@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "145034183638",
+    "project_id": "vocab-learning-app-219ef",
+    "storage_bucket": "vocab-learning-app-219ef.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:145034183638:android:719eb38067864496be5a77",
+        "android_client_info": {
+          "package_name": "com.example.vocab_learning_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAl2g3NcdURDucF1W5Jms-90kcrKUbqNt4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
