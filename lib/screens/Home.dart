@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'ChooseModeScreen.dart';
+
+
 
 class Home extends StatelessWidget {
   @override
@@ -13,26 +16,33 @@ class Home extends StatelessWidget {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'แบบฝึกหัด',
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
+            // ปุ่ม "เรียนรู้คำศัพท์"
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green[300], // สีเขียวสำหรับปุ่มแรก
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
               onPressed: () {
-                // Action for the first button
+                // เชื่อมไปยัง ChooseModeScreen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ChooseModeScreen(),
+                  ),
+                );
               },
-              child: Text(
+              child: const Text(
                 'เรียนรู้คำศัพท์',
                 style: TextStyle(
                   color: Colors.white,
@@ -40,19 +50,19 @@ class Home extends StatelessWidget {
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange[400], // สีส้มสำหรับปุ่มที่สอง
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
               onPressed: () {
-                // Action for the second button
+                // ยังไม่มีการเชื่อมโยง (คุณสามารถเพิ่มได้ภายหลัง)
               },
-              child: Text(
+              child: const Text(
                 'เพิ่มคำศัพท์',
                 style: TextStyle(
                   color: Colors.white,
