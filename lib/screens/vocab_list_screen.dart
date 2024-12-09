@@ -17,7 +17,7 @@ class VocabListScreen extends StatelessWidget {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => AddVocabScreen()),
+                MaterialPageRoute(builder: (context) => AddVocabScreen(categoryName: '',)),
               );
             },
           ),
@@ -62,7 +62,7 @@ class VocabListScreen extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => AddVocabScreen(vocab: vocab),
+                        builder: (context) => AddVocabScreen(vocab: vocab, categoryName: '',),
                       ),
                     );
                   },

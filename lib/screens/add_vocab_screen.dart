@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class AddVocabScreen extends StatefulWidget {
   final QueryDocumentSnapshot? vocab;
 
-  AddVocabScreen({this.vocab});
+  AddVocabScreen({this.vocab, required String categoryName});
 
   @override
   _AddVocabScreenState createState() => _AddVocabScreenState();
