@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'screens/vocab_list_screen.dart';
+import 'screens/CategoriesPage.dart'; // นำเข้า CategoriesPage
+import 'screens/add_vocab_screen.dart';
 import 'screens/Home.dart';
-import 'screens/SettingScreen.dart'; 
-import 'screens/Shop_Page.dart'; // เพิ่มการ import ShopPage
+import 'screens/SettingScreen.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+void main() {
   runApp(MyApp());
 }
 
@@ -30,10 +27,10 @@ class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    VocabListScreen(), // หน้ารายการคำศัพท์    
-    Home(),            // หน้าหลัก
-    ShopPage(),        // เปลี่ยนจาก AddVocabScreen เป็น ShopPage
-    SettingScreen(),   // หน้า Settings (โปรไฟล์)
+    CategoriesPage(), // เปลี่ยนจาก VocabListScreen เป็น CategoriesPage
+    Home(),
+    CategoriesPage(),
+    SettingScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -49,26 +46,25 @@ class _MainNavigationState extends State<MainNavigation> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Vocabulary', // แสดงหน้ารายการคำศัพท์
+            icon: Icon(Icons.category), // เปลี่ยนไอคอนให้เหมาะกับหมวดหมู่
+            label: 'Vocabulary', // คำอธิบายใต้ไอคอน
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home', // แสดงหน้าหลัก
+            label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart), // ใช้ไอคอนตะกร้าร้านค้า
-            label: 'Shop', // เปลี่ยนจาก Add Vocab เป็น Shop
+            icon: Icon(Icons.add),
+            label: 'Add Vocab',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
-            label: 'Settings', // แสดงหน้าโปรไฟล์/การตั้งค่า
+            label: 'Settings',
           ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.deepPurple,
         unselectedItemColor: Colors.grey,
-        iconSize: 30, // เพิ่มขนาดไอคอน (ค่าเริ่มต้นคือ 24)
         onTap: _onItemTapped,
       ),
     );
