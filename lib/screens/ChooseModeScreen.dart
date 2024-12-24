@@ -1,71 +1,77 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'quiz_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'เลือกรูปแบบ',
-          style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.black,
-          ),
-        ),
-        iconTheme: const IconThemeData(color: Colors.black),
+        title: const Text('เลือกรูปแบบ'),
       ),
-      body: Center(
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            // ปุ่มสีแดง
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red, // สีปุ่ม
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                backgroundColor: Colors.red,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // ความโค้งมนของปุ่ม
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                elevation: 5, // เงาของปุ่ม
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
-              onPressed: () {
-                // กำหนด action เมื่อกดปุ่มนี้
+              onPressed: () async {
+                final CollectionReference vocabCollection =
+                    FirebaseFirestore.instance.collection('vocabulary');
+                final querySnapshot = await vocabCollection.get();
+
+                if (querySnapshot.docs.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('ไม่มีคำศัพท์ในคลัง!')),
+                  );
+                  return;
+                }
+
+                final vocabList = querySnapshot.docs.map((doc) {
+                  return {
+                    'word': doc['word'],
+                    'meaning': doc['meaning'],
+                    'part_of_speech': doc['part_of_speech'],
+                  };
+                }).toList()
+                  ..shuffle();
+
+                final selectedWords = vocabList.take(10).toList();
+
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => QuizScreen(vocabList: selectedWords),
+                  ),
+                );
               },
               child: const Text(
                 'เริ่มด้วยคำศัพท์ในแอพ',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
-            const SizedBox(height: 20), // เว้นระหว่างปุ่ม
-            // ปุ่มสีเหลือง
+            const SizedBox(height: 20),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange, // สีปุ่ม
-                padding: const EdgeInsets.symmetric(horizontal: 60, vertical: 15),
+                backgroundColor: Colors.orange,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20), // ความโค้งมนของปุ่ม
+                  borderRadius: BorderRadius.circular(20),
                 ),
-                elevation: 5, // เงาของปุ่ม
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
               ),
               onPressed: () {
-                // กำหนด action เมื่อกดปุ่มนี้
+                // คุณสามารถสร้าง CategorySelectionScreen หรือหน้าที่เกี่ยวข้องได้
               },
               child: const Text(
                 'เริ่มด้วยคำศัพท์ที่เพิ่มเข้ามา',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               ),
             ),
           ],

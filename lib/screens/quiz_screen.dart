@@ -1,116 +1,170 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'dart:math';
+import 'package:flutter/services.dart';
+import 'ResultScreen.dart';
 
 class QuizScreen extends StatefulWidget {
+  final List<Map<String, dynamic>> vocabList;
+
+  QuizScreen({required this.vocabList});
+
   @override
   _QuizScreenState createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  final CollectionReference _vocabCollection =
-      FirebaseFirestore.instance.collection('vocab');
-
-  List<DocumentSnapshot> _vocabList = [];
-  String _question = "";
-  String _correctAnswer = "";
-  List<String> _options = [];
-  bool _isLoading = true;
-  int _score = 0;
+  int currentQuestionIndex = 0;
+  int correctAnswers = 0;
+  bool isAnswered = false;
+  bool isCorrect = false;
+  List<String> shuffledOptions = []; // เก็บตัวเลือกในคำถามปัจจุบัน
 
   @override
   void initState() {
     super.initState();
-    _loadVocab();
+    _initializeOptions(); // สร้างตัวเลือกครั้งแรก
   }
 
-  Future<void> _loadVocab() async {
-    try {
-      QuerySnapshot querySnapshot = await _vocabCollection.get();
-      if (querySnapshot.docs.isEmpty) {
-        // ตรวจสอบกรณีไม่มีข้อมูลคำศัพท์
-        setState(() {
-          _isLoading = false;
-          _question = "No vocabulary available. Please add some!";
-        });
-      } else {
-        setState(() {
-          _vocabList = querySnapshot.docs;
-          _isLoading = false;
-          _generateQuestion();
-        });
-      }
-    } catch (e) {
-      // จัดการข้อผิดพลาดในการเชื่อมต่อกับ Firestore
-      setState(() {
-        _isLoading = false;
-        _question = "Failed to load vocabulary: $e";
-      });
-    }
-  }
+  void _initializeOptions() {
+    final currentQuestion = widget.vocabList[currentQuestionIndex];
+    final correctAnswer = currentQuestion['meaning'];
 
-  void _generateQuestion() {
-    if (_vocabList.isEmpty) return;
+    // ดึงคำแปลหลอกจากคำศัพท์อื่น
+    final fakeOptions = widget.vocabList
+        .where((vocab) => vocab['meaning'] != correctAnswer)
+        .map((vocab) => vocab['meaning'])
+        .toList()
+      ..shuffle();
 
-    final random = Random();
-    final vocab = _vocabList[random.nextInt(_vocabList.length)];
-    _question = vocab['meaning'];
-    _correctAnswer = vocab['word'];
-
-    // สุ่มตัวเลือกคำตอบ
-    _options = [_correctAnswer];
-    while (_options.length < 4) {
-      final option = _vocabList[random.nextInt(_vocabList.length)]['word'];
-      if (!_options.contains(option)) {
-        _options.add(option);
-      }
-    }
-    _options.shuffle();
+    // สร้างตัวเลือกทั้งหมด (คำตอบที่ถูกต้อง + ตัวเลือกหลอก)
+    shuffledOptions = [correctAnswer, ...fakeOptions.take(3)]..shuffle();
   }
 
   void _checkAnswer(String selectedAnswer) {
-    if (selectedAnswer == _correctAnswer) {
+    final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
+
+    setState(() {
+      isAnswered = true;
+      if (selectedAnswer == correctAnswer) {
+        isCorrect = true;
+        correctAnswers++;
+        HapticFeedback.lightImpact(); // เสียงตอบถูก
+      } else {
+        isCorrect = false;
+        HapticFeedback.vibrate(); // เสียงตอบผิด
+      }
+    });
+  }
+
+  void _nextQuestion() {
+    if (currentQuestionIndex < widget.vocabList.length - 1) {
       setState(() {
-        _score++;
+        currentQuestionIndex++;
+        isAnswered = false;
+        isCorrect = false;
+        _initializeOptions(); // อัปเดตตัวเลือกเมื่อเปลี่ยนคำถาม
       });
+    } else {
+      // ไปหน้าสรุปคะแนน
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ResultScreen(
+            totalQuestions: widget.vocabList.length,
+            correctAnswers: correctAnswers,
+            duration: 300, // ตัวอย่างเวลาเล่น
+            userId: 'user123', // User ID (เปลี่ยนตามระบบของคุณ)
+          ),
+        ),
+      );
     }
-    _generateQuestion();
   }
 
   @override
   Widget build(BuildContext context) {
+    final currentQuestion = widget.vocabList[currentQuestionIndex];
+    final word = currentQuestion['word'];
+    final partOfSpeech = currentQuestion['part_of_speech'];
+    final correctAnswer = currentQuestion['meaning'];
+
     return Scaffold(
       appBar: AppBar(
-        title: Text('Vocabulary Quiz'),
+        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
+        title: Text('คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}'),
       ),
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    'Score: $_score',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'คำศัพท์',
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              word,
+              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(height: 10),
+            Text(
+              partOfSpeech,
+              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+            ),
+            SizedBox(height: 20),
+            ...shuffledOptions.map((option) {
+              final isSelected = isAnswered && option == correctAnswer;
+              final isIncorrect = isAnswered && option != correctAnswer && option == shuffledOptions.firstWhere((o) => o != correctAnswer, orElse: () => "");
+
+              return GestureDetector(
+                onTap: isAnswered
+                    ? null
+                    : () {
+                        _checkAnswer(option);
+                      },
+                child: Container(
+                  margin: EdgeInsets.symmetric(vertical: 8),
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? Colors.green
+                        : isIncorrect
+                            ? Colors.red
+                            : Colors.grey[300],
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  SizedBox(height: 30),
-                  Text(
-                    _question,
-                    style: TextStyle(fontSize: 18),
-                    textAlign: TextAlign.center,
+                  child: Center(
+                    child: Text(
+                      option,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isSelected || isIncorrect ? Colors.white : Colors.black,
+                      ),
+                    ),
                   ),
-                  SizedBox(height: 20),
-                  ..._options.map((option) => Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: ElevatedButton(
-                          onPressed: () => _checkAnswer(option),
-                          child: Text(option),
-                        ),
-                      )),
-                ],
+                ),
+              );
+            }),
+            SizedBox(height: 20),
+            ElevatedButton(
+              onPressed: isAnswered ? _nextQuestion : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: isAnswered
+                    ? (isCorrect ? Colors.green : Colors.red)
+                    : Colors.grey,
+                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: Text(
+                'ไปต่อ',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
             ),
+          ],
+        ),
+      ),
     );
   }
 }

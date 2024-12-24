@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'screens/CategoriesPage.dart'; // นำเข้า CategoriesPage
-import 'screens/add_vocab_screen.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'screens/CategoriesPage.dart';
 import 'screens/Home.dart';
+import 'screens/Shop_Page.dart';
 import 'screens/SettingScreen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp();
   runApp(MyApp());
 }
 
@@ -12,6 +15,8 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'Main App',
       theme: ThemeData(primarySwatch: Colors.deepPurple),
       home: MainNavigation(),
     );
@@ -24,12 +29,12 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   final List<Widget> _pages = [
-    CategoriesPage(), // เปลี่ยนจาก VocabListScreen เป็น CategoriesPage
-    Home(),
     CategoriesPage(),
+    Home(),
+    ShopPage(),
     SettingScreen(),
   ];
 
@@ -44,18 +49,18 @@ class _MainNavigationState extends State<MainNavigation> {
     return Scaffold(
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
-        items: const <BottomNavigationBarItem>[
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.category), // เปลี่ยนไอคอนให้เหมาะกับหมวดหมู่
-            label: 'Vocabulary', // คำอธิบายใต้ไอคอน
+            icon: Icon(Icons.list),
+            label: 'Vocabulary',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.add),
-            label: 'Add Vocab',
+            icon: Icon(Icons.shopping_cart),
+            label: 'Shop',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.settings),
