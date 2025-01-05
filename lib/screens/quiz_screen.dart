@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
-import 'ResultScreen.dart';
+import 'score_screen.dart';
+import 'SpeakToTextScreen.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class QuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>> vocabList;
+  final String? selectedCategoryId;
 
-  QuizScreen({required this.vocabList});
+  QuizScreen({required this.vocabList, this.selectedCategoryId});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -16,44 +20,62 @@ class _QuizScreenState extends State<QuizScreen> {
   int correctAnswers = 0;
   bool isAnswered = false;
   bool isCorrect = false;
-  List<String> shuffledOptions = []; // เก็บตัวเลือกในคำถามปัจจุบัน
+  List<String> shuffledOptions = [];
+  int userPoints = 0; // แต้มของผู้ใช้
+
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
     super.initState();
-    _initializeOptions(); // สร้างตัวเลือกครั้งแรก
+    _initializeOptions();
   }
 
   void _initializeOptions() {
     final currentQuestion = widget.vocabList[currentQuestionIndex];
     final correctAnswer = currentQuestion['meaning'];
 
-    // ดึงคำแปลหลอกจากคำศัพท์อื่น
     final fakeOptions = widget.vocabList
         .where((vocab) => vocab['meaning'] != correctAnswer)
         .map((vocab) => vocab['meaning'])
         .toList()
       ..shuffle();
 
-    // สร้างตัวเลือกทั้งหมด (คำตอบที่ถูกต้อง + ตัวเลือกหลอก)
     shuffledOptions = [correctAnswer, ...fakeOptions.take(3)]..shuffle();
   }
 
   void _checkAnswer(String selectedAnswer) {
-    final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
+  final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
 
-    setState(() {
-      isAnswered = true;
-      if (selectedAnswer == correctAnswer) {
-        isCorrect = true;
-        correctAnswers++;
-        HapticFeedback.lightImpact(); // เสียงตอบถูก
-      } else {
-        isCorrect = false;
-        HapticFeedback.vibrate(); // เสียงตอบผิด
-      }
-    });
-  }
+  setState(() {
+    isAnswered = true;
+    if (selectedAnswer == correctAnswer) {
+      isCorrect = true;
+      correctAnswers++;
+      userPoints++; // เพิ่มแต้มเมื่อผู้ใช้ตอบถูก
+
+      // นำทางไปยังหน้า SpeakToTextScreen เพื่อฝึกออกเสียง
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => SpeakToTextScreen(
+            correctWord: widget.vocabList[currentQuestionIndex]['word'],
+          ),
+        ),
+      ).then((_) {
+        // เมื่อกลับมาจาก SpeakToTextScreen ให้ไปคำถามถัดไป
+        _nextQuestion();
+      });
+
+      HapticFeedback.lightImpact(); // สั่นเบาเมื่อถูก
+    } else {
+      isCorrect = false;
+      HapticFeedback.vibrate(); // สั่นเมื่อผิด
+    }
+  });
+}
+
+
 
   void _nextQuestion() {
     if (currentQuestionIndex < widget.vocabList.length - 1) {
@@ -61,22 +83,28 @@ class _QuizScreenState extends State<QuizScreen> {
         currentQuestionIndex++;
         isAnswered = false;
         isCorrect = false;
-        _initializeOptions(); // อัปเดตตัวเลือกเมื่อเปลี่ยนคำถาม
+        _initializeOptions();
       });
     } else {
-      // ไปหน้าสรุปคะแนน
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ResultScreen(
-            totalQuestions: widget.vocabList.length,
-            correctAnswers: correctAnswers,
-            duration: 300, // ตัวอย่างเวลาเล่น
-            userId: 'user123', // User ID (เปลี่ยนตามระบบของคุณ)
+      _savePointsToFirestore().then((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ScoreScreen(
+              correctAnswers: correctAnswers,
+              wrongAnswers: widget.vocabList.length - correctAnswers,
+            ),
           ),
-        ),
-      );
+        );
+      });
     }
+  }
+
+  Future<void> _savePointsToFirestore() async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(_auth.currentUser!.uid);
+    await userRef.update({
+      'points': FieldValue.increment(userPoints),
+    });
   }
 
   @override
@@ -88,7 +116,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false, // ซ่อนปุ่มย้อนกลับ
+        automaticallyImplyLeading: false,
         title: Text('คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}'),
       ),
       body: Padding(
@@ -113,7 +141,9 @@ class _QuizScreenState extends State<QuizScreen> {
             SizedBox(height: 20),
             ...shuffledOptions.map((option) {
               final isSelected = isAnswered && option == correctAnswer;
-              final isIncorrect = isAnswered && option != correctAnswer && option == shuffledOptions.firstWhere((o) => o != correctAnswer, orElse: () => "");
+              final isIncorrect = isAnswered &&
+                  option != correctAnswer &&
+                  option == shuffledOptions.firstWhere((o) => o != correctAnswer, orElse: () => "");
 
               return GestureDetector(
                 onTap: isAnswered

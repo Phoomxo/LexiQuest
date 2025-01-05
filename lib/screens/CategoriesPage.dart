@@ -57,22 +57,35 @@ class CategoriesPage extends StatelessWidget {
                   _deleteCategory(context, category.id, category['category_name']);
                 },
                 onTap: () {
+                   Navigator.pop(context, category.id);
                   // เปิดหน้า VocabListScreen สำหรับดูคำศัพท์ในหมวดหมู่
                   Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => VocabListScreen(
-                        categoryId: category.id,
-                        categoryName: category['category_name'],
-                      ),
-                    ),
-                  );
+  context,
+  MaterialPageRoute(
+    builder: (context) => VocabListScreen(
+      categoryId: category.id,
+      categoryName: category['category_name'],
+    ),
+  ),
+);
+
                 },
                 child: Card(
                   margin: EdgeInsets.all(8),
                   child: ListTile(
-                    title: Text(category['category_name']),
-                  ),
+  title: Text(category['category_name']),
+  onTap: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VocabListScreen(
+          categoryId: category.id,
+          categoryName: category['category_name'],
+        ),
+      ),
+    );
+  },
+)
                 ),
               );
             },
