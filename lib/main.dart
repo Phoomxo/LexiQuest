@@ -4,6 +4,8 @@ import 'screens/CategoriesPage.dart';
 import 'screens/Home.dart';
 import 'screens/Shop_Page.dart';
 import 'screens/SettingScreen.dart';
+import 'screens/LoginScreen.dart';
+import 'screens/RegisterScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,9 +18,13 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Main App',
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
-      home: MainNavigation(),
+      title: 'Vocab Learning App',
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
+        '/home': (context) => MainNavigation(),
+      },
     );
   }
 }

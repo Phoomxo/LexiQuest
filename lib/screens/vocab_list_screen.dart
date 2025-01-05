@@ -22,9 +22,16 @@ class VocabListScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Words in $categoryName'), // แสดงชื่อหมวดหมู่
-      ),
+    appBar: AppBar(
+  title: Text('Words in $categoryName'),
+  leading: IconButton(
+    icon: Icon(Icons.arrow_back),
+    onPressed: () => Navigator.pop(context),
+  ),
+),
+
+
+
       body: StreamBuilder<QuerySnapshot>(
         stream: wordsCollection.snapshots(),
         builder: (context, snapshot) {
