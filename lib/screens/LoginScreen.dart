@@ -39,7 +39,7 @@ class _LoginScreenState extends State<LoginScreen> {
       // หลังจากล็อกอินเสร็จ พาไปหน้า Home หรือ Main
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => MainNavigation()), 
+         MaterialPageRoute(builder: (context) => MainNavigation()),
         // เปลี่ยนเป็นหน้า Home หรือ MainScreen ตามที่คุณใช้งานจริง
       );
     } on FirebaseAuthException catch (e) {
