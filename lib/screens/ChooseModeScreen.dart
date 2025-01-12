@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import '../services/vocab_service.dart';
 import 'quiz_screen.dart';
 import 'SelectCategoryForQuiz.dart';
+import '../services/quiz_service.dart';
 
 class ChooseModeScreen extends StatelessWidget {
   final VocabService _vocabService = VocabService();
+  final QuizService _quizService = QuizService();
 
   ChooseModeScreen({Key? key}) : super(key: key);
 
@@ -43,7 +45,7 @@ class ChooseModeScreen extends StatelessWidget {
               onPressed: () async {
                 try {
                   final vocabList = await _vocabService.getVocabFromAppCollection();
-
+                  await _quizService.generateQuizQuestions(5);
                   Navigator.push(
                     context,
                     MaterialPageRoute(
