@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'ResultScreen.dart';
 
@@ -14,110 +16,85 @@ class ScoreScreen extends StatelessWidget {
     this.selectedCategoryId,
   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        title: const Text('ความคืบหน้า'),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            // วงกลมแสดงจำนวนข้อที่ตอบถูก
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.green,
-                      child: Text(
-                        '$correctAnswers',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Icon(Icons.check, color: Colors.green, size: 32),
-                  ],
-                ),
-                Column(
-                  children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: Colors.red,
-                      child: Text(
-                        '$wrongAnswers',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Icon(Icons.close, color: Colors.red, size: 32),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 30),
-            // ปุ่มลองใหม่อีกครั้ง
-            ElevatedButton(
-              onPressed: () {
-                if (isFromFirestore) {
-                  // ถ้ามาจาก Firestore ให้สุ่มคำใหม่
-                  Navigator.pop(context, 'retry_firestore');
-                } else if (selectedCategoryId != null) {
-                  // ถ้ามาจากหมวดหมู่ ให้ฝึกซ้ำหมวดหมู่เดิม
-                  Navigator.pop(context, selectedCategoryId);
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.orange,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                'ลองใหม่อีกครั้ง',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-            const SizedBox(height: 20),
-            // ปุ่มออก
-            ElevatedButton(
-              onPressed: () {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => ResultScreen(score: correctAnswers),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                'ออก',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+@override
+Widget build(BuildContext context) {
+  return FutureBuilder<DocumentSnapshot>(
+    future: FirebaseFirestore.instance
+        .collection('state') // แก้จาก users เป็น state
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .get(),
+    builder: (context, snapshot) {
+      if (!snapshot.hasData) {
+        return const Center(child: CircularProgressIndicator());
+      }
+
+      final userData = snapshot.data!.data() as Map<String, dynamic>;
+      final totalPoints = userData['totalPoints'] ?? 0;
+      final totalCorrectAnswers = userData['totalCorrectAnswers'] ?? 0;
+      final totalWrongAnswers = userData['totalWrongAnswers'] ?? 0;
+      final gamesPlayed = userData['gamesPlayed'] ?? 0;
+
+      return Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          title: const Text('ความคืบหน้า'),
         ),
-      ),
-    );
-  }
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'แต้มรวม: $totalPoints',
+                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'จำนวนครั้งที่เล่น: $gamesPlayed',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'ตอบถูกทั้งหมด: $totalCorrectAnswers',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'ตอบผิดทั้งหมด: $totalWrongAnswers',
+                style: const TextStyle(fontSize: 18),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.pushReplacement(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ResultScreen(score: totalCorrectAnswers),
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red,
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+                child: const Text(
+                  'ออก',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+
+
+
+
 }

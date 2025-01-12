@@ -22,32 +22,24 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   /// ฟังก์ชันสำหรับดึงข้อมูลผู้ใช้ทั้งหมดและอัปเดตแต้ม
-  Future<void> _fetchUserPoints() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('กรุณาเข้าสู่ระบบเพื่อดูแต้มของคุณ')),
-        );
-        return;
-      }
-
-      final userModel = await _userService.getUserData();
-      if (userModel != null) {
-        setState(() {
-          userPoints = userModel.points!;
-        });
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาดในการดึงแต้ม: $e')),
-      );
-    } finally {
-      setState(() {
-        _isLoading = false; // ปิดสถานะกำลังโหลดข้อมูล
-      });
-    }
+  /// ฟังก์ชันสำหรับดึงข้อมูลแต้มรวมของผู้ใช้จาก state collection
+Future<void> _fetchUserPoints() async {
+  try {
+    final points = await _userService.getTotalPointsFromState();
+    setState(() {
+      userPoints = points;
+    });
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('เกิดข้อผิดพลาดในการดึงแต้ม: $e')),
+    );
+  } finally {
+    setState(() {
+      _isLoading = false; // ปิดสถานะกำลังโหลดข้อมูล
+    });
   }
+}
+
 
   @override
   Widget build(BuildContext context) {
