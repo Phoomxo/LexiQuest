@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class SelectCategoryForQuiz extends StatefulWidget {
   const SelectCategoryForQuiz({super.key});
@@ -19,15 +20,26 @@ class _SelectCategoryForQuizState extends State<SelectCategoryForQuiz> {
   }
 
   Future<void> _fetchAvailableCategories() async {
-    final categoriesSnapshot =
-        await FirebaseFirestore.instance.collection('categories').get();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
+
+    final categoriesSnapshot = await FirebaseFirestore.instance
+        .collection('categories')
+        .where('uid', isEqualTo: user.uid)
+        .get();
 
     List<Map<String, dynamic>> filteredCategories = [];
 
     for (var categoryDoc in categoriesSnapshot.docs) {
-      final wordsSnapshot = await categoryDoc.reference.collection('words').get();
+      final wordsCountSnapshot =
+          await categoryDoc.reference.collection('words').count().get();
 
-      if (wordsSnapshot.docs.length >= 5) {
+      if ((wordsCountSnapshot.count ?? 0) >= 5) {
         filteredCategories.add({
           'id': categoryDoc.id,
           'name': categoryDoc['category_name'],

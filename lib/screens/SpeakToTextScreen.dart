@@ -28,24 +28,30 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   }
 
   Future<void> _speakWord() async {
-    await _flutterTts.speak(widget.correctWord); // พูดคำศัพท์ด้วย FlutterTts
+    await _flutterTts.setLanguage("en-US"); // ตั้งค่าให้พูดเป็นภาษาอังกฤษแบบอเมริกัน
   }
 
   void _startListening() async {
-    bool available = await _speech.initialize();
-    if (available) {
-      setState(() {
-        isListening = true;
-        spokenText = ''; // ล้างข้อความก่อนเริ่มพูดใหม่
-      });
-      _speech.listen(onResult: (result) {
+  bool available = await _speech.initialize(
+    onStatus: (status) => print('Speech status: $status'),
+    onError: (error) => print('Speech error: $error'),
+  );
+  if (available) {
+    setState(() {
+      isListening = true;
+      spokenText = ''; // ล้างข้อความก่อนเริ่มพูดใหม่
+    });
+    _speech.listen(
+      onResult: (result) {
         setState(() {
           spokenText = result.recognizedWords; // อัปเดตข้อความที่ผู้ใช้พูด
           isCorrect = spokenText.toLowerCase() == widget.correctWord.toLowerCase(); // ตรวจสอบความถูกต้อง
         });
-      });
-    }
+      },
+      localeId: "en", // ตั้งค่าการรับเสียงเป็นภาษาอังกฤษแบบอเมริกัน
+    );
   }
+}
 
   void _stopListening() {
     setState(() {
