@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 class ResultScreen extends StatelessWidget {
   final int score;
 
-  ResultScreen({required this.score});
+  const ResultScreen({super.key, required this.score});
 
   @override
   Widget build(BuildContext context) {

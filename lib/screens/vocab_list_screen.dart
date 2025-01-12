@@ -1,93 +1,90 @@
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
+import '../models/word_model.dart';
+import '../services/word_service.dart';
+import 'add_vocab_screen.dart';
 
 class VocabListScreen extends StatelessWidget {
-  final String categoryId; // หมวดหมู่ที่เลือก
-  final String categoryName; // ชื่อหมวดหมู่
+  final String categoryId;
+  final String categoryName; // เพิ่ม parameter นี้
 
-  VocabListScreen({required this.categoryId, required this.categoryName});
+  const VocabListScreen({
+    Key? key,
+    required this.categoryId,
+    required this.categoryName, // กำหนดให้ required
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    // อ้างอิงไปยัง Subcollection `words` ของหมวดหมู่ที่เลือก
-    final CollectionReference wordsCollection = FirebaseFirestore.instance
-        .collection('categories')
-        .doc(categoryId)
-        .collection('words');
+    final WordService wordService = WordService(categoryId: categoryId);
 
-    // ฟังก์ชันลบคำศัพท์
-    Future<void> _deleteWord(String wordId) async {
-      await wordsCollection.doc(wordId).delete();
+    void showDeleteConfirmationDialog(BuildContext context, Word word) {
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Delete Word'),
+          content: Text('Are you sure you want to delete "${word.word}"?'),
+          actions: [
+            TextButton(
+              child: const Text('Cancel'),
+              onPressed: () => Navigator.pop(context),
+            ),
+            TextButton(
+              child: const Text('Delete'),
+              onPressed: () async {
+                await wordService.deleteWord(word.id!);
+                Navigator.pop(context);
+              },
+            ),
+          ],
+        ),
+      );
     }
 
     return Scaffold(
-    appBar: AppBar(
-  title: Text('Words in $categoryName'),
-  leading: IconButton(
-    icon: Icon(Icons.arrow_back),
-    onPressed: () => Navigator.pop(context),
-  ),
-),
-
-
-
-      body: StreamBuilder<QuerySnapshot>(
-        stream: wordsCollection.snapshots(),
+      appBar: AppBar(
+        title: Text('Words in $categoryName'), // ใช้ categoryName ใน title
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
+      ),
+      body: StreamBuilder<List<Word>>(
+        stream: wordService.getWordsStream(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading words.'));
+            return const Center(child: Text('Error loading words.'));
           }
-          final words = snapshot.data!.docs; // เอกสารของคำศัพท์ทั้งหมด
+          final words = snapshot.data ?? [];
+          if (words.isEmpty) {
+            return const Center(child: Text('No words added yet.'));
+          }
           return ListView.builder(
             itemCount: words.length,
             itemBuilder: (context, index) {
               final word = words[index];
               return GestureDetector(
-                onLongPress: () {
-                  // แสดง AlertDialog ยืนยันการลบ
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      title: Text('Delete Word'),
-                      content: Text('Are you sure you want to delete "${word['word']}"?'),
-                      actions: [
-                        TextButton(
-                          child: Text('Cancel'),
-                          onPressed: () => Navigator.pop(context),
-                        ),
-                        TextButton(
-                          child: Text('Delete'),
-                          onPressed: () async {
-                            await _deleteWord(word.id);
-                            Navigator.pop(context);
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                onLongPress: () => showDeleteConfirmationDialog(context, word),
                 onTap: () {
-                  // เปิดหน้าแก้ไขคำศัพท์ใน `AddVocabScreen`
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => AddVocabScreen(
+                      builder: (context) => AddWordScreen(
                         categoryId: categoryId,
-                        vocab: word, // ส่งเอกสารคำศัพท์เพื่อแก้ไข
+                        word: word,
                       ),
                     ),
                   );
                 },
                 child: Card(
-                  margin: EdgeInsets.all(8),
+                  margin: const EdgeInsets.all(8),
                   child: ListTile(
-                    title: Text(word['word']),
-                    subtitle: Text('${word['meaning']} (${word['part_of_speech']})'),
-                    trailing: Icon(Icons.edit), // ไอคอนแก้ไข
+                    title: Text(word.word),
+                    subtitle: Text('${word.meaning} (${word.partOfSpeech})'),
+                    trailing: const Icon(Icons.edit),
                   ),
                 ),
               );
@@ -97,15 +94,16 @@ class VocabListScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // ไปหน้าเพิ่มคำศัพท์ใหม่
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddVocabScreen(categoryId: categoryId),
+              builder: (context) => AddWordScreen(
+                categoryId: categoryId,
+              ),
             ),
           );
         },
-        child: Icon(Icons.add), // ไอคอนเพิ่มคำศัพท์
+        child: const Icon(Icons.add),
       ),
     );
   }

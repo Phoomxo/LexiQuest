@@ -1,88 +1,81 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'CategoriesPage.dart';
+import 'package:vocab_learning_app/models/word_model.dart';
+import '../services/category_service.dart';
 
-class AddVocabScreen extends StatefulWidget {
-  final String categoryId; // หมวดหมู่ที่เลือก
-  final QueryDocumentSnapshot? vocab; // เอกสารคำศัพท์ (ถ้ามี)
+class AddWordScreen extends StatefulWidget {
+  final String categoryId;
+  final Word? word; // เปลี่ยนเป็น nullable
 
-  AddVocabScreen({required this.categoryId, this.vocab});
+  const AddWordScreen({super.key, required this.categoryId, this.word}); // ลบ required ของ word
 
   @override
-  _AddVocabScreenState createState() => _AddVocabScreenState();
+  _AddWordScreenState createState() => _AddWordScreenState();
 }
 
-class _AddVocabScreenState extends State<AddVocabScreen> {
-  final TextEditingController _wordController = TextEditingController();
-  final TextEditingController _meaningController = TextEditingController();
-  final TextEditingController _partOfSpeechController = TextEditingController();
+class _AddWordScreenState extends State<AddWordScreen> {
+  late TextEditingController _wordController;
+  late TextEditingController _meaningController;
+  late TextEditingController _partOfSpeechController;
+  final CategoryService _categoryService = CategoryService();
+
+  bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    if (widget.vocab != null) {
-      _wordController.text = widget.vocab!['word'];
-      _meaningController.text = widget.vocab!['meaning'];
-      _partOfSpeechController.text = widget.vocab!['part_of_speech'];
+    _wordController = TextEditingController(text: widget.word?.word ?? '');
+    _meaningController = TextEditingController(text: widget.word?.meaning ?? '');
+    _partOfSpeechController =
+        TextEditingController(text: widget.word?.partOfSpeech ?? '');
+  }
+
+  void _addOrUpdateWord() async {
+    final word = _wordController.text.trim();
+    final meaning = _meaningController.text.trim();
+    final partOfSpeech = _partOfSpeechController.text.trim();
+
+    if (word.isEmpty || meaning.isEmpty || partOfSpeech.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please fill in all fields')),
+      );
+      return;
     }
 
-    // เพิ่ม Listener เพื่ออัปเดต UI เมื่อข้อความเปลี่ยน
-    _wordController.addListener(_updateSaveButtonState);
-    _meaningController.addListener(_updateSaveButtonState);
-    _partOfSpeechController.addListener(_updateSaveButtonState);
-  }
-
-  // ฟังก์ชันตรวจสอบว่าช่องข้อความไม่ว่าง
-  bool _isSaveButtonEnabled() {
-    return _wordController.text.trim().isNotEmpty &&
-        _meaningController.text.trim().isNotEmpty &&
-        _partOfSpeechController.text.trim().isNotEmpty;
-  }
-
-  // อัปเดตสถานะปุ่ม Save
-  void _updateSaveButtonState() {
-    setState(() {}); // รีเฟรช UI เพื่อปิดหรือเปิดปุ่ม Save
-  }
-
-  @override
-  void dispose() {
-    _wordController.dispose();
-    _meaningController.dispose();
-    _partOfSpeechController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _saveVocab() async {
-  final CollectionReference wordsCollection = FirebaseFirestore.instance
-      .collection('categories')
-      .doc(widget.categoryId)
-      .collection('words');
-
-  if (widget.vocab == null) {
-    await wordsCollection.add({
-      'word': _wordController.text.trim(),
-      'meaning': _meaningController.text.trim(),
-      'part_of_speech': _partOfSpeechController.text.trim(),
-      'created_at': Timestamp.now(),
+    setState(() {
+      _isLoading = true;
     });
-  } else {
-    await wordsCollection.doc(widget.vocab!.id).update({
-      'word': _wordController.text.trim(),
-      'meaning': _meaningController.text.trim(),
-      'part_of_speech': _partOfSpeechController.text.trim(),
-    });
+
+    try {
+      if (widget.word == null) {
+        // เพิ่มคำศัพท์ใหม่
+        await _categoryService.addWord(
+            widget.categoryId, word, meaning, partOfSpeech);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Word added successfully')),
+        );
+      } else {
+        // TODO: เพิ่มฟังก์ชันแก้ไขคำศัพท์ใน CategoryService
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Word updated successfully')),
+        );
+      }
+      Navigator.pop(context);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add/update word: $e')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
-
-  // ใช้ Navigator.pop เพื่อกลับไปที่ VocabListScreen
-  Navigator.pop(context);
-}
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.vocab == null ? 'Add Vocabulary' : 'Edit Vocabulary'),
+        title: Text(widget.word == null ? 'Add Word' : 'Edit Word'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -90,42 +83,26 @@ class _AddVocabScreenState extends State<AddVocabScreen> {
           children: [
             TextField(
               controller: _wordController,
-              decoration: InputDecoration(
-                labelText: 'Word',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              decoration: const InputDecoration(labelText: 'Word'),
             ),
-            SizedBox(height: 20),
             TextField(
               controller: _meaningController,
-              decoration: InputDecoration(
-                labelText: 'Meaning',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              decoration: const InputDecoration(labelText: 'Meaning'),
             ),
-            SizedBox(height: 20),
             TextField(
               controller: _partOfSpeechController,
-              decoration: InputDecoration(
-                labelText: 'Part of Speech',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
+              decoration: const InputDecoration(labelText: 'Part of Speech'),
             ),
-            SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _isSaveButtonEnabled() ? _saveVocab : null,
-              child: Text('Save', style: TextStyle(fontSize: 20)),
-            ),
+            const SizedBox(height: 20),
+            _isLoading
+                ? const CircularProgressIndicator()
+                : ElevatedButton(
+                    onPressed: _addOrUpdateWord,
+                    child: Text(widget.word == null ? 'Add Word' : 'Update Word'),
+                  ),
           ],
         ),
       ),
     );
   }
 }
-

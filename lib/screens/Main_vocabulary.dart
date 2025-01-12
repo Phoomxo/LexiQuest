@@ -5,11 +5,13 @@ class MainVocabulary extends StatelessWidget {
   final CollectionReference _vocabularyCollection =
       FirebaseFirestore.instance.collection('vocabulary');
 
+  MainVocabulary({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Main Vocabulary'),
+        title: const Text('Main Vocabulary'),
       ),
       body: Center(
         child: ElevatedButton(
@@ -65,10 +67,10 @@ class MainVocabulary extends StatelessWidget {
 
             // แสดงข้อความแจ้งเตือนเมื่อเพิ่มเสร็จ
             ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Added 20 A1 words successfully!')),
+              const SnackBar(content: Text('Added 20 A1 words successfully!')),
             );
           },
-          child: Text('Add 20 A1 Vocabulary'),
+          child: const Text('Add 20 A1 Vocabulary'),
         ),
       ),
     );

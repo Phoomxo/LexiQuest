@@ -6,7 +6,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
 
-  SpeakToTextScreen({required this.correctWord});
+  const SpeakToTextScreen({super.key, required this.correctWord});
 
   @override
   _SpeakToTextScreenState createState() => _SpeakToTextScreenState();
@@ -58,30 +58,30 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('ฝึกพูดคำศัพท์'),
+        title: const Text('ฝึกพูดคำศัพท์'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Text(
+            const Text(
               'พูดคำว่า:',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
             // เพิ่ม GestureDetector ให้สามารถแตะที่คำศัพท์เพื่อฟังการออกเสียงซ้ำได้
             GestureDetector(
               onTap: _speakWord, // ฟังก์ชันพูดซ้ำเมื่อแตะที่คำศัพท์
               child: Text(
                 widget.correctWord,
-                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue),
+                style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             // กล่องข้อความแสดงสิ่งที่ผู้ใช้พูด
             Container(
-              padding: EdgeInsets.all(12),
+              padding: const EdgeInsets.all(12),
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.grey[200],
@@ -89,37 +89,37 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
               ),
               child: Text(
                 spokenText.isEmpty ? 'พูดอะไรบางอย่าง...' : spokenText,
-                style: TextStyle(fontSize: 18, color: Colors.black),
+                style: const TextStyle(fontSize: 18, color: Colors.black),
                 textAlign: TextAlign.center,
               ),
             ),
-            SizedBox(height: 40),
+            const SizedBox(height: 40),
             GestureDetector(
               onTapDown: (_) => _startListening(),
               onTapUp: (_) => _stopListening(),
               child: CircleAvatar(
                 radius: 40,
                 backgroundColor: isCorrect ? Colors.green : Colors.red,
-                child: Icon(
+                child: const Icon(
                   Icons.mic,
                   color: Colors.white,
                   size: 40,
                 ),
               ),
             ),
-            SizedBox(height: 20),
+            const SizedBox(height: 20),
             ElevatedButton(
               onPressed: () {
                 Navigator.pop(context); // ไปยังหน้าถัดไป
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: isCorrect ? Colors.green : Colors.grey,
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-              child: Text(
+              child: const Text(
                 'ไปต่อ',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
