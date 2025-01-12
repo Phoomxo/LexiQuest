@@ -1,4 +1,4 @@
-// import 'dart:nativewrappers/_internal/vm/lib/internal_patch.dart';
+// 
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -26,6 +26,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   /// ฟังก์ชันโหลดคำถามจาก Firestore
   Future<void> _loadQuizQuestions() async {
+    print('Loading quiz questions...');
     try {
       final querySnapshot = await FirebaseFirestore.instance
           .collection('quiz')

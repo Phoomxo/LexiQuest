@@ -1,3 +1,5 @@
+
+import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -47,18 +49,21 @@ class QuizService {
 
   /// ดึงคำศัพท์จาก Firestore และสร้างคำถามแบบสุ่ม
   Future<void> generateQuizQuestions(int numberOfQuestions) async {
+   
     try {
       final user = FirebaseAuth.instance.currentUser;
+     
+     
       if (user == null) {
         throw Exception('User not signed in');
+        
       }
 
       // ดึงคำศัพท์ทั้งหมดจาก collection 'vocabulary'
       final querySnapshot = await FirebaseFirestore.instance
           .collection('vocabulary')
-          .where('uid', isEqualTo: user.uid)
           .get();
-
+      log("snapshot:${querySnapshot.docs.length}");
       if (querySnapshot.docs.isEmpty) {
         throw Exception('No vocabulary found for the user.');
       }
