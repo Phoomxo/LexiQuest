@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class SelectCategoryForQuiz extends StatefulWidget {
+  const SelectCategoryForQuiz({super.key});
+
   @override
   _SelectCategoryForQuizState createState() => _SelectCategoryForQuizState();
 }

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/auth_service.dart';
 import 'LoginScreen.dart';
 
 class RegisterScreen extends StatefulWidget {
+  const RegisterScreen({Key? key}) : super(key: key);
+
   @override
   _RegisterScreenState createState() => _RegisterScreenState();
 }
@@ -14,39 +16,39 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _firstNameController = TextEditingController();
   final TextEditingController _lastNameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  // ประกาศ AuthService
+  final AuthService _authService = AuthService();
+
   bool _isLoading = false;
 
-  void _register() async {
+  Future<void> _register() async {
     setState(() {
       _isLoading = true;
     });
 
     try {
-      // สร้างผู้ใช้ใหม่ใน Firebase Authentication
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+      // เรียกใช้ AuthService ในการสมัครสมาชิก
+      await _authService.registerUser(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
+        firstName: _firstNameController.text.trim(),
+        lastName: _lastNameController.text.trim(),
+        age: int.parse(_ageController.text.trim()),
       );
 
-      // บันทึกข้อมูลเพิ่มเติมใน Firestore
-      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-        'first_name': _firstNameController.text.trim(),
-        'last_name': _lastNameController.text.trim(),
-        'age': int.parse(_ageController.text.trim()),
-        'email': _emailController.text.trim(),
-      });
-
-      // หลังจากสมัครเสร็จ พาไปหน้า Login
+      // สมัครสำเร็จ -> ไปหน้า Login (หรือหน้า Home ก็ได้)
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => LoginScreen()),
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
       );
     } on FirebaseAuthException catch (e) {
+      // ดัก error จาก FirebaseAuth
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Registration Failed: ${e.message}')),
       );
     } catch (e) {
+      // ดัก error ทั่วไป
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
       );
@@ -58,44 +60,64 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    _firstNameController.dispose();
+    _lastNameController.dispose();
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Register'),
+        title: const Text('Register'),
       ),
+
       body: Padding(
         padding: const EdgeInsets.all(16.0),
+
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // First Name
             TextField(
               controller: _firstNameController,
-              decoration: InputDecoration(labelText: 'First Name'),
+              decoration: const InputDecoration(labelText: 'First Name'),
             ),
+            // Last Name
             TextField(
               controller: _lastNameController,
-              decoration: InputDecoration(labelText: 'Last Name'),
+              decoration: const InputDecoration(labelText: 'Last Name'),
             ),
+            // Age
             TextField(
               controller: _ageController,
-              decoration: InputDecoration(labelText: 'Age'),
+              decoration: const InputDecoration(labelText: 'Age'),
               keyboardType: TextInputType.number,
             ),
+            // Email
             TextField(
               controller: _emailController,
-              decoration: InputDecoration(labelText: 'Email'),
+              decoration: const InputDecoration(labelText: 'Email'),
             ),
+            // Password
             TextField(
               controller: _passwordController,
-              decoration: InputDecoration(labelText: 'Password'),
+              decoration: const InputDecoration(labelText: 'Password'),
               obscureText: true,
             ),
-            SizedBox(height: 20),
+
+            const SizedBox(height: 20),
+
+            // ปุ่มสมัครสมาชิก
             _isLoading
-                ? CircularProgressIndicator()
+                ? const CircularProgressIndicator()
                 : ElevatedButton(
                     onPressed: _register,
-                    child: Text('Register'),
+                    child: const Text('Register'),
                   ),
           ],
         ),

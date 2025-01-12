@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/vocab_service.dart';
 import 'quiz_screen.dart';
-import 'CategoriesPage.dart';
 import 'SelectCategoryForQuiz.dart';
 
 class ChooseModeScreen extends StatelessWidget {
+  final VocabService _vocabService = VocabService();
+
+  ChooseModeScreen({Key? key}) : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,34 +41,20 @@ class ChooseModeScreen extends StatelessWidget {
                 elevation: 5,
               ),
               onPressed: () async {
-                final CollectionReference vocabCollection =
-                    FirebaseFirestore.instance.collection('vocabulary');
-                final querySnapshot = await vocabCollection.get();
+                try {
+                  final vocabList = await _vocabService.getVocabFromAppCollection();
 
-                if (querySnapshot.docs.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('ไม่มีคำศัพท์ในคลัง!')),
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const QuizScreen(),
+                    ),
                   );
-                  return;
+                } catch (e) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text(e.toString())),
+                  );
                 }
-
-                final vocabList = querySnapshot.docs.map((doc) {
-                  return {
-                    'word': doc['word'],
-                    'meaning': doc['meaning'],
-                    'part_of_speech': doc['part_of_speech'],
-                  };
-                }).toList()
-                  ..shuffle();
-
-                final selectedWords = vocabList.take(10).toList();
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => QuizScreen(vocabList: selectedWords),
-                  ),
-                );
               },
               child: const Text(
                 'เริ่มด้วยคำศัพท์ในแอพ',
@@ -88,7 +77,6 @@ class ChooseModeScreen extends StatelessWidget {
                 elevation: 5,
               ),
               onPressed: () async {
-                // เปิดหน้า SelectCategoryForQuiz เพื่อเลือกหมวดหมู่ที่มีคำศัพท์มากกว่า 5 คำ
                 final selectedCategory = await Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -97,30 +85,21 @@ class ChooseModeScreen extends StatelessWidget {
                 );
 
                 if (selectedCategory != null) {
-                  final CollectionReference wordsCollection = FirebaseFirestore
-                      .instance
-                      .collection('categories')
-                      .doc(selectedCategory)
-                      .collection('words');
+                  try {
+                    final vocabList =
+                        await _vocabService.getVocabFromCategory(selectedCategory);
 
-                  final querySnapshot = await wordsCollection.get();
-
-                  final vocabList = querySnapshot.docs.map((doc) {
-                    return {
-                      'word': doc['word'],
-                      'meaning': doc['meaning'],
-                      'part_of_speech': doc['part_of_speech'],
-                    };
-                  }).toList()
-                    ..shuffle();
-
-                  // นำทางไปยัง QuizScreen พร้อมส่งคำศัพท์ที่เลือก
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => QuizScreen(vocabList: vocabList),
-                    ),
-                  );
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const QuizScreen(),
+                      ),
+                    );
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text(e.toString())),
+                    );
+                  }
                 }
               },
               child: const Text(

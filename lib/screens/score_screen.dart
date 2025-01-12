@@ -7,7 +7,7 @@ class ScoreScreen extends StatelessWidget {
   final bool isFromFirestore; // เช็คว่าเริ่มจาก Firestore หรือไม่
   final String? selectedCategoryId; // ถ้ามาจากหมวดหมู่ จะมีค่า categoryId
 
-  ScoreScreen({
+  const ScoreScreen({super.key, 
     required this.correctAnswers,
     required this.wrongAnswers,
     this.isFromFirestore = true,

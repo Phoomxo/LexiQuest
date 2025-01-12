@@ -1,29 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
+import '../models/category_model.dart';
+import '../services/category_service.dart';
 
 class CategoriesPage extends StatelessWidget {
-  final CollectionReference _categoriesCollection =
-      FirebaseFirestore.instance.collection('categories');
+  final CategoryService _categoryService = CategoryService();
 
-  // ฟังก์ชันลบหมวดหมู่
-  Future<void> _deleteCategory(BuildContext context, String categoryId, String categoryName) async {
-    // แสดง Dialog ยืนยันการลบ
+  CategoriesPage({super.key});
+
+  // Function to delete a category with confirmation dialog
+  void _deleteCategory(BuildContext context, String categoryId, String categoryName) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text('Delete Category'),
+        title: const Text('Delete Category'),
         content: Text('Are you sure you want to delete the category "$categoryName"?'),
         actions: [
           TextButton(
-            child: Text('Cancel'),
+            child: const Text('Cancel'),
             onPressed: () => Navigator.pop(context),
           ),
           TextButton(
-            child: Text('Delete'),
+            child: const Text('Delete'),
             onPressed: () async {
-              await _categoriesCollection.doc(categoryId).delete();
-              Navigator.pop(context); // ปิด Dialog หลังจากลบ
+              await _categoryService.deleteCategory(categoryId);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Function to show the add category dialog
+  void _showAddCategoryDialog(BuildContext context) {
+    TextEditingController addController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Category'),
+        content: TextField(
+          controller: addController,
+          decoration: const InputDecoration(labelText: 'Category Name'),
+        ),
+        actions: [
+          TextButton(
+            child: const Text('Cancel'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text('Add'),
+            onPressed: () async {
+              final categoryName = addController.text.trim();
+              if (categoryName.isNotEmpty) {
+                await _categoryService.addCategory(categoryName);
+              }
+              Navigator.pop(context);
             },
           ),
         ],
@@ -35,57 +67,45 @@ class CategoriesPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Categories'),
+        title: const Text('Categories'),
       ),
-      body: StreamBuilder(
-        stream: _categoriesCollection.snapshots(),
-        builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+      body: StreamBuilder<List<Category>>(
+        stream: _categoryService.getCategoriesStream(),
+        builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
           if (snapshot.hasError) {
-            return Center(child: Text('Error loading categories.'));
+            return const Center(child: Text('Error loading categories.'));
           }
-          final categories = snapshot.data!.docs;
+          final categories = snapshot.data ?? [];
+          if (categories.isEmpty) {
+            return const Center(child: Text('No categories found.'));
+          }
           return ListView.builder(
             itemCount: categories.length,
             itemBuilder: (context, index) {
-              final DocumentSnapshot category = categories[index];
+              final category = categories[index];
               return GestureDetector(
-                onLongPress: () {
-                  // เรียกฟังก์ชันลบหมวดหมู่
-                  _deleteCategory(context, category.id, category['category_name']);
-                },
+                onLongPress: () => _deleteCategory(context, category.id!, category.name),
                 onTap: () {
-                   Navigator.pop(context, category.id);
-                  // เปิดหน้า VocabListScreen สำหรับดูคำศัพท์ในหมวดหมู่
                   Navigator.push(
   context,
   MaterialPageRoute(
     builder: (context) => VocabListScreen(
-      categoryId: category.id,
-      categoryName: category['category_name'],
+      categoryId: category.id!,
+      categoryName: category.name, // ส่ง categoryName ไป VocabListScreen
     ),
   ),
 );
 
                 },
                 child: Card(
-                  margin: EdgeInsets.all(8),
+                  margin: const EdgeInsets.all(8),
                   child: ListTile(
-  title: Text(category['category_name']),
-  onTap: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => VocabListScreen(
-          categoryId: category.id,
-          categoryName: category['category_name'],
-        ),
-      ),
-    );
-  },
-)
+                    title: Text(category.name),
+                    trailing: const Icon(Icons.arrow_forward),
+                  ),
                 ),
               );
             },
@@ -93,37 +113,8 @@ class CategoriesPage extends StatelessWidget {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          // เพิ่มหมวดหมู่ใหม่
-          TextEditingController _addController = TextEditingController();
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text('Add Category'),
-              content: TextField(
-                controller: _addController,
-                decoration: InputDecoration(labelText: 'Category Name'),
-              ),
-              actions: [
-                TextButton(
-                  child: Text('Cancel'),
-                  onPressed: () => Navigator.pop(context),
-                ),
-                TextButton(
-                  child: Text('Add'),
-                  onPressed: () async {
-                    await _categoriesCollection.add({
-                      'category_name': _addController.text.trim(),
-                      'created_at': Timestamp.now(),
-                    });
-                    Navigator.pop(context);
-                  },
-                ),
-              ],
-            ),
-          );
-        },
-        child: Icon(Icons.add),
+        onPressed: () => _showAddCategoryDialog(context),
+        child: const Icon(Icons.add),
       ),
     );
   }

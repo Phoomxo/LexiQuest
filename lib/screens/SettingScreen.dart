@@ -1,137 +1,146 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
 
 class SettingScreen extends StatefulWidget {
+  const SettingScreen({super.key});
+
   @override
   _SettingScreenState createState() => _SettingScreenState();
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  User? _currentUser;
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final SupabaseClient _supabase = Supabase.instance.client;
   Map<String, dynamic>? _profileData;
   File? _profileImage;
+  bool isPickingImage = false;
+
+  firebase_auth.User? get _currentUser => _auth.currentUser;
 
   @override
   void initState() {
     super.initState();
-    _currentUser = _auth.currentUser;
-    _fetchUserProfile();
+    if (_currentUser != null) {
+      _fetchUserProfile();
+    }
   }
 
   Future<void> _fetchUserProfile() async {
-    if (_currentUser != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .get();
-      setState(() {
-        _profileData = doc.data();
-      });
+    try {
+      final doc = await _firestore.collection('users').doc(_currentUser!.uid).get();
+      if (doc.exists) {
+        setState(() {
+          _profileData = doc.data();
+        });
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to fetch profile data: $e')),
+      );
     }
   }
 
   Future<void> _pickImage() async {
-    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
+    if (isPickingImage) return; // ป้องกันการเรียกซ้ำ
+    isPickingImage = true;
+
+    try {
+      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+      if (pickedFile != null) {
+        setState(() {
+          _profileImage = File(pickedFile.path);
+        });
+        _uploadProfileImage();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาดในการเลือกภาพ: $e')),
+      );
+    } finally {
+      isPickingImage = false; // รีเซ็ตสถานะเมื่อเสร็จสิ้น
     }
   }
 
-  Future<void> _logout() async {
+  Future<void> _uploadProfileImage() async {
+    if (_profileImage == null) return;
+
+    try {
+      final String fileName = '${_currentUser!.uid}.jpg';
+      final response = await _supabase.storage.from('Pic_User').upload(fileName, _profileImage!);
+      final imageUrl = _supabase.storage.from('Pic_User').getPublicUrl(fileName);
+
+      await _firestore.collection('users').doc(_currentUser!.uid).update({'profile_image': imageUrl});
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('อัปโหลดรูปภาพสำเร็จ!')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: $e')),
+      );
+    }
+  }
+
+  void _logout() async {
     await _auth.signOut();
     Navigator.pushReplacementNamed(context, '/login');
+  }
+
+  Widget _buildProfileItem(String title, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          Text(value),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'โปรไฟล์',
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.black),
-      ),
-      body: SingleChildScrollView(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                GestureDetector(
-                  onTap: _pickImage,
-                  child: CircleAvatar(
-                    radius: 60,
-                    backgroundImage: _profileImage != null
-                        ? FileImage(_profileImage!)
-                        : const AssetImage('assets/profile_placeholder.png')
-                            as ImageProvider,
-                  ),
-                ),
-                const SizedBox(height: 20),
-                const Text(
-                  'โปรไฟล์',
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                _buildProfileItem('ชื่อ: ${_profileData?['first_name'] ?? ''}'),
-                const SizedBox(height: 10),
-                _buildProfileItem('นามสกุล: ${_profileData?['last_name'] ?? ''}'),
-                const SizedBox(height: 10),
-                _buildProfileItem('อายุ: ${_profileData?['age'] ?? ''}'),
-                const SizedBox(height: 40),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.red,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  ),
-                  onPressed: _logout,
-                  child: const Text(
-                    'ออกจากระบบ',
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
-                ),
-              ],
-            ),
+        title: const Text('Settings'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: _logout,
           ),
-        ),
+        ],
       ),
-    );
-  }
-
-  Widget _buildProfileItem(String value) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 20),
-      decoration: BoxDecoration(
-        color: Colors.grey[300],
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Text(
-        value,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w500,
-        ),
-        textAlign: TextAlign.center,
-      ),
+      body: _profileData == null
+          ? const Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  GestureDetector(
+                    onTap: _pickImage,
+                    child: CircleAvatar(
+                      radius: 50,
+                      backgroundImage: _profileImage != null
+                          ? FileImage(_profileImage!)
+                          : (_profileData?['profile_image'] != null
+                              ? NetworkImage(_profileData!['profile_image'])
+                              : const AssetImage('assets/profile_placeholder.png'))
+                                  as ImageProvider,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _buildProfileItem('First Name', _profileData?['first_name'] ?? ''),
+                  _buildProfileItem('Last Name', _profileData?['last_name'] ?? ''),
+                  _buildProfileItem('Age', _profileData?['age']?.toString() ?? ''),
+                ],
+              ),
+            ),
     );
   }
 }
