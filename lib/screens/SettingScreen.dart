@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:io';
+import 'SelectWallpaperScreen.dart'; // นำเข้าไฟล์หน้าจอเลือกวอลเปเปอร์
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -46,7 +47,7 @@ class _SettingScreenState extends State<SettingScreen> {
   }
 
   Future<void> _pickImage() async {
-    if (isPickingImage) return; // ป้องกันการเรียกซ้ำ
+    if (isPickingImage) return;
     isPickingImage = true;
 
     try {
@@ -58,11 +59,15 @@ class _SettingScreenState extends State<SettingScreen> {
         _uploadProfileImage();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาดในการเลือกภาพ: $e')),
-      );
+      if (!mounted) return;
+
+      Future.delayed(Duration.zero, () {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('เกิดข้อผิดพลาดในการเลือกภาพ')),
+        );
+      });
     } finally {
-      isPickingImage = false; // รีเซ็ตสถานะเมื่อเสร็จสิ้น
+      isPickingImage = false;
     }
   }
 
@@ -71,7 +76,7 @@ class _SettingScreenState extends State<SettingScreen> {
 
     try {
       final String fileName = '${_currentUser!.uid}.jpg';
-      final response = await _supabase.storage.from('Pic_User').upload(fileName, _profileImage!);
+      await _supabase.storage.from('Pic_User').upload(fileName, _profileImage!);
       final imageUrl = _supabase.storage.from('Pic_User').getPublicUrl(fileName);
 
       await _firestore.collection('users').doc(_currentUser!.uid).update({'profile_image': imageUrl});
@@ -138,6 +143,16 @@ class _SettingScreenState extends State<SettingScreen> {
                   _buildProfileItem('First Name', _profileData?['first_name'] ?? ''),
                   _buildProfileItem('Last Name', _profileData?['last_name'] ?? ''),
                   _buildProfileItem('Age', _profileData?['age']?.toString() ?? ''),
+                  const SizedBox(height: 20),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => SelectWallpaperScreen()),
+                      );
+                    },
+                    child: const Text('เปลี่ยนวอลเปเปอร์'),
+                  ),
                 ],
               ),
             ),

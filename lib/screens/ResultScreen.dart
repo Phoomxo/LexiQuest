@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // เพิ่มการ import นี้
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:vocab_learning_app/main.dart'; // เพิ่มการ import นี้
 
 
 
@@ -36,20 +37,13 @@ class ResultScreen extends StatelessWidget {
             const SizedBox(height: 30),
           ElevatedButton(
   onPressed: () {
-    // TODO: เพิ่มฟีเจอร์ร้านค้าและการใช้แต้ม
-    Navigator.popUntil(context, (route) => route.isFirst);
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => MainNavigation()), // เปลี่ยนเป็นหน้าหลักของคุณ
+      (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
+    );
   },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: Colors.green,
-    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(20),
-    ),
-  ),
-  child: const Text(
-    'ยืนยัน',
-    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-  ),
+  child: const Text('กลับหน้าหลัก'),
 ),
 
           ],
