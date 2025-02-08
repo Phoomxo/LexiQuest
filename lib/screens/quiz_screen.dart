@@ -22,6 +22,7 @@ class _QuizScreenState extends State<QuizScreen> {
   bool isCorrect = false;
   List<String> shuffledOptions = [];
   int userPoints = 0; // แต้มของผู้ใช้
+  String? backgroundUrl; // URL ของวอลเปเปอร์ที่เลือก
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
@@ -29,6 +30,20 @@ class _QuizScreenState extends State<QuizScreen> {
   void initState() {
     super.initState();
     _initializeOptions();
+    _loadBackground(); // โหลดวอลเปเปอร์ที่เลือก
+  }
+
+  // โหลดวอลเปเปอร์ที่ผู้ใช้เลือกจาก Firestore
+  Future<void> _loadBackground() async {
+    final user = _auth.currentUser;
+    if (user != null) {
+      final doc = await FirebaseFirestore.instance.collection('state').doc(user.uid).get();
+      if (doc.exists) {
+        setState(() {
+          backgroundUrl = doc.data()?['selectedWallpaper'];
+        });
+      }
+    }
   }
 
   void _initializeOptions() {
@@ -63,7 +78,6 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
           ),
         ).then((_) {
-          // เมื่อกลับมาจาก SpeakToTextScreen ให้ไปคำถามถัดไป
           _nextQuestion();
         });
 
@@ -98,33 +112,36 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
- Future<void> _savePointsToFirestore() async {
-  final userRef = FirebaseFirestore.instance.collection('users').doc(_auth.currentUser!.uid);
+  Future<void> _savePointsToFirestore() async {
+    final userRef = FirebaseFirestore.instance.collection('users').doc(_auth.currentUser!.uid);
 
-  // สร้างเอกสารใหม่ใน subcollection "sessions" สำหรับบันทึกรอบการเล่น
-  final sessionRef = userRef.collection('sessions').doc();
-  await sessionRef.set({
-    'points': userPoints,
-    'correctAnswers': correctAnswers,
-    'wrongAnswers': widget.vocabList.length - correctAnswers,
-    'timestamp': FieldValue.serverTimestamp(),
-  });
+    // สร้างเอกสารใหม่ใน subcollection "sessions" สำหรับบันทึกรอบการเล่น
+    final sessionRef = userRef.collection('sessions').doc();
+    await sessionRef.set({
+      'points': userPoints,
+      'correctAnswers': correctAnswers,
+      'wrongAnswers': widget.vocabList.length - correctAnswers,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
 
-  // อัปเดตแต้มรวมและจำนวนครั้งที่เล่นในเอกสารหลักของผู้ใช้
-  await userRef.set({
-    'totalPoints': FieldValue.increment(userPoints),
-    'gamesPlayed': FieldValue.increment(1),
-  }, SetOptions(merge: true));
+    // อัปเดตแต้มรวมและจำนวนครั้งที่เล่นในเอกสารหลักของผู้ใช้
+    try {
+      await userRef.set({
+        'totalPoints': FieldValue.increment(userPoints),
+        'gamesPlayed': FieldValue.increment(1),
+      }, SetOptions(merge: true));
+    } catch (e) {
+      print('เกิดข้อผิดพลาดในการบันทึกแต้ม: $e');
+    }
 
-  // สร้าง collection "state" สำหรับเก็บสถิติรวมของผู้ใช้
-  final stateRef = FirebaseFirestore.instance.collection('state').doc(_auth.currentUser!.uid);
-  await stateRef.set({
-    'totalCorrectAnswers': FieldValue.increment(correctAnswers),
-    'totalWrongAnswers': FieldValue.increment(widget.vocabList.length - correctAnswers),
-    'totalPoints': FieldValue.increment(userPoints),
-  }, SetOptions(merge: true));
-}
-
+    // สร้าง collection "state" สำหรับเก็บสถิติรวมของผู้ใช้
+    final stateRef = FirebaseFirestore.instance.collection('state').doc(_auth.currentUser!.uid);
+    await stateRef.set({
+      'totalCorrectAnswers': FieldValue.increment(correctAnswers),
+      'totalWrongAnswers': FieldValue.increment(widget.vocabList.length - correctAnswers),
+      'totalPoints': FieldValue.increment(userPoints),
+    }, SetOptions(merge: true));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -138,80 +155,90 @@ class _QuizScreenState extends State<QuizScreen> {
         automaticallyImplyLeading: false,
         title: Text('คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'คำศัพท์',
-              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              word,
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
-            ),
-            SizedBox(height: 10),
-            Text(
-              partOfSpeech,
-              style: TextStyle(fontSize: 18, color: Colors.grey[700]),
-            ),
-            SizedBox(height: 20),
-            ...shuffledOptions.map((option) {
-              final isSelected = isAnswered && option == correctAnswer;
-              final isIncorrect = isAnswered &&
-                  option != correctAnswer &&
-                  option == shuffledOptions.firstWhere((o) => o != correctAnswer, orElse: () => "");
+      body: Container(
+        decoration: BoxDecoration(
+          image: backgroundUrl != null
+              ? DecorationImage(
+                  image: NetworkImage(backgroundUrl!),
+                  fit: BoxFit.cover,
+                )
+              : null,
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                'คำศัพท์',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text(
+                word,
+                style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text(
+                partOfSpeech,
+                style: TextStyle(fontSize: 18, color: Colors.grey[700]),
+              ),
+              SizedBox(height: 20),
+              ...shuffledOptions.map((option) {
+                final isSelected = isAnswered && option == correctAnswer;
+                final isIncorrect = isAnswered &&
+                    option != correctAnswer &&
+                    option == shuffledOptions.firstWhere((o) => o != correctAnswer, orElse: () => "");
 
-              return GestureDetector(
-                onTap: isAnswered
-                    ? null
-                    : () {
-                        _checkAnswer(option);
-                      },
-                child: Container(
-                  margin: EdgeInsets.symmetric(vertical: 8),
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.green
-                        : isIncorrect
-                            ? Colors.red
-                            : Colors.grey[300],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Center(
-                    child: Text(
-                      option,
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: isSelected || isIncorrect ? Colors.white : Colors.black,
+                return GestureDetector(
+                  onTap: isAnswered
+                      ? null
+                      : () {
+                          _checkAnswer(option);
+                        },
+                  child: Container(
+                    margin: EdgeInsets.symmetric(vertical: 8),
+                    padding: EdgeInsets.symmetric(vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? Colors.green
+                          : isIncorrect
+                              ? Colors.red
+                              : Colors.grey[300],
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Center(
+                      child: Text(
+                        option,
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isSelected || isIncorrect ? Colors.white : Colors.black,
+                        ),
                       ),
                     ),
                   ),
+                );
+              }),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: isAnswered ? _nextQuestion : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isAnswered
+                      ? (isCorrect ? Colors.green : Colors.red)
+                      : Colors.grey,
+                  padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                 ),
-              );
-            }),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: isAnswered ? _nextQuestion : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: isAnswered
-                    ? (isCorrect ? Colors.green : Colors.red)
-                    : Colors.grey,
-                padding: EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                child: Text(
+                  'ไปต่อ',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
               ),
-              child: Text(
-                'ไปต่อ',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

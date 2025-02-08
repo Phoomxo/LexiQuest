@@ -66,7 +66,7 @@ Widget build(BuildContext context) {
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
-                  Navigator.pushReplacement(
+                  Navigator.push(
                     context,
                     MaterialPageRoute(
                       builder: (context) => ResultScreen(score: totalCorrectAnswers),
