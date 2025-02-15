@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
+
 class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
 
@@ -28,7 +29,11 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   }
 
   Future<void> _speakWord() async {
-    await _flutterTts.setLanguage("en-US"); // ตั้งค่าให้พูดเป็นภาษาอังกฤษแบบอเมริกัน
+  await _flutterTts.setLanguage("en-US"); // ตั้งค่าภาษา
+  await _flutterTts.setSpeechRate(0.5); // ตั้งค่าความเร็ว
+  await _flutterTts.setVolume(1.0); // ตั้งค่าความดัง
+  await _flutterTts.setPitch(1.0); // ตั้งค่าโทนเสียง
+  await _flutterTts.speak(widget.correctWord); // เรียกให้พูดคำศัพท์
   }
 
   void _startListening() async {
@@ -48,7 +53,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
           isCorrect = spokenText.toLowerCase() == widget.correctWord.toLowerCase(); // ตรวจสอบความถูกต้อง
         });
       },
-      localeId: "en", // ตั้งค่าการรับเสียงเป็นภาษาอังกฤษแบบอเมริกัน
+      localeId: "en-US", // ตั้งค่าการรับเสียงเป็นภาษาอังกฤษแบบอเมริกัน
     );
   }
 }
