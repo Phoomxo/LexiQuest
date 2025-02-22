@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:vocab_learning_app/models/word_model.dart';
-import '../services/category_service.dart';
+import '../models/word_model.dart';
+import '../services/word_service.dart';
 
 class AddWordScreen extends StatefulWidget {
   final String categoryId;
@@ -18,7 +18,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late TextEditingController _wordController;
   late TextEditingController _meaningController;
   late TextEditingController _partOfSpeechController;
-  final CategoryService _categoryService = CategoryService();
+  late WordService wordService;
 
   bool _isLoading = false;
   List<String> _suggestedWords = [];
@@ -26,11 +26,13 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   void initState() {
     super.initState();
+    wordService = WordService(categoryId: widget.categoryId);
     _wordController = TextEditingController(text: widget.word?.word ?? '');
     _meaningController = TextEditingController(text: widget.word?.meaning ?? '');
     _partOfSpeechController = TextEditingController(text: widget.word?.partOfSpeech ?? '');
   }
 
+  /// 🔎 **ดึงคำศัพท์แนะนำจาก Datamuse API**
   Future<void> _fetchSuggestions(String query) async {
     if (query.isEmpty) {
       setState(() => _suggestedWords = []);
@@ -46,51 +48,50 @@ class _AddWordScreenState extends State<AddWordScreen> {
     }
   }
 
-  Future<void> _fetchWordDetails(String word) async {
-    final translationUrl = Uri.parse('https://api.mymemory.translated.net/get?q=$word&langpair=en|th');
-    final translationResponse = await http.get(translationUrl);
-    if (translationResponse.statusCode == 200) {
-      final Map<String, dynamic> translationData = json.decode(translationResponse.body);
-      final String translatedText = translationData['responseData']['translatedText'] ?? word;
+  /// 🌍 **แปลคำศัพท์เป็นภาษาไทยโดยใช้ Google Translate (GTX)**
+  Future<void> _translateToThai(String word) async {
+    final url = Uri.parse(
+        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=$word');
+
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
       setState(() {
-        _meaningController.text = translatedText;
+        _meaningController.text = data[0][0][0]; // ใส่ค่าที่แปลลงในช่อง "ความหมาย"
       });
     }
+  }
 
-    final posUrl = Uri.parse('https://api.datamuse.com/words?sp=$word&md=p');
-    final posResponse = await http.get(posUrl);
-    if (posResponse.statusCode == 200) {
-      final List posData = json.decode(posResponse.body);
-      if (posData.isNotEmpty && posData[0]['tags'] != null) {
-        String posTag = posData[0]['tags'].firstWhere(
-          (tag) => tag.startsWith('n') || tag.startsWith('v') || tag.startsWith('adj') || tag.startsWith('adv'),
-          orElse: () => 'unknown'
-        );
-        setState(() {
-          _partOfSpeechController.text = _convertPosTag(posTag);
-        });
+  /// 🔥 **ดึงข้อมูล "ประเภทของคำ" อัตโนมัติจาก Dictionary API**
+  Future<void> _fetchWordDetails(String word) async {
+    final url = Uri.parse('https://api.dictionaryapi.dev/api/v2/entries/en/$word');
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      if (data.isNotEmpty) {
+        final firstEntry = data[0];
+        final meanings = firstEntry['meanings'] as List<dynamic>;
+
+        if (meanings.isNotEmpty) {
+          setState(() {
+            _partOfSpeechController.text = meanings[0]['partOfSpeech'] ?? '';
+          });
+        }
       }
     }
   }
 
-  String _convertPosTag(String tag) {
-    switch (tag) {
-      case 'n': return 'Noun';
-      case 'v': return 'Verb';
-      case 'adj': return 'Adjective';
-      case 'adv': return 'Adverb';
-      default: return 'Unknown';
-    }
-  }
-
+  /// ➕ **เพิ่มหรืออัปเดตคำศัพท์**
   void _addOrUpdateWord() async {
-    final word = _wordController.text.trim();
+    final wordText = _wordController.text.trim();
     final meaning = _meaningController.text.trim();
     final partOfSpeech = _partOfSpeechController.text.trim();
 
-    if (word.isEmpty || meaning.isEmpty || partOfSpeech.isEmpty) {
+    if (wordText.isEmpty || meaning.isEmpty || partOfSpeech.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill in all fields')),
+        const SnackBar(content: Text('กรุณากรอกข้อมูลให้ครบทุกช่อง')),
       );
       return;
     }
@@ -99,19 +100,34 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
     try {
       if (widget.word == null) {
-        await _categoryService.addWord(widget.categoryId, word, meaning, partOfSpeech);
+        await wordService.addWord(Word(
+          word: wordText,
+          meaning: meaning,
+          partOfSpeech: partOfSpeech,
+          userId: '',
+          isGlobal: false,
+          createdAt: DateTime.now(),
+        ));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Word added successfully')),
+          const SnackBar(content: Text('เพิ่มคำศัพท์สำเร็จ')),
         );
       } else {
+        await wordService.updateWord(widget.word!.id!, Word(
+          word: wordText,
+          meaning: meaning,
+          partOfSpeech: partOfSpeech,
+          userId: widget.word!.userId,
+          isGlobal: widget.word!.isGlobal,
+          createdAt: widget.word!.createdAt,
+        ));
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Word updated successfully')),
+          const SnackBar(content: Text('อัปเดตคำศัพท์สำเร็จ')),
         );
       }
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to add/update word: $e')),
+        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -121,51 +137,84 @@ class _AddWordScreenState extends State<AddWordScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(widget.word == null ? 'Add Word' : 'Edit Word')),
-      body: Padding(
+      appBar: AppBar(
+        title: Text(widget.word == null ? 'เพิ่มคำศัพท์' : 'แก้ไขคำศัพท์'),
+        centerTitle: true,
+      ),
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
+            // 🔎 **Autocomplete สำหรับเลือกคำศัพท์**
             Autocomplete<String>(
               optionsBuilder: (TextEditingValue textEditingValue) async {
                 await _fetchSuggestions(textEditingValue.text);
                 return _suggestedWords;
               },
-              onSelected: (String selection) {
+              onSelected: (String selection) async {
                 setState(() {
                   _wordController.text = selection;
                 });
-                _fetchWordDetails(selection);
+
+                // ✅ **แปลเป็นภาษาไทย**
+                await _translateToThai(selection);
+
+                // ✅ **ดึงข้อมูลประเภทของคำ**
+                await _fetchWordDetails(selection);
               },
               fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
                 return TextField(
                   controller: controller,
                   focusNode: focusNode,
                   onEditingComplete: onEditingComplete,
-                  onChanged: (value) {
-                    _fetchWordDetails(value);
-                  },
-                  decoration: const InputDecoration(labelText: 'Word'),
+                  decoration: InputDecoration(
+                    labelText: 'คำศัพท์',
+                    prefixIcon: const Icon(Icons.translate),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 );
               },
             ),
+            const SizedBox(height: 15),
+
+            // 📖 **ความหมายของคำศัพท์ (ภาษาไทย)**
             TextField(
               controller: _meaningController,
-              decoration: const InputDecoration(labelText: 'Meaning (Translated)'),
+              decoration: InputDecoration(
+                labelText: 'ความหมาย (ภาษาไทย)',
+                prefixIcon: const Icon(Icons.text_snippet),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
+            const SizedBox(height: 15),
+
+            // 🏷️ **ประเภทของคำ**
             TextField(
               controller: _partOfSpeechController,
-              decoration: const InputDecoration(labelText: 'Part of Speech'),
+              decoration: InputDecoration(
+                labelText: 'ประเภทของคำ',
+                prefixIcon: const Icon(Icons.category),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
             ),
             const SizedBox(height: 20),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _addOrUpdateWord,
-                    child: Text(widget.word == null ? 'Add Word' : 'Update Word'),
-                  ),
+
           ],
         ),
+      ),
+
+      // ✅ Floating Action Button สำหรับบันทึก
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _addOrUpdateWord,
+        icon: const Icon(Icons.check),
+        label: const Text('เพิ่ม'),
+        backgroundColor: Colors.blueAccent,
       ),
     );
   }

@@ -9,7 +9,7 @@ class QuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>> vocabList;
   final String? selectedCategoryId;
 
-  QuizScreen({required this.vocabList, this.selectedCategoryId});
+  const QuizScreen({super.key, required this.vocabList, this.selectedCategoryId});
 
   @override
   _QuizScreenState createState() => _QuizScreenState();
@@ -46,17 +46,23 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   void _initializeOptions() {
-    final currentQuestion = widget.vocabList[currentQuestionIndex];
-    final correctAnswer = currentQuestion['meaning'];
-
-    final fakeOptions = widget.vocabList
-        .where((vocab) => vocab['meaning'] != correctAnswer)
-        .map((vocab) => vocab['meaning'])
-        .toList()
-      ..shuffle();
-
-    shuffledOptions = [correctAnswer, ...fakeOptions.take(3)]..shuffle();
+  if (widget.vocabList.isEmpty) {
+    print("❌ คำศัพท์ว่าง! ตรวจสอบแหล่งที่มา");
+    return;
   }
+
+  final currentQuestion = widget.vocabList[currentQuestionIndex];
+  final correctAnswer = currentQuestion['meaning'];
+
+  final fakeOptions = widget.vocabList
+      .where((vocab) => vocab['meaning'] != correctAnswer)
+      .map((vocab) => vocab['meaning'])
+      .toList()
+    ..shuffle();
+
+  shuffledOptions = [correctAnswer, ...fakeOptions.take(3)]..shuffle();
+}
+
 
   void _checkAnswer(String selectedAnswer) {
     final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
@@ -100,28 +106,9 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _savePointsToFirestore() async {
     final userRef = FirebaseFirestore.instance.collection('users').doc(_auth.currentUser!.uid);
-    final sessionRef = userRef.collection('sessions').doc();
-    await sessionRef.set({
-      'points': userPoints,
-      'correctAnswers': correctAnswers,
-      'wrongAnswers': widget.vocabList.length - correctAnswers,
-      'timestamp': FieldValue.serverTimestamp(),
-    });
-
-    try {
-      await userRef.set({
-        'totalPoints': FieldValue.increment(userPoints),
-        'gamesPlayed': FieldValue.increment(1),
-      }, SetOptions(merge: true));
-    } catch (e) {
-      print('Error saving points: $e');
-    }
-
-    final stateRef = FirebaseFirestore.instance.collection('state').doc(_auth.currentUser!.uid);
-    await stateRef.set({
-      'totalCorrectAnswers': FieldValue.increment(correctAnswers),
-      'totalWrongAnswers': FieldValue.increment(widget.vocabList.length - correctAnswers),
+    await userRef.set({
       'totalPoints': FieldValue.increment(userPoints),
+      'gamesPlayed': FieldValue.increment(1),
     }, SetOptions(merge: true));
   }
 
@@ -134,50 +121,79 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        automaticallyImplyLeading: false,
         title: Text('คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}'),
+        centerTitle: true,
       ),
       body: Container(
-        decoration: BoxDecoration(
-          image: backgroundUrl != null
-              ? DecorationImage(
+        decoration: backgroundUrl != null
+            ? BoxDecoration(
+                image: DecorationImage(
                   image: NetworkImage(backgroundUrl!),
                   fit: BoxFit.cover,
-                )
-              : null,
-        ),
+                ),
+              )
+            : null,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Text('คำศัพท์', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text(word, style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-              Text(partOfSpeech, style: TextStyle(fontSize: 18, color: Colors.grey[700])),
-              SizedBox(height: 20),
+              // 🔵 Progress Bar
+              LinearProgressIndicator(
+                value: (currentQuestionIndex + 1) / widget.vocabList.length,
+                backgroundColor: Colors.grey.shade300,
+                color: Colors.blueAccent,
+                minHeight: 8,
+              ),
+              const SizedBox(height: 20),
+
+              // 📌 คำศัพท์และ Part of Speech
+              Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20.0),
+                  child: Column(
+                    children: [
+                      const Text('คำศัพท์', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 10),
+                      Text(word, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.blue)),
+                      const SizedBox(height: 10),
+                      Text(partOfSpeech, style: TextStyle(fontSize: 18, color: Colors.grey.shade700)),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 20),
+
+              // 🏆 ตัวเลือกคำตอบ
               ...shuffledOptions.map((option) {
                 return GestureDetector(
                   onTap: isAnswered ? null : () => _checkAnswer(option),
-                  child: Container(
-                    margin: EdgeInsets.symmetric(vertical: 8),
-                    padding: EdgeInsets.symmetric(vertical: 12),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeInOut,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.symmetric(vertical: 15),
+                    width: double.infinity,
                     decoration: BoxDecoration(
-                      color: isAnswered && option == correctAnswer
-                          ? Colors.green
-                          : isAnswered && option != correctAnswer
-                              ? Colors.red
-                              : Colors.grey[300],
+                      color: isAnswered
+                          ? (option == correctAnswer
+                              ? Colors.green.withOpacity(0.7)
+                              : Colors.red.withOpacity(0.7))
+                          : Colors.blue.shade100,
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Center(
-                      child: Text(option, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      child: Text(option, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                     ),
                   ),
                 );
               }),
-              SizedBox(height: 20),
+
+              const SizedBox(height: 20),
+
+              // 🔜 ปุ่มไปต่อ
               ElevatedButton(
                 onPressed: isAnswered
                     ? () {
@@ -195,8 +211,12 @@ class _QuizScreenState extends State<QuizScreen> {
                         }
                       }
                     : null,
-                style: ElevatedButton.styleFrom(backgroundColor: isAnswered ? Colors.blue : Colors.grey),
-                child: Text('ไปต่อ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isAnswered ? Colors.blueAccent : Colors.grey,
+                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text('ไปต่อ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
             ],
           ),
