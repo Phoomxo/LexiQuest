@@ -1,109 +1,177 @@
-
 import 'package:flutter/material.dart';
 import '../models/word_model.dart';
 import '../services/word_service.dart';
 import 'add_vocab_screen.dart';
 
-class VocabListScreen extends StatelessWidget {
+class VocabListScreen extends StatefulWidget {
   final String categoryId;
-  final String categoryName; // เพิ่ม parameter นี้
+  final String categoryName;
 
   const VocabListScreen({
     Key? key,
     required this.categoryId,
-    required this.categoryName, // กำหนดให้ required
+    required this.categoryName,
   }) : super(key: key);
 
   @override
+  _VocabListScreenState createState() => _VocabListScreenState();
+}
+
+class _VocabListScreenState extends State<VocabListScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  late WordService wordService;
+  String searchQuery = "";
+
+  @override
+  void initState() {
+    super.initState();
+    wordService = WordService(categoryId: widget.categoryId);
+  }
+
+  void showDeleteConfirmationDialog(BuildContext context, Word word) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ลบคำศัพท์'),
+        content: Text('คุณต้องการลบ "${word.word}" ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            child: const Text('ยกเลิก'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text(
+              'ลบ',
+              style: TextStyle(color: Colors.red),
+            ),
+            onPressed: () async {
+              await wordService.deleteWord(word.id!);
+              Navigator.pop(context);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final WordService wordService = WordService(categoryId: categoryId);
-
-    void showDeleteConfirmationDialog(BuildContext context, Word word) {
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('Delete Word'),
-          content: Text('Are you sure you want to delete "${word.word}"?'),
-          actions: [
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () => Navigator.pop(context),
-            ),
-            TextButton(
-              child: const Text('Delete'),
-              onPressed: () async {
-                await wordService.deleteWord(word.id!);
-                Navigator.pop(context);
-              },
-            ),
-          ],
-        ),
-      );
-    }
-
     return Scaffold(
       appBar: AppBar(
-        title: Text('Words in $categoryName'), // ใช้ categoryName ใน title
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+        title: Text(widget.categoryName),
+        centerTitle: true,
+        backgroundColor: Colors.blueAccent,
+        elevation: 4,
       ),
-      body: StreamBuilder<List<Word>>(
-        stream: wordService.getWordsStream(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return const Center(child: Text('Error loading words.'));
-          }
-          final words = snapshot.data ?? [];
-          if (words.isEmpty) {
-            return const Center(child: Text('No words added yet.'));
-          }
-          return ListView.builder(
-            itemCount: words.length,
-            itemBuilder: (context, index) {
-              final word = words[index];
-              return GestureDetector(
-                onLongPress: () => showDeleteConfirmationDialog(context, word),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AddWordScreen(
-                        categoryId: categoryId,
-                        word: word,
-                      ),
-                    ),
-                  );
-                },
-                child: Card(
-                  margin: const EdgeInsets.all(8),
-                  child: ListTile(
-                    title: Text(word.word),
-                    subtitle: Text('${word.meaning} (${word.partOfSpeech})'),
-                    trailing: const Icon(Icons.edit),
-                  ),
+      body: Column(
+        children: [
+          // 🔎 แถบค้นหาคำศัพท์
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: TextField(
+              controller: _searchController,
+              decoration: InputDecoration(
+                hintText: "ค้นหาคำศัพท์...",
+                prefixIcon: const Icon(Icons.search),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              );
-            },
-          );
-        },
+              ),
+              onChanged: (query) {
+                setState(() {
+                  searchQuery = query.toLowerCase();
+                });
+              },
+            ),
+          ),
+
+          // 📋 รายการคำศัพท์
+          Expanded(
+            child: StreamBuilder<List<Word>>(
+              stream: wordService.getWordsStream(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (snapshot.hasError) {
+                  return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดคำศัพท์'));
+                }
+
+                final words = snapshot.data ?? [];
+                final filteredWords = words
+                    .where((word) =>
+                        word.word.toLowerCase().contains(searchQuery) ||
+                        word.meaning.toLowerCase().contains(searchQuery))
+                    .toList();
+
+                if (filteredWords.isEmpty) {
+                  return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
+                }
+
+                return ListView.builder(
+                  itemCount: filteredWords.length,
+                  itemBuilder: (context, index) {
+                    final word = filteredWords[index];
+                    return Card(
+                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(15),
+                      ),
+                      elevation: 3,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(12),
+                        title: Text(
+                          word.word,
+                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text(
+                          '${word.meaning} (${word.partOfSpeech})',
+                          style: TextStyle(color: Colors.grey.shade700),
+                        ),
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blueAccent,
+                          child: Text(
+                            word.word[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        trailing: const Icon(Icons.edit, color: Colors.blue),
+                        onTap: () async {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => AddWordScreen(
+                                categoryId: widget.categoryId,
+                                word: word,
+                              ),
+                            ),
+                          );
+                          setState(() {}); // รีโหลดหน้าหลังจากอัปเดตคำศัพท์
+                        },
+                        onLongPress: () => showDeleteConfirmationDialog(context, word),
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
+        ],
       ),
-      floatingActionButton: FloatingActionButton(
+
+      // ➕ ปุ่มเพิ่มคำศัพท์
+      floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => AddWordScreen(
-                categoryId: categoryId,
-              ),
+              builder: (context) => AddWordScreen(categoryId: widget.categoryId),
             ),
           );
         },
-        child: const Icon(Icons.add),
+        label: const Text('เพิ่มคำศัพท์'),
+        icon: const Icon(Icons.add),
+        backgroundColor: Colors.green,
       ),
     );
   }

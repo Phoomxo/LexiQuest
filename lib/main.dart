@@ -16,11 +16,11 @@ void main() async {
 
   // Initialize Supabase
   await Supabase.initialize(
-    url: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',          // ใส่ URL ของ Supabase ของคุณ
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg', // ใส่ Anon Key ของ Supabase ของคุณ
+    url: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg',
   );
 
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -30,12 +30,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Vocab Learning App',
+      title: 'แอพฝึกคำศัพท์',
+      theme: ThemeData(
+        useMaterial3: true,
+        colorSchemeSeed: Colors.blueAccent,
+        brightness: Brightness.light,
+      ),
       initialRoute: '/login',
       routes: {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
-        '/home': (context) => MainNavigation(),
+        '/home': (context) => const MainNavigation(),
       },
     );
   }
@@ -52,10 +57,10 @@ class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 1;
 
   final List<Widget> _pages = [
-    CategoriesPage(),
+     CategoriesPage(),
     Home(),
-    ShopPage(),
-    SettingScreen(),
+     ShopPage(),
+     SettingScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -68,29 +73,33 @@ class _MainNavigationState extends State<MainNavigation> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.list),
-            label: 'Vocabulary',
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: Colors.white,
+        indicatorColor: Colors.blueAccent.shade100,
+        selectedIndex: _selectedIndex,
+        onDestinationSelected: _onItemTapped,
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.menu_book),
+            selectedIcon: Icon(Icons.menu_book, color: Colors.blueAccent),
+            label: 'หมวดหมู่',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Home',
+          NavigationDestination(
+            icon: Icon(Icons.school),
+            selectedIcon: Icon(Icons.school, color: Colors.blueAccent),
+            label: 'เรียนรู้',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.shopping_cart),
-            label: 'Shop',
+          NavigationDestination(
+            icon: Icon(Icons.shopping_bag),
+            selectedIcon: Icon(Icons.shopping_bag, color: Colors.blueAccent),
+            label: 'ร้านค้า',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.settings),
-            label: 'Settings',
+            selectedIcon: Icon(Icons.settings, color: Colors.blueAccent),
+            label: 'ตั้งค่า',
           ),
         ],
-        currentIndex: _selectedIndex,
-        selectedItemColor: Colors.deepPurple,
-        unselectedItemColor: Colors.grey,
-        onTap: _onItemTapped,
       ),
     );
   }
