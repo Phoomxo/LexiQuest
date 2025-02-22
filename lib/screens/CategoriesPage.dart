@@ -90,6 +90,8 @@ class CategoriesPage extends StatelessWidget {
   ),
 ),
 
+
+
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
         child: StreamBuilder<List<Category>>(
@@ -132,6 +134,7 @@ class CategoriesPage extends StatelessWidget {
                     );
                   },
                   child: Card(
+                    color: Colors.white.withOpacity(0.9),
                     elevation: 5,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15),
@@ -140,10 +143,10 @@ class CategoriesPage extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Icon(
-                          _getCategoryIcon(category.name),
-                          size: 40,
-                          color: Colors.blueAccent,
-                        ),
+  _getCategoryIcon(category.name),
+  size: 40,
+  color: Colors.deepPurple, // เปลี่ยนสีเป็นม่วง
+),
                         const SizedBox(height: 10),
                         Text(
                           category.name,
@@ -161,11 +164,15 @@ class CategoriesPage extends StatelessWidget {
 
       // 🟢 ปุ่มเพิ่มหมวดหมู่
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddCategoryDialog(context),
-        label: const Text('เพิ่มหมวดหมู่'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Colors.green,
-      ),
+  onPressed: () => _showAddCategoryDialog(context),
+  label: const Text(
+    'เพิ่มหมวดหมู่',
+    style: TextStyle(color: Colors.white), // ✅ กำหนดให้ตัวอักษรเป็นสีขาว
+  ),
+  icon: const Icon(Icons.add, color: Colors.white), // ✅ ทำให้ไอคอนเป็นสีขาวด้วย
+  backgroundColor: Colors.deepPurple,
+),
+
     );
   }
 

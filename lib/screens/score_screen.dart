@@ -55,11 +55,24 @@ class ScoreScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text('ผลลัพธ์ของคุณ'),
-            centerTitle: true,
-            backgroundColor: Colors.blueAccent,
-            elevation: 4,
-          ),
+  title: const Text(
+    'ผลลัพธ์ของคุณ',
+    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ),
+    ),
+  ),
+),
+
           body: Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -115,7 +128,7 @@ class ScoreScreen extends StatelessWidget {
                       icon: const Icon(Icons.replay, color: Colors.white),
                       label: const Text('เล่นใหม่', style: TextStyle(color: Colors.white)),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blueAccent,
+                        backgroundColor: Colors.deepPurple,
                         padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),

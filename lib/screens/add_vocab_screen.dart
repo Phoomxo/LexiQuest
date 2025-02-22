@@ -211,11 +211,15 @@ class _AddWordScreenState extends State<AddWordScreen> {
 
       // ✅ Floating Action Button สำหรับบันทึก
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _addOrUpdateWord,
-        icon: const Icon(Icons.check),
-        label: const Text('เพิ่ม'),
-        backgroundColor: Colors.blueAccent,
-      ),
+  onPressed: _addOrUpdateWord,
+  icon: const Icon(Icons.check, color: Colors.white), // ✅ เปลี่ยนไอคอนเป็นสีขาว
+  label: const Text(
+    'เพิ่ม',
+    style: TextStyle(color: Colors.white), // ✅ เปลี่ยนสีตัวอักษรเป็นสีขาว
+  ),
+  backgroundColor: Colors.deepPurple, // ✅ ใช้โทนสีม่วง
+),
+
     );
   }
 }

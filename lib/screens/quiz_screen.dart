@@ -121,9 +121,24 @@ class _QuizScreenState extends State<QuizScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}'),
-        centerTitle: true,
+  title: Text(
+    'คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}',
+    style: const TextStyle(color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: Container(
         decoration: backgroundUrl != null
             ? BoxDecoration(
@@ -141,7 +156,7 @@ class _QuizScreenState extends State<QuizScreen> {
               LinearProgressIndicator(
                 value: (currentQuestionIndex + 1) / widget.vocabList.length,
                 backgroundColor: Colors.grey.shade300,
-                color: Colors.blueAccent,
+                color: const Color.fromARGB(255, 21, 153, 49),
                 minHeight: 8,
               ),
               const SizedBox(height: 20),
@@ -195,29 +210,38 @@ class _QuizScreenState extends State<QuizScreen> {
 
               // 🔜 ปุ่มไปต่อ
               ElevatedButton(
-                onPressed: isAnswered
-                    ? () {
-                        if (isCorrect) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SpeakToTextScreen(
-                                correctWord: widget.vocabList[currentQuestionIndex]['word'],
-                              ),
-                            ),
-                          ).then((_) => _nextQuestion());
-                        } else {
-                          _nextQuestion();
-                        }
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isAnswered ? Colors.blueAccent : Colors.grey,
-                  padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+  onPressed: isAnswered
+      ? () {
+          if (isCorrect) {
+            // ถ้าตอบถูกให้ไปฝึกออกเสียง
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => SpeakToTextScreen(
+                  correctWord: widget.vocabList[currentQuestionIndex]['word'],
                 ),
-                child: const Text('ไปต่อ', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white)),
               ),
+            ).then((_) => _nextQuestion());
+          } else {
+            // ถ้าตอบผิดให้ไปยังคำถามถัดไปทันที
+            _nextQuestion();
+          }
+        }
+      : null,
+  style: ElevatedButton.styleFrom(
+    backgroundColor: isAnswered
+        ? (isCorrect ? Colors.green : Colors.red) // ✅ เปลี่ยนสีปุ่มตามเงื่อนไข
+        : Colors.grey,
+    padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+    shadowColor: Colors.black.withOpacity(0.3),
+    elevation: 5,
+  ),
+  child: const Text(
+    'ไปต่อ',
+    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+),
             ],
           ),
         ),

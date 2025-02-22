@@ -13,25 +13,24 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'แบบฝึกหัดคำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.category),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => CategoriesPage()),
-              );
-            },
-          ),
-        ],
+  title: const Text(
+    'แบบฝึกหัดคำศัพท์',
+    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: Column(
         children: [
           const SizedBox(height: 20),
@@ -47,11 +46,12 @@ class Home extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 LinearProgressIndicator(
-                  value: 0.4, // เปอร์เซ็นต์การเรียนรู้ (0.0 - 1.0)
-                  backgroundColor: Colors.grey.shade300,
-                  color: Colors.blueAccent,
-                  minHeight: 8,
-                ),
+  value: 0.4,
+  backgroundColor: Colors.white.withOpacity(0.3), // ✅ ทำให้โปร่งใส
+  color: Colors.amberAccent, // ✅ เปลี่ยนสีแถบความก้าวหน้าให้โดดเด่น
+  minHeight: 8,
+),
+
               ],
             ),
           ),
@@ -131,24 +131,23 @@ class Home extends StatelessWidget {
   // 📌 ฟังก์ชันสร้างการ์ดหมวดหมู่คำศัพท์
   Widget _buildCategoryCard(String title, IconData icon, Color color) {
     return Card(
-      elevation: 5,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: InkWell(
-        onTap: () {
-          // TODO: เพิ่มการนำทางไปยังหน้าของหมวดหมู่นี้
-        },
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 40, color: color),
-            const SizedBox(height: 10),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-          ],
+  color: Colors.white.withOpacity(0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
+  elevation: 5,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  child: InkWell(
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 40, color: Colors.deepPurple), // ✅ เปลี่ยนสีไอคอนให้เข้ากับธีม
+        const SizedBox(height: 10),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
         ),
-      ),
-    );
+      ],
+    ),
+  ),
+);
+
   }
 }

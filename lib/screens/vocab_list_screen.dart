@@ -58,11 +58,24 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.categoryName),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
+  title: Text(
+    widget.categoryName,
+    style: const TextStyle(color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: Column(
         children: [
           // 🔎 แถบค้นหาคำศัพท์
@@ -113,12 +126,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
                   itemBuilder: (context, index) {
                     final word = filteredWords[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      elevation: 3,
-                      child: ListTile(
+  color: Colors.white.withOpacity(0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
+  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+  shape: RoundedRectangleBorder(
+    borderRadius: BorderRadius.circular(15),
+  ),
+  elevation: 3,
+  child: ListTile(
                         contentPadding: const EdgeInsets.all(12),
                         title: Text(
                           word.word,
@@ -129,13 +143,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           style: TextStyle(color: Colors.grey.shade700),
                         ),
                         leading: CircleAvatar(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: Colors.deepPurple,
                           child: Text(
                             word.word[0].toUpperCase(),
                             style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                           ),
                         ),
-                        trailing: const Icon(Icons.edit, color: Colors.blue),
+                        trailing: const Icon(Icons.edit, color: Colors.deepPurple), // เปลี่ยนสีเป็นม่วง
                         onTap: () async {
                           await Navigator.push(
                             context,
@@ -161,18 +175,22 @@ class _VocabListScreenState extends State<VocabListScreen> {
 
       // ➕ ปุ่มเพิ่มคำศัพท์
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => AddWordScreen(categoryId: widget.categoryId),
-            ),
-          );
-        },
-        label: const Text('เพิ่มคำศัพท์'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Colors.green,
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddWordScreen(categoryId: widget.categoryId),
       ),
+    );
+  },
+  label: const Text(
+    'เพิ่มคำศัพท์',
+    style: TextStyle(color: Colors.white), // ✅ เปลี่ยนสีตัวอักษรเป็นสีขาว
+  ),
+  icon: const Icon(Icons.add, color: Colors.white), // ✅ เปลี่ยนไอคอนเป็นสีขาว
+  backgroundColor: Colors.deepPurple, // ✅ ใช้โทนสีม่วงให้ตรงกับธีม
+),
+
     );
   }
 }

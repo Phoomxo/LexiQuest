@@ -11,15 +11,24 @@ class ChooseModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
-        centerTitle: true,
-        title: const Text(
-          'เลือกรูปแบบการเรียน',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        iconTheme: const IconThemeData(color: Colors.white),
+  title: const Text(
+    'เลือกรูปแบบการเรียน',
+    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
