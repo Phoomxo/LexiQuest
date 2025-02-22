@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'dart:io';
 import 'SelectWallpaperScreen.dart'; // นำเข้าไฟล์หน้าจอเลือกวอลเปเปอร์
 
 class SettingScreen extends StatefulWidget {
@@ -18,8 +16,7 @@ class _SettingScreenState extends State<SettingScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SupabaseClient _supabase = Supabase.instance.client;
   Map<String, dynamic>? _profileData;
-  File? _profileImage;
-  bool isPickingImage = false;
+  IconData _selectedIcon = Icons.account_circle;
 
   firebase_auth.User? get _currentUser => _auth.currentUser;
 
@@ -46,65 +43,61 @@ class _SettingScreenState extends State<SettingScreen> {
     }
   }
 
-  Future<void> _pickImage() async {
-    if (isPickingImage) return;
-    isPickingImage = true;
-
-    try {
-      final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
-      if (pickedFile != null) {
-        setState(() {
-          _profileImage = File(pickedFile.path);
-        });
-        _uploadProfileImage();
-      }
-    } catch (e) {
-      if (!mounted) return;
-
-      Future.delayed(Duration.zero, () {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('เกิดข้อผิดพลาดในการเลือกภาพ')),
-        );
-      });
-    } finally {
-      isPickingImage = false;
-    }
-  }
-
-  Future<void> _uploadProfileImage() async {
-    if (_profileImage == null) return;
-
-    try {
-      final String fileName = '${_currentUser!.uid}.jpg';
-      await _supabase.storage.from('Pic_User').upload(fileName, _profileImage!);
-      final imageUrl = _supabase.storage.from('Pic_User').getPublicUrl(fileName);
-
-      await _firestore.collection('users').doc(_currentUser!.uid).update({'profile_image': imageUrl});
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('อัปโหลดรูปภาพสำเร็จ!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: $e')),
-      );
-    }
-  }
-
   void _logout() async {
     await _auth.signOut();
     Navigator.pushReplacementNamed(context, '/login');
   }
 
+  void _showIconPicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: GridView.count(
+            crossAxisCount: 4,
+            padding: const EdgeInsets.all(10),
+            children: [
+              Icons.emoji_emotions, Icons.emoji_events, Icons.emoji_food_beverage, Icons.emoji_nature, Icons.emoji_objects,
+              Icons.emoji_people, Icons.auto_awesome, Icons.auto_fix_high, Icons.auto_stories, Icons.local_florist,
+              Icons.star, Icons.wb_sunny, Icons.nightlight, Icons.self_improvement, Icons.volunteer_activism,
+              Icons.favorite, Icons.mood, Icons.mood_bad, Icons.cake, Icons.party_mode,
+              Icons.sports_esports, Icons.music_note, Icons.library_music, Icons.piano, Icons.headset,
+              Icons.pets, Icons.toys, Icons.beach_access, Icons.snowboarding, Icons.skateboarding,
+              Icons.airplanemode_active, Icons.directions_boat, Icons.directions_bus, Icons.directions_car, Icons.train,
+              Icons.fireplace, Icons.celebration, Icons.festival, Icons.brightness_5, Icons.auto_awesome_mosaic
+            ].map((iconData) {
+              return IconButton(
+                icon: CircleAvatar(
+                  radius: 30,
+                  backgroundColor: Colors.primaries[iconData.codePoint % Colors.primaries.length],
+                  child: Icon(iconData, size: 40, color: Colors.white),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _selectedIcon = iconData;
+                  });
+                  Navigator.pop(context);
+                },
+              );
+            }).toList(),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildProfileItem(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
-          Text(value),
-        ],
+    return Card(
+      elevation: 3,
+      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      child: ListTile(
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        trailing: Text(value, style: const TextStyle(fontSize: 16)),
       ),
     );
   }
@@ -113,7 +106,8 @@ class _SettingScreenState extends State<SettingScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: const Text('Settings', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22)),
+        backgroundColor: Colors.deepPurpleAccent,
         actions: [
           IconButton(
             icon: const Icon(Icons.logout),
@@ -128,15 +122,15 @@ class _SettingScreenState extends State<SettingScreen> {
               child: Column(
                 children: [
                   GestureDetector(
-                    onTap: _pickImage,
+                    onTap: _showIconPicker,
                     child: CircleAvatar(
-                      radius: 50,
-                      backgroundImage: _profileImage != null
-                          ? FileImage(_profileImage!)
-                          : (_profileData?['profile_image'] != null
-                              ? NetworkImage(_profileData!['profile_image'])
-                              : const AssetImage('assets/profile_placeholder.png'))
-                                  as ImageProvider,
+                      radius: 60,
+                      backgroundColor: Colors.primaries[_selectedIcon.codePoint % Colors.primaries.length],
+                      child: Icon(
+                        _selectedIcon,
+                        size: 80,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -151,7 +145,12 @@ class _SettingScreenState extends State<SettingScreen> {
                         MaterialPageRoute(builder: (context) => SelectWallpaperScreen()),
                       );
                     },
-                    child: const Text('เปลี่ยนวอลเปเปอร์'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.deepPurpleAccent,
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: const Text('เปลี่ยนวอลเปเปอร์', style: TextStyle(color: Colors.white, fontSize: 18)),
                   ),
                 ],
               ),

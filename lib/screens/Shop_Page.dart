@@ -93,54 +93,71 @@ class _ShopPageState extends State<ShopPage> {
   }
 
   Future<void> _buyProduct(Map<String, dynamic> product) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-    final userId = user.uid;
-    final int productPrice = (product['price'] as num).toInt();
+  final userId = user.uid;
+  final String productId = product['id'];
+  final int productPrice = (product['price'] as num).toInt();
 
-    if (userPoints < productPrice) {
+  if (userPoints < productPrice) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('แต้มของคุณไม่เพียงพอ!')),
+    );
+    return;
+  }
+
+  try {
+    // ✅ ตรวจสอบว่าผู้ใช้มีวอลเปเปอร์นี้อยู่แล้วหรือไม่
+    final existingPurchase = await FirebaseFirestore.instance
+        .collection('purchased_items')
+        .where('user_id', isEqualTo: userId)
+        .where('product_id', isEqualTo: productId)
+        .get();
+
+    if (existingPurchase.docs.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('แต้มของคุณไม่เพียงพอ!')),
+        SnackBar(content: Text('❌ คุณซื้อ "${product['name']}" ไปแล้ว!')),
       );
       return;
     }
 
-    try {
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final stateRef = FirebaseFirestore.instance.collection('state').doc(userId);
-        final stateSnapshot = await transaction.get(stateRef);
+    // ✅ ดำเนินการซื้อวอลเปเปอร์
+    await FirebaseFirestore.instance.runTransaction((transaction) async {
+      final stateRef = FirebaseFirestore.instance.collection('state').doc(userId);
+      final stateSnapshot = await transaction.get(stateRef);
 
-        if (!stateSnapshot.exists) return;
+      if (!stateSnapshot.exists) return;
 
-        final currentPoints = stateSnapshot.data()?['totalPoints'] ?? 0;
-        if (currentPoints < productPrice) return;
+      final currentPoints = stateSnapshot.data()?['totalPoints'] ?? 0;
+      if (currentPoints < productPrice) return;
 
-        transaction.update(stateRef, {'totalPoints': FieldValue.increment(-productPrice)});
-        transaction.set(
-          FirebaseFirestore.instance.collection('purchased_items').doc(),
-          {
-            'user_id': userId,
-            'product_id': product['id'],
-            'total_price': productPrice,
-            'created_at': Timestamp.now(),
-          },
-        );
-      });
-
-      if (mounted) {
-        setState(() {
-          userPoints -= productPrice;
-        });
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('✅ ซื้อ "${product['name']}" สำเร็จ!')),
+      transaction.update(stateRef, {'totalPoints': FieldValue.increment(-productPrice)});
+      transaction.set(
+        FirebaseFirestore.instance.collection('purchased_items').doc(),
+        {
+          'user_id': userId,
+          'product_id': productId,
+          'total_price': productPrice,
+          'created_at': Timestamp.now(),
+        },
       );
-    } catch (e) {
-      debugPrint("❌ Error purchasing product: $e");
+    });
+
+    if (mounted) {
+      setState(() {
+        userPoints -= productPrice;
+      });
     }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('✅ ซื้อ "${product['name']}" สำเร็จ!')),
+    );
+  } catch (e) {
+    debugPrint("❌ Error purchasing product: $e");
   }
+}
+
 
   Widget _buildProductImage(String? imageUrl) {
     if (imageUrl == null || imageUrl.isEmpty) {
@@ -160,11 +177,24 @@ class _ShopPageState extends State<ShopPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ร้านค้า'),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
+  title: const Text(
+    'ร้านค้า',
+    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : Padding(
@@ -173,23 +203,26 @@ class _ShopPageState extends State<ShopPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Card(
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                    elevation: 4,
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(Icons.stars, color: Colors.amber, size: 30),
-                          const SizedBox(width: 10),
-                          Text(
-                            'แต้มของคุณ: $userPoints',
-                            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+  color: Colors.white.withOpacity(0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  elevation: 5,
+  shadowColor: Colors.black.withOpacity(0.3),
+  child: Padding(
+    padding: const EdgeInsets.all(16.0),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.stars, color: Colors.amberAccent, size: 30),
+        const SizedBox(width: 10),
+        Text(
+          'แต้มของคุณ: $userPoints',
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+        ),
+      ],
+    ),
+  ),
+),
+
                   const SizedBox(height: 20),
                   Expanded(
                     child: GridView.builder(
@@ -204,19 +237,22 @@ class _ShopPageState extends State<ShopPage> {
                         final product = products[index];
 
                         return Card(
-                          elevation: 5,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-                          child: Column(
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: const BorderRadius.only(
-                                    topLeft: Radius.circular(15),
-                                    topRight: Radius.circular(15),
-                                  ),
-                                  child: _buildProductImage(product['image_url']),
-                                ),
-                              ),
+  color: Colors.white.withOpacity(0.95), // ✅ ทำให้โปร่งใสเล็กน้อย
+  elevation: 5,
+  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+  shadowColor: Colors.black.withOpacity(0.3), // ✅ เพิ่มเงาให้ดูมีมิติ
+  child: Column(
+    children: [
+      Expanded(
+        child: ClipRRect(
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(15),
+            topRight: Radius.circular(15),
+          ),
+          child: _buildProductImage(product['image_url']),
+        ),
+      ),
+
                               Padding(
                                 padding: const EdgeInsets.all(10.0),
                                 child: Column(
@@ -229,17 +265,23 @@ class _ShopPageState extends State<ShopPage> {
                                     Text('${product['price']} แต้ม', style: TextStyle(color: Colors.deepOrange, fontSize: 16)),
                                     const SizedBox(height: 10),
                                     ElevatedButton.icon(
-                                      onPressed: () => _buyProduct(product),
-                                      icon: const Icon(Icons.shopping_cart, color: Colors.white),
-                                      label: const Text('ซื้อ', style: TextStyle(color: Colors.white)),
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.green,
-                                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                      ),
-                                    ),
+  onPressed: () => _buyProduct(product),
+  icon: const Icon(Icons.shopping_cart, color: Colors.white),
+  label: const Text(
+    'ซื้อ',
+    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+  ),
+  style: ElevatedButton.styleFrom(
+    backgroundColor: Colors.deepPurple, // ✅ เปลี่ยนสีปุ่มเป็นสีม่วงให้เข้ากับธีม
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+    shadowColor: Colors.black.withOpacity(0.3),
+    elevation: 5,
+  ),
+),
+
                                   ],
                                 ),
                               ),

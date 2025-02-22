@@ -68,17 +68,31 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ฝึกพูดคำศัพท์'),
-        centerTitle: true,
-        backgroundColor: Colors.blueAccent,
-        elevation: 4,
+  title: const Text(
+    'ฝึกพูดคำศัพท์',
+    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+  centerTitle: true,
+  backgroundColor: Colors.transparent,
+  elevation: 0,
+  flexibleSpace: Container(
+    decoration: const BoxDecoration(
+      gradient: LinearGradient(
+        colors: [Colors.deepPurple, Colors.indigo],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
       ),
+    ),
+  ),
+),
+
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.blueAccent, Colors.deepPurpleAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+          decoration: const BoxDecoration(
+    gradient: LinearGradient(
+      colors: [Colors.deepPurple, Colors.indigo],
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+
           ),
         ),
         child: Padding(
