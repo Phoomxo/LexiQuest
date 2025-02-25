@@ -29,6 +29,7 @@ dependencies:
   fluttertoast: ^8.2.11
   confetti: ^0.7.0
   cached_network_image: ^3.3.0
+  flutter_speed_dial: ^7.0.0
 
 dev_dependencies:
   flutter_test:
