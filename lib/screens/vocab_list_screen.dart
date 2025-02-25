@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+import 'AddMultipleWordsScreen.dart';
 import '../models/word_model.dart';
 import '../services/word_service.dart';
 import 'add_vocab_screen.dart';
@@ -28,25 +30,25 @@ class _VocabListScreenState extends State<VocabListScreen> {
     wordService = WordService(categoryId: widget.categoryId);
   }
 
+  /// 🔥 ฟังก์ชันแสดง Dialog ยืนยันการลบคำศัพท์
   void showDeleteConfirmationDialog(BuildContext context, Word word) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('ลบคำศัพท์'),
-        content: Text('คุณต้องการลบ "${word.word}" ใช่หรือไม่?'),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('ลบคำศัพท์', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: Text('คุณต้องการลบ "${word.word}" ใช่หรือไม่?', textAlign: TextAlign.center),
         actions: [
           TextButton(
-            child: const Text('ยกเลิก'),
+            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
             onPressed: () => Navigator.pop(context),
           ),
           TextButton(
-            child: const Text(
-              'ลบ',
-              style: TextStyle(color: Colors.red),
-            ),
+            child: const Text('ลบ', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
             onPressed: () async {
               await wordService.deleteWord(word.id!);
               Navigator.pop(context);
+              setState(() {}); // รีโหลดหน้าหลังจากลบคำศัพท์
             },
           ),
         ],
@@ -54,31 +56,106 @@ class _VocabListScreenState extends State<VocabListScreen> {
     );
   }
 
+  /// 🔥 ฟังก์ชันลบคำศัพท์ทั้งหมดในหมวดหมู่
+  void showDeleteAllWordsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        title: const Text('ลบคำศัพท์ทั้งหมด', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text('คุณต้องการลบคำศัพท์ทั้งหมดในหมวดหมู่นี้ใช่หรือไม่?', textAlign: TextAlign.center),
+        actions: [
+          TextButton(
+            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text('ลบทั้งหมด', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            onPressed: () async {
+              await wordService.deleteAllWords();
+              Navigator.pop(context);
+              setState(() {}); // รีโหลดหน้าหลังจากลบทั้งหมด
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// 🔥 UI ปุ่มเพิ่มคำศัพท์แบบ Speed Dial
+  Widget _buildFloatingActionButton() {
+    return SpeedDial(
+      animatedIcon: AnimatedIcons.menu_close,
+      backgroundColor: Colors.deepPurple,
+      foregroundColor: Colors.white,
+      overlayColor: Colors.black,
+      overlayOpacity: 0.3,
+      spacing: 12,
+      spaceBetweenChildren: 10,
+
+      children: [
+        SpeedDialChild(
+          child: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: Colors.blue,
+          label: 'เพิ่มคำศัพท์',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddWordScreen(categoryId: widget.categoryId),
+              ),
+            );
+          },
+        ),
+        SpeedDialChild(
+          child: const Icon(Icons.playlist_add, color: Colors.white),
+          backgroundColor: Colors.green,
+          label: 'เพิ่มหลายคำ (Datamuse)',
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => AddMultipleWordsScreen(
+                  categoryId: widget.categoryId,
+                  categoryName: widget.categoryName,
+                ),
+              ),
+            );
+          },
+        ),
+        SpeedDialChild(
+          child: const Icon(Icons.delete_forever, color: Colors.white),
+          backgroundColor: Colors.red,
+          label: 'ลบคำศัพท์ทั้งหมด',
+          onTap: () {
+            showDeleteAllWordsDialog(context);
+          },
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: Text(
-    widget.categoryName,
-    style: const TextStyle(color: Colors.white),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  flexibleSpace: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.deepPurple, Colors.indigo],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        title: Text(widget.categoryName, style: const TextStyle(color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-    ),
-  ),
-),
 
       body: Column(
         children: [
-          // 🔎 แถบค้นหาคำศัพท์
           Padding(
             padding: const EdgeInsets.all(12.0),
             child: TextField(
@@ -98,7 +175,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
             ),
           ),
 
-          // 📋 รายการคำศัพท์
           Expanded(
             child: StreamBuilder<List<Word>>(
               stream: wordService.getWordsStream(),
@@ -111,58 +187,37 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 }
 
                 final words = snapshot.data ?? [];
-                final filteredWords = words
-                    .where((word) =>
-                        word.word.toLowerCase().contains(searchQuery) ||
-                        word.meaning.toLowerCase().contains(searchQuery))
-                    .toList();
-
-                if (filteredWords.isEmpty) {
+                if (words.isEmpty) {
                   return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
                 }
 
                 return ListView.builder(
-                  itemCount: filteredWords.length,
+                  itemCount: words.length,
                   itemBuilder: (context, index) {
-                    final word = filteredWords[index];
+                    final word = words[index];
+
                     return Card(
-  color: Colors.white.withOpacity(0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
-  margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(15),
-  ),
-  elevation: 3,
-  child: ListTile(
-                        contentPadding: const EdgeInsets.all(12),
-                        title: Text(
-                          word.word,
-                          style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        subtitle: Text(
-                          '${word.meaning} (${word.partOfSpeech})',
-                          style: TextStyle(color: Colors.grey.shade700),
-                        ),
-                        leading: CircleAvatar(
-                          backgroundColor: Colors.deepPurple,
-                          child: Text(
-                            word.word[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        trailing: const Icon(Icons.edit, color: Colors.deepPurple), // เปลี่ยนสีเป็นม่วง
-                        onTap: () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => AddWordScreen(
-                                categoryId: widget.categoryId,
-                                word: word,
+                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 4,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        title: Text(word.word, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('${word.meaning} (${word.partOfSpeech})'),
+                            if (word.userId == '') 
+                              const Text(
+                                '🔗 คำศัพท์นี้ถูกเพิ่มจาก Datamuse API',
+                                style: TextStyle(color: Colors.blue, fontSize: 12),
                               ),
-                            ),
-                          );
-                          setState(() {}); // รีโหลดหน้าหลังจากอัปเดตคำศัพท์
-                        },
-                        onLongPress: () => showDeleteConfirmationDialog(context, word),
+                          ],
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => showDeleteConfirmationDialog(context, word),
+                        ),
                       ),
                     );
                   },
@@ -173,24 +228,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
         ],
       ),
 
-      // ➕ ปุ่มเพิ่มคำศัพท์
-      floatingActionButton: FloatingActionButton.extended(
-  onPressed: () {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AddWordScreen(categoryId: widget.categoryId),
-      ),
-    );
-  },
-  label: const Text(
-    'เพิ่มคำศัพท์',
-    style: TextStyle(color: Colors.white), // ✅ เปลี่ยนสีตัวอักษรเป็นสีขาว
-  ),
-  icon: const Icon(Icons.add, color: Colors.white), // ✅ เปลี่ยนไอคอนเป็นสีขาว
-  backgroundColor: Colors.deepPurple, // ✅ ใช้โทนสีม่วงให้ตรงกับธีม
-),
-
+      floatingActionButton: _buildFloatingActionButton(),
     );
   }
 }
