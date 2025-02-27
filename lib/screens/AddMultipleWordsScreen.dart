@@ -82,7 +82,21 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('เพิ่มหลายคำศัพท์')),
+      appBar: AppBar(
+        title: const Text('เพิ่มหลายคำศัพท์', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
@@ -91,36 +105,78 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
             TextField(
               controller: _numWordsController,
               keyboardType: TextInputType.number,
+              style: const TextStyle(fontSize: 18, color: Colors.black),
               decoration: InputDecoration(
                 labelText: 'จำนวนคำศัพท์ (1-20)',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                labelStyle: const TextStyle(color: Colors.deepPurple),
+                focusedBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderSide: const BorderSide(color: Colors.grey, width: 1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
 
             // 🔥 ปุ่มเดียวสำหรับดึงและบันทึกทันที
-            ElevatedButton.icon(
+            ElevatedButton(
               onPressed: _isLoading ? null : _fetchAndSaveWords,
-              icon: const Icon(Icons.cloud_download),
-              label: const Text('ดึงและบันทึกคำศัพท์'),
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                backgroundColor: Colors.deepPurple,
+                elevation: 5,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.cloud_download, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Text(
+                    _isLoading ? 'กำลังโหลด...' : 'ดึงและบันทึกคำศัพท์',
+                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
             ),
             const SizedBox(height: 20),
 
             _isLoading
-                ? const CircularProgressIndicator()
+                ? const Center(child: CircularProgressIndicator(color: Colors.deepPurple))
                 : Expanded(
                     child: suggestedWords.isEmpty
-                        ? const Center(child: Text('ยังไม่มีคำศัพท์ กรุณากด "ดึงและบันทึกคำศัพท์"'))
+                        ? const Center(
+                            child: Text('ยังไม่มีคำศัพท์ กรุณากด "ดึงและบันทึกคำศัพท์"',
+                                style: TextStyle(fontSize: 16, color: Colors.grey)))
                         : ListView.builder(
                             itemCount: suggestedWords.length,
                             itemBuilder: (context, index) {
                               final word = suggestedWords[index];
                               return Card(
                                 margin: const EdgeInsets.symmetric(vertical: 8),
+                                elevation: 5,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(15),
+                                ),
                                 child: ListTile(
-                                  title: Text(word.word, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                                  subtitle: Text('${word.meaning} (${word.partOfSpeech})'),
+                                  contentPadding: const EdgeInsets.all(12),
+                                  tileColor: Colors.white.withOpacity(0.95),
+                                  title: Text(word.word,
+                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                                  subtitle: Text(
+                                    '${word.meaning} (${word.partOfSpeech})',
+                                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                  ),
+                                  leading: CircleAvatar(
+                                    backgroundColor: Colors.indigo,
+                                    child: Text(
+                                      word.word[0].toUpperCase(),
+                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
                                 ),
                               );
                             },
