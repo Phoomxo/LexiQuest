@@ -16,7 +16,34 @@ class CategoriesPage extends StatelessWidget {
         .doc(categoryId)
         .collection('words')
         .get();
-    return wordsSnapshot.size; // คืนค่าจำนวนคำศัพท์ในหมวดหมู่
+    return wordsSnapshot.size;
+  }
+
+  /// 🔥 ฟังก์ชันลบหมวดหมู่
+  void _deleteCategory(BuildContext context, String categoryId, String categoryName) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('ลบหมวดหมู่'),
+        content: Text('คุณต้องการลบหมวด "$categoryName" ใช่หรือไม่?'),
+        actions: [
+          TextButton(
+            child: const Text('ยกเลิก'),
+            onPressed: () => Navigator.pop(context),
+          ),
+          TextButton(
+            child: const Text('ลบ', style: TextStyle(color: Colors.red)),
+            onPressed: () async {
+              await _categoryService.deleteCategory(categoryId);
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('ลบหมวด "$categoryName" สำเร็จ!')),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -59,7 +86,7 @@ class CategoriesPage extends StatelessWidget {
 
             return GridView.builder(
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2, // แสดง 2 คอลัมน์
+                crossAxisCount: 2,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 childAspectRatio: 1.3,
@@ -69,7 +96,7 @@ class CategoriesPage extends StatelessWidget {
                 final category = categories[index];
 
                 return FutureBuilder<int>(
-                  future: getWordCount(category.id!), // ดึงจำนวนคำศัพท์
+                  future: getWordCount(category.id!),
                   builder: (context, wordCountSnapshot) {
                     int wordCount = wordCountSnapshot.data ?? 0;
 
@@ -85,6 +112,7 @@ class CategoriesPage extends StatelessWidget {
                           ),
                         );
                       },
+                      onLongPress: () => _deleteCategory(context, category.id!, category.name), // ✅ กดค้างเพื่อลบ
                       child: Card(
                         color: Colors.white.withOpacity(0.9),
                         elevation: 5,
@@ -106,7 +134,7 @@ class CategoriesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              '$wordCount/20 คำ', // แสดงจำนวนคำศัพท์ที่มีอยู่
+                              '$wordCount/20 คำ',
                               style: TextStyle(
                                 fontSize: 14,
                                 color: wordCount >= 20 ? Colors.red : Colors.black,
