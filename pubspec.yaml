@@ -30,6 +30,7 @@ dependencies:
   confetti: ^0.7.0
   cached_network_image: ^3.3.0
   flutter_speed_dial: ^7.0.0
+  mailer: ^6.0.1
 
 dev_dependencies:
   flutter_test:

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'LoginScreen.dart';
 import '../services/auth_service.dart';
+import 'OTPScreen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -12,32 +13,40 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _firstNameController = TextEditingController();
-  final TextEditingController _lastNameController = TextEditingController();
-  final TextEditingController _ageController = TextEditingController();
-
   final AuthService _authService = AuthService();
   bool _isLoading = false;
 
-  Future<void> _register() async {
+  bool _isValidEmail(String email) {
+    final RegExp regex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    return regex.hasMatch(email);
+  }
+
+  Future<void> _sendVerificationEmail() async {
     setState(() => _isLoading = true);
 
     try {
-      await _authService.registerUser(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-        firstName: _firstNameController.text.trim(),
-        lastName: _lastNameController.text.trim(),
-        age: int.parse(_ageController.text.trim()),
+      String email = _emailController.text.trim();
+      String password = _passwordController.text.trim();
+
+      if (!_isValidEmail(email)) {
+        throw Exception('รูปแบบอีเมลไม่ถูกต้อง');
+      }
+
+      // ให้ Firebase ส่งอีเมลยืนยัน
+      await _authService.sendEmailVerification(email, password);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('กรุณาตรวจสอบอีเมลของคุณเพื่อยืนยันบัญชี')),
       );
 
-      Navigator.pushReplacement(
+      // ไปที่หน้ารอการยืนยัน OTP
+      Navigator.push(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Failed: $e')),
+        SnackBar(content: Text('Failed to send verification email: $e')),
       );
     } finally {
       setState(() => _isLoading = false);
@@ -69,41 +78,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Register',
+                      'Register - Step 1',
                       style: TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 20),
-                    TextField(
-                      controller: _firstNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'First Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _lastNameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Last Name',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.person_outline),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _ageController,
-                      decoration: const InputDecoration(
-                        labelText: 'Age',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.cake),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
-                    const SizedBox(height: 15),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
@@ -126,7 +107,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     _isLoading
                         ? const CircularProgressIndicator()
                         : ElevatedButton(
-                            onPressed: _register,
+                            onPressed: _sendVerificationEmail,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
                                   vertical: 14, horizontal: 50),
@@ -136,7 +117,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Register',
+                              'ส่งอีเมลยืนยัน',
                               style: TextStyle(fontSize: 18, color: Colors.white),
                             ),
                           ),

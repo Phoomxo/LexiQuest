@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'RegisterScreen.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'OTPScreen.dart'; // เพิ่มไฟล์ OTP Screen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -17,73 +18,111 @@ class _LoginScreenState extends State<LoginScreen> {
 
   bool _isLoading = false;
 
-  Future<void> _login() async {
-  setState(() => _isLoading = true);
-
-  try {
-    await _authService.signIn(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
-
-    Navigator.pushReplacementNamed(context, '/home');
-  } on FirebaseAuthException catch (e) {
-    String errorMessage;
-    
-    switch (e.code) {
-      case 'invalid-email':
-        errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง';
-        break;
-      case 'user-not-found':
-        errorMessage = 'ไม่พบผู้ใช้นี้ กรุณาตรวจสอบอีเมล';
-        break;
-      case 'wrong-password':
-        errorMessage = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
-        break;
-      default:
-        errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-    }
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 10),
-            Expanded(child: Text(errorMessage)),
-          ],
-        ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white),
-            const SizedBox(width: 10),
-            Expanded(child: Text('เกิดข้อผิดพลาด กรุณาลองใหม่')),
-          ],
-        ),
-        backgroundColor: Colors.redAccent,
-        behavior: SnackBarBehavior.floating,
-        margin: const EdgeInsets.all(16),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
-      ),
-    );
-  } finally {
-    setState(() => _isLoading = false);
+  bool _isValidEmail(String email) {
+    final RegExp regex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    return regex.hasMatch(email);
   }
-}
 
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+
+    try {
+      String email = _emailController.text.trim();
+      String password = _passwordController.text.trim();
+
+      if (!_isValidEmail(email)) {
+        throw FirebaseAuthException(code: 'invalid-email', message: 'รูปแบบอีเมลไม่ถูกต้อง');
+      }
+      if (password.isEmpty) {
+        throw FirebaseAuthException(code: 'empty-password', message: 'กรุณากรอกรหัสผ่าน');
+      }
+
+      // เข้าสู่ระบบ
+      UserCredential userCredential = await _authService.signIn(
+        email: email,
+        password: password,
+      );
+
+      User? user = userCredential.user;
+      if (user != null) {
+        // ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง
+        if (!user.emailVerified) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
+          );
+
+          // ไปที่หน้ากรอก OTP เพื่อให้ยืนยันอีเมล
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => OTPScreen(email: email),
+            ),
+          );
+          return;
+        }
+
+        // อนุญาตให้เข้าสู่ระบบ
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      String errorMessage;
+
+      switch (e.code) {
+        case 'invalid-email':
+          errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง';
+          break;
+        case 'empty-password':
+          errorMessage = 'กรุณากรอกรหัสผ่าน';
+          break;
+        case 'user-not-found':
+          errorMessage = 'ไม่พบผู้ใช้นี้ กรุณาตรวจสอบอีเมล';
+          break;
+        case 'wrong-password':
+          errorMessage = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
+          break;
+        default:
+          errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 10),
+              Expanded(child: Text('เกิดข้อผิดพลาด กรุณาลองใหม่')),
+            ],
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          margin: const EdgeInsets.all(16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
