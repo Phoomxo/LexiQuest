@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'WordScrambleScreen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
@@ -180,22 +181,35 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
               const SizedBox(height: 20),
 
               // ✅ ปุ่มไปต่อ
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCorrect ? Colors.green : Colors.grey,
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: const Text(
-                  'ไปต่อ',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ),
+             ElevatedButton(
+  onPressed: () {
+    if (isCorrect) {
+      // ✅ ถ้าพูดถูก ให้ไป WordScrambleScreen
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => WordScrambleScreen(word: widget.correctWord),
+        ),
+      );
+    } else {
+      // ❌ ถ้าพูดผิด ให้กลับไป QuizScreen
+      Navigator.pop(context);
+    }
+  },
+  style: ElevatedButton.styleFrom(
+    backgroundColor: isCorrect ? Colors.green : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
+    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(12),
+    ),
+  ),
+  child: Text(
+    isCorrect ? 'ไปเกมเรียงคำ' : 'กลับไปแบบทดสอบ',
+    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+  ),
+),
+
+
             ],
           ),
         ),
