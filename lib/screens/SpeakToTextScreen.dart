@@ -54,7 +54,13 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
           });
         },
         localeId: "en-US", // ตั้งค่าการรับเสียงเป็นภาษาอังกฤษแบบอเมริกัน
+        listenFor: Duration(seconds: 10), // เพิ่มเวลารับเสียงมากขึ้น
+        partialResults: true, // รับผลลัพธ์แบบระหว่างการฟัง
       );
+    } else {
+      setState(() {
+        isListening = false;
+      });
     }
   }
 
@@ -66,34 +72,38 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   }
 
   @override
+  void dispose() {
+    _speech.stop();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text(
-    'ฝึกพูดคำศัพท์',
-    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  flexibleSpace: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.deepPurple, Colors.indigo],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-  ),
-),
-
-      body: Container(
+        title: const Text(
+          'ฝึกพูดคำศัพท์',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
           decoration: const BoxDecoration(
-    gradient: LinearGradient(
-      colors: [Colors.deepPurple, Colors.indigo],
-      begin: Alignment.topLeft,
-      end: Alignment.bottomRight,
-
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
+      ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.deepPurple, Colors.indigo],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
         ),
         child: Padding(
@@ -181,35 +191,33 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
               const SizedBox(height: 20),
 
               // ✅ ปุ่มไปต่อ
-             ElevatedButton(
-  onPressed: () {
-    if (isCorrect) {
-      // ✅ ถ้าพูดถูก ให้ไป WordScrambleScreen
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WordScrambleScreen(word: widget.correctWord),
-        ),
-      );
-    } else {
-      // ❌ ถ้าพูดผิด ให้กลับไป QuizScreen
-      Navigator.pop(context);
-    }
-  },
-  style: ElevatedButton.styleFrom(
-    backgroundColor: isCorrect ? Colors.green : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
-    padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
-    shape: RoundedRectangleBorder(
-      borderRadius: BorderRadius.circular(12),
-    ),
-  ),
-  child: Text(
-    isCorrect ? 'ไปเกมเรียงคำ' : 'กลับไปแบบทดสอบ',
-    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
-  ),
-),
-
-
+              ElevatedButton(
+                onPressed: () {
+                  if (isCorrect) {
+                    // ✅ ถ้าพูดถูก ให้ไป WordScrambleScreen
+                    Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => WordScrambleScreen(word: widget.correctWord),
+                      ),
+                    );
+                  } else {
+                    // ❌ ถ้าพูดผิด ให้กลับไป QuizScreen
+                    Navigator.pop(context);
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: isCorrect ? Colors.green : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
+                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: Text(
+                  isCorrect ? 'ไปเกมเรียงคำ' : 'กลับไปแบบทดสอบ',
+                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                ),
+              ),
             ],
           ),
         ),

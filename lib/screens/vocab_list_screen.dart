@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'AddMultipleWordsScreen.dart';
@@ -48,7 +50,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
             onPressed: () async {
               await wordService.deleteWord(word.id!);
               Navigator.pop(context);
-              setState(() {}); // รีโหลดหน้าหลังจากลบคำศัพท์
+              setState(() {});
             },
           ),
         ],
@@ -56,7 +58,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
     );
   }
 
-  /// 🔥 ฟังก์ชันลบคำศัพท์ทั้งหมดในหมวดหมู่
   void showDeleteAllWordsDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -74,7 +75,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
             onPressed: () async {
               await wordService.deleteAllWords();
               Navigator.pop(context);
-              setState(() {}); // รีโหลดหน้าหลังจากลบทั้งหมด
+              setState(() {});
             },
           ),
         ],
@@ -82,7 +83,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
     );
   }
 
-  /// 🔥 UI ปุ่มเพิ่มคำศัพท์แบบ Speed Dial
   Widget _buildFloatingActionButton() {
     return SpeedDial(
       animatedIcon: AnimatedIcons.menu_close,
@@ -92,7 +92,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
       overlayOpacity: 0.3,
       spacing: 12,
       spaceBetweenChildren: 10,
-
       children: [
         SpeedDialChild(
           child: const Icon(Icons.add, color: Colors.white),
@@ -153,7 +152,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
           ),
         ),
       ),
-
       body: Column(
         children: [
           Padding(
@@ -174,7 +172,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
               },
             ),
           ),
-
           Expanded(
             child: StreamBuilder<List<Word>>(
               stream: wordService.getWordsStream(),
@@ -187,15 +184,16 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 }
 
                 final words = snapshot.data ?? [];
-                if (words.isEmpty) {
+                final filteredWords = words.where((word) => word.word.toLowerCase().contains(searchQuery)).toList();
+
+                if (filteredWords.isEmpty) {
                   return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
                 }
 
                 return ListView.builder(
-                  itemCount: words.length,
+                  itemCount: filteredWords.length,
                   itemBuilder: (context, index) {
-                    final word = words[index];
-
+                    final word = filteredWords[index];
                     return Card(
                       margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -207,7 +205,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text('${word.meaning} (${word.partOfSpeech})'),
-                            if (word.userId == '') 
+                            if (word.userId == '')
                               const Text(
                                 '🔗 คำศัพท์นี้ถูกเพิ่มจาก Datamuse API',
                                 style: TextStyle(color: Colors.blue, fontSize: 12),
@@ -227,7 +225,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
           ),
         ],
       ),
-
       floatingActionButton: _buildFloatingActionButton(),
     );
   }

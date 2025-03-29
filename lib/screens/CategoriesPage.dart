@@ -3,11 +3,29 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 import '../models/category_model.dart';
 import '../services/category_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class CategoriesPage extends StatelessWidget {
   final CategoryService _categoryService = CategoryService();
 
   CategoriesPage({super.key});
+
+  // 🔄 เพิ่มหมวดหมู่เริ่มต้นเมื่อผู้ใช้สมัครใหม่ (เรียกใช้ครั้งเดียว)
+  Future<void> _addDefaultCategoriesForNewUser(BuildContext context) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      bool categoriesAdded = prefs.getBool('categories_added') ?? false;
+
+      if (!categoriesAdded) {
+        await _categoryService.addDefaultCategoriesForNewUser(user.uid);
+        await prefs.setBool('categories_added', true);
+      } else {
+        print('✅ Default categories have already been added for user ${user.uid}');
+      }
+    }
+  }
 
   /// 🔹 ดึงจำนวนคำศัพท์ในหมวดหมู่
   Future<int> getWordCount(String categoryId) async {
@@ -48,6 +66,8 @@ class CategoriesPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    _addDefaultCategoriesForNewUser(context); // เรียกเมื่อโหลดหน้าแรก
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -112,7 +132,7 @@ class CategoriesPage extends StatelessWidget {
                           ),
                         );
                       },
-                      onLongPress: () => _deleteCategory(context, category.id!, category.name), // ✅ กดค้างเพื่อลบ
+                      onLongPress: () => _deleteCategory(context, category.id!, category.name),
                       child: Card(
                         color: Colors.white.withOpacity(0.9),
                         elevation: 5,
@@ -134,10 +154,10 @@ class CategoriesPage extends StatelessWidget {
                             ),
                             const SizedBox(height: 5),
                             Text(
-                              '$wordCount/20 คำ',
+                              '$wordCount/50 คำ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: wordCount >= 20 ? Colors.red : Colors.black,
+                                color: wordCount >= 50 ? Colors.red : Colors.black,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -164,7 +184,6 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 
-  // 📌 ฟังก์ชันกำหนดไอคอนให้แต่ละหมวด
   IconData _getCategoryIcon(String categoryName) {
     switch (categoryName.toLowerCase()) {
       case 'สัตว์':
@@ -177,14 +196,11 @@ class CategoriesPage extends StatelessWidget {
         return Icons.sports_soccer;
       case 'อาชีพ':
         return Icons.work;
-      case 'ตัวเลข':
-        return Icons.numbers;
       default:
         return Icons.category;
     }
   }
 
-  /// 🟢 ฟังก์ชันเพิ่มหมวดหมู่ใหม่
   void _showAddCategoryDialog(BuildContext context) {
     TextEditingController addController = TextEditingController();
     showDialog(

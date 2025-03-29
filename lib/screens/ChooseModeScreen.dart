@@ -11,24 +11,23 @@ class ChooseModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text(
-    'เลือกรูปแบบการเรียน',
-    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  flexibleSpace: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.deepPurple, Colors.indigo],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        title: const Text(
+          'เลือกรูปแบบการเรียน',
+          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-    ),
-  ),
-),
-
       body: Center(
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -58,9 +57,9 @@ class ChooseModeScreen extends StatelessWidget {
                       'part_of_speech': doc['part_of_speech'],
                     };
                   }).toList()
-                    ..shuffle();
+                    ..shuffle(); // สุ่มคำศัพท์
 
-                  final selectedWords = vocabList.take(10).toList();
+                  final selectedWords = vocabList.take(10).toList(); // เลือกมา 10 คำ
 
                   Navigator.push(
                     context,
@@ -93,6 +92,11 @@ class ChooseModeScreen extends StatelessWidget {
 
                     final querySnapshot = await wordsCollection.get();
 
+                    if (querySnapshot.docs.isEmpty) {
+                      _showSnackBar(context, 'ไม่มีคำศัพท์ในหมวดหมู่นี้!');
+                      return;
+                    }
+
                     final vocabList = querySnapshot.docs.map((doc) {
                       return {
                         'word': doc['word'],
@@ -100,12 +104,14 @@ class ChooseModeScreen extends StatelessWidget {
                         'part_of_speech': doc['part_of_speech'],
                       };
                     }).toList()
-                      ..shuffle();
+                      ..shuffle(); // สุ่มคำศัพท์
+
+                    final selectedWords = vocabList.take(10).toList(); // เลือกแค่ 10 คำ
 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => QuizScreen(vocabList: vocabList),
+                        builder: (context) => QuizScreen(vocabList: selectedWords),
                       ),
                     );
                   }

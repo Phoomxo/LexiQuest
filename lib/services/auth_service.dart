@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/user_model.dart';
+import 'category_service.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -50,6 +51,10 @@ class AuthService {
           'age': age,
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+        // ✅ เพิ่มหมวดหมู่เริ่มต้นให้ผู้ใช้ใหม่
+await CategoryService().addDefaultCategoriesForNewUser(user.uid);
+
       } else {
         throw Exception('กรุณายืนยันอีเมลก่อนสมัครสมาชิก');
       }
