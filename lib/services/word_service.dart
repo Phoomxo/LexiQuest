@@ -15,7 +15,7 @@ class WordService {
     }
   }
 
-  /// 🔹 ตรวจสอบว่าหมวดหมู่สามารถเพิ่มคำศัพท์ได้อีกหรือไม่ (สูงสุด 20 คำ)
+  /// 🔹 ตรวจสอบว่าหมวดหมู่สามารถเพิ่มคำศัพท์ได้อีกหรือไม่ (สูงสุด 50 คำ)
   Future<bool> canAddMoreWords() async {
     QuerySnapshot wordCountSnapshot = await _wordsCollection.get();
     return wordCountSnapshot.size < 50;
@@ -35,20 +35,19 @@ class WordService {
   }
 
   /// 🔹 เพิ่มคำศัพท์แบบปกติ (จำกัด 50 คำ)
-Future<void> addWord(Word word) async {
-  bool canAdd = await canAddMoreWords();
-  if (!canAdd) {
-    throw Exception('หมวดหมู่นี้มีคำศัพท์ครบ 50 คำแล้ว ไม่สามารถเพิ่มได้อีก');
+  Future<void> addWord(Word word) async {
+    bool canAdd = await canAddMoreWords();
+    if (!canAdd) {
+      throw Exception('หมวดหมู่นี้มีคำศัพท์ครบ 50 คำแล้ว ไม่สามารถเพิ่มได้อีก');
+    }
+
+    DocumentReference wordRef = _wordsCollection.doc();
+    await wordRef.set(word.toMap());
+
+    print('✅ เพิ่มคำศัพท์สำเร็จ: ${word.word}');
   }
 
-  DocumentReference wordRef = _wordsCollection.doc();
-  await wordRef.set(word.toMap());
-
-  print('✅ เพิ่มคำศัพท์สำเร็จ: ${word.word}');
-}
-
-
-  /// 🔹 เพิ่มคำศัพท์จาก Datamuse API (จำกัด 20 คำ)
+  /// 🔹 เพิ่มคำศัพท์จาก Datamuse API (จำกัด 50 คำ)
   Future<void> addWordFromDatamuse(Word word) async {
     bool canAdd = await canAddMoreWords();
     if (!canAdd) {

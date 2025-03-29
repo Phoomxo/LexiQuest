@@ -35,9 +35,9 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   /// 🔥 ปุ่มเดียวสำหรับดึงคำศัพท์และบันทึกทันที
   Future<void> _fetchAndSaveWords() async {
     int numWords = int.tryParse(_numWordsController.text) ?? 0;
-    if (numWords <= 0 || numWords > 20) {
+    if (numWords <= 0 || numWords > 50) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาระบุจำนวนคำระหว่าง 1-20')),
+        const SnackBar(content: Text('กรุณาระบุจำนวนคำระหว่าง 1-50')),
       );
       return;
     }
@@ -107,7 +107,7 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
               keyboardType: TextInputType.number,
               style: const TextStyle(fontSize: 18, color: Colors.black),
               decoration: InputDecoration(
-                labelText: 'จำนวนคำศัพท์ (1-20)',
+                labelText: 'จำนวนคำศัพท์ (1-50)',
                 labelStyle: const TextStyle(color: Colors.deepPurple),
                 focusedBorder: OutlineInputBorder(
                   borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
