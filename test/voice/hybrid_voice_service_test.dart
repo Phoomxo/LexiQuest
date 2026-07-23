@@ -321,6 +321,175 @@ void main() {
       expect(result.modelVersion, _omniModelVersion);
     },
   );
+
+  for (final category in <VoiceFailureCategory>[
+    VoiceFailureCategory.authentication,
+    VoiceFailureCategory.network,
+    VoiceFailureCategory.timeout,
+    VoiceFailureCategory.rateLimited,
+    VoiceFailureCategory.modelUnavailable,
+    VoiceFailureCategory.synthesis,
+    VoiceFailureCategory.configuration,
+    VoiceFailureCategory.unknown,
+  ]) {
+    test(
+      'practice remote ${category.name} failure falls back to native TTS',
+      () async {
+        final remoteFailure = VoiceFailure(
+          category: category,
+          message: 'Voice synthesis is unavailable.',
+        );
+        final native = _RecordingNativeProvider();
+        final omni = _RecordingOmniVoiceSynthesizer(failure: remoteFailure);
+        final player = _RecordingAudioPlayer();
+        final service = _buildService(
+          nativeProvider: native,
+          omniVoiceProvider: omni,
+          audioPlayer: player,
+        );
+
+        final result = await service.speak(_practiceRequest());
+
+        expect(omni.synthesizeCalls, hasLength(1));
+        expect(native.speakCalls, hasLength(1));
+        expect(player.playCalls, isEmpty);
+        expect(result.requestedEngine, VoiceEngine.omniVoice);
+        expect(result.actualEngine, VoiceEngine.nativeTts);
+        expect(result.usedFallback, isTrue);
+        expect(result.cacheHit, isFalse);
+      },
+    );
+  }
+
+  for (final category in <VoiceFailureCategory>[
+    VoiceFailureCategory.validation,
+    VoiceFailureCategory.cancelled,
+  ]) {
+    test('practice remote ${category.name} failure is surfaced without native '
+        'fallback', () async {
+      final remoteFailure = VoiceFailure(
+        category: category,
+        message: 'Voice synthesis is unavailable.',
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(failure: remoteFailure);
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+      );
+
+      final failure = await _captureFailure(
+        () => service.speak(_practiceRequest()),
+      );
+
+      expect(failure.category, category);
+      expect(omni.synthesizeCalls, hasLength(1));
+      expect(native.speakCalls, isEmpty);
+      expect(player.playCalls, isEmpty);
+    });
+  }
+
+  test(
+    'practice remote audio playback failure falls back to native TTS',
+    () async {
+      const playbackFailure = VoiceFailure(
+        category: VoiceFailureCategory.playback,
+        message: 'Audio playback failed.',
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer(playFailure: playbackFailure);
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+      );
+
+      final result = await service.speak(_practiceRequest());
+
+      expect(omni.synthesizeCalls, hasLength(1));
+      expect(player.playCalls, hasLength(1));
+      expect(native.speakCalls, hasLength(1));
+      expect(result.requestedEngine, VoiceEngine.omniVoice);
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(result.usedFallback, isTrue);
+      expect(result.cacheHit, isFalse);
+    },
+  );
+
+  test(
+    'practice cached-audio playback failure falls back to native TTS',
+    () async {
+      const configuredModel = _omniModelVersion;
+      final request = _practiceRequest();
+      final cachedBytes = Uint8List.fromList(<int>[0x10, 0x20, 0x30, 0x40]);
+      final cache = MemoryVoiceAudioCache(
+        maxEntries: 16,
+        maxBytes: 1024 * 1024,
+      );
+      await cache.put(
+        VoiceAudioCacheKey.create(
+          request: request,
+          modelVersion: configuredModel,
+        ),
+        cachedBytes,
+      );
+
+      const playbackFailure = VoiceFailure(
+        category: VoiceFailureCategory.playback,
+        message: 'Audio playback failed.',
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer(playFailure: playbackFailure);
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        audioCache: cache,
+        omniVoiceModelVersion: configuredModel,
+      );
+
+      final result = await service.speak(request);
+
+      expect(omni.synthesizeCalls, isEmpty);
+      expect(player.playCalls, hasLength(1));
+      expect(native.speakCalls, hasLength(1));
+      expect(result.requestedEngine, VoiceEngine.omniVoice);
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(result.usedFallback, isTrue);
+      expect(result.cacheHit, isTrue);
+    },
+  );
+
+  test(
+    'research omniVoice playback failure is surfaced without native fallback',
+    () async {
+      const playbackFailure = VoiceFailure(
+        category: VoiceFailureCategory.playback,
+        message: 'Audio playback failed.',
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer(playFailure: playbackFailure);
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+      );
+
+      final failure = await _captureFailure(
+        () => service.speak(_researchRequest(VoiceEngine.omniVoice)),
+      );
+
+      expect(omni.synthesizeCalls, hasLength(1));
+      expect(player.playCalls, hasLength(1));
+      expect(native.speakCalls, isEmpty);
+      expect(failure.category, VoiceFailureCategory.playback);
+    },
+  );
 }
 
 class _RecordingNativeProvider implements VoiceProvider {
@@ -362,6 +531,9 @@ class _RecordingOmniVoiceSynthesizer implements OmniVoiceSynthesizer {
 }
 
 class _RecordingAudioPlayer implements VoiceAudioPlayer {
+  _RecordingAudioPlayer({this.playFailure});
+
+  final VoiceFailure? playFailure;
   final List<Uint8List> playCalls = <Uint8List>[];
   int stopCount = 0;
   int disposeCount = 0;
@@ -369,6 +541,10 @@ class _RecordingAudioPlayer implements VoiceAudioPlayer {
   @override
   Future<void> play(Uint8List bytes) async {
     playCalls.add(Uint8List.fromList(bytes));
+    final failure = playFailure;
+    if (failure != null) {
+      throw failure;
+    }
   }
 
   @override
