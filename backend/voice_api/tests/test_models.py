@@ -21,6 +21,17 @@ def test_settings_have_research_safe_defaults() -> None:
     assert settings.position_temperature == 0.0
     assert settings.class_temperature == 0.0
     assert settings.load_asr is False
+    assert (
+        settings.voice_instruction
+        == "female, young adult, american accent, moderate pitch"
+    )
+
+
+def test_settings_reject_unsupported_voice_instruction() -> None:
+    with pytest.raises(ValidationError, match="Unsupported OmniVoice instruction"):
+        Settings(
+            voice_instruction="female, young adult, clear teacher voice",
+        )
 
 
 def test_speech_request_normalizes_text() -> None:
