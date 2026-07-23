@@ -9,13 +9,13 @@ class AddMultipleWordsScreen extends StatefulWidget {
   final String categoryName;
 
   const AddMultipleWordsScreen({
-    Key? key,
+    super.key,
     required this.categoryId,
     required this.categoryName,
-  }) : super(key: key);
+  });
 
   @override
-  _AddMultipleWordsScreenState createState() => _AddMultipleWordsScreenState();
+  State<AddMultipleWordsScreen> createState() => _AddMultipleWordsScreenState();
 }
 
 class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
@@ -46,7 +46,10 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
 
     try {
       // ✅ ดึงคำศัพท์จาก API
-      suggestedWords = await suggestionService.fetchWords(widget.categoryName, numWords);
+      suggestedWords = await suggestionService.fetchWords(
+        widget.categoryName,
+        numWords,
+      );
       setState(() {}); // 🔥 อัปเดต UI แสดงคำศัพท์ที่ดึงมา
 
       // ✅ แปลงเป็น Word และบันทึกลง Firestore
@@ -63,17 +66,22 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
 
       await wordService.addMultipleWords(wordsToAdd);
 
+      if (!mounted) return;
+
       // ✅ แสดงข้อความแจ้งเตือน
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เพิ่มคำศัพท์จำนวน ${wordsToAdd.length} คำสำเร็จ!')),
+        SnackBar(
+          content: Text('เพิ่มคำศัพท์จำนวน ${wordsToAdd.length} คำสำเร็จ!'),
+        ),
       );
 
       // ✅ ปิดหน้าหลังจากบันทึกเสร็จ
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
     }
 
     setState(() => _isLoading = false);
@@ -83,7 +91,10 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('เพิ่มหลายคำศัพท์', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+        title: const Text(
+          'เพิ่มหลายคำศัพท์',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -110,7 +121,10 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
                 labelText: 'จำนวนคำศัพท์ (1-50)',
                 labelStyle: const TextStyle(color: Colors.deepPurple),
                 focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.deepPurple, width: 2),
+                  borderSide: const BorderSide(
+                    color: Colors.deepPurple,
+                    width: 2,
+                  ),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 enabledBorder: OutlineInputBorder(
@@ -126,7 +140,9 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
               onPressed: _isLoading ? null : _fetchAndSaveWords,
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 backgroundColor: Colors.deepPurple,
                 elevation: 5,
               ),
@@ -137,7 +153,11 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
                   const SizedBox(width: 8),
                   Text(
                     _isLoading ? 'กำลังโหลด...' : 'ดึงและบันทึกคำศัพท์',
-                    style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 16,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ],
               ),
@@ -145,12 +165,20 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
             const SizedBox(height: 20),
 
             _isLoading
-                ? const Center(child: CircularProgressIndicator(color: Colors.deepPurple))
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.deepPurple),
+                  )
                 : Expanded(
                     child: suggestedWords.isEmpty
                         ? const Center(
-                            child: Text('ยังไม่มีคำศัพท์ กรุณากด "ดึงและบันทึกคำศัพท์"',
-                                style: TextStyle(fontSize: 16, color: Colors.grey)))
+                            child: Text(
+                              'ยังไม่มีคำศัพท์ กรุณากด "ดึงและบันทึกคำศัพท์"',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          )
                         : ListView.builder(
                             itemCount: suggestedWords.length,
                             itemBuilder: (context, index) {
@@ -163,18 +191,32 @@ class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
                                 ),
                                 child: ListTile(
                                   contentPadding: const EdgeInsets.all(12),
-                                  tileColor: Colors.white.withOpacity(0.95),
-                                  title: Text(word.word,
-                                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                                  tileColor: Colors.white.withValues(
+                                    alpha: 0.95,
+                                  ),
+                                  title: Text(
+                                    word.word,
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.deepPurple,
+                                    ),
+                                  ),
                                   subtitle: Text(
                                     '${word.meaning} (${word.partOfSpeech})',
-                                    style: const TextStyle(fontSize: 14, color: Colors.black87),
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.black87,
+                                    ),
                                   ),
                                   leading: CircleAvatar(
                                     backgroundColor: Colors.indigo,
                                     child: Text(
                                       word.word[0].toUpperCase(),
-                                      style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                      ),
                                     ),
                                   ),
                                 ),

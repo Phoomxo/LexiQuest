@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -7,10 +8,13 @@ class GlobalWordService {
 
   /// 🔎 **ค้นหาคำศัพท์ใน Firestore (global_words)**
   Future<Map<String, dynamic>?> findWordInDatabase(String word) async {
-    DocumentSnapshot doc = await _firestore.collection('global_words').doc(word).get();
+    DocumentSnapshot doc = await _firestore
+        .collection('global_words')
+        .doc(word)
+        .get();
 
     if (doc.exists) {
-      print('✅ พบคำศัพท์ใน Firestore: $word');
+      debugPrint('✅ พบคำศัพท์ใน Firestore: $word');
       return doc.data() as Map<String, dynamic>;
     }
     return null;
@@ -36,13 +40,16 @@ class GlobalWordService {
         String partOfSpeech = "unknown";
 
         // 🔹 ดึงข้อมูลจาก Dictionary API
-        final dictUrl = Uri.parse('https://api.dictionaryapi.dev/api/v2/entries/en/$word');
+        final dictUrl = Uri.parse(
+          'https://api.dictionaryapi.dev/api/v2/entries/en/$word',
+        );
         final dictResponse = await http.get(dictUrl);
 
         if (dictResponse.statusCode == 200) {
           final List<dynamic> dictData = json.decode(dictResponse.body);
           if (dictData.isNotEmpty) {
-            meaning = dictData[0]['meanings'][0]['definitions'][0]['definition'];
+            meaning =
+                dictData[0]['meanings'][0]['definitions'][0]['definition'];
             partOfSpeech = dictData[0]['meanings'][0]['partOfSpeech'];
           }
         }
@@ -55,12 +62,8 @@ class GlobalWordService {
           'createdAt': FieldValue.serverTimestamp(),
         });
 
-        print('✅ เพิ่มคำศัพท์ลง Firestore: $word');
-        return {
-          'word': word,
-          'meaning': meaning,
-          'partOfSpeech': partOfSpeech,
-        };
+        debugPrint('✅ เพิ่มคำศัพท์ลง Firestore: $word');
+        return {'word': word, 'meaning': meaning, 'partOfSpeech': partOfSpeech};
       }
     }
 

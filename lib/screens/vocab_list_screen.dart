@@ -1,8 +1,6 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
-import 'AddMultipleWordsScreen.dart';
+import 'add_multiple_words_screen.dart';
 import '../models/word_model.dart';
 import '../services/word_service.dart';
 import 'add_vocab_screen.dart';
@@ -12,13 +10,13 @@ class VocabListScreen extends StatefulWidget {
   final String categoryName;
 
   const VocabListScreen({
-    Key? key,
+    super.key,
     required this.categoryId,
     required this.categoryName,
-  }) : super(key: key);
+  });
 
   @override
-  _VocabListScreenState createState() => _VocabListScreenState();
+  State<VocabListScreen> createState() => _VocabListScreenState();
 }
 
 class _VocabListScreenState extends State<VocabListScreen> {
@@ -38,18 +36,29 @@ class _VocabListScreenState extends State<VocabListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('ลบคำศัพท์', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: Text('คุณต้องการลบ "${word.word}" ใช่หรือไม่?', textAlign: TextAlign.center),
+        title: const Text(
+          'ลบคำศัพท์',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(
+          'คุณต้องการลบ "${word.word}" ใช่หรือไม่?',
+          textAlign: TextAlign.center,
+        ),
         actions: [
           TextButton(
             child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
             onPressed: () => Navigator.pop(context),
           ),
           TextButton(
-            child: const Text('ลบ', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'ลบ',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
             onPressed: () async {
               await wordService.deleteWord(word.id!);
-              Navigator.pop(context);
+              if (context.mounted) {
+                Navigator.pop(context);
+              }
               setState(() {});
             },
           ),
@@ -63,18 +72,29 @@ class _VocabListScreenState extends State<VocabListScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text('ลบคำศัพท์ทั้งหมด', style: TextStyle(fontWeight: FontWeight.bold)),
-        content: const Text('คุณต้องการลบคำศัพท์ทั้งหมดในหมวดหมู่นี้ใช่หรือไม่?', textAlign: TextAlign.center),
+        title: const Text(
+          'ลบคำศัพท์ทั้งหมด',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'คุณต้องการลบคำศัพท์ทั้งหมดในหมวดหมู่นี้ใช่หรือไม่?',
+          textAlign: TextAlign.center,
+        ),
         actions: [
           TextButton(
             child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
             onPressed: () => Navigator.pop(context),
           ),
           TextButton(
-            child: const Text('ลบทั้งหมด', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+            child: const Text(
+              'ลบทั้งหมด',
+              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+            ),
             onPressed: () async {
               await wordService.deleteAllWords();
+              if (!context.mounted) return;
               Navigator.pop(context);
+              if (!mounted) return;
               setState(() {});
             },
           ),
@@ -101,7 +121,8 @@ class _VocabListScreenState extends State<VocabListScreen> {
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => AddWordScreen(categoryId: widget.categoryId),
+                builder: (context) =>
+                    AddWordScreen(categoryId: widget.categoryId),
               ),
             );
           },
@@ -138,7 +159,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.categoryName, style: const TextStyle(color: Colors.white)),
+        title: Text(
+          widget.categoryName,
+          style: const TextStyle(color: Colors.white),
+        ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -180,11 +204,17 @@ class _VocabListScreenState extends State<VocabListScreen> {
                   return const Center(child: CircularProgressIndicator());
                 }
                 if (snapshot.hasError) {
-                  return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดคำศัพท์'));
+                  return const Center(
+                    child: Text('เกิดข้อผิดพลาดในการโหลดคำศัพท์'),
+                  );
                 }
 
                 final words = snapshot.data ?? [];
-                final filteredWords = words.where((word) => word.word.toLowerCase().contains(searchQuery)).toList();
+                final filteredWords = words
+                    .where(
+                      (word) => word.word.toLowerCase().contains(searchQuery),
+                    )
+                    .toList();
 
                 if (filteredWords.isEmpty) {
                   return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
@@ -195,12 +225,26 @@ class _VocabListScreenState extends State<VocabListScreen> {
                   itemBuilder: (context, index) {
                     final word = filteredWords[index];
                     return Card(
-                      margin: const EdgeInsets.symmetric(horizontal: 15, vertical: 8),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      margin: const EdgeInsets.symmetric(
+                        horizontal: 15,
+                        vertical: 8,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       elevation: 4,
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                        title: Text(word.word, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
+                        title: Text(
+                          word.word,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -208,13 +252,17 @@ class _VocabListScreenState extends State<VocabListScreen> {
                             if (word.userId == '')
                               const Text(
                                 '🔗 คำศัพท์นี้ถูกเพิ่มจาก Datamuse API',
-                                style: TextStyle(color: Colors.blue, fontSize: 12),
+                                style: TextStyle(
+                                  color: Colors.blue,
+                                  fontSize: 12,
+                                ),
                               ),
                           ],
                         ),
                         trailing: IconButton(
                           icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => showDeleteConfirmationDialog(context, word),
+                          onPressed: () =>
+                              showDeleteConfirmationDialog(context, word),
                         ),
                       ),
                     );

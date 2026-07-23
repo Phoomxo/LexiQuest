@@ -4,10 +4,10 @@ import '../services/auth_service.dart';
 class RegisterFormScreen extends StatefulWidget {
   final String email;
 
-  const RegisterFormScreen({Key? key, required this.email}) : super(key: key);
+  const RegisterFormScreen({super.key, required this.email});
 
   @override
-  _RegisterFormScreenState createState() => _RegisterFormScreenState();
+  State<RegisterFormScreen> createState() => _RegisterFormScreenState();
 }
 
 class _RegisterFormScreenState extends State<RegisterFormScreen> {
@@ -31,16 +31,18 @@ class _RegisterFormScreenState extends State<RegisterFormScreen> {
         age: int.tryParse(_ageController.text.trim()) ?? 0,
       );
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('สมัครสมาชิกสำเร็จ!')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('สมัครสมาชิกสำเร็จ!')));
 
       // ไปหน้า Home หรือ Login
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('สมัครไม่สำเร็จ: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('สมัครไม่สำเร็จ: $e')));
     } finally {
       setState(() => _isLoading = false);
     }
@@ -54,7 +56,10 @@ class _RegisterFormScreenState extends State<RegisterFormScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Text('อีเมลของคุณ: ${widget.email}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            Text(
+              'อีเมลของคุณ: ${widget.email}',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 15),
             TextField(
               controller: _firstNameController,
@@ -99,7 +104,10 @@ class _RegisterFormScreenState extends State<RegisterFormScreen> {
                 : ElevatedButton(
                     onPressed: _register,
                     style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 50),
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 14,
+                        horizontal: 50,
+                      ),
                       backgroundColor: Colors.blueAccent,
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),

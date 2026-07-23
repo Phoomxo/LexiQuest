@@ -1,25 +1,32 @@
 import 'package:flutter/material.dart';
-import 'RegisterScreen.dart';
+import 'register_screen.dart';
 import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'OTPScreen.dart'; // เพิ่มไฟล์ OTP Screen
+import 'otp_screen.dart'; // เพิ่มไฟล์ OTP Screen
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
+  AuthService? _authServiceInstance;
+
+  AuthService get _authService {
+    _authServiceInstance ??= AuthService();
+    return _authServiceInstance!;
+  }
 
   bool _isLoading = false;
 
   bool _isValidEmail(String email) {
-    final RegExp regex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    final RegExp regex = RegExp(
+      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+    );
     return regex.hasMatch(email);
   }
 
@@ -31,10 +38,16 @@ class _LoginScreenState extends State<LoginScreen> {
       String password = _passwordController.text.trim();
 
       if (!_isValidEmail(email)) {
-        throw FirebaseAuthException(code: 'invalid-email', message: 'รูปแบบอีเมลไม่ถูกต้อง');
+        throw FirebaseAuthException(
+          code: 'invalid-email',
+          message: 'รูปแบบอีเมลไม่ถูกต้อง',
+        );
       }
       if (password.isEmpty) {
-        throw FirebaseAuthException(code: 'empty-password', message: 'กรุณากรอกรหัสผ่าน');
+        throw FirebaseAuthException(
+          code: 'empty-password',
+          message: 'กรุณากรอกรหัสผ่าน',
+        );
       }
 
       // เข้าสู่ระบบ
@@ -47,6 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null) {
         // ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง
         if (!user.emailVerified) {
+          if (!mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
           );
@@ -54,14 +68,13 @@ class _LoginScreenState extends State<LoginScreen> {
           // ไปที่หน้ากรอก OTP เพื่อให้ยืนยันอีเมล
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => OTPScreen(email: email),
-            ),
+            MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
           );
           return;
         }
 
         // อนุญาตให้เข้าสู่ระบบ
+        if (!mounted) return;
         Navigator.pushReplacementNamed(context, '/home');
       }
     } on FirebaseAuthException catch (e) {
@@ -84,6 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
           errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
       }
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -102,6 +116,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
@@ -120,8 +135,17 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
+  }
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
   }
 
   @override
@@ -181,7 +205,9 @@ class _LoginScreenState extends State<LoginScreen> {
                             onPressed: _login,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 14, horizontal: 50),
+                                vertical: 14,
+                                horizontal: 50,
+                              ),
                               backgroundColor: Colors.deepPurple,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -189,17 +215,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             child: const Text(
                               'Login',
-                              style: TextStyle(fontSize: 18, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const RegisterScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const RegisterScreen(),
+                          ),
                         );
                       },
-                      child: const Text('Don’t have an account? Register here'),
+                      child: const Text("Don't have an account? Register here"),
                     ),
                   ],
                 ),

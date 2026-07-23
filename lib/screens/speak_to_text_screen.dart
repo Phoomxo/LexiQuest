@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
-import 'WordScrambleScreen.dart';
+import 'word_scramble_screen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
@@ -10,7 +9,7 @@ class SpeakToTextScreen extends StatefulWidget {
   const SpeakToTextScreen({super.key, required this.correctWord});
 
   @override
-  _SpeakToTextScreenState createState() => _SpeakToTextScreenState();
+  State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
 }
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
@@ -50,12 +49,16 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
         onResult: (result) {
           setState(() {
             spokenText = result.recognizedWords; // อัปเดตข้อความที่ผู้ใช้พูด
-            isCorrect = spokenText.toLowerCase() == widget.correctWord.toLowerCase(); // ตรวจสอบความถูกต้อง
+            isCorrect =
+                spokenText.toLowerCase() ==
+                widget.correctWord.toLowerCase(); // ตรวจสอบความถูกต้อง
           });
         },
-        localeId: "en-US", // ตั้งค่าการรับเสียงเป็นภาษาอังกฤษแบบอเมริกัน
-        listenFor: Duration(seconds: 10), // เพิ่มเวลารับเสียงมากขึ้น
-        partialResults: true, // รับผลลัพธ์แบบระหว่างการฟัง
+        listenOptions: stt.SpeechListenOptions(
+          localeId: 'en-US',
+          listenFor: const Duration(seconds: 10),
+          partialResults: true,
+        ),
       );
     } else {
       setState(() {
@@ -114,7 +117,11 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
               // 📢 แสดงคำศัพท์ที่ต้องพูด
               const Text(
                 'พูดคำว่า:',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
               const SizedBox(height: 10),
               GestureDetector(
@@ -135,14 +142,18 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                 padding: const EdgeInsets.all(16),
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.8),
+                  color: Colors.white.withValues(alpha: 0.8),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Column(
                   children: [
                     Text(
                       spokenText.isEmpty ? 'พูดอะไรบางอย่าง...' : spokenText,
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
@@ -170,7 +181,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                     color: isListening ? Colors.green : Colors.red,
                     boxShadow: [
                       BoxShadow(
-                        color: isListening ? Colors.greenAccent : Colors.redAccent,
+                        color: isListening
+                            ? Colors.greenAccent
+                            : Colors.redAccent,
                         blurRadius: isListening ? 10 : 5,
                         spreadRadius: 3,
                       ),
@@ -179,11 +192,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                   child: const CircleAvatar(
                     radius: 40,
                     backgroundColor: Colors.transparent,
-                    child: Icon(
-                      Icons.mic,
-                      color: Colors.white,
-                      size: 40,
-                    ),
+                    child: Icon(Icons.mic, color: Colors.white, size: 40),
                   ),
                 ),
               ),
@@ -198,7 +207,8 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                     Navigator.pushReplacement(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => WordScrambleScreen(word: widget.correctWord),
+                        builder: (context) =>
+                            WordScrambleScreen(word: widget.correctWord),
                       ),
                     );
                   } else {
@@ -207,15 +217,24 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                   }
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: isCorrect ? Colors.green : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
-                  padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                  backgroundColor: isCorrect
+                      ? Colors.green
+                      : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 50,
+                    vertical: 15,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: Text(
                   isCorrect ? 'ไปเกมเรียงคำ' : 'กลับไปแบบทดสอบ',
-                  style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             ],

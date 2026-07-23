@@ -3,15 +3,15 @@ class SuggestedWord {
   final String meaning;
   final String partOfSpeech;
 
-  SuggestedWord({required this.word, required this.meaning, required this.partOfSpeech});
+  SuggestedWord({
+    required this.word,
+    required this.meaning,
+    required this.partOfSpeech,
+  });
 
   // แปลงเป็น JSON
   Map<String, dynamic> toMap() {
-    return {
-      'word': word,
-      'meaning': meaning,
-      'partOfSpeech': partOfSpeech,
-    };
+    return {'word': word, 'meaning': meaning, 'partOfSpeech': partOfSpeech};
   }
 
   // โหลดจาก JSON

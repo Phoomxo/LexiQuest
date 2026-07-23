@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
-import '../models/SentenceModel.dart';
-import '../services/SentenceService.dart';
-import 'quiz_screen.dart';
+import '../models/sentence_model.dart';
+import '../services/sentence_service.dart';
 
 class FillInTheBlanksScreen extends StatefulWidget {
   final String word;
 
-  const FillInTheBlanksScreen({Key? key, required this.word}) : super(key: key);
+  const FillInTheBlanksScreen({super.key, required this.word});
 
   @override
-  _FillInTheBlanksScreenState createState() => _FillInTheBlanksScreenState();
+  State<FillInTheBlanksScreen> createState() => _FillInTheBlanksScreenState();
 }
 
 class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
@@ -39,8 +38,12 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(userInput == correctSentence ? "✅ คำตอบถูกต้อง!" : "❌ คำตอบผิด!"),
-        backgroundColor: userInput == correctSentence ? Colors.green : Colors.red,
+        content: Text(
+          userInput == correctSentence ? "✅ คำตอบถูกต้อง!" : "❌ คำตอบผิด!",
+        ),
+        backgroundColor: userInput == correctSentence
+            ? Colors.green
+            : Colors.red,
       ),
     );
 
@@ -69,7 +72,8 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
           ),
         ),
       ),
-      body: SingleChildScrollView(  // เพิ่ม SingleChildScrollView เพื่อให้สามารถเลื่อนหน้าจอได้
+      body: SingleChildScrollView(
+        // เพิ่ม SingleChildScrollView เพื่อให้สามารถเลื่อนหน้าจอได้
         child: Container(
           decoration: const BoxDecoration(
             gradient: LinearGradient(
@@ -105,10 +109,11 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                     alignment: WrapAlignment.center,
                     children: List.generate(userSentence.length, (index) {
                       return DragTarget<String>(
-                        onAccept: (word) {
+                        onAcceptWithDetails: (details) {
                           setState(() {
-                            if (sentenceModel!.words.contains(word)) {
-                              userSentence[index] = word;  // ให้แค่คำที่ถูกต้อง
+                            if (sentenceModel!.words.contains(details.data)) {
+                              userSentence[index] =
+                                  details.data; // ให้แค่คำที่ถูกต้อง
                             }
                           });
                         },
@@ -120,20 +125,29 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                             alignment: Alignment.center,
                             margin: const EdgeInsets.all(6),
                             decoration: BoxDecoration(
-                              color: userSentence[index].isEmpty ? Colors.white.withOpacity(0.2) : Colors.greenAccent.shade200,
+                              color: userSentence[index].isEmpty
+                                  ? Colors.white.withValues(alpha: 0.2)
+                                  : Colors.greenAccent.shade200,
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.white, width: 1.5),
+                              border: Border.all(
+                                color: Colors.white,
+                                width: 1.5,
+                              ),
                               boxShadow: [
                                 BoxShadow(
                                   color: Colors.black26,
                                   blurRadius: 6,
                                   offset: Offset(2, 3),
-                                )
+                                ),
                               ],
                             ),
                             child: Text(
                               userSentence[index],
-                              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+                              style: const TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.black87,
+                              ),
                             ),
                           );
                         },
@@ -144,29 +158,37 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                   Wrap(
                     alignment: WrapAlignment.center,
                     spacing: 12,
-                    children: sentenceModel?.words.map((word) {
-                      return Draggable<String>(
-                        data: word,
-                        child: _buildWordTile(word),
-                        feedback: Material(
-                          color: Colors.transparent,
-                          child: _buildWordTile(word, isDragging: true),
-                        ),
-                      );
-                    }).toList() ?? [],
+                    children:
+                        sentenceModel?.words.map((word) {
+                          return Draggable<String>(
+                            data: word,
+                            feedback: Material(
+                              color: Colors.transparent,
+                              child: _buildWordTile(word, isDragging: true),
+                            ),
+                            child: _buildWordTile(word),
+                          );
+                        }).toList() ??
+                        [],
                   ),
                   const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: _checkAnswer,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurpleAccent,
-                      padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 50,
+                        vertical: 15,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(25),
                       ),
                       elevation: 6,
                     ),
-                    child: const Text("ตรวจสอบคำตอบ", style: TextStyle(fontSize: 20, color: Colors.white)),
+                    child: const Text(
+                      "ตรวจสอบคำตอบ",
+                      style: TextStyle(fontSize: 20, color: Colors.white),
+                    ),
                   ),
                 ],
               ),
@@ -190,12 +212,16 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
               color: Colors.black26,
               blurRadius: 6,
               offset: Offset(2, 3),
-            )
+            ),
         ],
       ),
       child: Text(
         word,
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.black87),
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: Colors.black87,
+        ),
       ),
     );
   }

@@ -1,10 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:vocab_learning_app/main.dart'; // เพิ่มการ import นี้
-
-
 
 class ResultScreen extends StatelessWidget {
   final int score;
@@ -35,17 +30,18 @@ class ResultScreen extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 30),
-          ElevatedButton(
-  onPressed: () {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (context) => MainNavigation()), // เปลี่ยนเป็นหน้าหลักของคุณ
-      (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
-    );
-  },
-  child: const Text('กลับหน้าหลัก'),
-),
-
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => MainNavigation(),
+                  ), // เปลี่ยนเป็นหน้าหลักของคุณ
+                  (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
+                );
+              },
+              child: const Text('กลับหน้าหลัก'),
+            ),
           ],
         ),
       ),

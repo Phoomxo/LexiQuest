@@ -12,7 +12,7 @@ class AddWordScreen extends StatefulWidget {
   const AddWordScreen({super.key, required this.categoryId, this.word});
 
   @override
-  _AddWordScreenState createState() => _AddWordScreenState();
+  State<AddWordScreen> createState() => _AddWordScreenState();
 }
 
 class _AddWordScreenState extends State<AddWordScreen> {
@@ -22,7 +22,6 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late WordService wordService;
   late GlobalWordService globalWordService;
 
-  bool _isLoading = false;
   List<String> _suggestedWords = [];
 
   @override
@@ -32,64 +31,65 @@ class _AddWordScreenState extends State<AddWordScreen> {
     globalWordService = GlobalWordService();
 
     _wordController = TextEditingController(text: widget.word?.word ?? '');
-    _meaningController = TextEditingController(text: widget.word?.meaning ?? '');
-    _partOfSpeechController = TextEditingController(text: widget.word?.partOfSpeech ?? '');
+    _meaningController = TextEditingController(
+      text: widget.word?.meaning ?? '',
+    );
+    _partOfSpeechController = TextEditingController(
+      text: widget.word?.partOfSpeech ?? '',
+    );
   }
 
   /// 🔎 **ดึงคำศัพท์จาก GlobalWords หรือ API**
   Future<void> _searchWord(String query) async {
     if (query.isEmpty) return;
 
-    setState(() => _isLoading = true);
-
     try {
       final wordData = await globalWordService.addWordToDatabase(query);
 
-      if (wordData != null) {
-        setState(() {
-          _wordController.text = wordData['word'];
-          _meaningController.text = wordData['meaning'];
-          _partOfSpeechController.text = wordData['partOfSpeech'];
-        });
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('ไม่พบคำศัพท์')),
-        );
-      }
+      if (!mounted) return;
+      setState(() {
+        _wordController.text = wordData['word'];
+        _meaningController.text = wordData['meaning'];
+        _partOfSpeechController.text = wordData['partOfSpeech'];
+      });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
-      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
     }
-
-    setState(() => _isLoading = false);
   }
 
   /// 🔎 **แปลคำศัพท์เป็นภาษาไทยโดยใช้ Google Translate**
   Future<void> _translateToThai(String word) async {
     final url = Uri.parse(
-        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=$word');
+      'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&q=$word',
+    );
 
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       setState(() {
-        _meaningController.text = data[0][0][0]; // ใส่ค่าที่แปลลงในช่อง "ความหมาย"
+        _meaningController.text =
+            data[0][0][0]; // ใส่ค่าที่แปลลงในช่อง "ความหมาย"
       });
     }
   }
 
   /// 🔥 **ดึงข้อมูล "ประเภทของคำ" อัตโนมัติจาก Dictionary API**
   Future<void> _fetchWordDetails(String word) async {
-    final url = Uri.parse('https://api.dictionaryapi.dev/api/v2/entries/en/$word');
+    final url = Uri.parse(
+      'https://api.dictionaryapi.dev/api/v2/entries/en/$word',
+    );
     final response = await http.get(url);
 
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       if (data.isNotEmpty) {
         setState(() {
-          _partOfSpeechController.text = data[0]['meanings'][0]['partOfSpeech'] ?? '';
+          _partOfSpeechController.text =
+              data[0]['meanings'][0]['partOfSpeech'] ?? '';
         });
       }
     }
@@ -142,9 +142,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
           decoration: InputDecoration(
             labelText: 'คำศัพท์',
             prefixIcon: const Icon(Icons.translate),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
           ),
         );
       },
@@ -164,41 +162,45 @@ class _AddWordScreenState extends State<AddWordScreen> {
       return;
     }
 
-    setState(() => _isLoading = true);
-
     try {
       if (widget.word == null) {
-        await wordService.addWord(Word(
-          word: wordText,
-          meaning: meaning,
-          partOfSpeech: partOfSpeech,
-          userId: '',
-          isGlobal: false,
-          createdAt: DateTime.now(),
-        ));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('เพิ่มคำศัพท์สำเร็จ')),
+        await wordService.addWord(
+          Word(
+            word: wordText,
+            meaning: meaning,
+            partOfSpeech: partOfSpeech,
+            userId: '',
+            isGlobal: false,
+            createdAt: DateTime.now(),
+          ),
         );
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('เพิ่มคำศัพท์สำเร็จ')));
       } else {
-        await wordService.updateWord(widget.word!.id!, Word(
-          word: wordText,
-          meaning: meaning,
-          partOfSpeech: partOfSpeech,
-          userId: widget.word!.userId,
-          isGlobal: widget.word!.isGlobal,
-          createdAt: widget.word!.createdAt,
-        ));
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('อัปเดตคำศัพท์สำเร็จ')),
+        await wordService.updateWord(
+          widget.word!.id!,
+          Word(
+            word: wordText,
+            meaning: meaning,
+            partOfSpeech: partOfSpeech,
+            userId: widget.word!.userId,
+            isGlobal: widget.word!.isGlobal,
+            createdAt: widget.word!.createdAt,
+          ),
         );
+        if (!mounted) return;
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('อัปเดตคำศัพท์สำเร็จ')));
       }
       Navigator.pop(context);
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('เกิดข้อผิดพลาด: $e')),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
     }
   }
 

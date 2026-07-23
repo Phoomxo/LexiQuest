@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'quiz_screen.dart';
-import 'CategoriesPage.dart';
-import 'SelectCategoryForQuiz.dart';
+import 'select_category_for_quiz.dart';
 
 class ChooseModeScreen extends StatelessWidget {
   const ChooseModeScreen({super.key});
@@ -13,7 +12,11 @@ class ChooseModeScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text(
           'เลือกรูปแบบการเรียน',
-          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontSize: 22,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         centerTitle: true,
         backgroundColor: Colors.transparent,
@@ -41,11 +44,13 @@ class ChooseModeScreen extends StatelessWidget {
                 icon: Icons.play_arrow,
                 color: Colors.red,
                 onPressed: () async {
-                  final CollectionReference vocabCollection =
-                      FirebaseFirestore.instance.collection('vocabulary');
+                  final CollectionReference vocabCollection = FirebaseFirestore
+                      .instance
+                      .collection('vocabulary');
                   final querySnapshot = await vocabCollection.get();
 
                   if (querySnapshot.docs.isEmpty) {
+                    if (!context.mounted) return;
                     _showSnackBar(context, 'ไม่มีคำศัพท์ในคลัง!');
                     return;
                   }
@@ -56,15 +61,18 @@ class ChooseModeScreen extends StatelessWidget {
                       'meaning': doc['meaning'],
                       'part_of_speech': doc['part_of_speech'],
                     };
-                  }).toList()
-                    ..shuffle(); // สุ่มคำศัพท์
+                  }).toList()..shuffle(); // สุ่มคำศัพท์
 
-                  final selectedWords = vocabList.take(10).toList(); // เลือกมา 10 คำ
+                  final selectedWords = vocabList
+                      .take(10)
+                      .toList(); // เลือกมา 10 คำ
 
+                  if (!context.mounted) return;
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => QuizScreen(vocabList: selectedWords),
+                      builder: (context) =>
+                          QuizScreen(vocabList: selectedWords),
                     ),
                   );
                 },
@@ -80,19 +88,22 @@ class ChooseModeScreen extends StatelessWidget {
                 onPressed: () async {
                   final selectedCategory = await Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => SelectCategoryForQuiz()),
+                    MaterialPageRoute(
+                      builder: (context) => SelectCategoryForQuiz(),
+                    ),
                   );
 
                   if (selectedCategory != null) {
-                    final CollectionReference wordsCollection = FirebaseFirestore
-                        .instance
-                        .collection('categories')
-                        .doc(selectedCategory)
-                        .collection('words');
+                    final CollectionReference wordsCollection =
+                        FirebaseFirestore.instance
+                            .collection('categories')
+                            .doc(selectedCategory)
+                            .collection('words');
 
                     final querySnapshot = await wordsCollection.get();
 
                     if (querySnapshot.docs.isEmpty) {
+                      if (!context.mounted) return;
                       _showSnackBar(context, 'ไม่มีคำศัพท์ในหมวดหมู่นี้!');
                       return;
                     }
@@ -103,15 +114,18 @@ class ChooseModeScreen extends StatelessWidget {
                         'meaning': doc['meaning'],
                         'part_of_speech': doc['part_of_speech'],
                       };
-                    }).toList()
-                      ..shuffle(); // สุ่มคำศัพท์
+                    }).toList()..shuffle(); // สุ่มคำศัพท์
 
-                    final selectedWords = vocabList.take(10).toList(); // เลือกแค่ 10 คำ
+                    final selectedWords = vocabList
+                        .take(10)
+                        .toList(); // เลือกแค่ 10 คำ
 
+                    if (!context.mounted) return;
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => QuizScreen(vocabList: selectedWords),
+                        builder: (context) =>
+                            QuizScreen(vocabList: selectedWords),
                       ),
                     );
                   }
@@ -125,7 +139,8 @@ class ChooseModeScreen extends StatelessWidget {
   }
 
   /// 📌 ฟังก์ชันสร้างปุ่มแบบกำหนดเอง
-  Widget _buildModeButton(BuildContext context, {
+  Widget _buildModeButton(
+    BuildContext context, {
     required String title,
     required IconData icon,
     required Color color,
@@ -138,16 +153,22 @@ class ChooseModeScreen extends StatelessWidget {
         icon: Icon(icon, size: 24, color: Colors.white),
         label: Text(
           title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+          style: const TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         style: ElevatedButton.styleFrom(
-          padding: const EdgeInsets.symmetric(vertical: 15), // ✅ ปรับความสูงของปุ่มให้เหมาะสม
+          padding: const EdgeInsets.symmetric(
+            vertical: 15,
+          ), // ✅ ปรับความสูงของปุ่มให้เหมาะสม
           backgroundColor: color,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20),
           ),
           elevation: 5,
-          shadowColor: Colors.black.withOpacity(0.3),
+          shadowColor: Colors.black.withValues(alpha: 0.3),
         ),
       ),
     );
@@ -155,8 +176,8 @@ class ChooseModeScreen extends StatelessWidget {
 
   /// 📌 ฟังก์ชันแสดง SnackBar
   void _showSnackBar(BuildContext context, String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 }
