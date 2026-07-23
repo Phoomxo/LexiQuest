@@ -4,8 +4,19 @@ Settings are loaded from environment variables (prefixed with
 ``LEXIQUEST_VOICE_``) and/or a local ``.env`` file.
 """
 
+from pathlib import Path
+
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+from lexiquest_voice.models import MAX_TEXT_LENGTH_CEILING
+
+# Resolve ``.env`` deterministically relative to this module so the service
+# loads the same configuration regardless of the process working directory.
+# The README places ``.env`` in the backend project root
+# (``backend/voice_api/.env``); ``config.py`` lives three levels below it.
+_PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+_ENV_FILE = _PROJECT_ROOT / ".env"
 
 _OMNIVOICE_ENGLISH_INSTRUCTION_ITEMS = frozenset(
     {
@@ -41,7 +52,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_prefix="LEXIQUEST_VOICE_",
-        env_file=".env",
+        env_file=_ENV_FILE,
         extra="ignore",
         frozen=True,
     )
@@ -54,7 +65,7 @@ class Settings(BaseSettings):
         "female, young adult, american accent, moderate pitch"
     )
     sample_rate: int = Field(default=24_000, gt=0)
-    max_text_length: int = Field(default=500, ge=1, le=2000)
+    max_text_length: int = Field(default=500, ge=1, le=MAX_TEXT_LENGTH_CEILING)
     generation_num_steps: int = Field(default=32, ge=1, le=128)
     guidance_scale: float = Field(default=2.0, ge=0.0, le=20.0)
     position_temperature: float = Field(default=0.0, ge=0.0, le=20.0)

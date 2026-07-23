@@ -55,9 +55,10 @@ task snippets:
 backend/
   voice_api/
     .env.example
+    .python-version
     README.md
     pyproject.toml
-    requirements-omnivoice-cu128.txt
+    uv.lock
     src/
       lexiquest_voice/
         __init__.py
@@ -661,7 +662,8 @@ git commit -m "feat: add authenticated speech endpoint"
 
 **Files:**
 - Create: `backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py`
-- Create: `backend/voice_api/requirements-omnivoice-cu128.txt`
+- Modify: `backend/voice_api/pyproject.toml`
+- Modify: `backend/voice_api/uv.lock`
 - Test: `backend/voice_api/tests/test_omnivoice_engine.py`
 
 **Interfaces:**
@@ -813,14 +815,25 @@ def _write_wav(buffer: BytesIO, audio: Any, sample_rate: int) -> None:
     sf.write(buffer, audio, sample_rate, format="WAV")
 ```
 
-`backend/voice_api/requirements-omnivoice-cu128.txt`:
+`backend/voice_api/pyproject.toml`:
 
-```text
---extra-index-url https://download.pytorch.org/whl/cu128
-torch==2.8.0+cu128
-torchaudio==2.8.0+cu128
-omnivoice==0.2.1
-soundfile==0.13.1
+```toml
+[dependency-groups]
+gpu = [
+    "omnivoice==0.2.1",
+    "soundfile==0.13.1",
+    "torch==2.8.0+cu128",
+    "torchaudio==2.8.0+cu128",
+]
+
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchaudio = { index = "pytorch-cu128" }
 ```
 
 - [ ] **Step 4: Run adapter and full tests without model dependencies**
@@ -836,7 +849,7 @@ Expected: PASS without importing Torch or OmniVoice.
 - [ ] **Step 5: Commit**
 
 ```powershell
-git add backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py backend/voice_api/requirements-omnivoice-cu128.txt backend/voice_api/tests/test_omnivoice_engine.py
+git add backend/voice_api/src/lexiquest_voice/engines/omnivoice_engine.py backend/voice_api/pyproject.toml backend/voice_api/uv.lock backend/voice_api/tests/test_omnivoice_engine.py
 git commit -m "feat: add lazy OmniVoice engine adapter"
 ```
 
@@ -922,8 +935,7 @@ app = create_app(
 Document exact commands:
 
 ```powershell
-uv sync --project backend/voice_api --dev
-uv pip install --python backend/voice_api/.venv/Scripts/python.exe -r backend/voice_api/requirements-omnivoice-cu128.txt
+uv sync --project backend/voice_api --all-groups
 $env:GOOGLE_APPLICATION_CREDENTIALS='C:\absolute\path\service-account.json'
 uv run --project backend/voice_api uvicorn lexiquest_voice.main:app --host 127.0.0.1 --port 8000
 ```

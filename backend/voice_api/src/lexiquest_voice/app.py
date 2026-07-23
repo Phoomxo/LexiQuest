@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from uuid import uuid4
 
 from fastapi import FastAPI, Header
@@ -8,8 +9,14 @@ from fastapi.responses import Response
 from lexiquest_voice.auth import TokenVerifier, extract_bearer_token
 from lexiquest_voice.config import Settings
 from lexiquest_voice.engines.base import SpeechEngine
-from lexiquest_voice.errors import model_unavailable
+from lexiquest_voice.errors import (
+    model_unavailable,
+    synthesis_failed,
+    text_too_long,
+)
 from lexiquest_voice.models import SpeechRequest
+
+logger = logging.getLogger(__name__)
 
 
 def create_app(
@@ -40,12 +47,23 @@ def create_app(
     ) -> Response:
         token = extract_bearer_token(authorization)
         token_verifier.verify(token)
-        audio = engine.synthesize(request)
+        if len(request.text) > settings.max_text_length:
+            raise text_too_long(settings.max_text_length)
+        request_id = str(uuid4())
+        try:
+            audio = engine.synthesize(request)
+        except Exception as error:
+            logger.error(
+                "Speech synthesis failed (request_id=%s): %s",
+                request_id,
+                type(error).__name__,
+            )
+            raise synthesis_failed(request_id) from None
         return Response(
             content=audio.data,
             media_type=audio.media_type,
             headers={
-                "X-Request-ID": str(uuid4()),
+                "X-Request-ID": request_id,
                 "X-Voice-Engine": audio.engine,
                 "X-Model-Version": audio.model_version,
                 "X-Audio-Sample-Rate": str(audio.sample_rate),

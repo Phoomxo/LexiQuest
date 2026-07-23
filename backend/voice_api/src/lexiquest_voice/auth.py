@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from typing import Protocol
@@ -8,7 +9,21 @@ from fastapi import HTTPException, status
 from firebase_admin import auth as firebase_auth
 from firebase_admin import get_app, initialize_app
 
+from lexiquest_voice.errors import auth_unavailable
+
+logger = logging.getLogger(__name__)
+
 TokenDecoder = Callable[[str], Mapping[str, object]]
+
+# Firebase signals a bad, expired, revoked or disabled credential with these.
+# Anything else is treated as the auth backend being unreachable.
+_INVALID_CREDENTIAL_ERRORS: tuple[type[BaseException], ...] = (
+    ValueError,
+    firebase_auth.InvalidIdTokenError,
+    firebase_auth.ExpiredIdTokenError,
+    firebase_auth.RevokedIdTokenError,
+    firebase_auth.UserDisabledError,
+)
 
 
 @dataclass(frozen=True, slots=True)
@@ -69,8 +84,16 @@ class FirebaseTokenVerifier:
     def verify(self, token: str) -> AuthenticatedUser:
         try:
             claims = self._verify_id_token(token)
-        except Exception as error:
+        except _INVALID_CREDENTIAL_ERRORS as error:
             raise _unauthenticated() from error
+        except Exception as error:
+            # Log only the exception type; never the token or its message,
+            # which could leak secrets into logs.
+            logger.warning(
+                "Firebase token verification failed: %s",
+                type(error).__name__,
+            )
+            raise auth_unavailable() from None
 
         uid = claims.get("uid")
         if not isinstance(uid, str) or not uid:

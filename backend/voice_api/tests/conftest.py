@@ -39,6 +39,23 @@ class UnavailableSpeechEngine:
         raise RuntimeError("not ready")
 
 
+class FailingSpeechEngine:
+    """Engine whose ``synthesize`` always raises with an internal message.
+
+    The message is a distinctive secret that must never reach the client or
+    the captured log; tests assert its absence.
+    """
+
+    internal_error_message = "internal-tts-blowout-7c9f3a"
+
+    @property
+    def is_ready(self) -> bool:
+        return True
+
+    def synthesize(self, request: SpeechRequest) -> AudioResult:
+        raise RuntimeError(self.internal_error_message)
+
+
 @pytest.fixture
 def token_verifier() -> FakeTokenVerifier:
     return FakeTokenVerifier()

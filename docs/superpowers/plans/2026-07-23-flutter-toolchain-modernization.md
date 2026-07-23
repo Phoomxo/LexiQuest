@@ -12,7 +12,7 @@
 
 - Keep the existing branch name `feature/omnivoice-integration`; do not introduce a `codex/` branch prefix.
 - Do not change Firebase or Supabase project identifiers, credentials, application data, or user-facing behavior.
-- Keep OmniVoice research dependencies pinned separately in `backend/voice_api/requirements-omnivoice-cu128.txt`.
+- Keep OmniVoice research dependencies in the locked `gpu` dependency group in `backend/voice_api/pyproject.toml` and `backend/voice_api/uv.lock`.
 - Treat the existing 188 analyzer warnings/info messages as baseline debt; this migration must introduce zero analyzer errors.
 - Do not commit `android/local.properties`, `.env`, service-account JSON, model weights, generated audio, or Hugging Face cache files.
 
