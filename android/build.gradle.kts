@@ -14,17 +14,6 @@ rootProject.layout.buildDirectory.value(newBuildDir)
 subprojects {
     val newSubprojectBuildDir: Directory = newBuildDir.dir(project.name)
     project.layout.buildDirectory.value(newSubprojectBuildDir)
-
-    // file_picker 11 targets AGP 9 built-in Kotlin, while other current
-    // dependencies still require Flutter's temporary legacy KGP mode.
-    if (name == "file_picker") {
-        pluginManager.apply("org.jetbrains.kotlin.android")
-        tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
-            }
-        }
-    }
 }
 subprojects {
     project.evaluationDependsOn(":app")
