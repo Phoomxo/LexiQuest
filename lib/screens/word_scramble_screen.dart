@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
-import 'FillInTheBlanksScreen.dart';
+import 'fill_in_the_blanks_screen.dart';
 
 class WordScrambleScreen extends StatefulWidget {
   final String word;
@@ -8,7 +8,7 @@ class WordScrambleScreen extends StatefulWidget {
   const WordScrambleScreen({super.key, required this.word});
 
   @override
-  _WordScrambleScreenState createState() => _WordScrambleScreenState();
+  State<WordScrambleScreen> createState() => _WordScrambleScreenState();
 }
 
 class _WordScrambleScreenState extends State<WordScrambleScreen> {
@@ -45,9 +45,9 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
         }
       });
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("❌ ผิด! ลองอีกครั้ง")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text("❌ ผิด! ลองอีกครั้ง")));
     }
   }
 
@@ -74,7 +74,8 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
           ),
         ),
         child: Center(
-          child: SingleChildScrollView(  // เพิ่ม SingleChildScrollView
+          child: SingleChildScrollView(
+            // เพิ่ม SingleChildScrollView
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -82,11 +83,12 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                   alignment: WrapAlignment.center,
                   children: List.generate(scrambledLetters.length, (index) {
                     return DragTarget<int>(
-                      onWillAccept: (draggedIndex) => userAnswer[index] == null,
-                      onAccept: (draggedIndex) {
+                      onWillAcceptWithDetails: (details) =>
+                          userAnswer[index] == null,
+                      onAcceptWithDetails: (details) {
                         setState(() {
-                          userAnswer[index] = scrambledLetters[draggedIndex];
-                          usedIndexes.add(draggedIndex);
+                          userAnswer[index] = scrambledLetters[details.data];
+                          usedIndexes.add(details.data);
                         });
                       },
                       builder: (context, candidateData, rejectedData) {
@@ -105,13 +107,16 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                                 color: Colors.black26,
                                 blurRadius: 4,
                                 offset: Offset(2, 2),
-                              )
+                              ),
                             ],
                           ),
                           alignment: Alignment.center,
                           child: Text(
                             userAnswer[index] ?? "",
-                            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         );
                       },
@@ -126,14 +131,17 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                       visible: !usedIndexes.contains(index),
                       child: Draggable<int>(
                         data: index,
-                        child: _buildLetterTile(scrambledLetters[index]),
                         feedback: Material(
-                          child: _buildLetterTile(scrambledLetters[index], isDragging: true),
+                          child: _buildLetterTile(
+                            scrambledLetters[index],
+                            isDragging: true,
+                          ),
                         ),
                         childWhenDragging: Opacity(
                           opacity: 0.0,
                           child: _buildLetterTile(scrambledLetters[index]),
                         ),
+                        child: _buildLetterTile(scrambledLetters[index]),
                       ),
                     );
                   }),
@@ -143,24 +151,36 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                   onPressed: _checkAnswer,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text("ตรวจสอบคำตอบ", style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: const Text(
+                    "ตรวจสอบคำตอบ",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
                 const SizedBox(height: 10),
                 ElevatedButton(
                   onPressed: _resetGame,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 40,
+                      vertical: 15,
+                    ),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
                   ),
-                  child: const Text("เริ่มใหม่", style: TextStyle(fontSize: 18, color: Colors.white)),
+                  child: const Text(
+                    "เริ่มใหม่",
+                    style: TextStyle(fontSize: 18, color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -185,7 +205,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
               color: Colors.black26,
               blurRadius: 4,
               offset: Offset(2, 2),
-            )
+            ),
         ],
       ),
       child: Text(

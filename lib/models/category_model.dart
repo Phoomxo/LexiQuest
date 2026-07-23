@@ -5,11 +5,7 @@ class Category {
   final String name;
   final DateTime createdAt;
 
-  Category({
-    this.id,
-    required this.name,
-    required this.createdAt,
-  });
+  Category({this.id, required this.name, required this.createdAt});
 
   // สร้าง Category object จาก Firestore Document
   factory Category.fromDocumentSnapshot(DocumentSnapshot doc) {
@@ -22,9 +18,6 @@ class Category {
 
   // แปลง Category object เป็น Map สำหรับบันทึกลง Firestore
   Map<String, dynamic> toMap() {
-    return {
-      'category_name': name,
-      'created_at': Timestamp.fromDate(createdAt),
-    };
+    return {'category_name': name, 'created_at': Timestamp.fromDate(createdAt)};
   }
 }

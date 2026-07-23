@@ -1,11 +1,11 @@
-
 import 'dart:developer';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class QuizService {
-  final CollectionReference _quizCollection =
-      FirebaseFirestore.instance.collection('quiz');
+  final CollectionReference _quizCollection = FirebaseFirestore.instance
+      .collection('quiz');
 
   /// บันทึกคำถามลง Firestore
   Future<void> saveQuestionToFirestore({
@@ -25,10 +25,9 @@ class QuizService {
   Future<void> savePointsToFirestore(int points) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .update({'points': points});
+      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
+        {'points': points},
+      );
     }
   }
 
@@ -38,10 +37,9 @@ class QuizService {
     required List<String> allMeanings,
     int numberOfFakes = 3,
   }) {
-    final fakeOptions = allMeanings
-        .where((meaning) => meaning != correctAnswer)
-        .toList()
-      ..shuffle();
+    final fakeOptions =
+        allMeanings.where((meaning) => meaning != correctAnswer).toList()
+          ..shuffle();
     final options = [correctAnswer, ...fakeOptions.take(numberOfFakes)];
     options.shuffle();
     return options;
@@ -49,14 +47,11 @@ class QuizService {
 
   /// ดึงคำศัพท์จาก Firestore และสร้างคำถามแบบสุ่ม
   Future<void> generateQuizQuestions(int numberOfQuestions) async {
-   
     try {
       final user = FirebaseAuth.instance.currentUser;
-     
-     
+
       if (user == null) {
         throw Exception('User not signed in');
-        
       }
 
       // ดึงคำศัพท์ทั้งหมดจาก collection 'vocabulary'
@@ -71,10 +66,7 @@ class QuizService {
       // สร้างรายการคำศัพท์จากเอกสารที่ดึงมา
       final vocabList = querySnapshot.docs.map((doc) {
         final data = doc.data();
-        return {
-          'word': data['word'],
-          'meaning': data['meaning'],
-        };
+        return {'word': data['word'], 'meaning': data['meaning']};
       }).toList();
 
       // สุ่มเลือกคำถามจำนวนที่ต้องการ
@@ -98,9 +90,9 @@ class QuizService {
         );
       }
 
-      print('Quiz questions generated and saved successfully.');
+      debugPrint('Quiz questions generated and saved successfully.');
     } catch (e) {
-      print('Failed to generate quiz questions: $e');
+      debugPrint('Failed to generate quiz questions: $e');
     }
   }
 }

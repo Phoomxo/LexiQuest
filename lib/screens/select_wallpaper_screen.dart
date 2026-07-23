@@ -4,8 +4,10 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SelectWallpaperScreen extends StatefulWidget {
+  const SelectWallpaperScreen({super.key});
+
   @override
-  _SelectWallpaperScreenState createState() => _SelectWallpaperScreenState();
+  State<SelectWallpaperScreen> createState() => _SelectWallpaperScreenState();
 }
 
 class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
@@ -57,15 +59,17 @@ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
   Future<void> _setWallpaper(String wallpaperUrl) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      await FirebaseFirestore.instance.collection('state').doc(user.uid).update({
-        'selectedWallpaper': wallpaperUrl == "default" ? null : wallpaperUrl,
-      });
+      await FirebaseFirestore.instance.collection('state').doc(user.uid).update(
+        {'selectedWallpaper': wallpaperUrl == "default" ? null : wallpaperUrl},
+      );
       setState(() {
         selectedWallpaper = wallpaperUrl;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์สำเร็จ!')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('เปลี่ยนวอลเปเปอร์สำเร็จ!')),
+        );
+      }
     }
   }
 
@@ -97,13 +101,15 @@ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
+                            color: Colors.black.withValues(alpha: 0.2),
                             blurRadius: 5,
                             spreadRadius: 2,
-                          )
+                          ),
                         ],
                         border: Border.all(
-                          color: isSelected ? Colors.blueAccent : Colors.transparent,
+                          color: isSelected
+                              ? Colors.blueAccent
+                              : Colors.transparent,
                           width: 3,
                         ),
                       ),
@@ -113,20 +119,25 @@ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
                             ? Container(
                                 color: Colors.grey.shade300,
                                 child: const Center(
-                                  child: Icon(Icons.image, size: 50, color: Colors.grey),
+                                  child: Icon(
+                                    Icons.image,
+                                    size: 50,
+                                    color: Colors.grey,
+                                  ),
                                 ),
                               )
                             : Image.network(
                                 wallpaper,
                                 fit: BoxFit.cover,
-                                loadingBuilder: (context, child, loadingProgress) {
-                                  if (loadingProgress == null) return child;
-                                  return const Center(child: CircularProgressIndicator());
-                                },
-                                errorBuilder: (context, error, stackTrace) => const Icon(
-                                  Icons.error,
-                                  color: Colors.red,
-                                ),
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return const Center(
+                                        child: CircularProgressIndicator(),
+                                      );
+                                    },
+                                errorBuilder: (context, error, stackTrace) =>
+                                    const Icon(Icons.error, color: Colors.red),
                               ),
                       ),
                     ),

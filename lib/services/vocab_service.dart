@@ -21,7 +21,7 @@ class VocabService {
       }).toList();
 
       // สุ่มคำศัพท์และจำกัดจำนวน
-      allVocab.shuffle();  // Shuffle รายการคำศัพท์
+      allVocab.shuffle(); // Shuffle รายการคำศัพท์
       return allVocab.take(limit).toList(); // เลือกคำศัพท์ตามจำนวนที่ต้องการ
     } catch (e) {
       throw Exception('Failed to fetch vocabulary: $e');
@@ -47,8 +47,8 @@ class VocabService {
         return Vocab.fromMap(doc.data(), doc.id);
       }).toList();
 
-      vocabList.shuffle();  // Shuffle รายการคำศัพท์
-      return vocabList;  // ส่งผลลัพธ์
+      vocabList.shuffle(); // Shuffle รายการคำศัพท์
+      return vocabList; // ส่งผลลัพธ์
     } catch (e) {
       throw Exception('Failed to fetch vocabulary from category: $e');
     }

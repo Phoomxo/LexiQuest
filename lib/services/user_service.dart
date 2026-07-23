@@ -55,19 +55,19 @@ class UserService {
       throw Exception('Failed to update user points: $e');
     }
   }
-  
+
   Future<int> getTotalPointsFromState() async {
-  try {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final doc = await _firestore.collection('state').doc(user.uid).get();
-      if (doc.exists) {
-        return doc.data()!['totalPoints'] ?? 0;
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final doc = await _firestore.collection('state').doc(user.uid).get();
+        if (doc.exists) {
+          return doc.data()!['totalPoints'] ?? 0;
+        }
       }
+    } catch (e) {
+      throw Exception('Failed to fetch total points: $e');
     }
-  } catch (e) {
-    throw Exception('Failed to fetch total points: $e');
+    return 0;
   }
-  return 0;
-}
 }

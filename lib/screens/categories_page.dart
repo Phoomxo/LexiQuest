@@ -22,7 +22,9 @@ class CategoriesPage extends StatelessWidget {
         await _categoryService.addDefaultCategoriesForNewUser(user.uid);
         await prefs.setBool('categories_added', true);
       } else {
-        print('✅ Default categories have already been added for user ${user.uid}');
+        debugPrint(
+          '✅ Default categories have already been added for user ${user.uid}',
+        );
       }
     }
   }
@@ -38,7 +40,11 @@ class CategoriesPage extends StatelessWidget {
   }
 
   /// 🔥 ฟังก์ชันลบหมวดหมู่
-  void _deleteCategory(BuildContext context, String categoryId, String categoryName) {
+  void _deleteCategory(
+    BuildContext context,
+    String categoryId,
+    String categoryName,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -53,6 +59,7 @@ class CategoriesPage extends StatelessWidget {
             child: const Text('ลบ', style: TextStyle(color: Colors.red)),
             onPressed: () async {
               await _categoryService.deleteCategory(categoryId);
+              if (!context.mounted) return;
               Navigator.pop(context);
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(content: Text('ลบหมวด "$categoryName" สำเร็จ!')),
@@ -132,9 +139,10 @@ class CategoriesPage extends StatelessWidget {
                           ),
                         );
                       },
-                      onLongPress: () => _deleteCategory(context, category.id!, category.name),
+                      onLongPress: () =>
+                          _deleteCategory(context, category.id!, category.name),
                       child: Card(
-                        color: Colors.white.withOpacity(0.9),
+                        color: Colors.white.withValues(alpha: 0.9),
                         elevation: 5,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(15),
@@ -150,14 +158,19 @@ class CategoriesPage extends StatelessWidget {
                             const SizedBox(height: 10),
                             Text(
                               category.name,
-                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
                             ),
                             const SizedBox(height: 5),
                             Text(
                               '$wordCount/50 คำ',
                               style: TextStyle(
                                 fontSize: 14,
-                                color: wordCount >= 50 ? Colors.red : Colors.black,
+                                color: wordCount >= 50
+                                    ? Colors.red
+                                    : Colors.black,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
@@ -223,6 +236,7 @@ class CategoriesPage extends StatelessWidget {
               if (categoryName.isNotEmpty) {
                 await _categoryService.addCategory(categoryName);
               }
+              if (!context.mounted) return;
               Navigator.pop(context);
             },
           ),

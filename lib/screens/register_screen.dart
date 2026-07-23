@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
-import 'LoginScreen.dart';
+import 'login_screen.dart';
 import '../services/auth_service.dart';
-import 'OTPScreen.dart';
+import 'otp_screen.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
   @override
-  _RegisterScreenState createState() => _RegisterScreenState();
+  State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
@@ -17,7 +17,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
 
   bool _isValidEmail(String email) {
-    final RegExp regex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+    final RegExp regex = RegExp(
+      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
+    );
     return regex.hasMatch(email);
   }
 
@@ -35,6 +37,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       // ให้ Firebase ส่งอีเมลยืนยัน
       await _authService.sendEmailVerification(email, password);
 
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('กรุณาตรวจสอบอีเมลของคุณเพื่อยืนยันบัญชี')),
       );
@@ -45,6 +48,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
         MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
       );
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to send verification email: $e')),
       );
@@ -110,7 +114,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             onPressed: _sendVerificationEmail,
                             style: ElevatedButton.styleFrom(
                               padding: const EdgeInsets.symmetric(
-                                  vertical: 14, horizontal: 50),
+                                vertical: 14,
+                                horizontal: 50,
+                              ),
                               backgroundColor: Colors.blueAccent,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -118,14 +124,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                             child: const Text(
                               'ส่งอีเมลยืนยัน',
-                              style: TextStyle(fontSize: 18, color: Colors.white),
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const LoginScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const LoginScreen(),
+                          ),
                         );
                       },
                       child: const Text('Already have an account? Login here'),

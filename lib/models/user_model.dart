@@ -45,16 +45,11 @@ class UserModel {
 
   // Factory method สำหรับสร้าง UserModel จาก Firestore Document
   factory UserModel.fromMap(Map<String, dynamic> data, String id) {
-    return UserModel(
-      id: id,
-      points: data['points'] ?? 0,
-    );
+    return UserModel(id: id, points: data['points'] ?? 0);
   }
 
   // แปลง UserModel object เป็น Map เพื่อบันทึกใน Firestore
   Map<String, dynamic> toMap() {
-    return {
-      'points': points,
-    };
+    return {'points': points};
   }
 }

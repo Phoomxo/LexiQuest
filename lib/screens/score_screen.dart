@@ -2,9 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:vocab_learning_app/main.dart';
-import 'ResultScreen.dart';
-import 'quiz_screen.dart';
-import 'ChooseModeScreen.dart';
+import 'choose_mode_screen.dart';
 
 class ScoreScreen extends StatelessWidget {
   final int correctAnswers;
@@ -24,16 +22,17 @@ class ScoreScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('กรุณาเข้าสู่ระบบ')),
-      );
+      return const Scaffold(body: Center(child: Text('กรุณาเข้าสู่ระบบ')));
     }
 
     // ✅ อัปเดตข้อมูลผู้ใช้ใน Firestore
     _updateUserStats(user.uid, correctAnswers, wrongAnswers);
 
     return FutureBuilder<DocumentSnapshot>(
-      future: FirebaseFirestore.instance.collection('state').doc(user.uid).get(),
+      future: FirebaseFirestore.instance
+          .collection('state')
+          .doc(user.uid)
+          .get(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -43,7 +42,9 @@ class ScoreScreen extends StatelessWidget {
           return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดคะแนน!'));
         }
 
-        if (!snapshot.hasData || snapshot.data == null || !snapshot.data!.exists) {
+        if (!snapshot.hasData ||
+            snapshot.data == null ||
+            !snapshot.data!.exists) {
           return const Center(child: Text('ไม่พบข้อมูลคะแนน!'));
         }
 
@@ -55,23 +56,26 @@ class ScoreScreen extends StatelessWidget {
 
         return Scaffold(
           appBar: AppBar(
-  title: const Text(
-    'ผลลัพธ์ของคุณ',
-    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  flexibleSpace: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.deepPurple, Colors.indigo],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-      ),
-    ),
-  ),
-),
+            title: const Text(
+              'ผลลัพธ์ของคุณ',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+            centerTitle: true,
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            flexibleSpace: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.deepPurple, Colors.indigo],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+            ),
+          ),
 
           body: Padding(
             padding: const EdgeInsets.all(16.0),
@@ -80,7 +84,9 @@ class ScoreScreen extends StatelessWidget {
               children: [
                 // 🏆 แสดงคะแนนรวม
                 Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
                   elevation: 5,
                   child: Padding(
                     padding: const EdgeInsets.all(20.0),
@@ -88,7 +94,10 @@ class ScoreScreen extends StatelessWidget {
                       children: [
                         const Text(
                           'แต้มสะสมทั้งหมด',
-                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -96,7 +105,9 @@ class ScoreScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 40,
                             fontWeight: FontWeight.bold,
-                            color: totalPoints > 50 ? Colors.green : Colors.redAccent,
+                            color: totalPoints > 50
+                                ? Colors.green
+                                : Colors.redAccent,
                           ),
                         ),
                       ],
@@ -107,9 +118,24 @@ class ScoreScreen extends StatelessWidget {
                 const SizedBox(height: 20),
 
                 // 📊 แสดงสถิติการเล่น
-                _buildStatCard('จำนวนครั้งที่เล่น', gamesPlayed.toString(), Icons.history, Colors.deepPurple),
-                _buildStatCard('ตอบถูกทั้งหมด', totalCorrectAnswers.toString(), Icons.check_circle, Colors.green),
-                _buildStatCard('ตอบผิดทั้งหมด', totalWrongAnswers.toString(), Icons.cancel, Colors.red),
+                _buildStatCard(
+                  'จำนวนครั้งที่เล่น',
+                  gamesPlayed.toString(),
+                  Icons.history,
+                  Colors.deepPurple,
+                ),
+                _buildStatCard(
+                  'ตอบถูกทั้งหมด',
+                  totalCorrectAnswers.toString(),
+                  Icons.check_circle,
+                  Colors.green,
+                ),
+                _buildStatCard(
+                  'ตอบผิดทั้งหมด',
+                  totalWrongAnswers.toString(),
+                  Icons.cancel,
+                  Colors.red,
+                ),
 
                 const SizedBox(height: 30),
 
@@ -122,14 +148,22 @@ class ScoreScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) => const ChooseModeScreen()),
+                          MaterialPageRoute(
+                            builder: (context) => const ChooseModeScreen(),
+                          ),
                         );
                       },
                       icon: const Icon(Icons.replay, color: Colors.white),
-                      label: const Text('เล่นใหม่', style: TextStyle(color: Colors.white)),
+                      label: const Text(
+                        'เล่นใหม่',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.deepPurple,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 15,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -141,15 +175,23 @@ class ScoreScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pushAndRemoveUntil(
                           context,
-                          MaterialPageRoute(builder: (context) => const MainNavigation()),
+                          MaterialPageRoute(
+                            builder: (context) => const MainNavigation(),
+                          ),
                           (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
                         );
                       },
                       icon: const Icon(Icons.home, color: Colors.white),
-                      label: const Text('กลับหน้าหลัก', style: TextStyle(color: Colors.white)),
+                      label: const Text(
+                        'กลับหน้าหลัก',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.red,
-                        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 30,
+                          vertical: 15,
+                        ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -166,25 +208,38 @@ class ScoreScreen extends StatelessWidget {
   }
 
   /// ✅ ฟังก์ชันอัปเดตข้อมูลใน Firestore
-  Future<void> _updateUserStats(String userId, int correctAnswers, int wrongAnswers) async {
+  Future<void> _updateUserStats(
+    String userId,
+    int correctAnswers,
+    int wrongAnswers,
+  ) async {
     final userRef = FirebaseFirestore.instance.collection('state').doc(userId);
 
     try {
       await userRef.set({
         'totalPoints': FieldValue.increment(correctAnswers), // ✅ เพิ่มแต้มสะสม
-        'totalCorrectAnswers': FieldValue.increment(correctAnswers), // ✅ บันทึกคำตอบที่ถูก
-        'totalWrongAnswers': FieldValue.increment(wrongAnswers), // ✅ บันทึกคำตอบที่ผิด
+        'totalCorrectAnswers': FieldValue.increment(
+          correctAnswers,
+        ), // ✅ บันทึกคำตอบที่ถูก
+        'totalWrongAnswers': FieldValue.increment(
+          wrongAnswers,
+        ), // ✅ บันทึกคำตอบที่ผิด
         'gamesPlayed': FieldValue.increment(1), // ✅ เพิ่มจำนวนครั้งที่เล่น
       }, SetOptions(merge: true));
 
-      print("✅ อัปเดตคะแนนสำเร็จ");
+      debugPrint("✅ อัปเดตคะแนนสำเร็จ");
     } catch (e) {
-      print("❌ เกิดข้อผิดพลาดในการอัปเดตคะแนน: $e");
+      debugPrint("❌ เกิดข้อผิดพลาดในการอัปเดตคะแนน: $e");
     }
   }
 
   /// 📌 ฟังก์ชันสร้างการ์ดแสดงสถิติ
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       elevation: 4,

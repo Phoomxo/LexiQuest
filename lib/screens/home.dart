@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/category_service.dart';
 import '../models/category_model.dart';
-import 'ChooseModeScreen.dart';
-import 'CategoriesPage.dart';
+import 'choose_mode_screen.dart';
 
 class Home extends StatelessWidget {
   final CategoryService _categoryService = CategoryService();
@@ -13,23 +12,23 @@ class Home extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-  title: const Text(
-    'แบบฝึกหัดคำศัพท์',
-    style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-  ),
-  centerTitle: true,
-  backgroundColor: Colors.transparent,
-  elevation: 0,
-  flexibleSpace: Container(
-    decoration: const BoxDecoration(
-      gradient: LinearGradient(
-        colors: [Colors.deepPurple, Colors.indigo],
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
+        title: const Text(
+          'แบบฝึกหัดคำศัพท์',
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Colors.deepPurple, Colors.indigo],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+        ),
       ),
-    ),
-  ),
-),
 
       body: Column(
         children: [
@@ -46,12 +45,14 @@ class Home extends StatelessWidget {
                 ),
                 const SizedBox(height: 5),
                 LinearProgressIndicator(
-  value: 0.4,
-  backgroundColor: Colors.white.withOpacity(0.3), // ✅ ทำให้โปร่งใส
-  color: Colors.amberAccent, // ✅ เปลี่ยนสีแถบความก้าวหน้าให้โดดเด่น
-  minHeight: 8,
-),
-
+                  value: 0.4,
+                  backgroundColor: Colors.white.withValues(
+                    alpha: 0.3,
+                  ), // ✅ ทำให้โปร่งใส
+                  color: Colors
+                      .amberAccent, // ✅ เปลี่ยนสีแถบความก้าวหน้าให้โดดเด่น
+                  minHeight: 8,
+                ),
               ],
             ),
           ),
@@ -69,7 +70,9 @@ class Home extends StatelessWidget {
                     return const Center(child: CircularProgressIndicator());
                   }
                   if (snapshot.hasError) {
-                    return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดหมวดหมู่'));
+                    return const Center(
+                      child: Text('เกิดข้อผิดพลาดในการโหลดหมวดหมู่'),
+                    );
                   }
 
                   final categories = snapshot.data ?? [];
@@ -78,12 +81,13 @@ class Home extends StatelessWidget {
                   }
 
                   return GridView.builder(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 1.2,
-                      mainAxisSpacing: 15,
-                      crossAxisSpacing: 15,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 1.2,
+                          mainAxisSpacing: 15,
+                          crossAxisSpacing: 15,
+                        ),
                     itemCount: categories.length,
                     itemBuilder: (context, index) {
                       final category = categories[index];
@@ -112,14 +116,21 @@ class Home extends StatelessWidget {
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 50),
+                padding: const EdgeInsets.symmetric(
+                  vertical: 18,
+                  horizontal: 50,
+                ),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(20),
                 ),
               ),
               child: const Text(
                 'เริ่มเรียนรู้',
-                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
           ),
@@ -131,23 +142,30 @@ class Home extends StatelessWidget {
   // 📌 ฟังก์ชันสร้างการ์ดหมวดหมู่คำศัพท์
   Widget _buildCategoryCard(String title, IconData icon, Color color) {
     return Card(
-  color: Colors.white.withOpacity(0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
-  elevation: 5,
-  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-  child: InkWell(
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Icon(icon, size: 40, color: Colors.deepPurple), // ✅ เปลี่ยนสีไอคอนให้เข้ากับธีม
-        const SizedBox(height: 10),
-        Text(
-          title,
-          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black87),
+      color: Colors.white.withValues(alpha: 0.9), // ✅ ทำให้การ์ดโปร่งใสเล็กน้อย
+      elevation: 5,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      child: InkWell(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              icon,
+              size: 40,
+              color: Colors.deepPurple,
+            ), // ✅ เปลี่ยนสีไอคอนให้เข้ากับธีม
+            const SizedBox(height: 10),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+          ],
         ),
-      ],
-    ),
-  ),
-);
-
+      ),
+    );
   }
 }
