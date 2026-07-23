@@ -66,8 +66,13 @@ final class OmniVoiceAudio {
   Uint8List get bytes => Uint8List.fromList(_bytes);
 }
 
+/// Provider-neutral boundary for synthesizing WAV audio through OmniVoice.
+abstract interface class OmniVoiceSynthesizer {
+  Future<OmniVoiceAudio> synthesize(VoiceRequest request);
+}
+
 /// Sends authenticated speech requests to the OmniVoice WAV API.
-final class OmniVoiceProvider {
+final class OmniVoiceProvider implements OmniVoiceSynthesizer {
   factory OmniVoiceProvider({
     required http.Client client,
     required VoiceAuthTokenProvider authTokenProvider,
@@ -94,6 +99,7 @@ final class OmniVoiceProvider {
   final Uri _speechUri;
   final Duration _timeout;
 
+  @override
   Future<OmniVoiceAudio> synthesize(VoiceRequest request) async {
     final body = <String, Object>{
       'text': request.text,
