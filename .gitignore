@@ -10,6 +10,8 @@
 .svn/
 migrate_working_dir/
 .worktrees/
+.firecrawl/
+node_modules/
 
 # IntelliJ related
 *.iml
