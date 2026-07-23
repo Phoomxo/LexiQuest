@@ -1,18 +1,45 @@
 # LexiQuest Voice API
 
-Authenticated voice-design text-to-speech proof of concept for LexiQuest.
-The service generates a locked teacher voice with OmniVoice. It does not
-perform voice cloning.
+Component-level backend proof of concept (POC) / spike for LexiQuest text to
+speech. It targets a single locked "teacher" voice generated with OmniVoice and
+does not perform voice cloning.
+
+## Status
+
+This is a research spike, not a completed backend. The only verified evidence
+to date is:
+
+- **`OmniVoiceEngine` CUDA synthesis**, exercised directly against the engine
+  on an NVIDIA GeForce RTX 3050, producing a 24 kHz WAV with the locked
+  research preset. No HTTP layer was involved in this check.
+- **The FastAPI HTTP contract, exercised by fake-injected tests** that supply a
+  `FakeTokenVerifier` and a `FakeSpeechEngine`. These need no Firebase
+  credentials, GPU, or OmniVoice model.
+
+The following are explicitly **not yet completed**:
+
+- A real **Firebase + ASGI + OmniVoice end-to-end run** of
+  `lexiquest_voice.main` with live credentials, the OmniVoice runtime, and a
+  serving HTTP server. The production assembly is implemented but has not been
+  executed or validated end to end.
+- **Thai/English golden-set evaluation** of generated speech.
+- **Flutter integration**, which remains Phase 3 of the rollout.
+
+Accordingly Phase 2 (backend proof of concept) is partial, not complete.
 
 ## Architecture
 
 The FastAPI HTTP layer depends on `SpeechEngine` and `TokenVerifier`
-interfaces. Production uses OmniVoice and Firebase Admin; tests inject small
-fakes, so the unit suite does not download a model or require a GPU.
+interfaces. The intended production wiring uses OmniVoice and Firebase Admin;
+tests inject small fakes, so the test suite does not download a model or
+require a GPU.
 
-Importing `lexiquest_voice.main` initializes Firebase, loads the pinned model,
-and only then exports the ASGI application. A load failure prevents the
-production process from serving traffic.
+`lexiquest_voice.main` assembles the production ASGI application: it builds a
+`Settings`, a `FirebaseTokenVerifier`, and an `OmniVoiceEngine`, loads the
+engine, and exports the FastAPI app. Importing it initializes Firebase and
+loads the pinned model, so a load failure would prevent the process from
+serving traffic. This assembly is implemented but has not yet been run
+end-to-end (see Status).
 
 ## Requirements
 
@@ -31,11 +58,13 @@ through `OmniVoiceEngine` using the locked research preset.
 From the repository root:
 
 ```powershell
-uv sync --project backend/voice_api --dev
-uv pip install --python backend/voice_api/.venv/Scripts/python.exe -r backend/voice_api/requirements-omnivoice-cu128.txt
+uv sync --project backend/voice_api --all-groups
 Copy-Item backend/voice_api/.env.example backend/voice_api/.env
 $env:GOOGLE_APPLICATION_CREDENTIALS='C:\absolute\path\service-account.json'
 ```
+
+`--all-groups` installs the runtime dependencies plus the `dev` test group and the
+`gpu` group, which pins the CUDA 12.8 PyTorch wheels and OmniVoice.
 
 Do not commit `.env`, service-account JSON, model weights, or generated audio.
 
@@ -76,6 +105,9 @@ The response is `audio/wav` and includes `X-Request-ID`,
 uv run --project backend/voice_api pytest backend/voice_api/tests -v
 uv run --project backend/voice_api pytest backend/voice_api/tests --cov=lexiquest_voice --cov-report=term-missing
 ```
+
+Tests inject `FakeTokenVerifier` and a `FakeSpeechEngine`, so they run without
+Firebase credentials, a GPU, or the OmniVoice runtime.
 
 ## Locked research configuration
 
