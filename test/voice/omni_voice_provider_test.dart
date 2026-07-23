@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
@@ -154,6 +155,130 @@ Future<_AuthRetryOutcome> _runSecondUnauthorized({
       server: server,
       tokenProvider: tokenProvider,
     );
+  }
+}
+
+const Duration _tinyTimeout = Duration(milliseconds: 1);
+
+http.Response _errorResponse(
+  int status, {
+  String? code,
+  String message = 'error-message',
+  String? detailTrace,
+}) {
+  final detail = <String, Object>{'message': message};
+  if (code != null) detail['code'] = code;
+  if (detailTrace != null) detail['trace'] = detailTrace;
+  return http.Response(
+    jsonEncode(<String, Object>{'detail': detail}),
+    status,
+    headers: const <String, String>{'content-type': 'application/json'},
+  );
+}
+
+http.Response _wavResponseWith({
+  String contentType = 'audio/wav',
+  List<int>? bytes,
+  String? requestId = 'req-123',
+  String? engine = 'omnivoice-prod',
+  String? modelVersion = 'omnivoice-2026-07',
+  String? sampleRate = '24000',
+}) {
+  return http.Response.bytes(
+    bytes ?? _wavBytes,
+    200,
+    headers: <String, String>{
+      if (contentType.isNotEmpty) 'content-type': contentType,
+      'x-request-id': ?requestId,
+      'x-voice-engine': ?engine,
+      'x-model-version': ?modelVersion,
+      'x-audio-sample-rate': ?sampleRate,
+    },
+  );
+}
+
+List<({String name, http.Response response})> _malformedWavCases() {
+  return <({String name, http.Response response})>[
+    (
+      name: 'non-WAV content type',
+      response: _wavResponseWith(contentType: 'audio/mpeg'),
+    ),
+    (name: 'empty bytes', response: _wavResponseWith(bytes: <int>[])),
+    (name: 'blank request id', response: _wavResponseWith(requestId: '   ')),
+    (name: 'missing request id', response: _wavResponseWith(requestId: null)),
+    (name: 'blank voice engine', response: _wavResponseWith(engine: '   ')),
+    (name: 'missing voice engine', response: _wavResponseWith(engine: null)),
+    (
+      name: 'blank model version',
+      response: _wavResponseWith(modelVersion: '   '),
+    ),
+    (
+      name: 'missing model version',
+      response: _wavResponseWith(modelVersion: null),
+    ),
+    (name: 'missing sample rate', response: _wavResponseWith(sampleRate: null)),
+    (
+      name: 'non-integer sample rate',
+      response: _wavResponseWith(sampleRate: 'not-a-number'),
+    ),
+    (
+      name: 'non-positive sample rate',
+      response: _wavResponseWith(sampleRate: '0'),
+    ),
+  ];
+}
+
+OmniVoiceProvider _providerWith({
+  required http.Client client,
+  Duration timeout = const Duration(seconds: 30),
+  _RecordingTokenProvider? tokenProvider,
+}) {
+  return OmniVoiceProvider(
+    client: client,
+    authTokenProvider: tokenProvider ?? _RecordingTokenProvider(),
+    baseUri: _baseUri,
+    timeout: timeout,
+  );
+}
+
+class _ErrorOutcome {
+  const _ErrorOutcome({
+    this.failure,
+    required this.server,
+    required this.tokens,
+  });
+
+  final VoiceFailure? failure;
+  final _SpeechServer server;
+  final _RecordingTokenProvider tokens;
+}
+
+Future<_ErrorOutcome> _runResponse(http.Response response) async {
+  final server = _SpeechServer(<http.Response>[response]);
+  final tokens = _RecordingTokenProvider();
+  try {
+    await _provider(
+      server: server,
+      tokenProvider: tokens,
+    ).synthesize(_validRequest());
+    return _ErrorOutcome(server: server, tokens: tokens);
+  } on VoiceFailure catch (failure) {
+    return _ErrorOutcome(failure: failure, server: server, tokens: tokens);
+  }
+}
+
+Future<VoiceFailure> _failureFromResponse(http.Response response) async {
+  final outcome = await _runResponse(response);
+  expect(outcome.failure, isNotNull, reason: 'Expected a VoiceFailure.');
+  return outcome.failure!;
+}
+
+Future<VoiceFailure> _captureFailure(Future<void> Function() action) async {
+  try {
+    await action();
+    fail('Expected a VoiceFailure.');
+  } on VoiceFailure catch (failure) {
+    return failure;
   }
 }
 
@@ -325,5 +450,158 @@ void main() {
     ).synthesize(_validRequest());
 
     expect(audio, isA<OmniVoiceAudio>());
+  });
+
+  test('maps backend status/code to VoiceFailure categories', () async {
+    const cases = <(int, String?, VoiceFailureCategory)>[
+      (400, null, VoiceFailureCategory.validation),
+      (422, 'TEXT_TOO_LONG', VoiceFailureCategory.validation),
+      (422, null, VoiceFailureCategory.validation),
+      (429, 'RATE_LIMITED', VoiceFailureCategory.rateLimited),
+      (503, 'MODEL_UNAVAILABLE', VoiceFailureCategory.modelUnavailable),
+      (503, 'SYNTHESIS_FAILED', VoiceFailureCategory.synthesis),
+      (503, 'AUTH_UNAVAILABLE', VoiceFailureCategory.authentication),
+      (500, 'UNRECOGNIZED_CODE', VoiceFailureCategory.unknown),
+    ];
+
+    for (final (status, code, expected) in cases) {
+      final failure = await _failureFromResponse(
+        _errorResponse(status, code: code),
+      );
+      expect(failure.category, expected, reason: 'status $status code $code');
+    }
+  });
+
+  test('malformed 200 responses map to synthesis', () async {
+    for (final testCase in _malformedWavCases()) {
+      final outcome = await _runResponse(testCase.response);
+
+      expect(outcome.failure, isNotNull, reason: testCase.name);
+      expect(
+        outcome.failure!.category,
+        VoiceFailureCategory.synthesis,
+        reason: testCase.name,
+      );
+    }
+  });
+
+  test('non-401 errors never refresh the token or retry', () async {
+    final responses = <http.Response>[
+      _errorResponse(429, code: 'RATE_LIMITED'),
+      _errorResponse(503, code: 'MODEL_UNAVAILABLE'),
+    ];
+
+    for (final response in responses) {
+      final outcome = await _runResponse(response);
+
+      expect(outcome.failure, isNotNull);
+      expect(outcome.tokens.forceRefreshFlags, <bool>[false]);
+      expect(outcome.server.requests, hasLength(1));
+    }
+  });
+
+  test('timeout maps to a timeout VoiceFailure', () async {
+    final client = MockClient((_) => Completer<http.Response>().future);
+    final provider = _providerWith(client: client, timeout: _tinyTimeout);
+
+    await expectLater(
+      provider.synthesize(_validRequest()),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.timeout,
+        ),
+      ),
+    );
+  });
+
+  test('timeout uses one fixed safe message', () async {
+    Future<VoiceFailure> capture() async {
+      final client = MockClient((_) => Completer<http.Response>().future);
+      final provider = _providerWith(client: client, timeout: _tinyTimeout);
+      return _captureFailure(() => provider.synthesize(_validRequest()));
+    }
+
+    final first = await capture();
+    final second = await capture();
+
+    expect(first.toString(), second.toString());
+  });
+
+  test('http.ClientException maps to a network VoiceFailure', () async {
+    final client = MockClient(
+      (_) async =>
+          throw http.ClientException('credential-sentinel-7c9f3a body-leak'),
+    );
+    final provider = _providerWith(client: client);
+
+    await expectLater(
+      provider.synthesize(_validRequest()),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.network,
+        ),
+      ),
+    );
+  });
+
+  test('network failure uses a fixed safe message and leaks nothing', () async {
+    Future<VoiceFailure> capture(String message) async {
+      final client = MockClient(
+        (_) async => throw http.ClientException(message),
+      );
+      final provider = _providerWith(client: client);
+      return _captureFailure(() => provider.synthesize(_validRequest()));
+    }
+
+    final first = await capture('credential-sentinel-aaa');
+    final second = await capture('different-body-bbb');
+
+    expect(first.toString(), second.toString());
+    expect(first.toString(), isNot(contains('credential-sentinel-aaa')));
+    expect(first.toString(), isNot(contains('different-body-bbb')));
+  });
+
+  test('failure never exposes error body, code, or message', () async {
+    final failure = await _failureFromResponse(
+      _errorResponse(
+        429,
+        code: 'RATE_LIMITED-LEAK',
+        message: 'leaky-message-7c9f3a',
+        detailTrace: 'leaky-trace-body-7c9f3a',
+      ),
+    );
+    final text = failure.toString();
+
+    expect(text, isNot(contains('RATE_LIMITED-LEAK')));
+    expect(text, isNot(contains('leaky-message-7c9f3a')));
+    expect(text, isNot(contains('leaky-trace-body-7c9f3a')));
+  });
+
+  test('same source category yields identical safe toString', () async {
+    final first = await _failureFromResponse(
+      _errorResponse(429, code: 'RATE_LIMITED', message: 'first detail'),
+    );
+    final second = await _failureFromResponse(
+      _errorResponse(429, code: 'RATE_LIMITED', message: 'second detail'),
+    );
+
+    expect(first.toString(), second.toString());
+  });
+
+  test('mutating a returned bytes copy cannot alter later reads', () async {
+    final server = _SpeechServer(<http.Response>[_wavResponse()]);
+    final audio = await _provider(
+      server: server,
+      tokenProvider: _RecordingTokenProvider(),
+    ).synthesize(_validRequest());
+
+    final firstRead = audio.bytes;
+    firstRead[0] = 0xFF;
+
+    expect(audio.bytes, Uint8List.fromList(_wavBytes));
   });
 }
