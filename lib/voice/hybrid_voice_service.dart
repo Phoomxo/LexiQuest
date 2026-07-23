@@ -1,4 +1,5 @@
 import 'omni_voice_provider.dart';
+import 'voice_audio_cache.dart';
 import 'voice_audio_player.dart';
 import 'voice_models.dart';
 import 'voice_provider.dart';
@@ -11,17 +12,29 @@ final class HybridVoiceService implements VoiceProvider {
     required VoiceProvider nativeProvider,
     required OmniVoiceSynthesizer omniVoiceProvider,
     required VoiceAudioPlayer audioPlayer,
-  }) : this._(nativeProvider, omniVoiceProvider, audioPlayer);
+    required VoiceAudioCache audioCache,
+    required String omniVoiceModelVersion,
+  }) : this._(
+         nativeProvider,
+         omniVoiceProvider,
+         audioPlayer,
+         audioCache,
+         omniVoiceModelVersion,
+       );
 
   HybridVoiceService._(
     this._nativeProvider,
     this._omniVoiceProvider,
     this._audioPlayer,
+    this._audioCache,
+    this._activeOmniVoiceModelVersion,
   );
 
   final VoiceProvider _nativeProvider;
   final OmniVoiceSynthesizer _omniVoiceProvider;
   final VoiceAudioPlayer _audioPlayer;
+  final VoiceAudioCache _audioCache;
+  String _activeOmniVoiceModelVersion;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
@@ -30,7 +43,43 @@ final class HybridVoiceService implements VoiceProvider {
       return _nativeProvider.speak(request);
     }
 
+    if (request.mode == VoiceMode.researchEvaluation) {
+      final audio = await _omniVoiceProvider.synthesize(request);
+      await _audioPlayer.play(audio.bytes);
+      return VoicePlaybackResult(
+        requestedEngine: VoiceEngine.omniVoice,
+        actualEngine: VoiceEngine.omniVoice,
+        usedFallback: false,
+        cacheHit: false,
+        requestId: audio.requestId,
+        modelVersion: audio.modelVersion,
+      );
+    }
+
+    final cacheKey = VoiceAudioCacheKey.create(
+      request: request,
+      modelVersion: _activeOmniVoiceModelVersion,
+    );
+    final cachedBytes = await _audioCache.get(cacheKey);
+    if (cachedBytes != null) {
+      await _audioPlayer.play(cachedBytes);
+      return VoicePlaybackResult(
+        requestedEngine: VoiceEngine.omniVoice,
+        actualEngine: VoiceEngine.omniVoice,
+        usedFallback: false,
+        cacheHit: true,
+        requestId: null,
+        modelVersion: cacheKey.modelVersion,
+      );
+    }
+
     final audio = await _omniVoiceProvider.synthesize(request);
+    final storageKey = VoiceAudioCacheKey.create(
+      request: request,
+      modelVersion: audio.modelVersion,
+    );
+    await _audioCache.put(storageKey, audio.bytes);
+    _activeOmniVoiceModelVersion = storageKey.modelVersion;
     await _audioPlayer.play(audio.bytes);
     return VoicePlaybackResult(
       requestedEngine: VoiceEngine.omniVoice,

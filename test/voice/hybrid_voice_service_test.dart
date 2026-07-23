@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/voice/hybrid_voice_service.dart';
 import 'package:vocab_learning_app/voice/omni_voice_provider.dart';
+import 'package:vocab_learning_app/voice/voice_audio_cache.dart';
 import 'package:vocab_learning_app/voice/voice_audio_player.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -50,12 +51,15 @@ VoiceRequest _researchRequest(VoiceEngine engine) {
   );
 }
 
-OmniVoiceAudio _omniAudio() {
+OmniVoiceAudio _omniAudio({
+  String modelVersion = _omniModelVersion,
+  List<int> bytes = _wavBytes,
+}) {
   return OmniVoiceAudio(
-    bytes: Uint8List.fromList(_wavBytes),
+    bytes: Uint8List.fromList(bytes),
     requestId: _omniRequestId,
     engine: 'omnivoice-prod',
-    modelVersion: _omniModelVersion,
+    modelVersion: modelVersion,
     sampleRate: 24000,
   );
 }
@@ -64,11 +68,17 @@ HybridVoiceService _buildService({
   required _RecordingNativeProvider nativeProvider,
   required _RecordingOmniVoiceSynthesizer omniVoiceProvider,
   required _RecordingAudioPlayer audioPlayer,
+  VoiceAudioCache? audioCache,
+  String omniVoiceModelVersion = _omniModelVersion,
 }) {
   return HybridVoiceService(
     nativeProvider: nativeProvider,
     omniVoiceProvider: omniVoiceProvider,
     audioPlayer: audioPlayer,
+    audioCache:
+        audioCache ??
+        MemoryVoiceAudioCache(maxEntries: 16, maxBytes: 1024 * 1024),
+    omniVoiceModelVersion: omniVoiceModelVersion,
   );
 }
 
@@ -189,6 +199,128 @@ void main() {
     expect(native.speakCalls, isEmpty);
     expect(player.playCalls, isEmpty);
   });
+
+  test('practice request plays cached bytes without synthesizing or speaking '
+      'native', () async {
+    const configuredModel = _omniModelVersion;
+    final request = _practiceRequest();
+    final cachedBytes = Uint8List.fromList(<int>[0x10, 0x20, 0x30, 0x40]);
+    final cache = MemoryVoiceAudioCache(maxEntries: 16, maxBytes: 1024 * 1024);
+    await cache.put(
+      VoiceAudioCacheKey.create(
+        request: request,
+        modelVersion: configuredModel,
+      ),
+      cachedBytes,
+    );
+
+    final native = _RecordingNativeProvider();
+    final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+    final player = _RecordingAudioPlayer();
+    final service = _buildService(
+      nativeProvider: native,
+      omniVoiceProvider: omni,
+      audioPlayer: player,
+      audioCache: cache,
+      omniVoiceModelVersion: configuredModel,
+    );
+
+    final result = await service.speak(request);
+
+    expect(player.playCalls, hasLength(1));
+    expect(player.playCalls.single, cachedBytes);
+    expect(omni.synthesizeCalls, isEmpty);
+    expect(native.speakCalls, isEmpty);
+    expect(result.requestedEngine, VoiceEngine.omniVoice);
+    expect(result.actualEngine, VoiceEngine.omniVoice);
+    expect(result.usedFallback, isFalse);
+    expect(result.cacheHit, isTrue);
+    expect(result.requestId, isNull);
+    expect(result.modelVersion, configuredModel);
+  });
+
+  test('practice remote success populates cache and the next identical speak '
+      'uses it', () async {
+    const responseModel = 'omnivoice-2026-08';
+    final request = _practiceRequest();
+
+    final native = _RecordingNativeProvider();
+    final omni = _RecordingOmniVoiceSynthesizer(
+      audio: _omniAudio(modelVersion: responseModel),
+    );
+    final player = _RecordingAudioPlayer();
+    final service = _buildService(
+      nativeProvider: native,
+      omniVoiceProvider: omni,
+      audioPlayer: player,
+    );
+
+    final first = await service.speak(request);
+
+    expect(omni.synthesizeCalls, hasLength(1));
+    expect(player.playCalls, hasLength(1));
+    expect(player.playCalls.single, Uint8List.fromList(_wavBytes));
+    expect(native.speakCalls, isEmpty);
+    expect(first.requestedEngine, VoiceEngine.omniVoice);
+    expect(first.actualEngine, VoiceEngine.omniVoice);
+    expect(first.usedFallback, isFalse);
+    expect(first.cacheHit, isFalse);
+    expect(first.requestId, _omniRequestId);
+    expect(first.modelVersion, responseModel);
+
+    final second = await service.speak(request);
+
+    expect(omni.synthesizeCalls, hasLength(1));
+    expect(player.playCalls, hasLength(2));
+    expect(player.playCalls.last, Uint8List.fromList(_wavBytes));
+    expect(second.cacheHit, isTrue);
+    expect(second.requestId, isNull);
+    expect(second.modelVersion, responseModel);
+  });
+
+  test(
+    'research request assigned omniVoice bypasses a matching populated cache',
+    () async {
+      const configuredModel = _omniModelVersion;
+      final request = _researchRequest(VoiceEngine.omniVoice);
+      final cachedBytes = Uint8List.fromList(<int>[0x01, 0x02, 0x03, 0x04]);
+      final cache = MemoryVoiceAudioCache(
+        maxEntries: 16,
+        maxBytes: 1024 * 1024,
+      );
+      await cache.put(
+        VoiceAudioCacheKey.create(
+          request: request,
+          modelVersion: configuredModel,
+        ),
+        cachedBytes,
+      );
+
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        audioCache: cache,
+        omniVoiceModelVersion: configuredModel,
+      );
+
+      final result = await service.speak(request);
+
+      expect(omni.synthesizeCalls, hasLength(1));
+      expect(player.playCalls, hasLength(1));
+      expect(player.playCalls.single, Uint8List.fromList(_wavBytes));
+      expect(native.speakCalls, isEmpty);
+      expect(result.requestedEngine, VoiceEngine.omniVoice);
+      expect(result.actualEngine, VoiceEngine.omniVoice);
+      expect(result.usedFallback, isFalse);
+      expect(result.cacheHit, isFalse);
+      expect(result.requestId, _omniRequestId);
+      expect(result.modelVersion, _omniModelVersion);
+    },
+  );
 }
 
 class _RecordingNativeProvider implements VoiceProvider {
