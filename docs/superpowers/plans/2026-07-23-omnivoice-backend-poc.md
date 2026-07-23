@@ -8,9 +8,30 @@
 
 **Tech Stack:** Python 3.11, uv, FastAPI, Pydantic v2, firebase-admin, pytest, HTTPX, OmniVoice 0.2.1, PyTorch 2.8/CUDA 12.8
 
+## Execution Record
+
+The implementation review made these intentional adjustments to the original
+task snippets:
+
+- Work was isolated on `feature/omnivoice-backend-poc`, based on the approved
+  design commits from `feature/omnivoice-integration`.
+- The Hugging Face weights are pinned to revision
+  `c5fdb5ccb189668d56333f77ba2629f4cd7535f4`; generation steps, guidance,
+  temperatures, sample rate, language, and voice instruction are forwarded
+  explicitly for research reproducibility.
+- Generation is serialized because concurrent calls into one GPU model are
+  not assumed to be safe.
+- `generation_timeout_seconds` was not shipped. A Python thread timeout cannot
+  cancel an in-flight CUDA kernel and would give a false availability
+  guarantee. A cancellable worker-process/job boundary is required before the
+  design's `GENERATION_TIMEOUT` response can be implemented safely.
+- Firebase decoding is injectable in unit tests, avoiding credentials and
+  network access while still exercising success and rejection behavior.
+
 ## Global Constraints
 
-- Work on `feature/omnivoice-integration`, based on `origin/refactor`.
+- Work on `feature/omnivoice-backend-poc`, based on the approved integration
+  design branch.
 - Do not implement voice cloning.
 - Do not accept filesystem paths, audio URLs, or model names from clients.
 - Do not commit Firebase credentials, API keys, model weights, generated audio, or raw microphone recordings.

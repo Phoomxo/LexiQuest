@@ -8,6 +8,7 @@ from fastapi.responses import Response
 from lexiquest_voice.auth import TokenVerifier, extract_bearer_token
 from lexiquest_voice.config import Settings
 from lexiquest_voice.engines.base import SpeechEngine
+from lexiquest_voice.errors import model_unavailable
 from lexiquest_voice.models import SpeechRequest
 
 
@@ -28,6 +29,8 @@ def create_app(
 
     @app.get("/health/ready")
     def ready() -> dict[str, str]:
+        if not engine.is_ready:
+            raise model_unavailable()
         return {"status": "ready"}
 
     @app.post("/v1/speech")
