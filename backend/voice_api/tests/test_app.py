@@ -2,6 +2,11 @@ from __future__ import annotations
 
 from fastapi.testclient import TestClient
 
+from lexiquest_voice.app import create_app
+from lexiquest_voice.config import Settings
+
+from conftest import FakeTokenVerifier, UnavailableSpeechEngine
+
 
 def test_health_endpoints(client: TestClient) -> None:
     assert client.get("/health/live").json() == {"status": "live"}
@@ -45,3 +50,22 @@ def test_speech_returns_wav_with_provenance_headers(
     assert response.headers["cache-control"] == "no-store"
     assert response.headers["x-request-id"]
     assert response.content == b"RIFF-test-wav"
+
+
+def test_ready_returns_503_when_engine_is_unavailable(
+    token_verifier: FakeTokenVerifier,
+) -> None:
+    app = create_app(
+        engine=UnavailableSpeechEngine(),
+        token_verifier=token_verifier,
+        settings=Settings(),
+    )
+    response = TestClient(app).get("/health/ready")
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "code": "MODEL_UNAVAILABLE",
+            "message": "The speech engine is not ready.",
+        }
+    }

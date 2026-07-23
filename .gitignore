@@ -42,3 +42,14 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# LexiQuest Voice API local/runtime artifacts
+backend/voice_api/.venv/
+backend/voice_api/.env
+backend/voice_api/.pytest_cache/
+**/.coverage
+backend/voice_api/htmlcov/
+backend/voice_api/generated/
+*.wav
+*.pt
+*.safetensors
