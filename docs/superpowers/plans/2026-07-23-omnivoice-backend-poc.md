@@ -27,6 +27,11 @@ task snippets:
   design's `GENERATION_TIMEOUT` response can be implemented safely.
 - Firebase decoding is injectable in unit tests, avoiding credentials and
   network access while still exercising success and rejection behavior.
+- A real CUDA smoke test on 2026-07-24 exposed an unsupported free-form voice
+  instruction. The locked preset was corrected to supported OmniVoice 0.2.1
+  tokens (`female, young adult, american accent, moderate pitch`), validated
+  at configuration load, and then verified by generating a 24 kHz WAV on an
+  NVIDIA GeForce RTX 3050.
 
 ## Global Constraints
 
@@ -177,7 +182,7 @@ class Settings(BaseSettings):
     model_id: str = "k2-fsa/OmniVoice"
     model_version: str = "0.2.1"
     device: str = "cuda:0"
-    voice_instruction: str = "female, young adult, clear teacher voice"
+    voice_instruction: str = "female, young adult, american accent, moderate pitch"
     max_text_length: int = Field(default=500, ge=1, le=2000)
     generation_timeout_seconds: int = Field(default=30, ge=1, le=120)
     load_asr: bool = False
@@ -189,7 +194,7 @@ class Settings(BaseSettings):
 LEXIQUEST_VOICE_MODEL_ID=k2-fsa/OmniVoice
 LEXIQUEST_VOICE_MODEL_VERSION=0.2.1
 LEXIQUEST_VOICE_DEVICE=cuda:0
-LEXIQUEST_VOICE_VOICE_INSTRUCTION=female, young adult, clear teacher voice
+LEXIQUEST_VOICE_VOICE_INSTRUCTION=female, young adult, american accent, moderate pitch
 LEXIQUEST_VOICE_MAX_TEXT_LENGTH=500
 LEXIQUEST_VOICE_GENERATION_TIMEOUT_SECONDS=30
 LEXIQUEST_VOICE_LOAD_ASR=false

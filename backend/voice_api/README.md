@@ -22,7 +22,9 @@ production process from serving traffic.
 - Firebase service-account credentials or another supported Application
   Default Credentials source
 
-The CUDA/GPU path has not yet been integration-tested on this workstation.
+The CUDA/GPU path was smoke-tested on this workstation on 2026-07-24 with
+an NVIDIA GeForce RTX 3050. The pinned model produced a 24 kHz WAV response
+through `OmniVoiceEngine` using the locked research preset.
 
 ## Setup
 
@@ -84,7 +86,7 @@ uv run --project backend/voice_api pytest backend/voice_api/tests --cov=lexiques
 | Hugging Face model revision | `c5fdb5ccb189668d56333f77ba2629f4cd7535f4` |
 | Device | `cuda:0` |
 | Sample rate | `24000` Hz |
-| Voice instruction | `female, young adult, clear teacher voice` |
+| Voice instruction | `female, young adult, american accent, moderate pitch` |
 | ASR loading | `false` |
 | Generation steps | `32` |
 | Guidance scale | `2.0` |
