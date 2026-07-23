@@ -29,6 +29,17 @@ class OmniVoiceEngine:
         self._load_lock = Lock()
         self._generation_lock = Lock()
 
+    @property
+    def is_ready(self) -> bool:
+        """Whether the underlying model has loaded successfully."""
+
+        return self._model is not None
+
+    def load(self) -> Any:
+        """Load the model once and return it."""
+
+        return self._get_model()
+
     def _get_model(self) -> Any:
         if self._model is None:
             with self._load_lock:

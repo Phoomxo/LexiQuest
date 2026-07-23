@@ -25,7 +25,6 @@ class Settings(BaseSettings):
     voice_instruction: str = "female, young adult, clear teacher voice"
     sample_rate: int = Field(default=24_000, gt=0)
     max_text_length: int = Field(default=500, ge=1, le=2000)
-    generation_timeout_seconds: int = Field(default=30, ge=1, le=120)
     generation_num_steps: int = Field(default=32, ge=1, le=128)
     guidance_scale: float = Field(default=2.0, ge=0.0, le=20.0)
     position_temperature: float = Field(default=0.0, ge=0.0, le=20.0)

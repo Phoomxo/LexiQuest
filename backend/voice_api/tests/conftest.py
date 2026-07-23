@@ -16,6 +16,10 @@ class FakeTokenVerifier:
 
 
 class FakeSpeechEngine:
+    @property
+    def is_ready(self) -> bool:
+        return True
+
     def synthesize(self, request: SpeechRequest) -> AudioResult:
         return AudioResult(
             data=b"RIFF-test-wav",
@@ -26,11 +30,25 @@ class FakeSpeechEngine:
         )
 
 
+class UnavailableSpeechEngine:
+    @property
+    def is_ready(self) -> bool:
+        return False
+
+    def synthesize(self, request: SpeechRequest) -> AudioResult:
+        raise RuntimeError("not ready")
+
+
 @pytest.fixture
-def client() -> TestClient:
+def token_verifier() -> FakeTokenVerifier:
+    return FakeTokenVerifier()
+
+
+@pytest.fixture
+def client(token_verifier: FakeTokenVerifier) -> TestClient:
     app = create_app(
         engine=FakeSpeechEngine(),
-        token_verifier=FakeTokenVerifier(),
+        token_verifier=token_verifier,
         settings=Settings(),
     )
     return TestClient(app)

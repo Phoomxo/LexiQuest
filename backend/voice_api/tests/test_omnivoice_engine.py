@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor
 from io import BytesIO
 from typing import Any
 
@@ -37,10 +40,7 @@ def test_engine_loads_once_and_forwards_locked_configuration() -> None:
         nonlocal load_count
         load_count += 1
         assert settings.load_asr is False
-        assert (
-            settings.model_revision
-            == "c5fdb5ccb189668d56333f77ba2629f4cd7535f4"
-        )
+        assert settings.model_revision == "c5fdb5ccb189668d56333f77ba2629f4cd7535f4"
         return fake_model
 
     def writer(buffer: BytesIO, audio: object, sample_rate: int) -> None:
@@ -82,3 +82,64 @@ def test_engine_rejects_empty_generation() -> None:
 
     with pytest.raises(RuntimeError, match="no audio"):
         engine.synthesize(_request())
+
+
+def test_engine_load_exposes_readiness_and_remains_idempotent() -> None:
+    fake_model = FakeModel()
+    load_count = 0
+
+    def loader(settings: Settings) -> FakeModel:
+        nonlocal load_count
+        load_count += 1
+        return fake_model
+
+    engine = OmniVoiceEngine(
+        settings=Settings(),
+        model_loader=loader,
+        wav_writer=lambda buffer, audio, sample_rate: None,
+    )
+
+    assert engine.is_ready is False
+    assert engine.load() is fake_model
+    assert engine.is_ready is True
+    assert engine.load() is fake_model
+    assert load_count == 1
+
+
+def test_engine_serializes_concurrent_generation() -> None:
+    state_lock = threading.Lock()
+
+    class ConcurrentModel(FakeModel):
+        def __init__(self) -> None:
+            super().__init__()
+            self.active = 0
+            self.max_active = 0
+
+        def generate(self, **kwargs: Any) -> list[object]:
+            with state_lock:
+                self.active += 1
+                self.max_active = max(self.max_active, self.active)
+            try:
+                time.sleep(0.05)
+                return [object()]
+            finally:
+                with state_lock:
+                    self.active -= 1
+
+    model = ConcurrentModel()
+
+    def writer(buffer: BytesIO, audio: object, sample_rate: int) -> None:
+        buffer.write(b"RIFF")
+
+    engine = OmniVoiceEngine(
+        settings=Settings(),
+        model_loader=lambda settings: model,
+        wav_writer=writer,
+    )
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        futures = [executor.submit(engine.synthesize, _request()) for _ in range(2)]
+        results = [future.result() for future in futures]
+
+    assert model.max_active == 1
+    assert [result.data for result in results] == [b"RIFF", b"RIFF"]
