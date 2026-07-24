@@ -36,8 +36,18 @@ final class HybridVoiceService implements VoiceProvider {
   final VoiceAudioCache _audioCache;
   String _activeOmniVoiceModelVersion;
 
+  /// Monotonic token bumped at the start of each [speak] and [stop] so an
+  /// in-flight request can detect that it was superseded or cancelled.
+  int _generation = 0;
+
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    final generation = ++_generation;
+    await _audioPlayer.stop();
+    _requireCurrentGeneration(generation);
+    await _nativeProvider.stop();
+    _requireCurrentGeneration(generation);
+
     if (request.mode == VoiceMode.researchEvaluation &&
         request.assignedEngine == VoiceEngine.nativeTts) {
       return _nativeProvider.speak(request);
@@ -56,22 +66,29 @@ final class HybridVoiceService implements VoiceProvider {
       );
     }
 
-    return _speakPractice(request);
+    return _speakPractice(request, generation);
   }
 
   /// Practice path: prefer cached OmniVoice audio, then synthesize and play.
   /// Operational and playback failures fall back to native TTS once; failures
   /// that reflect caller intent (validation, cancelled) are rethrown.
-  Future<VoicePlaybackResult> _speakPractice(VoiceRequest request) async {
+  Future<VoicePlaybackResult> _speakPractice(
+    VoiceRequest request,
+    int generation,
+  ) async {
     final cacheKey = VoiceAudioCacheKey.create(
       request: request,
       modelVersion: _activeOmniVoiceModelVersion,
     );
-    final cachedBytes = await _audioCache.get(cacheKey);
+    var cacheHit = false;
 
     try {
+      final cachedBytes = await _audioCache.get(cacheKey);
+      _requireCurrentGeneration(generation);
       if (cachedBytes != null) {
+        cacheHit = true;
         await _audioPlayer.play(cachedBytes);
+        _requireCurrentGeneration(generation);
         return VoicePlaybackResult(
           requestedEngine: VoiceEngine.omniVoice,
           actualEngine: VoiceEngine.omniVoice,
@@ -83,13 +100,16 @@ final class HybridVoiceService implements VoiceProvider {
       }
 
       final audio = await _omniVoiceProvider.synthesize(request);
+      _requireCurrentGeneration(generation);
       final storageKey = VoiceAudioCacheKey.create(
         request: request,
         modelVersion: audio.modelVersion,
       );
       await _audioCache.put(storageKey, audio.bytes);
+      _requireCurrentGeneration(generation);
       _activeOmniVoiceModelVersion = storageKey.modelVersion;
       await _audioPlayer.play(audio.bytes);
+      _requireCurrentGeneration(generation);
       return VoicePlaybackResult(
         requestedEngine: VoiceEngine.omniVoice,
         actualEngine: VoiceEngine.omniVoice,
@@ -99,6 +119,7 @@ final class HybridVoiceService implements VoiceProvider {
         modelVersion: audio.modelVersion,
       );
     } on VoiceFailure catch (failure) {
+      _requireCurrentGeneration(generation);
       switch (failure.category) {
         // Surface failures that reflect caller intent unchanged.
         case VoiceFailureCategory.validation:
@@ -114,12 +135,18 @@ final class HybridVoiceService implements VoiceProvider {
         case VoiceFailureCategory.playback:
         case VoiceFailureCategory.configuration:
         case VoiceFailureCategory.unknown:
-          await _nativeProvider.speak(request);
+          try {
+            await _nativeProvider.speak(request);
+          } on VoiceFailure {
+            _requireCurrentGeneration(generation);
+            rethrow;
+          }
+          _requireCurrentGeneration(generation);
           return VoicePlaybackResult(
             requestedEngine: VoiceEngine.omniVoice,
             actualEngine: VoiceEngine.nativeTts,
             usedFallback: true,
-            cacheHit: cachedBytes != null,
+            cacheHit: cacheHit,
           );
       }
     }
@@ -127,7 +154,21 @@ final class HybridVoiceService implements VoiceProvider {
 
   @override
   Future<void> stop() async {
+    _generation++;
     await _audioPlayer.stop();
     await _nativeProvider.stop();
   }
+
+  /// Throws [_cancelledFailure] when [generation] is no longer current,
+  /// indicating the request was superseded or stopped.
+  void _requireCurrentGeneration(int generation) {
+    if (generation != _generation) {
+      throw _cancelledFailure;
+    }
+  }
 }
+
+const _cancelledFailure = VoiceFailure(
+  category: VoiceFailureCategory.cancelled,
+  message: 'The voice request was cancelled.',
+);
