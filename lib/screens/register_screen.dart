@@ -82,17 +82,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Register - Step 1',
+                      '📝 สมัครสมาชิก (Register)',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'กรอกอีเมลเพื่อสร้างบัญชีเรียนรู้คำศัพท์ภาษาอังกฤษ',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'อีเมล (Email)',
+                        hintText: 'กรอกอีเมลของคุณ',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
@@ -101,7 +107,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     TextField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
-                        labelText: 'Password',
+                        labelText: 'ตั้งรหัสผ่าน (Password)',
+                        hintText: 'ตั้งรหัสผ่าน 6 ตัวอักษรขึ้นไป',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
@@ -123,10 +130,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               ),
                             ),
                             child: const Text(
-                              'ส่งอีเมลยืนยัน',
+                              'ส่งอีเมลยืนยัน (Send Email)',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
@@ -139,7 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         );
                       },
-                      child: const Text('Already have an account? Login here'),
+                      child: const Text('มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)'),
                     ),
                   ],
                 ),

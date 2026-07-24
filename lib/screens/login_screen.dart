@@ -173,17 +173,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     const Text(
-                      'Login',
+                      '🔑 เข้าสู่ระบบ (Login)',
                       style: TextStyle(
-                        fontSize: 28,
+                        fontSize: 26,
                         fontWeight: FontWeight.bold,
                       ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'LexiQuest: แอปพลิเคชันเรียนรู้คำศัพท์ภาษาอังกฤษ',
+                      style: TextStyle(fontSize: 13, color: Colors.grey),
                     ),
                     const SizedBox(height: 20),
                     TextField(
                       controller: _emailController,
                       decoration: const InputDecoration(
-                        labelText: 'Email',
+                        labelText: 'อีเมล (Email)',
+                        hintText: 'กรอกอีเมลของคุณ',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.email),
                       ),
@@ -192,7 +198,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     TextField(
                       controller: _passwordController,
                       decoration: const InputDecoration(
-                        labelText: 'Password',
+                        labelText: 'รหัสผ่าน (Password)',
+                        hintText: 'กรอกรหัสผ่าน',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.lock),
                       ),
@@ -214,13 +221,29 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ),
                             child: const Text(
-                              'Login',
+                              'เข้าสู่ระบบ (Login)',
                               style: TextStyle(
                                 fontSize: 18,
                                 color: Colors.white,
+                                fontWeight: FontWeight.bold,
                               ),
                             ),
                           ),
+                    const SizedBox(height: 10),
+                    OutlinedButton.icon(
+                      onPressed: () {
+                        Navigator.pushReplacementNamed(context, '/home');
+                      },
+                      icon: const Icon(Icons.play_arrow, color: Colors.green),
+                      label: const Text(
+                        '🚀 ทดลองใช้งานทันที (Guest Mode)',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ),
                     TextButton(
                       onPressed: () {
                         Navigator.push(
@@ -230,7 +253,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text("Don't have an account? Register here"),
+                      child: const Text("ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่ (Register)"),
                     ),
                   ],
                 ),

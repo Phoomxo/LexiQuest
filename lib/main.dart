@@ -11,8 +11,12 @@ import 'screens/register_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp();
+  // Initialize Firebase safely with fallback for Web/Offline
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase init fallback: $e');
+  }
 
   // Initialize Supabase
   await Supabase.initialize(

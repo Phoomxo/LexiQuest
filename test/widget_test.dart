@@ -8,16 +8,16 @@ void main() {
     await tester.pumpWidget(const MaterialApp(home: LoginScreen()));
 
     // Verify the Login title appears
-    expect(find.text('Login'), findsWidgets);
+    expect(find.textContaining('เข้าสู่ระบบ'), findsWidgets);
 
     // Verify Email and Password TextFields are present
-    expect(find.widgetWithText(TextField, 'Email'), findsOneWidget);
-    expect(find.widgetWithText(TextField, 'Password'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'อีเมล (Email)'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'รหัสผ่าน (Password)'), findsOneWidget);
 
     // Verify the Login button
-    expect(find.widgetWithText(ElevatedButton, 'Login'), findsOneWidget);
+    expect(find.widgetWithText(ElevatedButton, 'เข้าสู่ระบบ (Login)'), findsOneWidget);
 
     // Verify the registration prompt
-    expect(find.text('Don\'t have an account? Register here'), findsOneWidget);
+    expect(find.textContaining('สมัครสมาชิก'), findsOneWidget);
   });
 }
