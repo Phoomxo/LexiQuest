@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'firebase_options.dart';
 import 'screens/categories_page.dart';
 import 'screens/home.dart';
 import 'screens/shop_page.dart';
@@ -11,9 +12,11 @@ import 'screens/register_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase safely with fallback for Web/Offline
+  // Initialize Firebase safely with DefaultFirebaseOptions for all platforms
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
   } catch (e) {
     debugPrint('Firebase init fallback: $e');
   }
