@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'ai_tutor_screen.dart';
+import 'avatar_equipment_screen.dart';
 import 'boss_battle_screen.dart';
 import 'cefr_article_reader_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
@@ -324,6 +325,23 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ThesisChartScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 🛡️ 13.1 อุปกรณ์สวมใส่ตัวละคร & บัฟพลัง RPG (Avatar Equipment)
+            _buildModeButton(
+              context,
+              title: "🛡️ อุปกรณ์ตัวละคร & บัฟพลัง RPG (Avatar Gear)",
+              icon: Icons.shield,
+              color: Colors.deepPurple.shade700,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AvatarEquipmentScreen(),
                   ),
                 );
               },
