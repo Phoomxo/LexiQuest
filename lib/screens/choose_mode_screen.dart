@@ -1,11 +1,14 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'ai_tutor_screen.dart';
 import 'boss_battle_screen.dart';
 import 'cefr_article_reader_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
 import 'cefr_selection_screen.dart';
 import 'dictation_quiz_screen.dart';
+import 'learning_world_map_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'object_scanner_screen.dart';
 import 'phonetic_explorer_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
@@ -301,6 +304,57 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const ThesisChartScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 🤖 14. จำลองบทสนทนากับ AI Tutor (AI Roleplay Tutor)
+            _buildModeButton(
+              context,
+              title: "จำลองบทสนทนา AI (AI Roleplay Tutor)",
+              icon: Icons.forum,
+              color: Colors.indigo.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AiTutorScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📸 15. สแกนวัตถุคำศัพท์ (Object Scanner)
+            _buildModeButton(
+              context,
+              title: "สแกนวัตถุคำศัพท์ (Camera Object Scanner)",
+              icon: Icons.camera_alt,
+              color: Colors.blueGrey.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ObjectScannerScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 🗺️ 16. แผนที่ท่องโลกคำศัพท์ (World Map Campaign)
+            _buildModeButton(
+              context,
+              title: "แผนที่ท่องโลกคำศัพท์ (World Map Campaign)",
+              icon: Icons.map,
+              color: Colors.teal.shade900,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const LearningWorldMapScreen(),
                   ),
                 );
               },
