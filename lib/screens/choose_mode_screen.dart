@@ -6,12 +6,14 @@ import 'cefr_diagnostic_test_screen.dart';
 import 'cefr_selection_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'phonetic_explorer_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import 'sentence_scramble_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'smart_audio_playlist_screen.dart';
 import 'srs_flashcards_screen.dart';
+import 'thesis_chart_screen.dart';
 import 'wordbook_import_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
@@ -265,6 +267,40 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const WordbookImportScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 🔤 12. สำรวจสัทอักษร IPA (Phonetic Explorer)
+            _buildModeButton(
+              context,
+              title: "สำรวจสัทอักษร IPA (Phonetic Explorer)",
+              icon: Icons.record_voice_over,
+              color: Colors.teal.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const PhoneticExplorerScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📊 13. กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)
+            _buildModeButton(
+              context,
+              title: "กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)",
+              icon: Icons.bar_chart,
+              color: Colors.indigo.shade900,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ThesisChartScreen(),
                   ),
                 );
               },
