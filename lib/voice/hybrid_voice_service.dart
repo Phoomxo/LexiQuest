@@ -3,6 +3,7 @@ import 'voice_audio_cache.dart';
 import 'voice_audio_player.dart';
 import 'voice_models.dart';
 import 'voice_provider.dart';
+import 'voice_telemetry.dart';
 
 /// Routes a [VoiceRequest] between the native on-device TTS engine and the
 /// OmniVoice remote synthesis API based on the request mode and assigned
@@ -14,12 +15,14 @@ final class HybridVoiceService implements VoiceProvider {
     required VoiceAudioPlayer audioPlayer,
     required VoiceAudioCache audioCache,
     required String omniVoiceModelVersion,
+    VoiceTelemetrySink telemetrySink = const NoopVoiceTelemetrySink(),
   }) : this._(
          nativeProvider,
          omniVoiceProvider,
          audioPlayer,
          audioCache,
          omniVoiceModelVersion,
+         telemetrySink,
        );
 
   HybridVoiceService._(
@@ -28,12 +31,14 @@ final class HybridVoiceService implements VoiceProvider {
     this._audioPlayer,
     this._audioCache,
     this._activeOmniVoiceModelVersion,
+    this._telemetrySink,
   );
 
   final VoiceProvider _nativeProvider;
   final OmniVoiceSynthesizer _omniVoiceProvider;
   final VoiceAudioPlayer _audioPlayer;
   final VoiceAudioCache _audioCache;
+  final VoiceTelemetrySink _telemetrySink;
   String _activeOmniVoiceModelVersion;
 
   /// Monotonic token bumped at the start of each [speak] and [stop] so an
@@ -42,7 +47,54 @@ final class HybridVoiceService implements VoiceProvider {
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    final stopwatch = Stopwatch()..start();
     final generation = ++_generation;
+    VoiceFailureCategory? fallbackReason;
+
+    try {
+      final result = await _routeSpeak(request, generation, (category) {
+        fallbackReason = category;
+      });
+      await _telemetrySink.record(
+        VoiceTelemetryEvent.succeeded(
+          request: request,
+          result: result,
+          fallbackReason: result.usedFallback ? fallbackReason : null,
+          latency: stopwatch.elapsed,
+          occurredAtUtc: DateTime.now().toUtc(),
+        ),
+      );
+      return result;
+    } on VoiceFailure catch (failure) {
+      await _telemetrySink.record(
+        VoiceTelemetryEvent.failed(
+          request: request,
+          requestedEngine: _requestedEngineFor(request),
+          failure: failure,
+          latency: stopwatch.elapsed,
+          occurredAtUtc: DateTime.now().toUtc(),
+        ),
+      );
+      rethrow;
+    }
+  }
+
+  /// The telemetry requested engine: practice always requests OmniVoice, while
+  /// research evaluation requests the assigned engine (validated non-null).
+  VoiceEngine _requestedEngineFor(VoiceRequest request) {
+    return request.mode == VoiceMode.practice
+        ? VoiceEngine.omniVoice
+        : request.assignedEngine!;
+  }
+
+  /// Stops active playback, then routes the request to the strict research or
+  /// practice path. [noteFallback] records the operational failure category
+  /// when the practice path falls back to native TTS.
+  Future<VoicePlaybackResult> _routeSpeak(
+    VoiceRequest request,
+    int generation,
+    void Function(VoiceFailureCategory) noteFallback,
+  ) async {
     await _audioPlayer.stop();
     _requireCurrentGeneration(generation);
     await _nativeProvider.stop();
@@ -84,7 +136,7 @@ final class HybridVoiceService implements VoiceProvider {
       }
     }
 
-    return _speakPractice(request, generation);
+    return _speakPractice(request, generation, noteFallback);
   }
 
   /// Practice path: prefer cached OmniVoice audio, then synthesize and play.
@@ -93,6 +145,7 @@ final class HybridVoiceService implements VoiceProvider {
   Future<VoicePlaybackResult> _speakPractice(
     VoiceRequest request,
     int generation,
+    void Function(VoiceFailureCategory) noteFallback,
   ) async {
     final cacheKey = VoiceAudioCacheKey.create(
       request: request,
@@ -153,6 +206,7 @@ final class HybridVoiceService implements VoiceProvider {
         case VoiceFailureCategory.playback:
         case VoiceFailureCategory.configuration:
         case VoiceFailureCategory.unknown:
+          noteFallback(failure.category);
           try {
             await _nativeProvider.speak(request);
           } on VoiceFailure {
