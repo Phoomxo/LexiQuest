@@ -8,13 +8,17 @@ void main() {
     cefrService = CefrService();
   });
 
-  test('CefrService retrieves default words by CEFR level', () {
-    final a1Words = cefrService.getWordsByLevel('A1');
-    expect(a1Words.isNotEmpty, true);
-    expect(a1Words.every((w) => w.cefrLevel == 'A1'), true);
+  test('CefrService filters multi-dimensionally by level and category', () {
+    final b2Business = cefrService.filter(level: 'B2', category: 'Technology');
+    expect(b2Business.length, 1);
+    expect(b2Business.first.word, 'innovative');
 
-    final c2Words = cefrService.getWordsByLevel('C2');
-    expect(c2Words.isNotEmpty, true);
-    expect(c2Words.first.word, 'ephemeral');
+    final toeicWords = cefrService.filter(tag: 'toeic');
+    expect(toeicWords.isNotEmpty, true);
+    expect(toeicWords.any((w) => w.word == 'achieve'), true);
+
+    final searchResult = cefrService.filter(searchQuery: 'บรรลุ');
+    expect(searchResult.length, 1);
+    expect(searchResult.first.word, 'achieve');
   });
 }

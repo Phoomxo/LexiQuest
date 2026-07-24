@@ -5,127 +5,275 @@ import 'srs_flashcards_screen.dart';
 class CefrSelectionScreen extends StatefulWidget {
   final CefrService? cefrService;
 
-  const CefrSelectionScreen({
-    super.key,
-    this.cefrService,
-  });
+  const CefrSelectionScreen({super.key, this.cefrService});
 
   @override
   State<CefrSelectionScreen> createState() => _CefrSelectionScreenState();
 }
 
-class _CefrSelectionScreenState extends State<CefrSelectionScreen> {
+class _CefrSelectionScreenState extends State<CefrSelectionScreen>
+    with SingleTickerProviderStateMixin {
   late final CefrService _cefrService;
+  late final TabController _tabController;
+  String _selectedCategory = 'ALL';
+  String _searchQuery = '';
+
+  static const List<String> _levels = [
+    'ALL',
+    'A1',
+    'A2',
+    'B1',
+    'B2',
+    'C1',
+    'C2',
+  ];
+  static const List<String> _categories = [
+    'ALL',
+    'Daily Life',
+    'Work/Business',
+    'Academic',
+    'Technology',
+    'Science',
+    'Travel',
+    'Philosophy',
+    'Animals',
+    'Food',
+  ];
 
   @override
   void initState() {
     super.initState();
     _cefrService = widget.cefrService ?? CefrService();
+    _tabController = TabController(length: _levels.length, vsync: this);
+    _tabController.addListener(() {
+      if (!_tabController.indexIsChanging) {
+        setState(() {});
+      }
+    });
   }
 
-  static const List<Map<String, dynamic>> cefrLevels = [
-    {
-      'level': 'A1',
-      'name': 'A1 - Beginner (ผู้เริ่มต้น)',
-      'color': Colors.blue,
-    },
-    {'level': 'A2', 'name': 'A2 - Elementary (พื้นฐาน)', 'color': Colors.teal},
-    {
-      'level': 'B1',
-      'name': 'B1 - Intermediate (ปานกลาง)',
-      'color': Colors.green,
-    },
-    {
-      'level': 'B2',
-      'name': 'B2 - Upper-Intermediate (ปานกลางสูง)',
-      'color': Colors.orange,
-    },
-    {
-      'level': 'C1',
-      'name': 'C1 - Advanced (ก้าวหน้า)',
-      'color': Colors.deepOrange,
-    },
-    {
-      'level': 'C2',
-      'name': 'C2 - Proficiency (เชี่ยวชาญ)',
-      'color': Colors.purple,
-    },
-  ];
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  String get _currentLevel => _levels[_tabController.index];
 
   @override
   Widget build(BuildContext context) {
+    final filteredWords = _cefrService.filter(
+      level: _currentLevel,
+      category: _selectedCategory,
+      searchQuery: _searchQuery,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'คลังคำศัพท์มาตรฐาน CEFR (A1 - C2)',
+          'คลังคำศัพท์ CEFR Multi-Matrix',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.indigo,
         centerTitle: true,
+        bottom: TabBar(
+          controller: _tabController,
+          isScrollable: true,
+          labelColor: Colors.amberAccent,
+          unselectedLabelColor: Colors.white70,
+          indicatorColor: Colors.amberAccent,
+          tabs: _levels
+              .map((lvl) => Tab(text: lvl == 'ALL' ? 'ทั้งหมด' : 'ระดับ $lvl'))
+              .toList(),
+        ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16.0),
-        itemCount: cefrLevels.length,
-        itemBuilder: (context, index) {
-          final levelInfo = cefrLevels[index];
-          final String levelCode = levelInfo['level'];
-          final String levelName = levelInfo['name'];
-          final Color badgeColor = levelInfo['color'];
-          final words = _cefrService.getWordsByLevel(levelCode);
-
-          return Card(
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
+      body: Column(
+        children: [
+          // Search & Filter header
+          Padding(
+            padding: const EdgeInsets.all(12.0),
+            child: Column(
+              children: [
+                TextField(
+                  decoration: InputDecoration(
+                    hintText: 'ค้นหาคำศัพท์ หรือ คำแปล...',
+                    prefixIcon: const Icon(Icons.search),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
+                  ),
+                  onChanged: (val) {
+                    setState(() {
+                      _searchQuery = val;
+                    });
+                  },
+                ),
+                const SizedBox(height: 8),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: _categories.map((cat) {
+                      final isSelected = _selectedCategory == cat;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6.0),
+                        child: ChoiceChip(
+                          label: Text(cat == 'ALL' ? 'ทุกหมวด' : cat),
+                          selected: isSelected,
+                          selectedColor: Colors.indigo.shade100,
+                          onSelected: (val) {
+                            if (val) {
+                              setState(() {
+                                _selectedCategory = cat;
+                              });
+                            }
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
             ),
-            child: ListTile(
-              contentPadding: const EdgeInsets.all(16.0),
-              leading: CircleAvatar(
-                backgroundColor: badgeColor,
-                child: Text(
-                  levelCode,
+          ),
+          // Word count & Action bar
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.indigo.shade50,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  'พบ ${filteredWords.length} คำศัพท์',
                   style: const TextStyle(
-                    color: Colors.white,
                     fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
                   ),
                 ),
-              ),
-              title: Text(
-                levelName,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              subtitle: Text('คำศัพท์ประจำระดับ: ${words.length} คำ'),
-              trailing: const Icon(
-                Icons.arrow_forward_ios,
-                color: Colors.indigo,
-              ),
-              onTap: () {
-                final wordMaps = words
-                    .map(
-                      (w) => {
-                        'word': w.word,
-                        'translation': w.meaning,
-                        'example': w.exampleSentence,
-                      },
-                    )
-                    .toList();
-
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) =>
-                        SrsFlashcardsScreen(wordList: wordMaps),
+                ElevatedButton.icon(
+                  onPressed: filteredWords.isNotEmpty
+                      ? () {
+                          final wordMaps = filteredWords
+                              .map(
+                                (w) => {
+                                  'word': w.word,
+                                  'translation': w.meaning,
+                                  'example': w.exampleSentence,
+                                },
+                              )
+                              .toList();
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) =>
+                                  SrsFlashcardsScreen(wordList: wordMaps),
+                            ),
+                          );
+                        }
+                      : null,
+                  icon: const Icon(Icons.style, size: 18),
+                  label: const Text('เริ่มทบทวน SRS'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.indigo,
+                    foregroundColor: Colors.white,
                   ),
-                );
-              },
+                ),
+              ],
             ),
-          );
-        },
+          ),
+          // Word List
+          Expanded(
+            child: filteredWords.isEmpty
+                ? const Center(child: Text('ไม่พบคำศัพท์ตรงตามเงื่อนไขที่กรอง'))
+                : ListView.builder(
+                    itemCount: filteredWords.length,
+                    itemBuilder: (context, index) {
+                      final item = filteredWords[index];
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: ListTile(
+                          leading: CircleAvatar(
+                            backgroundColor: _getCefrColor(item.cefrLevel),
+                            child: Text(
+                              item.cefrLevel,
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          title: Row(
+                            children: [
+                              Text(
+                                item.word,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Chip(
+                                label: Text(
+                                  item.category,
+                                  style: const TextStyle(fontSize: 10),
+                                ),
+                                padding: EdgeInsets.zero,
+                                materialTapTargetSize:
+                                    MaterialTapTargetSize.shrinkWrap,
+                              ),
+                            ],
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                item.meaning,
+                                style: const TextStyle(
+                                  color: Colors.deepOrange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Ex: "${item.exampleSentence}"',
+                                style: const TextStyle(
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
       ),
     );
+  }
+
+  Color _getCefrColor(String level) {
+    switch (level.toUpperCase()) {
+      case 'A1':
+        return Colors.blue;
+      case 'A2':
+        return Colors.teal;
+      case 'B1':
+        return Colors.green;
+      case 'B2':
+        return Colors.orange;
+      case 'C1':
+        return Colors.deepOrange;
+      case 'C2':
+        return Colors.purple;
+      default:
+        return Colors.indigo;
+    }
   }
 }

@@ -3,22 +3,22 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/cefr_selection_screen.dart';
 
 void main() {
-  testWidgets('CefrSelectionScreen renders CEFR levels and scrolls to C2',
+  testWidgets('CefrSelectionScreen renders tabs, search bar, and filters by query',
       (WidgetTester tester) async {
     await tester.pumpWidget(
-      MaterialApp(
+      const MaterialApp(
         home: CefrSelectionScreen(),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('คลังคำศัพท์มาตรฐาน CEFR (A1 - C2)'), findsOneWidget);
-    expect(find.text('A1 - Beginner (ผู้เริ่มต้น)'), findsOneWidget);
+    expect(find.text('คลังคำศัพท์ CEFR Multi-Matrix'), findsOneWidget);
+    expect(find.text('เริ่มทบทวน SRS'), findsOneWidget);
 
-    final itemFinder = find.text('C2 - Proficiency (เชี่ยวชาญ)');
-    await tester.scrollUntilVisible(itemFinder, 200.0);
+    // Enter search query
+    await tester.enterText(find.byType(TextField), 'achieve');
     await tester.pumpAndSettle();
 
-    expect(itemFinder, findsOneWidget);
+    expect(find.widgetWithText(ListTile, 'achieve'), findsOneWidget);
   });
 }
