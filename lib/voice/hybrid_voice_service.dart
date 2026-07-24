@@ -48,22 +48,40 @@ final class HybridVoiceService implements VoiceProvider {
     await _nativeProvider.stop();
     _requireCurrentGeneration(generation);
 
+    // Strict research/native route: synthesize on-device with no fallback;
+    // guard generation so a stopped or superseded request resolves as cancelled.
     if (request.mode == VoiceMode.researchEvaluation &&
         request.assignedEngine == VoiceEngine.nativeTts) {
-      return _nativeProvider.speak(request);
+      try {
+        final result = await _nativeProvider.speak(request);
+        _requireCurrentGeneration(generation);
+        return result;
+      } on VoiceFailure {
+        _requireCurrentGeneration(generation);
+        rethrow;
+      }
     }
 
+    // Strict research/OmniVoice route: synthesize and play, no cache/fallback;
+    // guard generation after each await so stops and supersede resolve cancelled.
     if (request.mode == VoiceMode.researchEvaluation) {
-      final audio = await _omniVoiceProvider.synthesize(request);
-      await _audioPlayer.play(audio.bytes);
-      return VoicePlaybackResult(
-        requestedEngine: VoiceEngine.omniVoice,
-        actualEngine: VoiceEngine.omniVoice,
-        usedFallback: false,
-        cacheHit: false,
-        requestId: audio.requestId,
-        modelVersion: audio.modelVersion,
-      );
+      try {
+        final audio = await _omniVoiceProvider.synthesize(request);
+        _requireCurrentGeneration(generation);
+        await _audioPlayer.play(audio.bytes);
+        _requireCurrentGeneration(generation);
+        return VoicePlaybackResult(
+          requestedEngine: VoiceEngine.omniVoice,
+          actualEngine: VoiceEngine.omniVoice,
+          usedFallback: false,
+          cacheHit: false,
+          requestId: audio.requestId,
+          modelVersion: audio.modelVersion,
+        );
+      } on VoiceFailure {
+        _requireCurrentGeneration(generation);
+        rethrow;
+      }
     }
 
     return _speakPractice(request, generation);

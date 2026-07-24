@@ -62,6 +62,19 @@ VoiceRequest _practiceRequest() {
   );
 }
 
+VoiceRequest _researchRequest({required VoiceEngine assignedEngine}) {
+  return VoiceRequest.create(
+    text: 'Research passage.',
+    language: 'en',
+    voiceId: 'teacher_female',
+    speed: 1.0,
+    contentId: 'word-002',
+    contentType: 'word',
+    mode: VoiceMode.researchEvaluation,
+    assignedEngine: assignedEngine,
+  );
+}
+
 OmniVoiceAudio _firstAudio() {
   return OmniVoiceAudio(
     bytes: Uint8List.fromList(_firstWav),
@@ -210,6 +223,88 @@ void main() {
     expect(native.speakCalls, isEmpty);
     expect(player.playCalls.single, Uint8List.fromList(_secondWav));
   });
+
+  test('a strict research omniVoice speak stopped after synthesis started '
+      'cancels the in-flight request without playback', () async {
+    final events = <String>[];
+    final native = _RecordingNativeProvider(events);
+    final omni = _QueuedOmniVoiceSynthesizer(events, expectedCalls: 1);
+    final player = _RecordingAudioPlayer(events);
+    final service = _buildService(native, omni, player);
+
+    final speak = service.speak(
+      _researchRequest(assignedEngine: VoiceEngine.omniVoice),
+    );
+    await omni.started(0);
+    await service.stop();
+    omni.completeResult(0, _firstAudio());
+
+    final failure = await _captureFailure(() => speak);
+
+    expect(failure.category, VoiceFailureCategory.cancelled);
+    expect(player.playCalls, isEmpty);
+    expect(native.speakCalls, isEmpty);
+  });
+
+  test('a strict research omniVoice speak superseded by a practice speak is '
+      'cancelled when its remote fails with an operational error', () async {
+    final events = <String>[];
+    final native = _RecordingNativeProvider(events);
+    final omni = _QueuedOmniVoiceSynthesizer(events, expectedCalls: 2);
+    final player = _RecordingAudioPlayer(events);
+    final service = _buildService(native, omni, player);
+
+    final firstSpeak = service.speak(
+      _researchRequest(assignedEngine: VoiceEngine.omniVoice),
+    );
+    await omni.started(0);
+    final secondSpeak = service.speak(_practiceRequest());
+    await omni.started(1);
+
+    omni.completeResult(1, _secondAudio());
+    await secondSpeak;
+
+    omni.completeError(0, _networkFailure);
+    final firstFailure = await _captureFailure(() => firstSpeak);
+
+    expect(firstFailure.category, VoiceFailureCategory.cancelled);
+    expect(native.speakCalls, isEmpty);
+    expect(player.playCalls.single, Uint8List.fromList(_secondWav));
+  });
+
+  test('a strict research native speak stopped after the native engine '
+      'started cancels the in-flight request without playback', () async {
+    final events = <String>[];
+    final nativeStarted = Completer<void>();
+    final nativeResult = Completer<VoicePlaybackResult>();
+    final native = _RecordingNativeProvider(
+      events,
+      started: nativeStarted,
+      result: nativeResult,
+    );
+    final omni = _QueuedOmniVoiceSynthesizer(events, expectedCalls: 1);
+    final player = _RecordingAudioPlayer(events);
+    final service = _buildService(native, omni, player);
+
+    final speak = service.speak(
+      _researchRequest(assignedEngine: VoiceEngine.nativeTts),
+    );
+    await nativeStarted.future;
+    await service.stop();
+    nativeResult.complete(
+      VoicePlaybackResult(
+        requestedEngine: VoiceEngine.nativeTts,
+        actualEngine: VoiceEngine.nativeTts,
+        usedFallback: false,
+        cacheHit: false,
+      ),
+    );
+
+    final failure = await _captureFailure(() => speak);
+
+    expect(failure.category, VoiceFailureCategory.cancelled);
+    expect(player.playCalls, isEmpty);
+  });
 }
 
 class _QueuedOmniVoiceSynthesizer implements OmniVoiceSynthesizer {
@@ -279,16 +374,27 @@ class _RecordingAudioPlayer implements VoiceAudioPlayer {
 }
 
 class _RecordingNativeProvider implements VoiceProvider {
-  _RecordingNativeProvider(this.events);
+  _RecordingNativeProvider(this.events, {this.started, this.result});
 
   final List<String> events;
   final List<VoiceRequest> speakCalls = <VoiceRequest>[];
   int stopCount = 0;
 
+  /// When provided, [speak] signals [started] and awaits [result] so tests can
+  /// control when native synthesis resolves. When omitted, [speak] resolves
+  /// synchronously (the default behavior for the cancellation suite).
+  final Completer<void>? started;
+  final Completer<VoicePlaybackResult>? result;
+
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     speakCalls.add(request);
     events.add('native.speak');
+    final resolvedResult = result;
+    if (resolvedResult != null) {
+      started?.complete();
+      return resolvedResult.future;
+    }
     return VoicePlaybackResult(
       requestedEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
       actualEngine: VoiceEngine.nativeTts,
