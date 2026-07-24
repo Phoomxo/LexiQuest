@@ -216,7 +216,7 @@ class _SettingScreenState extends State<SettingScreen> {
                   OutlinedButton.icon(
                     onPressed: () async {
                       await LocalUserProgressStore().clearAll();
-                      if (!mounted) return;
+                      if (!context.mounted) return;
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
                           content: Text('🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!'),

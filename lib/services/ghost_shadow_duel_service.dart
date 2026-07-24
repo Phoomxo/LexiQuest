@@ -1,5 +1,3 @@
-import 'dart:math';
-
 class GhostSnapshot {
   final DateTime recordedAt;
   final double accuracyRate;

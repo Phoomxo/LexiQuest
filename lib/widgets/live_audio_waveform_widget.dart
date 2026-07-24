@@ -21,7 +21,7 @@ class LiveAudioWaveformWidget extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.black54,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: barColor.withOpacity(0.4)),
+        border: Border.all(color: barColor.withValues(alpha: 0.4)),
       ),
       child: CustomPaint(
         size: Size(double.infinity, height - 16),

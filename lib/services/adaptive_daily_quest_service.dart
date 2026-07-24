@@ -58,7 +58,6 @@ class AdaptiveDailyQuestService {
           ),
         ];
       case LearnerPersona.atRiskLearner:
-      default:
         return const [
           DailyQuest(
             title: '🏥 ซ่อมเสริมคำศัพท์จุดอ่อน',
