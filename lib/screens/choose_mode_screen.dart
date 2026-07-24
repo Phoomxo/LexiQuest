@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'cefr_article_reader_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
 import 'cefr_selection_screen.dart';
 import 'dictation_quiz_screen.dart';
@@ -8,6 +9,7 @@ import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
 import 'sentence_scramble_screen.dart';
 import 'shadowing_challenge_screen.dart';
+import 'smart_audio_playlist_screen.dart';
 import 'srs_flashcards_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
@@ -103,9 +105,8 @@ class ChooseModeScreen extends StatelessWidget {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const DictationQuizScreen(
-                      targetWord: 'challenge',
-                    ),
+                    builder: (context) =>
+                        const DictationQuizScreen(targetWord: 'challenge'),
                   ),
                 );
               },
@@ -175,6 +176,58 @@ class ChooseModeScreen extends StatelessWidget {
                           'example': 'Sustainable energy sources.',
                         },
                       ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 🎧 8. เครื่องเล่นเสียงทบทวนคำศัพท์ต่อเนื่อง (Smart Audio Playlist)
+            _buildModeButton(
+              context,
+              title: "เครื่องเล่นเสียงทบทวนศัพท์ (Audio Playlist)",
+              icon: Icons.headphones,
+              color: Colors.deepPurpleAccent,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const SmartAudioPlaylistScreen(
+                      wordList: [
+                        {
+                          'word': 'opportunity',
+                          'translation': 'โอกาส',
+                          'example': 'This is a great opportunity.',
+                        },
+                        {
+                          'word': 'sustainable',
+                          'translation': 'ยั่งยืน',
+                          'example': 'Sustainable energy sources.',
+                        },
+                      ],
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📰 9. อ่านบทความตามระดับ CEFR (CEFR Article Reader)
+            _buildModeButton(
+              context,
+              title: "อ่านบทความ CEFR (Article Reader)",
+              icon: Icons.menu_book,
+              color: Colors.brown,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CefrArticleReaderScreen(
+                      title: 'The Future of Technology',
+                      content:
+                          'Sustainable technology brings incredible opportunities for innovative learning and development',
+                      cefrLevel: 'B2',
                     ),
                   ),
                 );
