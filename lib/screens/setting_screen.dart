@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../services/local_user_progress_store.dart';
 import 'select_wallpaper_screen.dart'; // นำเข้าไฟล์หน้าจอเลือกวอลเปเปอร์
 
 class SettingScreen extends StatefulWidget {
@@ -209,6 +210,28 @@ class _SettingScreenState extends State<SettingScreen> {
                     child: const Text(
                       'เปลี่ยนวอลเปเปอร์',
                       style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await LocalUserProgressStore().clearAll();
+                      if (!mounted) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!'),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.cleaning_services, color: Colors.redAccent),
+                    label: const Text(
+                      '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
+                      style: TextStyle(
+                        color: Colors.redAccent,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
