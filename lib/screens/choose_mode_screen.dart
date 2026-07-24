@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'boss_battle_screen.dart';
 import 'cefr_article_reader_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
 import 'cefr_selection_screen.dart';
@@ -229,6 +230,23 @@ class ChooseModeScreen extends StatelessWidget {
                           'Sustainable technology brings incredible opportunities for innovative learning and development',
                       cefrLevel: 'B2',
                     ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // ⚔️ 10. โหมดต่อสู้บอสคำศัพท์ประจำวัน (Daily Boss Battle)
+            _buildModeButton(
+              context,
+              title: "ต่อสู้บอสคำศัพท์ (Daily Boss Battle)",
+              icon: Icons.flash_on,
+              color: Colors.red.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BossBattleScreen(),
                   ),
                 );
               },
