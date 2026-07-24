@@ -4,21 +4,35 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'category_service.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseAuth? get _auth {
+    try {
+      return FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? get _firestore {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
 
   /// **🔹 1. ส่งอีเมลยืนยันผ่าน Firebase Authentication (พร้อมระบบสำรองสำหรับสาธิต/ทดลอง)**
   Future<void> sendEmailVerification(String email, String password) async {
     try {
-      UserCredential userCredential = await _auth
-          .createUserWithEmailAndPassword(email: email, password: password);
+      if (_auth != null) {
+        UserCredential userCredential = await _auth!
+            .createUserWithEmailAndPassword(email: email, password: password);
 
-      User? user = userCredential.user;
-      if (user != null && !user.emailVerified) {
-        await user.sendEmailVerification();
+        User? user = userCredential.user;
+        if (user != null && !user.emailVerified) {
+          await user.sendEmailVerification();
+        }
       }
     } catch (e) {
-      // Graceful fallback for offline / demo mode without active Cloud Firebase setup
       debugPrint('Cloud Firebase auth fallback: $e');
     }
   }
@@ -26,7 +40,7 @@ class AuthService {
   /// **🔹 2. ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง**
   Future<bool> isEmailVerified() async {
     try {
-      User? user = _auth.currentUser;
+      User? user = _auth?.currentUser;
       if (user != null) {
         await user.reload();
         return user.emailVerified;
@@ -44,9 +58,9 @@ class AuthService {
     required int age,
   }) async {
     try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).set({
+      User? user = _auth?.currentUser;
+      if (user != null && _firestore != null) {
+        await _firestore!.collection('users').doc(user.uid).set({
           'first_name': firstName,
           'last_name': lastName,
           'email': email,
@@ -56,7 +70,6 @@ class AuthService {
         await CategoryService().addDefaultCategoriesForNewUser(user.uid);
       }
     } catch (e) {
-      // เมื่อไม่มีคลาวด์ Firestore ให้ถือว่าสมัครลงเครื่องสำเร็จเรียบร้อย
       debugPrint('Cloud Firestore user profile fallback: $e');
     }
   }
@@ -67,24 +80,26 @@ class AuthService {
     required String password,
   }) async {
     try {
-      UserCredential userCredential = await _auth.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-      return userCredential;
+      if (_auth != null) {
+        UserCredential userCredential = await _auth!.signInWithEmailAndPassword(
+          email: email,
+          password: password,
+        );
+        return userCredential;
+      }
     } catch (e) {
       debugPrint('Cloud signIn fallback: $e');
-      return null;
     }
+    return null;
   }
 
   /// **🔹 5. ออกจากระบบ**
   Future<void> signOut() async {
     try {
-      await _auth.signOut();
+      await _auth?.signOut();
     } catch (_) {}
   }
 
   /// **🔹 6. ดึงข้อมูลผู้ใช้ปัจจุบัน**
-  User? get currentUser => _auth.currentUser;
+  User? get currentUser => _auth?.currentUser;
 }
