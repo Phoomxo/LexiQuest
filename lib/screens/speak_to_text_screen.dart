@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../utils/pronunciation_evaluator.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -199,12 +200,36 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 10),
-                    if (spokenText.isNotEmpty)
-                      Icon(
-                        isCorrect ? Icons.check_circle : Icons.cancel,
-                        color: isCorrect ? Colors.green : Colors.red,
-                        size: 40,
+                    if (spokenText.isNotEmpty) ...[
+                      Builder(
+                        builder: (context) {
+                          final diff = PronunciationEvaluator.evaluate(
+                            widget.correctWord,
+                            spokenText,
+                          );
+                          return Column(
+                            children: [
+                              Text(
+                                'Accuracy: ${diff.scorePercentage}%',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: isCorrect
+                                      ? Colors.green.shade800
+                                      : Colors.red.shade800,
+                                ),
+                              ),
+                              const SizedBox(height: 6),
+                              Icon(
+                                isCorrect ? Icons.check_circle : Icons.cancel,
+                                color: isCorrect ? Colors.green : Colors.red,
+                                size: 40,
+                              ),
+                            ],
+                          );
+                        },
                       ),
+                    ],
                   ],
                 ),
               ),
