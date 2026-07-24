@@ -9,7 +9,8 @@ class PersistentAudioCache {
 
   File _getFileForKey(String key) {
     final safeKey = key.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_');
-    final filePath = '${storageDirectory.path}${Platform.pathSeparator}$safeKey.wav';
+    final filePath =
+        '${storageDirectory.path}${Platform.pathSeparator}$safeKey.wav';
     return File(filePath);
   }
 
