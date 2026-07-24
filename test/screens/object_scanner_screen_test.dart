@@ -25,79 +25,74 @@ class FakeVoiceProvider implements VoiceProvider {
 
 void main() {
   testWidgets(
-      'ObjectScannerScreen renders scan area and scans objects with ML service',
-      (WidgetTester tester) async {
-    final mockMl = MockMlImageLabelingService(fakeResults: [
-      const LabelResult(label: 'Laptop', confidence: 0.95),
-    ]);
-    final fakeVoice = FakeVoiceProvider();
+    'ObjectScannerScreen renders scan area and scans objects with ML service',
+    (WidgetTester tester) async {
+      final mockMl = MockMlImageLabelingService(
+        fakeResults: [const LabelResult(label: 'Laptop', confidence: 0.95)],
+      );
+      final fakeVoice = FakeVoiceProvider();
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ObjectScannerScreen(
-          mlService: mockMl,
-          voiceProvider: fakeVoice,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            mlService: mockMl,
+            voiceProvider: fakeVoice,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    // Verify screen title renders in AppBar
-    expect(
-      find.text('สแกนวัตถุคำศัพท์ (Object Scanner)'),
-      findsOneWidget,
-    );
+      // Verify screen title renders in AppBar
+      expect(find.text('สแกนวัตถุคำศัพท์ (Object Scanner)'), findsOneWidget);
 
-    // Verify scan button exists — use the exact button text
-    expect(
-      find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'),
-      findsOneWidget,
-    );
+      // Verify scan button exists — use the exact button text
+      expect(find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'), findsOneWidget);
 
-    // Tap scan button using exact text
-    await tester.tap(find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'));
-    await tester.pump();
+      // Tap scan button using exact text
+      await tester.tap(find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'));
+      await tester.pump();
 
-    // Should show scanning indicator
-    expect(find.textContaining('กำลังวิเคราะห์'), findsOneWidget);
+      // Should show scanning indicator
+      expect(find.textContaining('กำลังวิเคราะห์'), findsOneWidget);
 
-    // Wait for scan to complete
-    await tester.pump(const Duration(milliseconds: 900));
+      // Wait for scan to complete
+      await tester.pump(const Duration(milliseconds: 900));
 
-    // Should show a detected word
-    expect(find.textContaining('สแกนพบ:'), findsOneWidget);
-  });
+      // Should show a detected word
+      expect(find.textContaining('สแกนพบ:'), findsOneWidget);
+    },
+  );
 
-  testWidgets('ObjectScannerScreen shows All category chip selected by default',
-      (WidgetTester tester) async {
+  testWidgets(
+    'ObjectScannerScreen shows All category chip selected by default',
+    (WidgetTester tester) async {
+      final mockMl = MockMlImageLabelingService();
+      final fakeVoice = FakeVoiceProvider();
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            mlService: mockMl,
+            voiceProvider: fakeVoice,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // Should have 'All' category chip visible
+      expect(find.text('All'), findsOneWidget);
+    },
+  );
+
+  testWidgets('ObjectScannerScreen displays database stats', (
+    WidgetTester tester,
+  ) async {
     final mockMl = MockMlImageLabelingService();
     final fakeVoice = FakeVoiceProvider();
 
     await tester.pumpWidget(
       MaterialApp(
-        home: ObjectScannerScreen(
-          mlService: mockMl,
-          voiceProvider: fakeVoice,
-        ),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    // Should have 'All' category chip visible
-    expect(find.text('All'), findsOneWidget);
-  });
-
-  testWidgets('ObjectScannerScreen displays database stats',
-      (WidgetTester tester) async {
-    final mockMl = MockMlImageLabelingService();
-    final fakeVoice = FakeVoiceProvider();
-
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ObjectScannerScreen(
-          mlService: mockMl,
-          voiceProvider: fakeVoice,
-        ),
+        home: ObjectScannerScreen(mlService: mockMl, voiceProvider: fakeVoice),
       ),
     );
     await tester.pumpAndSettle();

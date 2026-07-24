@@ -33,14 +33,39 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('จำลองบทสนทนากับ AI Tutor'), findsOneWidget);
+    expect(find.textContaining('จำลองบทสนทนา AI Tutor'), findsOneWidget);
     expect(find.textContaining('Welcome to the interview'), findsOneWidget);
 
-    await tester.enterText(find.byType(TextField), 'My name is Phet');
+    await tester.enterText(
+      find.byType(TextField),
+      'My name is Phet and I am a developer',
+    );
     await tester.tap(find.byIcon(Icons.send));
     await tester.pump();
-    await tester.pump(const Duration(milliseconds: 600));
+    await tester.pump(const Duration(milliseconds: 700));
 
-    expect(find.text('My name is Phet'), findsOneWidget);
+    expect(find.textContaining('My name is Phet'), findsOneWidget);
+    expect(find.textContaining('Grammar:'), findsOneWidget);
+  });
+
+  testWidgets('AiTutorScreen handles mic button tap for voice input', (
+    WidgetTester tester,
+  ) async {
+    final fakeVoice = FakeVoiceProvider();
+
+    await tester.pumpWidget(
+      MaterialApp(home: AiTutorScreen(voiceProvider: fakeVoice)),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.mic_none));
+    await tester.pump();
+
+    expect(find.textContaining('กำลังฟังเสียงพูดของคุณ'), findsOneWidget);
+
+    await tester.pump(const Duration(milliseconds: 1300));
+    await tester.pump(const Duration(milliseconds: 700));
+
+    expect(find.textContaining('three years of experience'), findsOneWidget);
   });
 }

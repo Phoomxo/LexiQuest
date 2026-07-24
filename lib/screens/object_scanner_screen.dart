@@ -235,6 +235,41 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                   ),
                   // Scanning corners overlay
                   ..._buildScanCorners(),
+                  if (_currentResult != null && !_isScanning)
+                    Positioned(
+                      top: 40,
+                      left: 60,
+                      right: 60,
+                      bottom: 40,
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border.all(
+                            color: Colors.greenAccent,
+                            width: 2.5,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.greenAccent.withValues(alpha: 0.1),
+                        ),
+                        child: Align(
+                          alignment: Alignment.topRight,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            color: Colors.greenAccent,
+                            child: Text(
+                              'AR Object: ${_currentResult!.mlLabel}',
+                              style: const TextStyle(
+                                color: Colors.black,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 11,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 ],
               ),
             ),
