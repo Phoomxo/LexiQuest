@@ -20,34 +20,36 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
-  testWidgets('SmartAudioPlaylistScreen renders word and toggles play/pause button',
-      (WidgetTester tester) async {
-    final fakeVoice = FakeVoiceProvider();
-    final wordList = [
-      {'word': 'apple', 'translation': 'แอปเปิ้ล', 'example': 'Red apple'},
-    ];
+  testWidgets(
+    'SmartAudioPlaylistScreen renders word and toggles play/pause button',
+    (WidgetTester tester) async {
+      final fakeVoice = FakeVoiceProvider();
+      final wordList = [
+        {'word': 'apple', 'translation': 'แอปเปิ้ล', 'example': 'Red apple'},
+      ];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SmartAudioPlaylistScreen(
-          wordList: wordList,
-          voiceProvider: fakeVoice,
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SmartAudioPlaylistScreen(
+            wordList: wordList,
+            voiceProvider: fakeVoice,
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('apple'), findsOneWidget);
-    expect(find.text('เริ่มเล่นต่อเนื่อง'), findsOneWidget);
+      expect(find.text('apple'), findsOneWidget);
+      expect(find.text('เริ่มเล่นต่อเนื่อง'), findsOneWidget);
 
-    await tester.tap(find.text('เริ่มเล่นต่อเนื่อง'));
-    await tester.pump();
+      await tester.tap(find.text('เริ่มเล่นต่อเนื่อง'));
+      await tester.pump();
 
-    expect(find.text('หยุดเล่น'), findsOneWidget);
+      expect(find.text('หยุดเล่น'), findsOneWidget);
 
-    // Stop to cancel timer
-    await tester.tap(find.text('หยุดเล่น'));
-    await tester.pump();
-    await tester.pump(const Duration(seconds: 3));
-  });
+      // Stop to cancel timer
+      await tester.tap(find.text('หยุดเล่น'));
+      await tester.pump();
+      await tester.pump(const Duration(seconds: 3));
+    },
+  );
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/category_service.dart';
 import '../models/category_model.dart';
-import 'choose_mode_screen.dart';
+import 'main_navigation_screen.dart';
 
 class Home extends StatelessWidget {
   final CategoryService _categoryService = CategoryService();
@@ -111,7 +111,9 @@ class Home extends StatelessWidget {
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => ChooseModeScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const MainNavigationScreen(),
+                  ),
                 );
               },
               style: ElevatedButton.styleFrom(
