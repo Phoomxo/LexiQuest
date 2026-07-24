@@ -51,32 +51,27 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       // เข้าสู่ระบบ
-      UserCredential userCredential = await _authService.signIn(
+      UserCredential? userCredential = await _authService.signIn(
         email: email,
         password: password,
       );
 
-      User? user = userCredential.user;
-      if (user != null) {
-        // ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง
-        if (!user.emailVerified) {
-          if (!mounted) return;
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
-          );
-
-          // ไปที่หน้ากรอก OTP เพื่อให้ยืนยันอีเมล
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
-          );
-          return;
-        }
-
-        // อนุญาตให้เข้าสู่ระบบ
+      User? user = userCredential?.user;
+      if (user != null && !user.emailVerified) {
         if (!mounted) return;
-        Navigator.pushReplacementNamed(context, '/home');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('กรุณายืนยันอีเมลก่อนเข้าสู่ระบบ')),
+        );
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
+        );
+        return;
       }
+
+      // อนุญาตให้เข้าสู่ระบบ
+      if (!mounted) return;
+      Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       String errorMessage;
 

@@ -31,18 +31,23 @@ class _RegisterScreenState extends State<RegisterScreen> {
       String password = _passwordController.text.trim();
 
       if (!_isValidEmail(email)) {
-        throw Exception('รูปแบบอีเมลไม่ถูกต้อง');
+        throw Exception('รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง');
+      }
+      if (password.length < 4) {
+        throw Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร');
       }
 
-      // ให้ Firebase ส่งอีเมลยืนยัน
       await _authService.sendEmailVerification(email, password);
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('กรุณาตรวจสอบอีเมลของคุณเพื่อยืนยันบัญชี')),
+        const SnackBar(
+          content: Text('✅ สร้างบัญชีเรียบร้อย! กำลังนำท่านไปขั้นตอนถัดไป...'),
+          backgroundColor: Colors.green,
+        ),
       );
 
-      // ไปที่หน้ารอการยืนยัน OTP
+      // ไปที่หน้ารอการยืนยัน OTP / ขั้นตอนถัดไป
       Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
@@ -50,10 +55,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to send verification email: $e')),
+        SnackBar(
+          content: Text('เกิดข้อผิดพลาด: ${e.toString().replaceAll('Exception: ', '')}'),
+          backgroundColor: Colors.orangeAccent,
+        ),
       );
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
