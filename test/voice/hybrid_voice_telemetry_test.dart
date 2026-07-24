@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
@@ -217,14 +218,191 @@ void main() {
     expect(event.latency.isNegative, isFalse);
     expect(event.occurredAtUtc.isUtc, isTrue);
   });
+
+  test(
+    'a successful practice speak stays successful when telemetry record fails '
+    'with a non-VoiceFailure error, returning the original result and '
+    'recording exactly once',
+    () async {
+      final sink = _RecordingTelemetrySink(
+        recordError: StateError('telemetry sink failed'),
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        telemetrySink: sink,
+      );
+
+      final result = await service.speak(_practiceRequest());
+
+      expect(result.actualEngine, VoiceEngine.omniVoice);
+      expect(result.usedFallback, isFalse);
+      expect(result.requestId, _omniRequestId);
+      expect(sink.recordCalls, 1);
+      expect(player.playCalls, hasLength(1));
+    },
+  );
+
+  test(
+    'a successful practice speak stays successful when telemetry record fails '
+    'with a VoiceFailure, never entering the source-failure telemetry path '
+    'and recording exactly once',
+    () async {
+      final sink = _RecordingTelemetrySink(
+        recordError: const VoiceFailure(
+          category: VoiceFailureCategory.unknown,
+          message: 'Telemetry sink failed.',
+        ),
+      );
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        telemetrySink: sink,
+      );
+
+      final result = await service.speak(_practiceRequest());
+
+      expect(result.actualEngine, VoiceEngine.omniVoice);
+      expect(result.usedFallback, isFalse);
+      expect(sink.recordCalls, 1);
+      expect(sink.events.single.outcome, VoiceTelemetryOutcome.succeeded);
+      expect(sink.events.single.failureCategory, isNull);
+    },
+  );
+
+  test('a strict research source VoiceFailure is rethrown identical when '
+      'telemetry record fails, so telemetry never masks the source failure and '
+      'records exactly once', () async {
+    const remoteFailure = VoiceFailure(
+      category: VoiceFailureCategory.modelUnavailable,
+      message: 'The voice model is currently unavailable.',
+    );
+    final sink = _RecordingTelemetrySink(
+      recordError: StateError('telemetry sink failed'),
+    );
+    final native = _RecordingNativeProvider();
+    final omni = _RecordingOmniVoiceSynthesizer(failure: remoteFailure);
+    final player = _RecordingAudioPlayer();
+    final service = _buildService(
+      nativeProvider: native,
+      omniVoiceProvider: omni,
+      audioPlayer: player,
+      telemetrySink: sink,
+    );
+
+    final failure = await _captureFailure(
+      () => service.speak(_researchRequest(VoiceEngine.omniVoice)),
+    );
+
+    expect(identical(failure, remoteFailure), isTrue);
+    expect(failure.category, VoiceFailureCategory.modelUnavailable);
+    expect(sink.recordCalls, 1);
+    expect(sink.events.single.outcome, VoiceTelemetryOutcome.failed);
+    expect(
+      sink.events.single.failureCategory,
+      VoiceFailureCategory.modelUnavailable,
+    );
+  });
+
+  test(
+    'a successful practice speak completes within a bounded timeout even when '
+    'the telemetry record future never completes, while still invoking record '
+    'exactly once',
+    () async {
+      final sink = _RecordingTelemetrySink(neverComplete: true);
+      final native = _RecordingNativeProvider();
+      final omni = _RecordingOmniVoiceSynthesizer(audio: _omniAudio());
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        telemetrySink: sink,
+      );
+
+      final result = await service
+          .speak(_practiceRequest())
+          .timeout(const Duration(seconds: 1));
+
+      expect(result.actualEngine, VoiceEngine.omniVoice);
+      expect(result.requestId, _omniRequestId);
+      expect(sink.recordCalls, 1);
+    },
+  );
+
+  test(
+    'a practice request cancelled after remote synthesis begins emits exactly '
+    'one cancelled telemetry event without playing, falling back, or caching',
+    () async {
+      final cache = MemoryVoiceAudioCache(
+        maxEntries: 16,
+        maxBytes: 1024 * 1024,
+      );
+      final sink = _RecordingTelemetrySink();
+      final native = _RecordingNativeProvider();
+      final omniPending = Completer<OmniVoiceAudio>();
+      final omni = _RecordingOmniVoiceSynthesizer(
+        audio: _omniAudio(),
+        pending: omniPending,
+      );
+      final player = _RecordingAudioPlayer();
+      final service = _buildService(
+        nativeProvider: native,
+        omniVoiceProvider: omni,
+        audioPlayer: player,
+        audioCache: cache,
+        telemetrySink: sink,
+      );
+
+      final speak = service.speak(_practiceRequest());
+      await omni.started;
+      await service.stop();
+      omniPending.complete(_omniAudio());
+
+      final failure = await _captureFailure(() => speak);
+
+      expect(failure.category, VoiceFailureCategory.cancelled);
+      expect(sink.recordCalls, 1);
+      expect(sink.events.single.outcome, VoiceTelemetryOutcome.cancelled);
+      expect(
+        sink.events.single.failureCategory,
+        VoiceFailureCategory.cancelled,
+      );
+      expect(player.playCalls, isEmpty);
+      expect(native.speakCalls, isEmpty);
+      expect(cache.entryCount, 0);
+    },
+  );
 }
 
 class _RecordingTelemetrySink implements VoiceTelemetrySink {
+  _RecordingTelemetrySink({this.recordError, this.neverComplete = false});
+
+  final Object? recordError;
+  final bool neverComplete;
   final List<VoiceTelemetryEvent> events = <VoiceTelemetryEvent>[];
+  int recordCalls = 0;
 
   @override
-  Future<void> record(VoiceTelemetryEvent event) async {
+  Future<void> record(VoiceTelemetryEvent event) {
+    recordCalls++;
     events.add(event);
+    if (neverComplete) {
+      return Completer<void>().future;
+    }
+    final error = recordError;
+    if (error != null) {
+      return Future<void>.error(error);
+    }
+    return Future<void>.value();
   }
 }
 
@@ -247,15 +425,26 @@ class _RecordingNativeProvider implements VoiceProvider {
 }
 
 class _RecordingOmniVoiceSynthesizer implements OmniVoiceSynthesizer {
-  _RecordingOmniVoiceSynthesizer({this.audio, this.failure});
+  _RecordingOmniVoiceSynthesizer({this.audio, this.failure, this.pending});
 
   final OmniVoiceAudio? audio;
   final VoiceFailure? failure;
+  final Completer<OmniVoiceAudio>? pending;
   final List<VoiceRequest> synthesizeCalls = <VoiceRequest>[];
+  final Completer<void> _started = Completer<void>();
+
+  Future<void> get started => _started.future;
 
   @override
   Future<OmniVoiceAudio> synthesize(VoiceRequest request) async {
     synthesizeCalls.add(request);
+    if (!_started.isCompleted) {
+      _started.complete();
+    }
+    final pendingCompleter = pending;
+    if (pendingCompleter != null) {
+      await pendingCompleter.future;
+    }
     if (failure != null) {
       throw failure!;
     }

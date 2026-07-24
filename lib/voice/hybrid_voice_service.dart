@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'omni_voice_provider.dart';
 import 'voice_audio_cache.dart';
 import 'voice_audio_player.dart';
@@ -50,32 +52,51 @@ final class HybridVoiceService implements VoiceProvider {
     final stopwatch = Stopwatch()..start();
     final generation = ++_generation;
     VoiceFailureCategory? fallbackReason;
+    late final VoicePlaybackResult result;
+    late final VoiceTelemetryEvent event;
+    VoiceFailure? sourceFailure;
+    StackTrace? sourceStackTrace;
 
     try {
-      final result = await _routeSpeak(request, generation, (category) {
+      result = await _routeSpeak(request, generation, (category) {
         fallbackReason = category;
       });
-      await _telemetrySink.record(
-        VoiceTelemetryEvent.succeeded(
-          request: request,
-          result: result,
-          fallbackReason: result.usedFallback ? fallbackReason : null,
-          latency: stopwatch.elapsed,
-          occurredAtUtc: DateTime.now().toUtc(),
-        ),
+      event = VoiceTelemetryEvent.succeeded(
+        request: request,
+        result: result,
+        fallbackReason: result.usedFallback ? fallbackReason : null,
+        latency: stopwatch.elapsed,
+        occurredAtUtc: DateTime.now().toUtc(),
       );
-      return result;
-    } on VoiceFailure catch (failure) {
-      await _telemetrySink.record(
-        VoiceTelemetryEvent.failed(
-          request: request,
-          requestedEngine: _requestedEngineFor(request),
-          failure: failure,
-          latency: stopwatch.elapsed,
-          occurredAtUtc: DateTime.now().toUtc(),
-        ),
+    } on VoiceFailure catch (failure, stackTrace) {
+      sourceFailure = failure;
+      sourceStackTrace = stackTrace;
+      event = VoiceTelemetryEvent.failed(
+        request: request,
+        requestedEngine: _requestedEngineFor(request),
+        failure: failure,
+        latency: stopwatch.elapsed,
+        occurredAtUtc: DateTime.now().toUtc(),
       );
-      rethrow;
+    }
+
+    unawaited(_recordTelemetry(event));
+
+    final failure = sourceFailure;
+    if (failure != null) {
+      Error.throwWithStackTrace(failure, sourceStackTrace!);
+    }
+    return result;
+  }
+
+  /// Consumes synchronous and asynchronous sink errors so telemetry can never
+  /// change or delay the user's voice result. Sink errors are deliberately not
+  /// logged because they may contain untrusted implementation details.
+  Future<void> _recordTelemetry(VoiceTelemetryEvent event) async {
+    try {
+      await _telemetrySink.record(event);
+    } on Object {
+      // Telemetry is best-effort.
     }
   }
 
