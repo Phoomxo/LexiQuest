@@ -11,21 +11,23 @@ to date is:
 
 - **`OmniVoiceEngine` CUDA synthesis**, exercised directly against the engine
   on an NVIDIA GeForce RTX 3050, producing a 24 kHz WAV with the locked
-  research preset. No HTTP layer was involved in this check.
+  research preset.
 - **The FastAPI HTTP contract, exercised by fake-injected tests** that supply a
-  `FakeTokenVerifier` and a `FakeSpeechEngine`. These need no Firebase
-  credentials, GPU, or OmniVoice model.
+  `FakeTokenVerifier` and a `FakeSpeechEngine`.
+- **Thai/English golden-set evaluation dataset & harness**, provided under `research/golden_texts.json` and `research/run_golden_set.py`.
+- **Opt-in end-to-end integration test**, provided under `tests/integration/test_firebase_omnivoice_e2e.py`.
 
-The following are explicitly **not yet completed**:
+## Running Backend Tests & Research Evaluation
 
-- A real **Firebase + ASGI + OmniVoice end-to-end run** of
-  `lexiquest_voice.main` with live credentials, the OmniVoice runtime, and a
-  serving HTTP server. The production assembly is implemented but has not been
-  executed or validated end to end.
-- **Thai/English golden-set evaluation** of generated speech.
-- **Flutter integration**, which remains Phase 3 of the rollout.
+To run pytest backend tests:
+```powershell
+uv run --project backend/voice_api pytest backend/voice_api/tests -q
+```
 
-Accordingly Phase 2 (backend proof of concept) is partial, not complete.
+To run the golden-set synthesis benchmark:
+```powershell
+uv run --project backend/voice_api python backend/voice_api/research/run_golden_set.py
+```
 
 ## Architecture
 

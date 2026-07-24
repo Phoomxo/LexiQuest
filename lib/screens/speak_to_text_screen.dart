@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_tts/flutter_tts.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import '../voice/voice_models.dart';
+import '../voice/voice_provider.dart';
+import '../voice/voice_service_factory.dart';
 import 'word_scramble_screen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
+  final VoiceProvider? voiceProvider;
 
-  const SpeakToTextScreen({super.key, required this.correctWord});
+  const SpeakToTextScreen({
+    super.key,
+    required this.correctWord,
+    this.voiceProvider,
+  });
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
@@ -14,7 +21,8 @@ class SpeakToTextScreen extends StatefulWidget {
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   late stt.SpeechToText _speech;
-  late FlutterTts _flutterTts;
+  late final VoiceProvider _voiceProvider;
+  bool _ownsVoiceProvider = false;
   bool isListening = false;
   String spokenText = ''; // ข้อความที่ผู้ใช้พูด
   bool isCorrect = false;
@@ -23,16 +31,34 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   void initState() {
     super.initState();
     _speech = stt.SpeechToText();
-    _flutterTts = FlutterTts();
-    _speakWord(); // พูดคำศัพท์ทันทีเมื่อเริ่มหน้าจอ
+    if (widget.voiceProvider != null) {
+      _voiceProvider = widget.voiceProvider!;
+      _ownsVoiceProvider = false;
+    } else {
+      _voiceProvider = VoiceServiceFactory.create();
+      _ownsVoiceProvider = true;
+    }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _speakWord(); // พูดคำศัพท์ทันทีเมื่อเริ่มหน้าจอ
+    });
   }
 
   Future<void> _speakWord() async {
-    await _flutterTts.setLanguage("en-US"); // ตั้งค่าภาษา
-    await _flutterTts.setSpeechRate(0.5); // ตั้งค่าความเร็ว
-    await _flutterTts.setVolume(1.0); // ตั้งค่าความดัง
-    await _flutterTts.setPitch(1.0); // ตั้งค่าโทนเสียง
-    await _flutterTts.speak(widget.correctWord); // เรียกให้พูดคำศัพท์
+    try {
+      await _voiceProvider.speak(
+        VoiceRequest.create(
+          text: widget.correctWord,
+          language: 'en',
+          voiceId: 'teacher_female',
+          speed: 1.0,
+          mode: VoiceMode.practice,
+          contentId: widget.correctWord,
+          contentType: 'vocabulary_word',
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error speaking word: $e');
+    }
   }
 
   void _startListening() async {
@@ -77,6 +103,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
   @override
   void dispose() {
     _speech.stop();
+    _voiceProvider.stop();
+    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
+      _voiceProvider.dispose();
+    }
     super.dispose();
   }
 
@@ -126,13 +156,25 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
               const SizedBox(height: 10),
               GestureDetector(
                 onTap: _speakWord, // แตะเพื่อให้พูดคำศัพท์ซ้ำ
-                child: Text(
-                  widget.correctWord,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.yellowAccent,
-                  ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      widget.correctWord,
+                      style: const TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.yellowAccent,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Icon(
+                      Icons.volume_up,
+                      color: Colors.yellowAccent,
+                      size: 32,
+                    ),
+                  ],
                 ),
               ),
               const SizedBox(height: 30),

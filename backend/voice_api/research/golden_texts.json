@@ -1,0 +1,38 @@
+[
+  {
+    "id": "en_word_apple",
+    "text": "apple",
+    "language": "en",
+    "category": "vocabulary_word"
+  },
+  {
+    "id": "en_word_scramble",
+    "text": "scramble",
+    "language": "en",
+    "category": "vocabulary_word"
+  },
+  {
+    "id": "en_sentence_cat",
+    "text": "The cat is sleeping on the mat.",
+    "language": "en",
+    "category": "quiz_sentence"
+  },
+  {
+    "id": "th_word_sawasdee",
+    "text": "สวัสดี",
+    "language": "th",
+    "category": "vocabulary_word"
+  },
+  {
+    "id": "th_word_khobkhun",
+    "text": "ขอบคุณ",
+    "language": "th",
+    "category": "vocabulary_word"
+  },
+  {
+    "id": "th_sentence_learn",
+    "text": "ฉันกำลังเรียนรู้ภาษาอังกฤษและภาษาไทย",
+    "language": "th",
+    "category": "quiz_sentence"
+  }
+]

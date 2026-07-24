@@ -3,6 +3,11 @@
 *.log
 *.pyc
 *.swp
+# Miscellaneous
+*.class
+*.log
+*.pyc
+*.swp
 .DS_Store
 .atom/
 .buildlog/
@@ -11,12 +16,8 @@
 migrate_working_dir/
 .worktrees/
 .firecrawl/
+.glm-prompts/
 node_modules/
-
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
 .idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in
