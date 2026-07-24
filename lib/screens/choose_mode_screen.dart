@@ -259,6 +259,26 @@ class ChooseModeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
+            // 🤺 10.1 โหมดดวลร่างเงาตนเอง (Your Next Opponent Is You)
+            _buildModeButton(
+              context,
+              title: "🤺 ดวลร่างเงาตนเอง (Your Next Opponent Is You)",
+              icon: Icons.psychology,
+              color: Colors.deepPurple.shade900,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BossBattleScreen(
+                      bossName: '🤺 ร่างเงาของคุณในอดีต (Shadow Self Avatar)',
+                      initialBossHp: 120,
+                    ),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
             // 📥 11. นำเข้าสมุดคำศัพท์ส่วนตัว (Custom Wordbook Import)
             _buildModeButton(
               context,
