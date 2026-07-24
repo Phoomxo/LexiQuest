@@ -32,9 +32,20 @@ class CustomWordbookImporter {
     final lines = LineSplitter.split(csvRaw).toList();
     final result = <Map<String, String>>[];
 
-    for (final line in lines) {
-      if (line.trim().isEmpty) continue;
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      if (line.isEmpty) continue;
       final parts = line.split(',');
+      final firstPart = parts[0].trim().toLowerCase();
+
+      // Skip header line if present
+      if (i == 0 &&
+          (firstPart == 'word' ||
+              firstPart == 'vocabulary' ||
+              firstPart == 'term')) {
+        continue;
+      }
+
       if (parts.isNotEmpty && parts[0].trim().isNotEmpty) {
         final word = parts[0].trim();
         final translation = parts.length > 1 ? parts[1].trim() : '';

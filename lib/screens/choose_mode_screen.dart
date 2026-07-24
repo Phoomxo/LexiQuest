@@ -12,6 +12,7 @@ import 'sentence_scramble_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'smart_audio_playlist_screen.dart';
 import 'srs_flashcards_screen.dart';
+import 'wordbook_import_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
   const ChooseModeScreen({super.key});
@@ -247,6 +248,23 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const BossBattleScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📥 11. นำเข้าสมุดคำศัพท์ส่วนตัว (Custom Wordbook Import)
+            _buildModeButton(
+              context,
+              title: "นำเข้าคลังคำศัพท์ส่วนตัว (Import Wordbook)",
+              icon: Icons.file_upload,
+              color: Colors.teal,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const WordbookImportScreen(),
                   ),
                 );
               },

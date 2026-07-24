@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'achievements_screen.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'profile_settings_screen.dart';
 import 'weakness_clinic_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -21,6 +22,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     MasteryDashboardScreen(),
     WeaknessClinicScreen(),
     AchievementsScreen(),
+    ProfileSettingsScreen(),
   ];
 
   @override
@@ -60,6 +62,11 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             icon: Icon(Icons.emoji_events_outlined),
             selectedIcon: Icon(Icons.emoji_events),
             label: 'รางวัล',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outlined),
+            selectedIcon: Icon(Icons.person),
+            label: 'โปรไฟล์',
           ),
         ],
       ),
