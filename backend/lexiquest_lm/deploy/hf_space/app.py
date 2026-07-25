@@ -177,12 +177,23 @@ def chat_completions(
     inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
     max_new = min(request.max_tokens or MAX_NEW_TOKENS, MAX_NEW_TOKENS)
 
+    # Stop generation at the ChatML assistant turn terminator so the model
+    # does not ramble past the first response (a known issue with greedy
+    # decoding on small fine-tuned models). eos_token_id covers <|im_end|>
+    # directly; we pass both the bare eos and any additional stop ids to be
+    # safe across tokenizer revisions.
+    stop_token_ids = {tokenizer.eos_token_id}
+    im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
+    if im_end_id is not None and im_end_id != tokenizer.unk_token_id:
+        stop_token_ids.add(im_end_id)
+
     with torch.no_grad():
         out = model.generate(
             **inputs,
             max_new_tokens=max_new,
             do_sample=False,  # greedy for reproducibility
             pad_token_id=tokenizer.pad_token_id,
+            eos_token_id=list(stop_token_ids),
         )
     new_tokens = out[0][inputs["input_ids"].shape[1]:]
     text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
