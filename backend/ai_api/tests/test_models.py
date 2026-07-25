@@ -15,7 +15,8 @@ def test_settings_have_safe_defaults() -> None:
     assert settings.model_version == "0.1.0"
     assert settings.max_text_length == 500
     assert settings.llm_provider == "openai-compat"
-    assert settings.llm_model == "gemini-2.0-flash"
+    assert settings.llm_model == "qwen2.5:3b"
+    assert settings.fallback_llm_model == "gemini-2.0-flash"
     assert settings.llm_temperature == 0.4
     assert settings.llm_max_tokens == 512
     # Default cache TTL is 7 days.
@@ -24,7 +25,7 @@ def test_settings_have_safe_defaults() -> None:
 
 
 def test_settings_reject_unsupported_provider() -> None:
-    with pytest.raises(ValidationError, match="Unsupported LLM provider"):
+    with pytest.raises(ValidationError, match="Input should be"):
         Settings(llm_provider="claude-native")  # type: ignore[arg-type]
 
 
