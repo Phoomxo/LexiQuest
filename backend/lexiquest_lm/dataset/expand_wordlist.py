@@ -2089,10 +2089,20 @@ _CEFRJ_B2_C1: list[tuple[str, str, str]] = [
 
 
 def build_expansion() -> list[CefrWord]:
-    """Combine the bundled lists into a flat list of ``CefrWord`` records."""
+    """Combine the bundled lists into a flat list of ``CefrWord`` records.
+
+    A word that appears in more than one band (e.g. ``challenge`` is in both
+    A2 and B2/C1 lists) is kept only at its first (lowest) band, so the
+    returned list is unique on the case-folded word.
+    """
 
     out: list[CefrWord] = []
+    seen: set[str] = set()
     for word, pos, category in _OXFORD_A1:
+        key = word.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
         out.append(
             CefrWord(
                 word=word,
@@ -2103,6 +2113,10 @@ def build_expansion() -> list[CefrWord]:
             )
         )
     for word, pos, category in _OXFORD_A2:
+        key = word.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
         out.append(
             CefrWord(
                 word=word,
@@ -2113,6 +2127,10 @@ def build_expansion() -> list[CefrWord]:
             )
         )
     for word, pos, category in _CEFRJ_B2_C1:
+        key = word.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
         # Alternate B2/C1 across the curated band so both tiers are
         # represented; the precise split is heuristic but stable.
         level = "B2" if len(out) % 2 == 0 else "C1"

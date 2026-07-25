@@ -184,18 +184,33 @@ def _pos_family(part_of_speech: str) -> str:
 
     The dictionary API uses many variants (``Noun``, ``Transitive Verb``,
     ``Adjective`` etc.); templates only need a coarse family.
+
+    Order matters: ``adverb`` is checked before ``verb`` because "adverb"
+    contains the substring "verb", and ``adjective`` before anything else for
+    the same reason.
     """
 
     pos = (part_of_speech or "").lower()
-    if any(k in pos for k in ("noun",)):
-        return "noun"
-    if any(k in pos for k in ("verb",)):
-        return "verb"
-    if any(k in pos for k in ("adjective",)):
-        return "adjective"
-    if any(k in pos for k in ("adverb",)):
+    if "adverb" in pos:
         return "adverb"
-    if any(k in pos for k in ("preposition", "conjunction", "determiner", "pronoun", "article", "modal")):
+    if "adjective" in pos or "adj" in pos:
+        return "adjective"
+    if "noun" in pos:
+        return "noun"
+    if "verb" in pos:
+        return "verb"
+    if any(
+        k in pos
+        for k in (
+            "preposition",
+            "conjunction",
+            "determiner",
+            "pronoun",
+            "article",
+            "modal",
+            "interjection",
+        )
+    ):
         return "function"
     return "any"
 
