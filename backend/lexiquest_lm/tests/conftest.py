@@ -8,15 +8,16 @@ from pathlib import Path
 
 import pytest
 
-# Make the dataset scripts importable as modules. They live alongside this
-# tests dir's parent (backend/lexiquest_lm/dataset/) and are not part of the
-# installed package, so we add that directory to sys.path for the test run.
+# Make the dataset + train scripts importable as modules. They live alongside
+# this tests dir's parent (backend/lexiquest_lm/{dataset,train}/) and are not
+# part of the installed package, so we add those directories to sys.path for
+# the test run.
 _BACKEND_ROOT = Path(__file__).resolve().parent.parent
 _DATASET_DIR = _BACKEND_ROOT / "dataset"
-if str(_DATASET_DIR) not in sys.path:
-    sys.path.insert(0, str(_DATASET_DIR))
-if str(_BACKEND_ROOT / "src") not in sys.path:
-    sys.path.insert(0, str(_BACKEND_ROOT / "src"))
+_TRAIN_DIR = _BACKEND_ROOT / "train"
+for _extra in (_DATASET_DIR, _TRAIN_DIR, _BACKEND_ROOT / "src"):
+    if str(_extra) not in sys.path:
+        sys.path.insert(0, str(_extra))
 
 
 @pytest.fixture

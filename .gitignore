@@ -76,6 +76,8 @@ backend/lexiquest_lm/data/
 # from the training scripts, so never commit them.
 backend/lexiquest_lm/checkpoints/
 backend/lexiquest_lm/models/
+# Evaluation reports are regenerable from evaluate.py.
+backend/lexiquest_lm/reports/
 *.bin
 *.gguf
 *.gguf.tmp
