@@ -187,7 +187,7 @@ def enrich_words(
     for index, word in enumerate(words, start=1):
         out.append(enrich_word(word, timeout=timeout, delay_seconds=delay_seconds))
         if index % 100 == 0:
-            progress(f"  enriched {index} words...")
+            progress(f"  enriched {index} words...", flush=True)
     return out
 
 
@@ -265,17 +265,47 @@ def main(argv: list[str] | None = None) -> int:
     if args.limit > 0:
         inputs = inputs[: args.limit]
 
-    print(f"Enriching {len(inputs)} words (delay={args.delay}s)...")
-    enriched = enrich_words(
-        inputs,
-        timeout=args.timeout,
-        delay_seconds=args.delay,
+    total = len(inputs)
+    print(
+        f"Enriching {total} words (delay={args.delay}s)...",
+        flush=True,
     )
-    count = write_jsonl(args.out, (r.to_jsonl_dict() for r in enriched))
 
-    filled_examples = sum(1 for w in enriched if w.example_sentence)
-    print(f"Enriched {count} words; {filled_examples} have an example sentence.")
-    print(f"Wrote {args.out}")
+    # Stream rows straight to disk so:
+    #  - progress is visible (the file grows live, see `wc -l` from another
+    #    shell),
+    #  - a Ctrl-C or a machine crash keeps the partial dataset (we lose at
+    #    most the in-flight row, not the whole run).
+    ensure_dirs()
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    filled_examples = 0
+    count = 0
+    with args.out.open("w", encoding="utf-8") as handle:
+        for index, word in enumerate(inputs, start=1):
+            enriched = enrich_word(
+                word,
+                timeout=args.timeout,
+                delay_seconds=args.delay,
+            )
+            if enriched.example_sentence:
+                filled_examples += 1
+            handle.write(json.dumps(enriched.to_jsonl_dict(), ensure_ascii=False))
+            handle.write("\n")
+            count += 1
+            # Flush periodically so progress is durable + observable.
+            if index % 50 == 0:
+                handle.flush()
+                print(
+                    f"  enriched {index}/{total} words "
+                    f"({filled_examples} with example)",
+                    flush=True,
+                )
+
+    print(
+        f"Enriched {count} words; {filled_examples} have an example sentence.",
+        flush=True,
+    )
+    print(f"Wrote {args.out}", flush=True)
     return 0
 
 
