@@ -198,6 +198,7 @@ def _run_real_train(args: argparse.Namespace) -> int:
         AutoModelForCausalLM,
         AutoTokenizer,
         BitsAndBytesConfig,
+        DataCollatorForSeq2Seq,
         TrainingArguments,
         Trainer,
     )
@@ -205,24 +206,35 @@ def _run_real_train(args: argparse.Namespace) -> int:
     from tokenise_dataset import TOKENISED_DIR, load_tokenizer, tokenise_rows
     from lexiquest_lm.dataset.io import read_jsonl
 
-    # ---- Base model, 4-bit quantised ----
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.float16,
-        bnb_4bit_use_double_quant=True,
-    )
-    print(f"Loading base model {args.model} (4-bit)...")
-    model = AutoModelForCausalLM.from_pretrained(
-        args.model,
-        quantization_config=bnb_config,
-        device_map="auto",
-        trust_remote_code=True,
-    )
-    model = prepare_model_for_kbit_training(model)
+    # ---- Base model, 4-bit quantised with FP16 fallback ----
     tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
+
+    try:
+        bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_use_double_quant=True,
+        )
+        print(f"Loading base model {args.model} (4-bit quantised)...")
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            quantization_config=bnb_config,
+            device_map="auto",
+            trust_remote_code=True,
+        )
+        model = prepare_model_for_kbit_training(model)
+    except Exception as err:
+        print(f"BitsAndBytes 4-bit quantization unavailable ({err}).")
+        print(f"Falling back to native FP16 precision (0.5B model fits comfortably in VRAM)...")
+        model = AutoModelForCausalLM.from_pretrained(
+            args.model,
+            torch_dtype=torch.float16,
+            device_map="auto",
+            trust_remote_code=True,
+        )
 
     # ---- LoRA adapters ----
     lora_config = LoraConfig(
@@ -260,6 +272,11 @@ def _run_real_train(args: argparse.Namespace) -> int:
     train_ds = _tokenise_split("train")
     eval_ds = _tokenise_split("validation")
 
+    if args.max_train_rows > 0:
+        train_ds = train_ds.select(range(min(args.max_train_rows, len(train_ds))))
+        eval_ds = eval_ds.select(range(min(max(1, args.max_train_rows // 10), len(eval_ds))))
+        print(f"Smoke test: capped train={len(train_ds)}, eval={len(eval_ds)}")
+
     # ---- Trainer ----
     training_args = TrainingArguments(
         output_dir=str(CHECKPOINT_DIR),
@@ -274,8 +291,25 @@ def _run_real_train(args: argparse.Namespace) -> int:
         save_strategy="epoch",
         save_total_limit=2,
         bf16=torch.cuda.is_bf16_supported(),
-        optim="paged_adamw_8bit",
+        # NOTE: bitsandbytes 8-bit optimizers are broken on Windows (0.44.1
+        # ships with a ``str2optimizer8bit_blockwise`` NameError). The 0.5B
+        # model is small enough that plain torch AdamW fits comfortably in
+        # VRAM, and is also numerically cleaner. ``adamw_torch`` is the
+        # cross-platform default; ``paged_adamw_8bit`` is only worth it for
+        # multi-billion-parameter models where VRAM is the binding constraint.
+        optim="adamw_torch",
         report_to="none",
+    )
+
+    # Dynamic padding collator: pads each batch to the longest sequence in
+    # that batch (not to a global max_length), which saves substantial compute
+    # when most examples are short and a few are long. ``label_pad_token_id``
+    # keeps masked prompt positions at -100 so the loss still ignores them.
+    data_collator = DataCollatorForSeq2Seq(
+        tokenizer=tokenizer,
+        model=model,
+        label_pad_token_id=-100,
+        pad_to_multiple_of=8,  # better tensor-core utilization
     )
 
     trainer = Trainer(
@@ -283,6 +317,7 @@ def _run_real_train(args: argparse.Namespace) -> int:
         args=training_args,
         train_dataset=train_ds,
         eval_dataset=eval_ds,
+        data_collator=data_collator,
     )
 
     print(
@@ -347,10 +382,30 @@ def main(argv: list[str] | None = None) -> int:
         default=8,
         help="Number of rows to train on in dry-run (default: 8).",
     )
+    parser.add_argument(
+        "--train",
+        action="store_true",
+        help=(
+            "Run the REAL training (download Qwen2.5-0.5B, apply LoRA, train). "
+            "Required explicitly so the script never accidentally downloads a "
+            "~1GB model just because ``--dry-run`` was forgotten."
+        ),
+    )
+    parser.add_argument(
+        "--max-train-rows",
+        type=int,
+        default=0,
+        help="Cap the training set to N rows (0 = all). Smoke-test convenience.",
+    )
     args = parser.parse_args(argv)
 
     if args.dry_run:
         return _run_dry_train(args)
+    if not args.train:
+        parser.error(
+            "No mode selected. Use --dry-run for a torch-free loop check, "
+            "or --train for real fine-tuning."
+        )
     return _run_real_train(args)
 
 
