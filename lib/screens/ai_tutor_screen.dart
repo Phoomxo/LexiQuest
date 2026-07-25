@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../ai/ai_models.dart';
+import '../ai/ai_service_factory.dart';
+import '../ai/content_provider.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -19,8 +22,9 @@ class ChatMessage {
 
 class AiTutorScreen extends StatefulWidget {
   final VoiceProvider? voiceProvider;
+  final ContentProvider? contentProvider;
 
-  const AiTutorScreen({super.key, this.voiceProvider});
+  const AiTutorScreen({super.key, this.voiceProvider, this.contentProvider});
 
   @override
   State<AiTutorScreen> createState() => _AiTutorScreenState();
@@ -28,7 +32,10 @@ class AiTutorScreen extends StatefulWidget {
 
 class _AiTutorScreenState extends State<AiTutorScreen> {
   late final VoiceProvider _voiceProvider;
+  late final ContentProvider _contentProvider;
   bool _ownsVoiceProvider = false;
+  bool _ownsContentProvider = false;
+  bool _isGenerating = false;
   final TextEditingController _inputController = TextEditingController();
   String _selectedScenario = 'Job Interview';
   bool _isListeningMic = false;
@@ -52,11 +59,18 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
       _voiceProvider = VoiceServiceFactory.create();
       _ownsVoiceProvider = true;
     }
+    if (widget.contentProvider != null) {
+      _contentProvider = widget.contentProvider!;
+      _ownsContentProvider = false;
+    } else {
+      _contentProvider = AiServiceFactory.create();
+      _ownsContentProvider = true;
+    }
   }
 
   void _sendMessage([String? spokenText]) {
     final text = (spokenText ?? _inputController.text).trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty || _isGenerating) return;
 
     final grammarRating = text.length > 15
         ? 'CEFR B2 | Grammar: Excellent (95%)'
@@ -73,26 +87,60 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
       );
       _inputController.clear();
       _isListeningMic = false;
+      _isGenerating = true;
     });
 
-    Future.delayed(const Duration(milliseconds: 600), () {
-      if (mounted) {
-        final responseText = _generateAiResponse(_selectedScenario);
-        setState(() {
-          _messages.add(
-            ChatMessage(
-              sender: 'AI Tutor',
-              text: responseText,
-              isUser: false,
-            ),
-          );
-        });
-        _speakAiResponse(responseText);
-      }
+    _generateAiReply(scenario: _selectedScenario, userText: text).then((reply) {
+      if (!mounted) return;
+      setState(() {
+        _messages.add(
+          ChatMessage(sender: 'AI Tutor', text: reply, isUser: false),
+        );
+        _isGenerating = false;
+      });
+      _speakAiResponse(reply);
     });
   }
 
-  String _generateAiResponse(String scenario) {
+  /// Generates the AI tutor's reply via the content provider.
+  ///
+  /// Falls back to a scenario-aware canned response when the provider is
+  /// unavailable, so the screen never hangs and the demo always works
+  /// offline (the canned text is labelled clearly in code as a fallback so
+  /// the thesis can distinguish live-model runs from offline runs).
+  Future<String> _generateAiReply({
+    required String scenario,
+    required String userText,
+  }) async {
+    final prompt =
+        'You are an AI English tutor simulating a "$scenario" conversation. '
+        'The learner just said: "$userText". '
+        'Reply in ONE short, natural English sentence that advances the '
+        'conversation at CEFR B1-B2 level.';
+    try {
+      final response = await _contentProvider.generate(
+        ContentRequest.create(
+          text: prompt,
+          kind: ContentKind.explanation,
+          cefr: CefrLevel.b2,
+          language: 'en',
+        ),
+      );
+      return response.text;
+    } on AiFailure catch (failure) {
+      debugPrint(
+        'AiTutor: provider ${failure.category.name}; using canned fallback',
+      );
+      return _cannedFallbackReply(scenario);
+    } on Object catch (error) {
+      debugPrint('AiTutor: ${error.runtimeType}; using canned fallback');
+      return _cannedFallbackReply(scenario);
+    }
+  }
+
+  /// Scenario-aware canned replies used only when the live provider fails.
+  /// Kept deterministic (no random) so an offline demo is reproducible.
+  String _cannedFallbackReply(String scenario) {
     switch (scenario) {
       case 'Airport Check-in':
         return 'May I please see your passport and booking reference number?';
@@ -144,6 +192,10 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
     _voiceProvider.stop();
     if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
       _voiceProvider.dispose();
+    }
+    final provider = _contentProvider;
+    if (_ownsContentProvider && provider is ManagedAiService) {
+      provider.dispose();
     }
     super.dispose();
   }

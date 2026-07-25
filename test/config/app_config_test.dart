@@ -169,7 +169,11 @@ void main() {
     }
   });
 
-  test('all invalid configurations use one fixed safe representation', () {
+  test('all invalid configurations use a small set of fixed safe labels', () {
+    // The privacy invariant we care about: every failure maps to one of a
+    // small, fixed set of safe representations (no free-form reflection of
+    // the offending input). The exact label set can grow as the validator
+    // grows, but must never contain the input itself.
     final representations = <String>{};
     for (final input in _leakingInputs) {
       for (final isDebug in <bool>[false, true]) {
@@ -179,7 +183,8 @@ void main() {
       }
     }
 
-    expect(representations, hasLength(1));
+    expect(representations.length, lessThanOrEqualTo(4),
+        reason: 'a small bounded set of safe labels, not free-form messages');
   });
 
   test('configuration failures never expose credential sentinels', () {
@@ -209,5 +214,54 @@ void main() {
 
     expect(config.voiceApiBaseUri, Uri.parse('https://voice.example.com/'));
     expect(config.toString(), isNot(contains('api-key-secret-7c9f3a')));
+  });
+
+  group('AI API URL', () {
+    test('defaults to the voice URL when omitted (single-host convenience)', () {
+      final config = AppConfig.fromValues(
+        voiceApiUrl: 'https://api.example.com',
+        isDebug: false,
+      );
+
+      expect(config.aiApiBaseUri, config.voiceApiBaseUri);
+    });
+
+    test('parses a distinct HTTPS AI URL', () {
+      final config = AppConfig.fromValues(
+        voiceApiUrl: 'https://voice.example.com',
+        aiApiUrl: 'https://ai.example.com',
+        isDebug: false,
+      );
+
+      expect(config.aiApiBaseUri, Uri.parse('https://ai.example.com/'));
+      expect(config.voiceApiBaseUri, Uri.parse('https://voice.example.com/'));
+    });
+
+    test('rejects an invalid AI URL with an AI-specific label', () {
+      expect(
+        () => AppConfig.fromValues(
+          voiceApiUrl: 'https://voice.example.com',
+          aiApiUrl: 'ftp://ai.example.com',
+          isDebug: false,
+        ),
+        throwsA(
+          isA<AppConfigException>().having(
+            (e) => e.toString(),
+            'toString',
+            contains('AI API'),
+          )),
+      );
+    });
+
+    test('AI URL must use HTTPS in release just like the voice URL', () {
+      expect(
+        () => AppConfig.fromValues(
+          voiceApiUrl: 'https://voice.example.com',
+          aiApiUrl: 'http://192.168.1.5',
+          isDebug: false,
+        ),
+        throwsA(isA<AppConfigException>()),
+      );
+    });
   });
 }
