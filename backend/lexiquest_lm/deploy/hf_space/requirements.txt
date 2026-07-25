@@ -1,0 +1,9 @@
+# Pinned for reproducibility on HuggingFace Spaces free CPU tier.
+# Versions match the workstation training environment (pyproject.toml train
+# extra) so a checkpoint trained locally serves identically in the Space.
+fastapi==0.139.2
+uvicorn[standard]==0.51.0
+torch==2.8.0
+transformers==4.46.3
+peft==0.13.2
+pydantic==2.14.2
