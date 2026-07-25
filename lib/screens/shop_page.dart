@@ -47,15 +47,57 @@ class _ShopPageState extends State<ShopPage> {
     }
   }
 
+  static final List<Map<String, dynamic>> _defaultProducts = [
+    {
+      'id': 'wallpaper_neon',
+      'name': 'วอลเปเปอร์ Neon Cyberpunk',
+      'image_name': 'wallpaper_neon.png',
+      'image_url':
+          'https://images.unsplash.com/photo-1508739773434-c26b3d09e071?auto=format&fit=crop&w=600&q=80',
+      'price': 50,
+    },
+    {
+      'id': 'wallpaper_sakura',
+      'name': 'วอลเปเปอร์ Sakura Blossom',
+      'image_name': 'wallpaper_sakura.png',
+      'image_url':
+          'https://images.unsplash.com/photo-1522383225653-ed111181a951?auto=format&fit=crop&w=600&q=80',
+      'price': 100,
+    },
+    {
+      'id': 'wallpaper_galaxy',
+      'name': 'วอลเปเปอร์ Cosmic Galaxy',
+      'image_name': 'wallpaper_galaxy.png',
+      'image_url':
+          'https://images.unsplash.com/photo-1506703719100-a0f3a48c0f86?auto=format&fit=crop&w=600&q=80',
+      'price': 150,
+    },
+    {
+      'id': 'wallpaper_gold',
+      'name': 'วอลเปเปอร์ Golden Castle',
+      'image_name': 'wallpaper_gold.png',
+      'image_url':
+          'https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80',
+      'price': 200,
+    },
+  ];
+
   Future<void> _fetchProducts() async {
     try {
-      final querySnapshot = await FirebaseFirestore.instance
+      final firestore = FirebaseFirestore.instance;
+      final querySnapshot = await firestore
           .collection('products')
           .get()
           .timeout(const Duration(seconds: 10));
 
       if (querySnapshot.docs.isEmpty) {
-        debugPrint("❌ ไม่พบสินค้าใน Firestore!");
+        debugPrint("⚠️ ไม่พบสินค้าใน Firestore! กำลังกู้คืน/สร้างข้อมูลวอลเปเปอร์...");
+        await _seedDefaultProducts(firestore);
+        if (mounted) {
+          setState(() {
+            products = List.from(_defaultProducts);
+          });
+        }
         return;
       }
 
@@ -64,21 +106,27 @@ class _ShopPageState extends State<ShopPage> {
       for (var doc in querySnapshot.docs) {
         final productData = doc.data();
 
-        if (!productData.containsKey('image_name') ||
-            !productData.containsKey('name') ||
+        if (!productData.containsKey('name') ||
             !productData.containsKey('price')) {
           continue;
         }
 
-        final imageName = productData['image_name'];
-        if (imageName == null || imageName.isEmpty) {
-          continue;
+        final imageName = productData['image_name'] ?? '';
+        String imageUrl = productData['image_url'] ?? '';
+
+        if (imageUrl.isEmpty && imageName.toString().isNotEmpty) {
+          try {
+            imageUrl = _supabase.storage.from('Image').getPublicUrl(imageName);
+          } catch (_) {}
         }
 
-        final imageUrl = _supabase.storage
-            .from('Image')
-            .getPublicUrl(imageName);
-        debugPrint("✅ ดึง URL รูปภาพสำเร็จ: $imageUrl");
+        if (imageUrl.isEmpty) {
+          final fallback = _defaultProducts.firstWhere(
+            (p) => p['id'] == doc.id || p['image_name'] == imageName,
+            orElse: () => _defaultProducts.first,
+          );
+          imageUrl = fallback['image_url'];
+        }
 
         productList.add({
           'id': doc.id,
@@ -88,13 +136,39 @@ class _ShopPageState extends State<ShopPage> {
         });
       }
 
+      if (productList.isEmpty) {
+        productList.addAll(_defaultProducts);
+      }
+
       if (mounted) {
         setState(() {
           products = productList;
         });
       }
     } catch (e) {
-      debugPrint('❌ Error fetching products: $e');
+      debugPrint('❌ Error fetching products, displaying default wallpapers: $e');
+      if (mounted) {
+        setState(() {
+          products = List.from(_defaultProducts);
+        });
+      }
+    }
+  }
+
+  Future<void> _seedDefaultProducts(FirebaseFirestore firestore) async {
+    try {
+      for (var item in _defaultProducts) {
+        await firestore.collection('products').doc(item['id']).set({
+          'name': item['name'],
+          'image_name': item['image_name'],
+          'image_url': item['image_url'],
+          'price': item['price'],
+          'createdAt': FieldValue.serverTimestamp(),
+        }, SetOptions(merge: true));
+      }
+      debugPrint("✅ กู้คืนข้อมูลวอลเปเปอร์ลง Firestore สำเร็จ!");
+    } catch (e) {
+      debugPrint("⚠️ ไม่สามารถบันทึกข้อมูลไปยัง Firestore: $e");
     }
   }
 
@@ -197,6 +271,26 @@ class _ShopPageState extends State<ShopPage> {
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.restore, color: Colors.white),
+            tooltip: 'กู้คืนสินค้าวอลเปเปอร์',
+            onPressed: () async {
+              final messenger = ScaffoldMessenger.of(context);
+              setState(() => _isLoading = true);
+              await _seedDefaultProducts(FirebaseFirestore.instance);
+              await _fetchProducts();
+              if (!mounted) return;
+              setState(() => _isLoading = false);
+              messenger.showSnackBar(
+                const SnackBar(
+                  content: Text('✅ กู้คืนรายการสินค้าวอลเปเปอร์ลง DB เรียบร้อยแล้ว!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+          ),
+        ],
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: Container(

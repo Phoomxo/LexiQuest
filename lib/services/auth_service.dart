@@ -32,6 +32,9 @@ class AuthService {
           await user.sendEmailVerification();
         }
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Cloud Firebase auth exception: ${e.code} - ${e.message}');
+      rethrow;
     } catch (e) {
       debugPrint('Cloud Firebase auth fallback: $e');
     }
@@ -69,6 +72,9 @@ class AuthService {
         });
         await CategoryService().addDefaultCategoriesForNewUser(user.uid);
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Cloud Firestore user profile exception: ${e.code}');
+      rethrow;
     } catch (e) {
       debugPrint('Cloud Firestore user profile fallback: $e');
     }
@@ -87,6 +93,9 @@ class AuthService {
         );
         return userCredential;
       }
+    } on FirebaseAuthException catch (e) {
+      debugPrint('Cloud signIn exception: ${e.code} - ${e.message}');
+      rethrow;
     } catch (e) {
       debugPrint('Cloud signIn fallback: $e');
     }
@@ -102,4 +111,38 @@ class AuthService {
 
   /// **🔹 6. ดึงข้อมูลผู้ใช้ปัจจุบัน**
   User? get currentUser => _auth?.currentUser;
+
+  /// **🔹 7. แปลง Error / Exception จาก Firebase Auth เป็นข้อความภาษาไทยที่เข้าใจง่าย**
+  static String getErrorMessage(dynamic error) {
+    if (error is FirebaseAuthException) {
+      switch (error.code) {
+        case 'email-already-in-use':
+          return 'อีเมลนี้ถูกใช้งานในระบบแล้ว กรุณาเข้าสู่ระบบหรือใช้อีเมลอื่น';
+        case 'invalid-email':
+          return 'รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง';
+        case 'weak-password':
+          return 'รหัสผ่านไม่ปลอดภัย ต้องมีความยาวอย่างน้อย 6 ตัวอักษร';
+        case 'operation-not-allowed':
+          return 'ระบบยังไม่เปิดใช้งานการสมัครสมาชิกด้วยอีเมล';
+        case 'user-not-found':
+          return 'ไม่พบผู้ใช้นี้ในระบบ กรุณาตรวจสอบอีเมลหรือสมัครสมาชิกใหม่';
+        case 'wrong-password':
+          return 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่อีกครั้ง';
+        case 'too-many-requests':
+          return 'มีการพยายามทำรายการมากเกินไป กรุณาลองใหม่ในภายหลัง';
+        case 'network-request-failed':
+          return 'ไม่สามารถเชื่อมต่อเครือข่ายได้ กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต';
+        case 'user-disabled':
+          return 'บัญชีนี้ถูกระงับการใช้งาน กรุณาติดต่อผู้ดูแลระบบ';
+        default:
+          return error.message ?? 'เกิดข้อผิดพลาดในการตรวจสอบสิทธิ์';
+      }
+    }
+
+    String str = error.toString();
+    if (str.startsWith('Exception: ')) {
+      str = str.substring(11);
+    }
+    return str;
+  }
 }

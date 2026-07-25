@@ -59,8 +59,8 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
     if (text.isEmpty) return;
 
     final grammarRating = text.length > 15
-        ? 'Grammar: Excellent (95%)'
-        : 'Grammar: Good (80%)';
+        ? 'CEFR B2 | Grammar: Excellent (95%)'
+        : 'CEFR B1 | Grammar: Good (82%)';
 
     setState(() {
       _messages.add(
@@ -77,11 +77,10 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
 
     Future.delayed(const Duration(milliseconds: 600), () {
       if (mounted) {
-        const responseText =
-            'That sounds impressive! What would you say is your greatest strength in team collaboration?';
+        final responseText = _generateAiResponse(_selectedScenario);
         setState(() {
           _messages.add(
-            const ChatMessage(
+            ChatMessage(
               sender: 'AI Tutor',
               text: responseText,
               isUser: false,
@@ -93,6 +92,21 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
     });
   }
 
+  String _generateAiResponse(String scenario) {
+    switch (scenario) {
+      case 'Airport Check-in':
+        return 'May I please see your passport and booking reference number?';
+      case 'Cafe Ordering':
+        return 'Welcome to LexiCafe! Would you prefer a latte or a cappuccino today?';
+      case 'Academic Conference':
+        return 'Fascinating findings! How did you control for confounding variables in your methodology?';
+      case 'Hotel Check-in':
+        return 'Welcome to our hotel! Did you reserve a deluxe suite with ocean view?';
+      default:
+        return 'That sounds impressive! What would you say is your greatest strength in team collaboration?';
+    }
+  }
+
   void _toggleMicListening() {
     if (_isListeningMic) {
       setState(() => _isListeningMic = false);
@@ -101,7 +115,7 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
       Future.delayed(const Duration(milliseconds: 1200), () {
         if (mounted && _isListeningMic) {
           _sendMessage(
-            'I have three years of experience in software engineering and team leadership.',
+            'I have three years of experience in software engineering and academic research.',
           );
         }
       });
@@ -153,39 +167,68 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'สถานการณ์:',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                DropdownButton<String>(
-                  value: _selectedScenario,
-                  items: const [
-                    DropdownMenuItem(
-                      value: 'Job Interview',
-                      child: Text('💼 Job Interview'),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.indigo.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.indigo.shade200),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'ฉากจำลองสนทนา:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.indigo,
                     ),
-                    DropdownMenuItem(
-                      value: 'Hotel Check-in',
-                      child: Text('🏨 Hotel Check-in'),
-                    ),
-                    DropdownMenuItem(
-                      value: 'Cafe Ordering',
-                      child: Text('☕ Cafe Ordering'),
-                    ),
-                  ],
-                  onChanged: (val) {
-                    if (val != null) {
-                      setState(() {
-                        _selectedScenario = val;
-                      });
-                    }
-                  },
-                ),
-              ],
+                  ),
+                  DropdownButton<String>(
+                    value: _selectedScenario,
+                    underline: const SizedBox(),
+                    items: const [
+                      DropdownMenuItem(
+                        value: 'Job Interview',
+                        child: Text('💼 Job Interview'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Airport Check-in',
+                        child: Text('✈️ Airport Check-in'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Cafe Ordering',
+                        child: Text('☕ Cafe Ordering'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Academic Conference',
+                        child: Text('🎓 Academic Conference'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'Hotel Check-in',
+                        child: Text('🏨 Hotel Check-in'),
+                      ),
+                    ],
+                    onChanged: (val) {
+                      if (val != null) {
+                        setState(() {
+                          _selectedScenario = val;
+                          _messages.add(
+                            ChatMessage(
+                              sender: 'AI Tutor',
+                              text:
+                                  'Switched to $val scenario! Let\'s begin practicing.',
+                              isUser: false,
+                            ),
+                          );
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
             ),
+            const SizedBox(height: 8),
             if (_isListeningMic) ...[
               Container(
                 padding: const EdgeInsets.all(8),
@@ -310,3 +353,4 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
     );
   }
 }
+

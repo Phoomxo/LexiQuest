@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'login_screen.dart';
 import '../services/auth_service.dart';
 import 'otp_screen.dart';
@@ -54,10 +55,43 @@ class _RegisterScreenState extends State<RegisterScreen> {
       );
     } catch (e) {
       if (!mounted) return;
+      final String errorMessage = AuthService.getErrorMessage(e);
+      final bool isEmailInUse =
+          e is FirebaseAuthException && e.code == 'email-already-in-use';
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('เกิดข้อผิดพลาด: ${e.toString().replaceAll('Exception: ', '')}'),
-          backgroundColor: Colors.orangeAccent,
+          content: Row(
+            children: [
+              const Icon(Icons.error_outline, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  errorMessage,
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          action: isEmailInUse
+              ? SnackBarAction(
+                  label: 'เข้าสู่ระบบ',
+                  textColor: Colors.amber,
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const LoginScreen(),
+                      ),
+                    );
+                  },
+                )
+              : null,
         ),
       );
     } finally {

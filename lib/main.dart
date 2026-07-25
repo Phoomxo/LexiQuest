@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'firebase_options.dart';
 import 'screens/categories_page.dart';
@@ -38,11 +39,29 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'แอพฝึกคำศัพท์',
+      title: 'LexiQuest - AI Vocab Learning',
       theme: ThemeData(
         useMaterial3: true,
-        colorSchemeSeed: Colors.blueAccent,
-        brightness: Brightness.light,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          primary: Colors.deepPurple,
+          secondary: Colors.indigo,
+          tertiary: Colors.teal,
+        ),
+        textTheme: GoogleFonts.outfitTextTheme(
+          ThemeData.light().textTheme,
+        ),
+        cardTheme: CardThemeData(
+          elevation: 4,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+          backgroundColor: Colors.transparent,
+        ),
       ),
       initialRoute: '/login',
       routes: {

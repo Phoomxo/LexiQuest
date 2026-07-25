@@ -73,25 +73,6 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
-      String errorMessage;
-
-      switch (e.code) {
-        case 'invalid-email':
-          errorMessage = 'รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง';
-          break;
-        case 'empty-password':
-          errorMessage = 'กรุณากรอกรหัสผ่าน';
-          break;
-        case 'user-not-found':
-          errorMessage = 'ไม่พบผู้ใช้นี้ กรุณาตรวจสอบอีเมล';
-          break;
-        case 'wrong-password':
-          errorMessage = 'รหัสผ่านไม่ถูกต้อง กรุณาลองใหม่';
-          break;
-        default:
-          errorMessage = 'เกิดข้อผิดพลาด กรุณาลองใหม่อีกครั้ง';
-      }
-
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -99,7 +80,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
               const SizedBox(width: 10),
-              Expanded(child: Text(errorMessage)),
+              Expanded(child: Text(AuthService.getErrorMessage(e))),
             ],
           ),
           backgroundColor: Colors.redAccent,
@@ -118,7 +99,7 @@ class _LoginScreenState extends State<LoginScreen> {
             children: [
               const Icon(Icons.error_outline, color: Colors.white),
               const SizedBox(width: 10),
-              Expanded(child: Text('เกิดข้อผิดพลาด กรุณาลองใหม่')),
+              Expanded(child: Text(AuthService.getErrorMessage(e))),
             ],
           ),
           backgroundColor: Colors.redAccent,

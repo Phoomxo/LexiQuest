@@ -32,32 +32,74 @@ class Home extends StatelessWidget {
 
       body: Column(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
-          // 🎯 แถบแสดงความก้าวหน้า
+          // 🎯 แถบแสดงความก้าวหน้าแบบ Glassmorphic Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: Column(
-              children: [
-                const Text(
-                  "ความก้าวหน้า",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 5),
-                LinearProgressIndicator(
-                  value: 0.4,
-                  backgroundColor: Colors.white.withValues(
-                    alpha: 0.3,
-                  ), // ✅ ทำให้โปร่งใส
-                  color: Colors
-                      .amberAccent, // ✅ เปลี่ยนสีแถบความก้าวหน้าให้โดดเด่น
-                  minHeight: 8,
-                ),
-              ],
+            child: Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.deepPurple.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.deepPurple.shade100),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.deepPurple.withValues(alpha: 0.08),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Row(
+                        children: [
+                          Icon(Icons.track_changes, color: Colors.deepPurple),
+                          SizedBox(width: 8),
+                          Text(
+                            "ความก้าวหน้าการเรียนรู้ประจำวัน",
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.deepPurple,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Chip(
+                        backgroundColor: Colors.amber.shade100,
+                        visualDensity: VisualDensity.compact,
+                        label: const Text(
+                          '40%',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.amber,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: 0.4,
+                      backgroundColor: Colors.deepPurple.shade100,
+                      color: Colors.amber,
+                      minHeight: 10,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
 
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
 
           // 🔥 แสดงหมวดหมู่จากฐานข้อมูล Firestore
           Expanded(
@@ -94,8 +136,8 @@ class Home extends StatelessWidget {
 
                       return _buildCategoryCard(
                         category.name,
-                        Icons.category, // ใช้ไอคอนหมวดหมู่ทั่วไป
-                        Colors.blueAccent, // ใช้สีเริ่มต้น
+                        Icons.category,
+                        Colors.blueAccent,
                       );
                     },
                   );
@@ -107,31 +149,33 @@ class Home extends StatelessWidget {
           // 🟢 ปุ่มเริ่มเรียนรู้
           Padding(
             padding: const EdgeInsets.all(20.0),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MainNavigationScreen(),
+            child: SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MainNavigationScreen(),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.play_circle_fill, size: 24, color: Colors.white),
+                label: const Text(
+                  'เข้าสู่ศูนย์การเรียนรู้ LexiQuest (Start)',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
-                padding: const EdgeInsets.symmetric(
-                  vertical: 18,
-                  horizontal: 50,
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-              child: const Text(
-                'เริ่มเรียนรู้',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green.shade600,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 4,
                 ),
               ),
             ),

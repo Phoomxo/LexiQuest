@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/local_user_progress_store.dart';
-import 'select_wallpaper_screen.dart'; // นำเข้าไฟล์หน้าจอเลือกวอลเปเปอร์
+import 'achievements_screen.dart';
+import 'avatar_equipment_screen.dart';
+import 'export_center_screen.dart';
+import 'select_wallpaper_screen.dart';
 
 class SettingScreen extends StatefulWidget {
   const SettingScreen({super.key});
@@ -187,37 +190,85 @@ class _SettingScreenState extends State<SettingScreen> {
                     'Age',
                     _profileData?['age']?.toString() ?? '',
                   ),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => SelectWallpaperScreen(),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    alignment: WrapAlignment.center,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => SelectWallpaperScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.wallpaper, size: 18),
+                        label: const Text('เปลี่ยนวอลเปเปอร์'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurpleAccent,
+                          foregroundColor: Colors.white,
                         ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurpleAccent,
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 32,
-                        vertical: 12,
                       ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AvatarEquipmentScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.shield, size: 18),
+                        label: const Text('อุปกรณ์ Avatar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple.shade700,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
-                    ),
-                    child: const Text(
-                      'เปลี่ยนวอลเปเปอร์',
-                      style: TextStyle(color: Colors.white, fontSize: 18),
-                    ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const AchievementsScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.emoji_events, size: 18),
+                        label: const Text('เหรียญรางวัล'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => const ExportCenterScreen(),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.download_for_offline, size: 18),
+                        label: const Text('ส่งออกข้อมูล'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.indigo.shade800,
+                          foregroundColor: Colors.white,
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   OutlinedButton.icon(
                     onPressed: () async {
+                      final messenger = ScaffoldMessenger.of(context);
                       await LocalUserProgressStore().clearAll();
-                      if (!context.mounted) return;
-                      ScaffoldMessenger.of(context).showSnackBar(
+                      if (!mounted) return;
+                      messenger.showSnackBar(
                         const SnackBar(
                           content: Text('🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!'),
                           backgroundColor: Colors.green,

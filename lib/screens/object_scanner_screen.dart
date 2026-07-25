@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/ml_image_labeling_service.dart';
 import '../services/object_vocabulary_database.dart';
+import '../services/srs_service.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -504,20 +505,27 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            '📥 บันทึก "${vocab.englishWord}" เข้าคลัง SRS แล้ว!',
+                    onPressed: () async {
+                      try {
+                        await SrsService().recordReview(
+                          vocab.englishWord,
+                          true,
+                        );
+                      } catch (_) {}
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              '📥 บันทึก "${vocab.englishWord}" เข้าคลัง SRS Flashcards เรียบร้อย!',
+                            ),
+                            backgroundColor: Colors.green,
                           ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
+                        );
+                      }
                     },
                     icon: const Icon(Icons.bookmark_add, size: 18),
                     label: const Text('บันทึก'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
                     ),
                   ),

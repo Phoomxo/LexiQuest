@@ -18,6 +18,9 @@ import 'shadowing_challenge_screen.dart';
 import 'smart_audio_playlist_screen.dart';
 import 'srs_flashcards_screen.dart';
 import 'thesis_chart_screen.dart';
+import 'export_center_screen.dart';
+import 'ghost_shadow_duel_screen.dart';
+import 'interactive_storybook_screen.dart';
 import 'wordbook_import_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
@@ -263,17 +266,31 @@ class ChooseModeScreen extends StatelessWidget {
             // 🤺 10.1 โหมดดวลร่างเงาตนเอง (Your Next Opponent Is You)
             _buildModeButton(
               context,
-              title: "🤺 ดวลร่างเงาตนเอง (Your Next Opponent Is You)",
+              title: "🤺 ดวลร่างเงาตนเอง (Ghost Shadow Duel)",
               icon: Icons.psychology,
-              color: Colors.deepPurple.shade900,
+              color: Colors.purple.shade900,
               onPressed: () {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => const BossBattleScreen(
-                      bossName: '🤺 ร่างเงาของคุณในอดีต (Shadow Self Avatar)',
-                      initialBossHp: 120,
-                    ),
+                    builder: (context) => const GhostShadowDuelScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📖 10.2 โหมดนิทานสองภาษา CEFR (Interactive Storybook)
+            _buildModeButton(
+              context,
+              title: "📖 นิทานสองภาษา (Interactive Storybook)",
+              icon: Icons.auto_stories,
+              color: Colors.teal.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const InteractiveStorybookScreen(),
                   ),
                 );
               },
@@ -291,6 +308,23 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const WordbookImportScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // 📄 11.1 ระบบส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)
+            _buildModeButton(
+              context,
+              title: "📄 ส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)",
+              icon: Icons.download_for_offline,
+              color: Colors.indigo.shade800,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ExportCenterScreen(),
                   ),
                 );
               },
@@ -501,25 +535,52 @@ class ChooseModeScreen extends StatelessWidget {
     required Color color,
     required VoidCallback onPressed,
   }) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: onPressed,
-        icon: Icon(icon, color: Colors.white, size: 24),
-        label: Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
-        ),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: color,
+    return Card(
+      elevation: 3,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onPressed,
+        child: Container(
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          alignment: Alignment.centerLeft,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [color, color.withValues(alpha: 0.85)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.2),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, color: Colors.white, size: 22),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 0.3,
+                  ),
+                ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white70,
+                size: 16,
+              ),
+            ],
           ),
         ),
       ),

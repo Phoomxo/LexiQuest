@@ -43,10 +43,17 @@ class _SelectWallpaperScreenState extends State<SelectWallpaperScreen> {
             .doc(productId)
             .get();
 
-        if (productDoc.exists && productDoc.data()?['image_name'] != null) {
-          final imageName = productDoc.data()?['image_name'];
-          final imageUrl = _getSupabaseImageUrl(imageName);
-          wallpapers.add(imageUrl);
+        if (productDoc.exists) {
+          final data = productDoc.data();
+          String imageUrl = data?['image_url'] ?? '';
+          if (imageUrl.isEmpty && data?['image_name'] != null) {
+            try {
+              imageUrl = _getSupabaseImageUrl(data!['image_name']);
+            } catch (_) {}
+          }
+          if (imageUrl.isNotEmpty) {
+            wallpapers.add(imageUrl);
+          }
         }
       }
     }
