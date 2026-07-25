@@ -56,3 +56,26 @@ backend/voice_api/generated/
 *.wav
 *.pt
 *.safetensors
+
+# LexiQuest AI API local/runtime artifacts
+backend/ai_api/.venv/
+backend/ai_api/.env
+backend/ai_api/.pytest_cache/
+backend/ai_api/htmlcov/
+backend/ai_api/generated/
+
+# LexiQuest-LM training pipeline artifacts
+backend/lexiquest_lm/.venv/
+backend/lexiquest_lm/.env
+backend/lexiquest_lm/.pytest_cache/
+backend/lexiquest_lm/htmlcov/
+# Raw + processed datasets are regenerable from the collectors, so they stay
+# out of git (they can be large; the JSONL alone runs into MBs at 50K rows).
+backend/lexiquest_lm/data/
+# Fine-tuned checkpoints and tokenizer artifacts are large and reproducible
+# from the training scripts, so never commit them.
+backend/lexiquest_lm/checkpoints/
+backend/lexiquest_lm/models/
+*.bin
+*.gguf
+*.gguf.tmp
