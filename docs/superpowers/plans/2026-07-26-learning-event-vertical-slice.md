@@ -32,11 +32,11 @@
 - Produces: `LearningActivity`, `LearningSkill`, and immutable `LearningEvent`.
 - `LearningEvent.toMap()` and `LearningEvent.fromMap()` use stable wire names.
 
-- [ ] **Step 1: Ask GLM for the single-file RED test**
+- [x] **Step 1: Ask GLM for the single-file RED test**
 
 Require constructor validation, UTC normalization, stable round-trip, score bounds, positive attempt/response time, event-id validation, and a strict privacy denylist.
 
-- [ ] **Step 2: Add the failing unit test**
+- [x] **Step 2: Add the failing unit test**
 
 The wished-for contract is:
 
@@ -62,7 +62,7 @@ const event = LearningEvent(
 
 `toMap()` must contain only the declared wire fields and must not contain any key matching `email`, `token`, `password`, `prompt`, `answerText`, `audio`, or `image`.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 ```powershell
 flutter test test/learning/learning_event_test.dart
@@ -70,20 +70,20 @@ flutter test test/learning/learning_event_test.dart
 
 Expected: compile failure because `lib/learning/learning_event.dart` does not exist.
 
-- [ ] **Step 4: Ask GLM for the single-file GREEN implementation**
+- [x] **Step 4: Ask GLM for the single-file GREEN implementation**
 
 The model validates non-empty bounded identifiers, `schemaVersion == 1`,
 `score` in `0..100`, `attemptNumber >= 1`, optional `responseTimeMs >= 0`,
 normalizes timestamps to UTC, and rejects unknown wire enum values.
 
-- [ ] **Step 5: Implement and run GREEN**
+- [x] **Step 5: Implement and run GREEN**
 
 ```powershell
 dart format lib/learning/learning_event.dart test/learning/learning_event_test.dart
 flutter test test/learning/learning_event_test.dart
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add lib/learning/learning_event.dart test/learning/learning_event_test.dart
