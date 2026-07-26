@@ -67,18 +67,32 @@ const _structurallyInvalid = <String>[
 const _nonLocalHttpHosts = <String>[
   'http://example.com',
   'http://localhost',
-  'http://192.168.1.1',
-  'http://0.0.0.0',
   'http://[::1]',
+  'http://0.0.0.0',
+  'http://8.8.8.8',
+  'http://255.255.255.255',
+  'http://172.15.255.255',
+  'http://172.32.0.1',
+  'http://192.167.255.255',
+  'http://192.169.0.1',
+  'http://999.1.1.1',
+  'http://10.0.0.256',
+  'http://1.2.3',
   'http://127.0.0.1.evil.com',
   'http://10.0.2.2.evil.com',
 ];
 
-const _debugOnlyHttpHosts = <String>[
+const _debugHttpHosts = <String>[
   'http://127.0.0.1',
   'http://10.0.2.2',
   'http://127.0.0.1:8080',
   'http://10.0.2.2:8081',
+  'http://10.0.0.1',
+  'http://10.255.255.254',
+  'http://172.16.0.1',
+  'http://172.31.255.254',
+  'http://192.168.0.1',
+  'http://192.168.255.254',
 ];
 
 const _leakingInputs = <String>[
@@ -134,12 +148,23 @@ void main() {
     expect(config.voiceApiBaseUri.port, 8443);
   });
 
-  group('release rejects debug-only HTTP origins', () {
-    for (final input in _debugOnlyHttpHosts) {
+  group('release rejects every debug-accepted HTTP origin', () {
+    for (final input in _debugHttpHosts) {
       test(input, () {
         expect(
           () => AppConfig.fromValues(voiceApiUrl: input, isDebug: false),
           throwsA(isA<AppConfigException>()),
+        );
+      });
+    }
+  });
+
+  group('debug accepts loopback, emulator alias, and RFC 1918 LAN', () {
+    for (final input in _debugHttpHosts) {
+      test(input, () {
+        expect(
+          () => AppConfig.fromValues(voiceApiUrl: input, isDebug: true),
+          isNot(throwsA(isA<AppConfigException>())),
         );
       });
     }
@@ -183,8 +208,11 @@ void main() {
       }
     }
 
-    expect(representations.length, lessThanOrEqualTo(4),
-        reason: 'a small bounded set of safe labels, not free-form messages');
+    expect(
+      representations.length,
+      lessThanOrEqualTo(4),
+      reason: 'a small bounded set of safe labels, not free-form messages',
+    );
   });
 
   test('configuration failures never expose credential sentinels', () {
@@ -217,14 +245,17 @@ void main() {
   });
 
   group('AI API URL', () {
-    test('defaults to the voice URL when omitted (single-host convenience)', () {
-      final config = AppConfig.fromValues(
-        voiceApiUrl: 'https://api.example.com',
-        isDebug: false,
-      );
+    test(
+      'defaults to the voice URL when omitted (single-host convenience)',
+      () {
+        final config = AppConfig.fromValues(
+          voiceApiUrl: 'https://api.example.com',
+          isDebug: false,
+        );
 
-      expect(config.aiApiBaseUri, config.voiceApiBaseUri);
-    });
+        expect(config.aiApiBaseUri, config.voiceApiBaseUri);
+      },
+    );
 
     test('parses a distinct HTTPS AI URL', () {
       final config = AppConfig.fromValues(
@@ -249,7 +280,8 @@ void main() {
             (e) => e.toString(),
             'toString',
             contains('AI API'),
-          )),
+          ),
+        ),
       );
     });
 
@@ -263,5 +295,44 @@ void main() {
         throwsA(isA<AppConfigException>()),
       );
     });
+  });
+
+  group('AI URL mirrors the voice HTTP allowlist', () {
+    for (final input in _debugHttpHosts) {
+      test('debug accepts $input', () {
+        expect(
+          () => AppConfig.fromValues(
+            voiceApiUrl: 'https://voice.example.com',
+            aiApiUrl: input,
+            isDebug: true,
+          ),
+          isNot(throwsA(isA<AppConfigException>())),
+        );
+      });
+
+      test('release rejects $input', () {
+        expect(
+          () => AppConfig.fromValues(
+            voiceApiUrl: 'https://voice.example.com',
+            aiApiUrl: input,
+            isDebug: false,
+          ),
+          throwsA(isA<AppConfigException>()),
+        );
+      });
+    }
+
+    for (final input in _nonLocalHttpHosts) {
+      test('debug rejects $input', () {
+        expect(
+          () => AppConfig.fromValues(
+            voiceApiUrl: 'https://voice.example.com',
+            aiApiUrl: input,
+            isDebug: true,
+          ),
+          throwsA(isA<AppConfigException>()),
+        );
+      });
+    }
   });
 }

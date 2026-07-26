@@ -163,7 +163,7 @@ This succeeds. The following stay rejected:
 - every HTTP origin in release mode
 - IPv6 cleartext until an explicit LAN IPv6 policy is designed
 
-- [ ] **Step 1: Ask GLM for RED cases**
+- [x] **Step 1: Ask GLM for RED cases**
 
 Require boundary coverage for:
 
@@ -173,11 +173,11 @@ Require boundary coverage for:
 - loopback `127.0.0.1`
 - emulator alias `10.0.2.2`
 
-- [ ] **Step 2: Add failing table-driven tests**
+- [x] **Step 2: Add failing table-driven tests**
 
 Move private hosts out of `_nonLocalHttpHosts` and add accepted debug cases, including the lower and upper `172.16/12` boundaries.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -187,7 +187,7 @@ flutter test test/config/app_config_test.dart
 
 Expected: private-LAN accepted cases fail with `AppConfigException`.
 
-- [ ] **Step 4: Ask GLM for minimal GREEN**
+- [x] **Step 4: Ask GLM for minimal GREEN**
 
 Require a pure helper such as:
 
@@ -197,7 +197,7 @@ static bool _isDebugHttpHostAllowed(String host)
 
 It must parse IPv4 octets numerically, reject malformed values, DNS names, IPv6, and public addresses, and never echo hostile input in an exception.
 
-- [ ] **Step 5: Implement and run GREEN**
+- [x] **Step 5: Implement and run GREEN**
 
 Run:
 
@@ -208,7 +208,7 @@ flutter test test/config/app_config_test.dart
 
 Expected: all AppConfig tests pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add lib/config/app_config.dart test/config/app_config_test.dart

@@ -23,7 +23,11 @@ final class AppConfig {
     // deployment (both services behind one origin) needs only one URL.
     final resolvedAiUrl = aiApiUrl ?? voiceApiUrl;
     return AppConfig._(
-      voiceApiBaseUri: _parse(voiceApiUrl, isDebug: isDebug, label: 'Voice API'),
+      voiceApiBaseUri: _parse(
+        voiceApiUrl,
+        isDebug: isDebug,
+        label: 'Voice API',
+      ),
       aiApiBaseUri: _parse(resolvedAiUrl, isDebug: isDebug, label: 'AI API'),
     );
   }
@@ -74,10 +78,9 @@ final class AppConfig {
         if (!isDebug) {
           throw AppConfigException('$label URL must use HTTPS in release.');
         }
-        final host = uri.host.toLowerCase();
-        if (host != '127.0.0.1' && host != '10.0.2.2') {
+        if (!_isDebugHttpHostAllowed(uri.host)) {
           throw AppConfigException(
-            '$label URL must use HTTPS except for 127.0.0.1 / 10.0.2.2.',
+            '$label URL must use HTTPS except for local debug addresses.',
           );
         }
       }
@@ -87,6 +90,39 @@ final class AppConfig {
     } on FormatException {
       throw AppConfigException('$label URL is invalid.');
     }
+  }
+
+  /// Allows cleartext only for loopback, the Android emulator host alias, or a
+  /// numerically valid RFC 1918 IPv4 address in debug builds.
+  static bool _isDebugHttpHostAllowed(String host) {
+    final normalized = host.toLowerCase();
+    if (normalized == '127.0.0.1' || normalized == '10.0.2.2') {
+      return true;
+    }
+
+    final octets = normalized.split('.');
+    if (octets.length != 4) {
+      return false;
+    }
+
+    final values = <int>[];
+    for (final octet in octets) {
+      final value = int.tryParse(octet);
+      if (value == null || value < 0 || value > 255) {
+        return false;
+      }
+      if (octet != value.toString()) {
+        return false;
+      }
+      values.add(value);
+    }
+
+    final first = values[0];
+    final second = values[1];
+    if (first == 10) return true;
+    if (first == 172 && second >= 16 && second <= 31) return true;
+    if (first == 192 && second == 168) return true;
+    return false;
   }
 }
 
