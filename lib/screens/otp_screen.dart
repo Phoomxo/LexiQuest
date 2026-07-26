@@ -44,7 +44,9 @@ class _OTPScreenState extends State<OTPScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ ตรวจสอบอีเมลล้มเหลว: ${AuthService.getErrorMessage(e)}'),
+          content: Text(
+            '❌ ตรวจสอบอีเมลล้มเหลว: ${AuthService.getErrorMessage(e)}',
+          ),
         ),
       );
     } finally {
@@ -67,7 +69,9 @@ class _OTPScreenState extends State<OTPScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('❌ ไม่สามารถส่งอีเมลยืนยันใหม่: ${AuthService.getErrorMessage(e)}'),
+          content: Text(
+            '❌ ไม่สามารถส่งอีเมลยืนยันใหม่: ${AuthService.getErrorMessage(e)}',
+          ),
         ),
       );
     }

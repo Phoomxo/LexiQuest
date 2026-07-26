@@ -16,9 +16,7 @@ void main() {
     );
 
     final partitioned = DatasetPartitioningService.partition(logs);
-    final trainedModel = GhostModelTrainerService.trainAndEvaluate(
-      partitioned,
-    );
+    final trainedModel = GhostModelTrainerService.trainAndEvaluate(partitioned);
 
     expect(trainedModel.predictedAvgLatencyMs > 0, isTrue);
     expect(trainedModel.predictedAccuracyRate, 0.50);

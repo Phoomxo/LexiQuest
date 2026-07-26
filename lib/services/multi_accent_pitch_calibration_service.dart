@@ -48,7 +48,9 @@ class MultiAccentPitchCalibrationService {
         break;
     }
 
-    final normalized = rawPitchPoints.map((p) => (p * factor).clamp(0.0, 1.0)).toList();
+    final normalized = rawPitchPoints
+        .map((p) => (p * factor).clamp(0.0, 1.0))
+        .toList();
 
     return CalibratedPitchCurve(
       accent: accent,

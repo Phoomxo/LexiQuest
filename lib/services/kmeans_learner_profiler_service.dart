@@ -52,7 +52,8 @@ class KMeansLearnerProfilerService {
       ClusterResult(
         persona: LearnerPersona.masterPerformer,
         members: masters,
-        recommendation: 'ส่งเข้าโหมดสู้บอส Ghost Shadow Duel เพื่อความท้าทายระดับสูง',
+        recommendation:
+            'ส่งเข้าโหมดสู้บอส Ghost Shadow Duel เพื่อความท้าทายระดับสูง',
       ),
       ClusterResult(
         persona: LearnerPersona.deepReader,

@@ -64,7 +64,10 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     setState(() {
       _answerController.clear();
       if (turnResult.playerHitGhost) {
-        _ghostHp = (_ghostHp - turnResult.damageDealt).clamp(0, _opponent.maxHp);
+        _ghostHp = (_ghostHp - turnResult.damageDealt).clamp(
+          0,
+          _opponent.maxHp,
+        );
         _battleLog.insert(
           0,
           '💥 [คำว่า "$targetWord"] คุณโจมตีใส่ร่างเงา ${turnResult.damageDealt} DMG! (${turnResult.message})',
@@ -140,7 +143,10 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                       children: [
                         const CircleAvatar(
                           backgroundColor: Colors.purple,
-                          child: Icon(Icons.person_outline, color: Colors.white),
+                          child: Icon(
+                            Icons.person_outline,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 12),
                         Expanded(
@@ -214,7 +220,9 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                       children: [
                         Icon(
                           Icons.favorite,
-                          color: _playerHp > 30 ? Colors.redAccent : Colors.orange,
+                          color: _playerHp > 30
+                              ? Colors.redAccent
+                              : Colors.orange,
                         ),
                         const SizedBox(width: 6),
                         Text(
@@ -305,17 +313,23 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                 child: Column(
                   children: [
                     Icon(
-                      _playerWon ? Icons.emoji_events : Icons.sentiment_very_dissatisfied,
+                      _playerWon
+                          ? Icons.emoji_events
+                          : Icons.sentiment_very_dissatisfied,
                       size: 60,
                       color: _playerWon ? Colors.amber : Colors.red,
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      _playerWon ? 'ชัยชนะเหนือร่างเงา!' : 'พ่ายแพ้ในศึกครั้งนี้',
+                      _playerWon
+                          ? 'ชัยชนะเหนือร่างเงา!'
+                          : 'พ่ายแพ้ในศึกครั้งนี้',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: _playerWon ? Colors.green.shade900 : Colors.red.shade900,
+                        color: _playerWon
+                            ? Colors.green.shade900
+                            : Colors.red.shade900,
                       ),
                     ),
                     const SizedBox(height: 12),

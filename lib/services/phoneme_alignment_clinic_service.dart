@@ -28,8 +28,10 @@ class PhonemeAlignmentClinicService {
     final cleanTarget = targetWord.trim().toLowerCase();
     final cleanSpoken = spokenText.trim().toLowerCase();
 
-    final ipaSymbols =
-        targetIpa.replaceAll('/', '').replaceAll('ˈ', '').split('');
+    final ipaSymbols = targetIpa
+        .replaceAll('/', '')
+        .replaceAll('ˈ', '')
+        .split('');
     final matched = <String>[];
     final errors = <String>[];
 
@@ -53,10 +55,9 @@ class PhonemeAlignmentClinicService {
       }
     }
 
-    final tip =
-      errors.isNotEmpty
-          ? 'ควรเน้นย้ำสัญลักษณ์ IPA ที่ออกเสียงคลาดเคลื่อน: ${errors.join(', ')}'
-          : 'ออกเสียงได้ใกล้เคียงมาตรฐาน';
+    final tip = errors.isNotEmpty
+        ? 'ควรเน้นย้ำสัญลักษณ์ IPA ที่ออกเสียงคลาดเคลื่อน: ${errors.join(', ')}'
+        : 'ออกเสียงได้ใกล้เคียงมาตรฐาน';
 
     return PhonemeAlignmentResult(
       targetWord: targetWord,

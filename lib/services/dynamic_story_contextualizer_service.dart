@@ -25,27 +25,32 @@ class DynamicStoryContextualizerService {
       'title': 'The Golden Chance',
       'text':
           'Sarah seized the opportunity to present her innovative project to the international board.',
-      'th': 'ซาราห์คว้าโอกาสในการนำเสนอโครงการนวัตกรรมของเธอแก่คณะกรรมการระดับสากล',
+      'th':
+          'ซาราห์คว้าโอกาสในการนำเสนอโครงการนวัตกรรมของเธอแก่คณะกรรมการระดับสากล',
     },
     'resilience': {
       'cefr': 'C1',
       'title': 'Overcoming Storms',
       'text':
           'The team displayed remarkable resilience after facing unexpected technical setbacks.',
-      'th': 'ทีมงานแสดงให้เห็นถึงความยืดหยุ่นล้มแล้วลุกไวที่น่าทึ่งหลังจากเผชิญกับอุปสรรคทางเทคนิค',
+      'th':
+          'ทีมงานแสดงให้เห็นถึงความยืดหยุ่นล้มแล้วลุกไวที่น่าทึ่งหลังจากเผชิญกับอุปสรรคทางเทคนิค',
     },
   };
 
   /// Generates a contextual micro-story embedded with the target word
   static ContextualStory generateStory(String targetWord) {
     final cleanWord = targetWord.trim().toLowerCase();
-    final data = _storyTemplates[cleanWord] ?? {
-      'cefr': 'B2',
-      'title': 'Exploring ${cleanWord.toUpperCase()}',
-      'text':
-          'Learning about $cleanWord opens up new perspectives in language mastery.',
-      'th': 'การเรียนรู้เกี่ยวกับ $cleanWord ช่วยเปิดมุมมองใหม่ในการเก่งภาษา',
-    };
+    final data =
+        _storyTemplates[cleanWord] ??
+        {
+          'cefr': 'B2',
+          'title': 'Exploring ${cleanWord.toUpperCase()}',
+          'text':
+              'Learning about $cleanWord opens up new perspectives in language mastery.',
+          'th':
+              'การเรียนรู้เกี่ยวกับ $cleanWord ช่วยเปิดมุมมองใหม่ในการเก่งภาษา',
+        };
 
     return ContextualStory(
       targetWord: cleanWord,

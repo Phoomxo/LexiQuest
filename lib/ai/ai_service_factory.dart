@@ -44,10 +44,7 @@ final class AiServiceFactory {
 
 /// Lifecycle-managed [ContentProvider] returned by [AiServiceFactory].
 final class ManagedAiService implements ContentProvider {
-  ManagedAiService._({
-    required this._provider,
-    required this._client,
-  });
+  ManagedAiService._({required this._provider, required this._client});
 
   final HttpContentProvider _provider;
   final http.Client _client;

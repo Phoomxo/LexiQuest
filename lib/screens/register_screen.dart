@@ -189,7 +189,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                           ),
                         );
                       },
-                      child: const Text('มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)'),
+                      child: const Text(
+                        'มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)',
+                      ),
                     ),
                   ],
                 ),

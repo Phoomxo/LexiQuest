@@ -48,18 +48,15 @@ class CrispDmAnalyticsService {
     }
 
     final accuracy = (truePositives + trueNegatives) / total;
-    final precision =
-        (truePositives + falsePositives) > 0
-            ? truePositives / (truePositives + falsePositives)
-            : 0.0;
-    final recall =
-        (truePositives + falseNegatives) > 0
-            ? truePositives / (truePositives + falseNegatives)
-            : 0.0;
-    final f1 =
-        (precision + recall) > 0
-            ? (2 * precision * recall) / (precision + recall)
-            : 0.0;
+    final precision = (truePositives + falsePositives) > 0
+        ? truePositives / (truePositives + falsePositives)
+        : 0.0;
+    final recall = (truePositives + falseNegatives) > 0
+        ? truePositives / (truePositives + falseNegatives)
+        : 0.0;
+    final f1 = (precision + recall) > 0
+        ? (2 * precision * recall) / (precision + recall)
+        : 0.0;
 
     return ModelBenchmarkMetrics(
       modelName: modelName,

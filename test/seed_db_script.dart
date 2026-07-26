@@ -58,7 +58,9 @@ void main() {
         }, SetOptions(merge: true));
       }
       // ignore: avoid_print
-      print('✅ Successfully seeded 4 wallpaper products into Firebase Firestore DB!');
+      print(
+        '✅ Successfully seeded 4 wallpaper products into Firebase Firestore DB!',
+      );
     } catch (e) {
       // ignore: avoid_print
       print('⚠️ Firestore seed note: $e');

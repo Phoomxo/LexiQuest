@@ -297,14 +297,22 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen> {
                       const SizedBox(height: 8),
                       Row(
                         children: [
-                          Container(width: 12, height: 12, color: Colors.cyanAccent),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            color: Colors.cyanAccent,
+                          ),
                           const SizedBox(width: 6),
                           const Text(
                             'เสียงต้นแบบ AI',
                             style: TextStyle(fontSize: 12),
                           ),
                           const SizedBox(width: 16),
-                          Container(width: 12, height: 12, color: Colors.orangeAccent),
+                          Container(
+                            width: 12,
+                            height: 12,
+                            color: Colors.orangeAccent,
+                          ),
                           const SizedBox(width: 6),
                           const Text(
                             'เสียงพูดของคุณ',
@@ -331,16 +339,16 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen> {
                             Chip(
                               backgroundColor:
                                   _pronunciationDiff!.scorePercentage >= 80
-                                      ? Colors.green.shade100
-                                      : Colors.orange.shade100,
+                                  ? Colors.green.shade100
+                                  : Colors.orange.shade100,
                               label: Text(
                                 '${_pronunciationDiff!.scorePercentage}%',
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   color:
                                       _pronunciationDiff!.scorePercentage >= 80
-                                          ? Colors.green.shade900
-                                          : Colors.orange.shade900,
+                                      ? Colors.green.shade900
+                                      : Colors.orange.shade900,
                                 ),
                               ),
                             ),
@@ -420,4 +428,3 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen> {
     );
   }
 }
-

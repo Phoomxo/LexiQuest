@@ -21,7 +21,8 @@ class SentenceService {
   /// Default provider used by [fetchSentence]. Call [disposeDefault] once at
   /// app shutdown (e.g. from the top-level widget's `dispose`).
   static ManagedAiService? _default;
-  static ManagedAiService get _instance => _default ??= AiServiceFactory.create();
+  static ManagedAiService get _instance =>
+      _default ??= AiServiceFactory.create();
 
   /// Generate one example sentence for [word] at A2 level (the level the
   /// fill-in-the-blanks screen expects; the screen is an A2 exercise).
@@ -35,11 +36,17 @@ class SentenceService {
   }) async {
     try {
       final response = await _instance.generate(
-        ContentRequest.create(text: word, kind: ContentKind.sentence, cefr: cefr),
+        ContentRequest.create(
+          text: word,
+          kind: ContentKind.sentence,
+          cefr: cefr,
+        ),
       );
       return SentenceModel.fromJson(response.text);
     } on AiFailure catch (failure) {
-      debugPrint('SentenceService: ${failure.category.name} - ${failure.message}');
+      debugPrint(
+        'SentenceService: ${failure.category.name} - ${failure.message}',
+      );
       return null;
     } on Object catch (error) {
       debugPrint('SentenceService: ${error.runtimeType}');
@@ -59,11 +66,17 @@ class SentenceService {
   }) async {
     try {
       final response = await provider.generate(
-        ContentRequest.create(text: word, kind: ContentKind.sentence, cefr: cefr),
+        ContentRequest.create(
+          text: word,
+          kind: ContentKind.sentence,
+          cefr: cefr,
+        ),
       );
       return SentenceModel.fromJson(response.text);
     } on AiFailure catch (failure) {
-      debugPrint('SentenceService: ${failure.category.name} - ${failure.message}');
+      debugPrint(
+        'SentenceService: ${failure.category.name} - ${failure.message}',
+      );
       return null;
     } on Object catch (error) {
       debugPrint('SentenceService: ${error.runtimeType}');

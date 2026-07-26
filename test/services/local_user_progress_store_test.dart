@@ -39,7 +39,9 @@ void main() {
   });
 
   test('saveSrsProgress and loadSrsProgress serialize correctly', () async {
-    final testData = {'apple': {'box': 2, 'interval': 86400}};
+    final testData = {
+      'apple': {'box': 2, 'interval': 86400},
+    };
     await store.saveSrsProgress(testData);
 
     final loaded = await store.loadSrsProgress();

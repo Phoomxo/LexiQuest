@@ -32,11 +32,9 @@ class LexiVisionAccessibilityService {
   /// Generates a speech announcement for a detected camera label
   static VisionAnnouncement announceObject(String detectedLabel) {
     final cleanLabel = detectedLabel.trim().toLowerCase();
-    final info = _objectDict[cleanLabel] ?? {
-      'ipa': '/$cleanLabel/',
-      'th': cleanLabel,
-      'cefr': 'B1',
-    };
+    final info =
+        _objectDict[cleanLabel] ??
+        {'ipa': '/$cleanLabel/', 'th': cleanLabel, 'cefr': 'B1'};
 
     final speech =
         'ตรวจพบ ${cleanLabel.toUpperCase()} ระดับ ${info['cefr']} ออกเสียงว่า ${info['ipa']} แปลว่า ${info['th']}';

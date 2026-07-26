@@ -146,32 +146,37 @@ void main() {
     expect(response.text, 'The cat sleeps peacefully.');
   });
 
-  test('throws authentication failure when 401 persists after refresh', () async {
-    final tokenProvider = _NeverRefreshTokenProvider();
+  test(
+    'throws authentication failure when 401 persists after refresh',
+    () async {
+      final tokenProvider = _NeverRefreshTokenProvider();
 
-    final client = MockClient((request) async => _unauthorizedResponse());
+      final client = MockClient((request) async => _unauthorizedResponse());
 
-    final provider = HttpContentProvider(
-      client: client,
-      authTokenProvider: tokenProvider,
-      baseUri: _baseUri,
-    );
+      final provider = HttpContentProvider(
+        client: client,
+        authTokenProvider: tokenProvider,
+        baseUri: _baseUri,
+      );
 
-    expect(
-      () => provider.generate(_validRequest()),
-      throwsA(
-        isA<AiFailure>().having(
-          (f) => f.category,
-          'category',
-          AiFailureCategory.authentication,
+      expect(
+        () => provider.generate(_validRequest()),
+        throwsA(
+          isA<AiFailure>().having(
+            (f) => f.category,
+            'category',
+            AiFailureCategory.authentication,
+          ),
         ),
-      ),
-    );
-  });
+      );
+    },
+  );
 
   test('maps 400 detail code to validation failure', () async {
     final tokenProvider = _StubTokenProvider();
-    final client = MockClient((request) async => _statusResponse(400, code: 'INVALID_REQUEST'));
+    final client = MockClient(
+      (request) async => _statusResponse(400, code: 'INVALID_REQUEST'),
+    );
 
     final provider = HttpContentProvider(
       client: client,
@@ -193,7 +198,9 @@ void main() {
 
   test('maps 429 to rateLimited', () async {
     final tokenProvider = _StubTokenProvider();
-    final client = MockClient((request) async => _statusResponse(429, code: 'RATE_LIMITED'));
+    final client = MockClient(
+      (request) async => _statusResponse(429, code: 'RATE_LIMITED'),
+    );
 
     final provider = HttpContentProvider(
       client: client,
@@ -240,7 +247,8 @@ void main() {
   test('maps 503 CONTENT_GENERATION_FAILED to generation', () async {
     final tokenProvider = _StubTokenProvider();
     final client = MockClient(
-      (request) async => _statusResponse(503, code: 'CONTENT_GENERATION_FAILED'),
+      (request) async =>
+          _statusResponse(503, code: 'CONTENT_GENERATION_FAILED'),
     );
 
     final provider = HttpContentProvider(
@@ -327,17 +335,22 @@ void main() {
       fail('expected AiFailure');
     } on AiFailure catch (failure) {
       final repr = '${failure.message}\n${failure.toString()}';
-      expect(repr.contains(secretToken), isFalse,
-          reason: 'token must not appear in failure message or toString');
+      expect(
+        repr.contains(secretToken),
+        isFalse,
+        reason: 'token must not appear in failure message or toString',
+      );
     }
   });
 
   test('rejects a 200 response missing required fields', () async {
     final tokenProvider = _StubTokenProvider();
     final client = MockClient(
-      (request) async => http.Response('{"text":"ok"}', 200, headers: const {
-        'content-type': 'application/json',
-      }),
+      (request) async => http.Response(
+        '{"text":"ok"}',
+        200,
+        headers: const {'content-type': 'application/json'},
+      ),
     );
 
     final provider = HttpContentProvider(

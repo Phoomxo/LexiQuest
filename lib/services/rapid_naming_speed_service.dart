@@ -1,7 +1,8 @@
 class RapidNamingReport {
   final String targetWord;
   final int responseTimeMs;
-  final String fluencyRating; // 'Ultra-Fast (Native-like)', 'Fluent', 'Hesitant'
+  final String
+  fluencyRating; // 'Ultra-Fast (Native-like)', 'Fluent', 'Hesitant'
   final int automaticityScore; // 0 to 100
 
   const RapidNamingReport({

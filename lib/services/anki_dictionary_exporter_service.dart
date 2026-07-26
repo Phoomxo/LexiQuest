@@ -32,17 +32,16 @@ class AnkiDictionaryExporterService {
 
   /// Exports cards into standard JSON Dictionary Package format
   static String exportToJsonPackage(List<VocabularyCardExport> cards) {
-    final list =
-        cards
-            .map(
-              (c) => {
-                'word': c.word,
-                'ipa': c.ipa,
-                'translation': c.translation,
-                'exampleSentence': c.exampleSentence,
-              },
-            )
-            .toList();
+    final list = cards
+        .map(
+          (c) => {
+            'word': c.word,
+            'ipa': c.ipa,
+            'translation': c.translation,
+            'exampleSentence': c.exampleSentence,
+          },
+        )
+        .toList();
 
     return const JsonEncoder.withIndent('  ').convert({'cards': list});
   }

@@ -209,7 +209,8 @@ final class HttpContentProvider implements ContentProvider {
         text: text.trim(),
         kind: kind,
         cefr: CefrLevel.fromWire(decoded['cefr'] as String?),
-        language: (decoded['language'] as String?)?.trim().toLowerCase() ?? 'en',
+        language:
+            (decoded['language'] as String?)?.trim().toLowerCase() ?? 'en',
         modelVersion: modelVersion.trim(),
         cached: cached,
       );

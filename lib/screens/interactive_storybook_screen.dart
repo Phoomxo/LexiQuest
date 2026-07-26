@@ -238,7 +238,10 @@ class _InteractiveStorybookScreenState
                         ),
                       ),
                       IconButton(
-                        icon: const Icon(Icons.play_circle_fill, color: Colors.teal),
+                        icon: const Icon(
+                          Icons.play_circle_fill,
+                          color: Colors.teal,
+                        ),
                         onPressed: () => _speakWord(_selectedWord!),
                       ),
                     ],
@@ -320,9 +323,7 @@ class _InteractiveStorybookScreenState
                 ),
               ),
             ] else ...[
-              const Center(
-                child: Text('ไม่พบบทเรียนนิทานสำหรับระดับนี้'),
-              ),
+              const Center(child: Text('ไม่พบบทเรียนนิทานสำหรับระดับนี้')),
             ],
           ],
         ),

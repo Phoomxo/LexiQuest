@@ -52,7 +52,10 @@ class GhostShadowDuelService {
     final name =
         'Shadow Self (${snapshot.recordedAt.day}/${snapshot.recordedAt.month})';
     final baseHp = (snapshot.accuracyRate * 100).round().clamp(50, 150);
-    final attackInterval = (snapshot.avgResponseTimeMs / 1000.0).clamp(1.5, 5.0);
+    final attackInterval = (snapshot.avgResponseTimeMs / 1000.0).clamp(
+      1.5,
+      5.0,
+    );
 
     return GhostOpponent(
       name: name,
@@ -85,10 +88,9 @@ class GhostShadowDuelService {
       playerHitGhost: true,
       damageDealt: damage,
       selfMasteryBonusTriggered: beatPastSpeed,
-      message:
-          beatPastSpeed
-              ? '⚡ ยอดเยี่ยม! คุณตอบไวกว่าร่างเงาในอดีต (โบนัสก้าวข้ามตนเอง)'
-              : '👍 ตอบถูกต้อง! กำลังสร้างความเสียหายใส่ร่างเงา',
+      message: beatPastSpeed
+          ? '⚡ ยอดเยี่ยม! คุณตอบไวกว่าร่างเงาในอดีต (โบนัสก้าวข้ามตนเอง)'
+          : '👍 ตอบถูกต้อง! กำลังสร้างความเสียหายใส่ร่างเงา',
     );
   }
 }

@@ -49,17 +49,16 @@ void main() {
 
     test('rejects text over 500 characters', () {
       expect(
-        () => ContentRequest.create(
-          text: 'a' * 501,
-          kind: ContentKind.sentence,
-        ),
+        () =>
+            ContentRequest.create(text: 'a' * 501, kind: ContentKind.sentence),
         throwsA(isA<AiFailure>()),
       );
     });
 
     test('accepts text at exactly 500 characters (boundary)', () {
       expect(
-        () => ContentRequest.create(text: 'a' * 500, kind: ContentKind.sentence),
+        () =>
+            ContentRequest.create(text: 'a' * 500, kind: ContentKind.sentence),
         returnsNormally,
       );
     });

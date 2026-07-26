@@ -9,9 +9,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: Scaffold(
-          body: LiveAudioWaveformWidget(
-            audioLevels: [0.2, 0.5, 0.8, 0.3, 0.9],
-          ),
+          body: LiveAudioWaveformWidget(audioLevels: [0.2, 0.5, 0.8, 0.3, 0.9]),
         ),
       ),
     );

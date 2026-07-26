@@ -30,7 +30,9 @@ class FakeContentProvider implements ContentProvider {
   final List<ContentRequest> requests = [];
   final String reply;
 
-  FakeContentProvider({this.reply = 'Tell me more about your project experience.'});
+  FakeContentProvider({
+    this.reply = 'Tell me more about your project experience.',
+  });
 
   @override
   Future<ContentResponse> generate(ContentRequest request) async {
@@ -102,7 +104,10 @@ void main() {
     await tester.pumpAndSettle();
 
     // The canned Job Interview fallback must appear so the screen never hangs.
-    expect(find.textContaining('greatest strength in team collaboration'), findsOneWidget);
+    expect(
+      find.textContaining('greatest strength in team collaboration'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('AiTutorScreen handles mic button tap for voice input', (

@@ -62,10 +62,9 @@ class CosineSimilarityEvaluatorService {
     return SemanticEvaluationResult(
       similarityScore: double.parse(score.toStringAsFixed(3)),
       isSemanticallyEquivalent: isPass,
-      feedback:
-          isPass
-              ? 'ประโยคตรงตามความหมายและบริบทสากล (ความเหมือน ${(score * 100).toStringAsFixed(1)}%)'
-              : 'ประโยคยังมีความหมายคลาดเคลื่อนจากบริบทเป้าหมาย',
+      feedback: isPass
+          ? 'ประโยคตรงตามความหมายและบริบทสากล (ความเหมือน ${(score * 100).toStringAsFixed(1)}%)'
+          : 'ประโยคยังมีความหมายคลาดเคลื่อนจากบริบทเป้าหมาย',
     );
   }
 

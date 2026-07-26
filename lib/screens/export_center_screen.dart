@@ -50,7 +50,9 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   void _generateAnkiExport() {
     setState(() {
       _activeTab = 'anki';
-      _previewContent = AnkiDictionaryExporterService.exportToAnkiTxt(_sampleCards);
+      _previewContent = AnkiDictionaryExporterService.exportToAnkiTxt(
+        _sampleCards,
+      );
     });
   }
 

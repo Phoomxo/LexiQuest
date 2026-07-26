@@ -61,7 +61,8 @@ class AdaptiveDailyQuestService {
         return const [
           DailyQuest(
             title: '🏥 ซ่อมเสริมคำศัพท์จุดอ่อน',
-            description: 'เข้าทบทวนคำศัพท์ที่สะกดคลาดเคลื่อนใน Weakness Clinic 5 คำ',
+            description:
+                'เข้าทบทวนคำศัพท์ที่สะกดคลาดเคลื่อนใน Weakness Clinic 5 คำ',
             rewardXp: 250,
             rewardCoins: 120,
             targetMode: 'WeaknessClinic',

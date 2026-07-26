@@ -160,7 +160,11 @@ class Home extends StatelessWidget {
                     ),
                   );
                 },
-                icon: const Icon(Icons.play_circle_fill, size: 24, color: Colors.white),
+                icon: const Icon(
+                  Icons.play_circle_fill,
+                  size: 24,
+                  color: Colors.white,
+                ),
                 label: const Text(
                   'เข้าสู่ศูนย์การเรียนรู้ LexiQuest (Start)',
                   style: TextStyle(

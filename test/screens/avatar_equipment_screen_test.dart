@@ -6,9 +6,7 @@ void main() {
   testWidgets('AvatarEquipmentScreen renders equipped avatar and items', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(
-      const MaterialApp(home: AvatarEquipmentScreen()),
-    );
+    await tester.pumpWidget(const MaterialApp(home: AvatarEquipmentScreen()));
 
     expect(find.text('Vocabulary Warrior'), findsOneWidget);
     expect(find.textContaining('Damage:'), findsOneWidget);
