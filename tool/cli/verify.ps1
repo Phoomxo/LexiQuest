@@ -92,6 +92,28 @@ try {
             (Join-Path $scriptDir 'tests\run-android.tests.ps1')
     }
 
+    Invoke-VerifyPhase '02.1' 'CI/CD contract tests' {
+        $contractTests = @(
+            'ci-workflow.tests.ps1',
+            'dependabot-config.tests.ps1',
+            'osv-pr-workflow.tests.ps1',
+            'osv-scheduled-workflow.tests.ps1',
+            'osv-config.tests.ps1'
+        )
+        foreach ($contractTest in $contractTests) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File `
+                (Join-Path $scriptDir ('tests\' + $contractTest))
+            $contractExitCode = [int]$LASTEXITCODE
+            if ($contractExitCode -ne 0) {
+                $exception = New-Object System.Exception(
+                    ('Contract test failed: {0}' -f $contractTest)
+                )
+                $exception.Data['LexiQuestExitCode'] = $contractExitCode
+                throw $exception
+            }
+        }
+    }
+
     Invoke-VerifyPhase '03' 'Flutter dependency resolution' {
         & flutter pub get
     }

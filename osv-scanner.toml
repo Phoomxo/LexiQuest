@@ -1,0 +1,15 @@
+# OSV-Scanner exceptions for the root npm lockfile.
+#
+# Both entries are reviewed, narrow, and time-bounded. No package or ecosystem
+# is ignored wholesale. Recheck upstream firebase-admin dependencies by the
+# expiry date and remove each entry as soon as a fixed dependency tree ships.
+
+[[IgnoredVulns]]
+id = "GHSA-mh99-v99m-4gvg"
+reason = "brace-expansion@2.1.2 is present only through firebase-admin@14.2.0 -> optional Firestore -> google-gax -> rimraf -> glob -> minimatch. The installed google-gax runtime does not import this cleanup/tooling chain, and the only project consumer is an offline maintainer-run Firestore seed script, not a network service. Latest upstream still resolves this version; unsafe major overrides are rejected."
+ignoreUntil = 2026-10-26
+
+[[IgnoredVulns]]
+id = "GHSA-w5hq-g745-h8pq"
+reason = "uuid@9.0.1 is present only through firebase-admin@14.2.0 -> optional @google-cloud/storage. The sole project consumer uses Firestore and never imports or calls Storage. Latest upstream still resolves this version; unsafe major overrides are rejected."
+ignoreUntil = 2026-10-26

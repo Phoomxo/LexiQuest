@@ -43,6 +43,10 @@ jobs:
           ./tool/cli/tests/runtime-probes.tests.ps1
           ./tool/cli/tests/run-android.tests.ps1
           ./tool/cli/tests/ci-workflow.tests.ps1
+          ./tool/cli/tests/dependabot-config.tests.ps1
+          ./tool/cli/tests/osv-pr-workflow.tests.ps1
+          ./tool/cli/tests/osv-scheduled-workflow.tests.ps1
+          ./tool/cli/tests/osv-config.tests.ps1
 
       - name: Resolve Flutter dependencies
         run: flutter pub get
