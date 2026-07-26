@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/app_config.dart';
 import '../firebase_options.dart';
 import '../services/guest_session_service.dart';
+import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
 
@@ -78,6 +79,7 @@ final class AppBootstrap {
       ),
       config: config,
       guestSessionService: guestSessionService,
+      buildInfo: const AppBuildInfo.fromEnvironment(),
     );
   }
 

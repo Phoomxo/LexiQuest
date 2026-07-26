@@ -54,6 +54,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return '${unavailable.join(' · ')} ยังไม่พร้อมใช้งาน';
   }
 
+  String _buildIdentity(BuildContext context) {
+    final buildInfo = AppDependenciesScope.maybeOf(context)?.buildInfo;
+    if (buildInfo == null) return '';
+    return '${buildInfo.version} · ${buildInfo.buildId}';
+  }
+
   void _pushLegacyDestination(Widget destination) {
     _scaffoldKey.currentState?.closeDrawer();
     Navigator.of(
@@ -109,6 +115,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 child: Text(
                   _runtimeStatusSummary(context),
                   key: const ValueKey<String>('runtime-status-summary'),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Text(
+                  _buildIdentity(context),
+                  key: const ValueKey<String>('build-identity'),
                 ),
               ),
             ],

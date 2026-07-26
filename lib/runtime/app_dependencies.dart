@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
 import '../services/guest_session_service.dart';
+import 'app_build_info.dart';
 import 'app_runtime_status.dart';
 
 final class AppDependencies {
@@ -9,11 +10,13 @@ final class AppDependencies {
     required this.runtimeStatus,
     required this.config,
     required this.guestSessionService,
+    this.buildInfo = const AppBuildInfo.fromEnvironment(),
   });
 
   final AppRuntimeStatus runtimeStatus;
   final AppConfig? config;
   final GuestSessionService guestSessionService;
+  final AppBuildInfo buildInfo;
 
   @override
   String toString() => 'AppDependencies';

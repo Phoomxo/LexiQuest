@@ -587,11 +587,11 @@ final class AppBuildInfo {
 
 The drawer displays a compact non-sensitive identity such as `1.0.0+1 · 22944f2-dirty`. `run-android.ps1` calculates the Git short SHA, detects a dirty tree, accepts `-DeviceId`, `-LanHost`, `-VoicePort` and `-AiPort`, and prints the exact command before invoking Flutter.
 
-- [ ] **Step 1: Ask GLM for Dart and PowerShell RED tests**
+- [x] **Step 1: Ask GLM for Dart and PowerShell RED tests**
 
 PowerShell command construction must be a pure function, allowing tests without launching Flutter or an emulator.
 
-- [ ] **Step 2: Add failing tests and run RED**
+- [x] **Step 2: Add failing tests and run RED**
 
 Run:
 
@@ -602,7 +602,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/run-android.t
 
 Expected: both fail because their contracts do not exist.
 
-- [ ] **Step 3: Ask GLM for minimal GREEN and implement**
+- [x] **Step 3: Ask GLM for minimal GREEN and implement**
 
 The generated Flutter command must include:
 
@@ -615,7 +615,7 @@ The generated Flutter command must include:
 
 Before invoking Flutter, the script must call the Task 1 runtime guard. Active training does not block the Flutter app itself, but the script must state that GPU inference backends are protected/offline.
 
-- [ ] **Step 4: Run GREEN**
+- [x] **Step 4: Run GREEN**
 
 Run:
 
@@ -625,7 +625,7 @@ flutter test test/runtime/app_build_info_test.dart
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/run-android.tests.ps1
 ```
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```powershell
 git add lib/runtime/app_build_info.dart lib/screens/main_navigation_screen.dart test/runtime/app_build_info_test.dart tool/cli/run-android.ps1 tool/cli/tests/run-android.tests.ps1
