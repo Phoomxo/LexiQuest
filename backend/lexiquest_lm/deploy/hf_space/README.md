@@ -9,7 +9,9 @@ Flutter app calls — once deployed, the app needs no other LLM.
 ```
 hf_space/
   app.py            # FastAPI app loaded by HF Spaces
-  requirements.txt  # pinned deps (transformers, peft, fastapi, uvicorn)
+  auth.py           # Firebase ID-token verification
+  Dockerfile        # standalone Docker SDK Space image
+  requirements.txt  # pinned API, auth, and ML runtime dependencies
   README.md         # this file (HF reads it as the Space's README)
 ```
 
@@ -19,12 +21,33 @@ hf_space/
 2. Push the resulting `checkpoints/lora_adapter/` to a HuggingFace model repo
    (e.g. `your-user/lexiquest-lm`).
 3. Create a new HF **Space** (SDK: Docker) and copy this directory into it.
-4. Set the Space's secret `MODEL_ID` to the model repo from step 2.
-5. The Space builds, downloads the adapter on cold start, and exposes:
+4. Set the Space's required secrets:
+
+   - `MODEL_ID`: the HuggingFace model repo from step 2.
+   - `FIREBASE_PROJECT_ID`: the Firebase project that issues client ID tokens.
+   - Optional `MAX_INPUT_TOKENS` and `MAX_NEW_TOKENS`: positive per-request
+     limits (defaults: `1024` input and `128` generated tokens).
+
+5. The service fails closed: `/health/ready` returns `503` until the model is
+   loaded and Firebase authentication is configured. Chat requests without a
+   cryptographically verified Firebase ID token return a uniform `401`.
+6. The Space builds, downloads the adapter on cold start, and exposes:
 
    - `GET /health/live`, `GET /health/ready`
    - `POST /v1/chat/completions` — OpenAI-compatible (so the Flutter client
      can reuse the exact same `OmniVoiceProvider`-style HTTP shape).
+
+## Calling the API
+
+Set `FIREBASE_ID_TOKEN` to a real token obtained from the authenticated
+Firebase client. Never commit or paste a real token into documentation.
+
+```bash
+curl -X POST "$SPACE_URL/v1/chat/completions" \
+  -H "Authorization: Bearer $FIREBASE_ID_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"messages":[{"role":"user","content":"Hello"}]}'
+```
 
 ## Why OpenAI-compatible?
 

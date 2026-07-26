@@ -63,8 +63,9 @@ already prepared at `backend/lexiquest_lm/deploy/hf_space/`.
 
 ### 2b. Upload the Space files
 
-The Space needs the three files from `backend/lexiquest_lm/deploy/hf_space/`:
-`app.py`, `requirements.txt`, and `README.md`.
+The Space needs all files from `backend/lexiquest_lm/deploy/hf_space/`,
+including `app.py`, `auth.py`, `Dockerfile`, `requirements.txt`, and
+`README.md`.
 
 Easiest method — clone the empty Space and copy files in:
 
@@ -78,16 +79,20 @@ git commit -m "Deploy LexiQuest-LM API"
 git push
 ```
 
-### 2c. Set the MODEL_ID secret
+### 2c. Set the required secrets
 
-The Space loads your adapter by repo ID. Set it as a secret so it's not
-hard-coded:
+The Space loads your model by repo ID and verifies Firebase ID tokens. Set both
+values as repository secrets so they are not hard-coded:
 
 1. Go to your Space: `https://huggingface.co/spaces/<your-username>/lexiquest-lm-api`
 2. **Settings** → **Repository secrets** → **New secret**
-3. **Name**: `MODEL_ID`
-4. **Value**: `<your-username>/lexiquest-lm` (the repo from Step 1)
-5. Save
+3. Add `MODEL_ID` with value `<your-username>/lexiquest-lm`.
+4. Add `FIREBASE_PROJECT_ID` with the Firebase project ID used by the app.
+5. Save both secrets. The readiness endpoint intentionally returns `503` until
+   the model is loaded and Firebase authentication is configured.
+
+Optional Space variables `MAX_INPUT_TOKENS` and `MAX_NEW_TOKENS` control the
+positive per-request resource limits. Their defaults are `1024` and `128`.
 
 ### 2d. Wait for build (~3-5 min)
 
@@ -101,9 +106,11 @@ Check the **Logs** tab if it stays in **Building** or errors.
 ```powershell
 # Replace <your-username> with your HF username
 $SPACE_URL = "https://<your-username>-lexiquest-lm-api.hf.space"
+# Export FIREBASE_ID_TOKEN from a signed-in client before running this command.
+if (-not $env:FIREBASE_ID_TOKEN) { throw "FIREBASE_ID_TOKEN is required" }
 
 curl -X POST "$SPACE_URL/v1/chat/completions" `
-  -H "Authorization: Bearer test-token" `
+  -H "Authorization: Bearer $env:FIREBASE_ID_TOKEN" `
   -H "Content-Type: application/json" `
   -d '{\"messages\":[{\"role\":\"user\",\"content\":\"Write ONE example sentence using the word cat.\"}]}'
 ```
@@ -156,6 +163,6 @@ flutter install
   fast (~1-3s).
 - **Generation loops / repeats**: ensure the latest `app.py` is deployed
   (it passes `<|im_end|>` as the eos token to stop cleanly).
-- **401 from the Space**: the Space's bearer-token check is a soft gate; any
-  non-empty `Bearer ...` header works. For real auth, put a proxy
-  (Cloud Run, API gateway) in front.
+- **401 from the Space**: obtain a fresh Firebase ID token from a signed-in
+  client and confirm `FIREBASE_PROJECT_ID` matches its issuer project. Tokens
+  are cryptographically verified and arbitrary bearer strings are rejected.

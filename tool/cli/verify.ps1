@@ -98,7 +98,12 @@ try {
             'dependabot-config.tests.ps1',
             'osv-pr-workflow.tests.ps1',
             'osv-scheduled-workflow.tests.ps1',
-            'osv-config.tests.ps1'
+            'osv-config.tests.ps1',
+            'firebase-seed-security.tests.ps1',
+            'firestore-rules-security.tests.ps1',
+            'model-loading-security.tests.ps1',
+            'android-manifest-security.tests.ps1',
+            'android-release-signing.tests.ps1'
         )
         foreach ($contractTest in $contractTests) {
             & powershell -NoProfile -ExecutionPolicy Bypass -File `

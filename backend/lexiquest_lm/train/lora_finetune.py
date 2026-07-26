@@ -207,7 +207,7 @@ def _run_real_train(args: argparse.Namespace) -> int:
     from lexiquest_lm.dataset.io import read_jsonl
 
     # ---- Base model, 4-bit quantised with FP16 fallback ----
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
@@ -223,7 +223,6 @@ def _run_real_train(args: argparse.Namespace) -> int:
             args.model,
             quantization_config=bnb_config,
             device_map="auto",
-            trust_remote_code=True,
         )
         model = prepare_model_for_kbit_training(model)
     except Exception as err:
@@ -233,7 +232,6 @@ def _run_real_train(args: argparse.Namespace) -> int:
             args.model,
             dtype=torch.float16,
             device_map="auto",
-            trust_remote_code=True,
         )
 
     # ---- LoRA adapters ----

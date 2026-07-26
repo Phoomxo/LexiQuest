@@ -118,7 +118,7 @@ def load_tokenizer(model_name: str, *, dry_run: bool):
         return StubTokenizer()
     from transformers import AutoTokenizer  # deferred so dry-run needs no torch
 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name)
     if tokenizer.pad_token is None:
         # Qwen2.5 has no default pad token; reuse eos for padding.
         tokenizer.pad_token = tokenizer.eos_token

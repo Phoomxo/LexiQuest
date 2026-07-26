@@ -7,8 +7,10 @@ root (``backend/ai_api/.env``).
 
 from __future__ import annotations
 
+import ipaddress
 from pathlib import Path
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -25,6 +27,69 @@ _ENV_FILE = _PROJECT_ROOT / ".env"
 # through the OpenAI-compatible HTTP contract, so adding a vendor amounts to a
 # new base URL + model name rather than a new SDK.
 _SUPPORTED_PROVIDERS = frozenset({"openai-compat"})
+_CLOUD_METADATA_HOSTS = frozenset({"metadata.google.internal"})
+
+
+def _canonical_ip_address(
+    host: str,
+) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    try:
+        return ipaddress.ip_address(host)
+    except ValueError:
+        return None
+
+
+def _inet_aton_ipv4(host: str) -> ipaddress.IPv4Address | None:
+    """Parse legacy integer/octal/hex IPv4 forms without DNS resolution."""
+
+    if not host:
+        return None
+    parts = host.split(".")
+    if len(parts) > 4:
+        return None
+    values: list[int] = []
+    for part in parts:
+        if not part:
+            return None
+        lowered = part.lower()
+        try:
+            if lowered.startswith("0x"):
+                number = int(part, 16)
+            elif part.startswith("0") and len(part) > 1:
+                number = int(part, 8)
+            else:
+                number = int(part, 10)
+        except ValueError:
+            return None
+        values.append(number)
+
+    try:
+        if len(values) == 4:
+            octets = values
+        elif len(values) == 3:
+            if values[2] > 0xFFFF:
+                return None
+            octets = [values[0], values[1], values[2] >> 8, values[2] & 0xFF]
+        elif len(values) == 2:
+            if values[1] > 0xFFFFFF:
+                return None
+            octets = [
+                values[0],
+                values[1] >> 16,
+                (values[1] >> 8) & 0xFF,
+                values[1] & 0xFF,
+            ]
+        else:
+            return (
+                ipaddress.IPv4Address(values[0])
+                if values[0] <= 0xFFFFFFFF
+                else None
+            )
+        if any(octet > 0xFF for octet in octets):
+            return None
+        return ipaddress.IPv4Address(".".join(str(octet) for octet in octets))
+    except ValueError:
+        return None
 
 
 class Settings(BaseSettings):
@@ -92,8 +157,55 @@ class Settings(BaseSettings):
         stripped = value.strip()
         if not stripped:
             raise ValueError("LLM base URL must not be empty")
-        if not (stripped.startswith("http://") or stripped.startswith("https://")):
+        if any(
+            character.isspace()
+            or ord(character) < 0x20
+            or ord(character) == 0x7F
+            or character in '<>"{}|\\^'
+            for character in stripped
+        ):
+            raise ValueError("LLM base URL is malformed")
+
+        try:
+            parsed = urlsplit(stripped)
+            hostname = parsed.hostname
+            port = parsed.port
+        except ValueError:
+            raise ValueError("LLM base URL is malformed") from None
+
+        if parsed.scheme not in {"http", "https"}:
             raise ValueError("LLM base URL must use http or https scheme")
+        if not hostname or parsed.username is not None or parsed.password is not None:
+            raise ValueError("LLM base URL is malformed")
+        if port is not None and not 1 <= port <= 65535:
+            raise ValueError("LLM base URL is malformed")
+        if parsed.query or parsed.fragment:
+            raise ValueError("LLM base URL is malformed")
+
+        normalized_host = hostname.rstrip(".").casefold()
+        host_ip = _canonical_ip_address(normalized_host)
+        inet_ipv4 = _inet_aton_ipv4(normalized_host)
+
+        if parsed.scheme == "http":
+            is_loopback = normalized_host == "localhost" or (
+                host_ip is not None and host_ip.is_loopback
+            )
+            if not is_loopback:
+                raise ValueError(
+                    "LLM base URL must use HTTPS unless the host is loopback"
+                )
+
+        if normalized_host in _CLOUD_METADATA_HOSTS:
+            raise ValueError("LLM base URL must not target cloud metadata services")
+        if inet_ipv4 is not None and host_ip is None:
+            raise ValueError("LLM base URL must use canonical IP address notation")
+        if host_ip is not None:
+            effective_ip = host_ip
+            if isinstance(host_ip, ipaddress.IPv6Address):
+                effective_ip = host_ip.ipv4_mapped or host_ip
+            if effective_ip.is_link_local:
+                raise ValueError("LLM base URL must not target link-local addresses")
+
         # Trailing slash keeps ``urllib.parse.urljoin`` predictable downstream.
         return stripped if stripped.endswith("/") else stripped + "/"
 

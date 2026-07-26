@@ -93,8 +93,8 @@ class FirebaseTokenVerifier:
     def verify(self, token: str) -> AuthenticatedUser:
         try:
             claims = self._verify_id_token(token)
-        except _INVALID_CREDENTIAL_ERRORS as error:
-            raise _unauthenticated() from error
+        except _INVALID_CREDENTIAL_ERRORS:
+            raise _unauthenticated() from None
         except Exception as error:
             # Log only the exception type; never the token or its message,
             # which could leak secrets into logs.

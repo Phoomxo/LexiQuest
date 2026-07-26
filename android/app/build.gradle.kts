@@ -1,8 +1,22 @@
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     id("com.android.application")
     id("dev.flutter.flutter-gradle-plugin")
     id("com.google.gms.google-services")
 }
+
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+
+val releaseSigningReady = keystoreProperties["storeFile"] != null &&
+    keystoreProperties["storePassword"] != null &&
+    keystoreProperties["keyAlias"] != null &&
+    keystoreProperties["keyPassword"] != null
 
 android {
     namespace = "com.example.vocab_learning_app"
@@ -22,10 +36,36 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        create("release") {
+            if (releaseSigningReady) {
+                storeFile = file(keystoreProperties["storeFile"] as String)
+                storePassword = keystoreProperties["storePassword"] as String
+                keyAlias = keystoreProperties["keyAlias"] as String
+                keyPassword = keystoreProperties["keyPassword"] as String
+            }
+        }
+    }
+
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
+    }
+}
+
+gradle.taskGraph.whenReady {
+    val isReleaseArtifact = allTasks.any { task ->
+        task.name.startsWith("packageRelease") ||
+            task.name.startsWith("bundleRelease")
+    }
+    if (isReleaseArtifact && !releaseSigningReady) {
+        throw GradleException(
+            "Release signing is not configured. Create android/key.properties " +
+                "(see android/key.properties.example) with storeFile, " +
+                "storePassword, keyAlias and keyPassword before building a " +
+                "release artifact. Debug builds are unaffected.",
+        )
     }
 }
 

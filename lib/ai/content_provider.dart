@@ -138,6 +138,8 @@ final class HttpContentProvider implements ContentProvider {
       throw _timeoutFailure;
     } on http.ClientException {
       throw _networkFailure;
+    } on Exception {
+      throw _networkFailure;
     }
   }
 

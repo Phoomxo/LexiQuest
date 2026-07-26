@@ -19,6 +19,7 @@ Configuration
 - ``MODEL_ID`` (secret): the HF repo of the merged/adapter model, e.g.
   ``your-user/lexiquest-lm``. Defaults to the base Qwen2.5-0.5B for
   first-time smoke tests before the adapter exists.
+- ``MAX_INPUT_TOKENS``: per-request prompt cap (default 1024).
 - ``MAX_NEW_TOKENS``: per-request generation cap (default 128).
 
 Privacy
@@ -45,22 +46,40 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# Re-use the exact prompt template from training so the served model sees the
-# same instruction frame it learned on. This is a reproducibility invariant.
-import sys
-from pathlib import Path
+# Hugging Face copies this directory as a flat Space, so keep this template
+# byte-identical to backend/lexiquest_lm/train/tokenise_dataset.py.
+SYSTEM_PROMPT = "You are an English vocabulary teacher for Thai learners."
 
-# Make the train package importable when this file runs inside the Space.
-_TRAIN_DIR = Path(__file__).resolve().parents[2] / "train"
-if str(_TRAIN_DIR) not in sys.path:
-    sys.path.insert(0, str(_TRAIN_DIR))
-from tokenise_dataset import SYSTEM_PROMPT, format_prompt  # noqa: E402
+_PROMPT_TEMPLATE = (
+    "<|im_start|>system\n{system}<|im_end|>\n"
+    "<|im_start|>user\n{user}<|im_end|>\n"
+    "<|im_start|>assistant\n"
+)
+
+
+def format_prompt(user_prompt: str) -> str:
+    return _PROMPT_TEMPLATE.format(system=SYSTEM_PROMPT, user=user_prompt)
+try:
+    from .auth import (  # noqa: E402
+        AuthenticationError,
+        FirebaseTokenVerifier,
+        extract_bearer_token,
+    )
+except ImportError:  # Hugging Face copies this directory as a flat Space.
+    from auth import (  # type: ignore[no-redef]  # noqa: E402
+        AuthenticationError,
+        FirebaseTokenVerifier,
+        extract_bearer_token,
+    )
 
 logger = logging.getLogger("lexiquest_lm_space")
 logging.basicConfig(level=logging.INFO)
 
 MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-0.5B")
-MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "128"))
+MAX_INPUT_TOKENS = max(1, int(os.environ.get("MAX_INPUT_TOKENS", "1024")))
+MAX_NEW_TOKENS = max(1, int(os.environ.get("MAX_NEW_TOKENS", "128")))
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
+token_verifier = FirebaseTokenVerifier(FIREBASE_PROJECT_ID)
 
 
 # ---------------------------------------------------------------------------
@@ -71,7 +90,7 @@ MAX_NEW_TOKENS = int(os.environ.get("MAX_NEW_TOKENS", "128"))
 def _load_model_and_tokenizer() -> tuple[Any, Any]:
     logger.info("Loading model %s ...", MODEL_ID)
     start = time.monotonic()
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     # CPU + float32 on the free tier. A 0.5B model fits comfortably in the
@@ -80,7 +99,6 @@ def _load_model_and_tokenizer() -> tuple[Any, Any]:
         MODEL_ID,
         dtype=torch.float32,
         device_map="cpu",
-        trust_remote_code=True,
     )
     model.eval()
     logger.info("Model loaded in %.1fs", time.monotonic() - start)
@@ -143,10 +161,15 @@ def live() -> dict[str, str]:
 
 @app.get("/health/ready")
 def ready() -> dict[str, str]:
-    if model is None:
+    if model is None or not token_verifier.is_configured:
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            content={"detail": {"code": "MODEL_UNAVAILABLE", "message": "Model not loaded."}},
+            content={
+                "detail": {
+                    "code": "SERVICE_UNAVAILABLE",
+                    "message": "Service is not ready.",
+                }
+            },
         )
     return {"status": "ready"}
 
@@ -156,16 +179,14 @@ def chat_completions(
     request: ChatCompletionRequest,
     authorization: str | None = Header(default=None),
 ) -> dict[str, Any]:
-    # NOTE: HuggingFace Spaces do not enforce auth themselves; this header
-    # check is a soft gate so the endpoint is not a fully open proxy. The
-    # Flutter app sends the Firebase ID token here, mirroring the ai_api
-    # contract. A production deployment should put a real auth layer in
-    # front (HF Inference Endpoints, a Cloud Run proxy, etc.).
-    if not authorization or not authorization.lower().startswith("bearer "):
+    try:
+        token = extract_bearer_token(authorization)
+        token_verifier.verify(token)
+    except AuthenticationError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail={"code": "UNAUTHENTICATED", "message": "Bearer token required."},
-        )
+        ) from None
 
     if not request.messages:
         raise HTTPException(
@@ -174,8 +195,16 @@ def chat_completions(
         )
 
     prompt = _build_prompt(request.messages)
-    inputs = tokenizer(prompt, return_tensors="pt").to(model.device)
-    max_new = min(request.max_tokens or MAX_NEW_TOKENS, MAX_NEW_TOKENS)
+    inputs = tokenizer(
+        prompt,
+        return_tensors="pt",
+        truncation=True,
+        max_length=MAX_INPUT_TOKENS,
+    ).to(model.device)
+    max_new = max(
+        1,
+        min(request.max_tokens or MAX_NEW_TOKENS, MAX_NEW_TOKENS),
+    )
 
     # Stop generation at the ChatML assistant turn terminator so the model
     # does not ramble past the first response (a known issue with greedy

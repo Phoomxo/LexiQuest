@@ -319,6 +319,35 @@ void main() {
     );
   });
 
+  test('unexpected transport error becomes typed network failure', () async {
+    const secret = 'private-transport-detail';
+    final client = MockClient((request) async {
+      throw Exception(secret);
+    });
+    final provider = HttpContentProvider(
+      client: client,
+      authTokenProvider: _StubTokenProvider(),
+      baseUri: Uri.parse('https://ai.example.test'),
+    );
+
+    await expectLater(
+      () => provider.generate(_validRequest()),
+      throwsA(
+        isA<AiFailure>()
+            .having(
+              (failure) => failure.category,
+              'category',
+              AiFailureCategory.network,
+            )
+            .having(
+              (failure) => failure.message,
+              'message',
+              isNot(contains(secret)),
+            ),
+      ),
+    );
+  });
+
   test('does not leak the bearer token into the thrown failure', () async {
     final secretToken = 'super-secret-id-token-7c9f3a';
     final tokenProvider = _StubTokenProvider(firstToken: secretToken);

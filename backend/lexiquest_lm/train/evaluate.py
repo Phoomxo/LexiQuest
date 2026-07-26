@@ -201,14 +201,13 @@ def _run_real_evaluate(args: argparse.Namespace) -> int:
     rows = list(read_jsonl(test_path))
 
     print(f"Loading base model {args.model}...")
-    tokenizer = AutoTokenizer.from_pretrained(args.model, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(args.model)
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     base = AutoModelForCausalLM.from_pretrained(
         args.model,
         device_map="auto",
         dtype=torch.float16,
-        trust_remote_code=True,
     )
 
     if args.adapter and Path(args.adapter).exists():

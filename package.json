@@ -1,4 +1,11 @@
 {
+  "private": true,
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "seed": "node lib/add_default_categories.js"
+  },
   "dependencies": {
     "firebase-admin": "^14.2.0"
   }

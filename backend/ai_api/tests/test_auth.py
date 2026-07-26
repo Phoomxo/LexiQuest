@@ -71,6 +71,7 @@ def test_firebase_verifier_hides_rejected_token() -> None:
     assert exc_info.value.status_code == 401
     assert exc_info.value.detail["code"] == "UNAUTHENTICATED"
     assert secret_token not in str(exc_info.value.detail)
+    assert exc_info.value.__cause__ is None
 
 
 def test_firebase_verifier_rejects_payload_without_uid() -> None:

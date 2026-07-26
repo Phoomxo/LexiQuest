@@ -48,6 +48,7 @@ Assert-Ecosystem $text 'uv' '/backend/ai_api'
 Assert-Ecosystem $text 'uv' '/backend/voice_api'
 Assert-Ecosystem $text 'uv' '/backend/lexiquest_lm'
 Assert-Ecosystem $text 'pip' '/backend/lexiquest_lm/deploy/hf_space'
+Assert-Ecosystem $text 'docker' '/backend/lexiquest_lm/deploy/hf_space'
 Assert-Ecosystem $text 'github-actions' '/'
 Assert-NoMatch $text '(?m)^\s*(target-branch|registries|reviewers|assignees)\s*:' 'config contains a forbidden ownership or registry key'
 

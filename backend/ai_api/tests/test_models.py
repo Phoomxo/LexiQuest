@@ -46,6 +46,131 @@ def test_settings_reject_empty_base_url() -> None:
         Settings(llm_base_url="   ")
 
 
+_BASE_URL_FIELDS = ("llm_base_url", "fallback_llm_base_url")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://api.openai.com/v1/",
+        "https://generativelanguage.googleapis.com/v1beta/openai/",
+        "https://proxy.example.internal",
+    ],
+)
+def test_settings_accept_https_remote_base_url(url: str) -> None:
+    assert Settings(llm_base_url=url).llm_base_url.endswith("/")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://localhost:11434/v1/",
+        "http://127.0.0.1:11434/v1/",
+        "http://[::1]:11434/v1/",
+        "http://localhost:8080",
+    ],
+)
+def test_settings_accept_http_only_for_loopback_dev(url: str) -> None:
+    assert Settings(llm_base_url=url).llm_base_url.endswith("/")
+
+
+@pytest.mark.parametrize("field", _BASE_URL_FIELDS)
+@pytest.mark.parametrize(
+    "url",
+    [
+        "http://api.openai.com/v1/",
+        "http://example.com",
+        "http://192.168.1.10/v1/",
+        "http://10.0.0.5/v1/",
+        "http://169.254.169.254/",
+    ],
+)
+def test_settings_reject_plain_http_to_non_loopback(
+    field: str,
+    url: str,
+) -> None:
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(**{field: url})
+    message = str(exc_info.value).lower()
+    assert "loopback" in message or "https" in message
+
+
+def test_settings_reject_userinfo_credentials_in_base_url() -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_base_url="https://operator:hunter2@api.openai.com/v1/")
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://",
+        "https:///",
+        "http://",
+        "https:// api.openai.com/",
+        "https://example.com/</v1>",
+    ],
+)
+def test_settings_reject_malformed_base_url(url: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_base_url=url)
+
+
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://api.example.com/v1/\x00",
+        "https://api.example.com/v1/\x7f",
+        "https://api.example.com/v1/\x01",
+        "http://localhost:11434/v1/\x00",
+    ],
+)
+def test_settings_reject_control_chars_in_base_url(url: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(llm_base_url=url)
+
+
+@pytest.mark.parametrize("field", _BASE_URL_FIELDS)
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://169.254.169.254/",
+        "https://metadata.google.internal/",
+        "https://[::ffff:169.254.169.254]/",
+    ],
+)
+def test_settings_reject_cloud_metadata_base_url(
+    field: str,
+    url: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: url})
+
+
+@pytest.mark.parametrize("field", _BASE_URL_FIELDS)
+@pytest.mark.parametrize(
+    "url",
+    [
+        "https://2852039166/",
+        "https://0xA9.0xFE.0xA9.0xFE/",
+        "https://0251.0376.0251.0376/",
+    ],
+)
+def test_settings_reject_obfuscated_ip_base_url(
+    field: str,
+    url: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        Settings(**{field: url})
+
+
+def test_settings_base_url_error_never_echoes_credentials() -> None:
+    secret = "hunter2-leak-canary-9f3c"
+    url = f"https://operator:{secret}@api.openai.com/v1/"
+    with pytest.raises(ValidationError) as exc_info:
+        Settings(llm_base_url=url)
+    assert secret not in str(exc_info.value)
+
+
 def test_content_request_normalizes_text() -> None:
     request = ContentRequest(
         text="  The   cat is sleeping.  ",
