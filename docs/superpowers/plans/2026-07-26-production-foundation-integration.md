@@ -428,11 +428,11 @@ final class AppRuntimeStatus {
 
 `AppDependencies` contains only public configuration and injectable service boundaries. It must not contain server keys.
 
-- [ ] **Step 1: Ask GLM for bootstrap RED tests**
+- [x] **Step 1: Ask GLM for bootstrap RED tests**
 
 Use injected async initializers and a supplied `AppConfig` factory. Do not call real Firebase, Supabase, or the network.
 
-- [ ] **Step 2: Add failing tests**
+- [x] **Step 2: Add failing tests**
 
 Cover:
 
@@ -442,7 +442,7 @@ Cover:
 - AppConfig missing/invalid → backends unavailable with a safe fixed label;
 - no exception text containing supplied sentinel credentials reaches `toString()`.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -452,7 +452,7 @@ flutter test test/runtime/app_bootstrap_test.dart
 
 Expected: fail because bootstrap types do not exist.
 
-- [ ] **Step 4: Ask GLM for minimal GREEN and implement**
+- [x] **Step 4: Ask GLM for minimal GREEN and implement**
 
 Refactor `main()` to:
 
@@ -466,7 +466,7 @@ Future<void> main() async {
 
 Do not change authentication or navigation behavior in this task.
 
-- [ ] **Step 5: Run GREEN**
+- [x] **Step 5: Run GREEN**
 
 Run:
 
@@ -476,7 +476,7 @@ flutter test test/runtime/app_bootstrap_test.dart
 flutter analyze
 ```
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add lib/main.dart lib/runtime test/runtime/app_bootstrap_test.dart

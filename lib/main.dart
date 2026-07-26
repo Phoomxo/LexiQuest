@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'firebase_options.dart';
+import 'runtime/app_bootstrap.dart';
+import 'runtime/app_dependencies.dart';
 import 'screens/categories_page.dart';
 import 'screens/home.dart';
 import 'screens/shop_page.dart';
@@ -10,65 +9,56 @@ import 'screens/setting_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Initialize Firebase safely with DefaultFirebaseOptions for all platforms
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-  } catch (e) {
-    debugPrint('Firebase init fallback: $e');
-  }
-
-  // Initialize Supabase
-  await Supabase.initialize(
-    url: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
-    publishableKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg',
-  );
-
-  runApp(const MyApp());
+  final dependencies = await AppBootstrap.production().initialize();
+  runApp(MyApp(dependencies: dependencies));
 }
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, required this.dependencies});
+
+  final AppDependencies dependencies;
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      title: 'LexiQuest - AI Vocab Learning',
-      theme: ThemeData(
-        useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.deepPurple,
-          primary: Colors.deepPurple,
-          secondary: Colors.indigo,
-          tertiary: Colors.teal,
-        ),
-        textTheme: GoogleFonts.outfitTextTheme(
-          ThemeData.light().textTheme,
-        ),
-        cardTheme: CardThemeData(
-          elevation: 4,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    return AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'LexiQuest - AI Vocab Learning',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple,
+            primary: Colors.deepPurple,
+            secondary: Colors.indigo,
+            tertiary: Colors.teal,
+          ),
+          textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
+          cardTheme: CardThemeData(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
           ),
         ),
-        appBarTheme: const AppBarTheme(
-          centerTitle: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-        ),
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => LoginScreen(
+            guestSessionService: AppDependenciesScope.of(
+              context,
+            ).guestSessionService,
+          ),
+          '/register': (context) => const RegisterScreen(),
+          '/home': (context) => const MainNavigation(),
+        },
       ),
-      initialRoute: '/login',
-      routes: {
-        '/login': (context) => const LoginScreen(),
-        '/register': (context) => const RegisterScreen(),
-        '/home': (context) => const MainNavigation(),
-      },
     );
   }
 }
