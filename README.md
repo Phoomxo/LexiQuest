@@ -42,5 +42,22 @@ uv run --project backend/voice_api python backend/voice_api/research/run_golden_
 ### Building Application Targets
 
 ```powershell
-flutter build apk --debug --dart-define=LEXIQUEST_VOICE_API_URL=https://your-voice-api.example.com
+flutter build apk --debug `
+    --dart-define=LEXIQUEST_VERSION=1.0.0+1 `
+    --dart-define=LEXIQUEST_BUILD_ID=<git-short-sha> `
+    --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 `
+    --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
 ```
+
+Debug builds allow cleartext only for loopback, emulator, and private-LAN
+origins. Release builds require HTTPS.
+
+### Production Foundation Verification
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify.ps1
+```
+
+This CPU-safe suite never starts a CUDA consumer. See the
+[Android LAN development runbook](docs/runbooks/android-lan-development.md) for
+Developer Mode, emulator/phone networking, the LoRA guard, and build identity.

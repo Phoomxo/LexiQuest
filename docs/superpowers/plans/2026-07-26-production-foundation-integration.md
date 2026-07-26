@@ -658,15 +658,15 @@ git commit -m "feat(runtime): expose verifiable build identity"
 
 The script must not start Voice API, Ollama, OmniVoice, the local LM server, or any other CUDA consumer.
 
-- [ ] **Step 1: Ask GLM for a fail-fast verification script and runbook outline**
+- [x] **Step 1: Ask GLM for a fail-fast verification script and runbook outline**
 
 Require clear phase names, propagated exit codes, and a final summary. No hidden `continue-on-error`.
 
-- [ ] **Step 2: Create `verify.ps1`**
+- [x] **Step 2: Create `verify.ps1`**
 
 Use explicit working directories and commands already present in the repository. Detect missing optional platform tooling and report `SKIPPED` only for unsupported platform smoke checks, never for Flutter analyze/tests or the three backend unit suites.
 
-- [ ] **Step 3: Document the operator workflow**
+- [x] **Step 3: Document the operator workflow**
 
 The runbook must explain:
 
@@ -678,7 +678,7 @@ The runbook must explain:
 - how to distinguish a newly installed artifact by build ID;
 - release HTTPS requirement.
 
-- [ ] **Step 4: Run complete CPU-safe verification**
+- [x] **Step 4: Run complete CPU-safe verification**
 
 Run:
 
@@ -688,7 +688,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify.ps1
 
 Expected: all mandatory CPU-safe checks pass; doctor reports the training guard accurately; no GPU service starts.
 
-- [ ] **Step 5: Inspect the diff and secrets boundary**
+- [x] **Step 5: Inspect the diff and secrets boundary**
 
 Run:
 
@@ -700,7 +700,7 @@ rg -n "(api[_-]?key|secret|token|Bearer )" lib tool docs android -g "*.dart" -g 
 
 Review every match. Public client configuration already tracked in the historical app is not expanded in this phase; no new server credential may be present.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add tool/cli/verify.ps1 docs/runbooks/android-lan-development.md README.md
@@ -711,16 +711,16 @@ git commit -m "docs: add production foundation runbook"
 
 ## Completion Gate for This Plan
 
-- [ ] `doctor.ps1` detects active LoRA training and reports that GPU inference may not start.
-- [ ] Debug AppConfig accepts RFC 1918 HTTP origins; release rejects all HTTP origins.
-- [ ] Android cleartext is enabled only through the debug source set.
-- [ ] Guest mode creates a Firebase anonymous session before entering `/home`.
-- [ ] App bootstrap exposes degraded/unavailable runtime states without crashing.
-- [ ] `/home` opens the five-destination learning shell.
-- [ ] Legacy categories, shop, and settings remain reachable from the drawer.
-- [ ] The installed app exposes an unambiguous build identity.
-- [ ] Full CPU-safe verification passes.
-- [ ] No active GPU training process was stopped, suspended, reprioritized, or competed with.
+- [x] `doctor.ps1` accurately reports training state and permits GPU inference only when training is inactive.
+- [x] Debug AppConfig accepts RFC 1918 HTTP origins; release rejects all HTTP origins.
+- [x] Android cleartext is enabled only through the debug source set.
+- [x] Guest mode creates a Firebase anonymous session before entering `/home`.
+- [x] App bootstrap exposes degraded/unavailable runtime states without crashing.
+- [x] `/home` opens the five-destination learning shell.
+- [x] Legacy categories, shop, and settings remain reachable from the drawer.
+- [x] The installed app exposes an unambiguous build identity.
+- [x] Full CPU-safe verification passes.
+- [x] No active GPU training process was stopped, suspended, reprioritized, or competed with.
 
 ## Deferred to the Next Vertical-Slice Plans
 
