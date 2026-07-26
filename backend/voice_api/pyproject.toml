@@ -15,29 +15,27 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx==0.28.1",
+    "httpx2==2.9.1",
     "pytest==9.1.1",
     "pytest-cov==7.1.0",
 ]
 gpu = [
     "omnivoice==0.2.1",
     "soundfile==0.13.1",
-    "torch==2.8.0+cu128",
-    "torchaudio==2.8.0+cu128",
+    "torch==2.13.0+cu132",
 ]
 
-# CUDA 12.8 PyTorch wheels are hosted on the dedicated PyTorch index. The index
-# is marked explicit and bound only to torch and torchaudio via tool.uv.sources
-# so that general packages (including torch's own nvidia-* transitives) keep
-# resolving from PyPI and never route through this index.
+# CUDA 13.2 PyTorch wheels for torch 2.13.0 are hosted on the dedicated PyTorch
+# index. The index is marked explicit and bound only to torch via
+# tool.uv.sources so general packages (including torch's own nvidia-* transitives)
+# continue resolving from PyPI and never route through this index.
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu128" }
-torchaudio = { index = "pytorch-cu128" }
+torch = { index = "pytorch-cu132" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexiquest_voice"]
@@ -46,3 +44,6 @@ packages = ["src/lexiquest_voice"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "-ra"
+markers = [
+    "integration: marks tests as integration tests.",
+]

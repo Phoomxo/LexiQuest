@@ -17,7 +17,7 @@ def text_too_long(max_length: int) -> HTTPException:
     """Return the stable error for text exceeding the configured limit."""
 
     return HTTPException(
-        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
         detail={
             "code": "TEXT_TOO_LONG",
             "message": (
