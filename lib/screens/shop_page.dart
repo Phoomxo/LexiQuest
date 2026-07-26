@@ -11,7 +11,14 @@ class ShopPage extends StatefulWidget {
 }
 
 class _ShopPageState extends State<ShopPage> {
-  final SupabaseClient _supabase = Supabase.instance.client;
+  SupabaseClient? get _supabase {
+    try {
+      return Supabase.instance.client;
+    } catch (_) {
+      return null;
+    }
+  }
+
   int userPoints = 0;
   List<Map<String, dynamic>> products = [];
   bool _isLoading = true;
@@ -42,8 +49,8 @@ class _ShopPageState extends State<ShopPage> {
           });
         }
       }
-    } catch (e) {
-      debugPrint('❌ Error fetching user points: $e');
+    } catch (_) {
+      debugPrint('User points are unavailable; continuing offline.');
     }
   }
 
@@ -91,7 +98,9 @@ class _ShopPageState extends State<ShopPage> {
           .timeout(const Duration(seconds: 10));
 
       if (querySnapshot.docs.isEmpty) {
-        debugPrint("⚠️ ไม่พบสินค้าใน Firestore! กำลังกู้คืน/สร้างข้อมูลวอลเปเปอร์...");
+        debugPrint(
+          "⚠️ ไม่พบสินค้าใน Firestore! กำลังกู้คืน/สร้างข้อมูลวอลเปเปอร์...",
+        );
         await _seedDefaultProducts(firestore);
         if (mounted) {
           setState(() {
@@ -115,9 +124,12 @@ class _ShopPageState extends State<ShopPage> {
         String imageUrl = productData['image_url'] ?? '';
 
         if (imageUrl.isEmpty && imageName.toString().isNotEmpty) {
-          try {
-            imageUrl = _supabase.storage.from('Image').getPublicUrl(imageName);
-          } catch (_) {}
+          final supabase = _supabase;
+          if (supabase != null) {
+            try {
+              imageUrl = supabase.storage.from('Image').getPublicUrl(imageName);
+            } catch (_) {}
+          }
         }
 
         if (imageUrl.isEmpty) {
@@ -145,8 +157,8 @@ class _ShopPageState extends State<ShopPage> {
           products = productList;
         });
       }
-    } catch (e) {
-      debugPrint('❌ Error fetching products, displaying default wallpapers: $e');
+    } catch (_) {
+      debugPrint('Products are unavailable; displaying offline defaults.');
       if (mounted) {
         setState(() {
           products = List.from(_defaultProducts);
@@ -167,8 +179,8 @@ class _ShopPageState extends State<ShopPage> {
         }, SetOptions(merge: true));
       }
       debugPrint("✅ กู้คืนข้อมูลวอลเปเปอร์ลง Firestore สำเร็จ!");
-    } catch (e) {
-      debugPrint("⚠️ ไม่สามารถบันทึกข้อมูลไปยัง Firestore: $e");
+    } catch (_) {
+      debugPrint('Default products could not be synchronized.');
     }
   }
 
@@ -239,8 +251,8 @@ class _ShopPageState extends State<ShopPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('✅ ซื้อ "${product['name']}" สำเร็จ!')),
       );
-    } catch (e) {
-      debugPrint("❌ Error purchasing product: $e");
+    } catch (_) {
+      debugPrint('Product purchase could not be completed.');
     }
   }
 
@@ -284,7 +296,9 @@ class _ShopPageState extends State<ShopPage> {
               setState(() => _isLoading = false);
               messenger.showSnackBar(
                 const SnackBar(
-                  content: Text('✅ กู้คืนรายการสินค้าวอลเปเปอร์ลง DB เรียบร้อยแล้ว!'),
+                  content: Text(
+                    '✅ กู้คืนรายการสินค้าวอลเปเปอร์ลง DB เรียบร้อยแล้ว!',
+                  ),
                   backgroundColor: Colors.green,
                 ),
               );

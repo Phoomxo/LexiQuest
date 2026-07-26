@@ -513,15 +513,15 @@ Drawer compatibility destinations:
 
 `/home` must create `MainNavigationScreen`, not the retired `MainNavigation`.
 
-- [ ] **Step 1: Ask GLM for navigation RED tests**
+- [x] **Step 1: Ask GLM for navigation RED tests**
 
 Test route construction, five bottom destinations, IndexedStack state preservation, and drawer access to the three legacy destinations.
 
-- [ ] **Step 2: Add failing widget test**
+- [x] **Step 2: Add failing widget test**
 
 The test must use a deterministic `MaterialApp` and avoid Firebase/network initialization.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -531,11 +531,11 @@ flutter test test/screens/production_shell_navigation_test.dart
 
 Expected: `/home` still resolves to the legacy four-tab shell or the new shell has no drawer.
 
-- [ ] **Step 4: Ask GLM for minimal GREEN and implement**
+- [x] **Step 4: Ask GLM for minimal GREEN and implement**
 
 Delete the duplicate `MainNavigation` class from `main.dart`, import `main_navigation_screen.dart`, and add a drawer to `MainNavigationScreen`. Correct all touched Thai labels to valid UTF-8.
 
-- [ ] **Step 5: Run GREEN and navigation regression tests**
+- [x] **Step 5: Run GREEN and navigation regression tests**
 
 Run:
 
@@ -547,7 +547,7 @@ flutter test test
 
 Expected: new shell and complete Flutter unit/widget suite pass.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add lib/main.dart lib/screens/main_navigation_screen.dart test

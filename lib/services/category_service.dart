@@ -4,9 +4,11 @@ import 'package:flutter/foundation.dart' show debugPrint;
 import '../models/category_model.dart' as models;
 
 class CategoryService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final CollectionReference _categoriesCollection = FirebaseFirestore.instance
-      .collection('categories');
+  FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+
+  CollectionReference get _categoriesCollection {
+    return FirebaseFirestore.instance.collection('categories');
+  }
 
   /// เพิ่ม Category ใหม่ พร้อมบันทึก uid ของผู้ใช้
   Future<void> addCategory(String categoryName) async {
@@ -88,28 +90,31 @@ class CategoryService {
     try {
       await _categoriesCollection.doc(categoryId).delete();
       debugPrint('Category deleted successfully');
-    } catch (e) {
-      debugPrint('Failed to delete category: $e');
-      throw Exception('Failed to delete category: $e');
+    } catch (_) {
+      debugPrint('Category deletion failed.');
+      throw Exception('Category deletion failed.');
     }
   }
 
   /// ดึงหมวดหมู่เฉพาะของผู้ใช้ปัจจุบัน
   Stream<List<models.Category>> getCategoriesStream() {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      debugPrint('No user is logged in');
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return const Stream.empty();
+      }
+
+      return _categoriesCollection
+          .where('uid', isEqualTo: user.uid)
+          .snapshots()
+          .map(
+            (snapshot) => snapshot.docs
+                .map((doc) => models.Category.fromDocumentSnapshot(doc))
+                .toList(),
+          );
+    } catch (_) {
       return const Stream.empty();
     }
-
-    return _categoriesCollection
-        .where('uid', isEqualTo: user.uid)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map((doc) => models.Category.fromDocumentSnapshot(doc))
-              .toList(),
-        );
   }
 
   /// เพิ่มหมวดหมู่เริ่มต้นให้กับผู้ใช้ใหม่ (เรียกใช้ได้จาก UI)

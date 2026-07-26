@@ -13,19 +13,19 @@ class CategoriesPage extends StatelessWidget {
 
   // 🔄 เพิ่มหมวดหมู่เริ่มต้นเมื่อผู้ใช้สมัครใหม่ (เรียกใช้ครั้งเดียว)
   Future<void> _addDefaultCategoriesForNewUser(BuildContext context) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      bool categoriesAdded = prefs.getBool('categories_added') ?? false;
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final prefs = await SharedPreferences.getInstance();
+        final categoriesAdded = prefs.getBool('categories_added') ?? false;
 
-      if (!categoriesAdded) {
-        await _categoryService.addDefaultCategoriesForNewUser(user.uid);
-        await prefs.setBool('categories_added', true);
-      } else {
-        debugPrint(
-          '✅ Default categories have already been added for user ${user.uid}',
-        );
+        if (!categoriesAdded) {
+          await _categoryService.addDefaultCategoriesForNewUser(user.uid);
+          await prefs.setBool('categories_added', true);
+        }
       }
+    } catch (_) {
+      // Safe offline shell: cloud initialization is optional at app bootstrap.
     }
   }
 

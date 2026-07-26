@@ -1,8 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:vocab_learning_app/main.dart';
 import 'choose_mode_screen.dart';
+import 'main_navigation_screen.dart';
 
 class ScoreScreen extends StatelessWidget {
   final int correctAnswers;
@@ -176,7 +176,7 @@ class ScoreScreen extends StatelessWidget {
                         Navigator.pushAndRemoveUntil(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => const MainNavigation(),
+                            builder: (context) => const MainNavigationScreen(),
                           ),
                           (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
                         );

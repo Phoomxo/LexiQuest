@@ -15,43 +15,61 @@ class SettingScreen extends StatefulWidget {
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  firebase_auth.FirebaseAuth? _auth;
+  FirebaseFirestore? _firestore;
   Map<String, dynamic>? _profileData;
   IconData _selectedIcon = Icons.account_circle;
 
-  firebase_auth.User? get _currentUser => _auth.currentUser;
+  firebase_auth.User? get _currentUser => _auth?.currentUser;
 
   @override
   void initState() {
     super.initState();
+    _auth = _resolveAuth();
+    _firestore = _resolveFirestore();
     if (_currentUser != null) {
       _fetchUserProfile();
     }
   }
 
-  Future<void> _fetchUserProfile() async {
+  firebase_auth.FirebaseAuth? _resolveAuth() {
     try {
-      final doc = await _firestore
-          .collection('users')
-          .doc(_currentUser!.uid)
-          .get();
+      return firebase_auth.FirebaseAuth.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  FirebaseFirestore? _resolveFirestore() {
+    try {
+      return FirebaseFirestore.instance;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<void> _fetchUserProfile() async {
+    final firestore = _firestore;
+    final user = _currentUser;
+    if (firestore == null || user == null) return;
+
+    try {
+      final doc = await firestore.collection('users').doc(user.uid).get();
       if (doc.exists) {
         if (!mounted) return;
         setState(() {
           _profileData = doc.data();
         });
       }
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to fetch profile data: $e')),
-      );
+    } catch (_) {
+      // Profile remains unavailable without surfacing provider diagnostics.
     }
   }
 
   void _logout() async {
-    await _auth.signOut();
+    final auth = _auth;
+    if (auth == null) return;
+    await auth.signOut();
     if (!mounted) return;
     Navigator.pushReplacementNamed(context, '/login');
   }
@@ -217,7 +235,8 @@ class _SettingScreenState extends State<SettingScreen> {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => const AvatarEquipmentScreen(),
+                              builder: (context) =>
+                                  const AvatarEquipmentScreen(),
                             ),
                           );
                         },
@@ -270,12 +289,17 @@ class _SettingScreenState extends State<SettingScreen> {
                       if (!mounted) return;
                       messenger.showSnackBar(
                         const SnackBar(
-                          content: Text('🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!'),
+                          content: Text(
+                            '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
+                          ),
                           backgroundColor: Colors.green,
                         ),
                       );
                     },
-                    icon: const Icon(Icons.cleaning_services, color: Colors.redAccent),
+                    icon: const Icon(
+                      Icons.cleaning_services,
+                      color: Colors.redAccent,
+                    ),
                     label: const Text(
                       '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
                       style: TextStyle(

@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
   testWidgets(
-    'MainNavigationScreen renders 4 tab destinations and switches tabs',
+    'MainNavigationScreen renders 5 tab destinations and switches tabs',
     (WidgetTester tester) async {
       await tester.pumpWidget(const MaterialApp(home: MainNavigationScreen()));
       await tester.pumpAndSettle();
@@ -13,6 +14,7 @@ void main() {
       expect(find.text('สถิติ'), findsOneWidget);
       expect(find.text('จุดอ่อน'), findsOneWidget);
       expect(find.text('รางวัล'), findsOneWidget);
+      expect(find.text('โปรไฟล์'), findsOneWidget);
 
       // Tap Analytics tab (index 1)
       await tester.tap(find.byType(NavigationDestination).at(1));
@@ -37,6 +39,11 @@ void main() {
         find.text('ตราความสำเร็จ & รางวัล (Achievements)'),
         findsOneWidget,
       );
+
+      await tester.tap(find.byType(NavigationDestination).at(4));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProfileSettingsScreen), findsOneWidget);
     },
   );
 }
