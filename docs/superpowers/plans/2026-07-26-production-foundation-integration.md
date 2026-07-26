@@ -322,11 +322,11 @@ abstract interface class GuestSessionService {
 
 `FirebaseGuestSessionService` wraps `FirebaseAuth.signInAnonymously()`. A guest reaches `/home` only after `GuestSessionStarted`. Failure stays on login and shows a fixed Thai action message with no credential or provider response leakage.
 
-- [ ] **Step 1: Ask GLM for service RED tests**
+- [x] **Step 1: Ask GLM for service RED tests**
 
 Use an injected callback or narrow auth adapter; do not initialize Firebase in unit tests.
 
-- [ ] **Step 2: Write failing service tests**
+- [x] **Step 2: Write failing service tests**
 
 Cover success and mapping of Firebase codes:
 
@@ -335,7 +335,7 @@ Cover success and mapping of Firebase codes:
 - missing Firebase app → `firebaseUnavailable`
 - everything else → `unknown`
 
-- [ ] **Step 3: Run service RED**
+- [x] **Step 3: Run service RED**
 
 Run:
 
@@ -345,7 +345,7 @@ flutter test test/services/guest_session_service_test.dart
 
 Expected: fail because the service contract does not exist.
 
-- [ ] **Step 4: Ask GLM for service GREEN, implement, and verify**
+- [x] **Step 4: Ask GLM for service GREEN, implement, and verify**
 
 Run:
 
@@ -354,7 +354,7 @@ dart format lib/services/guest_session_service.dart test/services/guest_session_
 flutter test test/services/guest_session_service_test.dart
 ```
 
-- [ ] **Step 5: Ask GLM for widget RED tests**
+- [x] **Step 5: Ask GLM for widget RED tests**
 
 Make `LoginScreen` accept an optional `GuestSessionService`. Test:
 
@@ -363,7 +363,7 @@ Make `LoginScreen` accept an optional `GuestSessionService`. Test:
 - failure does not navigate and displays the fixed message;
 - disposal during the async call causes no `setState after dispose`.
 
-- [ ] **Step 6: Add widget RED and run it**
+- [x] **Step 6: Add widget RED and run it**
 
 Run:
 
@@ -373,11 +373,11 @@ flutter test test/screens/login_guest_mode_test.dart
 
 Expected: fail because `LoginScreen` has no injectable guest session and navigates immediately.
 
-- [ ] **Step 7: Implement minimal widget GREEN**
+- [x] **Step 7: Implement minimal widget GREEN**
 
 Replace the direct guest navigation with `_startGuestSession()`. Preserve the existing email/password flow.
 
-- [ ] **Step 8: Run focused and related tests**
+- [x] **Step 8: Run focused and related tests**
 
 Run:
 
@@ -388,7 +388,7 @@ flutter test test/services/guest_session_service_test.dart test/screens/login_gu
 
 Expected: all pass.
 
-- [ ] **Step 9: Commit**
+- [x] **Step 9: Commit**
 
 ```powershell
 git add lib/services/guest_session_service.dart lib/screens/login_screen.dart test/services/guest_session_service_test.dart test/screens/login_guest_mode_test.dart

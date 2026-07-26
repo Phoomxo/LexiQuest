@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 import 'register_screen.dart';
 import '../services/auth_service.dart';
+import '../services/guest_session_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'otp_screen.dart'; // เพิ่มไฟล์ OTP Screen
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({super.key, this.guestSessionService});
+
+  final GuestSessionService? guestSessionService;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -21,7 +24,17 @@ class _LoginScreenState extends State<LoginScreen> {
     return _authServiceInstance!;
   }
 
+  GuestSessionService? _guestSessionServiceInstance;
+
+  GuestSessionService get _guestSessionService {
+    final injected = widget.guestSessionService;
+    if (injected != null) return injected;
+    _guestSessionServiceInstance ??= FirebaseGuestSessionService.production();
+    return _guestSessionServiceInstance!;
+  }
+
   bool _isLoading = false;
+  bool _isGuestLoading = false;
 
   bool _isValidEmail(String email) {
     final RegExp regex = RegExp(
@@ -117,6 +130,53 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
+  Future<void> _startGuestSession() async {
+    if (_isGuestLoading) return;
+    setState(() => _isGuestLoading = true);
+
+    final GuestSessionResult result;
+    try {
+      result = await _guestSessionService.start();
+    } catch (_) {
+      if (!mounted) return;
+      _showGuestFailureSnackBar(GuestSessionFailure.unknown);
+      setState(() => _isGuestLoading = false);
+      return;
+    }
+
+    if (!mounted) return;
+    switch (result) {
+      case GuestSessionStarted():
+        Navigator.pushReplacementNamed(context, '/home');
+      case GuestSessionFailed(:final reason):
+        _showGuestFailureSnackBar(reason);
+        setState(() => _isGuestLoading = false);
+    }
+  }
+
+  void _showGuestFailureSnackBar(GuestSessionFailure reason) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(_guestFailureMessage(reason)),
+        backgroundColor: Colors.redAccent,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
+  String _guestFailureMessage(GuestSessionFailure reason) {
+    return switch (reason) {
+      GuestSessionFailure.firebaseUnavailable =>
+        'ระบบยืนยันตัวตนยังไม่พร้อม กรุณาลองใหม่ภายหลัง',
+      GuestSessionFailure.providerDisabled =>
+        'โหมดผู้เยี่ยมชมยังไม่เปิดใช้งาน กรุณาเข้าสู่ระบบด้วยอีเมล',
+      GuestSessionFailure.network =>
+        'เชื่อมต่อเครือข่ายไม่ได้ กรุณาตรวจสอบอินเทอร์เน็ตแล้วลองใหม่',
+      GuestSessionFailure.unknown =>
+        'เริ่มโหมดผู้เยี่ยมชมไม่ได้ กรุณาลองใหม่หรือเข้าสู่ระบบด้วยอีเมล',
+    };
+  }
+
   @override
   void dispose() {
     _emailController.dispose();
@@ -207,10 +267,15 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                     const SizedBox(height: 10),
                     OutlinedButton.icon(
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, '/home');
-                      },
-                      icon: const Icon(Icons.play_arrow, color: Colors.green),
+                      key: const ValueKey<String>('guest-mode-button'),
+                      onPressed: _isGuestLoading ? null : _startGuestSession,
+                      icon: _isGuestLoading
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.play_arrow, color: Colors.green),
                       label: const Text(
                         '🚀 ทดลองใช้งานทันที (Guest Mode)',
                         style: TextStyle(
@@ -229,7 +294,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         );
                       },
-                      child: const Text("ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่ (Register)"),
+                      child: const Text(
+                        "ยังไม่มีบัญชีใช่ไหม? สมัครสมาชิกที่นี่ (Register)",
+                      ),
                     ),
                   ],
                 ),
