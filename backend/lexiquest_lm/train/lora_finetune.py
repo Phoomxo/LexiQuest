@@ -231,7 +231,7 @@ def _run_real_train(args: argparse.Namespace) -> int:
         print(f"Falling back to native FP16 precision (0.5B model fits comfortably in VRAM)...")
         model = AutoModelForCausalLM.from_pretrained(
             args.model,
-            torch_dtype=torch.float16,
+            dtype=torch.float16,
             device_map="auto",
             trust_remote_code=True,
         )

@@ -20,25 +20,25 @@ dev = [
     "pytest-cov==7.1.0",
 ]
 train = [
-    # Pinned for reproducibility on the workstation RTX 3050 (CUDA 12.8).
-    "torch==2.8.0+cu128",
-    "transformers==4.46.3",
-    "peft==0.13.2",
-    "datasets==3.1.0",
-    "accelerate==1.1.1",
-    "bitsandbytes==0.44.1",
+    # Pinned for reproducibility on the workstation RTX 3050 (CUDA 13.2).
+    "torch==2.13.0+cu132",
+    "transformers==5.14.1",
+    "peft==0.19.1",
+    "datasets==5.0.0",
+    "accelerate==1.14.0",
+    "bitsandbytes==0.50.0",
 ]
 
-# CUDA 12.8 PyTorch wheels are hosted on the dedicated PyTorch index. The index
+# CUDA 13.2 PyTorch wheels are hosted on the dedicated PyTorch index. The index
 # is marked explicit and bound only to torch via tool.uv.sources so general
 # packages keep resolving from PyPI.
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu128" }
+torch = { index = "pytorch-cu132" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexiquest_lm"]

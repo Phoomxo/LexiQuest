@@ -207,7 +207,7 @@ def _run_real_evaluate(args: argparse.Namespace) -> int:
     base = AutoModelForCausalLM.from_pretrained(
         args.model,
         device_map="auto",
-        torch_dtype=torch.float16,
+        dtype=torch.float16,
         trust_remote_code=True,
     )
 
