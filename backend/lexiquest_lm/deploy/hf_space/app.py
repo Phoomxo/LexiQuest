@@ -78,7 +78,7 @@ def _load_model_and_tokenizer() -> tuple[Any, Any]:
     # 16GB RAM HF allocates to free CPU Spaces.
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_ID,
-        torch_dtype=torch.float32,
+        dtype=torch.float32,
         device_map="cpu",
         trust_remote_code=True,
     )
@@ -169,7 +169,7 @@ def chat_completions(
 
     if not request.messages:
         raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             detail={"code": "INVALID_REQUEST", "message": "messages must not be empty"},
         )
 
