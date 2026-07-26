@@ -232,11 +232,11 @@ git commit -m "feat(config): allow private LAN backends in debug"
 - The debug XML permits cleartext because Android XML cannot enumerate arbitrary developer LAN subnets reliably; Dart `AppConfig` remains the narrower application-level allowlist.
 - Release configuration remains HTTPS-only at both manifest and Dart layers.
 
-- [ ] **Step 1: Ask GLM for a structural RED test**
+- [x] **Step 1: Ask GLM for a structural RED test**
 
 The test should read repository files through `File` and validate the two-layer policy without invoking Gradle.
 
-- [ ] **Step 2: Add the failing test**
+- [x] **Step 2: Add the failing test**
 
 Assertions:
 
@@ -248,7 +248,7 @@ expect(debugConfig, contains('cleartextTrafficPermitted="true"'));
 
 Also assert the cleartext declaration exists only under `android/app/src/debug`.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -258,11 +258,11 @@ flutter test test/config/android_network_security_test.dart
 
 Expected: fail because the debug manifest and XML do not exist.
 
-- [ ] **Step 4: Ask GLM for minimal GREEN and implement**
+- [x] **Step 4: Ask GLM for minimal GREEN and implement**
 
 Use a manifest overlay containing only the application attribute required for debug network security.
 
-- [ ] **Step 5: Run GREEN and manifest merge smoke check**
+- [x] **Step 5: Run GREEN and manifest merge smoke check**
 
 Run:
 
@@ -273,7 +273,7 @@ flutter build apk --debug --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:
 
 Expected: test passes and debug APK builds without changing the release manifest.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```powershell
 git add android/app/src/debug test/config/android_network_security_test.dart
