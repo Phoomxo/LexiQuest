@@ -53,11 +53,11 @@ function Get-LexiQuestRuntimeGuard {
 }
 ```
 
-- [ ] **Step 1: Ask GLM for a test-only RED proposal**
+- [x] **Step 1: Ask GLM for a test-only RED proposal**
 
 Use a bounded prompt that includes the contract above, Windows PowerShell 5.1 compatibility, and a prohibition on process mutation.
 
-- [ ] **Step 2: Write the failing probe tests**
+- [x] **Step 2: Write the failing probe tests**
 
 The custom test script must cover:
 
@@ -78,7 +78,7 @@ Assert-False (Test-LexiQuestTrainingProcess -Processes @())
 
 Also assert that malformed `nvidia-smi` output produces `GpuAvailable = $false` and blocks GPU inference rather than throwing.
 
-- [ ] **Step 3: Run RED**
+- [x] **Step 3: Run RED**
 
 Run:
 
@@ -88,11 +88,11 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/runtime-probe
 
 Expected: fail because `tool/cli/lib/runtime-probes.ps1` or its functions do not exist.
 
-- [ ] **Step 4: Ask GLM for the minimal GREEN implementation**
+- [x] **Step 4: Ask GLM for the minimal GREEN implementation**
 
 Require dependency injection for process and GPU samples so tests never call or control real processes.
 
-- [ ] **Step 5: Implement the probes and doctor**
+- [x] **Step 5: Implement the probes and doctor**
 
 `doctor.ps1` may use only read-only operations:
 
@@ -108,7 +108,7 @@ The doctor must print one compact object and exit:
 
 It must prominently report `MayStartGpuInference = False` while training is active.
 
-- [ ] **Step 6: Ignore runtime state**
+- [x] **Step 6: Ignore runtime state**
 
 Add:
 
@@ -117,7 +117,7 @@ tool/cli/.runtime/
 tool/cli/logs/
 ```
 
-- [ ] **Step 7: Run GREEN and the live read-only doctor**
+- [x] **Step 7: Run GREEN and the live read-only doctor**
 
 Run:
 
@@ -128,7 +128,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/doctor.ps1
 
 Expected: tests pass; live doctor reports active training and does not start or stop anything.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```powershell
 git add .gitignore tool/cli/lib/runtime-probes.ps1 tool/cli/tests/runtime-probes.tests.ps1 tool/cli/doctor.ps1

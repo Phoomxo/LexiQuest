@@ -17,6 +17,8 @@ migrate_working_dir/
 .worktrees/
 .firecrawl/
 .glm-prompts/
+tool/cli/.runtime/
+tool/cli/logs/
 node_modules/
 .idea/
 
