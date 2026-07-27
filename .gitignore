@@ -18,6 +18,8 @@ migrate_working_dir/
 .firecrawl/
 .glm-prompts/
 .zcode/
+supabase/.branches/
+supabase/.temp/
 firestore-debug.log
 tool/cli/.runtime/
 tool/cli/logs/

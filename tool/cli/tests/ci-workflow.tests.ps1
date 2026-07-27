@@ -195,6 +195,17 @@ function Invoke-NpmFirebaseToolchainTests {
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
 }
 
+function Invoke-SupabaseToolchainTests {
+    param([string]$Text)
+    Assert-RegexMatches $Text '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*supabase/setup-cli@' 'workflow provisions the official supabase/setup-cli action'
+    Assert-RegexMatches $Text '(?<!\d)2\.109\.1(?!\d)' 'Supabase CLI is pinned to exactly 2.109.1'
+    Assert-ContainsString $Text 'supabase db start' 'workflow runs supabase db start'
+    Assert-ContainsString $Text 'supabase db reset --local --no-seed' 'workflow runs supabase db reset --local --no-seed'
+    Assert-ContainsString $Text 'docker exec -i supabase_db_lexiquest-local psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f - < test/security/supabase_storage_contract.sql' 'workflow pipes the storage contract to psql in the local Supabase database'
+    Assert-ContainsString $Text 'supabase db lint --local --level warning' 'workflow runs supabase db lint --local --level warning'
+    Assert-ContainsString $Text 'supabase db advisors --local --type security --level warn --fail-on error' 'workflow runs supabase db advisors --local --type security --level warn --fail-on error'
+}
+
 $repoToolCli = Split-Path $PSScriptRoot -Parent
 $repoRoot = Split-Path (Split-Path $repoToolCli -Parent) -Parent
 $workflowPath = Join-Path $repoRoot (Join-Path '.github' (Join-Path 'workflows' 'ci.yml'))
@@ -247,6 +258,9 @@ try {
 } catch {
     Write-Fail ('npm/Firebase toolchain suite threw: ' + $_.Exception.Message)
 }
+
+Write-Host '-> Supabase toolchain' -ForegroundColor Cyan
+try { Invoke-SupabaseToolchainTests -Text $workflowText } catch { Write-Fail ('Supabase toolchain suite threw: ' + $_.Exception.Message) }
 
 $total = $script:PassedCount + $script:FailedCount
 Write-Host ''
