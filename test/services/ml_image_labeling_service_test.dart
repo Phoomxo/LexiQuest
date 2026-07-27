@@ -31,12 +31,14 @@ void main() {
     });
   });
 
-  group('LiveMlImageLabelingService', () {
-    test('is ready before dispose', () {
-      final service = LiveMlImageLabelingService();
-      expect(service.isReady, true);
+  group('UnavailableMlImageLabelingService', () {
+    test('is never ready and returns no labels', () async {
+      final service = UnavailableMlImageLabelingService();
+      expect(service.isReady, false);
+      expect(await service.processImageBytes([0, 1, 2]), isEmpty);
       service.dispose();
       expect(service.isReady, false);
+      expect(await service.processImageBytes([0, 1, 2]), isEmpty);
     });
   });
 

@@ -1,35 +1,26 @@
 import 'package:flutter/material.dart';
-import '../services/ml_image_labeling_service.dart';
 import '../services/object_vocabulary_database.dart';
 import '../services/srs_service.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
 
-/// Full-featured Object Scanner screen with ML Kit image labeling,
-/// vocabulary mapping, OmniVoice audio, and scan history.
+/// Object Scanner experience backed by a built-in vocabulary simulation.
 ///
-/// Supports 3-tier fallback:
-/// 1. Live camera preview + ML Kit (new phones)
-/// 2. Capture single photo → ML Kit (old phones)
-/// 3. Gallery picker / built-in simulation (no camera / emulator)
+/// This version does not inspect camera, image, or ML input. It samples the
+/// bundled vocabulary database, plays audio, and keeps a local result history.
 class ObjectScannerScreen extends StatefulWidget {
-  /// Optional ML service for dependency injection in tests.
-  final MlImageLabelingService? mlService;
-
   /// Optional voice provider for dependency injection in tests.
   final VoiceProvider? voiceProvider;
 
-  const ObjectScannerScreen({super.key, this.mlService, this.voiceProvider});
+  const ObjectScannerScreen({super.key, this.voiceProvider});
 
   @override
   State<ObjectScannerScreen> createState() => _ObjectScannerScreenState();
 }
 
 class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
-  late final MlImageLabelingService _mlService;
   late final VoiceProvider _voiceProvider;
-  bool _ownsMlService = false;
   bool _ownsVoiceProvider = false;
 
   final ObjectVocabularyDatabase _vocabDb = const ObjectVocabularyDatabase();
@@ -43,12 +34,6 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.mlService != null) {
-      _mlService = widget.mlService!;
-    } else {
-      _mlService = LiveMlImageLabelingService();
-      _ownsMlService = true;
-    }
     if (widget.voiceProvider != null) {
       _voiceProvider = widget.voiceProvider!;
     } else {
@@ -59,7 +44,6 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
 
   @override
   void dispose() {
-    if (_ownsMlService) _mlService.dispose();
     _voiceProvider.stop();
     if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
       _voiceProvider.dispose();
@@ -67,7 +51,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
     super.dispose();
   }
 
-  /// Simulate ML Kit scan using built-in database (works on all devices).
+  /// Draw a vocabulary sample without camera, image, or ML input.
   void _scanObject() {
     setState(() => _isScanning = true);
 
@@ -171,9 +155,14 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                 },
               ),
             ),
+            Text(
+              'โหมดจำลอง — เวอร์ชันนี้ยังไม่ใช้กล้องหรือ ML จริง',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              textAlign: TextAlign.center,
+            ),
             const SizedBox(height: 16),
 
-            // ── Camera Preview / Scan Area ──
+            // ── Simulation preview area ──
             Container(
               height: 220,
               decoration: BoxDecoration(
@@ -201,7 +190,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                               ),
                               SizedBox(height: 12),
                               Text(
-                                'ML Kit กำลังวิเคราะห์...',
+                                'กำลังสุ่มตัวอย่างคำศัพท์...',
                                 style: TextStyle(
                                   color: Colors.white70,
                                   fontSize: 14,
@@ -224,8 +213,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                               const SizedBox(height: 12),
                               Text(
                                 _currentResult != null
-                                    ? 'สแกนพบ: ${_currentResult!.englishWord}'
-                                    : 'ส่องกล้องไปยังวัตถุ แล้วกดสแกน',
+                                    ? 'ผลจำลอง: ${_currentResult!.englishWord}'
+                                    : 'กดปุ่มด้านล่างเพื่อสุ่มตัวอย่างคำศัพท์',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 16,
@@ -260,7 +249,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                             ),
                             color: Colors.greenAccent,
                             child: Text(
-                              'AR Object: ${_currentResult!.mlLabel}',
+                              'ตัวอย่าง: ${_currentResult!.mlLabel}',
                               style: const TextStyle(
                                 color: Colors.black,
                                 fontWeight: FontWeight.bold,
@@ -276,14 +265,13 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
             ),
             const SizedBox(height: 16),
 
-            // ── Scan Button ──
+            // ── Simulation button ──
             ElevatedButton.icon(
+              key: const ValueKey<String>('object-scanner-simulate-button'),
               onPressed: _isScanning ? null : _scanObject,
-              icon: Icon(_isScanning ? Icons.hourglass_top : Icons.camera_alt),
+              icon: Icon(_isScanning ? Icons.hourglass_top : Icons.shuffle),
               label: Text(
-                _isScanning
-                    ? 'กำลังสแกน...'
-                    : '📸 สแกนวัตถุ (ML Kit Image Labeling)',
+                _isScanning ? 'กำลังสุ่ม...' : 'สุ่มตัวอย่างวัตถุ (โหมดจำลอง)',
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueGrey.shade800,
@@ -306,7 +294,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 Text(
-                  '🔍 สแกนแล้ว: ${_scanHistory.length}',
+                  '🔀 สุ่มแล้ว: ${_scanHistory.length}',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
@@ -322,7 +310,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
             if (_scanHistory.isNotEmpty) ...[
               const SizedBox(height: 20),
               const Text(
-                '📋 ประวัติการสแกน',
+                '📋 ประวัติผลจำลอง',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
@@ -461,7 +449,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'ความมั่นใจ ML Kit: $confidencePercent%',
+                  'ค่าความมั่นใจจำลอง: $confidencePercent%',
                   style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
                 const SizedBox(height: 4),

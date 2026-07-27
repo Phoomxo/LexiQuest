@@ -1,7 +1,7 @@
 /// ML Image Labeling Service abstraction for on-device object recognition.
 ///
 /// Uses abstract interface pattern for dependency injection:
-/// - [LiveMlImageLabelingService] wraps Google ML Kit (production)
+/// - [UnavailableMlImageLabelingService] reports that real labeling is absent
 /// - [MockMlImageLabelingService] provides fake results (widget tests)
 library;
 
@@ -29,31 +29,19 @@ abstract class MlImageLabelingService {
   void dispose();
 }
 
-/// Production implementation wrapping Google ML Kit Image Labeling.
+/// Placeholder implementation that does not perform real image labeling.
 ///
-/// On real devices, this delegates to `google_mlkit_image_labeling`.
-/// The actual ML Kit integration requires platform channels and is
-/// initialized when the camera provides an [InputImage].
-class LiveMlImageLabelingService implements MlImageLabelingService {
-  bool _isDisposed = false;
+/// Real on-device recognition is not implemented in this version. The object
+/// scanner uses a separate, explicitly labelled vocabulary simulation.
+class UnavailableMlImageLabelingService implements MlImageLabelingService {
+  @override
+  bool get isReady => false;
 
   @override
-  bool get isReady => !_isDisposed;
+  Future<List<LabelResult>> processImageBytes(List<int> imageBytes) async => [];
 
   @override
-  Future<List<LabelResult>> processImageBytes(List<int> imageBytes) async {
-    if (_isDisposed) return [];
-    // In production APK build, this will delegate to:
-    //   final labeler = ImageLabeler(options: ImageLabelerOptions(confidenceThreshold: 0.5));
-    //   final labels = await labeler.processImage(inputImage);
-    // For now, this returns empty until camera integration wires it up.
-    return [];
-  }
-
-  @override
-  void dispose() {
-    _isDisposed = true;
-  }
+  void dispose() {}
 }
 
 /// Mock implementation for widget tests — returns configurable fake labels.

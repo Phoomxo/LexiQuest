@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
-import 'package:vocab_learning_app/services/ml_image_labeling_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
@@ -25,57 +24,49 @@ class FakeVoiceProvider implements VoiceProvider {
 
 void main() {
   testWidgets(
-    'ObjectScannerScreen renders scan area and scans objects with ML service',
+    'ObjectScannerScreen runs an explicit vocabulary simulation on tap',
     (WidgetTester tester) async {
-      final mockMl = MockMlImageLabelingService(
-        fakeResults: [const LabelResult(label: 'Laptop', confidence: 0.95)],
-      );
       final fakeVoice = FakeVoiceProvider();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: ObjectScannerScreen(
-            mlService: mockMl,
-            voiceProvider: fakeVoice,
-          ),
-        ),
+        MaterialApp(home: ObjectScannerScreen(voiceProvider: fakeVoice)),
       );
       await tester.pumpAndSettle();
 
-      // Verify screen title renders in AppBar
-      expect(find.text('สแกนวัตถุคำศัพท์ (Object Scanner)'), findsOneWidget);
+      expect(
+        find.text('โหมดจำลอง — เวอร์ชันนี้ยังไม่ใช้กล้องหรือ ML จริง'),
+        findsOneWidget,
+      );
+      final simulateButton = find.byKey(
+        const ValueKey<String>('object-scanner-simulate-button'),
+      );
+      expect(simulateButton, findsOneWidget);
+      expect(
+        find.descendant(
+          of: simulateButton,
+          matching: find.text('สุ่มตัวอย่างวัตถุ (โหมดจำลอง)'),
+        ),
+        findsOneWidget,
+      );
 
-      // Verify scan button exists — use the exact button text
-      expect(find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'), findsOneWidget);
-
-      // Tap scan button using exact text
-      await tester.tap(find.text('📸 สแกนวัตถุ (ML Kit Image Labeling)'));
+      await tester.tap(simulateButton);
       await tester.pump();
 
-      // Should show scanning indicator
-      expect(find.textContaining('กำลังวิเคราะห์'), findsOneWidget);
+      expect(find.text('กำลังสุ่มตัวอย่างคำศัพท์...'), findsOneWidget);
 
-      // Wait for scan to complete
       await tester.pump(const Duration(milliseconds: 900));
 
-      // Should show a detected word
-      expect(find.textContaining('สแกนพบ:'), findsOneWidget);
+      expect(find.textContaining('ผลจำลอง:'), findsOneWidget);
     },
   );
 
   testWidgets(
     'ObjectScannerScreen shows All category chip selected by default',
     (WidgetTester tester) async {
-      final mockMl = MockMlImageLabelingService();
       final fakeVoice = FakeVoiceProvider();
 
       await tester.pumpWidget(
-        MaterialApp(
-          home: ObjectScannerScreen(
-            mlService: mockMl,
-            voiceProvider: fakeVoice,
-          ),
-        ),
+        MaterialApp(home: ObjectScannerScreen(voiceProvider: fakeVoice)),
       );
       await tester.pumpAndSettle();
 
@@ -87,18 +78,15 @@ void main() {
   testWidgets('ObjectScannerScreen displays database stats', (
     WidgetTester tester,
   ) async {
-    final mockMl = MockMlImageLabelingService();
     final fakeVoice = FakeVoiceProvider();
 
     await tester.pumpWidget(
-      MaterialApp(
-        home: ObjectScannerScreen(mlService: mockMl, voiceProvider: fakeVoice),
-      ),
+      MaterialApp(home: ObjectScannerScreen(voiceProvider: fakeVoice)),
     );
     await tester.pumpAndSettle();
 
     // Should show database count
     expect(find.textContaining('ฐานข้อมูล:'), findsOneWidget);
-    expect(find.textContaining('สแกนแล้ว: 0'), findsOneWidget);
+    expect(find.textContaining('สุ่มแล้ว: 0'), findsOneWidget);
   });
 }
