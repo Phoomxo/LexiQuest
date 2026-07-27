@@ -8,12 +8,13 @@ from pathlib import Path
 PYPROJECT_PATH = Path(__file__).resolve().parent.parent / "pyproject.toml"
 EXPECTED_GPU_DEPS = [
     "omnivoice==0.2.1",
-    "soundfile==0.13.1",
+    "soundfile==0.14.0",
     "torch==2.8.0+cu128",
     "torchaudio==2.8.0+cu128",
 ]
 EXPECTED_INDEX_NAME = "pytorch-cu128"
 EXPECTED_INDEX_URL = "https://download.pytorch.org/whl/cu128"
+EXPECTED_FASTAPI_PIN = "fastapi==0.140.0"
 
 
 def _load_pyproject() -> dict:
@@ -25,6 +26,25 @@ def test_gpu_dependency_group_pins_the_exact_supported_runtime() -> None:
     gpu_deps = _load_pyproject().get("dependency-groups", {}).get("gpu")
 
     assert gpu_deps == EXPECTED_GPU_DEPS
+
+
+def test_project_dependencies_pin_exactly_one_fastapi_entry() -> None:
+    config = _load_pyproject()
+    project_deps = config.get("project", {}).get("dependencies", [])
+    project_fastapi = [
+        dependency
+        for dependency in project_deps
+        if dependency.lower().startswith("fastapi")
+    ]
+    grouped_fastapi = [
+        dependency
+        for group in config.get("dependency-groups", {}).values()
+        for dependency in group
+        if dependency.lower().startswith("fastapi")
+    ]
+
+    assert project_fastapi == [EXPECTED_FASTAPI_PIN]
+    assert grouped_fastapi == []
 
 
 def test_a_single_explicit_pytorch_cu128_index_is_declared() -> None:
