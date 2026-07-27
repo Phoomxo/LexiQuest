@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+import io
 import os
+import wave
+
 import pytest
 from fastapi.testclient import TestClient
 
@@ -41,3 +46,12 @@ def test_real_firebase_omnivoice_e2e() -> None:
     assert response.status_code == 200
     assert response.headers["content-type"] == "audio/wav"
     assert len(response.content) > 0
+    assert response.content[:4] == b"RIFF"
+
+    with wave.open(io.BytesIO(response.content), "rb") as wav:
+        assert wav.getnchannels() == 1
+        assert wav.getframerate() == 24_000
+        frame_count = wav.getnframes()
+        assert frame_count > 0
+        duration = frame_count / wav.getframerate()
+        assert 0 < duration < 30
