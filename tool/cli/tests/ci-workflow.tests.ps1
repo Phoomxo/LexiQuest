@@ -103,6 +103,13 @@ function Invoke-ActionPinTests {
     }
 }
 
+function Invoke-OfficialActionTests {
+    param([string]$Text)
+    Assert-RegexMatches $Text '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1[ \t]+#[ \t]+v7\.0\.1\b' 'actions/checkout is pinned to 3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1'
+    Assert-RegexMatches $Text '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95[ \t]+#[ \t]+v5\.6\.0\b' 'actions/setup-java is pinned to 03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0'
+    Assert-RegexMatches $Text '(?m)^[ \t]*-?[ \t]*uses[ \t]*:[ \t]*actions/setup-node@820762786026740c76f36085b0efc47a31fe5020[ \t]+#[ \t]+v7\.0\.0\b' 'actions/setup-node is pinned to 820762786026740c76f36085b0efc47a31fe5020 # v7.0.0'
+}
+
 function Invoke-JobCoverageTests {
     param([string]$Text)
     Assert-ContainsString $Text 'flutter pub get' 'job resolves Flutter dependencies'
@@ -240,6 +247,9 @@ try { Invoke-ConcurrencyTests -Text $workflowText } catch { Write-Fail ('Concurr
 
 Write-Host '-> Action pins' -ForegroundColor Cyan
 try { Invoke-ActionPinTests -Text $workflowText } catch { Write-Fail ('Action pin suite threw: ' + $_.Exception.Message) }
+
+Write-Host '-> Official actions' -ForegroundColor Cyan
+try { Invoke-OfficialActionTests -Text $workflowText } catch { Write-Fail ('Official action suite threw: ' + $_.Exception.Message) }
 
 Write-Host '-> Job coverage' -ForegroundColor Cyan
 try { Invoke-JobCoverageTests -Text $workflowText } catch { Write-Fail ('Job coverage suite threw: ' + $_.Exception.Message) }
