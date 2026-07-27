@@ -104,17 +104,31 @@ ships a corrected dependency tree.
 
 ## Upstream compatibility exception
 
-The app itself uses Flutter's Built-in Kotlin migration pattern. Four external
-plugins still apply the Kotlin Gradle Plugin:
+The app uses Flutter's Built-in Kotlin migration pattern with the strict path
+deferred. Two external plugins still directly apply the Kotlin Gradle Plugin:
 
-- `firebase_storage`
-- `flutter_tts`
-- `fluttertoast`
-- `speech_to_text`
+- `flutter_tts` 4.2.5
+- `speech_to_text` 7.4.0
 
-The settings-level Kotlin plugin pin and `android.builtInKotlin=false` must
-remain until those plugins publish Built-in Kotlin-compatible releases.
-Removing the compatibility switch now breaks the Android build.
+`firebase_storage` and `fluttertoast` were subsequently removed as unused
+direct dependencies; the earlier four-plugin record is obsolete.
+
+The compatibility flags `android.builtInKotlin=false` and
+`android.newDsl=false`, together with the settings-level
+`org.jetbrains.kotlin.android` 2.3.20 `apply false` pin, must remain until
+those plugins publish Built-in Kotlin-compatible releases. With these controls
+in place, the normal Android debug build succeeds, and Flutter emits a build
+compatibility warning naming `flutter_tts` and `speech_to_text`.
+
+A non-mutating strict experiment (Gradle system properties only; no repository
+file, pub-cache entry, or plugin source modified) fails while applying
+`dev.flutter.flutter-gradle-plugin` from `android/app/build.gradle.kts`, with
+`ApplicationExtensionImpl` unable to cast to `AbstractAppExtension`. The
+immediate blocker therefore lives in Flutter's own Gradle plugin, not in a
+third-party package build script.
+
+Detailed evidence and the removal gate are recorded in the
+[Built-in Kotlin migration deferral](../superpowers/notes/2026-07-27-built-in-kotlin-deferral.md) note.
 
 ## Outstanding production controls
 
