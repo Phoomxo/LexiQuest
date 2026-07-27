@@ -98,6 +98,35 @@ service cloud.firestore {
         && request.resource.data.occurredAtUtc.size() <= 40;
     }
 
+    // A purchase record may only be created by the same atomic write that
+    // debits the buyer's points by the exact positive catalog price.
+    function purchaseIntegrityOk(database) {
+      let productDoc = get(
+        /databases/$(database)/documents/products/$(request.resource.data.product_id)
+      );
+      let stateDoc = get(
+        /databases/$(database)/documents/state/$(request.auth.uid)
+      );
+      let stateAfterDoc = getAfter(
+        /databases/$(database)/documents/state/$(request.auth.uid)
+      );
+      return exists(
+          /databases/$(database)/documents/products/$(request.resource.data.product_id)
+        )
+        && productDoc.data.price is int
+        && productDoc.data.price > 0
+        && request.resource.data.total_price == productDoc.data.price
+        && exists(
+          /databases/$(database)/documents/state/$(request.auth.uid)
+        )
+        && stateDoc.data.totalPoints is int
+        && stateDoc.data.totalPoints >= request.resource.data.total_price
+        && stateAfterDoc.data.totalPoints is int
+        && stateAfterDoc.data.totalPoints
+             == stateDoc.data.totalPoints
+                - request.resource.data.total_price;
+    }
+
     // -------------------------------------------------------------------------
     // users/{uid} - profile + per-user points. Keyed by uid; self only.
     //   create: AuthService.registerUser (first_name, last_name, email, age,
@@ -339,9 +368,10 @@ service cloud.firestore {
         && request.resource.data.product_id.size() > 0
         && request.resource.data.product_id.size() <= 120
         && request.resource.data.total_price is int
-        && request.resource.data.total_price >= 0
+        && request.resource.data.total_price > 0
         && request.resource.data.total_price <= 100000000
-        && request.resource.data.created_at is timestamp;
+        && request.resource.data.created_at is timestamp
+        && purchaseIntegrityOk(database);
 
       allow update, delete: if false;
     }
