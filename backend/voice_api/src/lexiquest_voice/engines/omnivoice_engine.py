@@ -7,8 +7,10 @@ from typing import Any
 
 from lexiquest_voice.config import Settings
 from lexiquest_voice.models import AudioResult, SpeechRequest
+from lexiquest_voice.runtime_compat import require_supported_runtime
 
 ModelLoader = Callable[[Settings], Any]
+RuntimeGuard = Callable[[], None]
 WavWriter = Callable[[BytesIO, Any, int], None]
 
 
@@ -21,10 +23,12 @@ class OmniVoiceEngine:
         settings: Settings,
         model_loader: ModelLoader | None = None,
         wav_writer: WavWriter | None = None,
+        runtime_guard: RuntimeGuard | None = None,
     ) -> None:
         self._settings = settings
         self._model_loader = model_loader or _load_model
         self._wav_writer = wav_writer or _write_wav
+        self._runtime_guard = runtime_guard or require_supported_runtime
         self._model: Any | None = None
         self._load_lock = Lock()
         self._generation_lock = Lock()
@@ -44,6 +48,7 @@ class OmniVoiceEngine:
         if self._model is None:
             with self._load_lock:
                 if self._model is None:
+                    self._runtime_guard()
                     self._model = self._model_loader(self._settings)
         return self._model
 

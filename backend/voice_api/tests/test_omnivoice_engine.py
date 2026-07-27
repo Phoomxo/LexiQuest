@@ -11,6 +11,7 @@ import pytest
 from lexiquest_voice.config import Settings
 from lexiquest_voice.engines.omnivoice_engine import OmniVoiceEngine
 from lexiquest_voice.models import SpeechRequest
+from lexiquest_voice.runtime_compat import RuntimeCompatibilityError
 
 
 class FakeModel:
@@ -51,6 +52,7 @@ def test_engine_loads_once_and_forwards_locked_configuration() -> None:
     engine = OmniVoiceEngine(
         settings=settings,
         model_loader=loader,
+        runtime_guard=lambda: None,
         wav_writer=writer,
     )
 
@@ -77,6 +79,7 @@ def test_engine_rejects_empty_generation() -> None:
     engine = OmniVoiceEngine(
         settings=Settings(),
         model_loader=lambda settings: FakeModel(generated=[]),
+        runtime_guard=lambda: None,
         wav_writer=lambda buffer, audio, sample_rate: None,
     )
 
@@ -96,6 +99,7 @@ def test_engine_load_exposes_readiness_and_remains_idempotent() -> None:
     engine = OmniVoiceEngine(
         settings=Settings(),
         model_loader=loader,
+        runtime_guard=lambda: None,
         wav_writer=lambda buffer, audio, sample_rate: None,
     )
 
@@ -134,6 +138,7 @@ def test_engine_serializes_concurrent_generation() -> None:
     engine = OmniVoiceEngine(
         settings=Settings(),
         model_loader=lambda settings: model,
+        runtime_guard=lambda: None,
         wav_writer=writer,
     )
 
@@ -143,3 +148,29 @@ def test_engine_serializes_concurrent_generation() -> None:
 
     assert model.max_active == 1
     assert [result.data for result in results] == [b"RIFF", b"RIFF"]
+
+
+def test_engine_runs_guard_before_loader_and_fails_closed() -> None:
+    calls: list[str] = []
+
+    def loader(settings: Settings) -> FakeModel:
+        calls.append("loader")
+        return FakeModel()
+
+    def guard() -> None:
+        calls.append("guard")
+        raise RuntimeCompatibilityError("unsupported runtime")
+
+    engine = OmniVoiceEngine(
+        settings=Settings(),
+        model_loader=loader,
+        runtime_guard=guard,
+        wav_writer=lambda buffer, audio, sample_rate: None,
+    )
+
+    assert engine.is_ready is False
+    with pytest.raises(RuntimeCompatibilityError, match="unsupported runtime"):
+        engine.load()
+
+    assert calls == ["guard"]
+    assert engine.is_ready is False
