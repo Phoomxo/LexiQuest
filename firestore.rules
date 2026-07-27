@@ -76,12 +76,15 @@ service cloud.firestore {
         && request.resource.data.mode is string
         && request.resource.data.requestedEngine is string
         && (!('actualEngine' in request.resource.data.keys())
-             || request.resource.data.actualEngine is string)
+             || request.resource.data.actualEngine is string
+             || request.resource.data.actualEngine == null)
         && request.resource.data.usedFallback is bool
         && (!('fallbackReason' in request.resource.data.keys())
-             || request.resource.data.fallbackReason is string)
+             || request.resource.data.fallbackReason is string
+             || request.resource.data.fallbackReason == null)
         && (!('failureCategory' in request.resource.data.keys())
-             || request.resource.data.failureCategory is string)
+             || request.resource.data.failureCategory is string
+             || request.resource.data.failureCategory == null)
         && request.resource.data.cacheHit is bool
         && request.resource.data.latencyMs is int
         && request.resource.data.latencyMs >= 0
@@ -91,9 +94,11 @@ service cloud.firestore {
         && request.resource.data.contentType is string
         && request.resource.data.contentType.size() <= 60
         && (!('requestId' in request.resource.data.keys())
-             || request.resource.data.requestId is string)
+             || request.resource.data.requestId is string
+             || request.resource.data.requestId == null)
         && (!('modelVersion' in request.resource.data.keys())
-             || request.resource.data.modelVersion is string)
+             || request.resource.data.modelVersion is string
+             || request.resource.data.modelVersion == null)
         && request.resource.data.occurredAtUtc is string
         && request.resource.data.occurredAtUtc.size() <= 40;
     }

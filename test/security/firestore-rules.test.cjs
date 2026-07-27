@@ -7,10 +7,12 @@ const {
   initializeTestEnvironment,
 } = require('@firebase/rules-unit-testing');
 const {
+  deleteDoc,
   doc,
   getDoc,
   serverTimestamp,
   setDoc,
+  updateDoc,
   writeBatch,
 } = require('firebase/firestore');
 
@@ -128,5 +130,72 @@ describe('purchased_items transaction integrity', () => {
       purchaseData(),
     );
     await assertFails(second.commit());
+  });
+});
+
+describe('voice_telemetry_events telemetry contract', () => {
+  function failedTelemetryToMap() {
+    return {
+      schemaVersion: 'voice_telemetry_v1',
+      outcome: 'failed',
+      mode: 'practice',
+      requestedEngine: 'omniVoice',
+      actualEngine: null,
+      usedFallback: false,
+      fallbackReason: null,
+      failureCategory: 'network',
+      cacheHit: false,
+      latencyMs: 5000,
+      contentId: 'word-2',
+      contentType: 'vocabulary',
+      requestId: null,
+      modelVersion: null,
+      occurredAtUtc: '2026-07-24T10:00:00.000Z',
+    };
+  }
+
+  function validTelemetryToMap() {
+    return {
+      schemaVersion: 'voice_telemetry_v1',
+      outcome: 'succeeded',
+      mode: 'practice',
+      requestedEngine: 'omniVoice',
+      actualEngine: 'omniVoice',
+      usedFallback: false,
+      fallbackReason: 'flutterSdk',
+      failureCategory: 'network',
+      cacheHit: true,
+      latencyMs: 120,
+      contentId: 'word-1',
+      contentType: 'vocabulary',
+      requestId: 'req-999',
+      modelVersion: '0.2.1',
+      occurredAtUtc: '2026-07-24T10:00:00.000Z',
+    };
+  }
+
+  const telemetryPath = 'voice_telemetry_events';
+
+  it('allows creating the exact toMap() shape with nullable keys present as null', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      setDoc(doc(db, telemetryPath, 'evt_nulls'), failedTelemetryToMap()),
+    );
+  });
+
+  it('keeps a valid telemetry event create-only (read/update/delete denied)', async () => {
+    const db = authDb();
+    const ref = doc(db, telemetryPath, 'evt_valid');
+    await assertSucceeds(setDoc(ref, validTelemetryToMap()));
+
+    await assertFails(getDoc(ref));
+    await assertFails(updateDoc(ref, { latencyMs: 999 }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  it('denies creating a telemetry event with an extra field', async () => {
+    const db = authDb();
+    const payload = { ...validTelemetryToMap(), audioBytes: 'secret' };
+    await assertFails(setDoc(doc(db, telemetryPath, 'evt_extra'), payload));
   });
 });
