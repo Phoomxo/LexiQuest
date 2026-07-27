@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/suggestion_model.dart';
 import 'dart:math';
+import 'package:flutter/foundation.dart';
 
 class SuggestionService {
   /// 🔥 ดึงคำศัพท์จาก Datamuse API หรือสุ่มคำ ถ้าหมวดหมู่ไม่มีความหมาย
@@ -16,7 +17,8 @@ class SuggestionService {
     final cacheBuster = Random().nextInt(10000); // ✅ ป้องกัน API แคชผลลัพธ์
 
     final url = Uri.parse(
-        'https://api.datamuse.com/words?ml=${_sanitizeQuery(category)}+$randomNoise&max=$limit&md=p&nocache=$cacheBuster');
+      'https://api.datamuse.com/words?ml=${_sanitizeQuery(category)}+$randomNoise&max=$limit&md=p&nocache=$cacheBuster',
+    );
 
     final response = await http.get(url);
 
@@ -40,11 +42,9 @@ class SuggestionService {
           pos = _extractPartOfSpeech(tags);
         }
 
-        words.add(SuggestedWord(
-          word: word,
-          meaning: "กำลังแปล...",
-          partOfSpeech: pos,
-        ));
+        words.add(
+          SuggestedWord(word: word, meaning: "กำลังแปล...", partOfSpeech: pos),
+        );
         seenWords.add(word);
       }
 
@@ -60,7 +60,9 @@ class SuggestionService {
   /// 🔥 แปลคำศัพท์จากอังกฤษ → ไทย (Batch Translation)
   Future<List<SuggestedWord>> _translateWords(List<SuggestedWord> words) async {
     List<String> wordsToTranslate = words.map((w) => w.word).toList();
-    List<String> translatedTexts = await _batchTranslateToThai(wordsToTranslate);
+    List<String> translatedTexts = await _batchTranslateToThai(
+      wordsToTranslate,
+    );
 
     for (var i = 0; i < words.length; i++) {
       words[i] = SuggestedWord(
@@ -80,13 +82,19 @@ class SuggestionService {
 
     try {
       for (int i = 0; i < words.length; i += 5) {
-        List<String> batch = words.sublist(i, (i + 5 > words.length) ? words.length : i + 5);
-        String query = batch.join("%0A"); // ✅ ใช้ newline เพื่อให้ API แยกแต่ละคำ
+        List<String> batch = words.sublist(
+          i,
+          (i + 5 > words.length) ? words.length : i + 5,
+        );
+        String query = batch.join(
+          "%0A",
+        ); // ✅ ใช้ newline เพื่อให้ API แยกแต่ละคำ
         final url = Uri.parse(
-            'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&dt=at&q=$query');
+          'https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=th&dt=t&dt=at&q=$query',
+        );
 
         final response = await http.get(url);
-        print("📌 Google Translate API Response: ${response.body}");
+        debugPrint("📌 Google Translate API Response: ${response.body}");
 
         if (response.statusCode == 200) {
           final List<dynamic> data = json.decode(response.body);
@@ -109,11 +117,13 @@ class SuggestionService {
         }
       }
     } catch (e) {
-      print("❌ Error translating words: $e");
+      debugPrint("❌ Error translating words: $e");
       translations = List.filled(words.length, "ไม่มีคำแปล");
     }
 
-    return translations.length >= words.length ? translations.sublist(0, words.length) : translations;
+    return translations.length >= words.length
+        ? translations.sublist(0, words.length)
+        : translations;
   }
 
   /// 🔥 ตรวจสอบว่าหมวดหมู่เป็นภาษาไทยหรือไม่
@@ -125,7 +135,8 @@ class SuggestionService {
   Future<String> _translateToEnglish(String text) async {
     try {
       final url = Uri.parse(
-          'https://translate.googleapis.com/translate_a/single?client=gtx&sl=th&tl=en&dt=t&q=$text');
+        'https://translate.googleapis.com/translate_a/single?client=gtx&sl=th&tl=en&dt=t&q=$text',
+      );
 
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -135,7 +146,7 @@ class SuggestionService {
         }
       }
     } catch (e) {
-      print("❌ Error translating category: $e");
+      debugPrint("❌ Error translating category: $e");
     }
     return text;
   }
@@ -153,9 +164,26 @@ class SuggestionService {
   /// 🔥 ฟังก์ชันสุ่มคำศัพท์ (ใช้แทนเมื่อไม่มีคำที่เกี่ยวข้อง)
   List<SuggestedWord> getRandomWords(int limit) {
     List<String> randomWords = [
-      "Sunshine", "Ocean", "Harmony", "Discovery", "Innovation", "Momentum",
-      "Adventure", "Galaxy", "Breeze", "Thunder", "Echo", "Serenity",
-      "Storm", "Cloud", "Rain", "Tornado", "Mist", "Horizon", "Frost", "Glacier"
+      "Sunshine",
+      "Ocean",
+      "Harmony",
+      "Discovery",
+      "Innovation",
+      "Momentum",
+      "Adventure",
+      "Galaxy",
+      "Breeze",
+      "Thunder",
+      "Echo",
+      "Serenity",
+      "Storm",
+      "Cloud",
+      "Rain",
+      "Tornado",
+      "Mist",
+      "Horizon",
+      "Frost",
+      "Glacier",
     ];
 
     List<String> partOfSpeechList = ["noun", "verb", "adjective", "adverb"];

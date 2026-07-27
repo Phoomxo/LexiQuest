@@ -1,0 +1,48 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lexiquest-voice-api"
+version = "0.1.0"
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi==0.139.2",
+    "firebase-admin==7.5.0",
+    "pydantic-settings==2.14.2",
+    "uvicorn[standard]==0.51.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx==0.28.1",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+]
+gpu = [
+    "omnivoice==0.2.1",
+    "soundfile==0.13.1",
+    "torch==2.8.0+cu128",
+    "torchaudio==2.8.0+cu128",
+]
+
+# CUDA 12.8 PyTorch wheels are hosted on the dedicated PyTorch index. The index
+# is marked explicit and bound only to torch and torchaudio via tool.uv.sources
+# so that general packages (including torch's own nvidia-* transitives) keep
+# resolving from PyPI and never route through this index.
+[[tool.uv.index]]
+name = "pytorch-cu128"
+url = "https://download.pytorch.org/whl/cu128"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu128" }
+torchaudio = { index = "pytorch-cu128" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lexiquest_voice"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"

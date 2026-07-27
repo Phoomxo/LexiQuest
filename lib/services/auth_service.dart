@@ -1,6 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../models/user_model.dart';
 import 'category_service.dart';
 
 class AuthService {
@@ -11,10 +10,8 @@ class AuthService {
   Future<void> sendEmailVerification(String email, String password) async {
     try {
       // สมัครสมาชิกชั่วคราวเพื่อให้ Firebase ส่งอีเมลยืนยัน
-      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      UserCredential userCredential = await _auth
+          .createUserWithEmailAndPassword(email: email, password: password);
 
       User? user = userCredential.user;
       if (user != null && !user.emailVerified) {
@@ -53,8 +50,7 @@ class AuthService {
         });
 
         // ✅ เพิ่มหมวดหมู่เริ่มต้นให้ผู้ใช้ใหม่
-await CategoryService().addDefaultCategoriesForNewUser(user.uid);
-
+        await CategoryService().addDefaultCategoriesForNewUser(user.uid);
       } else {
         throw Exception('กรุณายืนยันอีเมลก่อนสมัครสมาชิก');
       }
@@ -64,7 +60,10 @@ await CategoryService().addDefaultCategoriesForNewUser(user.uid);
   }
 
   /// **🔹 4. เข้าสู่ระบบ**
-  Future<UserCredential> signIn({required String email, required String password}) async {
+  Future<UserCredential> signIn({
+    required String email,
+    required String password,
+  }) async {
     try {
       UserCredential userCredential = await _auth.signInWithEmailAndPassword(
         email: email,

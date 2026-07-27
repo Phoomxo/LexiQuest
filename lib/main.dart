@@ -1,23 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'screens/CategoriesPage.dart';
-import 'screens/Home.dart';
-import 'screens/Shop_Page.dart';
-import 'screens/SettingScreen.dart';
-import 'screens/LoginScreen.dart';
-import 'screens/RegisterScreen.dart';
+import 'screens/categories_page.dart';
+import 'screens/home.dart';
+import 'screens/shop_page.dart';
+import 'screens/setting_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Initialize Firebase
   await Firebase.initializeApp();
 
   // Initialize Supabase
   await Supabase.initialize(
     url: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
-    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg',
+    publishableKey:
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg',
   );
 
   runApp(const MyApp());
@@ -50,17 +51,17 @@ class MainNavigation extends StatefulWidget {
   const MainNavigation({super.key});
 
   @override
-  _MainNavigationState createState() => _MainNavigationState();
+  State<MainNavigation> createState() => _MainNavigationState();
 }
 
 class _MainNavigationState extends State<MainNavigation> {
   int _selectedIndex = 1;
 
   final List<Widget> _pages = [
-     CategoriesPage(),
+    CategoriesPage(),
     Home(),
-     ShopPage(),
-     SettingScreen(),
+    ShopPage(),
+    SettingScreen(),
   ];
 
   void _onItemTapped(int index) {

@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import '../models/word_model.dart';
 
 class WordService {
@@ -6,10 +7,10 @@ class WordService {
   final CollectionReference _wordsCollection;
 
   WordService({required this.categoryId})
-      : _wordsCollection = FirebaseFirestore.instance
-            .collection('categories')
-            .doc(categoryId)
-            .collection('words') {
+    : _wordsCollection = FirebaseFirestore.instance
+          .collection('categories')
+          .doc(categoryId)
+          .collection('words') {
     if (categoryId.isEmpty) {
       throw ArgumentError('Error: Category ID cannot be empty');
     }
@@ -24,7 +25,9 @@ class WordService {
   /// 🔹 ดึงคำศัพท์ทั้งหมดในหมวดหมู่ (Stream)
   Stream<List<Word>> getWordsStream() {
     return _wordsCollection.snapshots().map((snapshot) {
-      return snapshot.docs.map((doc) => Word.fromDocumentSnapshot(doc)).toList();
+      return snapshot.docs
+          .map((doc) => Word.fromDocumentSnapshot(doc))
+          .toList();
     });
   }
 
@@ -44,7 +47,7 @@ class WordService {
     DocumentReference wordRef = _wordsCollection.doc();
     await wordRef.set(word.toMap());
 
-    print('✅ เพิ่มคำศัพท์สำเร็จ: ${word.word}');
+    debugPrint('✅ เพิ่มคำศัพท์สำเร็จ: ${word.word}');
   }
 
   /// 🔹 เพิ่มคำศัพท์จาก Datamuse API (จำกัด 50 คำ)
@@ -61,11 +64,14 @@ class WordService {
       "userId": "", // 🔹 บ่งบอกว่ามาจาก Datamuse API
     });
 
-    print('✅ เพิ่มคำศัพท์จาก Datamuse API: ${word.word}');
+    debugPrint('✅ เพิ่มคำศัพท์จาก Datamuse API: ${word.word}');
   }
 
   /// 🔹 เพิ่มหลายคำศัพท์พร้อมกัน (Batch Write)
-  Future<void> addMultipleWords(List<Word> words, {bool isFromDatamuse = false}) async {
+  Future<void> addMultipleWords(
+    List<Word> words, {
+    bool isFromDatamuse = false,
+  }) async {
     QuerySnapshot wordCountSnapshot = await _wordsCollection.get();
     int currentWordCount = wordCountSnapshot.size;
 
@@ -88,13 +94,13 @@ class WordService {
     }
 
     await batch.commit();
-    print('✅ เพิ่มคำศัพท์สำเร็จ! (${wordsToAdd.length} คำ)');
+    debugPrint('✅ เพิ่มคำศัพท์สำเร็จ! (${wordsToAdd.length} คำ)');
   }
 
   /// 🔹 ลบคำศัพท์จากหมวดหมู่
   Future<void> deleteWord(String wordId) async {
     await _wordsCollection.doc(wordId).delete();
-    print('🗑️ ลบคำศัพท์สำเร็จ!');
+    debugPrint('🗑️ ลบคำศัพท์สำเร็จ!');
   }
 
   /// 🔹 ลบคำศัพท์ทั้งหมดในหมวดหมู่
@@ -107,12 +113,12 @@ class WordService {
     }
 
     await batch.commit();
-    print('🗑️ ลบคำศัพท์ทั้งหมดสำเร็จ!');
+    debugPrint('🗑️ ลบคำศัพท์ทั้งหมดสำเร็จ!');
   }
 
   /// 🔹 อัปเดตคำศัพท์
   Future<void> updateWord(String wordId, Word word) async {
     await _wordsCollection.doc(wordId).update(word.toMap());
-    print('✏️ อัปเดตคำศัพท์สำเร็จ: ${word.word}');
+    debugPrint('✏️ อัปเดตคำศัพท์สำเร็จ: ${word.word}');
   }
 }
