@@ -190,6 +190,7 @@ function Invoke-NpmFirebaseToolchainTests {
             $match.Groups[1].Value -eq '15.24.0'
         ) 'firebase-tools is pinned to exactly 15.24.0'
     }
+    Assert-RegexMatches $WorkflowText '(?m)^[ \t]*java-version[ \t]*:[ \t]*[''"]?21\b' 'setup-java selects Java 21 (firebase-tools 15.24.0 requires Java 21+)'
     Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
 }
