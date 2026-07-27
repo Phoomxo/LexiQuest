@@ -64,7 +64,7 @@ def _build_default_decoder(project_id: str) -> TokenDecoder:
         return firebase_auth.verify_id_token(
             token,
             app=firebase_app,
-            check_revoked=False,
+            check_revoked=True,
         )
 
     return decode

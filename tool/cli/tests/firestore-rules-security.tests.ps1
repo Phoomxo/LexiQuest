@@ -100,7 +100,7 @@ Assert-Match $quizBlock 'allow\s+read,\s*write\s*:\s*if\s*false' 'quiz denies al
 
 # Authenticated create-only telemetry.
 $telemetryBlock = Get-RuleBlock -Source $rules -Collection 'voice_telemetry_events'
-Assert-Match $telemetryBlock 'allow\s+create\s*:\s*if\s+(request\.auth\.uid\s*!=\s*null|isSignedIn\(\))' 'telemetry allows authenticated create only'
+Assert-Match $telemetryBlock 'allow\s+create\s*:\s*if\s+(request\.auth\.uid\s*!=\s*null|isSignedIn\(\)|isRegisteredUser\(\))' 'telemetry allows authenticated create only'
 Assert-NoMatch $telemetryBlock 'allow\s+(read|get|list|update|delete)[^:]*:\s*if\s+(request\.auth\.uid\s*!=\s*null|request\.auth\s*!=\s*null|true|isSignedIn\(\))' 'telemetry does not grant read/update/delete'
 
 # Recursive default deny for any path not explicitly allow-listed.

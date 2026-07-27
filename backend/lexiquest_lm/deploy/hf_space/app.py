@@ -75,11 +75,16 @@ except ImportError:  # Hugging Face copies this directory as a flat Space.
 logger = logging.getLogger("lexiquest_lm_space")
 logging.basicConfig(level=logging.INFO)
 
+import threading
+
 MODEL_ID = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-0.5B")
+MODEL_REVISION = os.environ.get("MODEL_REVISION", "main")
 MAX_INPUT_TOKENS = max(1, int(os.environ.get("MAX_INPUT_TOKENS", "1024")))
 MAX_NEW_TOKENS = max(1, int(os.environ.get("MAX_NEW_TOKENS", "128")))
 FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
 token_verifier = FirebaseTokenVerifier(FIREBASE_PROJECT_ID)
+
+_GENERATION_LOCK = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -88,15 +93,20 @@ token_verifier = FirebaseTokenVerifier(FIREBASE_PROJECT_ID)
 
 
 def _load_model_and_tokenizer() -> tuple[Any, Any]:
-    logger.info("Loading model %s ...", MODEL_ID)
+    logger.info("Loading model %s (revision: %s)...", MODEL_ID, MODEL_REVISION)
     start = time.monotonic()
-    tokenizer = AutoTokenizer.from_pretrained(MODEL_ID)
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_ID,
+        revision=MODEL_REVISION,
+    )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
     # CPU + float32 on the free tier. A 0.5B model fits comfortably in the
     # 16GB RAM HF allocates to free CPU Spaces.
     model = AutoModelForCausalLM.from_pretrained(
         MODEL_ID,
+        revision=MODEL_REVISION,
+        use_safetensors=True,
         dtype=torch.float32,
         device_map="cpu",
     )
@@ -188,11 +198,17 @@ def chat_completions(
             detail={"code": "UNAUTHENTICATED", "message": "Bearer token required."},
         ) from None
 
-    if not request.messages:
+    if not request.messages or len(request.messages) > 10:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail={"code": "INVALID_REQUEST", "message": "messages must not be empty"},
+            detail={"code": "INVALID_REQUEST", "message": "messages must contain between 1 and 10 items"},
         )
+    for msg in request.messages:
+        if len(msg.content) > 2000:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+                detail={"code": "INVALID_REQUEST", "message": "message content length exceeds limit"},
+            )
 
     prompt = _build_prompt(request.messages)
     inputs = tokenizer(
@@ -206,24 +222,27 @@ def chat_completions(
         min(request.max_tokens or MAX_NEW_TOKENS, MAX_NEW_TOKENS),
     )
 
-    # Stop generation at the ChatML assistant turn terminator so the model
-    # does not ramble past the first response (a known issue with greedy
-    # decoding on small fine-tuned models). eos_token_id covers <|im_end|>
-    # directly; we pass both the bare eos and any additional stop ids to be
-    # safe across tokenizer revisions.
     stop_token_ids = {tokenizer.eos_token_id}
     im_end_id = tokenizer.convert_tokens_to_ids("<|im_end|>")
     if im_end_id is not None and im_end_id != tokenizer.unk_token_id:
         stop_token_ids.add(im_end_id)
 
-    with torch.no_grad():
-        out = model.generate(
-            **inputs,
-            max_new_tokens=max_new,
-            do_sample=False,  # greedy for reproducibility
-            pad_token_id=tokenizer.pad_token_id,
-            eos_token_id=list(stop_token_ids),
+    if not _GENERATION_LOCK.acquire(blocking=False):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail={"code": "BUSY", "message": "Model generation busy"},
         )
+    try:
+        with torch.no_grad():
+            out = model.generate(
+                **inputs,
+                max_new_tokens=max_new,
+                do_sample=False,  # greedy for reproducibility
+                pad_token_id=tokenizer.pad_token_id,
+                eos_token_id=list(stop_token_ids),
+            )
+    finally:
+        _GENERATION_LOCK.release()
     new_tokens = out[0][inputs["input_ids"].shape[1]:]
     text = tokenizer.decode(new_tokens, skip_special_tokens=True).strip()
 

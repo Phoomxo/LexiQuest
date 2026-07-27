@@ -24,6 +24,7 @@ firestore-debug.log
 tool/cli/.runtime/
 tool/cli/logs/
 node_modules/
+android/build/
 .idea/
 
 # The .vscode folder contains launch configuration and tasks you configure in

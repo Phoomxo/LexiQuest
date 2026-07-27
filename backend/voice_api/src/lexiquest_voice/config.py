@@ -59,6 +59,7 @@ class Settings(BaseSettings):
 
     model_id: str = "k2-fsa/OmniVoice"
     model_version: str = "0.2.1"
+    environment: str = "development"
     model_revision: str = "c5fdb5ccb189668d56333f77ba2629f4cd7535f4"
     device: str = "cuda:0"
     voice_instruction: str = (

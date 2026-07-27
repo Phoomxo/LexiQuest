@@ -202,6 +202,8 @@ def main(argv: list[str] | None = None) -> int:
         folder_path=str(args.adapter_dir),
         repo_id=repo_id,
         repo_type="model",
+        allow_patterns=["*.json", "*.safetensors", "*.bin", "*.md", "*.txt"],
+        ignore_patterns=[".env*", "*.pem", "*.key", "*secret*", "*.log"],
         commit_message="Upload LexiQuest-LM LoRA adapter",
     )
     print(f"\nUploaded. View at: https://huggingface.co/{repo_id}")

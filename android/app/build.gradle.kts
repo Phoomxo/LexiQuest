@@ -19,7 +19,7 @@ val releaseSigningReady = keystoreProperties["storeFile"] != null &&
     keystoreProperties["keyPassword"] != null
 
 android {
-    namespace = "com.example.vocab_learning_app"
+    namespace = "com.lexiquest.app"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.vocab_learning_app"
+        applicationId = "com.lexiquest.app"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode

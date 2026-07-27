@@ -104,6 +104,7 @@ class Settings(BaseSettings):
 
     # --- Service identity ---
     model_version: str = "0.1.0"
+    environment: str = "development"
     max_text_length: int = Field(default=500, ge=1, le=MAX_TEXT_LENGTH_CEILING)
     request_timeout_seconds: int = Field(default=20, ge=1, le=120)
 

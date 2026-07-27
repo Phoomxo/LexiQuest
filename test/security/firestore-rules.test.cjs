@@ -22,8 +22,9 @@ const productId = 'wallpaper_neon';
 const purchaseId = `${alice}_${productId}`;
 let testEnv;
 
-function authDb(uid = alice) {
-  return testEnv.authenticatedContext(uid).firestore();
+function authDb(uid = alice, isAnon = false) {
+  const token = isAnon ? { firebase: { sign_in_provider: 'anonymous' } } : {};
+  return testEnv.authenticatedContext(uid, token).firestore();
 }
 
 async function seedStateAndProduct(points = 100, price = 50) {
@@ -199,3 +200,38 @@ describe('voice_telemetry_events telemetry contract', () => {
     await assertFails(setDoc(doc(db, telemetryPath, 'evt_extra'), payload));
   });
 });
+
+describe('anonymous user isolation & cross-account integrity contract', () => {
+  it('denies anonymous user from creating telemetry events or writing to shared collections', async () => {
+    const anonDb = authDb('anon_123', true);
+    await assertFails(
+      setDoc(doc(anonDb, 'voice_telemetry_events', 'evt_anon'), {
+        schemaVersion: 'voice_telemetry_v1',
+        outcome: 'failed',
+        mode: 'practice',
+        requestedEngine: 'omniVoice',
+        actualEngine: null,
+        usedFallback: false,
+        fallbackReason: null,
+        failureCategory: 'network',
+        cacheHit: false,
+        latencyMs: 100,
+        contentId: 'w-1',
+        contentType: 'vocabulary',
+        requestId: null,
+        modelVersion: null,
+        occurredAtUtc: '2026-07-24T10:00:00.000Z',
+      }),
+    );
+  });
+
+  it('denies user from writing to another user\'s state document', async () => {
+    const db = authDb('bob_uid');
+    await assertFails(
+      setDoc(doc(db, 'state', alice), {
+        totalPoints: 99999,
+      }),
+    );
+  });
+});
+

@@ -54,13 +54,10 @@ class _OTPScreenState extends State<OTPScreen> {
     }
   }
 
-  /// ✅ ให้ Firebase ส่งอีเมลยืนยันใหม่
+  /// ✅ ให้ Firebase ส่งอีเมลยืนยันใหม่ผ่านผู้ใช้ปัจจุบัน
   Future<void> _resendVerificationEmail() async {
     try {
-      await _authService.sendEmailVerification(
-        widget.email,
-        "defaultPassword123",
-      );
+      await _authService.resendVerificationEmail();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('📩 ส่งอีเมลยืนยันใหม่แล้ว!')),

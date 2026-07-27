@@ -40,7 +40,7 @@ void main() {
     });
 
     testWidgets(
-      'OTPScreen allows student to proceed directly to RegisterFormScreen',
+      'OTPScreen blocks proceed when email is unverified (fail-closed security)',
       (WidgetTester tester) async {
         await tester.pumpWidget(
           const MaterialApp(home: OTPScreen(email: 'student@example.com')),
@@ -50,14 +50,15 @@ void main() {
         expect(find.text('ยืนยันอีเมลของคุณ'), findsOneWidget);
         expect(find.textContaining('student@example.com'), findsOneWidget);
 
-        // Tap confirmation button
+        // Tap confirmation button when unverified
         await tester.tap(
           find.widgetWithText(ElevatedButton, '✅ ฉันได้ยืนยันแล้ว'),
         );
         await tester.pumpAndSettle();
 
-        // Verify navigation to RegisterFormScreen
-        expect(find.byType(RegisterFormScreen), findsOneWidget);
+        // Verify fail-closed security blocks navigation and displays warning
+        expect(find.text('⚠ กรุณายืนยันอีเมลก่อน'), findsOneWidget);
+        expect(find.byType(RegisterFormScreen), findsNothing);
       },
     );
 

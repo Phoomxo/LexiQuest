@@ -1,10 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from uuid import uuid4
 
-from fastapi import FastAPI, Header
-from fastapi.responses import Response
+from fastapi import FastAPI, Header, HTTPException, status
+from fastapi.responses import JSONResponse, Response
 
 from lexiquest_voice.auth import TokenVerifier, extract_bearer_token
 from lexiquest_voice.config import Settings
@@ -27,8 +28,31 @@ def create_app(
 ) -> FastAPI:
     """Create the HTTP API without loading production dependencies."""
 
-    app = FastAPI(title="LexiQuest Voice API", version="0.1.0")
+    is_prod = settings.environment.lower() == "production"
+    app = FastAPI(
+        title="LexiQuest Voice API",
+        version="0.1.0",
+        docs_url=None if is_prod else "/docs",
+        redoc_url=None if is_prod else "/redoc",
+        openapi_url=None if is_prod else "/openapi.json",
+    )
     app.state.settings = settings
+
+    @app.middleware("http")
+    async def limit_body_size(request, call_next):
+        if request.method in ("POST", "PUT", "PATCH"):
+            content_length = request.headers.get("content-length")
+            if content_length and int(content_length) > 100_000:
+                return JSONResponse(
+                    status_code=413,
+                    content={
+                        "detail": {
+                            "code": "PAYLOAD_TOO_LARGE",
+                            "message": "Request body size exceeds maximum allowed threshold (100KB).",
+                        }
+                    },
+                )
+        return await call_next(request)
 
     @app.get("/health/live")
     def live() -> dict[str, str]:

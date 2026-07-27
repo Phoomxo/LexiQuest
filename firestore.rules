@@ -28,6 +28,13 @@ service cloud.firestore {
       return request.auth.uid != null;
     }
 
+    function isRegisteredUser() {
+      return isSignedIn()
+        && (!('firebase' in request.auth.token)
+            || !('sign_in_provider' in request.auth.token.firebase)
+            || request.auth.token.firebase.sign_in_provider != 'anonymous');
+    }
+
     // True when the categories/{categoryId} document is owned by the signed-in
     // user. Used to authorize the nested words subcollection, whose own
     // user_id field is unreliably populated (incl. empty strings from the
@@ -304,7 +311,7 @@ service cloud.firestore {
     match /vocabulary/{vocabId} {
       allow read: if isSignedIn();
 
-      allow create: if isSignedIn()
+      allow create: if isRegisteredUser()
         && request.resource.data is map
         && request.resource.data.keys().hasOnly(['word', 'meaning', 'part_of_speech', 'uid'])
         && request.resource.data.word is string
@@ -328,7 +335,7 @@ service cloud.firestore {
     match /global_words/{word} {
       allow read: if isSignedIn();
 
-      allow create: if isSignedIn()
+      allow create: if isRegisteredUser()
         && request.resource.data is map
         && request.resource.data.keys().hasOnly(['word', 'meaning', 'partOfSpeech', 'createdAt'])
         && request.resource.data.word is string
@@ -364,7 +371,7 @@ service cloud.firestore {
       allow read: if isSignedIn()
         && resource.data.user_id == request.auth.uid;
 
-      allow create: if isSignedIn()
+      allow create: if isRegisteredUser()
         && request.resource.data is map
         && request.resource.data.keys().hasOnly(['user_id', 'product_id', 'total_price', 'created_at'])
         && request.resource.data.user_id is string
@@ -397,7 +404,7 @@ service cloud.firestore {
     //   See explanation re: adding a server-stamped uid.
     // -------------------------------------------------------------------------
     match /voice_telemetry_events/{eventId} {
-      allow create: if isSignedIn() && voiceTelemetryFieldsOk();
+      allow create: if isRegisteredUser() && voiceTelemetryFieldsOk();
       allow read, update, delete: if false;
     }
 

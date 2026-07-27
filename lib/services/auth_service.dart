@@ -40,16 +40,30 @@ class AuthService {
     }
   }
 
-  /// **🔹 2. ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง**
+  /// **🔹 2. ตรวจสอบว่าอีเมลได้รับการยืนยันหรือยัง (Fail-closed)**
   Future<bool> isEmailVerified() async {
     try {
       User? user = _auth?.currentUser;
       if (user != null) {
         await user.reload();
-        return user.emailVerified;
+        return _auth?.currentUser?.emailVerified ?? false;
       }
-    } catch (_) {}
-    return true; // อนุญาตให้ผ่านได้สำหรับสภาพแวดล้อมสาธิต/ทดลองเล่น
+    } catch (e) {
+      debugPrint('isEmailVerified check error: $e');
+    }
+    return false; // Fail-closed posture: reject access if unverified or error occurs
+  }
+
+  /// **🔹 ส่งอีเมลยืนยันใหม่สำหรับผู้ใช้ปัจจุบัน**
+  Future<void> resendVerificationEmail() async {
+    User? user = _auth?.currentUser;
+    if (user != null) {
+      if (!user.emailVerified) {
+        await user.sendEmailVerification();
+      }
+    } else {
+      throw Exception('ไม่พบผู้ใช้ที่ล็อกอินอยู่ในปัจจุบัน');
+    }
   }
 
   /// **🔹 3. สมัครสมาชิก (บันทึกข้อมูลลงระบบ)**
