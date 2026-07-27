@@ -6,11 +6,9 @@
 .DESCRIPTION
     Validates triggers, least-privilege permissions, concurrency cancellation,
     immutable action pins, CPU-only verification coverage, frozen uv commands,
-    and the absence of embedded secrets. The workflow is read as normalized raw
-    text, so YAML indentation and CRLF/LF line endings do not affect the checks.
-
-    RED state: .github/workflows/ci.yml does not exist yet, so the runner fails
-    fast with a non-zero exit code before any assertion runs.
+    the npm/Firebase test toolchain, and the absence of embedded secrets. The
+    workflow is read as normalized raw text, so YAML indentation and CRLF/LF
+    line endings do not affect the checks.
 #>
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -148,6 +146,54 @@ function Invoke-SecretEmbeddingTests {
     Assert-RegexNotMatches $Text '\bsk-[A-Za-z0-9]{20,}' 'no embedded OpenAI-style key'
 }
 
+function Invoke-NpmFirebaseToolchainTests {
+    param([string]$WorkflowText, [string]$PackageJsonText)
+
+    $engineMatch = [regex]::Match(
+        $PackageJsonText,
+        '(?s)"engines"[ \t]*:[ \t]*\{[^}]*?"node"[ \t]*:[ \t]*"([^"]+)"'
+    )
+    Assert-True ($engineMatch.Success) 'package.json declares an engines.node constraint'
+    $engineMajor = 0
+    if ($engineMatch.Success) {
+        $engineNumber = [regex]::Match($engineMatch.Groups[1].Value, '\d+')
+        if ($engineNumber.Success) { $engineMajor = [int]$engineNumber.Value }
+    }
+
+    $nodeMatches = [regex]::Matches(
+        $WorkflowText,
+        'node-version[ \t]*:[ \t]*(\S+)'
+    )
+    Assert-True ($nodeMatches.Count -ge 1) 'workflow provisions an explicit Node version'
+    foreach ($match in $nodeMatches) {
+        $nodeToken = $match.Groups[1].Value.Trim('"').Trim("'")
+        $nodeMajorMatch = [regex]::Match($nodeToken, '^\d+')
+        if ($nodeMajorMatch.Success) {
+            $nodeMajor = [int]$nodeMajorMatch.Value
+            Assert-True (
+                $engineMajor -gt 0 -and $nodeMajor -ge $engineMajor
+            ) ('Node major version satisfies engines.node (>=' + $engineMajor + ')')
+        } else {
+            Write-Fail ('Node version is not explicit and numeric: ' + $nodeToken)
+        }
+    }
+
+    Assert-ContainsString $WorkflowText 'npm ci' 'workflow installs npm dependencies reproducibly'
+
+    $firebaseRefs = [regex]::Matches(
+        $WorkflowText,
+        'firebase-tools[ \t]*@[ \t]*(\d+(?:\.\d+){1,3})'
+    )
+    Assert-True ($firebaseRefs.Count -ge 1) 'workflow provisions firebase-tools as a CI tool'
+    foreach ($match in $firebaseRefs) {
+        Assert-True (
+            $match.Groups[1].Value -eq '15.24.0'
+        ) 'firebase-tools is pinned to exactly 15.24.0'
+    }
+    Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
+    Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
+}
+
 $repoToolCli = Split-Path $PSScriptRoot -Parent
 $repoRoot = Split-Path (Split-Path $repoToolCli -Parent) -Parent
 $workflowPath = Join-Path $repoRoot (Join-Path '.github' (Join-Path 'workflows' 'ci.yml'))
@@ -160,6 +206,16 @@ if (-not (Test-Path -LiteralPath $workflowPath)) {
 }
 
 $workflowText = Get-CiWorkflowText -Path $workflowPath
+
+$packageJsonPath = Join-Path $repoRoot 'package.json'
+if (-not (Test-Path -LiteralPath $packageJsonPath)) {
+    Write-Host ("FAIL: missing package.json '{0}'." -f $packageJsonPath) -ForegroundColor Red
+    Write-Host 'CI workflow contract tests: 0 passed, 1 failed' -ForegroundColor Red
+    Write-Host 'FAILED' -ForegroundColor Red
+    exit 1
+}
+
+$packageJsonText = Get-CiWorkflowText -Path $packageJsonPath
 
 Write-Host '-> Triggers' -ForegroundColor Cyan
 try { Invoke-TriggerTests -Text $workflowText } catch { Write-Fail ('Trigger suite threw: ' + $_.Exception.Message) }
@@ -181,6 +237,15 @@ try { Invoke-UvFrozenTests -Text $workflowText } catch { Write-Fail ('uv suite t
 
 Write-Host '-> Secret embedding' -ForegroundColor Cyan
 try { Invoke-SecretEmbeddingTests -Text $workflowText } catch { Write-Fail ('secret suite threw: ' + $_.Exception.Message) }
+
+Write-Host '-> npm/Firebase toolchain' -ForegroundColor Cyan
+try {
+    Invoke-NpmFirebaseToolchainTests `
+        -WorkflowText $workflowText `
+        -PackageJsonText $packageJsonText
+} catch {
+    Write-Fail ('npm/Firebase toolchain suite threw: ' + $_.Exception.Message)
+}
 
 $total = $script:PassedCount + $script:FailedCount
 Write-Host ''
