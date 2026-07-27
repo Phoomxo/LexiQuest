@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'screens/vocab_list_screen.dart';
-import 'screens/add_vocab_screen.dart';
+import 'screens/CategoriesPage.dart';
 import 'screens/Home.dart';
-import 'screens/SettingScreen.dart'; // เพิ่มการ import SettingScreen
+import 'screens/Shop_Page.dart';
+import 'screens/SettingScreen.dart';
+import 'screens/LoginScreen.dart';
+import 'screens/RegisterScreen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -15,8 +17,14 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
-      home: MainNavigation(),
+      debugShowCheckedModeBanner: false,
+      title: 'Vocab Learning App',
+      initialRoute: '/login',
+      routes: {
+        '/login': (context) => LoginScreen(),
+        '/register': (context) => RegisterScreen(),
+        '/home': (context) => MainNavigation(),
+      },
     );
   }
 }
@@ -27,15 +35,13 @@ class MainNavigation extends StatefulWidget {
 }
 
 class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
+  int _selectedIndex = 1;
 
   final List<Widget> _pages = [
-    VocabListScreen(), // หน้ารายการคำศัพท์    
-    Home(),            // หน้าหลัก
-    AddVocabScreen(),  // หน้าสำหรับเพิ่มคำศัพท์ใหม่
-    SettingScreen(),     // หน้า Settings (โปรไฟล์)
-    
-
+    CategoriesPage(),
+    Home(),
+    ShopPage(),
+    SettingScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -46,33 +52,32 @@ class _MainNavigationState extends State<MainNavigation> {
 
   @override
   Widget build(BuildContext context) {
-  return Scaffold(
-    body: _pages[_selectedIndex],
-    bottomNavigationBar: BottomNavigationBar(
-  items: const <BottomNavigationBarItem>[
-    BottomNavigationBarItem(
-      icon: Icon(Icons.list),
-      label: 'Vocabulary',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.add),
-      label: 'Add Vocab',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ],
-  currentIndex: _selectedIndex,
-  selectedItemColor: Colors.deepPurple,
-  unselectedItemColor: Colors.grey,
-  iconSize: 30, // เพิ่มขนาดไอคอน (ค่าเริ่มต้นคือ 24)
-  onTap: _onItemTapped,
-),
-  );
-}
+    return Scaffold(
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.list),
+            label: 'Vocabulary',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.shopping_cart),
+            label: 'Shop',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.deepPurple,
+        unselectedItemColor: Colors.grey,
+        onTap: _onItemTapped,
+      ),
+    );
+  }
 }

@@ -1,12 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
-class SettingScreen extends StatelessWidget {
-  // ตัวอย่างข้อมูลโปรไฟล์ (สมมุติว่าดึงมาจากฐานข้อมูล)
-  final Map<String, dynamic> profileData = {
-    'name': 'วัดสิริ',
-    'nickname': 'สุขหวาน',
-    'age': 'อายุ 1 ขวบ',
-  };
+class SettingScreen extends StatefulWidget {
+  @override
+  _SettingScreenState createState() => _SettingScreenState();
+}
+
+class _SettingScreenState extends State<SettingScreen> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _currentUser;
+  Map<String, dynamic>? _profileData;
+  File? _profileImage;
+
+  @override
+  void initState() {
+    super.initState();
+    _currentUser = _auth.currentUser;
+    _fetchUserProfile();
+  }
+
+  Future<void> _fetchUserProfile() async {
+    if (_currentUser != null) {
+      final doc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(_currentUser!.uid)
+          .get();
+      setState(() {
+        _profileData = doc.data();
+      });
+    }
+  }
+
+  Future<void> _pickImage() async {
+    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      setState(() {
+        _profileImage = File(pickedFile.path);
+      });
+    }
+  }
+
+  Future<void> _logout() async {
+    await _auth.signOut();
+    Navigator.pushReplacementNamed(context, '/login');
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -28,13 +68,17 @@ class SettingScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                // รูปโปรไฟล์
-                const CircleAvatar(
-                  radius: 60,
-                  backgroundImage: AssetImage('assets/profile_placeholder.png'),
+                GestureDetector(
+                  onTap: _pickImage,
+                  child: CircleAvatar(
+                    radius: 60,
+                    backgroundImage: _profileImage != null
+                        ? FileImage(_profileImage!)
+                        : const AssetImage('assets/profile_placeholder.png')
+                            as ImageProvider,
+                  ),
                 ),
                 const SizedBox(height: 20),
-                // ชื่อโปรไฟล์
                 const Text(
                   'โปรไฟล์',
                   style: TextStyle(
@@ -43,14 +87,12 @@ class SettingScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 30),
-                // ข้อมูลที่ดึงมาจากฐานข้อมูล
-                _buildProfileItem(profileData['name']),
+                _buildProfileItem('ชื่อ: ${_profileData?['first_name'] ?? ''}'),
                 const SizedBox(height: 10),
-                _buildProfileItem(profileData['nickname']),
+                _buildProfileItem('นามสกุล: ${_profileData?['last_name'] ?? ''}'),
                 const SizedBox(height: 10),
-                _buildProfileItem(profileData['age']),
+                _buildProfileItem('อายุ: ${_profileData?['age'] ?? ''}'),
                 const SizedBox(height: 40),
-                // ปุ่มออกจากระบบ
                 ElevatedButton(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.red,
@@ -60,37 +102,7 @@ class SettingScreen extends StatelessWidget {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 50, vertical: 15),
                   ),
-                  onPressed: () {
-                    // Action สำหรับปุ่มออกจากระบบ
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        title: const Text('ออกจากระบบ'),
-                        content: const Text('คุณต้องการออกจากระบบหรือไม่?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('ยกเลิก'),
-                          ),
-                          TextButton(
-                            onPressed: () {
-                              // การทำงานหลังออกจากระบบ
-                              Navigator.pop(context); // ปิด Dialog
-                              Navigator.pushReplacement(
-                                context,
-                                MaterialPageRoute(
-                                    builder: (context) => Placeholder()), // หน้าหลัก (เปลี่ยนตามต้องการ)
-                              );
-                            },
-                            child: const Text(
-                              'ยืนยัน',
-                              style: TextStyle(color: Colors.red),
-                            ),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
+                  onPressed: _logout,
                   child: const Text(
                     'ออกจากระบบ',
                     style: TextStyle(fontSize: 18, color: Colors.white),
@@ -104,7 +116,6 @@ class SettingScreen extends StatelessWidget {
     );
   }
 
-  // Widget สำหรับสร้างกล่องข้อมูลโปรไฟล์
   Widget _buildProfileItem(String value) {
     return Container(
       width: double.infinity,
