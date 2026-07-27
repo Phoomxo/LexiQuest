@@ -7,20 +7,19 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
 
-// Public client identifiers, not server credentials. They remain overrideable
-// so research, staging, and production builds can target separate projects.
+// Public client identifiers, not server credentials. The Supabase URL keeps a
+// public default, but the publishable key must be supplied per build.
 const _productionSupabaseUrl = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_URL',
   defaultValue: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
 );
 const _productionSupabasePublishableKey = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
-  defaultValue:
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFueWl1b3FudWltdGpsYmpod3VmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY1ODMyMzIsImV4cCI6MjA1MjE1OTIzMn0.sHp532XD1L_Xr5X9eiRMCZqpgV2LA5RwQoOw3df6gDg',
 );
 
 bool _productionSupabaseInitialized = false;
@@ -35,9 +34,12 @@ Future<void> _initializeFirebaseProduction() async {
 
 Future<void> _initializeSupabaseProduction() async {
   if (_productionSupabaseInitialized) return;
+  final publishableKey = requireSupabasePublishableKey(
+    _productionSupabasePublishableKey,
+  );
   await Supabase.initialize(
     url: _productionSupabaseUrl,
-    publishableKey: _productionSupabasePublishableKey,
+    publishableKey: publishableKey,
   );
   _productionSupabaseInitialized = true;
 }

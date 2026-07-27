@@ -11,16 +11,19 @@ Branch: `feature/production-vertical-slices`
   `lib/screens/select_wallpaper_screen.dart`.
 - No Postgres table, RPC, Realtime, or Supabase Auth operation exists.
 - The only accessed Storage bucket is `Image`.
-- The app has a publishable anonymous client key only; no service-role key is
-  present.
+- No Supabase key value is committed. Production requires an explicit
+  `sb_publishable_...` client key; no service-role key is present.
 
 ## Initialization and identity
 
 `lib/runtime/app_bootstrap.dart` initializes Supabase from
-`LEXIQUEST_SUPABASE_URL` and `LEXIQUEST_SUPABASE_PUBLISHABLE_KEY`, with
-production public-client defaults. The app uses Firebase Auth and never
-establishes a Supabase user session. Every Supabase request therefore operates
-as the anonymous role and depends entirely on deployed bucket policies and RLS.
+`LEXIQUEST_SUPABASE_URL` and `LEXIQUEST_SUPABASE_PUBLISHABLE_KEY`. The public
+URL retains a production default, but the publishable key has no source
+default, must use the current `sb_publishable_...` format, and fails safely to
+`RuntimeAvailability.unavailable` when missing or malformed. The app uses
+Firebase Auth and never establishes a Supabase user session. Every Supabase
+request therefore operates as the anonymous role and depends entirely on
+deployed bucket policies and RLS.
 
 `lib/runtime/app_runtime_status.dart` and
 `lib/screens/main_navigation_screen.dart` only expose readiness state; they do
@@ -102,7 +105,8 @@ Firebase Storage only and has no effect on Supabase.
 
 No production project has been linked or modified. Remote parity is a
 pre-release gate that still requires user-owned auth/project selection and
-checks that the deployed project matches the version-controlled contract:
+rotation/provisioning of the current publishable key. It also checks that the
+deployed project matches the version-controlled contract:
 `Image` permits public reads only; anonymous uploads, updates, and deletes are
 denied; unused buckets and tables are inaccessible to the anonymous role; and
 every Postgres table has RLS enabled, even if the current app does not query

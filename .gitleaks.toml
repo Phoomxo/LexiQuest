@@ -14,16 +14,6 @@ paths = [
 regexes = ['''AIzaSy[A-Za-z0-9_-]{33}''']
 
 [[allowlists]]
-description = "Supabase publishable anon key used by the mobile client; authorization remains enforced by RLS."
-condition = "AND"
-regexTarget = "match"
-paths = [
-  '''(?:^|/)lib/main\.dart$''',
-  '''(?:^|/)lib/runtime/app_bootstrap\.dart$''',
-]
-regexes = ['''eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+''']
-
-[[allowlists]]
 description = "Tokenizer argument names are not API credentials."
 condition = "AND"
 regexTarget = "match"
