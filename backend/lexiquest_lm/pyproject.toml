@@ -11,7 +11,7 @@ dependencies = [
     # Dataset collection only. Heavy ML deps are in the ``train`` extra so the
     # collection scripts run on a fresh machine without torch/transformers.
     "httpx==0.28.1",
-    "tqdm==4.67.1",
+    "tqdm==4.69.1",
 ]
 
 [dependency-groups]
