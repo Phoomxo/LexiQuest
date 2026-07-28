@@ -9,8 +9,9 @@ The local code and dependency stabilization gate is green. Production release
 remains conditional on two external controls that cannot be proven from this
 repository:
 
-1. compare the repository Firestore policy with the deployed project and
-   capture/test the currently deployed Supabase RLS policies;
+1. compare the repository Firestore policy and privileged writers with the
+   deployed project, then compare the version-controlled Supabase migration
+   with the currently deployed Storage/RLS policies;
 2. start and complete the native Codex Security workspace scan.
 
 The GitHub-hosted checks must also run against the pushed commit before merge.
@@ -70,6 +71,9 @@ The GitHub-hosted checks must also run against the pushed commit before merge.
 - Added version-controlled Firestore and Storage rules plus Firebase deployment
   configuration. Firestore syntax was accepted by the local emulator; neither
   policy is considered deployed until the target project is verified.
+- Firestore private records now require a registered, non-anonymous identity;
+  legacy `users` counters are client-immutable; and shared `vocabulary` and
+  `global_words` content is signed-in read-only with Admin-controlled seeding.
 
 ## Secret-scanning policy
 
@@ -135,9 +139,14 @@ Detailed evidence and the removal gate are recorded in the
 - `firestore.rules` and `firebase.json` now capture a least-privilege,
   default-deny policy derived from the client access inventory. Deployment and
   emulator/live-project verification remain a release gate because the remote
-  rules may still differ from this reviewed repository policy.
-- Supabase RLS migrations/policies are absent. Confirm the public image bucket
-  and every table are read/write scoped as intended.
+  rules may still differ from this reviewed repository policy. Inventory and
+  reconcile every deployed Firebase Admin SDK or other privileged writer,
+  because those writers bypass client rules.
+- The Supabase migration
+  `supabase/migrations/20260727000000_image_bucket_public_readonly.sql` and its
+  local SQL contract now exist. Local evidence does not prove deployment:
+  confirm the target `Image` bucket and every table match the reviewed
+  read/write and RLS contract.
 - The native Codex Security workspace
   `54bd568b-56a7-40cc-8121-1594465b1046` is valid but still has
   `setup.submitted=false`; the user must press **Start scan** in that workspace.
@@ -159,8 +168,9 @@ Merge only when the same commit satisfies:
 
 1. local `tool/cli/verify.ps1`, OSV, Gitleaks, and `actionlint` remain green;
 2. GitHub CI, OSV, and Gitleaks checks complete successfully;
-3. Firestore rules match the target project and Supabase RLS is captured and
-   tested;
+3. Firestore rules and privileged writers match the target project, and the
+   deployed Supabase Storage/RLS policy is captured and tested against the
+   version-controlled migration;
 4. the native Codex Security scan completes with no unresolved high-impact
    finding;
 5. the two OSV exceptions remain justified and unexpired;

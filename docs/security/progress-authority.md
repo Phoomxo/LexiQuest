@@ -1,6 +1,6 @@
 # Progress Authority and Trusted-Writer Migration
 
-Updated: 2026-07-28
+Updated: 2026-07-29
 Release A security status: remote economy writes are closed at the Firestore
 rules boundary.
 
@@ -39,8 +39,10 @@ The legacy schema can contain three divergent per-user counter stores. Only
 - `UserService.saveUserData` is an unused legacy helper whose payload omits
   required registration fields and is rejected on create by current rules.
   No active quiz path writes `points`, `totalPoints`, or `gamesPlayed`.
-- The rules still permit owner updates to legacy counter fields. They are not
-  consumed by the disabled Shop or leaderboard and remain non-authoritative.
+- The rules preserve existing `points`, `totalPoints`, and `gamesPlayed`
+  fields during validated profile updates but deny clients from adding,
+  changing, or removing any of them. They remain non-authoritative until a
+  trusted migration reconciles them.
 - `AppUser.fromMap` can read `points` for profile display compatibility.
 
 ### `purchased_items/{purchaseId}` — ownership records
@@ -63,10 +65,9 @@ authority and are not part of the local `ProgressRepository`.
 
 Net effect: legacy documents can still contain three different "totals".
 Release A treats all of them as non-authoritative, excludes them from remote
-economy and research claims, and prevents clients from changing the
-shop-readable `state.totalPoints`. The redundant fields on `users/{uid}` remain
-a migration concern, but no enabled purchase or leaderboard path consumes
-them.
+economy and research claims, and prevents clients from changing all three
+stores. The redundant fields on `users/{uid}` remain a migration concern, but
+no enabled purchase or leaderboard path consumes them.
 
 ## ScoreScreen persistence status
 
@@ -84,14 +85,21 @@ and create a matching ownership record. Release A therefore closes both sides
 of that chain at the trusted boundary:
 
 - clients cannot create `state/{uid}` or change any remote counter;
+- clients cannot add, change, or remove legacy counters on `users/{uid}`;
 - a state update succeeds only when `selectedWallpaper` is the sole affected
   field;
 - clients cannot create, update, or delete `purchased_items`;
 - owner reads of existing state and ownership records remain available.
 
-Firebase Admin SDK writes are not governed by client Firestore rules. A future
-trusted writer can therefore be deployed and validated before narrowly
-reopening any client-facing workflow.
+Firebase Admin SDK writes are not governed by client Firestore rules. Every
+deployed privileged writer must therefore be inventoried and reviewed against
+this authority contract. A future trusted writer can be deployed and validated
+before narrowly reopening any client-facing workflow.
+
+Firebase anonymous authentication remains available for entry to the product
+shell and shared read-only content. Anonymous identities cannot read or write
+remote profile, state, purchase, category, category-word, or telemetry
+records; guest learning progress remains local.
 
 ## Research-data integrity impact (scoped)
 
@@ -139,13 +147,14 @@ requires the trusted-writer sequence below.
    This is a Firebase-project prerequisite and is not present in this
    repository today (no `functions/` backend exists).
 
-3. **Rules deny client economy writes (complete for Release A state and
-   purchases).** `firestore.rules` denies client creation and counter mutation
-   on `state/{uid}` and denies all client writes to `purchased_items`.
+3. **Rules deny client economy writes (complete for Release A).**
+   `firestore.rules` denies client creation and counter mutation on
+   `state/{uid}`, denies all client writes to `purchased_items`, and preserves
+   legacy `users/{uid}` counters while making them immutable to clients.
    `selectedWallpaper` remains the only allowed state update. Before reopening
-   the economy, also remove or deny the divergent counters on `users/{uid}`,
-   deploy the trusted writer, test deployed-policy parity, and route the
-   client through the local outbox.
+   the economy, reconcile the divergent counters, deploy the trusted writer,
+   inventory every privileged writer, test deployed-policy parity, and route
+   the client through the local outbox.
 
 4. **Optional server-side grading (residual hardening).** Move correctness
    scoring server-side so the answer tally is not client-claimed. This closes
@@ -160,7 +169,7 @@ requires the trusted-writer sequence below.
 - **Firebase project / deployment required:** Steps 2–4 — the callable and
   its runtime, Admin SDK credentials, and deployed `firestore.rules`.
   These are out of scope for a repository-only change; the deployed project
-  must be reconciled with the reviewed rules (per
+  and its privileged writers must be reconciled with the reviewed rules (per
   `docs/security/2026-07-26-stabilization-gate.md`).
 
 ## Compatibility order for reopening the economy

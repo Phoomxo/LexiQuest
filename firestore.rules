@@ -10,7 +10,8 @@ rules_version = '2';
 // client path here.
 //
 // Posture
-//   * Every client grant requires a signed-in user (request.auth.uid != null).
+//   * Shared curated reads are available to signed-in identities, including
+//     anonymous guests. Private records require a non-anonymous account.
 //   * Per-user collections (users, state, categories, categories/.../words,
 //     purchased_items) enforce self-ownership via the Firebase Auth uid.
 //   * Shared/catalog/telemetry collections that carry no owner uid
@@ -119,9 +120,9 @@ service cloud.firestore {
     //   createdAt is server-controlled and immutable after creation.
     // -------------------------------------------------------------------------
     match /users/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isRegisteredUser() && request.auth.uid == uid;
 
-      allow create: if isSignedIn()
+      allow create: if isRegisteredUser()
         && request.auth.uid == uid
         && request.resource.data is map
         && request.resource.data.keys().hasOnly([
@@ -139,39 +140,22 @@ service cloud.firestore {
         && request.resource.data.age <= 150
         && request.resource.data.createdAt == request.time;
 
-      allow update: if isSignedIn()
+      allow update: if isRegisteredUser()
         && request.auth.uid == uid
         && request.resource.data is map
-        && request.resource.data.keys().hasOnly([
-             'first_name', 'last_name', 'email', 'age', 'points',
-             'totalPoints', 'gamesPlayed', 'createdAt'
-           ])
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['first_name', 'last_name', 'email', 'age'])
         && request.resource.data.createdAt == resource.data.createdAt
-        && (!('first_name' in request.resource.data.keys())
-             || (request.resource.data.first_name is string
-                 && request.resource.data.first_name.size() <= 100))
-        && (!('last_name' in request.resource.data.keys())
-             || (request.resource.data.last_name is string
-                 && request.resource.data.last_name.size() <= 100))
-        && (!('email' in request.resource.data.keys())
-             || (request.resource.data.email is string
-                 && request.resource.data.email.size() <= 254))
-        && (!('age' in request.resource.data.keys())
-             || (request.resource.data.age is int
-                 && request.resource.data.age >= 0
-                 && request.resource.data.age <= 150))
-        && (!('points' in request.resource.data.keys())
-             || (request.resource.data.points is int
-                 && request.resource.data.points >= 0
-                 && request.resource.data.points <= 100000000))
-        && (!('totalPoints' in request.resource.data.keys())
-             || (request.resource.data.totalPoints is int
-                 && request.resource.data.totalPoints >= -100000000
-                 && request.resource.data.totalPoints <= 100000000))
-        && (!('gamesPlayed' in request.resource.data.keys())
-             || (request.resource.data.gamesPlayed is int
-                 && request.resource.data.gamesPlayed >= 0
-                 && request.resource.data.gamesPlayed <= 100000000));
+        && request.resource.data.first_name is string
+        && request.resource.data.first_name.size() > 0
+        && request.resource.data.first_name.size() <= 100
+        && request.resource.data.last_name is string
+        && request.resource.data.last_name.size() <= 100
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.age is int
+        && request.resource.data.age >= 0
+        && request.resource.data.age <= 150;
 
       allow delete: if false;
     }
@@ -183,11 +167,11 @@ service cloud.firestore {
     // Remote counters stay read-only until a trusted server writer is deployed.
     // -------------------------------------------------------------------------
     match /state/{uid} {
-      allow read: if isSignedIn() && request.auth.uid == uid;
+      allow read: if isRegisteredUser() && request.auth.uid == uid;
 
       allow create: if false;
 
-      allow update: if isSignedIn()
+      allow update: if isRegisteredUser()
         && request.auth.uid == uid
         && request.resource.data is map
         && request.resource.data.diff(resource.data).affectedKeys()
@@ -209,10 +193,10 @@ service cloud.firestore {
     //   No update path is evidenced; updates are denied.
     // -------------------------------------------------------------------------
     match /categories/{categoryId} {
-      allow read: if isSignedIn()
+      allow read: if isRegisteredUser()
         && resource.data.uid == request.auth.uid;
 
-      allow create: if isSignedIn()
+      allow create: if isRegisteredUser()
         && request.resource.data is map
         && request.resource.data.keys().hasOnly(['category_name', 'created_at', 'uid'])
         && request.resource.data.uid is string
@@ -222,7 +206,7 @@ service cloud.firestore {
         && request.resource.data.category_name.size() <= 120
         && request.resource.data.created_at is timestamp;
 
-      allow delete: if isSignedIn()
+      allow delete: if isRegisteredUser()
         && resource.data.uid == request.auth.uid;
 
       allow update: if false;
@@ -236,19 +220,19 @@ service cloud.firestore {
       //   Per-category size is capped at 50 by WordService on the client.
       // -----------------------------------------------------------------------
       match /words/{wordId} {
-        allow read: if isSignedIn()
+        allow read: if isRegisteredUser()
           && ownsCategory(database, categoryId);
 
-        allow create: if isSignedIn()
+        allow create: if isRegisteredUser()
           && ownsCategory(database, categoryId)
           && wordFieldsOk();
 
-        allow update: if isSignedIn()
+        allow update: if isRegisteredUser()
           && ownsCategory(database, categoryId)
           && wordFieldsOk()
           && request.resource.data.created_at == resource.data.created_at;
 
-        allow delete: if isSignedIn()
+        allow delete: if isRegisteredUser()
           && ownsCategory(database, categoryId);
       }
     }
@@ -257,49 +241,24 @@ service cloud.firestore {
     // vocabulary/{vocabId} - SHARED, uid-less A1 pool (default-quiz source).
     //   main_vocabulary seeds entries WITHOUT a uid; the default-quiz reads in
     //   ChooseModeScreen/QuizService list the whole pool. True uid ownership is
-    //   impossible here, so the pool is read for signed-in users and append-
-    //   only with strict fields. update/delete are denied. See explanation.
+    //   impossible here, so the admin-seeded pool is read-only for signed-in
+    //   identities, including anonymous guests.
     // -------------------------------------------------------------------------
     match /vocabulary/{vocabId} {
       allow read: if isSignedIn();
 
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['word', 'meaning', 'part_of_speech', 'uid'])
-        && request.resource.data.word is string
-        && request.resource.data.word.size() > 0
-        && request.resource.data.word.size() <= 120
-        && request.resource.data.meaning is string
-        && request.resource.data.meaning.size() <= 500
-        && request.resource.data.part_of_speech is string
-        && request.resource.data.part_of_speech.size() <= 60
-        && (!('uid' in request.resource.data.keys())
-             || request.resource.data.uid is string);
-
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
     // -------------------------------------------------------------------------
-    // global_words/{word} - shared, write-once dictionary cache keyed by word.
-    //   GlobalWordService.addWordToDatabase only writes after a cache miss, so
-    //   the evidenced path is create-only. createdAt is server-controlled.
+    // global_words/{word} - shared dictionary keyed by word.
+    //   The admin-seeded collection is read-only for signed-in identities,
+    //   including anonymous guests.
     // -------------------------------------------------------------------------
     match /global_words/{word} {
       allow read: if isSignedIn();
 
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['word', 'meaning', 'partOfSpeech', 'createdAt'])
-        && request.resource.data.word is string
-        && request.resource.data.word.size() > 0
-        && request.resource.data.word.size() <= 120
-        && request.resource.data.meaning is string
-        && request.resource.data.meaning.size() <= 1000
-        && request.resource.data.partOfSpeech is string
-        && request.resource.data.partOfSpeech.size() <= 60
-        && request.resource.data.createdAt == request.time;
-
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
     // -------------------------------------------------------------------------
@@ -320,7 +279,7 @@ service cloud.firestore {
     //   write : disabled until purchases use a trusted server writer
     // -------------------------------------------------------------------------
     match /purchased_items/{purchaseId} {
-      allow read: if isSignedIn()
+      allow read: if isRegisteredUser()
         && resource.data.user_id == request.auth.uid;
 
       allow create, update, delete: if false;
