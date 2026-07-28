@@ -33,6 +33,25 @@ class _RecordingRepository implements ProgressRepository {
   }
 }
 
+class _FailingRepository implements ProgressRepository {
+  const _FailingRepository({required this.failRecord});
+
+  final bool failRecord;
+
+  @override
+  Future<List<ProgressSession>> pendingSessions() async => const [];
+
+  @override
+  Future<ProgressSnapshot> readSnapshot() async {
+    throw StateError('read failed');
+  }
+
+  @override
+  Future<void> recordSession(ProgressSession session) async {
+    if (failRecord) throw StateError('record failed');
+  }
+}
+
 void main() {
   testWidgets('records the injected session once across rebuilds', (
     tester,
@@ -83,5 +102,66 @@ void main() {
     expect(after.totalCorrectAnswers, before.totalCorrectAnswers);
     expect(after.totalWrongAnswers, before.totalWrongAnswers);
     expect(after.gamesPlayed, before.gamesPlayed);
+  });
+
+  testWidgets('record failure shows session results without invented totals', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ScoreScreen(
+          sessionId: 'record-failure',
+          correctAnswers: 4,
+          wrongAnswers: 2,
+          repository: _FailingRepository(failRecord: true),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('This session: 4 correct, 2 wrong'), findsOneWidget);
+    expect(find.text('Total points'), findsNothing);
+    expect(find.text('Games played'), findsNothing);
+  });
+
+  testWidgets('snapshot read failure shows session results without totals', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ScoreScreen(
+          sessionId: 'read-failure',
+          correctAnswers: 3,
+          wrongAnswers: 1,
+          repository: _FailingRepository(failRecord: false),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('This session: 3 correct, 1 wrong'), findsOneWidget);
+    expect(find.text('Total points'), findsNothing);
+    expect(find.text('Games played'), findsNothing);
+  });
+
+  testWidgets('no repository settles without rebuilding a new loading future', (
+    tester,
+  ) async {
+    const score = ScoreScreen(
+      sessionId: 'no-repository',
+      correctAnswers: 2,
+      wrongAnswers: 1,
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: score));
+    await tester.pumpAndSettle();
+    await tester.pumpWidget(const MaterialApp(home: score));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('This session: 2 correct, 1 wrong'), findsOneWidget);
   });
 }

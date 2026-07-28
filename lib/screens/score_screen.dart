@@ -31,7 +31,7 @@ class ScoreScreen extends StatefulWidget {
 
 class _ScoreScreenState extends State<ScoreScreen> {
   late final String _sessionId;
-  Future<ProgressSnapshot>? _snapshotFuture;
+  Future<_PersistenceResult>? _persistenceFuture;
 
   @override
   void initState() {
@@ -42,24 +42,30 @@ class _ScoreScreenState extends State<ScoreScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_snapshotFuture != null) return;
+    if (_persistenceFuture != null) return;
     final repository =
         widget.repository ??
         AppDependenciesScope.maybeOf(context)?.progressRepository;
-    if (repository != null) {
-      _snapshotFuture = _recordAndRead(repository);
-    }
+    _persistenceFuture = repository == null
+        ? Future.value(const _PersistenceResult.unavailable())
+        : _recordAndRead(repository);
   }
 
-  Future<ProgressSnapshot> _recordAndRead(ProgressRepository repository) async {
-    await repository.recordSession(
-      ProgressSession(
-        sessionId: _sessionId,
-        correctAnswers: widget.correctAnswers,
-        wrongAnswers: widget.wrongAnswers,
-      ),
-    );
-    return repository.readSnapshot();
+  Future<_PersistenceResult> _recordAndRead(
+    ProgressRepository repository,
+  ) async {
+    try {
+      await repository.recordSession(
+        ProgressSession(
+          sessionId: _sessionId,
+          correctAnswers: widget.correctAnswers,
+          wrongAnswers: widget.wrongAnswers,
+        ),
+      );
+      return _PersistenceResult.saved(await repository.readSnapshot());
+    } catch (_) {
+      return const _PersistenceResult.unavailable();
+    }
   }
 
   String _newLegacySessionId() {
@@ -69,19 +75,14 @@ class _ScoreScreenState extends State<ScoreScreen> {
         '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 
-  ProgressSnapshot get _unpersistedSnapshot => ProgressSnapshot(
-    totalPoints: widget.correctAnswers,
-    totalCorrectAnswers: widget.correctAnswers,
-    totalWrongAnswers: widget.wrongAnswers,
-    gamesPlayed: 1,
-  );
-
   @override
   Widget build(BuildContext context) {
-    final snapshotFuture =
-        _snapshotFuture ?? Future.value(_unpersistedSnapshot);
-    return FutureBuilder<ProgressSnapshot>(
-      future: snapshotFuture,
+    final persistenceFuture = _persistenceFuture;
+    if (persistenceFuture == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+    return FutureBuilder<_PersistenceResult>(
+      future: persistenceFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
@@ -89,7 +90,8 @@ class _ScoreScreenState extends State<ScoreScreen> {
           );
         }
 
-        final progress = snapshot.data ?? _unpersistedSnapshot;
+        final persistence =
+            snapshot.data ?? const _PersistenceResult.unavailable();
         return Scaffold(
           appBar: AppBar(
             title: const Text('Quiz results'),
@@ -101,30 +103,28 @@ class _ScoreScreenState extends State<ScoreScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                _buildStatCard(
-                  'Total points',
-                  progress.totalPoints.toString(),
-                  Icons.stars,
-                  Colors.amber.shade800,
+                Text(
+                  'This session: ${widget.correctAnswers} correct, '
+                  '${widget.wrongAnswers} wrong',
+                  style: const TextStyle(fontSize: 18),
                 ),
-                _buildStatCard(
-                  'Games played',
-                  progress.gamesPlayed.toString(),
-                  Icons.history,
-                  Colors.deepPurple,
-                ),
-                _buildStatCard(
-                  'Correct answers',
-                  progress.totalCorrectAnswers.toString(),
-                  Icons.check_circle,
-                  Colors.green,
-                ),
-                _buildStatCard(
-                  'Wrong answers',
-                  progress.totalWrongAnswers.toString(),
-                  Icons.cancel,
-                  Colors.red,
-                ),
+                const SizedBox(height: 16),
+                if (!persistence.isSaved)
+                  const Text('Progress could not be saved locally.')
+                else ...[
+                  _buildStatCard(
+                    'Total points',
+                    persistence.snapshot!.totalPoints.toString(),
+                    Icons.stars,
+                    Colors.amber.shade800,
+                  ),
+                  _buildStatCard(
+                    'Games played',
+                    persistence.snapshot!.gamesPlayed.toString(),
+                    Icons.history,
+                    Colors.deepPurple,
+                  ),
+                ],
                 const SizedBox(height: 30),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
@@ -179,4 +179,13 @@ class _ScoreScreenState extends State<ScoreScreen> {
       ),
     );
   }
+}
+
+class _PersistenceResult {
+  const _PersistenceResult.saved(this.snapshot) : isSaved = true;
+
+  const _PersistenceResult.unavailable() : snapshot = null, isSaved = false;
+
+  final ProgressSnapshot? snapshot;
+  final bool isSaved;
 }
