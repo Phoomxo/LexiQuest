@@ -104,6 +104,7 @@ version และ build ID
 powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify.ps1
 ```
 
-สคริปต์ตรวจ Flutter, backend unit tests และ Android APK แบบ fail-fast โดยใช้ Python
-environment ที่ติดตั้งไว้แล้ว (`--no-sync`) และไม่เริ่ม OmniVoice, Ollama, local LM
-server หรือ model inference
+สคริปต์ตรวจ Flutter, backend unit tests และ Android APK แบบ fail-fast โดยจัดเตรียม Python
+environment จาก frozen lockfile พร้อม dependency กลุ่ม `dev` สำหรับ CPU tests และตัดกลุ่มเสริม
+`gpu`, `llm` และ `train` ออกอย่างชัดเจน สคริปต์ไม่เริ่ม OmniVoice, Ollama, local LM server
+หรือ model inference

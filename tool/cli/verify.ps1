@@ -6,8 +6,9 @@
 .DESCRIPTION
     Runs every mandatory foundation check fail-fast. It never starts Voice API,
     AI API, Ollama, OmniVoice, a local LM server, model loading, or another CUDA
-    consumer. Backend tests reuse the installed project environments without
-    syncing optional GPU/training dependency groups.
+    consumer. Backend tests provision frozen project environments with dev
+    dependencies while explicitly excluding optional GPU, LLM, and training
+    dependency groups.
 #>
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
@@ -95,6 +96,7 @@ try {
     Invoke-VerifyPhase '02.1' 'CI/CD contract tests' {
         $contractTests = @(
             'ci-workflow.tests.ps1',
+            'verify-backend-environments.tests.ps1',
             'dependabot-config.tests.ps1',
             'osv-pr-workflow.tests.ps1',
             'osv-scheduled-workflow.tests.ps1',
@@ -162,8 +164,8 @@ try {
         & uv run `
             --project (Join-Path $repoRoot 'backend\voice_api') `
             --frozen `
-            --no-sync `
             --group dev `
+            --no-group gpu `
             pytest backend/voice_api/tests -q `
             --ignore=backend/voice_api/tests/integration
     }
@@ -172,8 +174,8 @@ try {
         & uv run `
             --project (Join-Path $repoRoot 'backend\ai_api') `
             --frozen `
-            --no-sync `
             --group dev `
+            --no-group llm `
             pytest backend/ai_api/tests -q
     }
 
@@ -181,8 +183,8 @@ try {
         & uv run `
             --project (Join-Path $repoRoot 'backend\lexiquest_lm') `
             --frozen `
-            --no-sync `
             --group dev `
+            --no-group train `
             pytest backend/lexiquest_lm/tests -q
     }
 
