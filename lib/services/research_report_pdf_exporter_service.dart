@@ -1,5 +1,30 @@
 import 'dart:math';
 
+class ResearchObservation {
+  final double preTestScore;
+  final double postTestScore;
+  final double preLatencyMs;
+  final double postLatencyMs;
+
+  const ResearchObservation({
+    required this.preTestScore,
+    required this.postTestScore,
+    required this.preLatencyMs,
+    required this.postLatencyMs,
+  });
+}
+
+class InsufficientData implements Exception {
+  final String message;
+
+  const InsufficientData([
+    this.message = 'At least two real research observations are required.',
+  ]);
+
+  @override
+  String toString() => 'InsufficientData: $message';
+}
+
 class ThesisAcademicStats {
   final double preTestMean;
   final double preTestSd;
@@ -28,70 +53,65 @@ class ResearchReportPdfExporterService {
   const ResearchReportPdfExporterService();
 
   ThesisAcademicStats calculateAcademicStats(
-    List<Map<String, dynamic>> records,
+    List<ResearchObservation> observations,
   ) {
-    if (records.isEmpty) {
-      return const ThesisAcademicStats(
-        preTestMean: 45.0,
-        preTestSd: 12.5,
-        postTestMean: 87.5,
-        postTestSd: 6.2,
-        meanGainPercentage: 94.4,
-        preLatencyMs: 3400.0,
-        postLatencyMs: 1250.0,
-        latencyReductionPercentage: 63.2,
-        sampleSize: 30,
-      );
+    if (observations.length < 2) {
+      throw const InsufficientData();
     }
 
-    final latencies = records
-        .map((e) => (e['latencyMs'] as num).toDouble())
+    final preTestScores = observations
+        .map((observation) => observation.preTestScore)
         .toList();
-    final sampleSize = records.length;
-
-    final meanLatency = latencies.reduce((a, b) => a + b) / sampleSize;
-    final variance =
-        latencies.map((x) => pow(x - meanLatency, 2)).reduce((a, b) => a + b) /
-        sampleSize;
-    final sd = sqrt(variance);
+    final postTestScores = observations
+        .map((observation) => observation.postTestScore)
+        .toList();
+    final preLatencies = observations
+        .map((observation) => observation.preLatencyMs)
+        .toList();
+    final postLatencies = observations
+        .map((observation) => observation.postLatencyMs)
+        .toList();
+    final preTestMean = _mean(preTestScores);
+    final postTestMean = _mean(postTestScores);
+    final preLatencyMs = _mean(preLatencies);
+    final postLatencyMs = _mean(postLatencies);
 
     return ThesisAcademicStats(
-      preTestMean: 48.0,
-      preTestSd: 11.2,
-      postTestMean: 86.4,
-      postTestSd: sd,
-      meanGainPercentage: 80.0,
-      preLatencyMs: 3200.0,
-      postLatencyMs: meanLatency,
-      latencyReductionPercentage: ((3200.0 - meanLatency) / 3200.0 * 100).clamp(
-        0,
-        100,
-      ),
-      sampleSize: sampleSize,
+      preTestMean: preTestMean,
+      preTestSd: _populationStandardDeviation(preTestScores, preTestMean),
+      postTestMean: postTestMean,
+      postTestSd: _populationStandardDeviation(postTestScores, postTestMean),
+      meanGainPercentage: postTestMean - preTestMean,
+      preLatencyMs: preLatencyMs,
+      postLatencyMs: postLatencyMs,
+      latencyReductionPercentage: preLatencyMs == 0
+          ? 0
+          : (preLatencyMs - postLatencyMs) / preLatencyMs * 100,
+      sampleSize: observations.length,
     );
   }
 
-  String generateAcademicPdfReport(List<Map<String, dynamic>> records) {
-    final stats = calculateAcademicStats(records);
+  String generateAcademicPdfReport(List<ResearchObservation> observations) {
+    final stats = calculateAcademicStats(observations);
     final buffer = StringBuffer();
 
     buffer.writeln(
       '===============================================================',
     );
-    buffer.writeln('   LEXIQUEST RESEARCH SUMMARY REPORT (THESIS CHAPTER 4)');
+    buffer.writeln('LEXIQUEST RESEARCH SUMMARY REPORT');
     buffer.writeln(
       '===============================================================\n',
     );
-    buffer.writeln('1. EXECUTIVE SUMMARY & STATISTICAL OVERVIEW');
+    buffer.writeln('1. OBSERVED SUMMARY STATISTICS');
     buffer.writeln('   - Sample Size (N): ${stats.sampleSize} participants');
     buffer.writeln(
-      '   - Pre-Test Score (Mean ± SD): ${stats.preTestMean.toStringAsFixed(1)}% ± ${stats.preTestSd.toStringAsFixed(1)}',
+      '   - Pre-Test Score (Mean +/- SD): ${stats.preTestMean.toStringAsFixed(1)}% +/- ${stats.preTestSd.toStringAsFixed(1)}',
     );
     buffer.writeln(
-      '   - Post-Test Score (Mean ± SD): ${stats.postTestMean.toStringAsFixed(1)}% ± ${stats.postTestSd.toStringAsFixed(1)}',
+      '   - Post-Test Score (Mean +/- SD): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
     );
     buffer.writeln(
-      '   - Overall Achievement Gain: +${stats.meanGainPercentage.toStringAsFixed(1)}%',
+      '   - Mean Score Gain: +${stats.meanGainPercentage.toStringAsFixed(1)} percentage points',
     );
     buffer.writeln(
       '   - Pre-Test Recall Latency: ${stats.preLatencyMs.toStringAsFixed(0)} ms',
@@ -100,25 +120,25 @@ class ResearchReportPdfExporterService {
       '   - Post-Test Recall Latency: ${stats.postLatencyMs.toStringAsFixed(0)} ms',
     );
     buffer.writeln(
-      '   - Recall Latency Reduction: -${stats.latencyReductionPercentage.toStringAsFixed(1)}%\n',
-    );
-    buffer.writeln(
-      '---------------------------------------------------------------',
-    );
-    buffer.writeln('2. SPSS / R STATISTICAL ANALYSIS RECOMMENDATION');
-    buffer.writeln(
-      '   - Perform Paired-Samples t-Test comparing Pre vs Post Scores.',
-    );
-    buffer.writeln(
-      '   - Null Hypothesis (H0): No statistically significant difference.',
-    );
-    buffer.writeln(
-      '   - Expected Significance: p < 0.001 (Strong Rejection of H0).\n',
+      '   - Recall Latency Change: ${stats.latencyReductionPercentage.toStringAsFixed(1)}%',
     );
     buffer.writeln(
       '===============================================================',
     );
 
     return buffer.toString();
+  }
+
+  static double _mean(List<double> values) {
+    return values.reduce((sum, value) => sum + value) / values.length;
+  }
+
+  static double _populationStandardDeviation(List<double> values, double mean) {
+    final variance =
+        values
+            .map((value) => pow(value - mean, 2))
+            .reduce((sum, value) => sum + value) /
+        values.length;
+    return sqrt(variance);
   }
 }
