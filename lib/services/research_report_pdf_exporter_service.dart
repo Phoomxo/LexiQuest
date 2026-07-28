@@ -140,7 +140,7 @@ class ResearchReportPdfExporterService {
       '   - Post-Test Recall Latency: ${stats.postLatencyMs.toStringAsFixed(0)} ms',
     );
     buffer.writeln(
-      '   - Recall Latency Change: ${stats.latencyReductionPercentage.toStringAsFixed(1)}%',
+      '   - ${_formatLatencyChange(stats.latencyReductionPercentage)}',
     );
     buffer.writeln(
       '===============================================================',
@@ -173,5 +173,17 @@ class ResearchReportPdfExporterService {
   static String _formatSigned(double value) {
     final sign = value > 0 ? '+' : '';
     return '$sign${value.toStringAsFixed(1)}';
+  }
+
+  static String _formatLatencyChange(double reductionPercentage) {
+    if (reductionPercentage > 0) {
+      return 'Recall Latency Reduction: '
+          '${reductionPercentage.toStringAsFixed(1)}%';
+    }
+    if (reductionPercentage < 0) {
+      return 'Recall Latency Increase: '
+          '${(-reductionPercentage).toStringAsFixed(1)}%';
+    }
+    return 'Recall Latency Change: 0.0% (no change)';
   }
 }

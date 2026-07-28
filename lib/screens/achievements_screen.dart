@@ -22,31 +22,7 @@ class AchievementsScreen extends StatelessWidget {
         remoteEconomyPolicy ??
         AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
         const RemoteEconomyPolicy();
-    final displayBadges =
-        badges ??
-        [
-          const AchievementBadge(
-            id: 'streak_3',
-            title: 'นักเรียนต่อเนื่อง 3 วัน',
-            description: 'ทบทวนคำศัพท์ติดต่อกัน 3 วัน',
-            isUnlocked: true,
-            coinReward: 50,
-          ),
-          const AchievementBadge(
-            id: 'shadow_master',
-            title: 'ผู้เชี่ยวชาญการออกเสียง',
-            description: 'ทำคะแนน Shadowing ได้มากกว่า 90%',
-            isUnlocked: true,
-            coinReward: 100,
-          ),
-          const AchievementBadge(
-            id: 'dictation_pro',
-            title: 'เซียนสะกดคำ',
-            description: 'ทำคะแนน Dictation ได้ 100%',
-            isUnlocked: false,
-            coinReward: 150,
-          ),
-        ];
+    final displayBadges = badges ?? const <AchievementBadge>[];
 
     return Scaffold(
       appBar: AppBar(
@@ -135,69 +111,77 @@ class AchievementsScreen extends StatelessWidget {
               ),
             const SizedBox(height: 16),
             Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.9,
-                ),
-                itemCount: displayBadges.length,
-                itemBuilder: (context, index) {
-                  final badge = displayBadges[index];
-                  return Card(
-                    elevation: badge.isUnlocked ? 4 : 1,
-                    color: badge.isUnlocked
-                        ? Colors.amber.shade50
-                        : Colors.grey.shade200,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: badge.isUnlocked
-                            ? Colors.amber
-                            : Colors.grey.shade400,
-                        width: 1.5,
+              child: displayBadges.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'ยังไม่มีความสำเร็จที่ยืนยันจากข้อมูลการฝึก',
+                        textAlign: TextAlign.center,
                       ),
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            badge.isUnlocked ? Icons.stars : Icons.lock,
-                            size: 44,
-                            color: badge.isUnlocked
-                                ? Colors.amber.shade800
-                                : Colors.grey,
+                    )
+                  : GridView.builder(
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            childAspectRatio: 0.9,
                           ),
-                          const SizedBox(height: 8),
-                          Text(
-                            badge.title,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
+                      itemCount: displayBadges.length,
+                      itemBuilder: (context, index) {
+                        final badge = displayBadges[index];
+                        return Card(
+                          elevation: badge.isUnlocked ? 4 : 1,
+                          color: badge.isUnlocked
+                              ? Colors.amber.shade50
+                              : Colors.grey.shade200,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: BorderSide(
                               color: badge.isUnlocked
-                                  ? Colors.black87
-                                  : Colors.grey.shade700,
+                                  ? Colors.amber
+                                  : Colors.grey.shade400,
+                              width: 1.5,
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            badge.description,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  badge.isUnlocked ? Icons.stars : Icons.lock,
+                                  size: 44,
+                                  color: badge.isUnlocked
+                                      ? Colors.amber.shade800
+                                      : Colors.grey,
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  badge.title,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: badge.isUnlocked
+                                        ? Colors.black87
+                                        : Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  badge.description,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
+                        );
+                      },
                     ),
-                  );
-                },
-              ),
             ),
           ],
         ),
