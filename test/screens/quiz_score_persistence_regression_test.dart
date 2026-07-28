@@ -3,20 +3,50 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test(
-    'score rendering and quiz completion contain no Firestore counter mutation',
-    () {
-      final scoreSource = File(
-        'lib/screens/score_screen.dart',
-      ).readAsStringSync();
-      final quizSource = File(
-        'lib/screens/quiz_screen.dart',
-      ).readAsStringSync();
+  test('production has no client score or reward writers outside the disabled '
+      'shop debit allowlist', () {
+    final forbiddenWriters = <String>[];
+    final scoreOrRewardField = RegExp(
+      r'''['"](points|totalPoints|score|coins|coinReward|rewardXp|rewardCoins|balance|xp)['"]\s*:''',
+    );
 
-      expect(scoreSource, isNot(contains('FirebaseFirestore')));
-      expect(scoreSource, isNot(contains('FieldValue.increment')));
-      expect(quizSource, isNot(contains('_savePointsToFirestore')));
-      expect(quizSource, isNot(contains('FieldValue.increment')));
-    },
-  );
+    for (final entity in Directory('lib').listSync(recursive: true)) {
+      if (entity is! File || !entity.path.endsWith('.dart')) continue;
+      final source = entity.readAsStringSync();
+      if (!source.contains('cloud_firestore')) continue;
+
+      final relativePath = entity.path.replaceAll(r'\', '/');
+      final lines = source.split('\n');
+      for (var index = 0; index < lines.length; index++) {
+        final normalized = lines[index].trim();
+        if (!scoreOrRewardField.hasMatch(normalized) &&
+            !normalized.contains('FieldValue.increment')) {
+          continue;
+        }
+
+        final isLegacyZeroInitialization =
+            relativePath == 'lib/services/user_service.dart' &&
+            normalized == "'points': 0,";
+        final isDefaultDisabledPurchaseDebit =
+            relativePath == 'lib/screens/shop_page.dart' &&
+            normalized == "'totalPoints': FieldValue.increment(-productPrice),";
+
+        if (!isLegacyZeroInitialization && !isDefaultDisabledPurchaseDebit) {
+          forbiddenWriters.add('$relativePath:${index + 1}: $normalized');
+        }
+      }
+    }
+
+    final policySource = File(
+      'lib/config/remote_economy_policy.dart',
+    ).readAsStringSync();
+    final shopSource = File('lib/screens/shop_page.dart').readAsStringSync();
+
+    expect(forbiddenWriters, isEmpty);
+    expect(policySource, contains('this.shopAndPurchasesEnabled = false'));
+    expect(
+      shopSource,
+      contains('!_policyFor(context).shopAndPurchasesEnabled'),
+    );
+  });
 }

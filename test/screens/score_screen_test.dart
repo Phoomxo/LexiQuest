@@ -1,3 +1,6 @@
+import 'dart:async';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/progress/progress_repository.dart';
@@ -52,7 +55,62 @@ class _FailingRepository implements ProgressRepository {
   }
 }
 
+class _BlockingRepository implements ProgressRepository {
+  final Completer<void> recordCompleter = Completer<void>();
+  final List<ProgressSession> recorded = [];
+
+  @override
+  Future<List<ProgressSession>> pendingSessions() async => recorded;
+
+  @override
+  Future<ProgressSnapshot> readSnapshot() async => const ProgressSnapshot(
+    totalPoints: 4,
+    totalCorrectAnswers: 4,
+    totalWrongAnswers: 2,
+    gamesPlayed: 1,
+  );
+
+  @override
+  Future<void> recordSession(ProgressSession session) {
+    recorded.add(session);
+    return recordCompleter.future;
+  }
+}
+
 void main() {
+  test('sessionId is required and ScoreScreen never generates one', () {
+    final source = File('lib/screens/score_screen.dart').readAsStringSync();
+
+    expect(source, contains('required this.sessionId'));
+    expect(source, isNot(contains('_newLegacySessionId')));
+    expect(source, isNot(contains('Random.secure')));
+  });
+
+  testWidgets('renders result shell immediately while persistence is pending', (
+    tester,
+  ) async {
+    final repository = _BlockingRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ScoreScreen(
+          sessionId: 'pending-session',
+          correctAnswers: 4,
+          wrongAnswers: 2,
+          repository: repository,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.text('ผลลัพธ์ของคุณ'), findsOneWidget);
+    expect(find.text('รอบนี้: ตอบถูก 4 • ตอบผิด 2'), findsOneWidget);
+    expect(find.text('เล่นใหม่'), findsOneWidget);
+    expect(find.text('กลับหน้าหลัก'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(repository.recorded, hasLength(1));
+  });
+
   testWidgets('records the injected session once across rebuilds', (
     tester,
   ) async {
@@ -104,7 +162,7 @@ void main() {
     expect(after.gamesPlayed, before.gamesPlayed);
   });
 
-  testWidgets('successful persistence renders aggregate answer totals', (
+  testWidgets('successful persistence renders four scoped aggregate totals', (
     tester,
   ) async {
     final repository = _RecordingRepository();
@@ -128,10 +186,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Correct answers'), findsOneWidget);
+    expect(
+      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
+      findsNWidgets(4),
+    );
     expect(find.text('14'), findsWidgets);
-    expect(find.text('Wrong answers'), findsOneWidget);
     expect(find.text('8'), findsWidgets);
+    expect(find.text('2'), findsWidgets);
+    expect(
+      find.text('บันทึกผลแล้ว: ความคืบหน้าการฝึกอยู่เฉพาะอุปกรณ์นี้'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('record failure shows session results without invented totals', (
@@ -149,10 +214,12 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
-    expect(find.text('This session: 4 correct, 2 wrong'), findsOneWidget);
-    expect(find.text('Total points'), findsNothing);
-    expect(find.text('Games played'), findsNothing);
+    expect(find.text('ยังไม่ได้บันทึกผลรอบนี้ในอุปกรณ์'), findsOneWidget);
+    expect(find.text('รอบนี้: ตอบถูก 4 • ตอบผิด 2'), findsOneWidget);
+    expect(
+      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
+      findsNothing,
+    );
   });
 
   testWidgets('snapshot read failure shows session results without totals', (
@@ -170,10 +237,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
-    expect(find.text('This session: 3 correct, 1 wrong'), findsOneWidget);
-    expect(find.text('Total points'), findsNothing);
-    expect(find.text('Games played'), findsNothing);
+    expect(
+      find.text('บันทึกผลรอบนี้แล้ว แต่ยังอ่านยอดรวมจากอุปกรณ์ไม่ได้'),
+      findsOneWidget,
+    );
+    expect(find.text('รอบนี้: ตอบถูก 3 • ตอบผิด 1'), findsOneWidget);
+    expect(
+      find.textContaining('เฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้'),
+      findsNothing,
+    );
   });
 
   testWidgets('no repository settles without rebuilding a new loading future', (
@@ -191,7 +263,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
-    expect(find.text('This session: 2 correct, 1 wrong'), findsOneWidget);
+    expect(find.text('ยังไม่ได้บันทึกผลรอบนี้ในอุปกรณ์'), findsOneWidget);
+    expect(find.text('รอบนี้: ตอบถูก 2 • ตอบผิด 1'), findsOneWidget);
   });
 }

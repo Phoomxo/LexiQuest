@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/progress/progress_repository.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -10,6 +11,22 @@ class _StubGuestSessionService implements GuestSessionService {
   Future<GuestSessionResult> start() async {
     return const GuestSessionFailed(GuestSessionFailure.unknown);
   }
+}
+
+class _StubProgressRepository implements ProgressRepository {
+  @override
+  Future<List<ProgressSession>> pendingSessions() async => const [];
+
+  @override
+  Future<ProgressSnapshot> readSnapshot() async => const ProgressSnapshot(
+    totalPoints: 0,
+    totalCorrectAnswers: 0,
+    totalWrongAnswers: 0,
+    gamesPlayed: 0,
+  );
+
+  @override
+  Future<void> recordSession(ProgressSession session) async {}
 }
 
 AppConfig _validConfig() => AppConfig.fromValues(
@@ -26,6 +43,43 @@ void main() {
   });
 
   group('AppBootstrap.initialize', () {
+    test('retains the repository returned by the injected loader', () async {
+      final expectedRepository = _StubProgressRepository();
+      final bootstrap = AppBootstrap(
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        loadProgressRepository: () async => expectedRepository,
+      );
+
+      final dependencies = await bootstrap.initialize();
+
+      expect(
+        identical(dependencies.progressRepository, expectedRepository),
+        isTrue,
+      );
+    });
+
+    test(
+      'repository loader failure returns null without leaking details',
+      () async {
+        const sentinel = 'LOCAL-STORAGE-CREDENTIAL-7c9f3a';
+        final bootstrap = AppBootstrap(
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          loadProgressRepository: () async => throw StateError(sentinel),
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(dependencies.progressRepository, isNull);
+        expect(dependencies.toString(), isNot(contains(sentinel)));
+      },
+    );
+
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
       final bootstrap = AppBootstrap(

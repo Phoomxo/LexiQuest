@@ -12,14 +12,13 @@ class UserService {
     required String firstName,
     required String lastName,
     required String email,
-    int points = 0,
   }) async {
     try {
       await _firestore.collection('users').doc(uid).set({
         'first_name': firstName,
         'last_name': lastName,
         'email': email,
-        'points': points,
+        'points': 0,
       });
     } catch (e) {
       throw Exception('Failed to save user data: $e');
@@ -40,20 +39,6 @@ class UserService {
       throw Exception('Failed to fetch user data: $e');
     }
     return null;
-  }
-
-  /// อัปเดตแต้มของผู้ใช้
-  Future<void> updateUserPoints(int points) async {
-    try {
-      final user = _auth.currentUser;
-      if (user != null) {
-        await _firestore.collection('users').doc(user.uid).update({
-          'points': FieldValue.increment(points),
-        });
-      }
-    } catch (e) {
-      throw Exception('Failed to update user points: $e');
-    }
   }
 
   Future<int> getTotalPointsFromState() async {

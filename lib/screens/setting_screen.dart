@@ -6,6 +6,7 @@ import '../config/remote_economy_policy.dart';
 import '../runtime/app_dependencies.dart';
 import 'achievements_screen.dart';
 import 'avatar_equipment_screen.dart';
+import 'export_center_screen.dart';
 import 'select_wallpaper_screen.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -192,118 +193,142 @@ class _SettingScreenState extends State<SettingScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _showIconPicker,
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor:
-                          Colors.primaries[_selectedIcon.codePoint %
-                              Colors.primaries.length],
-                      child: Icon(_selectedIcon, size: 80, color: Colors.white),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    GestureDetector(
+                      onTap: _showIconPicker,
+                      child: CircleAvatar(
+                        radius: 60,
+                        backgroundColor:
+                            Colors.primaries[_selectedIcon.codePoint %
+                                Colors.primaries.length],
+                        child: Icon(
+                          _selectedIcon,
+                          size: 80,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildProfileItem(
-                    'First Name',
-                    _profileData?['first_name'] ?? '',
-                  ),
-                  _buildProfileItem(
-                    'Last Name',
-                    _profileData?['last_name'] ?? '',
-                  ),
-                  _buildProfileItem(
-                    'Age',
-                    _profileData?['age']?.toString() ?? '',
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      if (remoteEconomyEnabled.shopAndPurchasesEnabled)
+                    const SizedBox(height: 20),
+                    _buildProfileItem(
+                      'First Name',
+                      _profileData?['first_name'] ?? '',
+                    ),
+                    _buildProfileItem(
+                      'Last Name',
+                      _profileData?['last_name'] ?? '',
+                    ),
+                    _buildProfileItem(
+                      'Age',
+                      _profileData?['age']?.toString() ?? '',
+                    ),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      alignment: WrapAlignment.center,
+                      children: [
+                        if (remoteEconomyEnabled.shopAndPurchasesEnabled)
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => SelectWallpaperScreen(),
+                                ),
+                              );
+                            },
+                            icon: const Icon(Icons.wallpaper, size: 18),
+                            label: const Text('เปลี่ยนวอลเปเปอร์'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.deepPurpleAccent,
+                              foregroundColor: Colors.white,
+                            ),
+                          ),
                         ElevatedButton.icon(
                           onPressed: () {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => SelectWallpaperScreen(),
+                                builder: (context) =>
+                                    const AvatarEquipmentScreen(),
                               ),
                             );
                           },
-                          icon: const Icon(Icons.wallpaper, size: 18),
-                          label: const Text('เปลี่ยนวอลเปเปอร์'),
+                          icon: const Icon(Icons.shield, size: 18),
+                          label: const Text('อุปกรณ์ Avatar'),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.deepPurpleAccent,
+                            backgroundColor: Colors.deepPurple.shade700,
                             foregroundColor: Colors.white,
                           ),
                         ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const AvatarEquipmentScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.shield, size: 18),
-                        label: const Text('อุปกรณ์ Avatar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple.shade700,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AchievementsScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.emoji_events, size: 18),
-                        label: const Text('เหรียญรางวัล'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      await LocalUserProgressStore().clearAll();
-                      if (!mounted) return;
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const AchievementsScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.emoji_events, size: 18),
+                          label: const Text('เหรียญรางวัล'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.amber.shade800,
+                            foregroundColor: Colors.white,
                           ),
-                          backgroundColor: Colors.green,
                         ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.cleaning_services,
-                      color: Colors.redAccent,
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const ExportCenterScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.ios_share, size: 18),
+                          label: const Text('ส่งออก Anki/PDF'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blueGrey.shade700,
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      ],
                     ),
-                    label: const Text(
-                      '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
-                      style: TextStyle(
+                    const SizedBox(height: 16),
+                    OutlinedButton.icon(
+                      onPressed: () async {
+                        final messenger = ScaffoldMessenger.of(context);
+                        await LocalUserProgressStore().clearAll();
+                        if (!mounted) return;
+                        messenger.showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
+                            ),
+                            backgroundColor: Colors.green,
+                          ),
+                        );
+                      },
+                      icon: const Icon(
+                        Icons.cleaning_services,
                         color: Colors.redAccent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
+                      ),
+                      label: const Text(
+                        '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
+                        style: TextStyle(
+                          color: Colors.redAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
     );

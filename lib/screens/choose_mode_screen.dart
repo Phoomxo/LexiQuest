@@ -7,6 +7,7 @@ import 'cefr_article_reader_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
 import 'cefr_selection_screen.dart';
 import 'dictation_quiz_screen.dart';
+import 'export_center_screen.dart';
 import 'learning_world_map_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'object_scanner_screen.dart';
@@ -306,6 +307,22 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const WordbookImportScreen(),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(height: 12),
+
+            _buildModeButton(
+              context,
+              title: "ส่งออกคลังคำศัพท์ (Anki & PDF Glossary)",
+              icon: Icons.ios_share,
+              color: Colors.blueGrey,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const ExportCenterScreen(),
                   ),
                 );
               },

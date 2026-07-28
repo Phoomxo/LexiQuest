@@ -21,16 +21,6 @@ class QuizService {
     });
   }
 
-  /// บันทึกคะแนนของผู้ใช้ลง Firestore
-  Future<void> savePointsToFirestore(int points) async {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      await FirebaseFirestore.instance.collection('users').doc(user.uid).update(
-        {'points': points},
-      );
-    }
-  }
-
   /// สุ่มตัวเลือก
   List<String> shuffleOptions({
     required String correctAnswer,

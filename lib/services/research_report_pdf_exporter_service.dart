@@ -25,6 +25,15 @@ class InsufficientData implements Exception {
   String toString() => 'InsufficientData: $message';
 }
 
+class InvalidResearchData implements Exception {
+  final String message;
+
+  const InvalidResearchData(this.message);
+
+  @override
+  String toString() => 'InvalidResearchData: $message';
+}
+
 class ThesisAcademicStats {
   final double preTestMean;
   final double preTestSd;
@@ -59,6 +68,18 @@ class ResearchReportPdfExporterService {
       throw const InsufficientData();
     }
 
+    for (var index = 0; index < observations.length; index++) {
+      final observation = observations[index];
+      if (!_isBoundedScore(observation.preTestScore) ||
+          !_isBoundedScore(observation.postTestScore) ||
+          !_isPositiveFinite(observation.preLatencyMs) ||
+          !_isPositiveFinite(observation.postLatencyMs)) {
+        throw InvalidResearchData(
+          'Observation ${index + 1} contains an invalid score or latency.',
+        );
+      }
+    }
+
     final preTestScores = observations
         .map((observation) => observation.preTestScore)
         .toList();
@@ -76,17 +97,11 @@ class ResearchReportPdfExporterService {
     final preLatencyMs = _mean(preLatencies);
     final postLatencyMs = _mean(postLatencies);
 
-    if (preLatencyMs == 0) {
-      throw const InsufficientData(
-        'A non-zero pre-test latency baseline is required to calculate change.',
-      );
-    }
-
     return ThesisAcademicStats(
       preTestMean: preTestMean,
-      preTestSd: _populationStandardDeviation(preTestScores, preTestMean),
+      preTestSd: _sampleStandardDeviation(preTestScores, preTestMean),
       postTestMean: postTestMean,
-      postTestSd: _populationStandardDeviation(postTestScores, postTestMean),
+      postTestSd: _sampleStandardDeviation(postTestScores, postTestMean),
       meanGainPercentage: postTestMean - preTestMean,
       preLatencyMs: preLatencyMs,
       postLatencyMs: postLatencyMs,
@@ -108,12 +123,12 @@ class ResearchReportPdfExporterService {
       '===============================================================\n',
     );
     buffer.writeln('1. OBSERVED SUMMARY STATISTICS');
-    buffer.writeln('   - Sample Size (N): ${stats.sampleSize} participants');
+    buffer.writeln('   - Paired Observations (N): ${stats.sampleSize}');
     buffer.writeln(
-      '   - Pre-Test Score (Mean +/- SD): ${stats.preTestMean.toStringAsFixed(1)}% +/- ${stats.preTestSd.toStringAsFixed(1)}',
+      '   - Pre-Test Score (Mean +/- Sample SD (N-1)): ${stats.preTestMean.toStringAsFixed(1)}% +/- ${stats.preTestSd.toStringAsFixed(1)}',
     );
     buffer.writeln(
-      '   - Post-Test Score (Mean +/- SD): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
+      '   - Post-Test Score (Mean +/- Sample SD (N-1)): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
     );
     buffer.writeln(
       '   - Mean Score Change: ${_formatSigned(stats.meanGainPercentage)} percentage points',
@@ -138,12 +153,20 @@ class ResearchReportPdfExporterService {
     return values.reduce((sum, value) => sum + value) / values.length;
   }
 
-  static double _populationStandardDeviation(List<double> values, double mean) {
+  static bool _isBoundedScore(double value) {
+    return value.isFinite && value >= 0 && value <= 100;
+  }
+
+  static bool _isPositiveFinite(double value) {
+    return value.isFinite && value > 0;
+  }
+
+  static double _sampleStandardDeviation(List<double> values, double mean) {
     final variance =
         values
             .map((value) => pow(value - mean, 2))
             .reduce((sum, value) => sum + value) /
-        values.length;
+        (values.length - 1);
     return sqrt(variance);
   }
 

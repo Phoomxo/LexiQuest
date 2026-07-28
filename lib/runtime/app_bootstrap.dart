@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/app_config.dart';
 import '../firebase_options.dart';
 import '../progress/local_progress_repository.dart';
+import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -13,6 +14,7 @@ import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
+typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -46,12 +48,17 @@ Future<void> _initializeSupabaseProduction() async {
   _productionSupabaseInitialized = true;
 }
 
+Future<ProgressRepository> _loadProgressRepositoryProduction() async {
+  return LocalProgressRepository(await SharedPreferences.getInstance());
+}
+
 final class AppBootstrap {
   const AppBootstrap({
     required this.initializeFirebase,
     required this.initializeSupabase,
     required this.loadConfig,
     required this.guestSessionService,
+    this.loadProgressRepository = _loadProgressRepositoryProduction,
   });
 
   factory AppBootstrap.production() {
@@ -60,6 +67,7 @@ final class AppBootstrap {
       initializeSupabase: _initializeSupabaseProduction,
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
+      loadProgressRepository: _loadProgressRepositoryProduction,
     );
   }
 
@@ -67,14 +75,13 @@ final class AppBootstrap {
   final RuntimeInitializer initializeSupabase;
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
+  final ProgressRepositoryLoader loadProgressRepository;
 
   Future<AppDependencies> initialize() async {
     final firebase = await _availability(initializeFirebase);
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
-    final progressRepository = LocalProgressRepository(
-      await SharedPreferences.getInstance(),
-    );
+    final progressRepository = await _loadProgressRepository();
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -105,6 +112,14 @@ final class AppBootstrap {
   AppConfig? _loadConfig() {
     try {
       return loadConfig();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<ProgressRepository?> _loadProgressRepository() async {
+    try {
+      return await loadProgressRepository();
     } catch (_) {
       return null;
     }

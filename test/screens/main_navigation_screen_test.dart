@@ -35,10 +35,7 @@ void main() {
       await tester.tap(find.byType(NavigationDestination).at(3));
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('ตราความสำเร็จ & รางวัล (Achievements)'),
-        findsOneWidget,
-      );
+      expect(find.text('ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)'), findsOneWidget);
 
       await tester.tap(find.byType(NavigationDestination).at(4));
       await tester.pumpAndSettle();

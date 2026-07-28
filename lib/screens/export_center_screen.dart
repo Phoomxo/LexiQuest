@@ -83,7 +83,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Export Center (ส่งออกสมุดศัพท์ & ข้อมูลวิจัย)',
+          'ส่งออกคลังคำศัพท์: Anki & PDF Glossary',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.indigo.shade900,

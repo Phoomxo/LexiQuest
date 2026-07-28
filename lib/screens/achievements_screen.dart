@@ -5,12 +5,12 @@ import '../runtime/app_dependencies.dart';
 
 class AchievementsScreen extends StatelessWidget {
   final List<AchievementBadge>? badges;
-  final int coins;
+  final int? coins;
 
   const AchievementsScreen({
     super.key,
     this.badges,
-    this.coins = 250,
+    this.coins,
     this.remoteEconomyPolicy,
   });
 
@@ -50,9 +50,14 @@ class AchievementsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'ตราความสำเร็จ & รางวัล (Achievements)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        title: Text(
+          remoteEconomyEnabled.shopAndPurchasesEnabled
+              ? 'ตราความสำเร็จ & รางวัล (Achievements)'
+              : 'ความสำเร็จการฝึก (เฉพาะอุปกรณ์นี้)',
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
         ),
         backgroundColor: Colors.amber.shade800,
         centerTitle: true,
@@ -61,36 +66,52 @@ class AchievementsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            Card(
-              elevation: 4,
-              color: Colors.amber.shade100,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: Colors.amber.shade900,
-                          size: 36,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$coins เหรียญสะสม',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+            if (!remoteEconomyEnabled.shopAndPurchasesEnabled)
+              Card(
+                elevation: 2,
+                color: Colors.blueGrey.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: Text(
+                    'ความคืบหน้าการฝึกเฉพาะอุปกรณ์นี้ • ใช้จ่ายไม่ได้',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              )
+            else if (coins != null)
+              Card(
+                elevation: 4,
+                color: Colors.amber.shade100,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.monetization_on,
                             color: Colors.amber.shade900,
+                            size: 36,
                           ),
-                        ),
-                      ],
-                    ),
-                    if (remoteEconomyEnabled.shopAndPurchasesEnabled)
+                          const SizedBox(width: 8),
+                          Text(
+                            '$coins เหรียญสะสม',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.amber.shade900,
+                            ),
+                          ),
+                        ],
+                      ),
                       ElevatedButton.icon(
                         onPressed: () {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -108,10 +129,10 @@ class AchievementsScreen extends StatelessWidget {
                           foregroundColor: Colors.white,
                         ),
                       ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
             const SizedBox(height: 16),
             Expanded(
               child: GridView.builder(
