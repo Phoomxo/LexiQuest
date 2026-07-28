@@ -389,16 +389,26 @@ Expected: CLI contracts, dependency resolution, Dart format, Flutter analysis/te
 Run:
 
 ```powershell
-supabase db start
 try {
+  supabase db start
+  if ($LASTEXITCODE -ne 0) { throw "Supabase local database failed to start" }
+
   supabase db reset --local --no-seed
+  if ($LASTEXITCODE -ne 0) { throw "Supabase local schema reset failed" }
+
   supabase db lint --local --level warning
+  if ($LASTEXITCODE -ne 0) { throw "Supabase local schema lint failed" }
+
   supabase db advisors --local --type security --level warn --fail-on error
+  if ($LASTEXITCODE -ne 0) { throw "Supabase local security advisors failed" }
+
   Get-Content -Raw test/security/supabase_storage_contract.sql |
     docker exec -i supabase_db_lexiquest-local `
       psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f -
+  if ($LASTEXITCODE -ne 0) { throw "Supabase storage security contract failed" }
 } finally {
   supabase stop --no-backup
+  if ($LASTEXITCODE -ne 0) { throw "Supabase local database cleanup failed" }
 }
 ```
 
@@ -527,13 +537,24 @@ Run:
 
 ```powershell
 $releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
-$pr = gh pr view 3 --json headRefOid,reviews,reviewDecision,reviewRequests |
-  ConvertFrom-Json
+$prJson = gh pr view 3 --json headRefOid,reviews,reviewDecision,reviewRequests
+if ($LASTEXITCODE -ne 0) { throw "Unable to read PR #3 reviews" }
+$pr = $prJson | ConvertFrom-Json
 if ($pr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
-$pr | ConvertTo-Json -Depth 8
+$approvals = @(
+  $pr.reviews |
+    Where-Object {
+      $_.state -eq 'APPROVED' -and
+      $_.author.login -and
+      $_.author.login -ne 'Petch1910'
+    }
+)
+if ($pr.reviewDecision -ne 'APPROVED' -or $approvals.Count -lt 1) {
+  throw "PR #3 lacks a non-author APPROVED review"
+}
 ```
 
-Expected: at least one approving review from a user other than PR author `Petch1910`.
+Expected: `reviewDecision` is `APPROVED` and at least one returned review has state `APPROVED` with an author login other than PR author `Petch1910`.
 
 - [ ] **Step 2: Verify main branch protection**
 
@@ -548,17 +569,67 @@ Expected: required PR review, at least one approval, required `ci`, `Gitleaks`, 
 
 - [ ] **Step 3: Record OSV owner acceptance**
 
-Add an owner-authored PR comment:
-
-```text
-Risk accepted through 2026-10-26 for GHSA-mh99-v99m-4gvg and GHSA-w5hq-g745-h8pq under osv-scanner.toml. No dependency override is authorized. Re-evaluate and remove each exception when a safe upstream dependency tree ships.
-```
-
-Verify:
-
 ```powershell
-gh pr view 3 --comments
+$releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
+
+$repoJson = gh repo view Phoomxo/LexiQuest --json owner
+if ($LASTEXITCODE -ne 0) { throw "Unable to read repository owner" }
+$ownerLogin = ($repoJson | ConvertFrom-Json).owner.login
+
+$viewerLogin = gh api user --jq .login
+if ($LASTEXITCODE -ne 0) { throw "Unable to read authenticated GitHub identity" }
+
+$prJson = gh pr view 3 --json author,comments,headRefOid
+if ($LASTEXITCODE -ne 0) { throw "Unable to read PR #3 comments" }
+$pr = $prJson | ConvertFrom-Json
+if ($pr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
+
+$acceptanceText = @(
+  'Risk accepted through 2026-10-26 for GHSA-mh99-v99m-4gvg and GHSA-w5hq-g745-h8pq under osv-scanner.toml.'
+  'No dependency override is authorized. Re-evaluate and remove each exception when a safe upstream dependency tree ships.'
+  "Candidate SHA: $releaseSha"
+) -join [Environment]::NewLine
+
+$qualifyingComments = @(
+  $pr.comments |
+    Where-Object {
+      $_.author.login -eq $ownerLogin -and
+      $_.author.login -ne $pr.author.login -and
+      $_.body.Contains('GHSA-mh99-v99m-4gvg') -and
+      $_.body.Contains('GHSA-w5hq-g745-h8pq') -and
+      $_.body.Contains('2026-10-26') -and
+      $_.body.Contains($releaseSha)
+    }
+)
+if ($qualifyingComments.Count -eq 0) {
+  if ($viewerLogin -ne $ownerLogin -or $viewerLogin -eq $pr.author.login) {
+    throw "Repository-owner, non-author GitHub authentication is required to record acceptance"
+  }
+  gh pr comment 3 --body $acceptanceText
+  if ($LASTEXITCODE -ne 0) { throw "Unable to record owner OSV risk acceptance" }
+}
+
+$verifiedPrJson = gh pr view 3 --json author,comments,headRefOid
+if ($LASTEXITCODE -ne 0) { throw "Unable to verify PR #3 risk acceptance" }
+$verifiedPr = $verifiedPrJson | ConvertFrom-Json
+if ($verifiedPr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
+$verifiedAcceptance = @(
+  $verifiedPr.comments |
+    Where-Object {
+      $_.author.login -eq $ownerLogin -and
+      $_.author.login -ne $verifiedPr.author.login -and
+      $_.body.Contains('GHSA-mh99-v99m-4gvg') -and
+      $_.body.Contains('GHSA-w5hq-g745-h8pq') -and
+      $_.body.Contains('2026-10-26') -and
+      $_.body.Contains($releaseSha)
+    }
+)
+if ($verifiedAcceptance.Count -lt 1) {
+  throw "Owner OSV risk acceptance is not evidenced for the frozen SHA"
+}
 ```
+
+Expected: at least one repository-owner comment differs from the PR author and contains both allowed GHSA IDs, expiry `2026-10-26`, and the unchanged frozen SHA. Only an authenticated repository-owner/non-author session may create a missing acceptance comment; any authenticated reader may verify an existing qualifying comment. If an owner session is unavailable and no qualifying comment exists, leave this gate open.
 
 - [ ] **Step 4: Verify deployed Firebase and Supabase policy parity**
 
@@ -608,18 +679,52 @@ Run:
 
 ```powershell
 $mergeSha = gh pr view 3 --json mergeCommit --jq .mergeCommit.oid
+if ($LASTEXITCODE -ne 0) { throw "Unable to read PR #3 merge commit" }
 $remoteMain = gh api repos/Phoomxo/LexiQuest/commits/main --jq .sha
+if ($LASTEXITCODE -ne 0) { throw "Unable to read remote main head" }
 if ($remoteMain -ne $mergeSha) { throw "main does not point to the PR merge commit" }
-$runs = gh run list --branch main --commit $mergeSha --event push `
-  --json databaseId,workflowName,status,conclusion,headSha | ConvertFrom-Json
-if (-not $runs) { throw "No main push runs found for merge SHA" }
-foreach ($run in $runs) {
+
+$runsJson = gh run list --branch main --commit $mergeSha --event push --limit 100 `
+  --json databaseId,workflowName,status,conclusion,headSha
+if ($LASTEXITCODE -ne 0) { throw "Unable to list main push workflows" }
+$runs = @($runsJson | ConvertFrom-Json)
+
+$expectedWorkflows = @('CI', 'Secret Scan', 'OSV Scanner')
+$requiredRuns = @()
+foreach ($workflowName in $expectedWorkflows) {
+  $matches = @(
+    $runs |
+      Where-Object { $_.workflowName -eq $workflowName }
+  )
+  if ($matches.Count -ne 1) {
+    throw "Expected exactly one $workflowName push run for merge SHA; found $($matches.Count)"
+  }
+  if ($matches[0].headSha -ne $mergeSha) {
+    throw "$workflowName push run is not attached to the merge SHA"
+  }
+  $requiredRuns += $matches[0]
+}
+
+foreach ($run in $requiredRuns) {
   gh run watch $run.databaseId --exit-status
   if ($LASTEXITCODE -ne 0) { throw "main workflow failed: $($run.workflowName)" }
+
+  $runJson = gh run view $run.databaseId `
+    --json databaseId,workflowName,status,conclusion,headSha
+  if ($LASTEXITCODE -ne 0) {
+    throw "Unable to verify main workflow: $($run.workflowName)"
+  }
+  $verifiedRun = $runJson | ConvertFrom-Json
+  if ($verifiedRun.workflowName -ne $run.workflowName -or
+      $verifiedRun.headSha -ne $mergeSha -or
+      $verifiedRun.status -ne 'completed' -or
+      $verifiedRun.conclusion -ne 'success') {
+    throw "Required main workflow is not successful on merge SHA: $($run.workflowName)"
+  }
 }
 ```
 
-Expected: `main` points to the merge commit; push-triggered CI, Gitleaks, and scheduled/main OSV contexts associated with the merge commit complete successfully.
+Expected: `main` points to the merge commit; exactly one push-triggered `CI`, `Secret Scan` (Gitleaks), and `OSV Scanner` (the main/scheduled OSV workflow) run is found on that exact merge SHA, and all three finish with conclusion `success`.
 
 ### Task 9: Post-merge cleanup without deleting audit history
 
