@@ -4,21 +4,52 @@ import 'package:vocab_learning_app/services/research_report_pdf_exporter_service
 void main() {
   const service = ResearchReportPdfExporterService();
 
-  test('calculateAcademicStats calculates mean and SD correctly', () {
-    final records = [
-      {'latencyMs': 2000},
-      {'latencyMs': 1000},
-    ];
+  const observations = [
+    ResearchObservation(
+      preTestScore: 60,
+      postTestScore: 80,
+      preLatencyMs: 3000,
+      postLatencyMs: 1500,
+    ),
+    ResearchObservation(
+      preTestScore: 70,
+      postTestScore: 90,
+      preLatencyMs: 1000,
+      postLatencyMs: 500,
+    ),
+  ];
 
-    final stats = service.calculateAcademicStats(records);
+  test(
+    'calculateAcademicStats rejects empty research observations explicitly',
+    () {
+      expect(
+        () => service.calculateAcademicStats(const []),
+        throwsA(isA<InsufficientData>()),
+      );
+    },
+  );
+
+  test('calculateAcademicStats derives statistics from typed observations', () {
+    final stats = service.calculateAcademicStats(observations);
+
     expect(stats.sampleSize, 2);
-    expect(stats.postLatencyMs, 1500.0);
+    expect(stats.preTestMean, 65.0);
+    expect(stats.postTestMean, 85.0);
+    expect(stats.preLatencyMs, 2000.0);
+    expect(stats.postLatencyMs, 1000.0);
+    expect(stats.latencyReductionPercentage, 50.0);
   });
 
-  test('generateAcademicPdfReport formats research report text', () {
-    final report = service.generateAcademicPdfReport([]);
-    expect(report.contains('LEXIQUEST RESEARCH SUMMARY REPORT'), true);
-    expect(report.contains('Sample Size (N)'), true);
-    expect(report.contains('Paired-Samples t-Test'), true);
+  test('generateAcademicPdfReport contains only derived statistics', () {
+    final report = service.generateAcademicPdfReport(observations);
+
+    expect(report, contains('Sample Size (N): 2 participants'));
+    expect(report, contains('65.0%'));
+    expect(report, contains('85.0%'));
+    expect(report, contains('2000 ms'));
+    expect(report, contains('1000 ms'));
+    expect(report, isNot(contains('Expected Significance')));
+    expect(report, isNot(contains('p <')));
+    expect(report, isNot(contains('Paired-Samples t-Test')));
   });
 }

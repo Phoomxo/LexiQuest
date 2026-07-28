@@ -17,8 +17,6 @@ import 'sentence_scramble_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'smart_audio_playlist_screen.dart';
 import 'srs_flashcards_screen.dart';
-import 'thesis_chart_screen.dart';
-import 'export_center_screen.dart';
 import 'ghost_shadow_duel_screen.dart';
 import 'interactive_storybook_screen.dart';
 import 'wordbook_import_screen.dart';
@@ -314,23 +312,6 @@ class ChooseModeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 12),
 
-            // 📄 11.1 ระบบส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)
-            _buildModeButton(
-              context,
-              title: "📄 ส่งออกสมุดศัพท์ & ข้อมูลวิจัย (Export Center)",
-              icon: Icons.download_for_offline,
-              color: Colors.indigo.shade800,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ExportCenterScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
             // 🔤 12. สำรวจสัทอักษร IPA (Phonetic Explorer)
             _buildModeButton(
               context,
@@ -342,23 +323,6 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const PhoneticExplorerScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // 📊 13. กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)
-            _buildModeButton(
-              context,
-              title: "กราฟผลสัมฤทธิ์งานวิจัย (Thesis Auto-Chart)",
-              icon: Icons.bar_chart,
-              color: Colors.indigo.shade900,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ThesisChartScreen(),
                   ),
                 );
               },

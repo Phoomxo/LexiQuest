@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/local_user_progress_store.dart';
 import 'achievements_screen.dart';
 import 'avatar_equipment_screen.dart';
-import 'export_center_screen.dart';
 import 'select_wallpaper_screen.dart';
 
 class SettingScreen extends StatefulWidget {
@@ -260,22 +259,6 @@ class _SettingScreenState extends State<SettingScreen> {
                         label: const Text('เหรียญรางวัล'),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ExportCenterScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.download_for_offline, size: 18),
-                        label: const Text('ส่งออกข้อมูล'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo.shade800,
                           foregroundColor: Colors.white,
                         ),
                       ),

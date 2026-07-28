@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../services/anki_dictionary_exporter_service.dart';
 import '../services/pdf_glossary_exporter_service.dart';
-import '../services/research_data_exporter_service.dart';
 
 class ExportCenterScreen extends StatefulWidget {
   const ExportCenterScreen({super.key});
@@ -14,9 +13,6 @@ class ExportCenterScreen extends StatefulWidget {
 class _ExportCenterScreenState extends State<ExportCenterScreen> {
   final PdfGlossaryExporterService _pdfService =
       const PdfGlossaryExporterService();
-  final ResearchDataExporterService _researchService =
-      const ResearchDataExporterService();
-
   String _previewContent = '';
   String _activeTab = 'anki';
 
@@ -72,31 +68,6 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
     });
   }
 
-  void _generateResearchCsv() {
-    final records = [
-      {
-        'word': 'perseverance',
-        'cefr_level': 'B2',
-        'latency_ms': 2400,
-        'accuracy_percent': 95.0,
-        'srs_box': 4,
-        'reviewed_at': DateTime.now().toIso8601String(),
-      },
-      {
-        'word': 'resilience',
-        'cefr_level': 'B2',
-        'latency_ms': 1800,
-        'accuracy_percent': 100.0,
-        'srs_box': 5,
-        'reviewed_at': DateTime.now().toIso8601String(),
-      },
-    ];
-    setState(() {
-      _activeTab = 'csv';
-      _previewContent = _researchService.generateCsvReport(records);
-    });
-  }
-
   void _copyToClipboard() {
     Clipboard.setData(ClipboardData(text: _previewContent));
     ScaffoldMessenger.of(context).showSnackBar(
@@ -136,18 +107,12 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                   label: Text('PDF Glossary'),
                   icon: Icon(Icons.picture_as_pdf, size: 16),
                 ),
-                ButtonSegment(
-                  value: 'csv',
-                  label: Text('Research CSV'),
-                  icon: Icon(Icons.table_chart, size: 16),
-                ),
               ],
               selected: {_activeTab},
               onSelectionChanged: (Set<String> newSelection) {
                 final selected = newSelection.first;
                 if (selected == 'anki') _generateAnkiExport();
                 if (selected == 'pdf') _generatePdfGlossary();
-                if (selected == 'csv') _generateResearchCsv();
               },
             ),
             const SizedBox(height: 16),

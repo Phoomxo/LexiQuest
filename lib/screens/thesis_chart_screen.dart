@@ -8,9 +8,9 @@ class ThesisChartScreen extends StatelessWidget {
 
   const ThesisChartScreen({
     super.key,
-    this.preTestScore = 52.0,
-    this.postTestScore = 88.5,
-    this.latencyTrend = const [2400, 2100, 1850, 1600, 1300, 1150],
+    required this.preTestScore,
+    required this.postTestScore,
+    required this.latencyTrend,
   });
 
   @override
@@ -71,8 +71,16 @@ class ThesisChartScreen extends StatelessWidget {
                       sideTitles: SideTitles(
                         showTitles: true,
                         getTitlesWidget: (val, meta) {
-                          if (val == 0) return const Text('Pre-Test (52%)');
-                          if (val == 1) return const Text('Post-Test (88.5%)');
+                          if (val == 0) {
+                            return Text(
+                              'Pre-Test (${preTestScore.toStringAsFixed(1)}%)',
+                            );
+                          }
+                          if (val == 1) {
+                            return Text(
+                              'Post-Test (${postTestScore.toStringAsFixed(1)}%)',
+                            );
+                          }
                           return const Text('');
                         },
                       ),
