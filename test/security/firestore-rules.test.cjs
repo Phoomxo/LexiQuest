@@ -7,12 +7,16 @@ const {
   initializeTestEnvironment,
 } = require('@firebase/rules-unit-testing');
 const {
+  collection,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
+  query,
   serverTimestamp,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } = require('firebase/firestore');
 
@@ -70,30 +74,77 @@ after(async () => {
   await testEnv?.cleanup();
 });
 
-describe('purchased_items transaction integrity', () => {
-  it('denies minting an item without atomically debiting points', async () => {
+describe('Release A remote economy lockdown', () => {
+  it('denies an owner creating remote economy state', async () => {
+    const db = authDb();
+
+    await assertFails(
+      setDoc(doc(db, 'state', alice), { totalPoints: 100 }),
+    );
+  });
+
+  it('denies an owner creating wallpaper-only state', async () => {
+    const db = authDb();
+
+    await assertFails(
+      setDoc(
+        doc(db, 'state', alice),
+        { selectedWallpaper: 'wallpaper_neon.png' },
+      ),
+    );
+  });
+
+  for (const [field, value] of [
+    ['totalPoints', 150],
+    ['totalCorrectAnswers', 1],
+    ['totalWrongAnswers', 1],
+    ['gamesPlayed', 1],
+  ]) {
+    it(`denies an owner changing remote economy counter ${field}`, async () => {
+      await seedStateAndProduct();
+      const db = authDb();
+
+      await assertFails(
+        updateDoc(doc(db, 'state', alice), { [field]: value }),
+      );
+    });
+  }
+
+  it('denies mixing a wallpaper preference with an economy mutation', async () => {
     await seedStateAndProduct();
     const db = authDb();
 
     await assertFails(
-      setDoc(doc(db, 'purchased_items', purchaseId), purchaseData()),
+      updateDoc(doc(db, 'state', alice), {
+        selectedWallpaper: 'wallpaper_neon.png',
+        totalPoints: 150,
+      }),
     );
   });
 
-  it('denies a purchase whose submitted price differs from the catalog', async () => {
+  it('allows an owner to update only the wallpaper preference', async () => {
     await seedStateAndProduct();
     const db = authDb();
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'state', alice), { totalPoints: 99 });
-    batch.set(
-      doc(db, 'purchased_items', purchaseId),
-      purchaseData(1),
+
+    await assertSucceeds(
+      updateDoc(doc(db, 'state', alice), {
+        selectedWallpaper: 'wallpaper_neon.png',
+      }),
+    );
+    await assertSucceeds(
+      updateDoc(doc(db, 'state', alice), { selectedWallpaper: null }),
     );
 
-    await assertFails(batch.commit());
+    const state = await assertSucceeds(getDoc(doc(db, 'state', alice)));
+    if (
+      state.data().totalPoints !== 100
+      || state.data().selectedWallpaper !== null
+    ) {
+      throw new Error('Wallpaper-only update changed remote economy state.');
+    }
   });
 
-  it('allows one purchase with the exact catalog price and atomic debit', async () => {
+  it('denies an exact-price purchase even with an atomic debit', async () => {
     await seedStateAndProduct();
     const db = authDb();
     const batch = writeBatch(db);
@@ -103,34 +154,67 @@ describe('purchased_items transaction integrity', () => {
       purchaseData(),
     );
 
-    await assertSucceeds(batch.commit());
+    await assertFails(batch.commit());
+  });
+
+  it('denies direct creation of a purchased item', async () => {
+    await seedStateAndProduct();
+    const db = authDb();
+
+    await assertFails(
+      setDoc(doc(db, 'purchased_items', purchaseId), purchaseData()),
+    );
+  });
+
+  it('keeps purchased items immutable to clients', async () => {
+    await seedStateAndProduct();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), 'purchased_items', purchaseId),
+        purchaseData(),
+      );
+    });
+    const db = authDb();
+    const purchaseRef = doc(db, 'purchased_items', purchaseId);
+
+    await assertFails(updateDoc(purchaseRef, { total_price: 1 }));
+    await assertFails(deleteDoc(purchaseRef));
+  });
+
+  it('keeps legacy owner state and purchase records readable', async () => {
+    await seedStateAndProduct();
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(
+        doc(context.firestore(), 'purchased_items', purchaseId),
+        purchaseData(),
+      );
+    });
+    const db = authDb();
+
     const state = await assertSucceeds(getDoc(doc(db, 'state', alice)));
     const purchase = await assertSucceeds(
       getDoc(doc(db, 'purchased_items', purchaseId)),
     );
-    if (state.data().totalPoints !== 50 || purchase.data().total_price !== 50) {
-      throw new Error('The committed purchase does not match the expected debit.');
+    const purchases = await assertSucceeds(
+      getDocs(
+        query(
+          collection(db, 'purchased_items'),
+          where('user_id', '==', alice),
+        ),
+      ),
+    );
+    const bobDb = authDb('bob_uid');
+    await assertFails(getDoc(doc(bobDb, 'state', alice)));
+    await assertFails(
+      getDoc(doc(bobDb, 'purchased_items', purchaseId)),
+    );
+    if (
+      state.data().totalPoints !== 100
+      || purchase.data().product_id !== productId
+      || purchases.size !== 1
+    ) {
+      throw new Error('Legacy owner records were not preserved.');
     }
-  });
-
-  it('denies a second purchase of the same product', async () => {
-    await seedStateAndProduct();
-    const db = authDb();
-    const first = writeBatch(db);
-    first.update(doc(db, 'state', alice), { totalPoints: 50 });
-    first.set(
-      doc(db, 'purchased_items', purchaseId),
-      purchaseData(),
-    );
-    await assertSucceeds(first.commit());
-
-    const second = writeBatch(db);
-    second.update(doc(db, 'state', alice), { totalPoints: 0 });
-    second.set(
-      doc(db, 'purchased_items', purchaseId),
-      purchaseData(),
-    );
-    await assertFails(second.commit());
   });
 });
 
@@ -226,12 +310,14 @@ describe('anonymous user isolation & cross-account integrity contract', () => {
   });
 
   it('denies user from writing to another user\'s state document', async () => {
+    await seedStateAndProduct();
     const db = authDb('bob_uid');
+
     await assertFails(
-      setDoc(doc(db, 'state', alice), {
-        totalPoints: 99999,
-      }),
+      updateDoc(
+        doc(db, 'state', alice),
+        { selectedWallpaper: 'wallpaper_neon.png' },
+      ),
     );
   });
 });
-

@@ -110,40 +110,11 @@ service cloud.firestore {
         && request.resource.data.occurredAtUtc.size() <= 40;
     }
 
-    // A purchase record may only be created by the same atomic write that
-    // debits the buyer's points by the exact positive catalog price.
-    function purchaseIntegrityOk(database) {
-      let productDoc = get(
-        /databases/$(database)/documents/products/$(request.resource.data.product_id)
-      );
-      let stateDoc = get(
-        /databases/$(database)/documents/state/$(request.auth.uid)
-      );
-      let stateAfterDoc = getAfter(
-        /databases/$(database)/documents/state/$(request.auth.uid)
-      );
-      return exists(
-          /databases/$(database)/documents/products/$(request.resource.data.product_id)
-        )
-        && productDoc.data.price is int
-        && productDoc.data.price > 0
-        && request.resource.data.total_price == productDoc.data.price
-        && exists(
-          /databases/$(database)/documents/state/$(request.auth.uid)
-        )
-        && stateDoc.data.totalPoints is int
-        && stateDoc.data.totalPoints >= request.resource.data.total_price
-        && stateAfterDoc.data.totalPoints is int
-        && stateAfterDoc.data.totalPoints
-             == stateDoc.data.totalPoints
-                - request.resource.data.total_price;
-    }
-
     // -------------------------------------------------------------------------
-    // users/{uid} - profile + per-user points. Keyed by uid; self only.
+    // users/{uid} - profile + legacy per-user counters. Keyed by uid; self only.
     //   create: AuthService.registerUser (first_name, last_name, email, age,
     //           createdAt via serverTimestamp)
-    //   update: QuizScreen._savePointsToFirestore (merge totalPoints/gamesPlayed)
+    //   update: profile fields; legacy counter fields have no active writer
     //   read  : SettingScreen, UserService.getUserData
     //   createdAt is server-controlled and immutable after creation.
     // -------------------------------------------------------------------------
@@ -206,43 +177,24 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // state/{uid} - per-user game stats + selected wallpaper. Keyed by uid.
-    //   create/update: ScoreScreen (merge increments), ShopPage transaction
-    //                  (totalPoints increment), SelectWallpaperScreen
-    //                  (selectedWallpaper update)
-    //   read         : ScoreScreen, QuizScreen, ShopPage, UserService
-    //   NOTE: totalPoints is client-incrementable; tamper-proof scoring needs a
-    //   server-side writer (Cloud Function/Callable). See explanation.
+    // state/{uid} - legacy per-user game stats + selected wallpaper.
+    //   read  : authenticated owner only
+    //   write : clients may update selectedWallpaper only
+    // Remote counters stay read-only until a trusted server writer is deployed.
     // -------------------------------------------------------------------------
     match /state/{uid} {
       allow read: if isSignedIn() && request.auth.uid == uid;
 
-      allow create, update: if isSignedIn()
+      allow create: if false;
+
+      allow update: if isSignedIn()
         && request.auth.uid == uid
         && request.resource.data is map
-        && request.resource.data.keys().hasOnly([
-             'totalPoints', 'totalCorrectAnswers', 'totalWrongAnswers',
-             'gamesPlayed', 'selectedWallpaper'
-           ])
-        && (!('totalPoints' in request.resource.data.keys())
-             || (request.resource.data.totalPoints is int
-                 && request.resource.data.totalPoints >= -100000000
-                 && request.resource.data.totalPoints <= 100000000))
-        && (!('totalCorrectAnswers' in request.resource.data.keys())
-             || (request.resource.data.totalCorrectAnswers is int
-                 && request.resource.data.totalCorrectAnswers >= 0
-                 && request.resource.data.totalCorrectAnswers <= 100000000))
-        && (!('totalWrongAnswers' in request.resource.data.keys())
-             || (request.resource.data.totalWrongAnswers is int
-                 && request.resource.data.totalWrongAnswers >= 0
-                 && request.resource.data.totalWrongAnswers <= 100000000))
-        && (!('gamesPlayed' in request.resource.data.keys())
-             || (request.resource.data.gamesPlayed is int
-                 && request.resource.data.gamesPlayed >= 0
-                 && request.resource.data.gamesPlayed <= 100000000))
-        && (!('selectedWallpaper' in request.resource.data.keys())
-             || request.resource.data.selectedWallpaper is string
-             || request.resource.data.selectedWallpaper == null);
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['selectedWallpaper'])
+        && 'selectedWallpaper' in request.resource.data
+        && (request.resource.data.get('selectedWallpaper', null) is string
+            || request.resource.data.get('selectedWallpaper', null) == null);
 
       allow delete: if false;
     }
@@ -363,29 +315,15 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
-    // purchased_items/{purchaseId} - per-user ownership records.
-    //   create: ShopPage._buyProduct transaction (user_id == current user)
-    //   read  : ShopPage, SelectWallpaperScreen (both filter .where('user_id'))
+    // purchased_items/{purchaseId} - legacy per-user ownership records.
+    //   read  : authenticated owner only
+    //   write : disabled until purchases use a trusted server writer
     // -------------------------------------------------------------------------
     match /purchased_items/{purchaseId} {
       allow read: if isSignedIn()
         && resource.data.user_id == request.auth.uid;
 
-      allow create: if isRegisteredUser()
-        && request.resource.data is map
-        && request.resource.data.keys().hasOnly(['user_id', 'product_id', 'total_price', 'created_at'])
-        && request.resource.data.user_id is string
-        && request.resource.data.user_id == request.auth.uid
-        && request.resource.data.product_id is string
-        && request.resource.data.product_id.size() > 0
-        && request.resource.data.product_id.size() <= 120
-        && request.resource.data.total_price is int
-        && request.resource.data.total_price > 0
-        && request.resource.data.total_price <= 100000000
-        && request.resource.data.created_at is timestamp
-        && purchaseIntegrityOk(database);
-
-      allow update, delete: if false;
+      allow create, update, delete: if false;
     }
 
     // -------------------------------------------------------------------------

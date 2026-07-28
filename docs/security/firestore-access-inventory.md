@@ -1,7 +1,6 @@
 # Firestore Client Access Inventory
 
-Date: 2026-07-26
-Branch: `feature/production-vertical-slices`
+Updated: 2026-07-28
 
 ## Scope summary
 
@@ -28,30 +27,33 @@ collections, which is the dominant compatibility risk for any ownership rule.
 ### `users/{uid}` — owned by document id
 - Write `set` (AuthService.registerUser): `first_name`, `last_name`,
   `email`, `age`, `createdAt` (server timestamp).
-- Write `set` (UserService.saveUserData): `first_name`, `last_name`,
-  `email`, `points`. Omits `age` and `createdAt`.
-- Write `update` (UserService.updateUserPoints, QuizService.savePointsToFirestore):
-  `points` (increment / literal).
-- Write `set merge` (quiz_screen._savePointsToFirestore): `totalPoints`,
-  `gamesPlayed` (increment). Note field-name divergence from `points`.
+- Unused legacy helper `UserService.saveUserData` attempts `first_name`,
+  `last_name`, `email`, and `points`; it omits required `age` and `createdAt`,
+  so current create rules reject the payload.
+- No active quiz path writes `points`, `totalPoints`, or `gamesPlayed`.
+  Firestore rules still accept some legacy owner counter updates, so these
+  fields remain non-authoritative until the trusted-writer migration.
 - Read (UserService.getUserData, SettingScreen): `first_name`, `last_name`,
   `email`, `age`, `points`.
 - **Rule note:** no owner field is stored. A rule must key on the path
   wildcard `match /users/{userId}` with `userId == request.auth.uid`.
 
 ### `state/{uid}` — owned by document id; NO stored owner field
-- Write `set merge` (ScoreScreen._updateUserStats): `totalPoints`,
-  `totalCorrectAnswers`, `totalWrongAnswers`, `gamesPlayed` (all increment).
+- ScoreScreen no longer writes this collection; completed-session progress is
+  stored locally through `ProgressRepository`.
 - Write `update` (SelectWallpaperScreen._setWallpaper): `selectedWallpaper`
   (nullable; may be written as null).
-- Write `update` in transaction (ShopPage._buyProduct): `totalPoints`
-  (negative increment).
-- Read (ScoreScreen, ShopPage, UserService.getTotalPointsFromState,
+- Dormant legacy write: ShopPage._buyProduct attempts a negative
+  `totalPoints` increment. `RemoteEconomyPolicy` closes the screen and
+  Firestore rules deny the write.
+- Read (dormant ShopPage, UserService.getTotalPointsFromState,
   quiz_screen._loadBackground): `totalPoints`, `selectedWallpaper`.
 - **Rule note:** the document carries no `uid`/`user_id`. A rule anchored on
-  a stored owner field rejects every access. Must be `state/{userId}` with
-  `userId == request.auth.uid`. The `selectedWallpaper` write uses `.update()`
-  and assumes the document already exists (created lazily by ScoreScreen).
+  a stored owner field rejects every access. The repository rule keys owner
+  reads on `state/{userId}`, denies client create/delete and counter changes,
+  and permits only a `selectedWallpaper`-only update. The wallpaper write uses
+  `.update()` and therefore requires a pre-existing legacy or trusted-writer
+  document.
 
 ### `categories/{categoryId}` — owned by stored `uid`
 - Write `set` (CategoryService.addCategory / addCategoryForUser /
@@ -116,13 +118,14 @@ collections, which is the dominant compatibility risk for any ownership rule.
   reads degrade to defaults.
 
 ### `purchased_items/{purchaseId}` — owned by stored `user_id`
-- Write `set` in transaction (ShopPage._buyProduct): `user_id`, `product_id`,
-  `total_price`, `created_at` (client timestamp).
+- Dormant legacy write: ShopPage._buyProduct attempts a transactional `set`
+  with `user_id`, `product_id`, `total_price`, and `created_at`; repository
+  rules deny every client write.
 - Read (ShopPage._buyProduct): `.where('user_id', isEqualTo: uid).where(
   'product_id', isEqualTo: productId)`.
 - Read (SelectWallpaperScreen): `.where('user_id', isEqualTo: uid)`; `product_id`.
-- **Rule note:** an ownership rule on `user_id` is satisfiable for these
-  filtered reads.
+- **Rule note:** owner reads remain satisfiable for these filtered queries;
+  create, update, and delete are denied until a trusted server writer exists.
 
 ### `voice_telemetry_events/{eventId}` — global append, no owner in payload
 - Write `add` (FirestoreVoiceTelemetrySink): the VoiceTelemetryEvent.toMap
@@ -141,7 +144,10 @@ against this inventory. Confirm that:
 
 - `users`, `state`, and `products` reads are keyed on document id (path
   wildcard), not a stored owner field;
-- `state` is not gated on any field that is never written;
+- `state` denies client creation and counter mutation while preserving only
+  owner reads and `selectedWallpaper`-only updates;
+- `purchased_items` preserves owner-filtered legacy reads and denies every
+  client write;
 - `categories/words` list rules are satisfiable for the unfiltered client
   reads (parent-category lookup) without leaking cross-user words;
 - `quiz`, `global_words`, `products` (seed), and `voice_telemetry_events`

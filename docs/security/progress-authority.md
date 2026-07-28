@@ -1,116 +1,97 @@
 # Progress Authority and Trusted-Writer Migration
 
-Date: 2026-07-27
-Branch: `feature/production-vertical-slices`
+Updated: 2026-07-28
+Release A security status: remote economy writes are closed at the Firestore
+rules boundary.
 
 ## Purpose
 
-State the trust boundary for learner progress (points, answers, games) and
-the shop balance; explain why the current Firestore layout cannot make a
-client-mintable balance trustworthy; and lay out a compatibility-ordered
-migration to a server-authoritative writer. This is a design artifact, not a
-declaration that any callable or rules migration is complete.
+State the trust boundary for learner progress (points, answers, games) and the
+shop balance. Release A keeps progress local and non-spendable, disables Shop
+and leaderboard navigation, denies client writes to remote economy state and
+purchase ownership, and preserves owner reads of legacy records. A trusted
+server writer is still required before any remote economy can be reopened.
 
 ## Current writers and readers
 
-Three divergent per-user counter stores exist. Only one is consumed by the
-shop.
+The legacy schema can contain three divergent per-user counter stores. Only
+`state.totalPoints` is referenced by the dormant Shop implementation.
 
-### `state/{uid}` — the balance the shop trusts
+### `state/{uid}` — legacy balance and wallpaper state
 
-- Writers:
-  - `lib/screens/score_screen.dart` `_updateUserStats`: `set(..., merge)` with
-    `FieldValue.increment(correctAnswers)` on `totalPoints`,
-    `totalCorrectAnswers`, `totalWrongAnswers`, and `+1` on `gamesPlayed`.
-  - `lib/screens/shop_page.dart` `_buyProduct`: inside `runTransaction`,
-    `transaction.update` with `FieldValue.increment(-productPrice)` on
-    `totalPoints`.
-  - `lib/screens/select_wallpaper_screen.dart` `_setWallpaper`: `.update` of
-    `selectedWallpaper`.
-- Readers: `lib/screens/score_screen.dart` (renders `totalPoints` and stats),
-  `lib/screens/shop_page.dart` `_fetchUserPoints` (balance for purchase
-  gating), `lib/screens/quiz_screen.dart` `_loadBackground` (wallpaper),
-  `lib/services/user_service.dart` `getTotalPointsFromState`.
-- Rule: `firestore.rules` `match /state/{uid}` allows `create, update` for the
-  signed-in owner with type/bound checks. **`totalPoints` is a
-  client-incrementable integer**; the rule does not bind it to a graded
-  result.
+- Client write attempts:
+  - `lib/screens/shop_page.dart` still contains the legacy purchase
+    transaction, but production navigation and the screen itself are closed
+    by `RemoteEconomyPolicy`, and Firestore rules reject its counter debit.
+  - `lib/screens/select_wallpaper_screen.dart` may update only
+    `selectedWallpaper` on an existing owner document.
+  - `ScoreScreen` records progress through the local idempotent
+    `ProgressRepository`; it no longer writes remote counters.
+- Readers: dormant `ShopPage` and `UserService.getTotalPointsFromState` can
+  read the legacy balance; `QuizScreen._loadBackground` reads the wallpaper.
+- Rule: `firestore.rules` `match /state/{uid}` preserves owner reads, denies
+  client creates and deletes, and permits updates only when
+  `selectedWallpaper` is the sole affected field. Remote counters are
+  read-only to clients.
 
-### `users/{uid}.totalPoints` — divergent counter, not consumed by the shop
+### `users/{uid}` — profile with legacy counter fields
 
-- Writer: `lib/screens/quiz_screen.dart` `_savePointsToFirestore`:
-  `set(..., merge)` on `users/{uid}` with `FieldValue.increment(userPoints)`
-  and `+1` on `gamesPlayed`.
-- Reader: none evidenced for purchase or display. This counter drifts
-  independently of `state.totalPoints` and is a redundant authority.
-
-### `users/{uid}.points` — third counter, partially dead
-
-- Writers: `lib/services/user_service.dart` `saveUserData` (literal `set`) and
-  `updateUserPoints` (`FieldValue.increment`);
-  `lib/services/quiz_service.dart` `savePointsToFirestore` (literal `update`).
-  `QuizService` is not instantiated in the app (per the client access
-  inventory), so that writer is effectively dead.
-- Reader: `lib/models/user_model.dart` `AppUser.fromMap` reads `points`,
-  surfaced via `lib/screens/setting_screen.dart`.
+- `UserService.saveUserData` is an unused legacy helper whose payload omits
+  required registration fields and is rejected on create by current rules.
+  No active quiz path writes `points`, `totalPoints`, or `gamesPlayed`.
+- The rules still permit owner updates to legacy counter fields. They are not
+  consumed by the disabled Shop or leaderboard and remain non-authoritative.
+- `AppUser.fromMap` can read `points` for profile display compatibility.
 
 ### `purchased_items/{purchaseId}` — ownership records
 
-- Writer: `lib/screens/shop_page.dart` `_buyProduct`, inside the same
-  transaction that debits `state.totalPoints`, writes `user_id`,
-  `product_id`, `total_price`, `created_at`.
+- Dormant legacy writer: `lib/screens/shop_page.dart` `_buyProduct` attempts
+  to write `user_id`, `product_id`, `total_price`, and `created_at` in the
+  same transaction that debits `state.totalPoints`; current rules reject it.
 - Readers: `lib/screens/shop_page.dart` `_buyProduct` (duplicate-purchase
   guard, filtered by `user_id` + `product_id`) and
   `lib/screens/select_wallpaper_screen.dart` (ownership list, filtered by
   `user_id`).
-- Rule: `firestore.rules` `match /purchased_items/{purchaseId}` allows
-  `create` only when `purchaseIntegrityOk(database)` holds (see below);
-  update and delete are denied.
+- Rule: `firestore.rules` `match /purchased_items/{purchaseId}` preserves
+  owner reads of legacy ownership records and denies all client writes.
 
 ## Divergent points stores
 
-`totalPoints` lives in two documents (`state/{uid}` and `users/{uid}`), and a
-third `points` field lives on `users/{uid}`. They are written by three
-different code paths with no shared authority:
+Legacy data can contain `totalPoints` in both `state/{uid}` and `users/{uid}`,
+plus a third `points` field on `users/{uid}`. These fields have no shared
+authority and are not part of the local `ProgressRepository`.
 
-- `state.totalPoints` is debited by purchases and rendered as the balance;
-- `users.totalPoints` is incremented at end-of-quiz and never spent;
-- `users.points` is written by `UserService` and a dead `QuizService`.
+Net effect: legacy documents can still contain three different "totals".
+Release A treats all of them as non-authoritative, excludes them from remote
+economy and research claims, and prevents clients from changing the
+shop-readable `state.totalPoints`. The redundant fields on `users/{uid}` remain
+a migration concern, but no enabled purchase or leaderboard path consumes
+them.
 
-Net effect: a learner can hold three different "totals" at once, and only the
-shop-readable `state.totalPoints` has any spend-side guarantee. Any analytics
-or ranking that reads a different field measures a different quantity than
-the shop honors.
+## ScoreScreen persistence status
 
-## ScoreScreen side effect in `build()`
+The former Firestore increment from `ScoreScreen.build()` has been removed.
+`ScoreScreen` now records a stable `sessionId` through
+`ProgressRepository.recordSession(...)`, and displays a device-local snapshot.
+This closes rebuild-driven double counting without claiming that local results
+are server-authoritative or spendable.
 
-`ScoreScreen.build()` calls `_updateUserStats(...)` synchronously (a
-fire-and-forget `Future`) on every build. Because the surrounding widget is a
-`FutureBuilder` over `state/{uid}`, each rebuild re-issues a Firestore write
-that increments `totalPoints`/answers/`gamesPlayed`. `build()` is otherwise
-expected to be free of side effects; placing an incrementing write there means
-the recorded progress depends on how often the framework rebuilds the widget,
-not only on how many questions the learner answered. This is the proximate
-double-counting hazard and the reason a single idempotent writer is needed.
+## Release A remote economy lockdown
 
-## Why `purchaseIntegrityOk` is necessary but not sufficient
+The earlier exact-debit rule was insufficient because the same authenticated
+client could first mint `state.totalPoints`, then debit the fabricated balance
+and create a matching ownership record. Release A therefore closes both sides
+of that chain at the trusted boundary:
 
-`firestore.rules` `purchaseIntegrityOk(database)` is a strong atomic guarantee
-for *spending*: a `purchased_items` create is accepted only when, in the same
-batch, `state.totalPoints` drops by exactly the positive catalog `price`, the
-balance before was at least that price, and the product exists. It prevents a
-client from creating ownership records without paying, or from paying a
-mismatched price.
+- clients cannot create `state/{uid}` or change any remote counter;
+- a state update succeeds only when `selectedWallpaper` is the sole affected
+  field;
+- clients cannot create, update, or delete `purchased_items`;
+- owner reads of existing state and ownership records remain available.
 
-It cannot make the balance itself trustworthy because the balance is
-client-incrementable. A signed-in user can write `state/{uid}` directly (the
-rule permits `update` of `totalPoints` within bounds) and mint any balance up
-to the field ceiling before calling `_buyProduct`. `purchaseIntegrityOk` then
-correctly observes "the balance was debited by the price" — but the balance it
-observes was self-awarded. Atomic spend-integrity and authoritative
-credit-integrity are different properties; the rules provide the former, not
-the latter. No client-side check can supply authoritative credit, because the
-crediting write originates on the client.
+Firebase Admin SDK writes are not governed by client Firestore rules. A future
+trusted writer can therefore be deployed and validated before narrowly
+reopening any client-facing workflow.
 
 ## Research-data integrity impact (scoped)
 
@@ -131,9 +112,10 @@ This is bounded and must not be overstated:
 
 ## Target progression (compatibility-ordered)
 
-Each step is a prerequisite for the next. None is declared complete here.
+The status of each step is stated explicitly; reopening the economy still
+requires the trusted-writer sequence below.
 
-1. **Local idempotent outbox (underway via TDD; no Firebase dependency).**
+1. **Local idempotent progress store (complete for Release A).**
    Capture each completed session once, by stable session id, in a local
    store before any Firestore write. The test
    `test/progress/local_progress_repository_test.dart` fixes the contract:
@@ -157,14 +139,13 @@ Each step is a prerequisite for the next. None is declared complete here.
    This is a Firebase-project prerequisite and is not present in this
    repository today (no `functions/` backend exists).
 
-3. **Rules deny client counter writes.** Once the callable owns all credited
-   writes, tighten `firestore.rules`: deny client `create/update` of
-   `totalPoints`, `totalCorrectAnswers`, `totalWrongAnswers`, and
-   `gamesPlayed` on `state/{uid}`, and the divergent counters on
-   `users/{uid}`. `selectedWallpaper` and profile fields stay client-writable.
-   `purchaseIntegrityOk` stays, now guarding spends against a balance the
-   client can no longer inflate. Deploy and emulator-test before shipping;
-   clients must be off the client-write path first (see order below).
+3. **Rules deny client economy writes (complete for Release A state and
+   purchases).** `firestore.rules` denies client creation and counter mutation
+   on `state/{uid}` and denies all client writes to `purchased_items`.
+   `selectedWallpaper` remains the only allowed state update. Before reopening
+   the economy, also remove or deny the divergent counters on `users/{uid}`,
+   deploy the trusted writer, test deployed-policy parity, and route the
+   client through the local outbox.
 
 4. **Optional server-side grading (residual hardening).** Move correctness
    scoring server-side so the answer tally is not client-claimed. This closes
@@ -182,21 +163,26 @@ Each step is a prerequisite for the next. None is declared complete here.
   must be reconciled with the reviewed rules (per
   `docs/security/2026-07-26-stabilization-gate.md`).
 
-## Compatibility order (do not break old clients)
+## Compatibility order for reopening the economy
 
-1. Ship Step 1 (local outbox). Existing client counter writes still work;
-   behavior is unchanged for users who never upgrade.
-2. Deploy the callable (Step 2) and have *new* clients route credits through
-   it while still tolerating the old client-written counters.
-3. Only after telemetry shows no active clients writing counters directly,
-   tighten the rules (Step 3). Tightening before clients migrate makes the
-   app silently lose progress on old versions, because the existing writers
-   (`score_screen.dart`, `quiz_screen.dart`) would be denied.
+1. Keep Shop, purchases, leaderboards, and remote economy writes disabled.
+   Old clients that attempt those writes are intentionally denied; their
+   self-authored balances cannot remain a production authority.
+2. Deploy the callable and validate authentication, App Check, bounds,
+   idempotency, atomic debit, and rollback behavior.
+3. Route new clients through local outbox → callable → acknowledgement while
+   retaining the closed client rules.
+4. Confirm telemetry shows no dependency on legacy client writers, migrate
+   redundant `users/{uid}` counters, and only then design narrowly scoped
+   rules or callable-only purchase flows.
+5. Reopen Shop or leaderboard navigation only after deployed-policy parity
+   and security gates pass on the same release SHA.
 
 ## Residual limitation
 
-Until Step 4 (server-side grading), correctness and therefore points remain
-client-claimed: a determined client can still report a session with inflated
-`correctAnswers`. Steps 1–3 make writes authenticated, idempotent, and
-server-owned, but they cannot make a client-claimed result authoritative.
-State this in any thesis appendix that relies on the counters.
+Local correctness and points remain client-observed and must not support
+spending, rankings, or research claims. The Release A rules prevent those
+values from becoming remote economy authority, but they do not create a
+trusted progress pipeline. A future callable still needs server-side
+validation and, if the product requires strong anti-cheat guarantees,
+server-side grading. State this limitation anywhere legacy counters appear.
