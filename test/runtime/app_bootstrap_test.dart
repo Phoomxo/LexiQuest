@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -18,6 +19,12 @@ AppConfig _validConfig() => AppConfig.fromValues(
 );
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('AppBootstrap.initialize', () {
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();

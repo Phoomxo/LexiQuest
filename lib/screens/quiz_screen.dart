@@ -1,9 +1,12 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
 import 'score_screen.dart';
 import 'speak_to_text_screen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../runtime/app_dependencies.dart';
 
 class QuizScreen extends StatefulWidget {
   final List<Map<String, dynamic>> vocabList;
@@ -25,14 +28,15 @@ class _QuizScreenState extends State<QuizScreen> {
   bool isAnswered = false;
   bool isCorrect = false;
   List<String> shuffledOptions = [];
-  int userPoints = 0;
   String? backgroundUrl;
+  late final String _sessionId;
 
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
   void initState() {
     super.initState();
+    _sessionId = _newSessionId();
     _initializeOptions();
     _loadBackground();
   }
@@ -79,7 +83,6 @@ class _QuizScreenState extends State<QuizScreen> {
       if (selectedAnswer == correctAnswer) {
         isCorrect = true;
         correctAnswers++;
-        userPoints++;
         HapticFeedback.lightImpact();
       } else {
         isCorrect = false;
@@ -97,30 +100,27 @@ class _QuizScreenState extends State<QuizScreen> {
         _initializeOptions();
       });
     } else {
-      _savePointsToFirestore().then((_) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScoreScreen(
-                correctAnswers: correctAnswers,
-                wrongAnswers: widget.vocabList.length - correctAnswers,
-              ),
-            ),
-          );
-        }
-      });
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ScoreScreen(
+            sessionId: _sessionId,
+            correctAnswers: correctAnswers,
+            wrongAnswers: widget.vocabList.length - correctAnswers,
+            repository: AppDependenciesScope.maybeOf(
+              context,
+            )?.progressRepository,
+          ),
+        ),
+      );
     }
   }
 
-  Future<void> _savePointsToFirestore() async {
-    final userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(_auth.currentUser!.uid);
-    await userRef.set({
-      'totalPoints': FieldValue.increment(userPoints),
-      'gamesPlayed': FieldValue.increment(1),
-    }, SetOptions(merge: true));
+  String _newSessionId() {
+    final random = Random.secure();
+    return 'quiz-${DateTime.now().microsecondsSinceEpoch}-'
+        '${random.nextInt(1 << 32).toRadixString(16)}-'
+        '${random.nextInt(1 << 32).toRadixString(16)}';
   }
 
   @override

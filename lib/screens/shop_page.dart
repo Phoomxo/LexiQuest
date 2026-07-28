@@ -3,8 +3,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../config/remote_economy_policy.dart';
+import '../runtime/app_dependencies.dart';
+
 class ShopPage extends StatefulWidget {
-  const ShopPage({super.key});
+  const ShopPage({super.key, this.remoteEconomyPolicy, this.onLoadData});
+
+  final RemoteEconomyPolicy? remoteEconomyPolicy;
+
+  @visibleForTesting
+  final Future<void> Function()? onLoadData;
 
   @override
   State<ShopPage> createState() => _ShopPageState();
@@ -22,11 +30,37 @@ class _ShopPageState extends State<ShopPage> {
   int userPoints = 0;
   List<Map<String, dynamic>> products = [];
   bool _isLoading = true;
+  bool _hasStartedLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _loadData();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_hasStartedLoading || !_policyFor(context).shopAndPurchasesEnabled) {
+      return;
+    }
+    _hasStartedLoading = true;
+    _startLoading();
+  }
+
+  RemoteEconomyPolicy _policyFor(BuildContext context) {
+    return widget.remoteEconomyPolicy ??
+        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
+        const RemoteEconomyPolicy();
+  }
+
+  Future<void> _startLoading() async {
+    final onLoadData = widget.onLoadData;
+    if (onLoadData != null) {
+      await onLoadData();
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+    await _loadData();
   }
 
   Future<void> _loadData() async {
@@ -276,6 +310,11 @@ class _ShopPageState extends State<ShopPage> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_policyFor(context).shopAndPurchasesEnabled) {
+      return const Scaffold(
+        body: Center(child: Text('Shop is currently unavailable.')),
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(

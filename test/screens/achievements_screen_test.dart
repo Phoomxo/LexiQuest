@@ -14,5 +14,6 @@ void main() {
     expect(find.text('ตราความสำเร็จ & รางวัล (Achievements)'), findsOneWidget);
     expect(find.text('300 เหรียญสะสม'), findsOneWidget);
     expect(find.text('นักเรียนต่อเนื่อง 3 วัน'), findsOneWidget);
+    expect(find.byIcon(Icons.shopping_bag), findsNothing);
   });
 }

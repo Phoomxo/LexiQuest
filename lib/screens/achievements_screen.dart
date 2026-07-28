@@ -1,14 +1,27 @@
 import 'package:flutter/material.dart';
 import '../models/achievement_badge.dart';
+import '../config/remote_economy_policy.dart';
+import '../runtime/app_dependencies.dart';
 
 class AchievementsScreen extends StatelessWidget {
   final List<AchievementBadge>? badges;
   final int coins;
 
-  const AchievementsScreen({super.key, this.badges, this.coins = 250});
+  const AchievementsScreen({
+    super.key,
+    this.badges,
+    this.coins = 250,
+    this.remoteEconomyPolicy,
+  });
+
+  final RemoteEconomyPolicy? remoteEconomyPolicy;
 
   @override
   Widget build(BuildContext context) {
+    final remoteEconomyEnabled =
+        remoteEconomyPolicy ??
+        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
+        const RemoteEconomyPolicy();
     final displayBadges =
         badges ??
         [
@@ -77,23 +90,24 @@ class AchievementsScreen extends StatelessWidget {
                         ),
                       ],
                     ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
+                    if (remoteEconomyEnabled.shopAndPurchasesEnabled)
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
+                              ),
                             ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.shopping_bag),
-                      label: const Text('ร้านค้า'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber.shade900,
-                        foregroundColor: Colors.white,
+                          );
+                        },
+                        icon: const Icon(Icons.shopping_bag),
+                        label: const Text('ร้านค้า'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade900,
+                          foregroundColor: Colors.white,
+                        ),
                       ),
-                    ),
                   ],
                 ),
               ),

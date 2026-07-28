@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
+import '../config/remote_economy_policy.dart';
+import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -11,12 +13,16 @@ final class AppDependencies {
     required this.config,
     required this.guestSessionService,
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
+    this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
+    this.progressRepository,
   });
 
   final AppRuntimeStatus runtimeStatus;
   final AppConfig? config;
   final GuestSessionService guestSessionService;
   final AppBuildInfo buildInfo;
+  final RemoteEconomyPolicy remoteEconomyPolicy;
+  final ProgressRepository? progressRepository;
 
   @override
   String toString() => 'AppDependencies';
