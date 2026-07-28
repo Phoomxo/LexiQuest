@@ -1,4 +1,4 @@
-"""Tests pinning the Voice API CUDA 12.8 dependency configuration."""
+"""Tests pinning the Voice API CUDA 13.2 dependency configuration."""
 
 from __future__ import annotations
 
@@ -9,11 +9,11 @@ PYPROJECT_PATH = Path(__file__).resolve().parent.parent / "pyproject.toml"
 EXPECTED_GPU_DEPS = [
     "omnivoice==0.2.1",
     "soundfile==0.14.0",
-    "torch==2.8.0+cu128",
-    "torchaudio==2.8.0+cu128",
+    "torch==2.13.0+cu132",
+    "torchaudio==2.11.0",
 ]
-EXPECTED_INDEX_NAME = "pytorch-cu128"
-EXPECTED_INDEX_URL = "https://download.pytorch.org/whl/cu128"
+EXPECTED_INDEX_NAME = "pytorch-cu132"
+EXPECTED_INDEX_URL = "https://download.pytorch.org/whl/cu132"
 EXPECTED_FASTAPI_PIN = "fastapi==0.140.0"
 
 
@@ -47,7 +47,7 @@ def test_project_dependencies_pin_exactly_one_fastapi_entry() -> None:
     assert grouped_fastapi == []
 
 
-def test_a_single_explicit_pytorch_cu128_index_is_declared() -> None:
+def test_a_single_explicit_pytorch_cu132_index_is_declared() -> None:
     indexes = _load_pyproject().get("tool", {}).get("uv", {}).get("index", [])
     pytorch_indexes = [
         index
@@ -62,16 +62,16 @@ def test_a_single_explicit_pytorch_cu128_index_is_declared() -> None:
     assert index.get("explicit") is True
 
 
-def test_uv_sources_bind_torch_and_torchaudio_to_cu128() -> None:
+def test_uv_sources_bind_only_torch_to_cu132() -> None:
     sources = _load_pyproject().get("tool", {}).get("uv", {}).get("sources", {})
 
-    for package in ("torch", "torchaudio"):
-        source = sources.get(package)
-        assert isinstance(source, dict)
-        assert source.get("index") == EXPECTED_INDEX_NAME
+    torch_source = sources.get("torch")
+    assert isinstance(torch_source, dict)
+    assert torch_source.get("index") == EXPECTED_INDEX_NAME
+    assert "torchaudio" not in sources
 
 
-def test_no_cu132_pytorch_index_or_source_remains() -> None:
+def test_no_cu128_pytorch_index_or_source_remains() -> None:
     tool_uv = _load_pyproject().get("tool", {}).get("uv", {})
     references: list[str] = []
     for index in tool_uv.get("index", []):
@@ -87,4 +87,4 @@ def test_no_cu132_pytorch_index_or_source_remains() -> None:
         ):
             references.append(target)
 
-    assert not [reference for reference in references if "cu132" in reference]
+    assert not [reference for reference in references if "cu128" in reference]

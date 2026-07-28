@@ -47,13 +47,14 @@ end-to-end (see Status).
 
 - Python 3.11
 - `uv`
-- NVIDIA GPU and a driver compatible with the CUDA 12.8 PyTorch build
+- NVIDIA GPU and a driver compatible with the CUDA 13.2 PyTorch build
 - Firebase service-account credentials or another supported Application
   Default Credentials source
 
-The CUDA/GPU path was smoke-tested on this workstation on 2026-07-24 with
-an NVIDIA GeForce RTX 3050. The pinned model produced a 24 kHz WAV response
-through `OmniVoiceEngine` using the locked research preset.
+The CUDA/GPU path was smoke-tested on this workstation on 2026-07-28 with
+an NVIDIA GeForce RTX 3050. Torch 2.13.0+cu132, Torchaudio 2.11.0, and the
+pinned OmniVoice model produced a 24 kHz WAV response through
+`OmniVoiceEngine` using the locked research preset.
 
 ## Setup
 
@@ -66,7 +67,8 @@ $env:GOOGLE_APPLICATION_CREDENTIALS='C:\absolute\path\service-account.json'
 ```
 
 `--all-groups` installs the runtime dependencies plus the `dev` test group and the
-`gpu` group, which pins the CUDA 12.8 PyTorch wheels and OmniVoice.
+`gpu` group, which pins the CUDA 13.2 PyTorch wheel, the PyPI Torchaudio
+runtime, and OmniVoice.
 
 Do not commit `.env`, service-account JSON, model weights, or generated audio.
 

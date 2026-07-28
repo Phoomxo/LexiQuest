@@ -23,8 +23,8 @@ from lexiquest_voice.runtime_compat import (
 
 
 def test_supported_version_pins_are_exact() -> None:
-    assert TORCH_VERSION == "2.8.0+cu128"
-    assert TORCHAUDIO_VERSION == "2.8.0+cu128"
+    assert TORCH_VERSION == "2.13.0+cu132"
+    assert TORCHAUDIO_VERSION == "2.11.0"
     assert OMNIVOICE_VERSION == "0.2.1"
 
 
@@ -51,8 +51,8 @@ _REJECTION_CASES: list[
         OMNIVOICE_VERSION,
         ("2.13.0+cu132", "2.11.0+cpu"),
     ),
-    (TORCH_VERSION, "2.8.0+cpu", OMNIVOICE_VERSION, "2.8.0+cpu"),
-    ("2.8.0+cu121", TORCHAUDIO_VERSION, OMNIVOICE_VERSION, "2.8.0+cu121"),
+    (TORCH_VERSION, "2.11.0+cu128", OMNIVOICE_VERSION, "2.11.0+cu128"),
+    ("2.13.0+cu128", TORCHAUDIO_VERSION, OMNIVOICE_VERSION, "2.13.0+cu128"),
     (TORCH_VERSION, TORCHAUDIO_VERSION, "0.3.0", "0.3.0"),
 ]
 

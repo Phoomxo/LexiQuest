@@ -10,8 +10,8 @@ import importlib.metadata
 from collections.abc import Callable
 from dataclasses import dataclass
 
-TORCH_VERSION = "2.8.0+cu128"
-TORCHAUDIO_VERSION = "2.8.0+cu128"
+TORCH_VERSION = "2.13.0+cu132"
+TORCHAUDIO_VERSION = "2.11.0"
 OMNIVOICE_VERSION = "0.2.1"
 
 TORCH_PACKAGE = "torch"

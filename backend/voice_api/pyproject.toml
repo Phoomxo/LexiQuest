@@ -22,21 +22,23 @@ dev = [
 gpu = [
     "omnivoice==0.2.1",
     "soundfile==0.14.0",
-    "torch==2.8.0+cu128",
-    "torchaudio==2.8.0+cu128",
+    "torch==2.13.0+cu132",
+    "torchaudio==2.11.0",
 ]
 
-# OmniVoice 0.2.1 is supported on the CUDA 12.8 runtime, so torch and
-# torchaudio 2.8.0+cu128 wheels come from the dedicated PyTorch index. The
-# explicit source bindings prevent unrelated packages from using this index.
+# OmniVoice 0.2.1 supports Torch and Torchaudio 2.4 or newer. Torch 2.13.0
+# removes the known vulnerabilities in the prior 2.8.0 runtime. Torchaudio
+# 2.11.0 no longer pins a matching Torch build, so it remains compatible
+# with the newer CUDA runtime used by the workstation.
+# The explicit source binding prevents unrelated packages from using the
+# dedicated PyTorch index.
 [[tool.uv.index]]
-name = "pytorch-cu128"
-url = "https://download.pytorch.org/whl/cu128"
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
 explicit = true
 
 [tool.uv.sources]
-torch = { index = "pytorch-cu128" }
-torchaudio = { index = "pytorch-cu128" }
+torch = { index = "pytorch-cu132" }
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/lexiquest_voice"]
