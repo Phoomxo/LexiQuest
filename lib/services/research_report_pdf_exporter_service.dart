@@ -1,5 +1,9 @@
 import 'dart:math';
 
+import 'research_export_errors.dart';
+
+export 'research_export_errors.dart';
+
 class ResearchObservation {
   final double preTestScore;
   final double postTestScore;
@@ -12,17 +16,6 @@ class ResearchObservation {
     required this.preLatencyMs,
     required this.postLatencyMs,
   });
-}
-
-class InsufficientData implements Exception {
-  final String message;
-
-  const InsufficientData([
-    this.message = 'At least two real research observations are required.',
-  ]);
-
-  @override
-  String toString() => 'InsufficientData: $message';
 }
 
 class InvalidResearchData implements Exception {

@@ -1,3 +1,7 @@
+import 'research_export_errors.dart';
+
+export 'research_export_errors.dart';
+
 class ResearchExportRow {
   const ResearchExportRow({
     required this.word,
@@ -40,6 +44,10 @@ class ResearchDataExporterService {
 
   /// Converts learning telemetry and SRS performance records into CSV format for SPSS/Python analysis in Chapter 4.
   String generateCsvReport(List<ResearchExportRow> records) {
+    if (records.isEmpty) {
+      throw const InsufficientData();
+    }
+
     final buffer = StringBuffer();
     buffer.write(
       'word,cefr_level,latency_ms,accuracy_percent,srs_box,reviewed_at\r\n',

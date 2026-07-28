@@ -4,6 +4,13 @@ import 'package:vocab_learning_app/services/research_data_exporter_service.dart'
 void main() {
   const service = ResearchDataExporterService();
 
+  test('generateCsvReport rejects empty research observations explicitly', () {
+    expect(
+      () => service.generateCsvReport(const []),
+      throwsA(isA<InsufficientData>()),
+    );
+  });
+
   test('generateCsvReport formats learning data into CSV header and rows', () {
     final records = [
       ResearchExportRow(
