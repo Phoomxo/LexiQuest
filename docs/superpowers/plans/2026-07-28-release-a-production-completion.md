@@ -37,7 +37,7 @@
 - Consumes: PR #3 remote head `f66d0316daff57c83ed972a11f6425cb326f482a`.
 - Produces: one clean candidate commit whose parent lineage contains every Release A integrity/security fix.
 
-- [ ] **Step 1: Verify isolation and cleanliness**
+- [x] **Step 1: Verify isolation and cleanliness**
 
 Run:
 
@@ -50,7 +50,7 @@ git status --short
 
 Expected: linked worktree, branch `codex/release-a-economy-lockdown`, and no uncommitted files before adding this plan.
 
-- [ ] **Step 2: Verify direct ancestry and enumerate the candidate commits**
+- [x] **Step 2: Verify direct ancestry and enumerate the candidate commits**
 
 Run:
 
@@ -61,7 +61,7 @@ git log --reverse --oneline f66d0316daff57c83ed972a11f6425cb326f482a..HEAD
 
 Expected: exit `0` and the integrity/security chain beginning with research observation fixes and ending with `fix(security): close client-authoritative economy writes`.
 
-- [ ] **Step 3: Prove the alternate economy worktree has no missing production behavior**
+- [x] **Step 3: Prove the alternate economy worktree has no missing production behavior**
 
 Run:
 
@@ -71,7 +71,7 @@ git diff --name-status 04e2f8f2183e15bf01cf4d10e98b84e9d2d75f7c 212764410714e590
 
 Expected: differences are confined to research-integrity files because commit `04e2f8f` already contains the final economy behavior from the alternate branch.
 
-- [ ] **Step 4: Commit this execution plan**
+- [x] **Step 4: Commit the initial execution plan**
 
 Run:
 
@@ -81,7 +81,7 @@ git diff --cached --check
 git commit -m "docs: add Release A production completion plan"
 ```
 
-Expected: one documentation commit and a clean worktree.
+Expected and recorded: commit `cfbe3ae5f6e0cc672f4ceec2e1f83ebf7fd7bbfd` and a clean worktree.
 
 ### Task 2: Run independent candidate, GitHub, and deployment-readiness audits
 
@@ -94,11 +94,11 @@ Expected: one documentation commit and a clean worktree.
 - Consumes: frozen candidate SHA from Task 1.
 - Produces: three read-only audit receipts with exact blockers and no repository or cloud mutations.
 
-- [ ] **Step 1: Dispatch three bounded read-only agents**
+- [x] **Step 1: Dispatch bounded read-only agents**
 
-Each agent must inspect only its assigned domain: candidate/spec coverage, GitHub PR/protection state, or deployed-policy readiness. Agents write only their assigned ignored report.
+Each agent must inspect only its assigned domain: candidate/spec coverage, GitHub PR/protection state, deployed-policy readiness, or plan safety. Agents write only their assigned ignored report.
 
-- [ ] **Step 2: Review all three receipts**
+- [x] **Step 2: Review all four receipts**
 
 Run:
 
@@ -106,9 +106,157 @@ Run:
 Get-Content .superpowers/sdd/audits/release-a-candidate.md
 Get-Content .superpowers/sdd/audits/release-a-github.md
 Get-Content .superpowers/sdd/audits/release-a-deployment-readiness.md
+Get-Content .superpowers/sdd/audits/release-a-plan-review.md
 ```
 
-Expected: no unresolved code-integrity blocker. External permission or credential blockers must be carried into Tasks 5 and 7 rather than silently waived.
+Recorded result: candidate code blockers move to Task 2A. GitHub protection, non-author review, deployed-policy parity, and credential blockers remain fail-closed owner gates in Tasks 5 and 7.
+
+### Task 2A: Close validated research-export and Firestore authorization blockers
+
+**Files:**
+- Create: `lib/services/research_export_errors.dart`
+- Modify: `lib/services/research_data_exporter_service.dart`
+- Modify: `lib/services/research_report_pdf_exporter_service.dart`
+- Modify: `firestore.rules`
+- Modify: `test/services/research_data_exporter_service_test.dart`
+- Modify: `test/services/research_report_pdf_exporter_service_test.dart`
+- Modify: `test/security/firestore-rules.test.cjs`
+- Modify: `docs/security/firestore-access-inventory.md`
+- Modify: `docs/security/progress-authority.md`
+- Modify: `docs/security/2026-07-26-stabilization-gate.md`
+
+**Interfaces:**
+- Consumes: `ResearchDataExporterService.generateCsvReport(...)`, existing PDF `InsufficientData`, Firebase registered/anonymous identity predicates, and the Release A A2 authorization contract.
+- Produces: one shared `InsufficientData` type, fail-closed empty research exports, profile-only registered-user writes, non-anonymous owner-private records, and admin-only shared curated writes.
+
+- [ ] **Step 1: Write failing research-export tests**
+
+Add a zero-row CSV assertion:
+
+```dart
+expect(
+  () => service.generateCsvReport(const []),
+  throwsA(isA<InsufficientData>()),
+);
+```
+
+Retain the existing PDF assertion that fewer than two paired observations throws the same public type.
+
+- [ ] **Step 2: Run the focused research tests and verify RED**
+
+Run:
+
+```powershell
+flutter test test/services/research_data_exporter_service_test.dart test/services/research_report_pdf_exporter_service_test.dart
+```
+
+Expected: the new CSV case fails because the current exporter returns a header-only CSV.
+
+- [ ] **Step 3: Introduce the shared error and fail closed before writing a CSV header**
+
+Create:
+
+```dart
+class InsufficientData implements Exception {
+  const InsufficientData([
+    this.message = 'Insufficient real observations for this report.',
+  ]);
+
+  final String message;
+
+  @override
+  String toString() => 'InsufficientData: $message';
+}
+```
+
+Both exporter files import and re-export `research_export_errors.dart`. `generateCsvReport` throws `const InsufficientData()` when `records.isEmpty`; the PDF exporter retains its two-observation requirement.
+
+- [ ] **Step 4: Run the focused research tests and verify GREEN**
+
+Run the Step 2 command.
+
+Expected: all focused exporter tests pass.
+
+- [ ] **Step 5: Write failing Firestore emulator cases**
+
+Add explicit assertions that:
+
+- registered owners cannot add, change, or remove `points`, `totalPoints`, or `gamesPlayed` on `users/{uid}`;
+- registered owners can change only validated profile fields on a legacy document while counters remain unchanged;
+- anonymous identities cannot read or write `users`, `state`, `purchased_items`, `categories`, or category words;
+- registered and anonymous clients cannot create/update/delete shared `vocabulary` or `global_words`;
+- signed-in users may retain read-only access to shared curated vocabulary required by the current quiz path;
+- registered owner and cross-owner behavior remains least-privilege.
+
+- [ ] **Step 6: Run the Firestore emulator suite and verify RED**
+
+Run:
+
+```powershell
+$env:NODE_PATH='C:\Users\Phet\Documents\LexiQuest\node_modules'
+npm run test:rules
+```
+
+Expected: the new assertions expose the current writable legacy counters, anonymous private records, and registered shared-word creation.
+
+- [ ] **Step 7: Apply the minimal authorization rules**
+
+Implement these exact boundaries:
+
+```javascript
+// users/{uid}
+// registered owner read/create only; updates may affect profile fields only.
+request.resource.data.diff(resource.data).affectedKeys()
+  .hasOnly(['first_name', 'last_name', 'email', 'age'])
+
+// state, purchased_items, categories, and category words
+// replace write/read identity checks with isRegisteredUser() plus owner scope.
+
+// vocabulary and global_words
+allow read: if isSignedIn();
+allow create, update, delete: if false;
+```
+
+Preserve strict create validation, immutable `createdAt`, legacy counter values already stored on profile documents, state wallpaper-only updates, owner legacy reads, and the recursive default deny.
+
+- [ ] **Step 8: Re-run the Firestore emulator suite and verify GREEN**
+
+Run the Step 6 command.
+
+Expected: every economy, anonymous, shared-curated, owner-isolation, and telemetry case passes.
+
+- [ ] **Step 9: Reconcile security documentation**
+
+Document that authenticated anonymous guests may enter the product shell and read shared curated content but cannot create remote private/shared learning records. Document that `users` legacy counters are preserved read-only to clients and that deployed policy parity remains unverified. Remove the obsolete statement that Supabase migrations are absent.
+
+- [ ] **Step 10: Run focused analysis and commit each reviewed slice**
+
+Run:
+
+```powershell
+flutter analyze
+git diff --check
+```
+
+Commit research export and Firestore authorization as separate reviewable commits:
+
+```powershell
+git add -- `
+  lib/services/research_export_errors.dart `
+  lib/services/research_data_exporter_service.dart `
+  lib/services/research_report_pdf_exporter_service.dart `
+  test/services/research_data_exporter_service_test.dart `
+  test/services/research_report_pdf_exporter_service_test.dart
+git commit -m "fix(research): reject empty CSV exports"
+
+git add -- `
+  firestore.rules `
+  test/security/firestore-rules.test.cjs `
+  docs/security/firestore-access-inventory.md `
+  docs/security/progress-authority.md `
+  docs/security/2026-07-26-stabilization-gate.md
+git commit -m "fix(firestore): close anonymous and shared write boundaries"
+```
 
 ### Task 3: Publish the candidate to PR #3 without rewriting history
 
@@ -180,8 +328,13 @@ Create a temporary Markdown file outside the repository containing:
 Run:
 
 ```powershell
+$prBodyPath = 'C:\Users\Phet\AppData\Local\Temp\lexiquest-pr3-release-a.md'
+if (-not (Test-Path -LiteralPath $prBodyPath -PathType Leaf)) {
+  throw "PR body file is missing: $prBodyPath"
+}
 gh pr edit 3 --body-file $prBodyPath
 gh pr edit 3 --add-reviewer Phoomxo
+Remove-Item -LiteralPath $prBodyPath
 ```
 
 Expected: PR body updated and a non-author owner review requested. If GitHub rejects the reviewer request, record the exact API response and leave the review gate open.
@@ -208,6 +361,8 @@ if (git status --porcelain) { throw "Candidate worktree is dirty" }
 $releaseSha
 ```
 
+Use `apply_patch` to write exactly that SHA plus a trailing newline to the ignored receipt `.superpowers/sdd/release-a-frozen-sha.txt`. Every later task reloads this receipt and compares it to the PR head before trusting a check.
+
 - [ ] **Step 2: Run the Firestore emulator contract**
 
 Run:
@@ -228,6 +383,26 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tool\cli\verify.ps1
 ```
 
 Expected: CLI contracts, dependency resolution, Dart format, Flutter analysis/tests, all three backend CPU suites, debug APK, and read-only GPU doctor pass.
+
+- [ ] **Step 3A: Run the local Supabase policy contract**
+
+Run:
+
+```powershell
+supabase db start
+try {
+  supabase db reset --local --no-seed
+  supabase db lint --local --level warning
+  supabase db advisors --local --type security --level warn --fail-on error
+  Get-Content -Raw test/security/supabase_storage_contract.sql |
+    docker exec -i supabase_db_lexiquest-local `
+      psql -U postgres -d postgres -v ON_ERROR_STOP=1 -f -
+} finally {
+  supabase stop --no-backup
+}
+```
+
+Expected: migration/reset, schema lint, security advisors, and the SQL storage contract pass without persistent probe data.
 
 - [ ] **Step 4: Run commit-scoped secret scanning**
 
@@ -274,7 +449,7 @@ uv run --project backend/voice_api --frozen --no-sync --all-groups `
 
 Expected: exactly one bounded request returns a non-empty mono RIFF/WAV at 24 kHz with duration below 30 seconds. If credential preflight fails, record this as an operator-controlled gate; do not substitute a fake smoke.
 
-### Task 5: Monitor GitHub gates on the same SHA
+### Task 5: Monitor GitHub PR gates on the same SHA
 
 **Files:**
 - No repository changes.
@@ -283,25 +458,38 @@ Expected: exactly one bounded request returns a non-empty mono RIFF/WAV at 24 kH
 - Consumes: published candidate SHA.
 - Produces: completed CI, OSV, and Gitleaks check receipts for that SHA.
 
-- [ ] **Step 1: Watch PR checks**
+- [ ] **Step 1: Poll PR checks in bounded calls**
 
 Run:
 
 ```powershell
-gh pr checks 3 --watch --interval 10
+$releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
+$prHead = gh pr view 3 --json headRefOid --jq .headRefOid
+if ($prHead -ne $releaseSha) { throw "PR #3 head changed" }
+gh pr checks 3
 ```
 
-Expected: `ci`, `Gitleaks`, `osv-scanner-pr / osv-scan`, and `osv-scanner` complete successfully.
+Repeat the one-shot command after bounded waits while checks are pending; do not hold an unbounded watcher. Expected pre-merge contexts are `ci`, `Gitleaks`, and `osv-scanner-pr / osv-scan`. The scheduled workflow context `osv-scanner` runs on `main`/schedule and is verified on the merge commit after Task 8, not substituted for a PR-head check.
 
 - [ ] **Step 2: Verify every check belongs to the frozen head**
 
 Run:
 
 ```powershell
-gh pr view 3 --json headRefOid,statusCheckRollup
+$releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
+$pr = gh pr view 3 --json headRefOid,statusCheckRollup | ConvertFrom-Json
+if ($pr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
+$required = @('ci', 'Gitleaks', 'osv-scanner-pr / osv-scan')
+foreach ($name in $required) {
+  $check = @($pr.statusCheckRollup | Where-Object name -eq $name)
+  if ($check.Count -ne 1 -or $check[0].status -ne 'COMPLETED' -or
+      $check[0].conclusion -ne 'SUCCESS') {
+    throw "Required PR check is not successful: $name"
+  }
+}
 ```
 
-Expected: `headRefOid` equals `$releaseSha`; no required check is pending, skipped, cancelled, or failed.
+Expected: `headRefOid` equals `$releaseSha`; every required PR context exists exactly once and has conclusion `SUCCESS`.
 
 ### Task 6: Run Codex Security closure and Deep Security Scan
 
@@ -314,13 +502,13 @@ Expected: `headRefOid` equals `$releaseSha`; no required check is pending, skipp
 
 - [ ] **Step 1: Run security-diff closure**
 
-Use the Codex Security `security-diff-scan` workflow for the exact immutable revision range. Focus on authentication, authorization, owner isolation, score/economy integrity, research-data integrity, CSV/PDF injection or fabrication, API/AI/voice boundaries, secrets, and supply chain.
+Load the immutable head from `.superpowers/sdd/release-a-frozen-sha.txt`, prove it still equals PR #3 `headRefOid`, then use the Codex Security `security-diff-scan` workflow for base `f66d0316daff57c83ed972a11f6425cb326f482a` and that exact head. Focus on authentication, authorization, owner isolation, score/economy integrity, research-data integrity, CSV/PDF injection or fabrication, API/AI/voice boundaries, secrets, and supply chain.
 
 Expected: the previous client-only economy finding is no longer reproducible and every reportable finding has canonical artifacts.
 
 - [ ] **Step 2: Run repository-wide Deep Security Scan**
 
-Use the Codex Security `deep-security-scan` workflow on the same candidate commit. Do not claim zero-day absence; report only validated findings and coverage.
+Use the Codex Security `deep-security-scan` workflow on the same immutable candidate commit read from the receipt. Do not claim zero-day absence; report only validated findings and coverage.
 
 Expected: scan completes rather than being cancelled. Any validated Critical/High finding returns the workflow to implementation and requires a fresh candidate SHA plus complete rerun of Tasks 4–6.
 
@@ -338,7 +526,11 @@ Expected: scan completes rather than being cancelled. Any validated Critical/Hig
 Run:
 
 ```powershell
-gh pr view 3 --json reviews,reviewDecision,reviewRequests
+$releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
+$pr = gh pr view 3 --json headRefOid,reviews,reviewDecision,reviewRequests |
+  ConvertFrom-Json
+if ($pr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
+$pr | ConvertTo-Json -Depth 8
 ```
 
 Expected: at least one approving review from a user other than PR author `Petch1910`.
@@ -349,9 +541,10 @@ Run with an admin-authorized GitHub identity:
 
 ```powershell
 gh api repos/Phoomxo/LexiQuest/branches/main/protection
+gh api repos/Phoomxo/LexiQuest/rulesets
 ```
 
-Expected: required PR review, at least one approval, required CI/Gitleaks/OSV contexts, conversation resolution, strict up-to-date branch, force-push denial, and deletion denial. A `404` under a `WRITE`-only identity does not prove protection and leaves the gate open.
+Expected: required PR review, at least one approval, required `ci`, `Gitleaks`, and `osv-scanner-pr / osv-scan` contexts, conversation resolution, strict up-to-date branch, force-push denial, deletion denial, and merge commits permitted. A `404` plus an empty ruleset list leaves the gate open.
 
 - [ ] **Step 3: Record OSV owner acceptance**
 
@@ -369,9 +562,9 @@ gh pr view 3 --comments
 
 - [ ] **Step 4: Verify deployed Firebase and Supabase policy parity**
 
-Authenticate using owner-controlled CLI sessions without copying credentials into the repository. Export or retrieve the deployed Firestore, Storage, and Supabase policies through supported admin tooling, compare them to `firestore.rules`, repository Storage policy, and Supabase migrations, and record only hashes/diffs without secrets.
+Before authentication, the owner supplies the exact Firebase project/database/Storage bucket and Supabase project ref/data region. Authenticate using owner-controlled CLI or ADC sessions without copying credentials into the repository. Retrieve active Firebase Rules releases/rulesets through supported Firebaserules API/admin tooling and query deployed Supabase `storage.buckets`, `pg_class`, and `pg_policies` through read-only access. Compare normalized deployed sources/state to `firestore.rules`, `storage.rules`, and `supabase/migrations/20260727000000_image_bucket_public_readonly.sql`.
 
-Expected: no deployed rule is broader than the reviewed repository policy. If access is unavailable or parity differs, do not merge.
+Write a redacted operator receipt outside the repository containing candidate SHA, exact non-secret target identifiers, identity name, timestamp, repository artifact SHA-256 hashes, deployed artifact hashes, semantic diff result, and privileged Admin SDK/service-role writer inventory. Expected: no deployed rule or bypass writer is broader than the reviewed Release A policy. If target binding, access, export, or parity is unavailable, do not merge.
 
 ### Task 8: Merge Release A and verify main
 
@@ -387,7 +580,14 @@ Expected: no deployed rule is broader than the reviewed repository policy. If ac
 Run:
 
 ```powershell
-gh pr view 3 --json headRefOid,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup
+$releaseSha = (Get-Content -Raw .superpowers/sdd/release-a-frozen-sha.txt).Trim()
+$pr = gh pr view 3 --json headRefOid,mergeable,mergeStateStatus,reviewDecision,statusCheckRollup |
+  ConvertFrom-Json
+if ($pr.headRefOid -ne $releaseSha) { throw "PR #3 head changed" }
+if ($pr.mergeable -ne 'MERGEABLE' -or $pr.mergeStateStatus -ne 'CLEAN' -or
+    $pr.reviewDecision -ne 'APPROVED') {
+  throw "PR #3 terminal gate is not satisfied"
+}
 ```
 
 Expected: unchanged frozen SHA, mergeable, clean, approved, and all checks successful.
@@ -397,7 +597,7 @@ Expected: unchanged frozen SHA, mergeable, clean, approved, and all checks succe
 Run:
 
 ```powershell
-gh pr merge 3 --merge --delete-branch=false
+gh pr merge 3 --merge --match-head-commit $releaseSha
 ```
 
 Expected: PR #3 merged without squash/rebase and the remote feature branch retained.
@@ -408,11 +608,18 @@ Run:
 
 ```powershell
 $mergeSha = gh pr view 3 --json mergeCommit --jq .mergeCommit.oid
-gh api repos/Phoomxo/LexiQuest/commits/$mergeSha --jq .sha
-gh run list --branch main --limit 10
+$remoteMain = gh api repos/Phoomxo/LexiQuest/commits/main --jq .sha
+if ($remoteMain -ne $mergeSha) { throw "main does not point to the PR merge commit" }
+$runs = gh run list --branch main --commit $mergeSha --event push `
+  --json databaseId,workflowName,status,conclusion,headSha | ConvertFrom-Json
+if (-not $runs) { throw "No main push runs found for merge SHA" }
+foreach ($run in $runs) {
+  gh run watch $run.databaseId --exit-status
+  if ($LASTEXITCODE -ne 0) { throw "main workflow failed: $($run.workflowName)" }
+}
 ```
 
-Expected: the merge commit exists on `main`; CI, OSV, and Gitleaks for `main` complete successfully.
+Expected: `main` points to the merge commit; push-triggered CI, Gitleaks, and scheduled/main OSV contexts associated with the merge commit complete successfully.
 
 ### Task 9: Post-merge cleanup without deleting audit history
 
