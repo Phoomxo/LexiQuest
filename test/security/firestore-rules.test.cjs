@@ -29,8 +29,12 @@ const productId = 'wallpaper_neon';
 const purchaseId = `${alice}_${productId}`;
 let testEnv;
 
-function authDb(uid = alice, isAnon = false) {
-  const token = isAnon ? { firebase: { sign_in_provider: 'anonymous' } } : {};
+function authDb(uid = alice, isAnon = false, provider = 'password') {
+  const token = {
+    firebase: {
+      sign_in_provider: isAnon ? 'anonymous' : provider,
+    },
+  };
   return testEnv.authenticatedContext(uid, token).firestore();
 }
 
@@ -134,6 +138,19 @@ after(async () => {
 });
 
 describe('registered profile authority contract', () => {
+  it('denies a provider-less authenticated token from private records', async () => {
+    const uid = 'providerless_uid';
+    await seedDocuments([
+      [`users/${uid}`, profileData()],
+    ]);
+    const db = testEnv.authenticatedContext(
+      uid,
+      { firebase: {} },
+    ).firestore();
+
+    await assertFails(getDoc(doc(db, 'users', uid)));
+  });
+
   it('allows a registered owner to create and read a validated profile', async () => {
     const db = authDb();
     const profileRef = doc(db, 'users', alice);
@@ -143,6 +160,17 @@ describe('registered profile authority contract', () => {
     if (profile.data().email !== 'alice@example.com') {
       throw new Error('Registered owner profile was not preserved.');
     }
+  });
+
+  it('allows a custom-provider owner to access a validated profile', async () => {
+    const uid = 'custom_provider_uid';
+    const db = authDb(uid, false, 'custom');
+    const profileRef = doc(db, 'users', uid);
+
+    await assertSucceeds(
+      setDoc(profileRef, profileData({ email: 'custom@example.com' })),
+    );
+    await assertSucceeds(getDoc(profileRef));
   });
 
   for (const field of ['points', 'totalPoints', 'gamesPlayed']) {

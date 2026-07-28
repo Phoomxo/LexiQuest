@@ -31,9 +31,9 @@ service cloud.firestore {
 
     function isRegisteredUser() {
       return isSignedIn()
-        && (!('firebase' in request.auth.token)
-            || !('sign_in_provider' in request.auth.token.firebase)
-            || request.auth.token.firebase.sign_in_provider != 'anonymous');
+        && 'firebase' in request.auth.token
+        && 'sign_in_provider' in request.auth.token.firebase
+        && request.auth.token.firebase.sign_in_provider != 'anonymous';
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
