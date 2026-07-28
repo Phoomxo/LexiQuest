@@ -40,6 +40,28 @@ void main() {
     expect(stats.latencyReductionPercentage, 50.0);
   });
 
+  test('calculateAcademicStats rejects a zero pre-test latency baseline', () {
+    const zeroPreTestLatency = [
+      ResearchObservation(
+        preTestScore: 60,
+        postTestScore: 80,
+        preLatencyMs: 0,
+        postLatencyMs: 200,
+      ),
+      ResearchObservation(
+        preTestScore: 70,
+        postTestScore: 90,
+        preLatencyMs: 0,
+        postLatencyMs: 300,
+      ),
+    ];
+
+    expect(
+      () => service.calculateAcademicStats(zeroPreTestLatency),
+      throwsA(isA<InsufficientData>()),
+    );
+  });
+
   test('generateAcademicPdfReport contains only derived statistics', () {
     final report = service.generateAcademicPdfReport(observations);
 
@@ -51,5 +73,28 @@ void main() {
     expect(report, isNot(contains('Expected Significance')));
     expect(report, isNot(contains('p <')));
     expect(report, isNot(contains('Paired-Samples t-Test')));
+  });
+
+  test('generateAcademicPdfReport formats a score decline with one sign', () {
+    const decliningObservations = [
+      ResearchObservation(
+        preTestScore: 80,
+        postTestScore: 60,
+        preLatencyMs: 1000,
+        postLatencyMs: 1200,
+      ),
+      ResearchObservation(
+        preTestScore: 60,
+        postTestScore: 60,
+        preLatencyMs: 1000,
+        postLatencyMs: 1200,
+      ),
+    ];
+
+    final report = service.generateAcademicPdfReport(decliningObservations);
+
+    expect(report, contains('Mean Score Change: -10.0 percentage points'));
+    expect(report, isNot(contains('Mean Score Gain')));
+    expect(report, isNot(contains('+-10.0')));
   });
 }

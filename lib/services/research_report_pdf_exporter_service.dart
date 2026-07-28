@@ -76,6 +76,12 @@ class ResearchReportPdfExporterService {
     final preLatencyMs = _mean(preLatencies);
     final postLatencyMs = _mean(postLatencies);
 
+    if (preLatencyMs == 0) {
+      throw const InsufficientData(
+        'A non-zero pre-test latency baseline is required to calculate change.',
+      );
+    }
+
     return ThesisAcademicStats(
       preTestMean: preTestMean,
       preTestSd: _populationStandardDeviation(preTestScores, preTestMean),
@@ -84,9 +90,8 @@ class ResearchReportPdfExporterService {
       meanGainPercentage: postTestMean - preTestMean,
       preLatencyMs: preLatencyMs,
       postLatencyMs: postLatencyMs,
-      latencyReductionPercentage: preLatencyMs == 0
-          ? 0
-          : (preLatencyMs - postLatencyMs) / preLatencyMs * 100,
+      latencyReductionPercentage:
+          (preLatencyMs - postLatencyMs) / preLatencyMs * 100,
       sampleSize: observations.length,
     );
   }
@@ -111,7 +116,7 @@ class ResearchReportPdfExporterService {
       '   - Post-Test Score (Mean +/- SD): ${stats.postTestMean.toStringAsFixed(1)}% +/- ${stats.postTestSd.toStringAsFixed(1)}',
     );
     buffer.writeln(
-      '   - Mean Score Gain: +${stats.meanGainPercentage.toStringAsFixed(1)} percentage points',
+      '   - Mean Score Change: ${_formatSigned(stats.meanGainPercentage)} percentage points',
     );
     buffer.writeln(
       '   - Pre-Test Recall Latency: ${stats.preLatencyMs.toStringAsFixed(0)} ms',
@@ -140,5 +145,10 @@ class ResearchReportPdfExporterService {
             .reduce((sum, value) => sum + value) /
         values.length;
     return sqrt(variance);
+  }
+
+  static String _formatSigned(double value) {
+    final sign = value > 0 ? '+' : '';
+    return '$sign${value.toStringAsFixed(1)}';
   }
 }
