@@ -104,6 +104,36 @@ void main() {
     expect(after.gamesPlayed, before.gamesPlayed);
   });
 
+  testWidgets('successful persistence renders aggregate answer totals', (
+    tester,
+  ) async {
+    final repository = _RecordingRepository();
+    await repository.recordSession(
+      const ProgressSession(
+        sessionId: 'existing-session',
+        correctAnswers: 10,
+        wrongAnswers: 6,
+      ),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ScoreScreen(
+          sessionId: 'aggregate-session',
+          correctAnswers: 4,
+          wrongAnswers: 2,
+          repository: repository,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Correct answers'), findsOneWidget);
+    expect(find.text('14'), findsWidgets);
+    expect(find.text('Wrong answers'), findsOneWidget);
+    expect(find.text('8'), findsWidgets);
+  });
+
   testWidgets('record failure shows session results without invented totals', (
     tester,
   ) async {
@@ -119,7 +149,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
     expect(find.text('This session: 4 correct, 2 wrong'), findsOneWidget);
     expect(find.text('Total points'), findsNothing);
     expect(find.text('Games played'), findsNothing);
@@ -140,7 +170,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
     expect(find.text('This session: 3 correct, 1 wrong'), findsOneWidget);
     expect(find.text('Total points'), findsNothing);
     expect(find.text('Games played'), findsNothing);
@@ -161,7 +191,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(CircularProgressIndicator), findsNothing);
-    expect(find.text('Progress could not be saved locally.'), findsOneWidget);
+    expect(find.text('Local progress totals are unavailable.'), findsOneWidget);
     expect(find.text('This session: 2 correct, 1 wrong'), findsOneWidget);
   });
 }

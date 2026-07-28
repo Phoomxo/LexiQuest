@@ -110,7 +110,7 @@ class _ScoreScreenState extends State<ScoreScreen> {
                 ),
                 const SizedBox(height: 16),
                 if (!persistence.isSaved)
-                  const Text('Progress could not be saved locally.')
+                  const Text('Local progress totals are unavailable.')
                 else ...[
                   _buildStatCard(
                     'Total points',
@@ -123,6 +123,18 @@ class _ScoreScreenState extends State<ScoreScreen> {
                     persistence.snapshot!.gamesPlayed.toString(),
                     Icons.history,
                     Colors.deepPurple,
+                  ),
+                  _buildStatCard(
+                    'Correct answers',
+                    persistence.snapshot!.totalCorrectAnswers.toString(),
+                    Icons.check_circle,
+                    Colors.green,
+                  ),
+                  _buildStatCard(
+                    'Wrong answers',
+                    persistence.snapshot!.totalWrongAnswers.toString(),
+                    Icons.cancel,
+                    Colors.red,
                   ),
                 ],
                 const SizedBox(height: 30),
