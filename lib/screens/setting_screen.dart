@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/local_user_progress_store.dart';
+import '../config/remote_economy_policy.dart';
+import '../runtime/app_dependencies.dart';
 import 'achievements_screen.dart';
 import 'avatar_equipment_screen.dart';
 import 'select_wallpaper_screen.dart';
 
 class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key});
+  const SettingScreen({super.key, this.profileData, this.remoteEconomyPolicy});
+
+  final Map<String, dynamic>? profileData;
+  final RemoteEconomyPolicy? remoteEconomyPolicy;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
@@ -26,7 +31,8 @@ class _SettingScreenState extends State<SettingScreen> {
     super.initState();
     _auth = _resolveAuth();
     _firestore = _resolveFirestore();
-    if (_currentUser != null) {
+    _profileData = widget.profileData;
+    if (_profileData == null && _currentUser != null) {
       _fetchUserProfile();
     }
   }
@@ -167,6 +173,10 @@ class _SettingScreenState extends State<SettingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final remoteEconomyEnabled =
+        widget.remoteEconomyPolicy ??
+        AppDependenciesScope.maybeOf(context)?.remoteEconomyPolicy ??
+        const RemoteEconomyPolicy();
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -213,22 +223,23 @@ class _SettingScreenState extends State<SettingScreen> {
                     runSpacing: 8,
                     alignment: WrapAlignment.center,
                     children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SelectWallpaperScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.wallpaper, size: 18),
-                        label: const Text('เปลี่ยนวอลเปเปอร์'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurpleAccent,
-                          foregroundColor: Colors.white,
+                      if (remoteEconomyEnabled.shopAndPurchasesEnabled)
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => SelectWallpaperScreen(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.wallpaper, size: 18),
+                          label: const Text('เปลี่ยนวอลเปเปอร์'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.deepPurpleAccent,
+                            foregroundColor: Colors.white,
+                          ),
                         ),
-                      ),
                       ElevatedButton.icon(
                         onPressed: () {
                           Navigator.push(

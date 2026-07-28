@@ -96,11 +96,15 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 title: const Text('คลังหมวดหมู่'),
                 onTap: () => _pushLegacyDestination(CategoriesPage()),
               ),
-              ListTile(
-                leading: const Icon(Icons.shopping_bag),
-                title: const Text('ร้านค้า'),
-                onTap: () => _pushLegacyDestination(const ShopPage()),
-              ),
+              if (AppDependenciesScope.maybeOf(
+                    context,
+                  )?.remoteEconomyPolicy.shopAndPurchasesEnabled ??
+                  false)
+                ListTile(
+                  leading: const Icon(Icons.shopping_bag),
+                  title: const Text('ร้านค้า'),
+                  onTap: () => _pushLegacyDestination(const ShopPage()),
+                ),
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('ตั้งค่าเดิม'),

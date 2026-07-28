@@ -1,8 +1,10 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 import '../firebase_options.dart';
+import '../progress/local_progress_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -70,6 +72,9 @@ final class AppBootstrap {
     final firebase = await _availability(initializeFirebase);
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
+    final progressRepository = LocalProgressRepository(
+      await SharedPreferences.getInstance(),
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -82,6 +87,7 @@ final class AppBootstrap {
       config: config,
       guestSessionService: guestSessionService,
       buildInfo: const AppBuildInfo.fromEnvironment(),
+      progressRepository: progressRepository,
     );
   }
 

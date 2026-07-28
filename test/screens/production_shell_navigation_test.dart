@@ -7,7 +7,6 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
-import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _FakeGuestSessionService implements GuestSessionService {
@@ -112,7 +111,7 @@ void main() {
     await _openDrawer(tester);
 
     expect(find.text('คลังหมวดหมู่'), findsOneWidget);
-    expect(find.text('ร้านค้า'), findsOneWidget);
+    expect(find.text('ร้านค้า'), findsNothing);
     expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
 
     final status = tester.widget<Text>(
@@ -130,17 +129,6 @@ void main() {
     await tester.pump(const Duration(milliseconds: 350));
 
     expect(find.byType(CategoriesPage), findsOneWidget);
-  });
-
-  testWidgets('drawer shop item reaches ShopPage', (tester) async {
-    await _pumpHome(tester);
-    await _openDrawer(tester);
-
-    await tester.tap(find.text('ร้านค้า'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
-
-    expect(find.byType(ShopPage), findsOneWidget);
   });
 
   testWidgets('drawer settings item reaches SettingScreen', (tester) async {
