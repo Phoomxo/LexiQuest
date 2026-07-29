@@ -4,12 +4,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 import '../firebase_options.dart';
+import '../learning/storage/drift_learning_repository.dart';
+import '../learning/storage/learning_database_factory.dart';
 import '../progress/local_progress_repository.dart';
 import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'learning_dependencies.dart';
+import 'learning_feature_flags.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -52,6 +56,16 @@ Future<ProgressRepository> _loadProgressRepositoryProduction() async {
   return LocalProgressRepository(await SharedPreferences.getInstance());
 }
 
+Future<LearningDependencies> _loadLearningDependenciesProduction() async {
+  final database = await LearningDatabaseFactory().open();
+  final repository = DriftLearningRepository(database);
+  return LearningDependencies(
+    repository: repository,
+    reader: repository,
+    close: database.close,
+  );
+}
+
 final class AppBootstrap {
   const AppBootstrap({
     required this.initializeFirebase,
@@ -59,6 +73,8 @@ final class AppBootstrap {
     required this.loadConfig,
     required this.guestSessionService,
     this.loadProgressRepository = _loadProgressRepositoryProduction,
+    this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
+    this.loadLearningDependencies = _loadLearningDependenciesProduction,
   });
 
   factory AppBootstrap.production() {
@@ -76,12 +92,17 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final ProgressRepositoryLoader loadProgressRepository;
+  final LearningFeatureFlags featureFlags;
+  final LearningDependenciesLoader loadLearningDependencies;
 
   Future<AppDependencies> initialize() async {
     final firebase = await _availability(initializeFirebase);
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
     final progressRepository = await _loadProgressRepository();
+    final learningDependencies = featureFlags.associativeReadingEnabled
+        ? await _loadLearningDependencies()
+        : null;
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -95,6 +116,7 @@ final class AppBootstrap {
       guestSessionService: guestSessionService,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       progressRepository: progressRepository,
+      learningDependencies: learningDependencies,
     );
   }
 
@@ -120,6 +142,14 @@ final class AppBootstrap {
   Future<ProgressRepository?> _loadProgressRepository() async {
     try {
       return await loadProgressRepository();
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<LearningDependencies?> _loadLearningDependencies() async {
+    try {
+      return await loadLearningDependencies();
     } catch (_) {
       return null;
     }

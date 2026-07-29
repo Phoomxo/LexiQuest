@@ -6,6 +6,7 @@ import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
+import 'learning_dependencies.dart';
 
 final class AppDependencies {
   const AppDependencies({
@@ -15,6 +16,7 @@ final class AppDependencies {
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
     this.progressRepository,
+    this.learningDependencies,
   });
 
   final AppRuntimeStatus runtimeStatus;
@@ -23,6 +25,7 @@ final class AppDependencies {
   final AppBuildInfo buildInfo;
   final RemoteEconomyPolicy remoteEconomyPolicy;
   final ProgressRepository? progressRepository;
+  final LearningDependencies? learningDependencies;
 
   @override
   String toString() => 'AppDependencies';
