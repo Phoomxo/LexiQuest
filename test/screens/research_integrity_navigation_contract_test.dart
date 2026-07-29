@@ -29,6 +29,15 @@ void main() {
     expect(source, isNot(contains('ResearchDataExporterService')));
   });
 
+  test('Choose Mode does not expose the simulated object scanner', () {
+    final source = File(
+      'lib/screens/choose_mode_screen.dart',
+    ).readAsStringSync();
+
+    expect(source, isNot(contains('ObjectScannerScreen')));
+    expect(source, isNot(contains('Camera Object Scanner')));
+  });
+
   testWidgets(
     'reachable Export Center presents Anki and PDF without research outputs',
     (tester) async {

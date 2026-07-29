@@ -10,7 +10,6 @@ import 'dictation_quiz_screen.dart';
 import 'export_center_screen.dart';
 import 'learning_world_map_screen.dart';
 import 'mastery_dashboard_screen.dart';
-import 'object_scanner_screen.dart';
 import 'phonetic_explorer_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
@@ -374,23 +373,6 @@ class ChooseModeScreen extends StatelessWidget {
                   context,
                   MaterialPageRoute(
                     builder: (context) => const AiTutorScreen(),
-                  ),
-                );
-              },
-            ),
-            const SizedBox(height: 12),
-
-            // 📸 15. สแกนวัตถุคำศัพท์ (Object Scanner)
-            _buildModeButton(
-              context,
-              title: "สแกนวัตถุคำศัพท์ (Camera Object Scanner)",
-              icon: Icons.camera_alt,
-              color: Colors.blueGrey.shade800,
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const ObjectScannerScreen(),
                   ),
                 );
               },
