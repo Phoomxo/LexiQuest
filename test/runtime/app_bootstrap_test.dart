@@ -67,6 +67,13 @@ void main() {
   });
 
   group('AppBootstrap.initialize', () {
+    test(
+      'production composition does not access Firebase before initialization',
+      () {
+        expect(AppBootstrap.production, returnsNormally);
+      },
+    );
+
     test('retains the repository returned by the injected loader', () async {
       final expectedRepository = _StubProgressRepository();
       final bootstrap = AppBootstrap(
