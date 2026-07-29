@@ -73,7 +73,7 @@ function Get-AreaPathPattern {
             return '^(lib/(voice|services/voice_|screens/.*voice)|test/(voice|services/.*voice|screens/.*voice))'
         }
         'Economy' {
-            return '^(lib/(progress|config/remote_economy_policy|screens/(shop|score|achievements|setting))|test/(progress|screens/(shop|score|achievements|setting))|firestore\.rules|test/security/firestore-rules\.test\.cjs|package(-lock)?\.json)'
+            return '^(lib/(progress|config/remote_economy_policy|screens/(shop|score|achievements|setting))|test/(progress|screens/(shop|score|quiz_score|achievements|setting))|firestore\.rules|test/security/firestore-rules\.test\.cjs|package(-lock)?\.json)'
         }
         'Runtime' {
             return '^(lib/(runtime|config)|test/(runtime|config)|tool/cli/|android/|\.github/workflows/)'
@@ -279,6 +279,7 @@ function Get-VerificationCommands {
                     'test\progress',
                     'test\screens\shop_page_test.dart',
                     'test\screens\score_screen_test.dart',
+                    'test\screens\quiz_score_persistence_regression_test.dart',
                     'test\screens\achievements_screen_test.dart',
                     'test\screens\setting_screen_test.dart'
                 ) `
@@ -372,7 +373,8 @@ function Invoke-BoundedCommand {
             ForEach-Object { ConvertTo-PowerShellLiteral -Value ([string]$_) }
     )
     $wrappedCommand = @(
-        "`$ErrorActionPreference = 'Stop'"
+        "`$ErrorActionPreference = 'Continue'"
+        "`$global:LASTEXITCODE = `$null"
         (
             '& ' +
             $fileLiteral +
@@ -383,17 +385,22 @@ function Invoke-BoundedCommand {
             ' 2> ' +
             (ConvertTo-PowerShellLiteral -Value $stderrPath)
         )
-        'if ($null -eq $LASTEXITCODE) { exit 0 }'
-        'exit [int]$LASTEXITCODE'
+        "`$commandSucceeded = `$?"
+        'if ($null -ne $LASTEXITCODE) { exit [int]$LASTEXITCODE }'
+        'if (-not $commandSucceeded) { exit 1 }'
+        'exit 0'
     ) -join "`n"
     $encodedCommand = [Convert]::ToBase64String(
         [System.Text.Encoding]::Unicode.GetBytes($wrappedCommand)
     )
     $processInfo = New-Object System.Diagnostics.ProcessStartInfo
     $processInfo.FileName = 'powershell.exe'
-    $processInfo.Arguments = '-NoProfile -NonInteractive -EncodedCommand ' + $encodedCommand
+    $processInfo.Arguments =
+        '-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand ' +
+        $encodedCommand
     $processInfo.WorkingDirectory = $repoRoot
     $processInfo.UseShellExecute = $false
+    $processInfo.RedirectStandardError = $true
     $processInfo.CreateNoWindow = $true
     $process = New-Object System.Diagnostics.Process
     $process.StartInfo = $processInfo
@@ -416,6 +423,10 @@ function Invoke-BoundedCommand {
     }
 
     $process.WaitForExit()
+    $wrapperError = $process.StandardError.ReadToEnd()
+    if (-not [string]::IsNullOrWhiteSpace($wrapperError)) {
+        Add-Content -LiteralPath $stderrPath -Value $wrapperError -Encoding UTF8
+    }
     $process.Refresh()
     $status = if ($process.ExitCode -eq 0) { 'Passed' } else { 'Failed' }
     return [pscustomobject]@{

@@ -3,8 +3,7 @@ import 'dart:io';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  test('production has no client score or reward writers outside the disabled '
-      'shop debit allowlist', () {
+  test('production has no client score, reward, or purchase writers', () {
     final forbiddenWriters = <String>[];
     final scoreOrRewardField = RegExp(
       r'''['"](points|totalPoints|score|coins|coinReward|rewardXp|rewardCoins|balance|xp)['"]\s*:''',
@@ -27,11 +26,7 @@ void main() {
         final isLegacyZeroInitialization =
             relativePath == 'lib/services/user_service.dart' &&
             normalized == "'points': 0,";
-        final isDefaultDisabledPurchaseDebit =
-            relativePath == 'lib/screens/shop_page.dart' &&
-            normalized == "'totalPoints': FieldValue.increment(-productPrice),";
-
-        if (!isLegacyZeroInitialization && !isDefaultDisabledPurchaseDebit) {
+        if (!isLegacyZeroInitialization) {
           forbiddenWriters.add('$relativePath:${index + 1}: $normalized');
         }
       }
@@ -44,9 +39,9 @@ void main() {
 
     expect(forbiddenWriters, isEmpty);
     expect(policySource, contains('this.shopAndPurchasesEnabled = false'));
-    expect(
-      shopSource,
-      contains('!_policyFor(context).shopAndPurchasesEnabled'),
-    );
+    expect(shopSource, isNot(contains('cloud_firestore')));
+    expect(shopSource, isNot(contains('runTransaction')));
+    expect(shopSource, isNot(contains("collection('purchased_items')")));
+    expect(shopSource, isNot(contains("collection('products')")));
   });
 }
