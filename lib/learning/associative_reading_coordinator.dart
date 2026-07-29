@@ -121,6 +121,9 @@ final class AssociativeReadingCoordinator {
     required String ownerId,
     required String sessionId,
   }) async {
+    if (_state != null && _state!.session.ownerId != ownerId) {
+      _state = null;
+    }
     final session = await reader.readSession(
       ownerId: ownerId,
       sessionId: sessionId,

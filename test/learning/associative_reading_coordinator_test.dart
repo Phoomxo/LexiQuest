@@ -126,6 +126,7 @@ void main() {
         ),
       ),
     );
+    expect(restarted.state, isNull);
   });
 
   test('finalize and abandon are idempotent terminal operations', () async {

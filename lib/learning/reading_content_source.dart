@@ -52,6 +52,44 @@ abstract interface class ReadingContentSource {
   Future<ReadingContentResult> obtain(ReadingContentRequest request);
 }
 
+final class OfflineCuratedReadingContentSource implements ReadingContentSource {
+  static const _supportedLevels = {'A1', 'A2', 'B1', 'B2'};
+
+  @override
+  Future<ReadingContentResult> obtain(ReadingContentRequest request) async {
+    if (!_supportedLevels.contains(request.cefrLevel) ||
+        request.targetWords.isEmpty ||
+        request.targetWords.any((word) => word.trim().isEmpty)) {
+      return const ReadingContentUnavailable(
+        ReadingContentFailure.invalidRequest,
+      );
+    }
+    final normalizedWords = request.targetWords
+        .map((word) => word.trim())
+        .toList(growable: false);
+    final identifier =
+        'offline-${request.cefrLevel.toLowerCase()}-'
+        '${_contentHash(normalizedWords.join('|')).toRadixString(16)}';
+    if (request.preferredContentId != null &&
+        request.preferredContentId != identifier) {
+      return const ReadingContentUnavailable(ReadingContentFailure.unavailable);
+    }
+    return ReadingContentAvailable(
+      ReadingContent(
+        contentId: identifier,
+        contentVersion: 'offline-template-v1',
+        cefrLevel: request.cefrLevel,
+        passage:
+            'Read this short practice and connect the target words: '
+            '${normalizedWords.join(', ')}. Think about how each word can '
+            'describe a real situation.',
+        targetWords: normalizedWords,
+        provenance: ReadingContentProvenance.curated,
+      ),
+    );
+  }
+}
+
 final class CuratedReadingContentSource implements ReadingContentSource {
   CuratedReadingContentSource(List<ReadingContent> content)
     : _content = List<ReadingContent>.unmodifiable(content);
@@ -79,4 +117,13 @@ final class CuratedReadingContentSource implements ReadingContentSource {
     }
     return const ReadingContentUnavailable(ReadingContentFailure.unavailable);
   }
+}
+
+int _contentHash(String value) {
+  var hash = 0x811c9dc5;
+  for (final codeUnit in value.codeUnits) {
+    hash ^= codeUnit;
+    hash = (hash * 0x01000193) & 0x7fffffff;
+  }
+  return hash;
 }
