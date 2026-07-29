@@ -97,6 +97,7 @@ try {
         $contractTests = @(
             'ci-workflow.tests.ps1',
             'verify-backend-environments.tests.ps1',
+            'verify-scope.tests.ps1',
             'dependabot-config.tests.ps1',
             'osv-pr-workflow.tests.ps1',
             'osv-scheduled-workflow.tests.ps1',
