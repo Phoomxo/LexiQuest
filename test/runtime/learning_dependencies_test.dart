@@ -3,12 +3,15 @@ import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/learning/association_record.dart';
 import 'package:vocab_learning_app/learning/association_prompt.dart';
 import 'package:vocab_learning_app/learning/associative_memory.dart';
+import 'package:vocab_learning_app/learning/associative_reading_coordinator.dart';
 import 'package:vocab_learning_app/learning/learning_commit.dart';
 import 'package:vocab_learning_app/learning/learning_repository.dart';
 import 'package:vocab_learning_app/learning/memory_state.dart';
+import 'package:vocab_learning_app/learning/reading_content_source.dart';
 import 'package:vocab_learning_app/learning/reading_session.dart';
 import 'package:vocab_learning_app/learning/secure_id_generator.dart';
 import 'package:vocab_learning_app/learning/sync_outbox_entry.dart';
+import 'package:vocab_learning_app/learning/vocabulary_mixer.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/learning_dependencies.dart';
 import 'package:vocab_learning_app/runtime/learning_feature_flags.dart';
@@ -116,6 +119,14 @@ void main() {
         idGenerator: CryptographicIdGenerator(),
         clock: DateTime.now,
       ),
+      readingCoordinator: AssociativeReadingCoordinator(
+        repository: store,
+        reader: store,
+        contentSource: CuratedReadingContentSource(const []),
+        mixer: const VersionedVocabularyMixer(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
       close: () async {},
     );
     final dependencies = await _bootstrap(
@@ -129,6 +140,13 @@ void main() {
       isTrue,
     );
     expect(identical(dependencies.learningDependencies?.reader, store), isTrue);
+    expect(
+      identical(
+        dependencies.learningDependencies?.readingCoordinator,
+        expected.readingCoordinator,
+      ),
+      isTrue,
+    );
   });
 
   test('fails closed when durable storage cannot open', () async {

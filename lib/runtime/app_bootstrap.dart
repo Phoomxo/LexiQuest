@@ -6,9 +6,12 @@ import '../config/app_config.dart';
 import '../firebase_options.dart';
 import '../learning/association_prompt.dart';
 import '../learning/associative_memory.dart';
+import '../learning/associative_reading_coordinator.dart';
+import '../learning/reading_content_source.dart';
 import '../learning/secure_id_generator.dart';
 import '../learning/storage/drift_learning_repository.dart';
 import '../learning/storage/learning_database_factory.dart';
+import '../learning/vocabulary_mixer.dart';
 import '../progress/local_progress_repository.dart';
 import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
@@ -69,6 +72,14 @@ Future<LearningDependencies> _loadLearningDependenciesProduction() async {
       repository: repository,
       reader: repository,
       promptCatalog: CuratedAssociationPromptCatalog.offlineDefaults(),
+      idGenerator: CryptographicIdGenerator(),
+      clock: DateTime.now,
+    ),
+    readingCoordinator: AssociativeReadingCoordinator(
+      repository: repository,
+      reader: repository,
+      contentSource: OfflineCuratedReadingContentSource(),
+      mixer: const VersionedVocabularyMixer(),
       idGenerator: CryptographicIdGenerator(),
       clock: DateTime.now,
     ),
