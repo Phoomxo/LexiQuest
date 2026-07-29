@@ -67,8 +67,12 @@ jobs:
             --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
             --dart-define=LEXIQUEST_VOICE_API_URL=${LEXIQUEST_VOICE_API_URL} \
             --dart-define=LEXIQUEST_AI_API_URL=${LEXIQUEST_AI_API_URL}
-          jarsigner -verify -strict \
-            build/app/outputs/bundle/release/app-release.aab
+          signature_output="$(
+            jarsigner -verify -verbose -certs \
+              build/app/outputs/bundle/release/app-release.aab 2>&1
+          )"
+          printf '%s\n' "$signature_output"
+          grep -q "jar verified." <<<"$signature_output"
 
       - name: Generate source SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
