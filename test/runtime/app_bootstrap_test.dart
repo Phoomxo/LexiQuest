@@ -116,27 +116,30 @@ void main() {
       },
     );
 
-    test('retains the trusted purchase writer without enabling the shop', () async {
-      final purchaseWriter = _StubPurchaseRemoteWriter();
-      final bootstrap = AppBootstrap(
-        initializeFirebase: () async {},
-        initializeSupabase: () async {},
-        loadConfig: _validConfig,
-        guestSessionService: _StubGuestSessionService(),
-        purchaseRemoteWriter: purchaseWriter,
-      );
+    test(
+      'retains the trusted purchase writer without enabling the shop',
+      () async {
+        final purchaseWriter = _StubPurchaseRemoteWriter();
+        final bootstrap = AppBootstrap(
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          purchaseRemoteWriter: purchaseWriter,
+        );
 
-      final dependencies = await bootstrap.initialize();
+        final dependencies = await bootstrap.initialize();
 
-      expect(
-        identical(dependencies.purchaseRemoteWriter, purchaseWriter),
-        isTrue,
-      );
-      expect(
-        dependencies.remoteEconomyPolicy.shopAndPurchasesEnabled,
-        isFalse,
-      );
-    });
+        expect(
+          identical(dependencies.purchaseRemoteWriter, purchaseWriter),
+          isTrue,
+        );
+        expect(
+          dependencies.remoteEconomyPolicy.shopAndPurchasesEnabled,
+          isFalse,
+        );
+      },
+    );
 
     test(
       'repository loader failure returns null without leaking details',
