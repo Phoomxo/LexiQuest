@@ -45,6 +45,8 @@ Assert-Match $text 'anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610
 Assert-Match $text 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' 'artifact upload is pinned'
 Assert-Match $text 'production-aab\.cdx\.json' 'production AAB SBOM is retained'
 Assert-Match $text 'source\.cdx\.json' 'source SBOM is retained'
+Assert-NoMatch $text 'test -n "\$\{LEXIQUEST_VOICE_API_URL\}"' 'offline-first release does not require a voice endpoint'
+Assert-NoMatch $text 'test -n "\$\{LEXIQUEST_AI_API_URL\}"' 'offline-first release does not require a generated-content endpoint'
 Assert-Match $text 'rm -f android/key\.properties' 'temporary signing properties are removed'
 Assert-Match $text 'rm -f "\$\{RUNNER_TEMP\}/lexiquest-release\.jks"' 'temporary keystore is removed'
 Assert-NoMatch $text '-----BEGIN[ A-Z]*PRIVATE KEY-----' 'workflow contains no embedded private key'

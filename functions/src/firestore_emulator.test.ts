@@ -7,6 +7,10 @@ import {
   type CallableRequest,
 } from "firebase-functions/v2/https";
 
+import {
+  applyProductCatalogMigration,
+  rollbackProductCatalogMigration,
+} from "./product_catalog_migration.js";
 import { purchaseItem, recordProgressSession } from "./index.js";
 
 const firestore = getFirestore();
@@ -157,5 +161,81 @@ describe("trusted callable emulator contract", () => {
       remainingPoints: 0,
     });
     assert.equal((await firestore.collection("purchased_items").get()).size, 1);
+  });
+});
+
+describe("product catalog migration", () => {
+  it("is idempotent and restores the exact legacy catalog on rollback", async () => {
+    await firestore.collection("products").doc("legacy-a").set({
+      name: "Legacy A",
+      image_name: "a.png",
+      price: 50,
+    });
+    await firestore.collection("products").doc("legacy-b").set({
+      name: "Legacy B",
+      image_name: "b.png",
+      price: 100,
+      active: true,
+    });
+    await firestore.collection("purchased_items").doc("purchase-1").set({
+      user_id: "alice",
+      product_id: "legacy-a",
+      total_price: 50,
+    });
+
+    const before = new Map(
+      (await firestore.collection("products").get()).docs.map((document) => [
+        document.id,
+        document.data(),
+      ]),
+    );
+
+    assert.deepEqual(
+      await applyProductCatalogMigration(
+        firestore,
+        "catalog-v1",
+        "2026-07-29T13:00:00.000Z",
+      ),
+      { status: "applied", productCount: 2 },
+    );
+    assert.deepEqual(
+      await applyProductCatalogMigration(
+        firestore,
+        "catalog-v1",
+        "2026-07-29T13:00:01.000Z",
+      ),
+      { status: "already-applied", productCount: 2 },
+    );
+
+    for (const document of (await firestore.collection("products").get()).docs) {
+      assert.equal(document.data().active, false);
+      assert.equal(document.data().catalogVersion, "legacy-v1");
+    }
+    assert.equal(
+      (await firestore.collection("purchased_items").doc("purchase-1").get())
+        .data()?.product_id,
+      "legacy-a",
+    );
+
+    assert.deepEqual(
+      await rollbackProductCatalogMigration(
+        firestore,
+        "catalog-v1",
+        "2026-07-29T13:05:00.000Z",
+      ),
+      { status: "rolled-back", productCount: 2 },
+    );
+    assert.deepEqual(
+      await rollbackProductCatalogMigration(
+        firestore,
+        "catalog-v1",
+        "2026-07-29T13:05:01.000Z",
+      ),
+      { status: "already-rolled-back", productCount: 2 },
+    );
+
+    for (const document of (await firestore.collection("products").get()).docs) {
+      assert.deepEqual(document.data(), before.get(document.id));
+    }
   });
 });
