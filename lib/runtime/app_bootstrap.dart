@@ -20,7 +20,7 @@ typedef ProgressRepositoryLoader = Future<ProgressRepository> Function();
 // public default, but the publishable key must be supplied per build.
 const _productionSupabaseUrl = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_URL',
-  defaultValue: 'https://anyiuoqnuimtjlbjhwuf.supabase.co',
+  defaultValue: 'https://jkiyfnlegmhodyxpfwpc.supabase.co',
 );
 const _productionSupabasePublishableKey = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',

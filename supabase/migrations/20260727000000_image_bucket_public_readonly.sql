@@ -13,7 +13,19 @@ ON CONFLICT (id) DO UPDATE
 SET name = EXCLUDED.name,
     public = EXCLUDED.public;
 
--- 2. Keep RLS enabled on storage.objects. ENABLE only (never FORCE) so that
+-- 2. The Image bucket is the only public bucket in this release.
+UPDATE storage.buckets
+SET public = false
+WHERE id <> 'Image' AND public = true;
+
+-- 3. Remove broad policies left by the retired project before establishing
+--    the production contract below.
+DROP POLICY IF EXISTS "allow-delete-store-images 164ncr_0" ON storage.objects;
+DROP POLICY IF EXISTS "allow-insert-store-images 164ncr_0" ON storage.objects;
+DROP POLICY IF EXISTS "allow-select-store-images 164ncr_0" ON storage.objects;
+DROP POLICY IF EXISTS "allow-update-store-images 164ncr_0" ON storage.objects;
+
+-- 4. Keep RLS enabled on storage.objects. ENABLE only (never FORCE) so that
 --    service_role / superuser callers retain their normal RLS bypass.
 --    Conditional: the Supabase base schema already enables RLS on
 --    storage.objects and owns the table, so a non-owner migration role cannot
@@ -38,7 +50,7 @@ BEGIN
     END IF;
 END $$;
 
--- 3. Public read of the Image bucket, scoped exactly to bucket_id = 'Image'.
+-- 5. Public read of the Image bucket, scoped exactly to bucket_id = 'Image'.
 DROP POLICY IF EXISTS image_bucket_public_read ON storage.objects;
 CREATE POLICY image_bucket_public_read
 ON storage.objects
@@ -46,7 +58,7 @@ FOR SELECT
 TO anon, authenticated
 USING (bucket_id = 'Image'::text);
 
--- 4. Deny client inserts into storage.objects (RESTRICTIVE, false check).
+-- 6. Deny client inserts into storage.objects (RESTRICTIVE, false check).
 DROP POLICY IF EXISTS image_bucket_deny_client_insert ON storage.objects;
 CREATE POLICY image_bucket_deny_client_insert
 ON storage.objects
@@ -55,7 +67,7 @@ FOR INSERT
 TO anon, authenticated
 WITH CHECK (false);
 
--- 5. Deny client updates of storage.objects.
+-- 7. Deny client updates of storage.objects.
 DROP POLICY IF EXISTS image_bucket_deny_client_update ON storage.objects;
 CREATE POLICY image_bucket_deny_client_update
 ON storage.objects
@@ -65,7 +77,7 @@ TO anon, authenticated
 USING (false)
 WITH CHECK (false);
 
--- 6. Deny client deletes from storage.objects.
+-- 8. Deny client deletes from storage.objects.
 DROP POLICY IF EXISTS image_bucket_deny_client_delete ON storage.objects;
 CREATE POLICY image_bucket_deny_client_delete
 ON storage.objects

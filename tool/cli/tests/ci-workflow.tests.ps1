@@ -127,6 +127,8 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text 'flutter build' 'job builds the Android app'
     Assert-ContainsString $Text 'apk' 'Android build produces an APK'
     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
+    Assert-ContainsString $Text 'vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'build reads the Supabase publishable key from a repository variable'
+    Assert-ContainsString $Text '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'build injects the Supabase publishable key'
 }
 
 function Invoke-UvFrozenTests {

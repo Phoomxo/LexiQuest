@@ -126,9 +126,12 @@ jobs:
       - name: Build Android debug APK
         env:
           LEXIQUEST_BUILD_ID: ${{ github.sha }}
+          LEXIQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          test -n "${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY}"
           flutter build apk --debug \
             --dart-define=LEXIQUEST_VERSION=1.0.0+1 \
             --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
+            --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
             --dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001 \
             --dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000
