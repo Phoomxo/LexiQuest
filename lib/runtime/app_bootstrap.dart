@@ -2,6 +2,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../ai/ai_service_factory.dart';
+import '../ai/generated_reading_content_source.dart';
 import '../config/app_config.dart';
 import '../firebase_options.dart';
 import '../learning/association_prompt.dart';
@@ -15,6 +17,8 @@ import '../learning/vocabulary_mixer.dart';
 import '../progress/local_progress_repository.dart';
 import '../progress/progress_repository.dart';
 import '../services/guest_session_service.dart';
+import '../voice/reading_voice_enrichment.dart';
+import '../voice/voice_service_factory.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
@@ -62,29 +66,89 @@ Future<ProgressRepository> _loadProgressRepositoryProduction() async {
   return LocalProgressRepository(await SharedPreferences.getInstance());
 }
 
-Future<LearningDependencies> _loadLearningDependenciesProduction() async {
+Future<LearningDependencies> _loadLearningDependenciesProduction(
+  AppConfig? config,
+  LearningFeatureFlags flags,
+) async {
   final database = await LearningDatabaseFactory().open();
-  final repository = DriftLearningRepository(database);
-  return LearningDependencies(
-    repository: repository,
-    reader: repository,
-    associativeMemory: AssociativeMemory(
+  ManagedAiService? generatedService;
+  ManagedVoiceService? voiceService;
+  try {
+    final repository = DriftLearningRepository(database);
+    final curatedSource = OfflineCuratedReadingContentSource();
+    ReadingContentSource contentSource = curatedSource;
+    if (flags.generatedContentEnabled && config != null) {
+      generatedService = AiServiceFactory.create(config: config);
+      contentSource = GeneratedReadingContentSource(
+        provider: generatedService,
+        curatedFallback: curatedSource,
+      );
+    }
+
+    var readingVoice = const ReadingVoiceEnrichment.disabled();
+    if (flags.voiceEnrichmentEnabled && config != null) {
+      voiceService = VoiceServiceFactory.create(config: config);
+      readingVoice = ReadingVoiceEnrichment(provider: voiceService);
+    }
+
+    return LearningDependencies(
       repository: repository,
       reader: repository,
-      promptCatalog: CuratedAssociationPromptCatalog.offlineDefaults(),
-      idGenerator: CryptographicIdGenerator(),
-      clock: DateTime.now,
-    ),
-    readingCoordinator: AssociativeReadingCoordinator(
-      repository: repository,
-      reader: repository,
-      contentSource: OfflineCuratedReadingContentSource(),
-      mixer: const VersionedVocabularyMixer(),
-      idGenerator: CryptographicIdGenerator(),
-      clock: DateTime.now,
-    ),
-    close: database.close,
-  );
+      associativeMemory: AssociativeMemory(
+        repository: repository,
+        reader: repository,
+        promptCatalog: CuratedAssociationPromptCatalog.offlineDefaults(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
+      readingCoordinator: AssociativeReadingCoordinator(
+        repository: repository,
+        reader: repository,
+        contentSource: contentSource,
+        mixer: const VersionedVocabularyMixer(),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
+      readingVoice: readingVoice,
+      close: () => _closeLearningResources(
+        database.close,
+        generatedService?.dispose,
+        voiceService?.dispose,
+      ),
+    );
+  } on Object {
+    await _closeLearningResources(
+      database.close,
+      generatedService?.dispose,
+      voiceService?.dispose,
+    );
+    rethrow;
+  }
+}
+
+Future<void> _closeLearningResources(
+  Future<void> Function() closeDatabase,
+  Future<void> Function()? closeGeneratedService,
+  Future<void> Function()? closeVoiceService,
+) async {
+  Object? firstError;
+  StackTrace? firstStackTrace;
+  for (final closer in <Future<void> Function()?>[
+    closeVoiceService,
+    closeGeneratedService,
+    closeDatabase,
+  ]) {
+    if (closer == null) continue;
+    try {
+      await closer();
+    } on Object catch (error, stackTrace) {
+      firstError ??= error;
+      firstStackTrace ??= stackTrace;
+    }
+  }
+  if (firstError != null) {
+    Error.throwWithStackTrace(firstError, firstStackTrace!);
+  }
 }
 
 final class AppBootstrap {
@@ -122,7 +186,7 @@ final class AppBootstrap {
     final config = _loadConfig();
     final progressRepository = await _loadProgressRepository();
     final learningDependencies = featureFlags.associativeReadingEnabled
-        ? await _loadLearningDependencies()
+        ? await _loadLearningDependencies(config)
         : null;
 
     return AppDependencies(
@@ -168,9 +232,11 @@ final class AppBootstrap {
     }
   }
 
-  Future<LearningDependencies?> _loadLearningDependencies() async {
+  Future<LearningDependencies?> _loadLearningDependencies(
+    AppConfig? config,
+  ) async {
     try {
-      return await loadLearningDependencies();
+      return await loadLearningDependencies(config, featureFlags);
     } catch (_) {
       return null;
     }

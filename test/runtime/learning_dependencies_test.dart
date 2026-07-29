@@ -16,6 +16,7 @@ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/learning_dependencies.dart';
 import 'package:vocab_learning_app/runtime/learning_feature_flags.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/reading_voice_enrichment.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
   @override
@@ -86,10 +87,12 @@ AppBootstrap _bootstrap({
 }
 
 void main() {
-  test('associative reading and research are closed by default', () {
+  test('optional learning capabilities and research are closed by default', () {
     const flags = LearningFeatureFlags();
 
     expect(flags.associativeReadingEnabled, isFalse);
+    expect(flags.generatedContentEnabled, isFalse);
+    expect(flags.voiceEnrichmentEnabled, isFalse);
     expect(flags.researchModeEnabled, isFalse);
   });
 
@@ -97,7 +100,7 @@ void main() {
     var loaderCalls = 0;
     final dependencies = await _bootstrap(
       featureFlags: const LearningFeatureFlags(),
-      loadLearningDependencies: () async {
+      loadLearningDependencies: (config, flags) async {
         loaderCalls++;
         throw StateError('must not run');
       },
@@ -127,11 +130,23 @@ void main() {
         idGenerator: CryptographicIdGenerator(),
         clock: DateTime.now,
       ),
+      readingVoice: const ReadingVoiceEnrichment.disabled(),
       close: () async {},
     );
+    AppConfig? receivedConfig;
+    LearningFeatureFlags? receivedFlags;
+    const enabledFlags = LearningFeatureFlags(
+      associativeReadingEnabled: true,
+      generatedContentEnabled: true,
+      voiceEnrichmentEnabled: true,
+    );
     final dependencies = await _bootstrap(
-      featureFlags: const LearningFeatureFlags(associativeReadingEnabled: true),
-      loadLearningDependencies: () async => expected,
+      featureFlags: enabledFlags,
+      loadLearningDependencies: (config, flags) async {
+        receivedConfig = config;
+        receivedFlags = flags;
+        return expected;
+      },
     ).initialize();
 
     expect(identical(dependencies.learningDependencies, expected), isTrue);
@@ -147,13 +162,23 @@ void main() {
       ),
       isTrue,
     );
+    expect(receivedConfig, isNotNull);
+    expect(identical(receivedFlags, enabledFlags), isTrue);
+    expect(
+      identical(
+        dependencies.learningDependencies?.readingVoice,
+        expected.readingVoice,
+      ),
+      isTrue,
+    );
   });
 
   test('fails closed when durable storage cannot open', () async {
     const sentinel = 'PRIVATE-STORAGE-PATH-7c9f3a';
     final dependencies = await _bootstrap(
       featureFlags: const LearningFeatureFlags(associativeReadingEnabled: true),
-      loadLearningDependencies: () async => throw StateError(sentinel),
+      loadLearningDependencies: (config, flags) async =>
+          throw StateError(sentinel),
     ).initialize();
 
     expect(dependencies.learningDependencies, isNull);
