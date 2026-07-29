@@ -1,10 +1,13 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/learning/association_record.dart';
+import 'package:vocab_learning_app/learning/association_prompt.dart';
+import 'package:vocab_learning_app/learning/associative_memory.dart';
 import 'package:vocab_learning_app/learning/learning_commit.dart';
 import 'package:vocab_learning_app/learning/learning_repository.dart';
 import 'package:vocab_learning_app/learning/memory_state.dart';
 import 'package:vocab_learning_app/learning/reading_session.dart';
+import 'package:vocab_learning_app/learning/secure_id_generator.dart';
 import 'package:vocab_learning_app/learning/sync_outbox_entry.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/learning_dependencies.dart';
@@ -106,6 +109,13 @@ void main() {
     final expected = LearningDependencies(
       repository: store,
       reader: store,
+      associativeMemory: AssociativeMemory(
+        repository: store,
+        reader: store,
+        promptCatalog: CuratedAssociationPromptCatalog(const {}),
+        idGenerator: CryptographicIdGenerator(),
+        clock: DateTime.now,
+      ),
       close: () async {},
     );
     final dependencies = await _bootstrap(
