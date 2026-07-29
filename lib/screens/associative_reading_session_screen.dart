@@ -1,18 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../learning/associative_reading_coordinator.dart';
 import '../learning/reading_session.dart';
 import '../learning/recall_attempt.dart';
+import '../voice/reading_voice_enrichment.dart';
 
 class AssociativeReadingSessionScreen extends StatefulWidget {
   const AssociativeReadingSessionScreen({
     super.key,
     required this.coordinator,
     required this.initialState,
+    this.readingVoice,
   });
 
   final AssociativeReadingCoordinator coordinator;
   final AssociativeReadingState initialState;
+  final ReadingVoiceEnrichment? readingVoice;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -24,6 +29,7 @@ class _AssociativeReadingSessionScreenState
   late AssociativeReadingState _state;
   final _answerController = TextEditingController();
   var _busy = false;
+  var _voiceBusy = false;
   var _stageStarted = DateTime.now();
 
   @override
@@ -34,6 +40,10 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void dispose() {
+    final readingVoice = widget.readingVoice;
+    if (readingVoice != null) {
+      unawaited(readingVoice.stop());
+    }
     _answerController.dispose();
     super.dispose();
   }
@@ -87,13 +97,13 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(_state.content.passage),
+            _readingPassage(),
             const SizedBox(height: 12),
             Text('Target words: ${_state.session.targetWordKeys.join(', ')}'),
           ],
         );
       case ReadingSessionStage.cueFading:
-        return Text(_state.content.passage);
+        return _readingPassage();
       case ReadingSessionStage.recall:
         return _answerField('Type the missing target word');
       case ReadingSessionStage.association:
@@ -121,6 +131,44 @@ class _AssociativeReadingSessionScreenState
         border: const OutlineInputBorder(),
       ),
     );
+  }
+
+  Widget _readingPassage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(_state.content.passage),
+        if (widget.readingVoice != null) ...[
+          const SizedBox(height: 8),
+          IconButton.filledTonal(
+            tooltip: 'Listen',
+            onPressed: _voiceBusy ? null : _listen,
+            icon: _voiceBusy
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.volume_up_outlined),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Future<void> _listen() async {
+    final readingVoice = widget.readingVoice;
+    if (readingVoice == null) return;
+    setState(() => _voiceBusy = true);
+    final result = await readingVoice.speak(_state.content);
+    if (!mounted) return;
+    setState(() => _voiceBusy = false);
+    if (result is ReadingVoiceUnavailable) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Voice is unavailable. Continue reading.'),
+        ),
+      );
+    }
   }
 
   Future<void> _primaryIntent(ReadingSessionStage stage) async {
