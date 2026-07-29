@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/progress/progress_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  final recordedAt = DateTime.utc(2026, 7, 29, 10);
 
   late SharedPreferences prefs;
   late LocalProgressRepository repository;
@@ -14,7 +15,7 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
-    repository = LocalProgressRepository(prefs);
+    repository = LocalProgressRepository(prefs, clock: () => recordedAt);
   });
 
   group('LocalProgressRepository boundary', () {
@@ -215,6 +216,88 @@ void main() {
           'session-1',
           'session-2',
         });
+      },
+    );
+  });
+
+  group('trusted writer outbox', () {
+    test('captures stable event ids and completion time once', () async {
+      await repository.recordSession(
+        const ProgressSession(
+          sessionId: 'session-1',
+          correctAnswers: 7,
+          wrongAnswers: 3,
+        ),
+      );
+
+      final pending = await repository.pendingSessions();
+
+      expect(pending.single.eventIds, hasLength(10));
+      expect(pending.single.eventIds.toSet(), hasLength(10));
+      expect(
+        pending.single.eventIds.every(
+          (eventId) => RegExp(r'^[a-f0-9]{64}$').hasMatch(eventId),
+        ),
+        isTrue,
+      );
+      expect(pending.single.completedAtUtc, recordedAt);
+    });
+
+    test('acknowledgement removes only outbox data', () async {
+      await repository.recordSession(
+        const ProgressSession(
+          sessionId: 'session-1',
+          correctAnswers: 7,
+          wrongAnswers: 3,
+        ),
+      );
+      final before = await repository.readSnapshot();
+
+      await repository.acknowledgeSession('session-1');
+      await repository.acknowledgeSession('session-1');
+
+      expect(await repository.pendingSessions(), isEmpty);
+      final after = await repository.readSnapshot();
+      expect(after.totalPoints, before.totalPoints);
+      expect(after.gamesPlayed, before.gamesPlayed);
+    });
+
+    test(
+      'reads the previous envelope version with safe sync metadata',
+      () async {
+        await repository.recordSession(
+          const ProgressSession(
+            sessionId: 'key-probe',
+            correctAnswers: 0,
+            wrongAnswers: 0,
+          ),
+        );
+        final key = prefs.getKeys().single;
+        await prefs.setString(
+          key,
+          jsonEncode({
+            'v': 1,
+            'snapshot': {
+              'totalPoints': 2,
+              'totalCorrectAnswers': 2,
+              'totalWrongAnswers': 1,
+              'gamesPlayed': 1,
+            },
+            'pending': [
+              {
+                'sessionId': 'legacy-session',
+                'correctAnswers': 2,
+                'wrongAnswers': 1,
+              },
+            ],
+          }),
+        );
+        final legacy = LocalProgressRepository(prefs, clock: () => recordedAt);
+
+        final pending = await legacy.pendingSessions();
+
+        expect(pending.single.eventIds, hasLength(3));
+        expect(pending.single.completedAtUtc, recordedAt);
       },
     );
   });

@@ -1,4 +1,6 @@
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -16,7 +18,12 @@ import '../learning/storage/drift_learning_repository.dart';
 import '../learning/storage/learning_database_factory.dart';
 import '../learning/vocabulary_mixer.dart';
 import '../progress/local_progress_repository.dart';
+import '../progress/firebase_progress_remote_writer.dart';
+import '../progress/firebase_purchase_remote_writer.dart';
+import '../progress/progress_remote_writer.dart';
 import '../progress/progress_repository.dart';
+import '../progress/progress_sync_service.dart';
+import '../progress/purchase_remote_writer.dart';
 import '../services/guest_session_service.dart';
 import '../voice/reading_voice_enrichment.dart';
 import '../voice/voice_service_factory.dart';
@@ -47,6 +54,21 @@ Future<void> _initializeFirebaseProduction() async {
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
+  if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+    await FirebaseAppCheck.instance.activate(
+      providerAndroid: kDebugMode
+          ? const AndroidDebugProvider()
+          : const AndroidPlayIntegrityProvider(),
+    );
+  } else if (!kIsWeb &&
+      (defaultTargetPlatform == TargetPlatform.iOS ||
+          defaultTargetPlatform == TargetPlatform.macOS)) {
+    await FirebaseAppCheck.instance.activate(
+      providerApple: kDebugMode
+          ? const AppleDebugProvider()
+          : const AppleAppAttestWithDeviceCheckFallbackProvider(),
     );
   }
 }
@@ -163,6 +185,8 @@ final class AppBootstrap {
     required this.loadConfig,
     required this.guestSessionService,
     this.loadProgressRepository = _loadProgressRepositoryProduction,
+    this.progressRemoteWriter,
+    this.purchaseRemoteWriter,
     this.featureFlags = const LearningFeatureFlags.fromEnvironment(),
     this.loadLearningDependencies = _loadLearningDependenciesProduction,
   });
@@ -174,6 +198,8 @@ final class AppBootstrap {
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       loadProgressRepository: _loadProgressRepositoryProduction,
+      progressRemoteWriter: FirebaseProgressRemoteWriter(),
+      purchaseRemoteWriter: FirebasePurchaseRemoteWriter(),
     );
   }
 
@@ -182,6 +208,8 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final ProgressRepositoryLoader loadProgressRepository;
+  final ProgressRemoteWriter? progressRemoteWriter;
+  final PurchaseRemoteWriter? purchaseRemoteWriter;
   final LearningFeatureFlags featureFlags;
   final LearningDependenciesLoader loadLearningDependencies;
 
@@ -190,6 +218,13 @@ final class AppBootstrap {
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
     final progressRepository = await _loadProgressRepository();
+    final progressSyncService =
+        progressRepository == null || progressRemoteWriter == null
+        ? null
+        : ProgressSyncService(
+            repository: progressRepository,
+            remoteWriter: progressRemoteWriter!,
+          );
     final learningDependencies = featureFlags.associativeReadingEnabled
         ? await _loadLearningDependencies(config)
         : null;
@@ -206,6 +241,8 @@ final class AppBootstrap {
       guestSessionService: guestSessionService,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       progressRepository: progressRepository,
+      progressSyncService: progressSyncService,
+      purchaseRemoteWriter: purchaseRemoteWriter,
       learningDependencies: learningDependencies,
     );
   }

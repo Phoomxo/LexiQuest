@@ -312,7 +312,45 @@ describe('registered private learning record contract', () => {
   });
 });
 
-describe('Release A remote economy lockdown', () => {
+describe('trusted remote economy contract', () => {
+  it('denies direct progress evidence reads and writes for every client', async () => {
+    await seedDocuments([
+      [
+        'progress_sessions/server_owned',
+        {
+          uid: alice,
+          sessionId: 'session_1',
+          eventIds: ['event_1'],
+          correctAnswers: 1,
+          completedAt: '2026-07-29T10:00:00.000Z',
+          recordedAt: '2026-07-29T10:00:01.000Z',
+          fingerprint: 'server-only',
+        },
+      ],
+    ]);
+    const ownerDb = authDb();
+    const crossOwnerDb = authDb(bob);
+    const anonymousDb = authDb(anonymousUid, true);
+    const unauthenticatedDb = testEnv.unauthenticatedContext().firestore();
+
+    for (const db of [
+      ownerDb,
+      crossOwnerDb,
+      anonymousDb,
+      unauthenticatedDb,
+    ]) {
+      await assertFails(
+        getDoc(doc(db, 'progress_sessions', 'server_owned')),
+      );
+      await assertFails(
+        setDoc(doc(db, 'progress_sessions', 'client_forged'), {
+          uid: alice,
+          correctAnswers: 100,
+        }),
+      );
+    }
+  });
+
   it('denies an owner creating remote economy state', async () => {
     const db = authDb();
 

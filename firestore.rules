@@ -286,6 +286,15 @@ service cloud.firestore {
     }
 
     // -------------------------------------------------------------------------
+    // progress_sessions/{sessionId} - trusted-writer idempotency evidence.
+    // These records contain server-owned fingerprints and are never exposed to
+    // clients. Callable functions use the Admin SDK and bypass client rules.
+    // -------------------------------------------------------------------------
+    match /progress_sessions/{sessionId} {
+      allow read, write: if false;
+    }
+
+    // -------------------------------------------------------------------------
     // quiz/{quizId} - DENIED. QuizService is the only writer and is never
     // instantiated in the app (dead code), the documents carry no uid, and no
     // reader exists. Do not enable until ownership and a reader are designed.

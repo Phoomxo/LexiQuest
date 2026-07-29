@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/progress/progress_repository.dart';
+
+typedef ProgressClock = DateTime Function();
 
 /// Offline-first [ProgressRepository] backed entirely by [SharedPreferences].
 ///
@@ -14,24 +17,26 @@ import 'package:vocab_learning_app/progress/progress_repository.dart';
 /// previously persisted state without any separate in-memory cache.
 class LocalProgressRepository implements ProgressRepository {
   /// Constructs a repository that reads and writes [prefs] directly.
-  LocalProgressRepository(this._prefs);
+  LocalProgressRepository(this._prefs, {ProgressClock? clock})
+    : _clock = clock ?? DateTime.now;
 
   final SharedPreferences _prefs;
+  final ProgressClock _clock;
 
   /// Single private, namespaced, versioned key for the whole progress envelope.
   static const String _kProgressKey = 'lexiquest_local_progress_v1';
 
   /// Envelope schema version, stored alongside the payload so future readers
   /// can detect and fail closed on formats they cannot safely interpret.
-  static const int _kEnvelopeVersion = 1;
+  static const int _kEnvelopeVersion = 2;
 
   /// Reasonable upper bound on a recorded session id length.
-  static const int _kMaxSessionIdLength = 256;
+  static const int _kMaxSessionIdLength = 128;
 
   /// Sane per-session ceiling on total answers. Real sessions are far smaller;
   /// this rejects obviously broken payloads (e.g. a million answers) while
   /// comfortably admitting any realistic session.
-  static const int _kMaxAnswersPerSession = 10000;
+  static const int _kMaxAnswersPerSession = 100;
 
   /// Serializer gate: concurrent [recordSession] calls on one instance are
   /// queued here so their read-modify-write steps cannot interleave and lose
@@ -50,6 +55,31 @@ class LocalProgressRepository implements ProgressRepository {
   @override
   Future<List<ProgressSession>> pendingSessions() async {
     return List<ProgressSession>.unmodifiable(_readState().pending);
+  }
+
+  @override
+  Future<void> acknowledgeSession(String sessionId) {
+    return _serialized(() async {
+      final canonicalId = sessionId.trim();
+      if (canonicalId.isEmpty ||
+          canonicalId.length > _kMaxSessionIdLength ||
+          canonicalId != sessionId) {
+        throw ArgumentError.value(sessionId, 'sessionId', 'is invalid');
+      }
+      final state = _readState();
+      if (!state.pending.any((session) => session.sessionId == canonicalId)) {
+        return;
+      }
+      await _writeState(
+        _ProgressState(
+          snapshot: state.snapshot,
+          pending: [
+            for (final session in state.pending)
+              if (session.sessionId != canonicalId) session,
+          ],
+        ),
+      );
+    });
   }
 
   /// Runs [task] only after any previously queued [recordSession] has settled,
@@ -87,6 +117,10 @@ class LocalProgressRepository implements ProgressRepository {
       sessionId: id,
       correctAnswers: session.correctAnswers,
       wrongAnswers: session.wrongAnswers,
+      eventIds: session.eventIds.isEmpty
+          ? _defaultEventIds(id, session.correctAnswers + session.wrongAnswers)
+          : List<String>.unmodifiable(session.eventIds),
+      completedAtUtc: (session.completedAtUtc ?? _clock()).toUtc(),
     );
     await _writeState(_applySession(state, canonical));
   }
@@ -119,6 +153,20 @@ class LocalProgressRepository implements ProgressRepository {
         _kMaxAnswersPerSession) {
       return 'answers per session exceed the maximum of '
           '$_kMaxAnswersPerSession';
+    }
+    final eventIds = session.eventIds;
+    if (eventIds.isNotEmpty) {
+      if (eventIds.length > _kMaxAnswersPerSession ||
+          session.correctAnswers > eventIds.length ||
+          eventIds.toSet().length != eventIds.length ||
+          eventIds.any(
+            (eventId) =>
+                eventId.isEmpty ||
+                eventId.length > 128 ||
+                !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(eventId),
+          )) {
+        return 'event identifiers are invalid';
+      }
     }
     return null;
   }
@@ -165,7 +213,8 @@ class LocalProgressRepository implements ProgressRepository {
   }
 
   _ProgressState _decodeState(Map<String, dynamic> json) {
-    if (json['v'] != _kEnvelopeVersion) {
+    final envelopeVersion = json['v'];
+    if (envelopeVersion != 1 && envelopeVersion != _kEnvelopeVersion) {
       throw FormatException(
         'unsupported progress envelope version: ${json['v']}',
       );
@@ -180,7 +229,8 @@ class LocalProgressRepository implements ProgressRepository {
     }
     final seenIds = <String>{};
     final pending = <ProgressSession>[
-      for (final entry in pendingJson) _decodeSession(entry, seenIds),
+      for (final entry in pendingJson)
+        _decodeSession(entry, seenIds, envelopeVersion as int),
     ];
     return _ProgressState(
       snapshot: _decodeSnapshot(snapshotJson),
@@ -223,14 +273,27 @@ class LocalProgressRepository implements ProgressRepository {
     );
   }
 
-  ProgressSession _decodeSession(dynamic json, Set<String> seenIds) {
+  ProgressSession _decodeSession(
+    dynamic json,
+    Set<String> seenIds,
+    int envelopeVersion,
+  ) {
     if (json is! Map<String, dynamic>) {
       throw const FormatException('invalid pending session entry');
     }
+    final sessionId = _decodeString(json['sessionId'], 'sessionId');
+    final correctAnswers = _decodeInt(json['correctAnswers'], 'correctAnswers');
+    final wrongAnswers = _decodeInt(json['wrongAnswers'], 'wrongAnswers');
     final session = ProgressSession(
-      sessionId: _decodeString(json['sessionId'], 'sessionId'),
-      correctAnswers: _decodeInt(json['correctAnswers'], 'correctAnswers'),
-      wrongAnswers: _decodeInt(json['wrongAnswers'], 'wrongAnswers'),
+      sessionId: sessionId,
+      correctAnswers: correctAnswers,
+      wrongAnswers: wrongAnswers,
+      eventIds: envelopeVersion == 1
+          ? _defaultEventIds(sessionId, correctAnswers + wrongAnswers)
+          : _decodeEventIds(json['eventIds']),
+      completedAtUtc: envelopeVersion == 1
+          ? _clock().toUtc()
+          : _decodeUtc(json['completedAtUtc']),
     );
     // The writer always stores ids already trimmed, so surrounding whitespace
     // is a corruption signal rather than something to normalize on read.
@@ -263,6 +326,24 @@ class LocalProgressRepository implements ProgressRepository {
     return value;
   }
 
+  List<String> _decodeEventIds(dynamic value) {
+    if (value is! List || value.any((entry) => entry is! String)) {
+      throw const FormatException('progress eventIds must be strings');
+    }
+    return List<String>.unmodifiable(value.cast<String>());
+  }
+
+  DateTime _decodeUtc(dynamic value) {
+    if (value is! String) {
+      throw const FormatException('completedAtUtc must be a string');
+    }
+    final parsed = DateTime.tryParse(value);
+    if (parsed == null) {
+      throw const FormatException('completedAtUtc must be an ISO timestamp');
+    }
+    return parsed.toUtc();
+  }
+
   String _encodeState(_ProgressState state) {
     return jsonEncode({
       'v': _kEnvelopeVersion,
@@ -278,6 +359,8 @@ class LocalProgressRepository implements ProgressRepository {
             'sessionId': session.sessionId,
             'correctAnswers': session.correctAnswers,
             'wrongAnswers': session.wrongAnswers,
+            'eventIds': session.eventIds,
+            'completedAtUtc': session.completedAtUtc!.toIso8601String(),
           },
       ],
     });
@@ -289,6 +372,14 @@ class LocalProgressRepository implements ProgressRepository {
     totalWrongAnswers: 0,
     gamesPlayed: 0,
   );
+
+  List<String> _defaultEventIds(String sessionId, int answerCount) {
+    final count = answerCount < 1 ? 1 : answerCount;
+    return List<String>.unmodifiable([
+      for (var index = 0; index < count; index++)
+        sha256.convert(utf8.encode('$sessionId:$index')).toString(),
+    ]);
+  }
 }
 
 /// Private holder pairing the current snapshot with its pending outbox.
