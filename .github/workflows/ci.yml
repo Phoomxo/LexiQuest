@@ -184,6 +184,9 @@ jobs:
           printf '%s\n' "$signature_output"
           grep -q "jar verified." <<<"$signature_output"
 
+      - name: Prepare SBOM directory
+        run: mkdir -p build/sbom
+
       - name: Generate source SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:

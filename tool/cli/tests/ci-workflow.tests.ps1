@@ -133,6 +133,7 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text 'flutter build appbundle --release' 'CI builds a release candidate AAB'
     Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'CI verifies the release candidate signature'
     Assert-ContainsString $Text 'grep -q "jar verified."' 'CI rejects unsigned release candidates'
+    Assert-ContainsString $Text 'mkdir -p build/sbom' 'CI prepares the SBOM output directory'
     Assert-ContainsString $Text 'release-candidate.cdx.json' 'CI creates an artifact SBOM'
     Assert-ContainsString $Text 'source.cdx.json' 'CI creates a source SBOM'
     Assert-ContainsString $Text 'Remove ephemeral signing material' 'CI removes disposable signing material'

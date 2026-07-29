@@ -40,6 +40,7 @@ Assert-Match $text 'secrets\.ANDROID_RELEASE_KEY_PASSWORD' 'key password is read
 Assert-Match $text 'flutter build appbundle --release' 'workflow builds a production AAB'
 Assert-Match $text 'jarsigner -verify -verbose -certs' 'workflow verifies the signed AAB'
 Assert-Match $text 'grep -q "jar verified."' 'workflow rejects unsigned AABs'
+Assert-Match $text 'mkdir -p build/sbom' 'workflow prepares the SBOM output directory'
 Assert-Match $text 'anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610' 'SBOM generator is pinned'
 Assert-Match $text 'actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a' 'artifact upload is pinned'
 Assert-Match $text 'production-aab\.cdx\.json' 'production AAB SBOM is retained'
