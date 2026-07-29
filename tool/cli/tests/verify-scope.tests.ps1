@@ -106,6 +106,8 @@ Assert-RegexNotMatches $scopeText '(?i)\b(retry|attempts?|maxRetries)\b' 'runner
 Assert-ContainsString $scopeText "-ExcludedGroup 'gpu'" 'voice backend checks exclude GPU dependencies'
 Assert-ContainsString $scopeText "-AdditionalPytestArguments @('--ignore', 'backend\voice_api\tests\integration')" 'voice backend checks exclude live integration tests'
 Assert-ContainsString $scopeText "'test\screens\quiz_score_persistence_regression_test.dart'" 'economy scope includes the client-writer regression contract'
+Assert-ContainsString $scopeText "-FilePath 'npm'" 'economy scope can invoke npm'
+Assert-ContainsString $scopeText "-Arguments @('--prefix', 'functions', 'test')" 'economy scope includes trusted writer tests'
 Assert-ContainsString $verifyText "'verify-scope.tests.ps1'," 'full verification runs the scoped-runner contract'
 Assert-ContainsString $verifyText '$env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'release verification reads the Supabase publishable key from the environment'
 Assert-ContainsString $verifyText 'Get-RequiredSupabasePublishableKey' 'release verification rejects a missing or malformed Supabase publishable key'

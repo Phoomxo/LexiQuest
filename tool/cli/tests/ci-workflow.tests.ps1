@@ -224,6 +224,8 @@ function Invoke-NpmFirebaseToolchainTests {
     Assert-RegexMatches $WorkflowText '(?m)^[ \t]*java-version[ \t]*:[ \t]*[''"]?21\b' 'setup-java selects Java 21 (firebase-tools 15.24.0 requires Java 21+)'
     Assert-RegexNotMatches $PackageJsonText '"firebase-tools"[ \t]*:' 'package.json excludes firebase-tools'
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
+    Assert-ContainsString $WorkflowText 'npm --prefix functions ci --ignore-scripts' 'workflow installs trusted writer dependencies reproducibly'
+    Assert-ContainsString $WorkflowText 'npm --prefix functions test' 'workflow executes trusted writer tests'
 }
 
 function Invoke-SupabaseToolchainTests {

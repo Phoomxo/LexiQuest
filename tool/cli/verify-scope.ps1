@@ -73,7 +73,7 @@ function Get-AreaPathPattern {
             return '^(lib/(voice|services/voice_|screens/.*voice)|test/(voice|services/.*voice|screens/.*voice))'
         }
         'Economy' {
-            return '^(lib/(progress|config/remote_economy_policy|screens/(shop|score|achievements|setting))|test/(progress|screens/(shop|score|quiz_score|achievements|setting))|firestore\.rules|test/security/firestore-rules\.test\.cjs|package(-lock)?\.json)'
+            return '^(lib/(progress|config/remote_economy_policy|screens/(shop|score|achievements|setting))|test/(progress|screens/(shop|score|quiz_score|achievements|setting))|functions/|firebase\.json|firestore\.rules|test/security/firestore-rules\.test\.cjs|package(-lock)?\.json)'
         }
         'Runtime' {
             return '^(lib/(runtime|config)|test/(runtime|config)|tool/cli/|android/|\.github/workflows/)'
@@ -283,6 +283,11 @@ function Get-VerificationCommands {
                     'test\screens\achievements_screen_test.dart',
                     'test\screens\setting_screen_test.dart'
                 ) `
+                -SourceArea 'Economy'))
+            $commands.Add((New-CommandSpec `
+                -Name 'Trusted writer tests' `
+                -FilePath 'npm' `
+                -Arguments @('--prefix', 'functions', 'test') `
                 -SourceArea 'Economy'))
             if ($SelectedLevel -eq 'Subsystem') {
                 $commands.Add((New-CommandSpec `
