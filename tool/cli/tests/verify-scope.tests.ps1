@@ -107,6 +107,9 @@ Assert-ContainsString $scopeText "-ExcludedGroup 'gpu'" 'voice backend checks ex
 Assert-ContainsString $scopeText "-AdditionalPytestArguments @('--ignore', 'backend\voice_api\tests\integration')" 'voice backend checks exclude live integration tests'
 Assert-ContainsString $scopeText "'test\screens\quiz_score_persistence_regression_test.dart'" 'economy scope includes the client-writer regression contract'
 Assert-ContainsString $verifyText "'verify-scope.tests.ps1'," 'full verification runs the scoped-runner contract'
+Assert-ContainsString $verifyText '$env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'release verification reads the Supabase publishable key from the environment'
+Assert-ContainsString $verifyText 'Get-RequiredSupabasePublishableKey' 'release verification rejects a missing or malformed Supabase publishable key'
+Assert-ContainsString $verifyText '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'release build injects the Supabase publishable key'
 Assert-ContainsString $workflowText './tool/cli/tests/verify-scope.tests.ps1' 'CI runs the scoped-runner contract'
 
 $total = $script:PassedCount + $script:FailedCount

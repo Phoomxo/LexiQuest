@@ -17,6 +17,17 @@ $scriptDir = $PSScriptRoot
 $repoRoot = Split-Path -Parent (Split-Path -Parent $scriptDir)
 $script:phaseResults = @()
 
+function Get-RequiredSupabasePublishableKey {
+    $value = $env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY
+    if (
+        [string]::IsNullOrWhiteSpace($value) -or
+        $value -notmatch '^sb_publishable_[A-Za-z0-9_-]+$'
+    ) {
+        throw 'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY must be a valid publishable key.'
+    }
+    return $value
+}
+
 function Write-VerifySummary {
     param([string]$Title)
 
@@ -190,6 +201,7 @@ try {
     }
 
     Invoke-VerifyPhase '10' 'Android debug APK build (emulator loopback)' {
+        $supabasePublishableKey = Get-RequiredSupabasePublishableKey
         $shortSha = (& git rev-parse --short HEAD 2>$null | Select-Object -First 1)
         if ([string]::IsNullOrWhiteSpace($shortSha)) {
             $shortSha = 'unknown'
@@ -207,6 +219,7 @@ try {
             '--debug',
             '--dart-define=LEXIQUEST_VERSION=1.0.0+1',
             ('--dart-define=LEXIQUEST_BUILD_ID=' + $buildId),
+            ('--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' + $supabasePublishableKey),
             '--dart-define=LEXIQUEST_VOICE_API_URL=http://10.0.2.2:8001',
             '--dart-define=LEXIQUEST_AI_API_URL=http://10.0.2.2:8000'
         )
