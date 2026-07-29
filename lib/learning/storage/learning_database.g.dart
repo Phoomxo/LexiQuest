@@ -4,7 +4,7 @@ part of 'learning_database.dart';
 
 // ignore_for_file: type=lint
 class $LearningCommitsTable extends LearningCommits
-    with TableInfo<$LearningCommitsTable, LearningCommit> {
+    with TableInfo<$LearningCommitsTable, LearningCommitRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -95,6 +95,21 @@ class $LearningCommitsTable extends LearningCommits
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _contentFingerprintMeta =
+      const VerificationMeta('contentFingerprint');
+  @override
+  late final GeneratedColumn<String> contentFingerprint =
+      GeneratedColumn<String>(
+        'content_fingerprint',
+        aliasedName,
+        false,
+        additionalChecks: GeneratedColumn.checkTextLength(
+          minTextLength: 64,
+          maxTextLength: 64,
+        ),
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
   @override
   List<GeneratedColumn> get $columns => [
     ownerId,
@@ -104,6 +119,7 @@ class $LearningCommitsTable extends LearningCommits
     commitId,
     recordedAtUtc,
     recordCount,
+    contentFingerprint,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -112,7 +128,7 @@ class $LearningCommitsTable extends LearningCommits
   static const String $name = 'learning_commits';
   @override
   VerificationContext validateIntegrity(
-    Insertable<LearningCommit> instance, {
+    Insertable<LearningCommitRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -186,15 +202,26 @@ class $LearningCommitsTable extends LearningCommits
     } else if (isInserting) {
       context.missing(_recordCountMeta);
     }
+    if (data.containsKey('content_fingerprint')) {
+      context.handle(
+        _contentFingerprintMeta,
+        contentFingerprint.isAcceptableOrUnknown(
+          data['content_fingerprint']!,
+          _contentFingerprintMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentFingerprintMeta);
+    }
     return context;
   }
 
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, commitId};
   @override
-  LearningCommit map(Map<String, dynamic> data, {String? tablePrefix}) {
+  LearningCommitRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return LearningCommit(
+    return LearningCommitRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -223,6 +250,10 @@ class $LearningCommitsTable extends LearningCommits
         DriftSqlType.int,
         data['${effectivePrefix}record_count'],
       )!,
+      contentFingerprint: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_fingerprint'],
+      )!,
     );
   }
 
@@ -232,7 +263,8 @@ class $LearningCommitsTable extends LearningCommits
   }
 }
 
-class LearningCommit extends DataClass implements Insertable<LearningCommit> {
+class LearningCommitRow extends DataClass
+    implements Insertable<LearningCommitRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -240,7 +272,8 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
   final String commitId;
   final int recordedAtUtc;
   final int recordCount;
-  const LearningCommit({
+  final String contentFingerprint;
+  const LearningCommitRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -248,6 +281,7 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
     required this.commitId,
     required this.recordedAtUtc,
     required this.recordCount,
+    required this.contentFingerprint,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -259,6 +293,7 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
     map['commit_id'] = Variable<String>(commitId);
     map['recorded_at_utc'] = Variable<int>(recordedAtUtc);
     map['record_count'] = Variable<int>(recordCount);
+    map['content_fingerprint'] = Variable<String>(contentFingerprint);
     return map;
   }
 
@@ -271,15 +306,16 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
       commitId: Value(commitId),
       recordedAtUtc: Value(recordedAtUtc),
       recordCount: Value(recordCount),
+      contentFingerprint: Value(contentFingerprint),
     );
   }
 
-  factory LearningCommit.fromJson(
+  factory LearningCommitRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return LearningCommit(
+    return LearningCommitRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -287,6 +323,9 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
       commitId: serializer.fromJson<String>(json['commitId']),
       recordedAtUtc: serializer.fromJson<int>(json['recordedAtUtc']),
       recordCount: serializer.fromJson<int>(json['recordCount']),
+      contentFingerprint: serializer.fromJson<String>(
+        json['contentFingerprint'],
+      ),
     );
   }
   @override
@@ -300,10 +339,11 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
       'commitId': serializer.toJson<String>(commitId),
       'recordedAtUtc': serializer.toJson<int>(recordedAtUtc),
       'recordCount': serializer.toJson<int>(recordCount),
+      'contentFingerprint': serializer.toJson<String>(contentFingerprint),
     };
   }
 
-  LearningCommit copyWith({
+  LearningCommitRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -311,7 +351,8 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
     String? commitId,
     int? recordedAtUtc,
     int? recordCount,
-  }) => LearningCommit(
+    String? contentFingerprint,
+  }) => LearningCommitRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -319,9 +360,10 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
     commitId: commitId ?? this.commitId,
     recordedAtUtc: recordedAtUtc ?? this.recordedAtUtc,
     recordCount: recordCount ?? this.recordCount,
+    contentFingerprint: contentFingerprint ?? this.contentFingerprint,
   );
-  LearningCommit copyWithCompanion(LearningCommitsCompanion data) {
-    return LearningCommit(
+  LearningCommitRow copyWithCompanion(LearningCommitsCompanion data) {
+    return LearningCommitRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -339,19 +381,23 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
       recordCount: data.recordCount.present
           ? data.recordCount.value
           : this.recordCount,
+      contentFingerprint: data.contentFingerprint.present
+          ? data.contentFingerprint.value
+          : this.contentFingerprint,
     );
   }
 
   @override
   String toString() {
-    return (StringBuffer('LearningCommit(')
+    return (StringBuffer('LearningCommitRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
           ..write('updatedAtUtc: $updatedAtUtc, ')
           ..write('commitId: $commitId, ')
           ..write('recordedAtUtc: $recordedAtUtc, ')
-          ..write('recordCount: $recordCount')
+          ..write('recordCount: $recordCount, ')
+          ..write('contentFingerprint: $contentFingerprint')
           ..write(')'))
         .toString();
   }
@@ -365,21 +411,23 @@ class LearningCommit extends DataClass implements Insertable<LearningCommit> {
     commitId,
     recordedAtUtc,
     recordCount,
+    contentFingerprint,
   );
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is LearningCommit &&
+      (other is LearningCommitRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
           other.updatedAtUtc == this.updatedAtUtc &&
           other.commitId == this.commitId &&
           other.recordedAtUtc == this.recordedAtUtc &&
-          other.recordCount == this.recordCount);
+          other.recordCount == this.recordCount &&
+          other.contentFingerprint == this.contentFingerprint);
 }
 
-class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
+class LearningCommitsCompanion extends UpdateCompanion<LearningCommitRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -387,6 +435,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
   final Value<String> commitId;
   final Value<int> recordedAtUtc;
   final Value<int> recordCount;
+  final Value<String> contentFingerprint;
   final Value<int> rowid;
   const LearningCommitsCompanion({
     this.ownerId = const Value.absent(),
@@ -396,6 +445,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
     this.commitId = const Value.absent(),
     this.recordedAtUtc = const Value.absent(),
     this.recordCount = const Value.absent(),
+    this.contentFingerprint = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningCommitsCompanion.insert({
@@ -406,14 +456,16 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
     required String commitId,
     required int recordedAtUtc,
     required int recordCount,
+    required String contentFingerprint,
     this.rowid = const Value.absent(),
   }) : ownerId = Value(ownerId),
        createdAtUtc = Value(createdAtUtc),
        updatedAtUtc = Value(updatedAtUtc),
        commitId = Value(commitId),
        recordedAtUtc = Value(recordedAtUtc),
-       recordCount = Value(recordCount);
-  static Insertable<LearningCommit> custom({
+       recordCount = Value(recordCount),
+       contentFingerprint = Value(contentFingerprint);
+  static Insertable<LearningCommitRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -421,6 +473,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
     Expression<String>? commitId,
     Expression<int>? recordedAtUtc,
     Expression<int>? recordCount,
+    Expression<String>? contentFingerprint,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -431,6 +484,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
       if (commitId != null) 'commit_id': commitId,
       if (recordedAtUtc != null) 'recorded_at_utc': recordedAtUtc,
       if (recordCount != null) 'record_count': recordCount,
+      if (contentFingerprint != null) 'content_fingerprint': contentFingerprint,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -443,6 +497,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
     Value<String>? commitId,
     Value<int>? recordedAtUtc,
     Value<int>? recordCount,
+    Value<String>? contentFingerprint,
     Value<int>? rowid,
   }) {
     return LearningCommitsCompanion(
@@ -453,6 +508,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
       commitId: commitId ?? this.commitId,
       recordedAtUtc: recordedAtUtc ?? this.recordedAtUtc,
       recordCount: recordCount ?? this.recordCount,
+      contentFingerprint: contentFingerprint ?? this.contentFingerprint,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -481,6 +537,9 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
     if (recordCount.present) {
       map['record_count'] = Variable<int>(recordCount.value);
     }
+    if (contentFingerprint.present) {
+      map['content_fingerprint'] = Variable<String>(contentFingerprint.value);
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -497,6 +556,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
           ..write('commitId: $commitId, ')
           ..write('recordedAtUtc: $recordedAtUtc, ')
           ..write('recordCount: $recordCount, ')
+          ..write('contentFingerprint: $contentFingerprint, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -504,7 +564,7 @@ class LearningCommitsCompanion extends UpdateCompanion<LearningCommit> {
 }
 
 class $AssociationsTable extends Associations
-    with TableInfo<$AssociationsTable, Association> {
+    with TableInfo<$AssociationsTable, AssociationRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -686,7 +746,7 @@ class $AssociationsTable extends Associations
   static const String $name = 'associations';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Association> instance, {
+    Insertable<AssociationRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -809,9 +869,9 @@ class $AssociationsTable extends Associations
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, associationId};
   @override
-  Association map(Map<String, dynamic> data, {String? tablePrefix}) {
+  AssociationRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Association(
+    return AssociationRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -869,7 +929,7 @@ class $AssociationsTable extends Associations
   }
 }
 
-class Association extends DataClass implements Insertable<Association> {
+class AssociationRow extends DataClass implements Insertable<AssociationRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -882,7 +942,7 @@ class Association extends DataClass implements Insertable<Association> {
   final double strength;
   final int successCount;
   final int failureCount;
-  const Association({
+  const AssociationRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -931,12 +991,12 @@ class Association extends DataClass implements Insertable<Association> {
     );
   }
 
-  factory Association.fromJson(
+  factory AssociationRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Association(
+    return AssociationRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -970,7 +1030,7 @@ class Association extends DataClass implements Insertable<Association> {
     };
   }
 
-  Association copyWith({
+  AssociationRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -983,7 +1043,7 @@ class Association extends DataClass implements Insertable<Association> {
     double? strength,
     int? successCount,
     int? failureCount,
-  }) => Association(
+  }) => AssociationRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -997,8 +1057,8 @@ class Association extends DataClass implements Insertable<Association> {
     successCount: successCount ?? this.successCount,
     failureCount: failureCount ?? this.failureCount,
   );
-  Association copyWithCompanion(AssociationsCompanion data) {
-    return Association(
+  AssociationRow copyWithCompanion(AssociationsCompanion data) {
+    return AssociationRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -1028,7 +1088,7 @@ class Association extends DataClass implements Insertable<Association> {
 
   @override
   String toString() {
-    return (StringBuffer('Association(')
+    return (StringBuffer('AssociationRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -1063,7 +1123,7 @@ class Association extends DataClass implements Insertable<Association> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Association &&
+      (other is AssociationRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -1078,7 +1138,7 @@ class Association extends DataClass implements Insertable<Association> {
           other.failureCount == this.failureCount);
 }
 
-class AssociationsCompanion extends UpdateCompanion<Association> {
+class AssociationsCompanion extends UpdateCompanion<AssociationRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -1132,7 +1192,7 @@ class AssociationsCompanion extends UpdateCompanion<Association> {
        strength = Value(strength),
        successCount = Value(successCount),
        failureCount = Value(failureCount);
-  static Insertable<Association> custom({
+  static Insertable<AssociationRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -1263,7 +1323,7 @@ class AssociationsCompanion extends UpdateCompanion<Association> {
 }
 
 class $ReadingSessionsTable extends ReadingSessions
-    with TableInfo<$ReadingSessionsTable, ReadingSession> {
+    with TableInfo<$ReadingSessionsTable, ReadingSessionRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -1475,7 +1535,7 @@ class $ReadingSessionsTable extends ReadingSessions
   static const String $name = 'reading_sessions';
   @override
   VerificationContext validateIntegrity(
-    Insertable<ReadingSession> instance, {
+    Insertable<ReadingSessionRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -1622,9 +1682,9 @@ class $ReadingSessionsTable extends ReadingSessions
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, sessionId};
   @override
-  ReadingSession map(Map<String, dynamic> data, {String? tablePrefix}) {
+  ReadingSessionRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return ReadingSession(
+    return ReadingSessionRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -1690,7 +1750,8 @@ class $ReadingSessionsTable extends ReadingSessions
   }
 }
 
-class ReadingSession extends DataClass implements Insertable<ReadingSession> {
+class ReadingSessionRow extends DataClass
+    implements Insertable<ReadingSessionRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -1705,7 +1766,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
   final int startedAtUtc;
   final int? completedAtUtc;
   final int? abandonedAtUtc;
-  const ReadingSession({
+  const ReadingSessionRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -1768,12 +1829,12 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
     );
   }
 
-  factory ReadingSession.fromJson(
+  factory ReadingSessionRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return ReadingSession(
+    return ReadingSessionRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -1813,7 +1874,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
     };
   }
 
-  ReadingSession copyWith({
+  ReadingSessionRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -1828,7 +1889,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
     int? startedAtUtc,
     Value<int?> completedAtUtc = const Value.absent(),
     Value<int?> abandonedAtUtc = const Value.absent(),
-  }) => ReadingSession(
+  }) => ReadingSessionRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -1848,8 +1909,8 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
         ? abandonedAtUtc.value
         : this.abandonedAtUtc,
   );
-  ReadingSession copyWithCompanion(ReadingSessionsCompanion data) {
-    return ReadingSession(
+  ReadingSessionRow copyWithCompanion(ReadingSessionsCompanion data) {
+    return ReadingSessionRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -1889,7 +1950,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
 
   @override
   String toString() {
-    return (StringBuffer('ReadingSession(')
+    return (StringBuffer('ReadingSessionRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -1928,7 +1989,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is ReadingSession &&
+      (other is ReadingSessionRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -1945,7 +2006,7 @@ class ReadingSession extends DataClass implements Insertable<ReadingSession> {
           other.abandonedAtUtc == this.abandonedAtUtc);
 }
 
-class ReadingSessionsCompanion extends UpdateCompanion<ReadingSession> {
+class ReadingSessionsCompanion extends UpdateCompanion<ReadingSessionRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -2005,7 +2066,7 @@ class ReadingSessionsCompanion extends UpdateCompanion<ReadingSession> {
        contentVersion = Value(contentVersion),
        currentStage = Value(currentStage),
        startedAtUtc = Value(startedAtUtc);
-  static Insertable<ReadingSession> custom({
+  static Insertable<ReadingSessionRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -2153,7 +2214,7 @@ class ReadingSessionsCompanion extends UpdateCompanion<ReadingSession> {
 }
 
 class $RecallAttemptsTable extends RecallAttempts
-    with TableInfo<$RecallAttemptsTable, RecallAttempt> {
+    with TableInfo<$RecallAttemptsTable, RecallAttemptRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -2384,7 +2445,7 @@ class $RecallAttemptsTable extends RecallAttempts
   static const String $name = 'recall_attempts';
   @override
   VerificationContext validateIntegrity(
-    Insertable<RecallAttempt> instance, {
+    Insertable<RecallAttemptRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -2532,9 +2593,9 @@ class $RecallAttemptsTable extends RecallAttempts
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, attemptId};
   @override
-  RecallAttempt map(Map<String, dynamic> data, {String? tablePrefix}) {
+  RecallAttemptRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return RecallAttempt(
+    return RecallAttemptRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -2604,7 +2665,8 @@ class $RecallAttemptsTable extends RecallAttempts
   }
 }
 
-class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
+class RecallAttemptRow extends DataClass
+    implements Insertable<RecallAttemptRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -2620,7 +2682,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
   final String? contextId;
   final String algorithmVersion;
   final int occurredAtUtc;
-  const RecallAttempt({
+  const RecallAttemptRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -2682,12 +2744,12 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
     );
   }
 
-  factory RecallAttempt.fromJson(
+  factory RecallAttemptRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return RecallAttempt(
+    return RecallAttemptRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -2727,7 +2789,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
     };
   }
 
-  RecallAttempt copyWith({
+  RecallAttemptRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -2743,7 +2805,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
     Value<String?> contextId = const Value.absent(),
     String? algorithmVersion,
     int? occurredAtUtc,
-  }) => RecallAttempt(
+  }) => RecallAttemptRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -2760,8 +2822,8 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
     algorithmVersion: algorithmVersion ?? this.algorithmVersion,
     occurredAtUtc: occurredAtUtc ?? this.occurredAtUtc,
   );
-  RecallAttempt copyWithCompanion(RecallAttemptsCompanion data) {
-    return RecallAttempt(
+  RecallAttemptRow copyWithCompanion(RecallAttemptsCompanion data) {
+    return RecallAttemptRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -2800,7 +2862,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
 
   @override
   String toString() {
-    return (StringBuffer('RecallAttempt(')
+    return (StringBuffer('RecallAttemptRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -2841,7 +2903,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is RecallAttempt &&
+      (other is RecallAttemptRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -2859,7 +2921,7 @@ class RecallAttempt extends DataClass implements Insertable<RecallAttempt> {
           other.occurredAtUtc == this.occurredAtUtc);
 }
 
-class RecallAttemptsCompanion extends UpdateCompanion<RecallAttempt> {
+class RecallAttemptsCompanion extends UpdateCompanion<RecallAttemptRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -2924,7 +2986,7 @@ class RecallAttemptsCompanion extends UpdateCompanion<RecallAttempt> {
        confidence = Value(confidence),
        algorithmVersion = Value(algorithmVersion),
        occurredAtUtc = Value(occurredAtUtc);
-  static Insertable<RecallAttempt> custom({
+  static Insertable<RecallAttemptRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -3079,7 +3141,7 @@ class RecallAttemptsCompanion extends UpdateCompanion<RecallAttempt> {
 }
 
 class $MemoryStatesTable extends MemoryStates
-    with TableInfo<$MemoryStatesTable, MemoryState> {
+    with TableInfo<$MemoryStatesTable, MemoryStateRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -3279,7 +3341,7 @@ class $MemoryStatesTable extends MemoryStates
   static const String $name = 'memory_states';
   @override
   VerificationContext validateIntegrity(
-    Insertable<MemoryState> instance, {
+    Insertable<MemoryStateRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -3420,9 +3482,9 @@ class $MemoryStatesTable extends MemoryStates
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, wordKey};
   @override
-  MemoryState map(Map<String, dynamic> data, {String? tablePrefix}) {
+  MemoryStateRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return MemoryState(
+    return MemoryStateRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -3488,7 +3550,7 @@ class $MemoryStatesTable extends MemoryStates
   }
 }
 
-class MemoryState extends DataClass implements Insertable<MemoryState> {
+class MemoryStateRow extends DataClass implements Insertable<MemoryStateRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -3503,7 +3565,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
   final int nextDueAtUtc;
   final String? lastErrorType;
   final String algorithmVersion;
-  const MemoryState({
+  const MemoryStateRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -3566,12 +3628,12 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
     );
   }
 
-  factory MemoryState.fromJson(
+  factory MemoryStateRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return MemoryState(
+    return MemoryStateRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -3609,7 +3671,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
     };
   }
 
-  MemoryState copyWith({
+  MemoryStateRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -3624,7 +3686,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
     int? nextDueAtUtc,
     Value<String?> lastErrorType = const Value.absent(),
     String? algorithmVersion,
-  }) => MemoryState(
+  }) => MemoryStateRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -3644,8 +3706,8 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
         : this.lastErrorType,
     algorithmVersion: algorithmVersion ?? this.algorithmVersion,
   );
-  MemoryState copyWithCompanion(MemoryStatesCompanion data) {
-    return MemoryState(
+  MemoryStateRow copyWithCompanion(MemoryStatesCompanion data) {
+    return MemoryStateRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -3685,7 +3747,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
 
   @override
   String toString() {
-    return (StringBuffer('MemoryState(')
+    return (StringBuffer('MemoryStateRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -3724,7 +3786,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is MemoryState &&
+      (other is MemoryStateRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -3741,7 +3803,7 @@ class MemoryState extends DataClass implements Insertable<MemoryState> {
           other.algorithmVersion == this.algorithmVersion);
 }
 
-class MemoryStatesCompanion extends UpdateCompanion<MemoryState> {
+class MemoryStatesCompanion extends UpdateCompanion<MemoryStateRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -3801,7 +3863,7 @@ class MemoryStatesCompanion extends UpdateCompanion<MemoryState> {
        lapseCount = Value(lapseCount),
        nextDueAtUtc = Value(nextDueAtUtc),
        algorithmVersion = Value(algorithmVersion);
-  static Insertable<MemoryState> custom({
+  static Insertable<MemoryStateRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -3948,7 +4010,7 @@ class MemoryStatesCompanion extends UpdateCompanion<MemoryState> {
 }
 
 class $LearningEventsTable extends LearningEvents
-    with TableInfo<$LearningEventsTable, LearningEvent> {
+    with TableInfo<$LearningEventsTable, LearningEventRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -4203,7 +4265,7 @@ class $LearningEventsTable extends LearningEvents
   static const String $name = 'learning_events';
   @override
   VerificationContext validateIntegrity(
-    Insertable<LearningEvent> instance, {
+    Insertable<LearningEventRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -4360,9 +4422,9 @@ class $LearningEventsTable extends LearningEvents
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, eventId};
   @override
-  LearningEvent map(Map<String, dynamic> data, {String? tablePrefix}) {
+  LearningEventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return LearningEvent(
+    return LearningEventRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -4440,7 +4502,8 @@ class $LearningEventsTable extends LearningEvents
   }
 }
 
-class LearningEvent extends DataClass implements Insertable<LearningEvent> {
+class LearningEventRow extends DataClass
+    implements Insertable<LearningEventRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -4458,7 +4521,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
   final int attemptNumber;
   final String appVersion;
   final String buildId;
-  const LearningEvent({
+  const LearningEventRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -4534,12 +4597,12 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
     );
   }
 
-  factory LearningEvent.fromJson(
+  factory LearningEventRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return LearningEvent(
+    return LearningEventRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -4583,7 +4646,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
     };
   }
 
-  LearningEvent copyWith({
+  LearningEventRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -4601,7 +4664,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
     int? attemptNumber,
     String? appVersion,
     String? buildId,
-  }) => LearningEvent(
+  }) => LearningEventRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -4622,8 +4685,8 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
     appVersion: appVersion ?? this.appVersion,
     buildId: buildId ?? this.buildId,
   );
-  LearningEvent copyWithCompanion(LearningEventsCompanion data) {
-    return LearningEvent(
+  LearningEventRow copyWithCompanion(LearningEventsCompanion data) {
+    return LearningEventRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -4662,7 +4725,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
 
   @override
   String toString() {
-    return (StringBuffer('LearningEvent(')
+    return (StringBuffer('LearningEventRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -4707,7 +4770,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is LearningEvent &&
+      (other is LearningEventRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -4727,7 +4790,7 @@ class LearningEvent extends DataClass implements Insertable<LearningEvent> {
           other.buildId == this.buildId);
 }
 
-class LearningEventsCompanion extends UpdateCompanion<LearningEvent> {
+class LearningEventsCompanion extends UpdateCompanion<LearningEventRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -4798,7 +4861,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEvent> {
        attemptNumber = Value(attemptNumber),
        appVersion = Value(appVersion),
        buildId = Value(buildId);
-  static Insertable<LearningEvent> custom({
+  static Insertable<LearningEventRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -4969,7 +5032,7 @@ class LearningEventsCompanion extends UpdateCompanion<LearningEvent> {
 }
 
 class $SyncOutboxTable extends SyncOutbox
-    with TableInfo<$SyncOutboxTable, SyncOutboxData> {
+    with TableInfo<$SyncOutboxTable, SyncOutboxRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -5121,7 +5184,7 @@ class $SyncOutboxTable extends SyncOutbox
   static const String $name = 'sync_outbox';
   @override
   VerificationContext validateIntegrity(
-    Insertable<SyncOutboxData> instance, {
+    Insertable<SyncOutboxRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -5226,9 +5289,9 @@ class $SyncOutboxTable extends SyncOutbox
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, outboxId};
   @override
-  SyncOutboxData map(Map<String, dynamic> data, {String? tablePrefix}) {
+  SyncOutboxRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return SyncOutboxData(
+    return SyncOutboxRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -5278,7 +5341,7 @@ class $SyncOutboxTable extends SyncOutbox
   }
 }
 
-class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
+class SyncOutboxRow extends DataClass implements Insertable<SyncOutboxRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -5289,7 +5352,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
   final String payloadJson;
   final int? acknowledgedAtUtc;
   final int attemptCount;
-  const SyncOutboxData({
+  const SyncOutboxRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -5336,12 +5399,12 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
     );
   }
 
-  factory SyncOutboxData.fromJson(
+  factory SyncOutboxRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return SyncOutboxData(
+    return SyncOutboxRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -5371,7 +5434,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
     };
   }
 
-  SyncOutboxData copyWith({
+  SyncOutboxRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -5382,7 +5445,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
     String? payloadJson,
     Value<int?> acknowledgedAtUtc = const Value.absent(),
     int? attemptCount,
-  }) => SyncOutboxData(
+  }) => SyncOutboxRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -5396,8 +5459,8 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
         : this.acknowledgedAtUtc,
     attemptCount: attemptCount ?? this.attemptCount,
   );
-  SyncOutboxData copyWithCompanion(SyncOutboxCompanion data) {
-    return SyncOutboxData(
+  SyncOutboxRow copyWithCompanion(SyncOutboxCompanion data) {
+    return SyncOutboxRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -5425,7 +5488,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
 
   @override
   String toString() {
-    return (StringBuffer('SyncOutboxData(')
+    return (StringBuffer('SyncOutboxRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -5456,7 +5519,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is SyncOutboxData &&
+      (other is SyncOutboxRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -5469,7 +5532,7 @@ class SyncOutboxData extends DataClass implements Insertable<SyncOutboxData> {
           other.attemptCount == this.attemptCount);
 }
 
-class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
+class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -5514,7 +5577,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
        operation = Value(operation),
        payloadJson = Value(payloadJson),
        attemptCount = Value(attemptCount);
-  static Insertable<SyncOutboxData> custom({
+  static Insertable<SyncOutboxRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -5629,7 +5692,7 @@ class SyncOutboxCompanion extends UpdateCompanion<SyncOutboxData> {
 }
 
 class $DeletionTombstonesTable extends DeletionTombstones
-    with TableInfo<$DeletionTombstonesTable, DeletionTombstone> {
+    with TableInfo<$DeletionTombstonesTable, DeletionTombstoneRow> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -5757,7 +5820,7 @@ class $DeletionTombstonesTable extends DeletionTombstones
   static const String $name = 'deletion_tombstones';
   @override
   VerificationContext validateIntegrity(
-    Insertable<DeletionTombstone> instance, {
+    Insertable<DeletionTombstoneRow> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -5845,9 +5908,9 @@ class $DeletionTombstonesTable extends DeletionTombstones
   @override
   Set<GeneratedColumn> get $primaryKey => {ownerId, tombstoneId};
   @override
-  DeletionTombstone map(Map<String, dynamic> data, {String? tablePrefix}) {
+  DeletionTombstoneRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return DeletionTombstone(
+    return DeletionTombstoneRow(
       ownerId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}owner_id'],
@@ -5889,8 +5952,8 @@ class $DeletionTombstonesTable extends DeletionTombstones
   }
 }
 
-class DeletionTombstone extends DataClass
-    implements Insertable<DeletionTombstone> {
+class DeletionTombstoneRow extends DataClass
+    implements Insertable<DeletionTombstoneRow> {
   final String ownerId;
   final int schemaVersion;
   final int createdAtUtc;
@@ -5899,7 +5962,7 @@ class DeletionTombstone extends DataClass
   final String entityType;
   final String entityId;
   final int deletedAtUtc;
-  const DeletionTombstone({
+  const DeletionTombstoneRow({
     required this.ownerId,
     required this.schemaVersion,
     required this.createdAtUtc,
@@ -5936,12 +5999,12 @@ class DeletionTombstone extends DataClass
     );
   }
 
-  factory DeletionTombstone.fromJson(
+  factory DeletionTombstoneRow.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return DeletionTombstone(
+    return DeletionTombstoneRow(
       ownerId: serializer.fromJson<String>(json['ownerId']),
       schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
       createdAtUtc: serializer.fromJson<int>(json['createdAtUtc']),
@@ -5967,7 +6030,7 @@ class DeletionTombstone extends DataClass
     };
   }
 
-  DeletionTombstone copyWith({
+  DeletionTombstoneRow copyWith({
     String? ownerId,
     int? schemaVersion,
     int? createdAtUtc,
@@ -5976,7 +6039,7 @@ class DeletionTombstone extends DataClass
     String? entityType,
     String? entityId,
     int? deletedAtUtc,
-  }) => DeletionTombstone(
+  }) => DeletionTombstoneRow(
     ownerId: ownerId ?? this.ownerId,
     schemaVersion: schemaVersion ?? this.schemaVersion,
     createdAtUtc: createdAtUtc ?? this.createdAtUtc,
@@ -5986,8 +6049,8 @@ class DeletionTombstone extends DataClass
     entityId: entityId ?? this.entityId,
     deletedAtUtc: deletedAtUtc ?? this.deletedAtUtc,
   );
-  DeletionTombstone copyWithCompanion(DeletionTombstonesCompanion data) {
-    return DeletionTombstone(
+  DeletionTombstoneRow copyWithCompanion(DeletionTombstonesCompanion data) {
+    return DeletionTombstoneRow(
       ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       schemaVersion: data.schemaVersion.present
           ? data.schemaVersion.value
@@ -6013,7 +6076,7 @@ class DeletionTombstone extends DataClass
 
   @override
   String toString() {
-    return (StringBuffer('DeletionTombstone(')
+    return (StringBuffer('DeletionTombstoneRow(')
           ..write('ownerId: $ownerId, ')
           ..write('schemaVersion: $schemaVersion, ')
           ..write('createdAtUtc: $createdAtUtc, ')
@@ -6040,7 +6103,7 @@ class DeletionTombstone extends DataClass
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is DeletionTombstone &&
+      (other is DeletionTombstoneRow &&
           other.ownerId == this.ownerId &&
           other.schemaVersion == this.schemaVersion &&
           other.createdAtUtc == this.createdAtUtc &&
@@ -6051,7 +6114,8 @@ class DeletionTombstone extends DataClass
           other.deletedAtUtc == this.deletedAtUtc);
 }
 
-class DeletionTombstonesCompanion extends UpdateCompanion<DeletionTombstone> {
+class DeletionTombstonesCompanion
+    extends UpdateCompanion<DeletionTombstoneRow> {
   final Value<String> ownerId;
   final Value<int> schemaVersion;
   final Value<int> createdAtUtc;
@@ -6089,7 +6153,7 @@ class DeletionTombstonesCompanion extends UpdateCompanion<DeletionTombstone> {
        entityType = Value(entityType),
        entityId = Value(entityId),
        deletedAtUtc = Value(deletedAtUtc);
-  static Insertable<DeletionTombstone> custom({
+  static Insertable<DeletionTombstoneRow> custom({
     Expression<String>? ownerId,
     Expression<int>? schemaVersion,
     Expression<int>? createdAtUtc,
@@ -6228,6 +6292,7 @@ typedef $$LearningCommitsTableCreateCompanionBuilder =
       required String commitId,
       required int recordedAtUtc,
       required int recordCount,
+      required String contentFingerprint,
       Value<int> rowid,
     });
 typedef $$LearningCommitsTableUpdateCompanionBuilder =
@@ -6239,6 +6304,7 @@ typedef $$LearningCommitsTableUpdateCompanionBuilder =
       Value<String> commitId,
       Value<int> recordedAtUtc,
       Value<int> recordCount,
+      Value<String> contentFingerprint,
       Value<int> rowid,
     });
 
@@ -6283,6 +6349,11 @@ class $$LearningCommitsTableFilterComposer
 
   ColumnFilters<int> get recordCount => $composableBuilder(
     column: $table.recordCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentFingerprint => $composableBuilder(
+    column: $table.contentFingerprint,
     builder: (column) => ColumnFilters(column),
   );
 }
@@ -6330,6 +6401,11 @@ class $$LearningCommitsTableOrderingComposer
     column: $table.recordCount,
     builder: (column) => ColumnOrderings(column),
   );
+
+  ColumnOrderings<String> get contentFingerprint => $composableBuilder(
+    column: $table.contentFingerprint,
+    builder: (column) => ColumnOrderings(column),
+  );
 }
 
 class $$LearningCommitsTableAnnotationComposer
@@ -6371,6 +6447,11 @@ class $$LearningCommitsTableAnnotationComposer
     column: $table.recordCount,
     builder: (column) => column,
   );
+
+  GeneratedColumn<String> get contentFingerprint => $composableBuilder(
+    column: $table.contentFingerprint,
+    builder: (column) => column,
+  );
 }
 
 class $$LearningCommitsTableTableManager
@@ -6378,21 +6459,21 @@ class $$LearningCommitsTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $LearningCommitsTable,
-          LearningCommit,
+          LearningCommitRow,
           $$LearningCommitsTableFilterComposer,
           $$LearningCommitsTableOrderingComposer,
           $$LearningCommitsTableAnnotationComposer,
           $$LearningCommitsTableCreateCompanionBuilder,
           $$LearningCommitsTableUpdateCompanionBuilder,
           (
-            LearningCommit,
+            LearningCommitRow,
             BaseReferences<
               _$LearningDatabase,
               $LearningCommitsTable,
-              LearningCommit
+              LearningCommitRow
             >,
           ),
-          LearningCommit,
+          LearningCommitRow,
           PrefetchHooks Function()
         > {
   $$LearningCommitsTableTableManager(
@@ -6417,6 +6498,7 @@ class $$LearningCommitsTableTableManager
                 Value<String> commitId = const Value.absent(),
                 Value<int> recordedAtUtc = const Value.absent(),
                 Value<int> recordCount = const Value.absent(),
+                Value<String> contentFingerprint = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningCommitsCompanion(
                 ownerId: ownerId,
@@ -6426,6 +6508,7 @@ class $$LearningCommitsTableTableManager
                 commitId: commitId,
                 recordedAtUtc: recordedAtUtc,
                 recordCount: recordCount,
+                contentFingerprint: contentFingerprint,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -6437,6 +6520,7 @@ class $$LearningCommitsTableTableManager
                 required String commitId,
                 required int recordedAtUtc,
                 required int recordCount,
+                required String contentFingerprint,
                 Value<int> rowid = const Value.absent(),
               }) => LearningCommitsCompanion.insert(
                 ownerId: ownerId,
@@ -6446,6 +6530,7 @@ class $$LearningCommitsTableTableManager
                 commitId: commitId,
                 recordedAtUtc: recordedAtUtc,
                 recordCount: recordCount,
+                contentFingerprint: contentFingerprint,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -6460,21 +6545,21 @@ typedef $$LearningCommitsTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $LearningCommitsTable,
-      LearningCommit,
+      LearningCommitRow,
       $$LearningCommitsTableFilterComposer,
       $$LearningCommitsTableOrderingComposer,
       $$LearningCommitsTableAnnotationComposer,
       $$LearningCommitsTableCreateCompanionBuilder,
       $$LearningCommitsTableUpdateCompanionBuilder,
       (
-        LearningCommit,
+        LearningCommitRow,
         BaseReferences<
           _$LearningDatabase,
           $LearningCommitsTable,
-          LearningCommit
+          LearningCommitRow
         >,
       ),
-      LearningCommit,
+      LearningCommitRow,
       PrefetchHooks Function()
     >;
 typedef $$AssociationsTableCreateCompanionBuilder =
@@ -6713,17 +6798,21 @@ class $$AssociationsTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $AssociationsTable,
-          Association,
+          AssociationRow,
           $$AssociationsTableFilterComposer,
           $$AssociationsTableOrderingComposer,
           $$AssociationsTableAnnotationComposer,
           $$AssociationsTableCreateCompanionBuilder,
           $$AssociationsTableUpdateCompanionBuilder,
           (
-            Association,
-            BaseReferences<_$LearningDatabase, $AssociationsTable, Association>,
+            AssociationRow,
+            BaseReferences<
+              _$LearningDatabase,
+              $AssociationsTable,
+              AssociationRow
+            >,
           ),
-          Association,
+          AssociationRow,
           PrefetchHooks Function()
         > {
   $$AssociationsTableTableManager(
@@ -6811,17 +6900,17 @@ typedef $$AssociationsTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $AssociationsTable,
-      Association,
+      AssociationRow,
       $$AssociationsTableFilterComposer,
       $$AssociationsTableOrderingComposer,
       $$AssociationsTableAnnotationComposer,
       $$AssociationsTableCreateCompanionBuilder,
       $$AssociationsTableUpdateCompanionBuilder,
       (
-        Association,
-        BaseReferences<_$LearningDatabase, $AssociationsTable, Association>,
+        AssociationRow,
+        BaseReferences<_$LearningDatabase, $AssociationsTable, AssociationRow>,
       ),
-      Association,
+      AssociationRow,
       PrefetchHooks Function()
     >;
 typedef $$ReadingSessionsTableCreateCompanionBuilder =
@@ -7098,21 +7187,21 @@ class $$ReadingSessionsTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $ReadingSessionsTable,
-          ReadingSession,
+          ReadingSessionRow,
           $$ReadingSessionsTableFilterComposer,
           $$ReadingSessionsTableOrderingComposer,
           $$ReadingSessionsTableAnnotationComposer,
           $$ReadingSessionsTableCreateCompanionBuilder,
           $$ReadingSessionsTableUpdateCompanionBuilder,
           (
-            ReadingSession,
+            ReadingSessionRow,
             BaseReferences<
               _$LearningDatabase,
               $ReadingSessionsTable,
-              ReadingSession
+              ReadingSessionRow
             >,
           ),
-          ReadingSession,
+          ReadingSessionRow,
           PrefetchHooks Function()
         > {
   $$ReadingSessionsTableTableManager(
@@ -7208,21 +7297,21 @@ typedef $$ReadingSessionsTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $ReadingSessionsTable,
-      ReadingSession,
+      ReadingSessionRow,
       $$ReadingSessionsTableFilterComposer,
       $$ReadingSessionsTableOrderingComposer,
       $$ReadingSessionsTableAnnotationComposer,
       $$ReadingSessionsTableCreateCompanionBuilder,
       $$ReadingSessionsTableUpdateCompanionBuilder,
       (
-        ReadingSession,
+        ReadingSessionRow,
         BaseReferences<
           _$LearningDatabase,
           $ReadingSessionsTable,
-          ReadingSession
+          ReadingSessionRow
         >,
       ),
-      ReadingSession,
+      ReadingSessionRow,
       PrefetchHooks Function()
     >;
 typedef $$RecallAttemptsTableCreateCompanionBuilder =
@@ -7512,21 +7601,21 @@ class $$RecallAttemptsTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $RecallAttemptsTable,
-          RecallAttempt,
+          RecallAttemptRow,
           $$RecallAttemptsTableFilterComposer,
           $$RecallAttemptsTableOrderingComposer,
           $$RecallAttemptsTableAnnotationComposer,
           $$RecallAttemptsTableCreateCompanionBuilder,
           $$RecallAttemptsTableUpdateCompanionBuilder,
           (
-            RecallAttempt,
+            RecallAttemptRow,
             BaseReferences<
               _$LearningDatabase,
               $RecallAttemptsTable,
-              RecallAttempt
+              RecallAttemptRow
             >,
           ),
-          RecallAttempt,
+          RecallAttemptRow,
           PrefetchHooks Function()
         > {
   $$RecallAttemptsTableTableManager(
@@ -7626,17 +7715,21 @@ typedef $$RecallAttemptsTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $RecallAttemptsTable,
-      RecallAttempt,
+      RecallAttemptRow,
       $$RecallAttemptsTableFilterComposer,
       $$RecallAttemptsTableOrderingComposer,
       $$RecallAttemptsTableAnnotationComposer,
       $$RecallAttemptsTableCreateCompanionBuilder,
       $$RecallAttemptsTableUpdateCompanionBuilder,
       (
-        RecallAttempt,
-        BaseReferences<_$LearningDatabase, $RecallAttemptsTable, RecallAttempt>,
+        RecallAttemptRow,
+        BaseReferences<
+          _$LearningDatabase,
+          $RecallAttemptsTable,
+          RecallAttemptRow
+        >,
       ),
-      RecallAttempt,
+      RecallAttemptRow,
       PrefetchHooks Function()
     >;
 typedef $$MemoryStatesTableCreateCompanionBuilder =
@@ -7913,17 +8006,21 @@ class $$MemoryStatesTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $MemoryStatesTable,
-          MemoryState,
+          MemoryStateRow,
           $$MemoryStatesTableFilterComposer,
           $$MemoryStatesTableOrderingComposer,
           $$MemoryStatesTableAnnotationComposer,
           $$MemoryStatesTableCreateCompanionBuilder,
           $$MemoryStatesTableUpdateCompanionBuilder,
           (
-            MemoryState,
-            BaseReferences<_$LearningDatabase, $MemoryStatesTable, MemoryState>,
+            MemoryStateRow,
+            BaseReferences<
+              _$LearningDatabase,
+              $MemoryStatesTable,
+              MemoryStateRow
+            >,
           ),
-          MemoryState,
+          MemoryStateRow,
           PrefetchHooks Function()
         > {
   $$MemoryStatesTableTableManager(
@@ -8019,17 +8116,17 @@ typedef $$MemoryStatesTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $MemoryStatesTable,
-      MemoryState,
+      MemoryStateRow,
       $$MemoryStatesTableFilterComposer,
       $$MemoryStatesTableOrderingComposer,
       $$MemoryStatesTableAnnotationComposer,
       $$MemoryStatesTableCreateCompanionBuilder,
       $$MemoryStatesTableUpdateCompanionBuilder,
       (
-        MemoryState,
-        BaseReferences<_$LearningDatabase, $MemoryStatesTable, MemoryState>,
+        MemoryStateRow,
+        BaseReferences<_$LearningDatabase, $MemoryStatesTable, MemoryStateRow>,
       ),
-      MemoryState,
+      MemoryStateRow,
       PrefetchHooks Function()
     >;
 typedef $$LearningEventsTableCreateCompanionBuilder =
@@ -8347,21 +8444,21 @@ class $$LearningEventsTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $LearningEventsTable,
-          LearningEvent,
+          LearningEventRow,
           $$LearningEventsTableFilterComposer,
           $$LearningEventsTableOrderingComposer,
           $$LearningEventsTableAnnotationComposer,
           $$LearningEventsTableCreateCompanionBuilder,
           $$LearningEventsTableUpdateCompanionBuilder,
           (
-            LearningEvent,
+            LearningEventRow,
             BaseReferences<
               _$LearningDatabase,
               $LearningEventsTable,
-              LearningEvent
+              LearningEventRow
             >,
           ),
-          LearningEvent,
+          LearningEventRow,
           PrefetchHooks Function()
         > {
   $$LearningEventsTableTableManager(
@@ -8469,17 +8566,21 @@ typedef $$LearningEventsTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $LearningEventsTable,
-      LearningEvent,
+      LearningEventRow,
       $$LearningEventsTableFilterComposer,
       $$LearningEventsTableOrderingComposer,
       $$LearningEventsTableAnnotationComposer,
       $$LearningEventsTableCreateCompanionBuilder,
       $$LearningEventsTableUpdateCompanionBuilder,
       (
-        LearningEvent,
-        BaseReferences<_$LearningDatabase, $LearningEventsTable, LearningEvent>,
+        LearningEventRow,
+        BaseReferences<
+          _$LearningDatabase,
+          $LearningEventsTable,
+          LearningEventRow
+        >,
       ),
-      LearningEvent,
+      LearningEventRow,
       PrefetchHooks Function()
     >;
 typedef $$SyncOutboxTableCreateCompanionBuilder =
@@ -8688,21 +8789,17 @@ class $$SyncOutboxTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $SyncOutboxTable,
-          SyncOutboxData,
+          SyncOutboxRow,
           $$SyncOutboxTableFilterComposer,
           $$SyncOutboxTableOrderingComposer,
           $$SyncOutboxTableAnnotationComposer,
           $$SyncOutboxTableCreateCompanionBuilder,
           $$SyncOutboxTableUpdateCompanionBuilder,
           (
-            SyncOutboxData,
-            BaseReferences<
-              _$LearningDatabase,
-              $SyncOutboxTable,
-              SyncOutboxData
-            >,
+            SyncOutboxRow,
+            BaseReferences<_$LearningDatabase, $SyncOutboxTable, SyncOutboxRow>,
           ),
-          SyncOutboxData,
+          SyncOutboxRow,
           PrefetchHooks Function()
         > {
   $$SyncOutboxTableTableManager(_$LearningDatabase db, $SyncOutboxTable table)
@@ -8780,17 +8877,17 @@ typedef $$SyncOutboxTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $SyncOutboxTable,
-      SyncOutboxData,
+      SyncOutboxRow,
       $$SyncOutboxTableFilterComposer,
       $$SyncOutboxTableOrderingComposer,
       $$SyncOutboxTableAnnotationComposer,
       $$SyncOutboxTableCreateCompanionBuilder,
       $$SyncOutboxTableUpdateCompanionBuilder,
       (
-        SyncOutboxData,
-        BaseReferences<_$LearningDatabase, $SyncOutboxTable, SyncOutboxData>,
+        SyncOutboxRow,
+        BaseReferences<_$LearningDatabase, $SyncOutboxTable, SyncOutboxRow>,
       ),
-      SyncOutboxData,
+      SyncOutboxRow,
       PrefetchHooks Function()
     >;
 typedef $$DeletionTombstonesTableCreateCompanionBuilder =
@@ -8969,21 +9066,21 @@ class $$DeletionTombstonesTableTableManager
         RootTableManager<
           _$LearningDatabase,
           $DeletionTombstonesTable,
-          DeletionTombstone,
+          DeletionTombstoneRow,
           $$DeletionTombstonesTableFilterComposer,
           $$DeletionTombstonesTableOrderingComposer,
           $$DeletionTombstonesTableAnnotationComposer,
           $$DeletionTombstonesTableCreateCompanionBuilder,
           $$DeletionTombstonesTableUpdateCompanionBuilder,
           (
-            DeletionTombstone,
+            DeletionTombstoneRow,
             BaseReferences<
               _$LearningDatabase,
               $DeletionTombstonesTable,
-              DeletionTombstone
+              DeletionTombstoneRow
             >,
           ),
-          DeletionTombstone,
+          DeletionTombstoneRow,
           PrefetchHooks Function()
         > {
   $$DeletionTombstonesTableTableManager(
@@ -9058,21 +9155,21 @@ typedef $$DeletionTombstonesTableProcessedTableManager =
     ProcessedTableManager<
       _$LearningDatabase,
       $DeletionTombstonesTable,
-      DeletionTombstone,
+      DeletionTombstoneRow,
       $$DeletionTombstonesTableFilterComposer,
       $$DeletionTombstonesTableOrderingComposer,
       $$DeletionTombstonesTableAnnotationComposer,
       $$DeletionTombstonesTableCreateCompanionBuilder,
       $$DeletionTombstonesTableUpdateCompanionBuilder,
       (
-        DeletionTombstone,
+        DeletionTombstoneRow,
         BaseReferences<
           _$LearningDatabase,
           $DeletionTombstonesTable,
-          DeletionTombstone
+          DeletionTombstoneRow
         >,
       ),
-      DeletionTombstone,
+      DeletionTombstoneRow,
       PrefetchHooks Function()
     >;
 

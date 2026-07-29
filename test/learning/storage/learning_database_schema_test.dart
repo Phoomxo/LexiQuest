@@ -65,6 +65,17 @@ void main() {
     expect(_primaryKeyColumns(memories), ['owner_id', 'word_key']);
   });
 
+  test('stores a content fingerprint for idempotency validation', () async {
+    final commits = await database
+        .customSelect('PRAGMA table_info(learning_commits)')
+        .get();
+
+    expect(
+      commits.map((column) => column.read<String>('name')),
+      contains('content_fingerprint'),
+    );
+  });
+
   test('starts at schema version one', () {
     expect(database.schemaVersion, 1);
   });

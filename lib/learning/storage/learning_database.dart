@@ -13,6 +13,7 @@ abstract class OwnedLearningTable extends Table {
   IntColumn get updatedAtUtc => integer()();
 }
 
+@DataClassName('LearningCommitRow')
 class LearningCommits extends OwnedLearningTable {
   @override
   String get tableName => 'learning_commits';
@@ -23,10 +24,13 @@ class LearningCommits extends OwnedLearningTable {
 
   IntColumn get recordCount => integer()();
 
+  TextColumn get contentFingerprint => text().withLength(min: 64, max: 64)();
+
   @override
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, commitId};
 }
 
+@DataClassName('AssociationRow')
 class Associations extends OwnedLearningTable {
   @override
   String get tableName => 'associations';
@@ -54,6 +58,7 @@ class Associations extends OwnedLearningTable {
   };
 }
 
+@DataClassName('ReadingSessionRow')
 class ReadingSessions extends OwnedLearningTable {
   @override
   String get tableName => 'reading_sessions';
@@ -82,6 +87,7 @@ class ReadingSessions extends OwnedLearningTable {
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, sessionId};
 }
 
+@DataClassName('RecallAttemptRow')
 class RecallAttempts extends OwnedLearningTable {
   @override
   String get tableName => 'recall_attempts';
@@ -112,6 +118,7 @@ class RecallAttempts extends OwnedLearningTable {
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, attemptId};
 }
 
+@DataClassName('MemoryStateRow')
 class MemoryStates extends OwnedLearningTable {
   @override
   String get tableName => 'memory_states';
@@ -141,6 +148,7 @@ class MemoryStates extends OwnedLearningTable {
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, wordKey};
 }
 
+@DataClassName('LearningEventRow')
 class LearningEvents extends OwnedLearningTable {
   @override
   String get tableName => 'learning_events';
@@ -175,6 +183,7 @@ class LearningEvents extends OwnedLearningTable {
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, eventId};
 }
 
+@DataClassName('SyncOutboxRow')
 class SyncOutbox extends OwnedLearningTable {
   @override
   String get tableName => 'sync_outbox';
@@ -195,6 +204,7 @@ class SyncOutbox extends OwnedLearningTable {
   Set<Column<Object>> get primaryKey => <Column<Object>>{ownerId, outboxId};
 }
 
+@DataClassName('DeletionTombstoneRow')
 class DeletionTombstones extends OwnedLearningTable {
   @override
   String get tableName => 'deletion_tombstones';
