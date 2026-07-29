@@ -31,7 +31,7 @@ void main() {
   final migration = File(
     '${_repositoryRoot().path}/supabase/migrations/'
     '20260727000000_image_bucket_public_readonly.sql',
-  ).readAsStringSync();
+  ).readAsStringSync().replaceAll('\r\n', '\n');
 
   test('removes legacy broad storage policies during upgrade', () {
     for (final policy in <String>[
