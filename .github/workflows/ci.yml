@@ -56,16 +56,24 @@ jobs:
         with:
           node-version: '24'
           cache: 'npm'
-          cache-dependency-path: package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            functions/package-lock.json
 
       - name: Install npm dependencies
         run: npm ci --ignore-scripts
+
+      - name: Install trusted writer dependencies
+        run: npm --prefix functions ci --ignore-scripts
 
       - name: Provision Firebase CLI
         run: npm install -g firebase-tools@15.24.0 --ignore-scripts
 
       - name: Firestore emulator contract tests
         run: npm run test:rules
+
+      - name: Trusted writer tests
+        run: npm --prefix functions test
 
       - uses: supabase/setup-cli@46f7f98c7f948ad727d22c1e67fab04c223a0520 # v3.0.0
         with:

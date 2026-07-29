@@ -28,6 +28,8 @@ dependencies:
   path: ^1.9.1
   path_provider: ^2.1.6
   crypto: ^3.0.7
+  cloud_functions: ^6.3.5
+  firebase_app_check: ^0.4.5+2
 
 dev_dependencies:
   flutter_test:

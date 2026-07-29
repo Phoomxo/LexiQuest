@@ -12,6 +12,8 @@ final class ProgressSession {
     required this.sessionId,
     required this.correctAnswers,
     required this.wrongAnswers,
+    this.eventIds = const [],
+    this.completedAtUtc,
   });
 
   /// Stable identifier for the session; used for idempotent recording.
@@ -22,6 +24,13 @@ final class ProgressSession {
 
   /// Number of incorrectly answered prompts in the session.
   final int wrongAnswers;
+
+  /// Stable event identifiers used by the trusted writer for bounded,
+  /// idempotent progress recording.
+  final List<String> eventIds;
+
+  /// Completion time captured locally when the session enters the outbox.
+  final DateTime? completedAtUtc;
 }
 
 /// An immutable, point-in-time view of the user's aggregated progress.
@@ -64,4 +73,8 @@ abstract interface class ProgressRepository {
 
   /// Returns the sessions recorded locally but not yet synchronized upstream.
   Future<List<ProgressSession>> pendingSessions();
+
+  /// Removes one acknowledged session from the local outbox without changing
+  /// the already-applied offline snapshot.
+  Future<void> acknowledgeSession(String sessionId);
 }

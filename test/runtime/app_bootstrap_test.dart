@@ -1,7 +1,9 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/progress/progress_remote_writer.dart';
 import 'package:vocab_learning_app/progress/progress_repository.dart';
+import 'package:vocab_learning_app/progress/purchase_remote_writer.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -15,6 +17,9 @@ class _StubGuestSessionService implements GuestSessionService {
 
 class _StubProgressRepository implements ProgressRepository {
   @override
+  Future<void> acknowledgeSession(String sessionId) async {}
+
+  @override
   Future<List<ProgressSession>> pendingSessions() async => const [];
 
   @override
@@ -27,6 +32,25 @@ class _StubProgressRepository implements ProgressRepository {
 
   @override
   Future<void> recordSession(ProgressSession session) async {}
+}
+
+class _StubProgressRemoteWriter implements ProgressRemoteWriter {
+  @override
+  Future<ProgressRemoteResult> recordProgressSession(
+    ProgressSession session,
+  ) async {
+    return const ProgressRemoteAccepted(duplicate: false);
+  }
+}
+
+class _StubPurchaseRemoteWriter implements PurchaseRemoteWriter {
+  @override
+  Future<PurchaseRemoteResult> purchaseItem(String productId) async {
+    return const PurchaseRemoteAccepted(
+      alreadyOwned: false,
+      remainingPoints: 0,
+    );
+  }
 }
 
 AppConfig _validConfig() => AppConfig.fromValues(
@@ -60,6 +84,62 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'composes one-shot progress synchronization when both ports exist',
+      () async {
+        final repository = _StubProgressRepository();
+        final remoteWriter = _StubProgressRemoteWriter();
+        final bootstrap = AppBootstrap(
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          loadProgressRepository: () async => repository,
+          progressRemoteWriter: remoteWriter,
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(dependencies.progressSyncService, isNotNull);
+        expect(
+          identical(dependencies.progressSyncService!.repository, repository),
+          isTrue,
+        );
+        expect(
+          identical(
+            dependencies.progressSyncService!.remoteWriter,
+            remoteWriter,
+          ),
+          isTrue,
+        );
+      },
+    );
+
+    test(
+      'retains the trusted purchase writer without enabling the shop',
+      () async {
+        final purchaseWriter = _StubPurchaseRemoteWriter();
+        final bootstrap = AppBootstrap(
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          purchaseRemoteWriter: purchaseWriter,
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(
+          identical(dependencies.purchaseRemoteWriter, purchaseWriter),
+          isTrue,
+        );
+        expect(
+          dependencies.remoteEconomyPolicy.shopAndPurchasesEnabled,
+          isFalse,
+        );
+      },
+    );
 
     test(
       'repository loader failure returns null without leaking details',

@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../config/remote_economy_policy.dart';
 import '../progress/progress_repository.dart';
+import '../progress/progress_sync_service.dart';
+import '../progress/purchase_remote_writer.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -16,6 +18,8 @@ final class AppDependencies {
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.remoteEconomyPolicy = const RemoteEconomyPolicy(),
     this.progressRepository,
+    this.progressSyncService,
+    this.purchaseRemoteWriter,
     this.learningDependencies,
   });
 
@@ -25,6 +29,8 @@ final class AppDependencies {
   final AppBuildInfo buildInfo;
   final RemoteEconomyPolicy remoteEconomyPolicy;
   final ProgressRepository? progressRepository;
+  final ProgressSyncService? progressSyncService;
+  final PurchaseRemoteWriter? purchaseRemoteWriter;
   final LearningDependencies? learningDependencies;
 
   @override

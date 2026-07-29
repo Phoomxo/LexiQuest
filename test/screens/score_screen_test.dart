@@ -17,6 +17,9 @@ class _RecordingRepository implements ProgressRepository {
   );
 
   @override
+  Future<void> acknowledgeSession(String sessionId) async {}
+
+  @override
   Future<List<ProgressSession>> pendingSessions() async => recorded;
 
   @override
@@ -42,6 +45,9 @@ class _FailingRepository implements ProgressRepository {
   final bool failRecord;
 
   @override
+  Future<void> acknowledgeSession(String sessionId) async {}
+
+  @override
   Future<List<ProgressSession>> pendingSessions() async => const [];
 
   @override
@@ -58,6 +64,9 @@ class _FailingRepository implements ProgressRepository {
 class _BlockingRepository implements ProgressRepository {
   final Completer<void> recordCompleter = Completer<void>();
   final List<ProgressSession> recorded = [];
+
+  @override
+  Future<void> acknowledgeSession(String sessionId) async {}
 
   @override
   Future<List<ProgressSession>> pendingSessions() async => recorded;

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../progress/progress_repository.dart';
+import '../progress/progress_sync_service.dart';
 import '../runtime/app_dependencies.dart';
 import 'choose_mode_screen.dart';
 import 'main_navigation_screen.dart';
@@ -12,6 +15,7 @@ class ScoreScreen extends StatefulWidget {
     required this.wrongAnswers,
     required this.sessionId,
     this.repository,
+    this.progressSyncService,
     this.isFromFirestore = true,
     this.selectedCategoryId,
   });
@@ -20,6 +24,7 @@ class ScoreScreen extends StatefulWidget {
   final int wrongAnswers;
   final String sessionId;
   final ProgressRepository? repository;
+  final ProgressSyncService? progressSyncService;
   final bool isFromFirestore;
   final String? selectedCategoryId;
 
@@ -34,16 +39,18 @@ class _ScoreScreenState extends State<ScoreScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_persistenceFuture != null) return;
-    final repository =
-        widget.repository ??
-        AppDependenciesScope.maybeOf(context)?.progressRepository;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final repository = widget.repository ?? dependencies?.progressRepository;
+    final progressSyncService =
+        widget.progressSyncService ?? dependencies?.progressSyncService;
     _persistenceFuture = repository == null
         ? Future.value(const _PersistenceResult.notSaved())
-        : _recordAndRead(repository);
+        : _recordAndRead(repository, progressSyncService);
   }
 
   Future<_PersistenceResult> _recordAndRead(
     ProgressRepository repository,
+    ProgressSyncService? progressSyncService,
   ) async {
     try {
       await repository.recordSession(
@@ -56,11 +63,22 @@ class _ScoreScreenState extends State<ScoreScreen> {
     } catch (_) {
       return const _PersistenceResult.notSaved();
     }
+    if (progressSyncService != null) {
+      unawaited(_synchronize(progressSyncService));
+    }
 
     try {
       return _PersistenceResult.saved(await repository.readSnapshot());
     } catch (_) {
       return const _PersistenceResult.savedWithoutSnapshot();
+    }
+  }
+
+  Future<void> _synchronize(ProgressSyncService service) async {
+    try {
+      await service.synchronize();
+    } on Object {
+      // The durable outbox remains pending for the next explicit sync pass.
     }
   }
 

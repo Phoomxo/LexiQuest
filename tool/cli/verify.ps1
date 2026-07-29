@@ -172,6 +172,10 @@ try {
         & flutter test --reporter compact
     }
 
+    Invoke-VerifyPhase '06.1' 'Trusted writer tests' {
+        & npm --prefix functions test
+    }
+
     Invoke-VerifyPhase '07' 'Voice API CPU-only tests' {
         & uv run `
             --project (Join-Path $repoRoot 'backend\voice_api') `
