@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/app_config.dart';
 import '../firebase_options.dart';
+import '../learning/association_prompt.dart';
+import '../learning/associative_memory.dart';
+import '../learning/secure_id_generator.dart';
 import '../learning/storage/drift_learning_repository.dart';
 import '../learning/storage/learning_database_factory.dart';
 import '../progress/local_progress_repository.dart';
@@ -62,6 +65,13 @@ Future<LearningDependencies> _loadLearningDependenciesProduction() async {
   return LearningDependencies(
     repository: repository,
     reader: repository,
+    associativeMemory: AssociativeMemory(
+      repository: repository,
+      reader: repository,
+      promptCatalog: CuratedAssociationPromptCatalog.offlineDefaults(),
+      idGenerator: CryptographicIdGenerator(),
+      clock: DateTime.now,
+    ),
     close: database.close,
   );
 }
