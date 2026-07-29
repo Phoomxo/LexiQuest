@@ -1,78 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'screens/vocab_list_screen.dart';
-import 'screens/add_vocab_screen.dart';
-import 'screens/Home.dart';
-import 'screens/SettingScreen.dart'; // เพิ่มการ import SettingScreen
+import 'package:google_fonts/google_fonts.dart';
+import 'runtime/app_bootstrap.dart';
+import 'runtime/app_dependencies.dart';
+import 'screens/main_navigation_screen.dart';
+import 'screens/login_screen.dart';
+import 'screens/register_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
-  runApp(MyApp());
+  final dependencies = await AppBootstrap.production().initialize();
+  runApp(MyApp(dependencies: dependencies));
 }
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key, required this.dependencies});
+
+  final AppDependencies dependencies;
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      theme: ThemeData(primarySwatch: Colors.deepPurple),
-      home: MainNavigation(),
+    return AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'LexiQuest - AI Vocab Learning',
+        theme: ThemeData(
+          useMaterial3: true,
+          colorScheme: ColorScheme.fromSeed(
+            seedColor: Colors.deepPurple,
+            primary: Colors.deepPurple,
+            secondary: Colors.indigo,
+            tertiary: Colors.teal,
+          ),
+          textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
+          cardTheme: CardThemeData(
+            elevation: 4,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+          ),
+          appBarTheme: const AppBarTheme(
+            centerTitle: true,
+            elevation: 0,
+            backgroundColor: Colors.transparent,
+          ),
+        ),
+        initialRoute: '/login',
+        routes: {
+          '/login': (context) => LoginScreen(
+            guestSessionService: AppDependenciesScope.of(
+              context,
+            ).guestSessionService,
+          ),
+          '/register': (context) => const RegisterScreen(),
+          '/home': (context) => const MainNavigationScreen(),
+        },
+      ),
     );
   }
-}
-
-class MainNavigation extends StatefulWidget {
-  @override
-  _MainNavigationState createState() => _MainNavigationState();
-}
-
-class _MainNavigationState extends State<MainNavigation> {
-  int _selectedIndex = 0;
-
-  final List<Widget> _pages = [
-    VocabListScreen(), // หน้ารายการคำศัพท์    
-    Home(),            // หน้าหลัก
-    AddVocabScreen(),  // หน้าสำหรับเพิ่มคำศัพท์ใหม่
-    SettingScreen(),     // หน้า Settings (โปรไฟล์)
-    
-
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-  return Scaffold(
-    body: _pages[_selectedIndex],
-    bottomNavigationBar: BottomNavigationBar(
-  items: const <BottomNavigationBarItem>[
-    BottomNavigationBarItem(
-      icon: Icon(Icons.list),
-      label: 'Vocabulary',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.home),
-      label: 'Home',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.add),
-      label: 'Add Vocab',
-    ),
-    BottomNavigationBarItem(
-      icon: Icon(Icons.settings),
-      label: 'Settings',
-    ),
-  ],
-  currentIndex: _selectedIndex,
-  selectedItemColor: Colors.deepPurple,
-  unselectedItemColor: Colors.grey,
-  iconSize: 30, // เพิ่มขนาดไอคอน (ค่าเริ่มต้นคือ 24)
-  onTap: _onItemTapped,
-),
-  );
-}
 }

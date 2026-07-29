@@ -1,0 +1,38 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lexiquest-ai-api"
+version = "0.1.0"
+description = "LexiQuest AI API: provider-agnostic LLM content generation and (Phase 2) pronunciation scoring."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    "fastapi==0.140.0",
+    "firebase-admin==7.5.0",
+    "pydantic-settings==2.14.2",
+    "uvicorn[standard]==0.51.0",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2==2.9.1",
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+]
+llm = [
+    # LLM HTTP clients are optional runtime extras. They are declared in the
+    # `llm` group so unit tests never require network access or a provider SDK.
+    # The default LlmContentService uses the OpenAI-compatible HTTP contract so
+    # that Gemini (OpenAI-compat endpoint), Ollama, and OpenAI all work without
+    # shipping a per-vendor SDK.
+    "httpx==0.28.1",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lexiquest_ai"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra"

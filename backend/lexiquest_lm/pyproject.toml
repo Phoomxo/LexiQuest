@@ -1,0 +1,49 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "lexiquest-lm"
+version = "0.1.0"
+description = "LexiQuest-LM: domain-specific vocabulary teaching small LM (dataset, training, deploy)."
+requires-python = ">=3.11,<3.12"
+dependencies = [
+    # Dataset collection only. Heavy ML deps are in the ``train`` extra so the
+    # collection scripts run on a fresh machine without torch/transformers.
+    "httpx==0.28.1",
+    "tqdm==4.69.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest==9.1.1",
+    "pytest-cov==7.1.0",
+]
+train = [
+    # Pinned for reproducibility on the workstation RTX 3050 (CUDA 13.2).
+    "torch==2.13.0+cu132",
+    "transformers==5.14.1",
+    "peft==0.19.1",
+    "datasets==5.0.0",
+    "accelerate==1.14.0",
+    "bitsandbytes==0.50.0",
+]
+
+# CUDA 13.2 PyTorch wheels are hosted on the dedicated PyTorch index. The index
+# is marked explicit and bound only to torch via tool.uv.sources so general
+# packages keep resolving from PyPI.
+[[tool.uv.index]]
+name = "pytorch-cu132"
+url = "https://download.pytorch.org/whl/cu132"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu132" }
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/lexiquest_lm"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src", "."]
+testpaths = ["tests"]
+addopts = "-ra"

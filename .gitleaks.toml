@@ -1,0 +1,52 @@
+title = "LexiQuest secret scanning policy"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Generated Firebase mobile client API identifiers are public configuration."
+condition = "AND"
+regexTarget = "match"
+paths = [
+  '''(?:^|/)lib/firebase_options\.dart$''',
+  '''(?:^|/)android/app/google-services\.json$''',
+]
+regexes = ['''AIzaSy[A-Za-z0-9_-]{33}''']
+
+[[allowlists]]
+description = "Retired public Supabase anon key in three historical commits."
+condition = "AND"
+commits = [
+  "ff2364209c53bf3b4ff5e3bff7630484d9c5fd05",
+  "15ae3e0e6b510296c4d064f974993f167730f8c4",
+  "52a478a7a9589766bfbdf8a88bff97e3a6c771b7",
+]
+paths = ['''(?:^|/)lib/main\.dart$''']
+
+[[allowlists]]
+description = "Tokenizer argument names are not API credentials."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)backend/lexiquest_lm/train/(?:tokenise_dataset|lora_finetune)\.py$''']
+regexes = ['''tokenizer,\s+max_length=args\.max_length''']
+
+[[allowlists]]
+description = "SharedPreferences storage key is not a credential."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)lib/services/achievement_service\.dart$''']
+regexes = ['''lexiquest_achievements_v1''']
+
+[[allowlists]]
+description = "Network-policy test URL contains no credential."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)test/config/app_config_test\.dart$''']
+regexes = ['''api-key-secret-7c9f3a''']
+
+[[allowlists]]
+description = "AI URL validation test uses a fixed leak-canary sentinel."
+condition = "AND"
+regexTarget = "match"
+paths = ['''(?:^|/)backend/ai_api/tests/test_models\.py$''']
+regexes = ['''hunter2-leak-canary-9f3c''']

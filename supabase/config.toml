@@ -1,0 +1,27 @@
+# Local-only Supabase configuration for Storage/RLS policy verification.
+# No production project ref, key, password, or JWT secret is stored here.
+project_id = "lexiquest-local"
+
+[api]
+enabled = true
+port = 65431
+
+[db]
+port = 65432
+shadow_port = 65430
+major_version = 17
+
+[studio]
+enabled = false
+port = 65433
+
+[local_smtp]
+enabled = false
+port = 65434
+
+[storage]
+enabled = true
+
+[analytics]
+enabled = false
+port = 65437
