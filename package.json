@@ -5,7 +5,8 @@
   },
   "scripts": {
     "seed": "node lib/add_default_categories.js",
-    "test:rules": "firebase emulators:exec --project demo-lexiquest-rules-test --only firestore \"node --test test/security/firestore-rules.test.cjs\""
+    "test:rules": "firebase emulators:exec --project demo-lexiquest-rules-test --only firestore \"node --test test/security/firestore-rules.test.cjs\"",
+    "test:functions-emulator": "firebase emulators:exec --project demo-lexiquest-functions-test --only firestore \"npm --prefix functions run test:emulator\""
   },
   "dependencies": {
     "firebase-admin": "^14.2.0"

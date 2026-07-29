@@ -118,6 +118,7 @@ try {
             'model-loading-security.tests.ps1',
             'android-manifest-security.tests.ps1',
             'android-release-signing.tests.ps1'
+            'production-release-workflow.tests.ps1'
         )
         foreach ($contractTest in $contractTests) {
             & powershell -NoProfile -ExecutionPolicy Bypass -File `
@@ -174,6 +175,10 @@ try {
 
     Invoke-VerifyPhase '06.1' 'Trusted writer tests' {
         & npm --prefix functions test
+    }
+
+    Invoke-VerifyPhase '06.2' 'Trusted writer emulator tests' {
+        & npm run test:functions-emulator
     }
 
     Invoke-VerifyPhase '07' 'Voice API CPU-only tests' {

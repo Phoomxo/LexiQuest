@@ -42,6 +42,7 @@ $text = ([System.IO.File]::ReadAllText($configPath) -replace "`r`n", "`n") -repl
 
 Assert-Match $text '(?m)^version\s*:\s*2\s*$' 'config uses schema version 2'
 Assert-Ecosystem $text 'npm' '/'
+Assert-Ecosystem $text 'npm' '/functions'
 Assert-Ecosystem $text 'pub' '/'
 Assert-Ecosystem $text 'gradle' '/android'
 Assert-Ecosystem $text 'uv' '/backend/ai_api'

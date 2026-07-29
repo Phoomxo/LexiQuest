@@ -75,7 +75,7 @@ $verifyText = Get-NormalizedText -Path $verifyPath
 $workflowText = Get-NormalizedText -Path $workflowPath
 
 Assert-RegexMatches $scopeText '\[ValidateSet\(''Targeted'',[ \t]*''Subsystem'',[ \t]*''Release''\)\]' 'level is a closed three-value contract'
-Assert-RegexMatches $scopeText '\[ValidateSet\([^\]]*''Learning''[^\]]*''AI''[^\]]*''Voice''[^\]]*''Economy''[^\]]*''Runtime''[^\]]*''BackendAI''[^\]]*''BackendVoice''[^\]]*''BackendLM''[^\]]*''All''[^\]]*\)\]' 'area contract covers every planned subsystem'
+Assert-RegexMatches $scopeText '\[ValidateSet\([^\]]*''Learning''[^\]]*''AI''[^\]]*''Voice''[^\]]*''Economy''[^\]]*''Runtime''[^\]]*''BackendAI''[^\]]*''BackendVoice''[^\]]*''BackendLM''[^\]]*''Integration''[^\]]*''All''[^\]]*\)\]' 'area contract covers every planned subsystem'
 Assert-ContainsString $scopeText '[switch]$Resume' 'resume is an explicit switch'
 Assert-ContainsString $scopeText '[string]$BaseSha' 'base SHA is an explicit input'
 Assert-RegexMatches $scopeText 'Targeted[ \t]*=[ \t]*600' 'targeted timeout is ten minutes'
@@ -108,6 +108,10 @@ Assert-ContainsString $scopeText "-AdditionalPytestArguments @('--ignore', 'back
 Assert-ContainsString $scopeText "'test\screens\quiz_score_persistence_regression_test.dart'" 'economy scope includes the client-writer regression contract'
 Assert-ContainsString $scopeText "-FilePath 'npm'" 'economy scope can invoke npm'
 Assert-ContainsString $scopeText "-Arguments @('--prefix', 'functions', 'test')" 'economy scope includes trusted writer tests'
+Assert-ContainsString $scopeText "-Arguments @('run', 'test:functions-emulator')" 'economy subsystem includes trusted writer emulator tests'
+Assert-ContainsString $scopeText "'Android integration static analysis'" 'targeted integration scope stays analysis-only'
+Assert-ContainsString $scopeText "'Android device end-to-end tests'" 'integration subsystem runs bounded device E2E'
+Assert-ContainsString $scopeText 'verify-android-e2e.ps1' 'integration subsystem delegates to the device runner'
 Assert-ContainsString $verifyText "'verify-scope.tests.ps1'," 'full verification runs the scoped-runner contract'
 Assert-ContainsString $verifyText '$env:LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'release verification reads the Supabase publishable key from the environment'
 Assert-ContainsString $verifyText 'Get-RequiredSupabasePublishableKey' 'release verification rejects a missing or malformed Supabase publishable key'
