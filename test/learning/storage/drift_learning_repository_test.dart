@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/learning/learning_event.dart';
 import 'package:vocab_learning_app/learning/learning_repository.dart';
 import 'package:vocab_learning_app/learning/memory_state.dart';
 import 'package:vocab_learning_app/learning/reading_session.dart';
+import 'package:vocab_learning_app/learning/recall_attempt.dart';
 import 'package:vocab_learning_app/learning/storage/drift_learning_repository.dart';
 import 'package:vocab_learning_app/learning/storage/learning_database.dart';
 import 'package:vocab_learning_app/learning/sync_outbox_entry.dart';
@@ -182,6 +183,53 @@ void main() {
       hasLength(1),
     );
   });
+
+  test('reads session attempts chronologically with owner isolation', () async {
+    await repository.commit(
+      LearningCommit(
+        commitId: 'attempts-owner-a',
+        ownerId: 'owner-a',
+        recordedAtUtc: _now,
+        recallAttempts: [
+          _attempt(
+            ownerId: 'owner-a',
+            attemptId: 'attempt-later',
+            occurredAtUtc: _now.add(const Duration(seconds: 2)),
+          ),
+          _attempt(
+            ownerId: 'owner-a',
+            attemptId: 'attempt-first',
+            occurredAtUtc: _now,
+          ),
+        ],
+      ),
+    );
+    await repository.commit(
+      LearningCommit(
+        commitId: 'attempts-owner-b',
+        ownerId: 'owner-b',
+        recordedAtUtc: _now,
+        recallAttempts: [
+          _attempt(
+            ownerId: 'owner-b',
+            attemptId: 'attempt-private',
+            occurredAtUtc: _now,
+          ),
+        ],
+      ),
+    );
+
+    final attempts = await repository.readRecallAttempts(
+      ownerId: 'owner-a',
+      sessionId: 'session-1',
+    );
+
+    expect(attempts.map((attempt) => attempt.attemptId), [
+      'attempt-first',
+      'attempt-later',
+    ]);
+    expect(attempts.every((attempt) => attempt.ownerId == 'owner-a'), isTrue);
+  });
 }
 
 final DateTime _now = DateTime.utc(2026, 7, 29, 10);
@@ -228,5 +276,25 @@ LearningEvent _event({required String ownerId, required String eventId}) {
     attemptNumber: 1,
     appVersion: '1.0.0',
     buildId: '1',
+  );
+}
+
+RecallAttempt _attempt({
+  required String ownerId,
+  required String attemptId,
+  required DateTime occurredAtUtc,
+}) {
+  return RecallAttempt(
+    attemptId: attemptId,
+    ownerId: ownerId,
+    sessionId: 'session-1',
+    wordKey: 'word-a',
+    recallMode: RecallMode.unaided,
+    cueLevel: RecallCueLevel.none,
+    correctness: true,
+    responseTimeMs: 900,
+    confidence: 4,
+    algorithmVersion: 'reading-v1',
+    occurredAtUtc: occurredAtUtc,
   );
 }

@@ -76,6 +76,33 @@ void main() {
       },
     );
 
+    test('associative reading dimensions use stable wire values', () {
+      final event = LearningEvent(
+        eventId: 'reading-event-1',
+        schemaVersion: 1,
+        pseudonymousUserId: 'owner-a',
+        occurredAtUtc: DateTime.utc(2026, 7, 29),
+        activity: LearningActivity.associativeReading,
+        contentId: 'reading-content-1',
+        categoryId: 'transferMastery',
+        cefrLevel: 'A2',
+        skill: LearningSkill.contextRecall,
+        correct: true,
+        score: 100,
+        responseTimeMs: 900,
+        attemptNumber: 1,
+        appVersion: '1.0.0+1',
+        buildId: 'build-1',
+      );
+
+      expect(event.toMap()['activity'], 'associative_reading');
+      expect(event.toMap()['skill'], 'context_recall');
+      expect(
+        LearningEvent.fromMap(event.toMap()).activity,
+        LearningActivity.associativeReading,
+      );
+    });
+
     test('normalizes a non-UTC DateTime to UTC', () {
       final local = DateTime(2026, 7, 26, 1);
       expect(local.isUtc, isFalse);

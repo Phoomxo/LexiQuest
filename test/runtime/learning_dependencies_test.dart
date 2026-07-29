@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/learning/learning_repository.dart';
 import 'package:vocab_learning_app/learning/memory_state.dart';
 import 'package:vocab_learning_app/learning/reading_content_source.dart';
 import 'package:vocab_learning_app/learning/reading_session.dart';
+import 'package:vocab_learning_app/learning/recall_attempt.dart';
 import 'package:vocab_learning_app/learning/secure_id_generator.dart';
 import 'package:vocab_learning_app/learning/sync_outbox_entry.dart';
 import 'package:vocab_learning_app/learning/vocabulary_mixer.dart';
@@ -49,6 +50,14 @@ class _StubLearningStore implements LearningRepository, LearningReader {
     required String wordKey,
   }) async {
     return null;
+  }
+
+  @override
+  Future<List<RecallAttempt>> readRecallAttempts({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    return const [];
   }
 
   @override
