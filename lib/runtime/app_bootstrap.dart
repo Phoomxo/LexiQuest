@@ -6,6 +6,7 @@ import '../ai/ai_service_factory.dart';
 import '../ai/generated_reading_content_source.dart';
 import '../config/app_config.dart';
 import '../firebase_options.dart';
+import '../learning/adaptive_associative_scheduler.dart';
 import '../learning/association_prompt.dart';
 import '../learning/associative_memory.dart';
 import '../learning/associative_reading_coordinator.dart';
@@ -71,6 +72,7 @@ Future<LearningDependencies> _loadLearningDependenciesProduction(
   LearningFeatureFlags flags,
 ) async {
   final database = await LearningDatabaseFactory().open();
+  const buildInfo = AppBuildInfo.fromEnvironment();
   ManagedAiService? generatedService;
   ManagedVoiceService? voiceService;
   try {
@@ -106,8 +108,11 @@ Future<LearningDependencies> _loadLearningDependenciesProduction(
         reader: repository,
         contentSource: contentSource,
         mixer: const VersionedVocabularyMixer(),
+        scheduler: const AdaptiveAssociativeScheduler(),
         idGenerator: CryptographicIdGenerator(),
         clock: DateTime.now,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
       ),
       readingVoice: readingVoice,
       close: () => _closeLearningResources(

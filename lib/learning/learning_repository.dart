@@ -2,6 +2,7 @@ import 'association_record.dart';
 import 'learning_commit.dart';
 import 'memory_state.dart';
 import 'reading_session.dart';
+import 'recall_attempt.dart';
 import 'sync_outbox_entry.dart';
 
 enum LearningRepositoryErrorCode {
@@ -39,6 +40,11 @@ abstract interface class LearningReader {
   Future<MemoryState?> readMemoryState({
     required String ownerId,
     required String wordKey,
+  });
+
+  Future<List<RecallAttempt>> readRecallAttempts({
+    required String ownerId,
+    required String sessionId,
   });
 
   Future<List<SyncOutboxEntry>> readPendingOutbox({required String ownerId});

@@ -1,5 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/learning/adaptive_associative_scheduler.dart';
 import 'package:vocab_learning_app/learning/associative_reading_coordinator.dart';
 import 'package:vocab_learning_app/learning/learning_commit.dart';
 import 'package:vocab_learning_app/learning/learning_repository.dart';
@@ -141,6 +142,16 @@ void main() {
 
     expect(completed.session.currentStage, ReadingSessionStage.completed);
     expect(identical(completed, repeated), isTrue);
+    final memory = await store.readMemoryState(
+      ownerId: 'owner-a',
+      wordKey: 'resilient',
+    );
+    expect(memory?.algorithmVersion, 'associative-v1');
+    expect(memory!.nextDueAtUtc.isAfter(memory.lastReviewedAtUtc!), isTrue);
+    final events = await database.select(database.learningEvents).get();
+    expect(events, hasLength(1));
+    expect(events.single.activity, 'associative_reading');
+    expect(events.single.skill, 'context_recall');
 
     final another = _coordinator(repository: repository, reader: store);
     await another.start(_startRequest);
@@ -149,6 +160,53 @@ void main() {
 
     expect(abandoned.session.currentStage, ReadingSessionStage.abandoned);
     expect(identical(abandoned, repeatedAbandon), isTrue);
+  });
+
+  test('failed scheduling commit leaves the session ready to retry', () async {
+    await coordinator.start(_startRequest);
+    await coordinator.advance();
+    await coordinator.advance();
+    await coordinator.submit(_answer);
+    await coordinator.advance();
+    await coordinator.submit(_answer);
+    repository.failNext = true;
+
+    await expectLater(
+      coordinator.finalize(),
+      throwsA(isA<LearningRepositoryException>()),
+    );
+
+    expect(
+      coordinator.state?.session.currentStage,
+      ReadingSessionStage.scheduling,
+    );
+    expect(
+      await store.readMemoryState(ownerId: 'owner-a', wordKey: 'resilient'),
+      isNull,
+    );
+  });
+
+  test('restart at scheduling rebuilds from durable attempts', () async {
+    final started = await coordinator.start(_startRequest);
+    await coordinator.advance();
+    await coordinator.advance();
+    await coordinator.submit(_answer);
+    await coordinator.advance();
+    await coordinator.submit(_answer);
+    final restarted = _coordinator(repository: repository, reader: store);
+    await restarted.resume(
+      ownerId: 'owner-a',
+      sessionId: started.session.sessionId,
+    );
+
+    final completed = await restarted.finalize();
+
+    expect(completed.session.currentStage, ReadingSessionStage.completed);
+    expect(
+      await store.readMemoryState(ownerId: 'owner-a', wordKey: 'resilient'),
+      isNotNull,
+    );
+    expect(await database.select(database.learningEvents).get(), hasLength(1));
   });
 }
 
@@ -191,8 +249,11 @@ AssociativeReadingCoordinator _coordinator({
       ),
     ]),
     mixer: const VersionedVocabularyMixer(),
+    scheduler: const AdaptiveAssociativeScheduler(),
     idGenerator: _CounterIdGenerator(),
     clock: _Clock().now,
+    appVersion: '1.0.0+1',
+    buildId: 'test-build',
   );
 }
 

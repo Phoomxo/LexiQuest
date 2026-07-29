@@ -1,5 +1,8 @@
+import 'adaptive_associative_scheduler.dart';
 import 'learning_commit.dart';
+import 'learning_event.dart';
 import 'learning_repository.dart';
+import 'memory_state.dart';
 import 'reading_content_source.dart';
 import 'reading_session.dart';
 import 'recall_attempt.dart';
@@ -65,16 +68,22 @@ final class AssociativeReadingCoordinator {
     required this.reader,
     required this.contentSource,
     required this.mixer,
+    this.scheduler = const AdaptiveAssociativeScheduler(),
     required this.idGenerator,
     required this.clock,
+    this.appVersion = 'unknown',
+    this.buildId = 'development',
   });
 
   final LearningRepository repository;
   final LearningReader reader;
   final ReadingContentSource contentSource;
   final VersionedVocabularyMixer mixer;
+  final AdaptiveAssociativeScheduler scheduler;
   final SecureIdGenerator idGenerator;
   final ReadingClock clock;
+  final String appVersion;
+  final String buildId;
 
   AssociativeReadingState? _state;
 
@@ -205,7 +214,7 @@ final class AssociativeReadingCoordinator {
         ReadingCoordinatorErrorCode.illegalTransition,
       );
     }
-    return _commitTransition(ReadingSessionStage.completed);
+    return _commitFinalization();
   }
 
   Future<AssociativeReadingState> abandon() async {
@@ -258,6 +267,103 @@ final class AssociativeReadingCoordinator {
     );
   }
 
+  Future<AssociativeReadingState> _commitFinalization() async {
+    final current = _requireState();
+    final now = clock().toUtc();
+    final attempts = await reader.readRecallAttempts(
+      ownerId: current.session.ownerId,
+      sessionId: current.session.sessionId,
+    );
+    final memoryStates = <MemoryState>[];
+    final learningEvents = <LearningEvent>[];
+
+    for (final wordKey in current.session.targetWordKeys) {
+      RecallAttempt? recall;
+      RecallAttempt? transfer;
+      for (final attempt in attempts) {
+        if (attempt.wordKey != wordKey) continue;
+        if (attempt.recallMode == RecallMode.transfer) {
+          transfer = attempt;
+        } else {
+          recall = attempt;
+        }
+      }
+      if (recall == null || transfer == null) {
+        throw const ReadingCoordinatorException(
+          ReadingCoordinatorErrorCode.invalidSubmission,
+        );
+      }
+
+      final previous = await reader.readMemoryState(
+        ownerId: current.session.ownerId,
+        wordKey: wordKey,
+      );
+      final decision = scheduler.schedule(
+        SchedulingEvidence(
+          ownerId: current.session.ownerId,
+          wordKey: wordKey,
+          correct: recall.correctness,
+          normalizedLatency: recall.responseTimeMs / 15000,
+          cueLevel: recall.cueLevel,
+          confidence: recall.confidence,
+          transferResult: transfer.correctness,
+          lapseHistory: previous?.lapseCount ?? 0,
+          reviewedAtUtc: now,
+          previousState: previous,
+        ),
+      );
+      memoryStates.add(decision.memoryState);
+      learningEvents.add(
+        LearningEvent(
+          eventId: idGenerator.nextId(),
+          schemaVersion: 1,
+          pseudonymousUserId: current.session.ownerId,
+          occurredAtUtc: now,
+          activity: LearningActivity.associativeReading,
+          contentId: current.session.contentId,
+          categoryId: decision.reasonCode.name,
+          cefrLevel: current.session.cefrLevel,
+          skill: LearningSkill.contextRecall,
+          correct: recall.correctness && transfer.correctness,
+          score: _eventScore(recall, transfer),
+          responseTimeMs: recall.responseTimeMs,
+          attemptNumber: (previous?.lapseCount ?? 0) + 1,
+          appVersion: appVersion,
+          buildId: buildId,
+        ),
+      );
+    }
+
+    final session = ReadingSession(
+      sessionId: current.session.sessionId,
+      ownerId: current.session.ownerId,
+      cefrLevel: current.session.cefrLevel,
+      targetWordKeys: current.session.targetWordKeys,
+      mixPolicyVersion: current.session.mixPolicyVersion,
+      contentId: current.session.contentId,
+      contentVersion: current.session.contentVersion,
+      currentStage: ReadingSessionStage.completed,
+      startedAtUtc: current.session.startedAtUtc,
+      updatedAtUtc: now,
+      completedAtUtc: now,
+      schemaVersion: current.session.schemaVersion,
+    );
+    await repository.commit(
+      LearningCommit(
+        commitId: idGenerator.nextId(),
+        ownerId: session.ownerId,
+        recordedAtUtc: now,
+        sessions: [session],
+        memoryStates: memoryStates,
+        learningEvents: learningEvents,
+      ),
+    );
+    return _state = AssociativeReadingState(
+      session: session,
+      content: current.content,
+    );
+  }
+
   AssociativeReadingState _requireState() {
     final current = _state;
     if (current == null) {
@@ -277,6 +383,18 @@ final class AssociativeReadingCoordinator {
       ReadingCoordinatorErrorCode.contentUnavailable,
     );
   }
+}
+
+int _eventScore(RecallAttempt recall, RecallAttempt transfer) {
+  if (!recall.correctness) return 0;
+  var score = transfer.correctness ? 80 : 60;
+  score += switch (recall.cueLevel) {
+    RecallCueLevel.none => 20,
+    RecallCueLevel.highlight => 12,
+    RecallCueLevel.associationHint => 6,
+    RecallCueLevel.fullDefinition => 0,
+  };
+  return score.clamp(0, 100).toInt();
 }
 
 bool _isTerminal(ReadingSessionStage stage) {

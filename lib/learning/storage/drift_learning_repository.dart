@@ -165,6 +165,33 @@ final class DriftLearningRepository
   }
 
   @override
+  Future<List<RecallAttempt>> readRecallAttempts({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    try {
+      final rows =
+          await (_database.select(_database.recallAttempts)
+                ..where(
+                  (candidate) =>
+                      candidate.ownerId.equals(ownerId) &
+                      candidate.sessionId.equals(sessionId),
+                )
+                ..orderBy([
+                  (candidate) => OrderingTerm.asc(candidate.occurredAtUtc),
+                  (candidate) => OrderingTerm.asc(candidate.attemptId),
+                ]))
+              .get();
+      return rows.map(_recallAttemptFromRow).toList(growable: false);
+    } on Object {
+      throw const LearningRepositoryException(
+        LearningRepositoryErrorCode.invalidStoredData,
+        'Stored recall evidence could not be read.',
+      );
+    }
+  }
+
+  @override
   Future<List<SyncOutboxEntry>> readPendingOutbox({
     required String ownerId,
   }) async {
@@ -435,6 +462,24 @@ MemoryState _memoryFromRow(MemoryStateRow row) {
     lastErrorType: row.lastErrorType,
     algorithmVersion: row.algorithmVersion,
     updatedAtUtc: _dateTime(row.updatedAtUtc),
+    schemaVersion: row.schemaVersion,
+  );
+}
+
+RecallAttempt _recallAttemptFromRow(RecallAttemptRow row) {
+  return RecallAttempt(
+    attemptId: row.attemptId,
+    ownerId: row.ownerId,
+    sessionId: row.sessionId,
+    wordKey: row.wordKey,
+    recallMode: RecallMode.values.byName(row.recallMode),
+    cueLevel: RecallCueLevel.values.byName(row.cueLevel),
+    correctness: row.correctness,
+    responseTimeMs: row.responseTimeMs,
+    confidence: row.confidence,
+    contextId: row.contextId,
+    algorithmVersion: row.algorithmVersion,
+    occurredAtUtc: _dateTime(row.occurredAtUtc),
     schemaVersion: row.schemaVersion,
   );
 }
