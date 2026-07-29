@@ -129,6 +129,14 @@ function Invoke-JobCoverageTests {
     Assert-ContainsString $Text '--debug' 'Android build is a debug build'
     Assert-ContainsString $Text 'vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY' 'build reads the Supabase publishable key from a repository variable'
     Assert-ContainsString $Text '--dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=' 'build injects the Supabase publishable key'
+    Assert-ContainsString $Text 'Create ephemeral release signing key' 'CI creates a disposable release signing key'
+    Assert-ContainsString $Text 'flutter build appbundle --release' 'CI builds a release candidate AAB'
+    Assert-ContainsString $Text 'jarsigner -verify -verbose -certs' 'CI verifies the release candidate signature'
+    Assert-ContainsString $Text 'grep -q "jar verified."' 'CI rejects unsigned release candidates'
+    Assert-ContainsString $Text 'mkdir -p build/sbom' 'CI prepares the SBOM output directory'
+    Assert-ContainsString $Text 'release-candidate.cdx.json' 'CI creates an artifact SBOM'
+    Assert-ContainsString $Text 'source.cdx.json' 'CI creates a source SBOM'
+    Assert-ContainsString $Text 'Remove ephemeral signing material' 'CI removes disposable signing material'
 }
 
 function Invoke-UvFrozenTests {
@@ -226,6 +234,7 @@ function Invoke-NpmFirebaseToolchainTests {
     Assert-ContainsString $WorkflowText 'npm run test:rules' 'workflow executes Firestore rules tests'
     Assert-ContainsString $WorkflowText 'npm --prefix functions ci --ignore-scripts' 'workflow installs trusted writer dependencies reproducibly'
     Assert-ContainsString $WorkflowText 'npm --prefix functions test' 'workflow executes trusted writer tests'
+    Assert-ContainsString $WorkflowText 'npm run test:functions-emulator' 'workflow executes trusted writer emulator tests'
 }
 
 function Invoke-SupabaseToolchainTests {

@@ -24,6 +24,7 @@ param(
         'BackendAI',
         'BackendVoice',
         'BackendLM',
+        'Integration',
         'All'
     )]
     [string]$Area,
@@ -81,6 +82,9 @@ function Get-AreaPathPattern {
         'BackendAI' { return '^backend/ai_api/' }
         'BackendVoice' { return '^backend/voice_api/' }
         'BackendLM' { return '^backend/lexiquest_lm/' }
+        'Integration' {
+            return '^(integration_test/|tool/cli/verify-android-e2e\.ps1|android/|pubspec\.(yaml|lock)|\.github/workflows/)'
+        }
         'All' {
             return '^(lib/|test/|backend/|tool/cli/|android/|firestore\.rules|storage\.rules|supabase/|\.github/workflows/|pubspec\.(yaml|lock)|package(-lock)?\.json)'
         }
@@ -295,6 +299,11 @@ function Get-VerificationCommands {
                     -FilePath 'npm' `
                     -Arguments @('run', 'test:rules') `
                     -SourceArea 'Economy'))
+                $commands.Add((New-CommandSpec `
+                    -Name 'Trusted writer emulator tests' `
+                    -FilePath 'npm' `
+                    -Arguments @('run', 'test:functions-emulator') `
+                    -SourceArea 'Economy'))
             }
         }
         'Runtime' {
@@ -337,6 +346,30 @@ function Get-VerificationCommands {
                 -Project 'backend\lexiquest_lm' `
                 -ExcludedGroup 'train' `
                 -SourceArea 'BackendLM'))
+        }
+        'Integration' {
+            if ($SelectedLevel -eq 'Targeted') {
+                $commands.Add((New-CommandSpec `
+                    -Name 'Android integration static analysis' `
+                    -FilePath 'flutter' `
+                    -Arguments @(
+                        'analyze',
+                        'integration_test\production_learning_flow_test.dart'
+                    ) `
+                    -SourceArea 'Integration'))
+            } else {
+                $commands.Add((New-CommandSpec `
+                    -Name 'Android device end-to-end tests' `
+                    -FilePath 'powershell' `
+                    -Arguments @(
+                        '-NoProfile',
+                        '-ExecutionPolicy',
+                        'Bypass',
+                        '-File',
+                        (Join-Path $scriptDir 'verify-android-e2e.ps1')
+                    ) `
+                    -SourceArea 'Integration'))
+            }
         }
         default { throw ('Unsupported area: ' + $SelectedArea) }
     }

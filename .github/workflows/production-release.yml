@@ -1,0 +1,114 @@
+name: Production Release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-release
+  cancel-in-progress: false
+
+jobs:
+  android-release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-java@03ad4de0992f5dab5e18fcb136590ce7c4a0ac95 # v5.6.0
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          flutter-version: '3.44.7'
+          cache: true
+
+      - name: Restore protected signing material
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_RELEASE_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_RELEASE_STORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_RELEASE_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_RELEASE_KEY_PASSWORD }}
+        run: |
+          test -n "${KEYSTORE_BASE64}"
+          test -n "${STORE_PASSWORD}"
+          test -n "${KEY_ALIAS}"
+          test -n "${KEY_PASSWORD}"
+          echo "${KEYSTORE_BASE64}" | base64 --decode \
+            > "${RUNNER_TEMP}/lexiquest-release.jks"
+          cat > android/key.properties <<EOF
+          storeFile=${RUNNER_TEMP}/lexiquest-release.jks
+          storePassword=${STORE_PASSWORD}
+          keyAlias=${KEY_ALIAS}
+          keyPassword=${KEY_PASSWORD}
+          EOF
+
+      - name: Resolve Flutter dependencies
+        run: flutter pub get
+
+      - name: Build protected production AAB
+        env:
+          LEXIQUEST_BUILD_ID: ${{ github.sha }}
+          LEXIQUEST_SUPABASE_PUBLISHABLE_KEY: ${{ vars.LEXIQUEST_SUPABASE_PUBLISHABLE_KEY }}
+          LEXIQUEST_VOICE_API_URL: ${{ vars.LEXIQUEST_VOICE_API_URL }}
+          LEXIQUEST_AI_API_URL: ${{ vars.LEXIQUEST_AI_API_URL }}
+        run: |
+          test -n "${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY}"
+          test -n "${LEXIQUEST_VOICE_API_URL}"
+          test -n "${LEXIQUEST_AI_API_URL}"
+          flutter build appbundle --release \
+            --dart-define=LEXIQUEST_VERSION=1.0.0+1 \
+            --dart-define=LEXIQUEST_BUILD_ID=${LEXIQUEST_BUILD_ID} \
+            --dart-define=LEXIQUEST_SUPABASE_PUBLISHABLE_KEY=${LEXIQUEST_SUPABASE_PUBLISHABLE_KEY} \
+            --dart-define=LEXIQUEST_VOICE_API_URL=${LEXIQUEST_VOICE_API_URL} \
+            --dart-define=LEXIQUEST_AI_API_URL=${LEXIQUEST_AI_API_URL}
+          signature_output="$(
+            jarsigner -verify -verbose -certs \
+              build/app/outputs/bundle/release/app-release.aab 2>&1
+          )"
+          printf '%s\n' "$signature_output"
+          grep -q "jar verified." <<<"$signature_output"
+
+      - name: Prepare SBOM directory
+        run: mkdir -p build/sbom
+
+      - name: Generate source SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: build/sbom/source.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+          syft-version: v1.49.0
+
+      - name: Generate production artifact SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          file: build/app/outputs/bundle/release/app-release.aab
+          format: cyclonedx-json
+          output-file: build/sbom/production-aab.cdx.json
+          upload-artifact: false
+          dependency-snapshot: false
+          syft-version: v1.49.0
+
+      - name: Upload protected release artifacts
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: lexiquest-production-${{ github.sha }}
+          path: |
+            build/app/outputs/bundle/release/app-release.aab
+            build/sbom
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Remove protected signing material
+        if: always()
+        run: |
+          rm -f android/key.properties
+          rm -f "${RUNNER_TEMP}/lexiquest-release.jks"

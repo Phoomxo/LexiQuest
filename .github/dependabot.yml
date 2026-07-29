@@ -12,6 +12,18 @@ updates:
           - "version-update:semver-minor"
           - "version-update:semver-patch"
     open-pull-requests-limit: 5
+  - package-ecosystem: npm
+    directory: "/functions"
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: Asia/Bangkok
+    groups:
+      minor-and-patch:
+        update-types:
+          - "version-update:semver-minor"
+          - "version-update:semver-patch"
+    open-pull-requests-limit: 5
   - package-ecosystem: pub
     directory: "/"
     schedule:

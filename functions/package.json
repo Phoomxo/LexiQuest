@@ -8,7 +8,8 @@
   "main": "lib/index.js",
   "scripts": {
     "build": "tsc",
-    "test": "npm run build && node --test \"lib/**/*.test.js\""
+    "test": "npm run build && node --test lib/progress_writer.test.js",
+    "test:emulator": "npm run build && node --test lib/firestore_emulator.test.js"
   },
   "dependencies": {
     "firebase-admin": "14.2.0",
