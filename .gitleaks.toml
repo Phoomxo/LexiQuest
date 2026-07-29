@@ -14,6 +14,16 @@ paths = [
 regexes = ['''AIzaSy[A-Za-z0-9_-]{33}''']
 
 [[allowlists]]
+description = "Retired public Supabase anon key in three historical commits."
+condition = "AND"
+commits = [
+  "ff2364209c53bf3b4ff5e3bff7630484d9c5fd05",
+  "15ae3e0e6b510296c4d064f974993f167730f8c4",
+  "52a478a7a9589766bfbdf8a88bff97e3a6c771b7",
+]
+paths = ['''(?:^|/)lib/main\.dart$''']
+
+[[allowlists]]
 description = "Tokenizer argument names are not API credentials."
 condition = "AND"
 regexTarget = "match"
