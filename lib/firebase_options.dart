@@ -42,7 +42,7 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions android = FirebaseOptions(
     apiKey: 'AIzaSyAl2g3NcdURDucF1W5Jms-90kcrKUbqNt4',
-    appId: '1:145034183638:android:719eb38067864496be5a77',
+    appId: '1:145034183638:android:2c492244dd68e77dbe5a77',
     messagingSenderId: '145034183638',
     projectId: 'vocab-learning-app-219ef',
     storageBucket: 'vocab-learning-app-219ef.firebasestorage.app',
