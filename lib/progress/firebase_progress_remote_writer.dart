@@ -17,16 +17,17 @@ final class ProgressCallableFailure implements Exception {
 }
 
 final class FirebaseProgressCallableClient implements ProgressCallableClient {
-  FirebaseProgressCallableClient({FirebaseFunctions? functions})
-    : _functions =
-          functions ?? FirebaseFunctions.instanceFor(region: 'asia-southeast1');
+  FirebaseProgressCallableClient({this._functions});
 
-  final FirebaseFunctions _functions;
+  final FirebaseFunctions? _functions;
 
   @override
   Future<Object?> call(String functionName, Map<String, Object?> data) async {
     try {
-      final response = await _functions.httpsCallable(functionName).call(data);
+      final functions =
+          _functions ??
+          FirebaseFunctions.instanceFor(region: 'asia-southeast1');
+      final response = await functions.httpsCallable(functionName).call(data);
       return response.data;
     } on FirebaseFunctionsException catch (error) {
       throw ProgressCallableFailure(error.code);
