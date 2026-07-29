@@ -24,10 +24,11 @@ final class ReadingVoiceUnavailable extends ReadingVoiceResult {
 /// state, and all provider failures reduce to a typed unavailable result.
 final class ReadingVoiceEnrichment {
   const ReadingVoiceEnrichment({required VoiceProvider provider})
-    : _provider = provider,
-      _enabled = true;
+    : this._(provider, true);
 
-  const ReadingVoiceEnrichment.disabled() : _provider = null, _enabled = false;
+  const ReadingVoiceEnrichment.disabled() : this._(null, false);
+
+  const ReadingVoiceEnrichment._(this._provider, this._enabled);
 
   final VoiceProvider? _provider;
   final bool _enabled;

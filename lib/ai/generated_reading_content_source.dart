@@ -9,9 +9,13 @@ final class GeneratedReadingContentSource implements ReadingContentSource {
     required ContentProvider provider,
     required ReadingContentSource curatedFallback,
     bool generationEnabled = true,
-  }) : _provider = provider,
-       _curatedFallback = curatedFallback,
-       _generationEnabled = generationEnabled;
+  }) : this._(provider, curatedFallback, generationEnabled);
+
+  const GeneratedReadingContentSource._(
+    this._provider,
+    this._curatedFallback,
+    this._generationEnabled,
+  );
 
   final ContentProvider _provider;
   final ReadingContentSource _curatedFallback;
