@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version four with learning indexes', () async {
+  test('new databases use schema version five with learning indexes', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 4);
+    expect(database.schemaVersion, 5);
 
     final categoryColumns = await _columnNames(
       database,
@@ -55,6 +55,10 @@ void main() {
       await _columnNames(database, 'reading_events'),
       contains('document_revision'),
     );
+    expect(
+      await _columnNames(database, 'model_downloads'),
+      contains('failure_code'),
+    );
     final indexes = await database
         .customSelect(
           "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_learning_%'",
@@ -73,7 +77,7 @@ void main() {
   });
 
   test(
-    'schema one upgrades to a complete schema four without row loss',
+    'schema one upgrades to a complete schema five without row loss',
     () async {
       final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
       final database = AppDatabase(executor);
@@ -112,7 +116,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 4);
+      expect(version, 5);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -190,11 +194,38 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        4,
+        5,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
       expect(await _tableNames(database), containsAll(_expectedTables));
+    },
+  );
+
+  test(
+    'schema four model download gains typed failure without row loss',
+    () async {
+      final executor = NativeDatabase.memory(setup: _createSchemaFourFixture);
+      final database = AppDatabase(executor);
+      addTearDown(database.close);
+
+      final row = await database
+          .customSelect(
+            'SELECT id, state, failure_code FROM model_downloads WHERE id = ?',
+            variables: const [Variable<String>('vision@1')],
+          )
+          .getSingle();
+
+      expect(
+        await database
+            .customSelect('PRAGMA user_version')
+            .map((value) => value.read<int>('user_version'))
+            .getSingle(),
+        5,
+      );
+      expect(row.read<String>('id'), 'vision@1');
+      expect(row.read<String>('state'), 'downloading');
+      expect(row.readNullable<String>('failure_code'), isNull);
     },
   );
 }
@@ -387,4 +418,32 @@ void _createSchemaThreeFixture(dynamic sqlite) {
     "VALUES ('reading:legacy', 'local:guest', 'doc:1', 'checkpoint', 7, 10)",
   );
   sqlite.execute('PRAGMA user_version = 3');
+}
+
+void _createSchemaFourFixture(dynamic sqlite) {
+  sqlite.execute('''
+    CREATE TABLE model_downloads (
+      id TEXT NOT NULL PRIMARY KEY,
+      model_version TEXT NOT NULL UNIQUE,
+      source_url TEXT NOT NULL,
+      expected_checksum TEXT NOT NULL,
+      expected_bytes INTEGER NOT NULL,
+      downloaded_bytes INTEGER NOT NULL DEFAULT 0,
+      retry_count INTEGER NOT NULL DEFAULT 0,
+      state TEXT NOT NULL DEFAULT 'notStarted',
+      local_path TEXT,
+      updated_at_utc_ms INTEGER NOT NULL
+    )
+  ''');
+  sqlite.execute('''
+    INSERT INTO model_downloads (
+      id, model_version, source_url, expected_checksum, expected_bytes,
+      downloaded_bytes, retry_count, state, local_path, updated_at_utc_ms
+    ) VALUES (
+      'vision@1', '1', 'https://models.example/1.tflite',
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      20, 5, 0, 'downloading', 'models/1.tflite.partial', 10
+    )
+  ''');
+  sqlite.execute('PRAGMA user_version = 4');
 }

@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
+import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
@@ -31,6 +32,7 @@ final class AppDependencies {
     this.progress,
     this.vocabulary,
     this.vocabularyImporter,
+    this.deviceModels,
     this.disposeResources,
   });
 
@@ -48,6 +50,7 @@ final class AppDependencies {
   final ProgressUseCases? progress;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
+  final DeviceModelUseCases? deviceModels;
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
 

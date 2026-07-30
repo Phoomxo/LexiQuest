@@ -39,7 +39,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 4;
+  int get schemaVersion => 5;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -123,6 +123,14 @@ final class AppDatabase extends _$AppDatabase {
           'reading_events',
           readingEvents,
           readingEvents.documentRevision,
+        );
+      }
+      if (from < 5) {
+        await _addColumnIfMissing(
+          migrator,
+          'model_downloads',
+          modelDownloads,
+          modelDownloads.failureCode,
         );
       }
     },

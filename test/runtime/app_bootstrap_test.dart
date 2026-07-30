@@ -53,6 +53,7 @@ void main() {
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
       expect(identical(dependencies.config, expectedConfig), isTrue);
+      expect(dependencies.deviceModels, isNotNull);
     });
 
     test(

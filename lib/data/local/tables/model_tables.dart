@@ -10,6 +10,7 @@ class ModelDownloads extends Table {
   IntColumn get retryCount => integer().withDefault(const Constant(0))();
   TextColumn get state => text().withDefault(const Constant('notStarted'))();
   TextColumn get localPath => text().nullable()();
+  TextColumn get failureCode => text().nullable()();
   IntColumn get updatedAtUtcMs => integer()();
 
   @override

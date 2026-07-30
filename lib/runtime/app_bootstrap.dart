@@ -1,14 +1,23 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
+import '../features/device_model/application/device_model_use_cases.dart';
+import '../features/device_model/application/model_download_manager.dart';
+import '../features/device_model/data/drift_model_download_repository.dart';
+import '../features/device_model/data/http_model_byte_source.dart';
+import '../features/device_model/data/litert_image_classifier.dart';
+import '../features/device_model/domain/model_manifest.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -202,6 +211,29 @@ final class AppBootstrap {
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final modelRepository = DriftModelDownloadRepository(database);
+    final modelByteSource = HttpModelByteSource(http.Client());
+    final modelDownloadManager = ModelDownloadManager(
+      repository: modelRepository,
+      source: modelByteSource,
+      verifier: const LiteRtModelFileVerifier(),
+      modelDirectory: () async {
+        final support = await getApplicationSupportDirectory();
+        return Directory('${support.path}${Platform.pathSeparator}models');
+      },
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    final deviceModels = DeviceModelUseCases(
+      manifest: ModelManifest.fieldImageClassifier,
+      repository: modelRepository,
+      downloadManager: modelDownloadManager,
+      openRuntime: ({required path, required manifest, required delegate}) =>
+          LiteRtImageClassifier.open(
+            path: path,
+            manifest: manifest,
+            delegate: delegate,
+          ),
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -224,7 +256,12 @@ final class AppBootstrap {
       progress: progress,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
-      disposeResources: database.close,
+      deviceModels: deviceModels,
+      disposeResources: () async {
+        await deviceModels.dispose();
+        modelByteSource.close();
+        await database.close();
+      },
     );
   }
 

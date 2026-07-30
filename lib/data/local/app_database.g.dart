@@ -10401,6 +10401,17 @@ class $ModelDownloadsTable extends ModelDownloads
     type: DriftSqlType.string,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _failureCodeMeta = const VerificationMeta(
+    'failureCode',
+  );
+  @override
+  late final GeneratedColumn<String> failureCode = GeneratedColumn<String>(
+    'failure_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
     'updatedAtUtcMs',
   );
@@ -10423,6 +10434,7 @@ class $ModelDownloadsTable extends ModelDownloads
     retryCount,
     state,
     localPath,
+    failureCode,
     updatedAtUtcMs,
   ];
   @override
@@ -10510,6 +10522,15 @@ class $ModelDownloadsTable extends ModelDownloads
         localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
       );
     }
+    if (data.containsKey('failure_code')) {
+      context.handle(
+        _failureCodeMeta,
+        failureCode.isAcceptableOrUnknown(
+          data['failure_code']!,
+          _failureCodeMeta,
+        ),
+      );
+    }
     if (data.containsKey('updated_at_utc_ms')) {
       context.handle(
         _updatedAtUtcMsMeta,
@@ -10570,6 +10591,10 @@ class $ModelDownloadsTable extends ModelDownloads
         DriftSqlType.string,
         data['${effectivePrefix}local_path'],
       ),
+      failureCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}failure_code'],
+      ),
       updatedAtUtcMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}updated_at_utc_ms'],
@@ -10593,6 +10618,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
   final int retryCount;
   final String state;
   final String? localPath;
+  final String? failureCode;
   final int updatedAtUtcMs;
   const ModelDownload({
     required this.id,
@@ -10604,6 +10630,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
     required this.retryCount,
     required this.state,
     this.localPath,
+    this.failureCode,
     required this.updatedAtUtcMs,
   });
   @override
@@ -10619,6 +10646,9 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
     map['state'] = Variable<String>(state);
     if (!nullToAbsent || localPath != null) {
       map['local_path'] = Variable<String>(localPath);
+    }
+    if (!nullToAbsent || failureCode != null) {
+      map['failure_code'] = Variable<String>(failureCode);
     }
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
     return map;
@@ -10637,6 +10667,9 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
       localPath: localPath == null && nullToAbsent
           ? const Value.absent()
           : Value(localPath),
+      failureCode: failureCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(failureCode),
       updatedAtUtcMs: Value(updatedAtUtcMs),
     );
   }
@@ -10656,6 +10689,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
       retryCount: serializer.fromJson<int>(json['retryCount']),
       state: serializer.fromJson<String>(json['state']),
       localPath: serializer.fromJson<String?>(json['localPath']),
+      failureCode: serializer.fromJson<String?>(json['failureCode']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
     );
   }
@@ -10672,6 +10706,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
       'retryCount': serializer.toJson<int>(retryCount),
       'state': serializer.toJson<String>(state),
       'localPath': serializer.toJson<String?>(localPath),
+      'failureCode': serializer.toJson<String?>(failureCode),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
     };
   }
@@ -10686,6 +10721,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
     int? retryCount,
     String? state,
     Value<String?> localPath = const Value.absent(),
+    Value<String?> failureCode = const Value.absent(),
     int? updatedAtUtcMs,
   }) => ModelDownload(
     id: id ?? this.id,
@@ -10697,6 +10733,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
     retryCount: retryCount ?? this.retryCount,
     state: state ?? this.state,
     localPath: localPath.present ? localPath.value : this.localPath,
+    failureCode: failureCode.present ? failureCode.value : this.failureCode,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
   );
   ModelDownload copyWithCompanion(ModelDownloadsCompanion data) {
@@ -10720,6 +10757,9 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
           : this.retryCount,
       state: data.state.present ? data.state.value : this.state,
       localPath: data.localPath.present ? data.localPath.value : this.localPath,
+      failureCode: data.failureCode.present
+          ? data.failureCode.value
+          : this.failureCode,
       updatedAtUtcMs: data.updatedAtUtcMs.present
           ? data.updatedAtUtcMs.value
           : this.updatedAtUtcMs,
@@ -10738,6 +10778,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
           ..write('retryCount: $retryCount, ')
           ..write('state: $state, ')
           ..write('localPath: $localPath, ')
+          ..write('failureCode: $failureCode, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs')
           ..write(')'))
         .toString();
@@ -10754,6 +10795,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
     retryCount,
     state,
     localPath,
+    failureCode,
     updatedAtUtcMs,
   );
   @override
@@ -10769,6 +10811,7 @@ class ModelDownload extends DataClass implements Insertable<ModelDownload> {
           other.retryCount == this.retryCount &&
           other.state == this.state &&
           other.localPath == this.localPath &&
+          other.failureCode == this.failureCode &&
           other.updatedAtUtcMs == this.updatedAtUtcMs);
 }
 
@@ -10782,6 +10825,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
   final Value<int> retryCount;
   final Value<String> state;
   final Value<String?> localPath;
+  final Value<String?> failureCode;
   final Value<int> updatedAtUtcMs;
   final Value<int> rowid;
   const ModelDownloadsCompanion({
@@ -10794,6 +10838,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
     this.retryCount = const Value.absent(),
     this.state = const Value.absent(),
     this.localPath = const Value.absent(),
+    this.failureCode = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -10807,6 +10852,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
     this.retryCount = const Value.absent(),
     this.state = const Value.absent(),
     this.localPath = const Value.absent(),
+    this.failureCode = const Value.absent(),
     required int updatedAtUtcMs,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -10825,6 +10871,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
     Expression<int>? retryCount,
     Expression<String>? state,
     Expression<String>? localPath,
+    Expression<String>? failureCode,
     Expression<int>? updatedAtUtcMs,
     Expression<int>? rowid,
   }) {
@@ -10838,6 +10885,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
       if (retryCount != null) 'retry_count': retryCount,
       if (state != null) 'state': state,
       if (localPath != null) 'local_path': localPath,
+      if (failureCode != null) 'failure_code': failureCode,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
       if (rowid != null) 'rowid': rowid,
     });
@@ -10853,6 +10901,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
     Value<int>? retryCount,
     Value<String>? state,
     Value<String?>? localPath,
+    Value<String?>? failureCode,
     Value<int>? updatedAtUtcMs,
     Value<int>? rowid,
   }) {
@@ -10866,6 +10915,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
       retryCount: retryCount ?? this.retryCount,
       state: state ?? this.state,
       localPath: localPath ?? this.localPath,
+      failureCode: failureCode ?? this.failureCode,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
       rowid: rowid ?? this.rowid,
     );
@@ -10901,6 +10951,9 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
     if (localPath.present) {
       map['local_path'] = Variable<String>(localPath.value);
     }
+    if (failureCode.present) {
+      map['failure_code'] = Variable<String>(failureCode.value);
+    }
     if (updatedAtUtcMs.present) {
       map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
     }
@@ -10922,6 +10975,7 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
           ..write('retryCount: $retryCount, ')
           ..write('state: $state, ')
           ..write('localPath: $localPath, ')
+          ..write('failureCode: $failureCode, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -20313,6 +20367,7 @@ typedef $$ModelDownloadsTableCreateCompanionBuilder =
       Value<int> retryCount,
       Value<String> state,
       Value<String?> localPath,
+      Value<String?> failureCode,
       required int updatedAtUtcMs,
       Value<int> rowid,
     });
@@ -20327,6 +20382,7 @@ typedef $$ModelDownloadsTableUpdateCompanionBuilder =
       Value<int> retryCount,
       Value<String> state,
       Value<String?> localPath,
+      Value<String?> failureCode,
       Value<int> updatedAtUtcMs,
       Value<int> rowid,
     });
@@ -20382,6 +20438,11 @@ class $$ModelDownloadsTableFilterComposer
 
   ColumnFilters<String> get localPath => $composableBuilder(
     column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -20445,6 +20506,11 @@ class $$ModelDownloadsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
     builder: (column) => ColumnOrderings(column),
@@ -20497,6 +20563,11 @@ class $$ModelDownloadsTableAnnotationComposer
   GeneratedColumn<String> get localPath =>
       $composableBuilder(column: $table.localPath, builder: (column) => column);
 
+  GeneratedColumn<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
     builder: (column) => column,
@@ -20545,6 +20616,7 @@ class $$ModelDownloadsTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String> state = const Value.absent(),
                 Value<String?> localPath = const Value.absent(),
+                Value<String?> failureCode = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => ModelDownloadsCompanion(
@@ -20557,6 +20629,7 @@ class $$ModelDownloadsTableTableManager
                 retryCount: retryCount,
                 state: state,
                 localPath: localPath,
+                failureCode: failureCode,
                 updatedAtUtcMs: updatedAtUtcMs,
                 rowid: rowid,
               ),
@@ -20571,6 +20644,7 @@ class $$ModelDownloadsTableTableManager
                 Value<int> retryCount = const Value.absent(),
                 Value<String> state = const Value.absent(),
                 Value<String?> localPath = const Value.absent(),
+                Value<String?> failureCode = const Value.absent(),
                 required int updatedAtUtcMs,
                 Value<int> rowid = const Value.absent(),
               }) => ModelDownloadsCompanion.insert(
@@ -20583,6 +20657,7 @@ class $$ModelDownloadsTableTableManager
                 retryCount: retryCount,
                 state: state,
                 localPath: localPath,
+                failureCode: failureCode,
                 updatedAtUtcMs: updatedAtUtcMs,
                 rowid: rowid,
               ),
