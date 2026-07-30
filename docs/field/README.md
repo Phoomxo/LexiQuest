@@ -40,7 +40,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
 
 ตัว collector จะปฏิเสธ emulator, hash serial ก่อนบันทึก, ติดตั้งและเปิด APK
 จริง และสร้างรายการอื่นเป็น `pending` โดยตั้งใจ ผู้ทดสอบต้องทำ journey
-ตาม `docs/superpowers/plans/2026-07-30-active-field-readiness-execution.md`
+ตาม `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`
 พร้อม evidence reference แล้วกรอกผลจริง ห้ามเปลี่ยน `pending` เป็น `pass`
 โดยไม่ได้ทำการทดสอบ
 
