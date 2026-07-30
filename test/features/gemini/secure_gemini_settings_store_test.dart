@@ -4,6 +4,20 @@ import 'package:vocab_learning_app/features/gemini/data/secure_gemini_settings_s
 import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 
 void main() {
+  test('uses non-biometric Android Keystore wrapping for unattended reads', () {
+    final options = lexiQuestGeminiAndroidOptions.toMap();
+
+    expect(options['storageNamespace'], 'lexiquest_gemini_byok_v2');
+    expect(
+      options['keyCipherAlgorithm'],
+      'RSA_ECB_OAEPwithSHA_256andMGF1Padding',
+    );
+    expect(options['storageCipherAlgorithm'], 'AES_GCM_NoPadding');
+    expect(options['enforceBiometrics'], 'false');
+    expect(options['migrateOnAlgorithmChange'], 'false');
+    expect(options['resetOnError'], 'false');
+  });
+
   test('stores key and consent without exposing key through status', () async {
     final values = <String, String>{};
     final store = SecureGeminiSettingsStore(_MemorySecureStore(values));

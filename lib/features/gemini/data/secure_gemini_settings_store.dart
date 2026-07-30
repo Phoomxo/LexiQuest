@@ -8,16 +8,30 @@ abstract interface class SecureValueStore {
   Future<void> delete(String key);
 }
 
+/// The field-study build performs unattended reads while AI Tutor opens, so it
+/// uses the package's standard RSA-wrapped AES configuration rather than its
+/// biometric key cipher. The v2 namespace intentionally leaves the broken
+/// pre-study AES-key namespace behind; no participant key was stored there.
+///
+/// Automatic migration/reset are disabled because flutter_secure_storage
+/// 10.3.1 can recursively re-enter recovery on some Android Keystore failures.
+/// A failure is returned to Dart and shown as a typed storage error instead of
+/// terminating the process.
+const lexiQuestGeminiAndroidOptions = AndroidOptions(
+  storageNamespace: 'lexiquest_gemini_byok_v2',
+  resetOnError: false,
+  migrateOnAlgorithmChange: false,
+  keyCipherAlgorithm:
+      KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+  storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
+);
+
 final class FlutterSecureValueStore implements SecureValueStore {
   FlutterSecureValueStore({FlutterSecureStorage? storage})
     : _storage =
           storage ??
           const FlutterSecureStorage(
-            aOptions: AndroidOptions(
-              storageNamespace: 'lexiquest_gemini_byok',
-              keyCipherAlgorithm: KeyCipherAlgorithm.AES_GCM_NoPadding,
-              storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
-            ),
+            aOptions: lexiQuestGeminiAndroidOptions,
             iOptions: IOSOptions(
               accessibility: KeychainAccessibility.first_unlock_this_device,
             ),
