@@ -1,6 +1,7 @@
 import 'sync_engine.dart';
 
 enum SyncTriggerReason {
+  startup,
   localMutation,
   accountBinding,
   appResume,

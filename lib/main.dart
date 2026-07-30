@@ -45,6 +45,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final trigger = widget.dependencies.syncTrigger;
+      if (trigger != null) {
+        unawaited(trigger.request(SyncTriggerReason.startup));
+      }
+    });
   }
 
   @override

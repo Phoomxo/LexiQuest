@@ -109,6 +109,25 @@ void main() {
     expect(disposeCalls, 1);
   });
 
+  testWidgets('MyApp requests shared sync after initial startup', (
+    tester,
+  ) async {
+    var runs = 0;
+    final trigger = SyncTrigger(() async {
+      runs += 1;
+      return const SyncRunResult(status: SyncRunStatus.completed);
+    });
+    final dependencies = _dependencies(
+      const AppBuildInfo.fromEnvironment(),
+      syncTrigger: trigger,
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pump();
+
+    expect(runs, 1);
+  });
+
   testWidgets('MyApp requests shared sync when returning to foreground', (
     tester,
   ) async {
@@ -122,6 +141,8 @@ void main() {
       syncTrigger: trigger,
     );
     await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pump();
+    runs = 0;
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
