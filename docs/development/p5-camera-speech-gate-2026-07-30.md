@@ -1,5 +1,11 @@
 # P5 Camera and Speech Gate Record
 
+> **Historical gate record.** The statement that no Android device was
+> connected describes this gate only. Current camera/speech status and later
+> physical-device evidence are reconciled in
+> `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`,
+> section 3.1.
+
 **Date:** 2026-07-30
 
 **Result:** PASS

@@ -1,5 +1,11 @@
 # Field Build Baseline — 2026-07-30
 
+> **Historical gate record.** Versions, warnings, and results below describe
+> the 2026-07-30 baseline. Current status and later physical-device evidence are
+> reconciled in
+> `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`,
+> section 3.1.
+
 - Commit: `d707dbf`
 - Flutter: `3.44.7` stable, framework `84fc5cbb22`
 - Dart: `3.12.2` stable

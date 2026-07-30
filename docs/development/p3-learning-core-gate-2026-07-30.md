@@ -1,5 +1,11 @@
 # P3 Learning Core Gate Record
 
+> **Historical gate record.** Results below remain the accepted P3 automated
+> evidence. Current field status and later physical-device evidence are
+> reconciled in
+> `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`,
+> section 3.1.
+
 **Date:** 2026-07-30
 
 **Result:** PASS

@@ -1,5 +1,11 @@
 # P1 Local-First Gate — 2026-07-30
 
+> **Historical gate record.** The deferred-device and toolchain statements
+> below describe the environment at this gate. Current status and later
+> physical-device evidence are reconciled in
+> `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`,
+> section 3.1.
+
 - Gate: `tool/cli/verify-local-first.ps1`
 - Result: PASS, 6/6 phases
 - Duration: 01:41

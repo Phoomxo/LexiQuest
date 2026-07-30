@@ -93,6 +93,43 @@ This artifact is a baseline, not the final VoxCPM-enabled release candidate.
 Any product-code change requires a newly signed APK, a new hash, and new
 evidence for affected journeys.
 
+### 3.1 Test and evidence reconciliation
+
+The earlier gate documents are point-in-time records. Their test counts are not
+added together because later suites intentionally repeat earlier coverage.
+
+| Gate | Recorded automated evidence | Current P8 interpretation |
+|---|---|---|
+| P0 baseline | Analyze passed, 57 focused tests, debug APK passed | Historical starting point |
+| P1 Local-First | 6/6 phases, 51 focused tests | Physical offline persistence later passed on the mid-tier device |
+| P2 Sync | 7/7 phases, 128 focused tests, 17 Firestore tests | Physical offline restart/reconnect sync later passed; reboot/background work remains pending |
+| P3 Learning Core | 88 focused tests, 23 Firestore tests | Automated learning evidence is accepted; the complete participant learning journey remains pending on the final APK |
+| P4 Device Model | 43 focused tests, host CPU/XNNPACK inference, APK integrity passed | Physical model, CPU/XNNPACK, and camera inference passed on mid-tier; low/high and GPU allowlist remain pending |
+| P5 Camera/Speech | 53 focused tests and Android packaging passed | Physical camera inference passed; real speech/TTS/pronunciation acceptance remains pending |
+| P6 Gemini BYOK | 37 focused tests and secret/no-log contracts passed | Live owner-key acceptance remains pending |
+| P7 Product | Latest recorded product run passed 334 Flutter tests, 3 Auth emulator tests, and 25 Firestore tests | Account, export, Gemini, and related participant journeys still require final-APK device evidence |
+| P8 Release | Field-release contracts passed 59/59; Android release-signing contracts passed 54/54 | Mid-tier evidence is partial; low/high devices, App Check, support/research references, and owner approval remain open |
+
+The P0 baseline also recorded future-version warnings for Android Gradle Plugin
+8.9.1, Kotlin 2.1.0, and transitive `jni` 1.0.1. The current repository uses
+Android Gradle Plugin 9.0.1, Kotlin 2.3.20, and `jni` 1.0.3, so those three
+specific warnings are closed. Historical gate files retain their original
+versions and results for auditability.
+
+### 3.2 Evidence precedence
+
+When two records describe different dates, use this order:
+
+1. exact release manifest and APK hash;
+2. exact physical-device evidence for that APK;
+3. latest complete automated gate output;
+4. individual historical P0-P7 gate record;
+5. planning or design text.
+
+A later device result may close a historical hardware deferral, but it does not
+change the original gate record. A passed automated test does not convert a
+pending physical journey into a pass.
+
 ## 4. Remaining scope
 
 Work is divided into seven dependency-ordered packages:

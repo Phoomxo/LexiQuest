@@ -37,9 +37,9 @@
 ## Verified baseline
 
 - Field release contract tests: 59 passed in the latest recorded gate.
-- Android release-signing contracts: 45 passed.
+- Android release-signing contracts: 54 passed in the latest recorded gate.
 - Flutter static analysis: zero issues.
-- P7 product completion tests: 331 passed.
+- P7 product completion tests: 334 passed in the latest recorded product run.
 - Firebase Auth emulator journey: 3 passed.
 - Firestore rules emulator suite: 25 passed.
 - Android debug APK and packaged LiteRT runtime integrity: passed.
