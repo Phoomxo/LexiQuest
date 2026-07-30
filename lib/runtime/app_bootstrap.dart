@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -8,6 +12,14 @@ import '../firebase_options.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
+import '../features/sync/application/sync_backoff.dart';
+import '../features/sync/application/sync_engine.dart';
+import '../features/sync/application/sync_mutex.dart';
+import '../features/sync/application/sync_trigger.dart';
+import '../features/sync/data/drift_cloud_policy_cache.dart';
+import '../features/sync/data/drift_sync_store.dart';
+import '../features/sync/data/firestore_sync_gateway.dart';
+import '../features/sync/domain/sync_gateway.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -21,6 +33,7 @@ import 'supabase_client_config.dart';
 typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
+typedef SyncGatewayFactory = SyncGateway Function();
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -30,6 +43,10 @@ const _productionSupabaseUrl = String.fromEnvironment(
 );
 const _productionSupabasePublishableKey = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
+);
+const _productionCloudSyncEnabled = bool.fromEnvironment(
+  'LEXIQUEST_CLOUD_SYNC_ENABLED',
+  defaultValue: true,
 );
 
 bool _productionSupabaseInitialized = false;
@@ -62,6 +79,8 @@ final class AppBootstrap {
     required this.guestSessionService,
     required this.createDatabase,
     this.bindGuestOwnership = false,
+    this.syncGatewayFactory,
+    this.cloudSyncEnabled = true,
   });
 
   factory AppBootstrap.production() {
@@ -72,6 +91,11 @@ final class AppBootstrap {
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
       bindGuestOwnership: true,
+      syncGatewayFactory: () => FirestoreSyncGateway(
+        firestore: FirebaseFirestore.instance,
+        auth: FirebaseAuth.instance,
+      ),
+      cloudSyncEnabled: _productionCloudSyncEnabled,
     );
   }
 
@@ -81,6 +105,8 @@ final class AppBootstrap {
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final bool bindGuestOwnership;
+  final SyncGatewayFactory? syncGatewayFactory;
+  final bool cloudSyncEnabled;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -99,11 +125,50 @@ final class AppBootstrap {
       generateOwnerId: idGenerator.v4,
     );
     final upgradeGuestOwner = UpgradeGuestOwner(ownerUpgrades);
+    final firebase = await _availability(initializeFirebase);
+    final supabase = await _availability(initializeSupabase);
+    final config = _loadConfig();
+    SyncEngine? syncEngine;
+    SyncTrigger? syncTrigger;
+    final createGateway = syncGatewayFactory;
+    if (firebase == RuntimeAvailability.ready && createGateway != null) {
+      final gateway = createGateway();
+      final policy = CloudSyncPolicyProvider(
+        buildEnabled: cloudSyncEnabled,
+        cache: DriftCloudPolicyCache(database),
+        gateway: gateway,
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+      syncEngine = SyncEngine(
+        owners: localOwners,
+        store: DriftSyncStore(database),
+        gateway: gateway,
+        policyProvider: policy.call,
+        mutex: SyncMutex(),
+        backoff: const SyncBackoff(),
+        nowUtc: () => DateTime.now().toUtc(),
+        generateLeaseToken: idGenerator.v4,
+      );
+      syncTrigger = SyncTrigger(syncEngine.run);
+    }
+    void notifyLocalMutation() {
+      final trigger = syncTrigger;
+      if (trigger != null) {
+        unawaited(trigger.request(SyncTriggerReason.localMutation));
+      }
+    }
+
     final exposedGuestSession = bindGuestOwnership
         ? OwnerBindingGuestSessionService(
             delegate: guestSessionService,
             localOwners: localOwners,
             upgradeGuestOwner: upgradeGuestOwner,
+            onOwnerBound: () {
+              final trigger = syncTrigger;
+              if (trigger != null) {
+                unawaited(trigger.request(SyncTriggerReason.accountBinding));
+              }
+            },
           )
         : guestSessionService;
     final vocabulary = VocabularyUseCases(
@@ -111,16 +176,15 @@ final class AppBootstrap {
       vocabulary: DriftVocabularyRepository(database),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
+      onLocalMutation: notifyLocalMutation,
     );
     final vocabularyImporter = ImportVocabulary(
       owners: localOwners,
       repository: DriftVocabularyImportRepository(database),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
+      onLocalMutation: notifyLocalMutation,
     );
-    final firebase = await _availability(initializeFirebase);
-    final supabase = await _availability(initializeSupabase);
-    final config = _loadConfig();
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -137,6 +201,8 @@ final class AppBootstrap {
       database: database,
       localOwners: localOwners,
       upgradeGuestOwner: upgradeGuestOwner,
+      syncEngine: syncEngine,
+      syncTrigger: syncTrigger,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       disposeResources: database.close,

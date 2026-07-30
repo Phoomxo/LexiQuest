@@ -17,12 +17,14 @@ final class ImportVocabulary {
     required this.repository,
     required this.generateId,
     required this.nowUtc,
+    this.onLocalMutation,
   });
 
   final LocalOwnerRepository owners;
   final VocabularyImportRepository repository;
   final ImportIdGenerator generateId;
   final ImportUtcNow nowUtc;
+  final LocalMutationNotifier? onLocalMutation;
 
   Future<VocabularyImportResult> call({
     required String categoryId,
@@ -88,7 +90,7 @@ final class ImportVocabulary {
       }),
     );
 
-    return repository.persist(
+    final result = await repository.persist(
       PreparedVocabularyImport(
         importId: 'import:${_nextId()}',
         ownerId: owner.id,
@@ -100,6 +102,8 @@ final class ImportVocabulary {
       ),
       isCancelled: cancellation,
     );
+    onLocalMutation?.call();
+    return result;
   }
 
   String _nextId() {

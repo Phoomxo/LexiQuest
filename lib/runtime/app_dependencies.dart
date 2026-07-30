@@ -3,6 +3,8 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/sync/application/sync_engine.dart';
+import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
@@ -21,6 +23,8 @@ final class AppDependencies {
     this.database,
     this.localOwners,
     this.upgradeGuestOwner,
+    this.syncEngine,
+    this.syncTrigger,
     this.vocabulary,
     this.vocabularyImporter,
     this.disposeResources,
@@ -34,6 +38,8 @@ final class AppDependencies {
   final AppDatabase? database;
   final LocalOwnerRepository? localOwners;
   final UpgradeGuestOwner? upgradeGuestOwner;
+  final SyncEngine? syncEngine;
+  final SyncTrigger? syncTrigger;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final Future<void> Function()? disposeResources;

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:vocab_learning_app/main.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
@@ -16,6 +18,7 @@ class _FakeGuestSessionService implements GuestSessionService {
 AppDependencies _dependencies(
   AppBuildInfo buildInfo, {
   Future<void> Function()? disposeResources,
+  SyncTrigger? syncTrigger,
 }) {
   return AppDependencies(
     runtimeStatus: const AppRuntimeStatus(
@@ -27,6 +30,7 @@ AppDependencies _dependencies(
     config: null,
     guestSessionService: _FakeGuestSessionService(),
     buildInfo: buildInfo,
+    syncTrigger: syncTrigger,
     disposeResources: disposeResources,
   );
 }
@@ -101,5 +105,26 @@ void main() {
     await dependencies.dispose();
 
     expect(disposeCalls, 1);
+  });
+
+  testWidgets('MyApp requests shared sync when returning to foreground', (
+    tester,
+  ) async {
+    var runs = 0;
+    final trigger = SyncTrigger(() async {
+      runs += 1;
+      return const SyncRunResult(status: SyncRunStatus.completed);
+    });
+    final dependencies = _dependencies(
+      const AppBuildInfo.fromEnvironment(),
+      syncTrigger: trigger,
+    );
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(runs, 1);
   });
 }

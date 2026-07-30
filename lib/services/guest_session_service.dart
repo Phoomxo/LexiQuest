@@ -92,21 +92,25 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     required GuestSessionService delegate,
     required LocalOwnerRepository localOwners,
     required UpgradeGuestOwner upgradeGuestOwner,
+    void Function()? onOwnerBound,
   }) => OwnerBindingGuestSessionService._(
     delegate,
     localOwners,
     upgradeGuestOwner,
+    onOwnerBound,
   );
 
   const OwnerBindingGuestSessionService._(
     this._delegate,
     this._localOwners,
     this._upgradeGuestOwner,
+    this._onOwnerBound,
   );
 
   final GuestSessionService _delegate;
   final LocalOwnerRepository _localOwners;
   final UpgradeGuestOwner _upgradeGuestOwner;
+  final void Function()? _onOwnerBound;
 
   @override
   Future<GuestSessionResult> start() async {
@@ -115,6 +119,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
       try {
         final owner = await _localOwners.getOrCreateActiveOwner();
         await _upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
+        _onOwnerBound?.call();
       } catch (_) {
         return const GuestSessionFailed(GuestSessionFailure.unknown);
       }

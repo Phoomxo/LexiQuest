@@ -2,6 +2,10 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -237,5 +241,53 @@ void main() {
         expect(owner.accountState, 'firebaseBound');
       },
     );
+
+    test('composes local mutations into the shared sync trigger', () async {
+      final gateway = _BootstrapSyncGateway();
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        syncGatewayFactory: () => gateway,
+      );
+
+      final dependencies = await bootstrap.initialize();
+      await dependencies.vocabulary!.createCategory('Travel');
+      await Future<void>.delayed(Duration.zero);
+
+      expect(dependencies.syncTrigger, isNotNull);
+      expect(gateway.policyFetches, 1);
+    });
   });
+}
+
+final class _BootstrapSyncGateway implements SyncGateway {
+  int policyFetches = 0;
+
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() async {
+    policyFetches += 1;
+    final now = DateTime.now().toUtc();
+    return CloudSyncPolicy(
+      enabled: true,
+      source: CloudSyncPolicySource.remote,
+      fetchedAtUtc: now,
+      expiresAtUtc: now.add(const Duration(minutes: 15)),
+    );
+  }
+
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) async => PullPage(changes: const [], nextCursor: after, hasMore: false);
+
+  @override
+  Future<PushResult> push(PushMutation mutation) {
+    throw UnimplementedError();
+  }
 }

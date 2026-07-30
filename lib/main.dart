@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
+import 'features/sync/application/sync_trigger.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -23,7 +24,23 @@ class MyApp extends StatefulWidget {
   State<MyApp> createState() => _MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      final trigger = widget.dependencies.syncTrigger;
+      if (trigger != null) {
+        unawaited(trigger.request(SyncTriggerReason.appResume));
+      }
+    }
+  }
+
   @override
   void didUpdateWidget(covariant MyApp oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -34,6 +51,7 @@ class _MyAppState extends State<MyApp> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     unawaited(widget.dependencies.dispose());
     super.dispose();
   }

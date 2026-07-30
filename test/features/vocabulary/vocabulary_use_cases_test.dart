@@ -135,4 +135,41 @@ void main() {
     await useCases.deleteCategory(category.id);
     expect(await useCases.watchCategories().first, isEmpty);
   });
+
+  test(
+    'successful local mutations notify sync only after persistence',
+    () async {
+      var notifications = 0;
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'trigger-owner',
+        nowUtc: () => nowUtc,
+      );
+      final triggered = VocabularyUseCases(
+        owners: owners,
+        vocabulary: DriftVocabularyRepository(database),
+        generateId: () => 'trigger-${++idCounter}',
+        nowUtc: () => nowUtc,
+        onLocalMutation: () => notifications += 1,
+      );
+
+      final category = await triggered.createCategory('Travel');
+      expect(notifications, 1);
+      await triggered.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'station',
+          meaning: 'สถานี',
+          partOfSpeech: 'noun',
+        ),
+      );
+      expect(notifications, 2);
+
+      await expectLater(
+        triggered.createCategory('Travel'),
+        throwsA(isA<DuplicateVocabularyFailure>()),
+      );
+      expect(notifications, 2);
+    },
+  );
 }

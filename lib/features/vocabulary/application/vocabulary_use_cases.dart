@@ -7,6 +7,7 @@ import '../domain/vocabulary_word.dart';
 
 typedef VocabularyIdGenerator = String Function();
 typedef VocabularyUtcNow = DateTime Function();
+typedef LocalMutationNotifier = void Function();
 
 const int maxCategoryNameLength = 80;
 const int maxSpellingLength = 120;
@@ -57,12 +58,14 @@ final class VocabularyUseCases {
     required this.vocabulary,
     required this.generateId,
     required this.nowUtc,
+    this.onLocalMutation,
   });
 
   final LocalOwnerRepository owners;
   final VocabularyRepository vocabulary;
   final VocabularyIdGenerator generateId;
   final VocabularyUtcNow nowUtc;
+  final LocalMutationNotifier? onLocalMutation;
 
   Stream<List<VocabularyCategory>> watchCategories() {
     return Stream.fromFuture(
@@ -89,7 +92,7 @@ final class VocabularyUseCases {
     );
     final now = _currentUtc();
     final owner = await owners.getOrCreateActiveOwner();
-    return vocabulary.createCategory(
+    final created = await vocabulary.createCategory(
       VocabularyCategory(
         id: 'category:${_nextId()}',
         ownerId: owner.id,
@@ -102,6 +105,8 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
+    onLocalMutation?.call();
+    return created;
   }
 
   Future<VocabularyCategory> renameCategory(
@@ -119,13 +124,15 @@ final class VocabularyUseCases {
       maxLength: maxCategoryNameLength,
     );
     final owner = await owners.getOrCreateActiveOwner();
-    return vocabulary.renameCategory(
+    final renamed = await vocabulary.renameCategory(
       ownerId: owner.id,
       categoryId: canonicalCategoryId,
       name: canonicalName,
       normalizedName: normalizeVocabularyText(canonicalName),
       nowUtc: _currentUtc(),
     );
+    onLocalMutation?.call();
+    return renamed;
   }
 
   Future<void> deleteCategory(String categoryId) async {
@@ -140,12 +147,13 @@ final class VocabularyUseCases {
       categoryId: canonicalCategoryId,
       nowUtc: _currentUtc(),
     );
+    onLocalMutation?.call();
   }
 
   Future<VocabularyWord> createWord(CreateWordCommand command) async {
     final owner = await owners.getOrCreateActiveOwner();
     final now = _currentUtc();
-    return vocabulary.createWord(
+    final created = await vocabulary.createWord(
       _wordFromInput(
         id: 'word:${_nextId()}',
         ownerId: owner.id,
@@ -159,12 +167,14 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
+    onLocalMutation?.call();
+    return created;
   }
 
   Future<VocabularyWord> updateWord(UpdateWordCommand command) async {
     final owner = await owners.getOrCreateActiveOwner();
     final now = _currentUtc();
-    return vocabulary.updateWord(
+    final updated = await vocabulary.updateWord(
       _wordFromInput(
         id: _required(command.id, 'wordId', maxLength: 256),
         ownerId: owner.id,
@@ -178,6 +188,8 @@ final class VocabularyUseCases {
         updatedAtUtc: now,
       ),
     );
+    onLocalMutation?.call();
+    return updated;
   }
 
   Future<void> deleteWord(String wordId) async {
@@ -188,6 +200,7 @@ final class VocabularyUseCases {
       wordId: canonicalWordId,
       nowUtc: _currentUtc(),
     );
+    onLocalMutation?.call();
   }
 
   VocabularyWord _wordFromInput({
