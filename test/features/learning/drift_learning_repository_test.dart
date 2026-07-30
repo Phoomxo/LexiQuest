@@ -104,6 +104,8 @@ void main() {
       'first_answer',
       'first_correct',
     });
+    final outbox = await database.select(database.outboxOperations).get();
+    expect(outbox.map((row) => row.entityType), contains('attempt'));
     final storedSession = await (database.select(
       database.learningSessions,
     )..where((row) => row.id.equals('session-1'))).getSingle();
@@ -147,6 +149,184 @@ void main() {
     expect(result.wrongCount, 1);
     expect(result.score, 0);
   });
+
+  test(
+    'out-of-order local attempts rebuild SRS in canonical event order',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-order',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 9),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      final later = DateTime.utc(2026, 7, 30, 10);
+      final earlier = DateTime.utc(2026, 7, 30, 9, 30);
+      await repository.recordAnswer(
+        RecordAnswerCommand(
+          id: 'attempt-later',
+          ownerId: 'owner-1',
+          sessionId: 'session-order',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 200,
+          attemptNumber: 2,
+          occurredAtUtc: later,
+        ),
+      );
+
+      final result = await repository.recordAnswer(
+        RecordAnswerCommand(
+          id: 'attempt-earlier',
+          ownerId: 'owner-1',
+          sessionId: 'session-order',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: false,
+          responseTimeMs: 300,
+          attemptNumber: 1,
+          occurredAtUtc: earlier,
+        ),
+      );
+
+      expect(result.srs.lastReviewAtUtc, later);
+      expect(result.srs.repetitions, 1);
+      expect(result.srs.lapses, 1);
+      final firstAnswer = await (database.select(
+        database.achievementUnlocks,
+      )..where((row) => row.achievementId.equals('first_answer'))).getSingle();
+      expect(firstAnswer.sourceEventId, 'attempt-earlier');
+      expect(firstAnswer.unlockedAtUtcMs, earlier.millisecondsSinceEpoch);
+    },
+  );
+
+  test('attempt replay compares provider provenance', () async {
+    await repository.startSession(
+      LearningSessionDraft(
+        id: 'session-provenance',
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+        appVersion: '1.0.0',
+        buildId: 'test',
+      ),
+    );
+    final command = RecordAnswerCommand(
+      id: 'attempt-provenance',
+      ownerId: 'owner-1',
+      sessionId: 'session-provenance',
+      wordId: 'word-1',
+      promptMode: 'pronunciation',
+      isCorrect: true,
+      responseTimeMs: 400,
+      attemptNumber: 1,
+      occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+      providerProvenance: 'device-stt',
+    );
+    await repository.recordAnswer(command);
+
+    await expectLater(
+      repository.recordAnswer(
+        RecordAnswerCommand(
+          id: command.id,
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+          wordId: command.wordId,
+          promptMode: command.promptMode,
+          isCorrect: command.isCorrect,
+          responseTimeMs: command.responseTimeMs,
+          attemptNumber: command.attemptNumber,
+          occurredAtUtc: command.occurredAtUtc,
+          providerProvenance: 'cloud-stt',
+        ),
+      ),
+      throwsStateError,
+    );
+  });
+
+  test(
+    'invalid cloud-contract evidence is rejected before local commit',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-limits',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      final base = RecordAnswerCommand(
+        id: 'attempt-limits',
+        ownerId: 'owner-1',
+        sessionId: 'session-limits',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+      );
+
+      for (final invalid in [
+        RecordAnswerCommand(
+          id: base.id,
+          ownerId: base.ownerId,
+          sessionId: base.sessionId,
+          wordId: base.wordId,
+          promptMode: 'x' * 61,
+          isCorrect: base.isCorrect,
+          responseTimeMs: base.responseTimeMs,
+          attemptNumber: base.attemptNumber,
+          occurredAtUtc: base.occurredAtUtc,
+        ),
+        RecordAnswerCommand(
+          id: base.id,
+          ownerId: base.ownerId,
+          sessionId: base.sessionId,
+          wordId: base.wordId,
+          promptMode: base.promptMode,
+          isCorrect: base.isCorrect,
+          responseTimeMs: 2147483648,
+          attemptNumber: base.attemptNumber,
+          occurredAtUtc: base.occurredAtUtc,
+        ),
+        RecordAnswerCommand(
+          id: base.id,
+          ownerId: base.ownerId,
+          sessionId: base.sessionId,
+          wordId: base.wordId,
+          promptMode: base.promptMode,
+          isCorrect: base.isCorrect,
+          responseTimeMs: base.responseTimeMs,
+          attemptNumber: 1000001,
+          occurredAtUtc: base.occurredAtUtc,
+        ),
+        RecordAnswerCommand(
+          id: base.id,
+          ownerId: base.ownerId,
+          sessionId: base.sessionId,
+          wordId: base.wordId,
+          promptMode: base.promptMode,
+          isCorrect: base.isCorrect,
+          responseTimeMs: base.responseTimeMs,
+          attemptNumber: base.attemptNumber,
+          occurredAtUtc: base.occurredAtUtc,
+          providerProvenance: 'p' * 121,
+        ),
+      ]) {
+        expect(() => repository.recordAnswer(invalid), throwsArgumentError);
+      }
+
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
 
   test('reading progress is monotonic and completion is idempotent', () async {
     final first = await repository.saveReadingProgress(
@@ -199,5 +379,9 @@ void main() {
     expect(completed.isCompleted, isTrue);
     expect(replay, completed);
     expect(await database.select(database.readingEvents).get(), hasLength(3));
+    final readingOutbox = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.entityType.equals('readingEvent'))).get();
+    expect(readingOutbox, hasLength(3));
   });
 }

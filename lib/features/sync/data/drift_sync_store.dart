@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_result.dart';
@@ -21,12 +23,14 @@ final class ClaimedSyncOperation {
 }
 
 final class DriftSyncStore {
-  DriftSyncStore(this.database);
+  DriftSyncStore(this.database)
+    : projections = DriftLearningProjectionRebuilder(database);
 
   static const int maxClaimLimit = 50;
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
+  final DriftLearningProjectionRebuilder projections;
   Future<void> _claimGate = Future<void>.value();
 
   Future<bool> tryAcquireRunLease({
@@ -344,6 +348,15 @@ final class DriftSyncStore {
           operation.leaseToken != claim.leaseToken) {
         throw StateError('outbox operation lease does not match');
       }
+      if (cloudEntity.collection == SyncCollection.attempts ||
+          cloudEntity.collection == SyncCollection.readingEvents) {
+        await _resolveImmutableConflict(
+          operation: operation,
+          cloudEntity: cloudEntity,
+          resolvedAtUtc: resolvedAtUtc,
+        );
+        return;
+      }
 
       final localSnapshot = await _localSnapshot(operation);
       final cloudSnapshot = <String, Object?>{
@@ -390,6 +403,9 @@ final class DriftSyncStore {
             cloudEntity,
             handlePendingConflict: false,
           );
+        case SyncCollection.attempts:
+        case SyncCollection.readingEvents:
+          throw const InvalidSyncPayloadFailure();
       }
       await (database.update(
         database.outboxOperations,
@@ -437,6 +453,10 @@ final class DriftSyncStore {
             await _applyCategory(canonicalOwnerId, entity);
           case SyncCollection.words:
             await _applyWord(canonicalOwnerId, entity);
+          case SyncCollection.attempts:
+            await _applyAttempt(canonicalOwnerId, entity);
+          case SyncCollection.readingEvents:
+            await _applyReadingEvent(canonicalOwnerId, entity);
         }
       }
 
@@ -543,6 +563,67 @@ final class DriftSyncStore {
             'updatedAtUtcMs': word.updatedAtUtcMs,
           },
         );
+      case 'attempt':
+        final attempt =
+            await (database.select(database.answerAttempts)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
+        if (attempt == null) {
+          throw StateError('outbox attempt was not found');
+        }
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.attempts,
+          entityId: attempt.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: operation.payloadVersion,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(attempt.occurredAtUtcMs),
+          payload: <String, Object?>{
+            'sessionId': attempt.sessionId,
+            'wordId': attempt.wordId,
+            'promptMode': attempt.promptMode,
+            'isCorrect': attempt.isCorrect,
+            'responseTimeMs': attempt.responseTimeMs,
+            'attemptNumber': attempt.attemptNumber,
+            'occurredAtUtcMs': attempt.occurredAtUtcMs,
+            'providerProvenance': attempt.providerProvenance,
+          },
+        );
+      case 'readingEvent':
+        final event =
+            await (database.select(database.readingEvents)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
+        if (event == null) {
+          throw StateError('outbox reading event was not found');
+        }
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.readingEvents,
+          entityId: event.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: operation.payloadVersion,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(event.occurredAtUtcMs),
+          payload: <String, Object?>{
+            'documentId': event.documentId,
+            'documentRevision': event.documentRevision,
+            'eventType': event.eventType,
+            'position': event.position,
+            'occurredAtUtcMs': event.occurredAtUtcMs,
+          },
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -581,6 +662,11 @@ final class DriftSyncStore {
                 serverUpdatedAtUtcMs: Value(acknowledgedMs),
               ),
             );
+      case 'attempt':
+      case 'readingEvent':
+        // Immutable evidence has no mutable cloud revision columns. The
+        // acknowledged outbox row is the durable local receipt.
+        return;
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -627,6 +713,24 @@ final class DriftSyncStore {
           'isDeleted': word.isDeleted,
           'updatedAtUtcMs': word.updatedAtUtcMs,
         };
+      case 'attempt':
+        final attempt =
+            await (database.select(database.answerAttempts)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return _attemptPayload(attempt);
+      case 'readingEvent':
+        final event =
+            await (database.select(database.readingEvents)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return _readingEventPayload(event);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -719,6 +823,272 @@ final class DriftSyncStore {
         );
   }
 
+  Future<void> _applyAttempt(String ownerId, SyncEntity entity) async {
+    _requireImmutableEntity(entity, SyncCollection.attempts);
+    final existing =
+        await (database.select(database.answerAttempts)..where(
+              (row) =>
+                  row.id.equals(entity.entityId) & row.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (existing != null) {
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _attemptPayload(existing),
+      );
+      await projections.rebuildWord(ownerId: ownerId, wordId: existing.wordId);
+      await projections.rebuildSession(
+        ownerId: ownerId,
+        sessionId: existing.sessionId,
+      );
+      await projections.rebuildAchievements(ownerId);
+      return;
+    }
+    final payload = entity.payload;
+    final sessionId = _requiredString(payload, 'sessionId');
+    final wordId = _requiredString(payload, 'wordId');
+    final promptMode = _requiredString(payload, 'promptMode');
+    final responseTimeMs = _optionalInt(payload, 'responseTimeMs');
+    final attemptNumber = _requiredInt(payload, 'attemptNumber');
+    final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
+    final providerProvenance = _optionalString(payload, 'providerProvenance');
+    if (!LearningEvidenceContract.validAttempt(
+      id: entity.entityId,
+      ownerId: ownerId,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtcMs: occurredAtUtcMs,
+      providerProvenance: providerProvenance,
+    )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final word =
+        await (database.select(database.vocabularyWords)..where(
+              (row) => row.id.equals(wordId) & row.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (word == null) throw const InvalidSyncPayloadFailure();
+
+    final session = await (database.select(
+      database.learningSessions,
+    )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
+    if (session != null && session.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    if (session == null) {
+      await database
+          .into(database.learningSessions)
+          .insert(
+            db.LearningSessionsCompanion.insert(
+              id: sessionId,
+              ownerId: ownerId,
+              activityType: 'syncedEvidence',
+              state: 'syncedEvidence',
+              startedAtUtcMs: occurredAtUtcMs,
+              appVersion: 'unknown',
+              buildId: 'synced',
+            ),
+          );
+    }
+    final isCorrect = _requiredBool(payload, 'isCorrect');
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          db.AnswerAttemptsCompanion.insert(
+            id: entity.entityId,
+            ownerId: ownerId,
+            sessionId: sessionId,
+            wordId: wordId,
+            promptMode: promptMode,
+            isCorrect: isCorrect,
+            responseTimeMs: Value(responseTimeMs),
+            attemptNumber: attemptNumber,
+            occurredAtUtcMs: occurredAtUtcMs,
+            providerProvenance: Value(providerProvenance),
+          ),
+        );
+    await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+    await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
+    await projections.rebuildAchievements(ownerId);
+  }
+
+  Future<void> _applyReadingEvent(String ownerId, SyncEntity entity) async {
+    _requireImmutableEntity(entity, SyncCollection.readingEvents);
+    final existing =
+        await (database.select(database.readingEvents)..where(
+              (row) =>
+                  row.id.equals(entity.entityId) & row.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (existing != null) {
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _readingEventPayload(existing),
+      );
+      await projections.rebuildReading(
+        ownerId: ownerId,
+        documentId: existing.documentId,
+        documentRevision: existing.documentRevision,
+      );
+      return;
+    }
+    final payload = entity.payload;
+    final documentId = _requiredString(payload, 'documentId');
+    final documentRevision = _requiredInt(payload, 'documentRevision');
+    final eventType = _requiredString(payload, 'eventType');
+    final position = _optionalInt(payload, 'position');
+    final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
+    if (!LearningEvidenceContract.validReading(
+      eventId: entity.entityId,
+      ownerId: ownerId,
+      documentId: documentId,
+      documentRevision: documentRevision,
+      eventType: eventType,
+      position: position,
+      occurredAtUtcMs: occurredAtUtcMs,
+    )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    await database
+        .into(database.readingEvents)
+        .insert(
+          db.ReadingEventsCompanion.insert(
+            id: entity.entityId,
+            ownerId: ownerId,
+            documentId: documentId,
+            documentRevision: Value(documentRevision),
+            eventType: eventType,
+            position: Value(position),
+            occurredAtUtcMs: occurredAtUtcMs,
+          ),
+        );
+    await projections.rebuildReading(
+      ownerId: ownerId,
+      documentId: documentId,
+      documentRevision: documentRevision,
+    );
+  }
+
+  Future<void> _handleExistingImmutable({
+    required String ownerId,
+    required SyncEntity entity,
+    required Map<String, Object?> localPayload,
+  }) async {
+    if (_jsonEquivalent(localPayload, entity.payload)) {
+      await _resolvePendingImmutableOutbox(
+        ownerId: ownerId,
+        entity: entity,
+        failureCode: 'identicalCloudEvidence',
+      );
+      return;
+    }
+    await _recordImmutableConflict(
+      ownerId: ownerId,
+      entity: entity,
+      localPayload: localPayload,
+      resolvedAtUtc: entity.serverUpdatedAtUtc,
+    );
+  }
+
+  Future<void> _resolveImmutableConflict({
+    required db.OutboxOperation operation,
+    required SyncEntity cloudEntity,
+    required DateTime resolvedAtUtc,
+  }) async {
+    final localPayload = await _localSnapshot(operation);
+    if (_jsonEquivalent(localPayload, cloudEntity.payload)) {
+      await (database.update(
+        database.outboxOperations,
+      )..where((row) => row.operationId.equals(operation.operationId))).write(
+        const db.OutboxOperationsCompanion(
+          state: Value('conflictResolved'),
+          leaseToken: Value(null),
+          leaseExpiresAtUtcMs: Value(null),
+          nextAttemptAtUtcMs: Value(null),
+          failureCode: Value('identicalCloudEvidence'),
+        ),
+      );
+      return;
+    }
+    await _recordImmutableConflict(
+      ownerId: operation.ownerId,
+      entity: cloudEntity,
+      localPayload: localPayload,
+      resolvedAtUtc: resolvedAtUtc,
+    );
+    await (database.update(
+      database.outboxOperations,
+    )..where((row) => row.operationId.equals(operation.operationId))).write(
+      const db.OutboxOperationsCompanion(
+        state: Value('permanentFailure'),
+        leaseToken: Value(null),
+        leaseExpiresAtUtcMs: Value(null),
+        nextAttemptAtUtcMs: Value(null),
+        failureCode: Value('immutableConflictQuarantined'),
+      ),
+    );
+  }
+
+  Future<void> _recordImmutableConflict({
+    required String ownerId,
+    required SyncEntity entity,
+    required Map<String, Object?> localPayload,
+    required DateTime resolvedAtUtc,
+  }) async {
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id:
+                'conflict:immutable:${entity.collection.wireName}:'
+                '${entity.entityId}:${entity.revision}',
+            ownerId: ownerId,
+            entityType: entity.collection.entityType,
+            entityId: entity.entityId,
+            localRevision: 1,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'immutableEventId',
+            outcome: 'quarantined',
+            localSnapshotJson: Value(jsonEncode(localPayload)),
+            cloudSnapshotJson: Value(jsonEncode(entity.payload)),
+            resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  Future<void> _resolvePendingImmutableOutbox({
+    required String ownerId,
+    required SyncEntity entity,
+    required String failureCode,
+  }) async {
+    await (database.update(database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityType.equals(entity.collection.entityType) &
+              row.entityId.equals(entity.entityId) &
+              row.state.isNotIn(const [
+                'acknowledged',
+                'superseded',
+                'conflictResolved',
+              ]),
+        ))
+        .write(
+          db.OutboxOperationsCompanion(
+            state: const Value('conflictResolved'),
+            leaseToken: const Value(null),
+            leaseExpiresAtUtcMs: const Value(null),
+            nextAttemptAtUtcMs: const Value(null),
+            failureCode: Value(failureCode),
+          ),
+        );
+  }
+
   Future<bool> _preparePullApply(String ownerId, SyncEntity entity) async {
     late final int localRevision;
     late final int cloudRevision;
@@ -771,6 +1141,9 @@ final class DriftSyncStore {
           'isDeleted': current.isDeleted,
           'updatedAtUtcMs': current.updatedAtUtcMs,
         };
+      case SyncCollection.attempts:
+      case SyncCollection.readingEvents:
+        throw const InvalidSyncPayloadFailure();
     }
 
     final incomingServerMs = entity.serverUpdatedAtUtc.millisecondsSinceEpoch;
@@ -842,6 +1215,59 @@ final class DriftSyncStore {
   }
 }
 
+Map<String, Object?> _attemptPayload(db.AnswerAttempt attempt) =>
+    <String, Object?>{
+      'sessionId': attempt.sessionId,
+      'wordId': attempt.wordId,
+      'promptMode': attempt.promptMode,
+      'isCorrect': attempt.isCorrect,
+      'responseTimeMs': attempt.responseTimeMs,
+      'attemptNumber': attempt.attemptNumber,
+      'occurredAtUtcMs': attempt.occurredAtUtcMs,
+      'providerProvenance': attempt.providerProvenance,
+    };
+
+Map<String, Object?> _readingEventPayload(db.ReadingEvent event) =>
+    <String, Object?>{
+      'documentId': event.documentId,
+      'documentRevision': event.documentRevision,
+      'eventType': event.eventType,
+      'position': event.position,
+      'occurredAtUtcMs': event.occurredAtUtcMs,
+    };
+
+void _requireImmutableEntity(
+  SyncEntity entity,
+  SyncCollection expectedCollection,
+) {
+  if (entity.collection != expectedCollection ||
+      entity.revision != 1 ||
+      entity.isDeleted) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+bool _jsonEquivalent(Object? left, Object? right) {
+  if (identical(left, right) || left == right) return true;
+  if (left is List && right is List) {
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (!_jsonEquivalent(left[index], right[index])) return false;
+    }
+    return true;
+  }
+  if (left is Map && right is Map) {
+    if (left.length != right.length) return false;
+    for (final key in left.keys) {
+      if (!right.containsKey(key) || !_jsonEquivalent(left[key], right[key])) {
+        return false;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
 SyncOperationKind _operationKind(String value) => switch (value) {
   'upsert' => SyncOperationKind.upsert,
   'delete' => SyncOperationKind.delete,
@@ -887,9 +1313,21 @@ int? _optionalInt(Map<String, Object?> payload, String key) {
   return value;
 }
 
+int _requiredInt(Map<String, Object?> payload, String key) {
+  final value = _optionalInt(payload, key);
+  if (value == null) throw const InvalidSyncPayloadFailure();
+  return value;
+}
+
 bool? _optionalBool(Map<String, Object?> payload, String key) {
   final value = payload[key];
   if (value == null) return null;
   if (value is! bool) throw const InvalidSyncPayloadFailure();
+  return value;
+}
+
+bool _requiredBool(Map<String, Object?> payload, String key) {
+  final value = _optionalBool(payload, key);
+  if (value == null) throw const InvalidSyncPayloadFailure();
   return value;
 }

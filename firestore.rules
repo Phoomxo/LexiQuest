@@ -129,6 +129,59 @@ service cloud.firestore {
       );
     }
 
+    function fieldAttemptPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'sessionId', 'wordId', 'promptMode', 'isCorrect',
+          'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
+          'providerProvenance'
+        ])
+        && payload.sessionId is string
+        && payload.sessionId.size() > 0
+        && payload.sessionId.size() <= 256
+        && payload.wordId is string
+        && payload.wordId.size() > 0
+        && payload.wordId.size() <= 256
+        && payload.promptMode is string
+        && payload.promptMode.size() > 0
+        && payload.promptMode.size() <= 60
+        && payload.isCorrect is bool
+        && (payload.responseTimeMs == null
+            || (payload.responseTimeMs is int
+                && payload.responseTimeMs >= 0
+                && payload.responseTimeMs <= 2147483647))
+        && payload.attemptNumber is int
+        && payload.attemptNumber > 0
+        && payload.attemptNumber <= 1000000
+        && payload.occurredAtUtcMs is int
+        && payload.occurredAtUtcMs >= 0
+        && (payload.providerProvenance == null
+            || (payload.providerProvenance is string
+                && payload.providerProvenance.size() <= 120))
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
+    function fieldReadingEventPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'documentId', 'documentRevision', 'eventType', 'position',
+          'occurredAtUtcMs'
+        ])
+        && payload.documentId is string
+        && payload.documentId.size() > 0
+        && payload.documentId.size() <= 256
+        && payload.documentRevision is int
+        && payload.documentRevision > 0
+        && payload.eventType in ['checkpoint', 'completed']
+        && (payload.position == null
+            || (payload.position is int && payload.position >= 0))
+        && payload.occurredAtUtcMs is int
+        && payload.occurredAtUtcMs >= 0
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
     function fieldOperationAfter(uid, operationId) {
       return getAfter(
         /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId)
@@ -166,7 +219,9 @@ service cloud.firestore {
         && request.resource.data.operationId is string
         && request.resource.data.operationId.size() > 0
         && request.resource.data.operationId.size() <= 256
-        && request.resource.data.entityType in ['category', 'word']
+        && request.resource.data.entityType in [
+             'category', 'word', 'attempt', 'readingEvent'
+           ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
         && request.resource.data.entityId.size() <= 256
@@ -207,6 +262,34 @@ service cloud.firestore {
         && entity.entityId == entityId
         && entity.lastOperationId == request.resource.data.operationId
         && entity.revision == request.resource.data.resultingRevision;
+    }
+
+    function fieldOperationMatchesAttempt(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/attempts/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return !exists(entityPath)
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == 1;
+    }
+
+    function fieldOperationMatchesReadingEvent(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/reading_events/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return !exists(entityPath)
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == 1;
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
@@ -340,6 +423,24 @@ service cloud.firestore {
         allow delete: if false;
       }
 
+      match /attempts/{attemptId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(attemptId)
+          && fieldAttemptPayloadOk()
+          && fieldOperationLinksEntity(uid, 'attempt', attemptId);
+        allow update, delete: if false;
+      }
+
+      match /reading_events/{eventId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(eventId)
+          && fieldReadingEventPayloadOk()
+          && fieldOperationLinksEntity(uid, 'readingEvent', eventId);
+        allow update, delete: if false;
+      }
+
       match /operations/{operationId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownsFieldUser(uid)
@@ -347,7 +448,11 @@ service cloud.firestore {
           && ((request.resource.data.entityType == 'category'
                && fieldOperationMatchesCategory(uid))
               || (request.resource.data.entityType == 'word'
-                  && fieldOperationMatchesWord(uid)));
+                  && fieldOperationMatchesWord(uid))
+              || (request.resource.data.entityType == 'attempt'
+                  && fieldOperationMatchesAttempt(uid))
+              || (request.resource.data.entityType == 'readingEvent'
+                  && fieldOperationMatchesReadingEvent(uid)));
         allow update, delete: if false;
       }
     }

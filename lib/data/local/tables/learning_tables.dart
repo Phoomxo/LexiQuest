@@ -81,6 +81,7 @@ class ReadingEvents extends Table {
   TextColumn get id => text()();
   TextColumn get ownerId => text().references(LocalOwners, #id)();
   TextColumn get documentId => text()();
+  IntColumn get documentRevision => integer().withDefault(const Constant(1))();
   TextColumn get eventType => text()();
   IntColumn get position => integer().nullable()();
   IntColumn get occurredAtUtcMs => integer()();

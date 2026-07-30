@@ -79,6 +79,19 @@ void main() {
           .then((row) => row.read<int>('count')),
       1,
     );
+    final migratedEvidenceOutbox = await database
+        .customSelect(
+          'SELECT entity_type FROM outbox_operations '
+          'WHERE owner_id = ? AND entity_type IN (?, ?) ORDER BY entity_type',
+          variables: const [
+            Variable<String>('account-owner'),
+            Variable<String>('attempt'),
+            Variable<String>('readingEvent'),
+          ],
+        )
+        .map((row) => row.read<String>('entity_type'))
+        .get();
+    expect(migratedEvidenceOutbox, ['attempt', 'readingEvent']);
   });
 
   test(
@@ -167,7 +180,7 @@ void main() {
       );
       await database.customInsert(
         "INSERT INTO reading_events VALUES "
-        "('account-reading', 'account-owner', 'doc-2', 'opened', 0, 30)",
+        "('account-reading', 'account-owner', 'doc-2', 1, 'opened', 0, 30)",
       );
 
       final result = await repository.createLocalGuestAfterLogout();
@@ -243,7 +256,7 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   );
   await database.customInsert(
     "INSERT INTO reading_events VALUES "
-    "('reading-event-1', 'guest-owner', 'doc-1', 'position', 5, 20)",
+    "('reading-event-1', 'guest-owner', 'doc-1', 1, 'position', 5, 20)",
   );
   await database.customInsert(
     "INSERT INTO points_ledger_entries VALUES "
@@ -258,6 +271,20 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
     "created_at_utc_ms) VALUES "
     "('operation-1', 'guest-owner', 'word', 'word-1', 'upsert', 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO outbox_operations "
+    "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+    "created_at_utc_ms) VALUES "
+    "('attempt:attempt-1:1', 'guest-owner', 'attempt', 'attempt-1', "
+    "'upsert', 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO outbox_operations "
+    "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+    "created_at_utc_ms) VALUES "
+    "('readingEvent:reading-event-1:1', 'guest-owner', 'readingEvent', "
+    "'reading-event-1', 'upsert', 20)",
   );
   await database.customInsert(
     "INSERT INTO sync_checkpoints VALUES "

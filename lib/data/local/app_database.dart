@@ -39,58 +39,91 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => 4;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
     onUpgrade: (migrator, from, to) async {
+      await _createMissingTables(migrator);
       if (from < 2) {
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_categories',
           vocabularyCategories,
           vocabularyCategories.cloudRevision,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_categories',
           vocabularyCategories,
           vocabularyCategories.lastAcknowledgedAtUtcMs,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_categories',
           vocabularyCategories,
           vocabularyCategories.serverUpdatedAtUtcMs,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
           vocabularyWords,
           vocabularyWords.cloudRevision,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
           vocabularyWords,
           vocabularyWords.lastAcknowledgedAtUtcMs,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
           vocabularyWords,
           vocabularyWords.serverUpdatedAtUtcMs,
         );
-        await migrator.addColumn(outboxOperations, outboxOperations.leaseToken);
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'outbox_operations',
+          outboxOperations,
+          outboxOperations.leaseToken,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'outbox_operations',
           outboxOperations,
           outboxOperations.leaseExpiresAtUtcMs,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'outbox_operations',
           outboxOperations,
           outboxOperations.lastAttemptAtUtcMs,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'sync_conflicts',
           syncConflicts,
           syncConflicts.localSnapshotJson,
         );
-        await migrator.addColumn(
+        await _addColumnIfMissing(
+          migrator,
+          'sync_conflicts',
           syncConflicts,
           syncConflicts.cloudSnapshotJson,
         );
-        await migrator.createTable(runtimeFlags);
       }
       if (from < 3) {
         await _createLearningIndexes();
+      }
+      if (from < 4) {
+        await _addColumnIfMissing(
+          migrator,
+          'reading_events',
+          readingEvents,
+          readingEvents.documentRevision,
+        );
       }
     },
     beforeOpen: (details) async {
@@ -128,5 +161,87 @@ final class AppDatabase extends _$AppDatabase {
         'ON reading_progress_entries(owner_id, document_id, document_revision)',
       );
     }
+  }
+
+  Future<void> _createMissingTables(Migrator migrator) async {
+    if (!await _tableExists('local_owners')) {
+      await migrator.createTable(localOwners);
+    }
+    if (!await _tableExists('research_consents')) {
+      await migrator.createTable(researchConsents);
+    }
+    if (!await _tableExists('vocabulary_categories')) {
+      await migrator.createTable(vocabularyCategories);
+    }
+    if (!await _tableExists('vocabulary_words')) {
+      await migrator.createTable(vocabularyWords);
+    }
+    if (!await _tableExists('vocabulary_imports')) {
+      await migrator.createTable(vocabularyImports);
+    }
+    if (!await _tableExists('vocabulary_import_rows')) {
+      await migrator.createTable(vocabularyImportRows);
+    }
+    if (!await _tableExists('learning_sessions')) {
+      await migrator.createTable(learningSessions);
+    }
+    if (!await _tableExists('answer_attempts')) {
+      await migrator.createTable(answerAttempts);
+    }
+    if (!await _tableExists('srs_states')) {
+      await migrator.createTable(srsStates);
+    }
+    if (!await _tableExists('reading_progress_entries')) {
+      await migrator.createTable(readingProgressEntries);
+    }
+    if (!await _tableExists('reading_events')) {
+      await migrator.createTable(readingEvents);
+    }
+    if (!await _tableExists('points_ledger_entries')) {
+      await migrator.createTable(pointsLedgerEntries);
+    }
+    if (!await _tableExists('achievement_unlocks')) {
+      await migrator.createTable(achievementUnlocks);
+    }
+    if (!await _tableExists('outbox_operations')) {
+      await migrator.createTable(outboxOperations);
+    }
+    if (!await _tableExists('sync_checkpoints')) {
+      await migrator.createTable(syncCheckpoints);
+    }
+    if (!await _tableExists('sync_conflicts')) {
+      await migrator.createTable(syncConflicts);
+    }
+    if (!await _tableExists('runtime_flags')) {
+      await migrator.createTable(runtimeFlags);
+    }
+    if (!await _tableExists('model_downloads')) {
+      await migrator.createTable(modelDownloads);
+    }
+  }
+
+  Future<void> _addColumnIfMissing(
+    Migrator migrator,
+    String tableName,
+    TableInfo table,
+    GeneratedColumn column,
+  ) async {
+    if (!await _columnExists(tableName, column.$name)) {
+      await migrator.addColumn(table, column);
+    }
+  }
+
+  Future<bool> _columnExists(String tableName, String columnName) async {
+    final rows = await customSelect('PRAGMA table_info($tableName)').get();
+    return rows.any((row) => row.read<String>('name') == columnName);
+  }
+
+  Future<bool> _tableExists(String tableName) async {
+    final row = await customSelect(
+      "SELECT 1 AS present FROM sqlite_master "
+      "WHERE type = 'table' AND name = ? LIMIT 1",
+      variables: [Variable<String>(tableName)],
+    ).getSingleOrNull();
+    return row != null;
   }
 }

@@ -1,8 +1,8 @@
-import 'dart:math' as math;
-
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import 'drift_learning_projection_rebuilder.dart';
+import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
@@ -10,11 +10,14 @@ import '../domain/srs_policy.dart';
 final class DriftLearningRepository implements LearningRepository {
   DriftLearningRepository(
     this.database, {
-    this.srsPolicy = const BinarySm2SrsPolicy(),
-  });
+    SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
+  }) : projections = DriftLearningProjectionRebuilder(
+         database,
+         srsPolicy: srsPolicy,
+       );
 
   final db.AppDatabase database;
-  final SrsPolicy srsPolicy;
+  final DriftLearningProjectionRebuilder projections;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -80,10 +83,16 @@ final class DriftLearningRepository implements LearningRepository {
         if (!_sameAttempt(existing, command)) {
           throw StateError('attempt id already exists with different evidence');
         }
-        return AnswerRecordResult(
-          inserted: false,
-          srs: await _requiredSrs(command.ownerId, command.wordId),
+        final srs = await projections.rebuildWord(
+          ownerId: command.ownerId,
+          wordId: command.wordId,
         );
+        await projections.rebuildSession(
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+        );
+        await projections.rebuildAchievements(command.ownerId);
+        return AnswerRecordResult(inserted: false, srs: srs);
       }
 
       final session =
@@ -125,90 +134,21 @@ final class DriftLearningRepository implements LearningRepository {
               providerProvenance: Value(command.providerProvenance),
             ),
           );
-      await (database.update(
-        database.learningSessions,
-      )..where((row) => row.id.equals(command.sessionId))).write(
-        command.isCorrect
-            ? db.LearningSessionsCompanion(
-                correctCount: Value(session.correctCount + 1),
-              )
-            : db.LearningSessionsCompanion(
-                wrongCount: Value(session.wrongCount + 1),
-              ),
-      );
-
-      final prior = await _srs(command.ownerId, command.wordId);
-      final next = srsPolicy.review(
-        previous: prior,
-        isCorrect: command.isCorrect,
-        nowUtc: command.occurredAtUtc,
-      );
-      await database
-          .into(database.srsStates)
-          .insertOnConflictUpdate(
-            db.SrsStatesCompanion.insert(
-              id: 'srs:${command.ownerId}:${command.wordId}',
-              ownerId: command.ownerId,
-              wordId: command.wordId,
-              stability: Value(next.stability),
-              difficulty: Value(next.difficulty),
-              intervalDays: Value(next.intervalDays),
-              repetitions: Value(next.repetitions),
-              lapses: Value(next.lapses),
-              lastReviewAtUtcMs: Value(
-                next.lastReviewAtUtc?.millisecondsSinceEpoch,
-              ),
-              dueAtUtcMs: next.dueAtUtc!.millisecondsSinceEpoch,
-              algorithmVersion: next.algorithmVersion,
-            ),
-          );
-      if (command.isCorrect) {
-        await database
-            .into(database.pointsLedgerEntries)
-            .insert(
-              db.PointsLedgerEntriesCompanion.insert(
-                id: 'points:${command.id}',
-                ownerId: command.ownerId,
-                idempotencyKey: 'correct-answer:${command.id}',
-                entryType: 'quizCorrect',
-                amount: 1,
-                sourceEventId: Value(command.id),
-                occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
-              ),
-              mode: InsertMode.insertOrIgnore,
-            );
-      }
-      await _unlockAchievement(
+      final next = await projections.rebuildWord(
         ownerId: command.ownerId,
-        achievementId: 'first_answer',
-        sourceEventId: command.id,
-        unlockedAtUtc: command.occurredAtUtc,
+        wordId: command.wordId,
       );
-      if (command.isCorrect) {
-        await _unlockAchievement(
-          ownerId: command.ownerId,
-          achievementId: 'first_correct',
-          sourceEventId: command.id,
-          unlockedAtUtc: command.occurredAtUtc,
-        );
-        final correctExpression = database.answerAttempts.id.count();
-        final correctRow =
-            await (database.selectOnly(database.answerAttempts)
-                  ..addColumns([correctExpression])
-                  ..where(
-                    database.answerAttempts.ownerId.equals(command.ownerId) &
-                        database.answerAttempts.isCorrect.equals(true),
-                  ))
-                .getSingle();
-        if ((correctRow.read(correctExpression) ?? 0) >= 10) {
-          await _unlockAchievement(
-            ownerId: command.ownerId,
-            achievementId: 'ten_correct',
-            sourceEventId: command.id,
-            unlockedAtUtc: command.occurredAtUtc,
-          );
-        }
-      }
+      await projections.rebuildSession(
+        ownerId: command.ownerId,
+        sessionId: command.sessionId,
+      );
+      await projections.rebuildAchievements(command.ownerId);
+      await _appendImmutableOutbox(
+        ownerId: command.ownerId,
+        entityType: 'attempt',
+        entityId: command.id,
+        occurredAtUtc: command.occurredAtUtc,
+      );
       return AnswerRecordResult(inserted: true, srs: next);
     });
   }
@@ -335,42 +275,17 @@ final class DriftLearningRepository implements LearningRepository {
         database.readingEvents,
       )..where((row) => row.id.equals(command.eventId))).getSingleOrNull();
       if (priorEvent != null) {
-        final current = await readReadingProgress(
+        if (!_sameReadingEvent(priorEvent, command)) {
+          throw StateError(
+            'reading event id already exists with different evidence',
+          );
+        }
+        return projections.rebuildReading(
           ownerId: command.ownerId,
           documentId: command.documentId,
           documentRevision: command.documentRevision,
         );
-        if (current == null) {
-          throw StateError('reading event exists without progress');
-        }
-        return current;
       }
-      final current = await readReadingProgress(
-        ownerId: command.ownerId,
-        documentId: command.documentId,
-        documentRevision: command.documentRevision,
-      );
-      final nextPosition = math.max(
-        current?.lastPosition ?? 0,
-        command.position,
-      );
-      final nextCompleted =
-          (current?.isCompleted ?? false) || command.isCompleted;
-      final progressId =
-          'reading:${command.ownerId}:${command.documentId}:${command.documentRevision}';
-      await database
-          .into(database.readingProgressEntries)
-          .insertOnConflictUpdate(
-            db.ReadingProgressEntriesCompanion.insert(
-              id: progressId,
-              ownerId: command.ownerId,
-              documentId: command.documentId,
-              documentRevision: Value(command.documentRevision),
-              lastPosition: Value(nextPosition),
-              isCompleted: Value(nextCompleted),
-              updatedAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
-            ),
-          );
       await database
           .into(database.readingEvents)
           .insert(
@@ -378,40 +293,24 @@ final class DriftLearningRepository implements LearningRepository {
               id: command.eventId,
               ownerId: command.ownerId,
               documentId: command.documentId,
+              documentRevision: Value(command.documentRevision),
               eventType: command.isCompleted ? 'completed' : 'checkpoint',
               position: Value(command.position),
               occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
             ),
           );
-      return ReadingProgressSnapshot(
+      await _appendImmutableOutbox(
+        ownerId: command.ownerId,
+        entityType: 'readingEvent',
+        entityId: command.eventId,
+        occurredAtUtc: command.occurredAtUtc,
+      );
+      return projections.rebuildReading(
+        ownerId: command.ownerId,
         documentId: command.documentId,
         documentRevision: command.documentRevision,
-        lastPosition: nextPosition,
-        isCompleted: nextCompleted,
-        updatedAtUtc: command.occurredAtUtc,
       );
     });
-  }
-
-  Future<SrsSnapshot?> _srs(String ownerId, String wordId) async {
-    final row =
-        await (database.select(database.srsStates)..where(
-              (candidate) =>
-                  candidate.ownerId.equals(ownerId) &
-                  candidate.wordId.equals(wordId),
-            ))
-            .getSingleOrNull();
-    if (row == null) return null;
-    return SrsSnapshot(
-      intervalDays: row.intervalDays,
-      repetitions: row.repetitions,
-      lapses: row.lapses,
-      stability: row.stability,
-      difficulty: row.difficulty,
-      lastReviewAtUtc: _fromEpoch(row.lastReviewAtUtcMs),
-      dueAtUtc: _fromEpoch(row.dueAtUtcMs),
-      algorithmVersion: row.algorithmVersion,
-    );
   }
 
   Future<void> _unlockAchievement({
@@ -436,10 +335,26 @@ final class DriftLearningRepository implements LearningRepository {
         );
   }
 
-  Future<SrsSnapshot> _requiredSrs(String ownerId, String wordId) async {
-    final result = await _srs(ownerId, wordId);
-    if (result == null) throw StateError('attempt exists without SRS state');
-    return result;
+  Future<void> _appendImmutableOutbox({
+    required String ownerId,
+    required String entityType,
+    required String entityId,
+    required DateTime occurredAtUtc,
+  }) async {
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          db.OutboxOperationsCompanion.insert(
+            operationId: '$entityType:$entityId:1',
+            ownerId: ownerId,
+            entityType: entityType,
+            entityId: entityId,
+            operationKind: 'upsert',
+            baseRevision: const Value(0),
+            createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
   }
 
   bool _sameAttempt(db.AnswerAttempt row, RecordAnswerCommand command) {
@@ -450,6 +365,16 @@ final class DriftLearningRepository implements LearningRepository {
         row.isCorrect == command.isCorrect &&
         row.responseTimeMs == command.responseTimeMs &&
         row.attemptNumber == command.attemptNumber &&
+        row.occurredAtUtcMs == command.occurredAtUtc.millisecondsSinceEpoch &&
+        row.providerProvenance == command.providerProvenance;
+  }
+
+  bool _sameReadingEvent(db.ReadingEvent row, ReadingProgressCommand command) {
+    return row.ownerId == command.ownerId &&
+        row.documentId == command.documentId &&
+        row.documentRevision == command.documentRevision &&
+        row.eventType == (command.isCompleted ? 'completed' : 'checkpoint') &&
+        row.position == command.position &&
         row.occurredAtUtcMs == command.occurredAtUtc.millisecondsSinceEpoch;
   }
 
@@ -464,27 +389,34 @@ final class DriftLearningRepository implements LearningRepository {
   }
 
   void _validateAnswer(RecordAnswerCommand command) {
-    _required(command.id, 'id');
-    _required(command.ownerId, 'ownerId');
-    _required(command.sessionId, 'sessionId');
-    _required(command.wordId, 'wordId');
-    _required(command.promptMode, 'promptMode');
-    _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
-    if (command.attemptNumber < 1) {
-      throw ArgumentError.value(command.attemptNumber, 'attemptNumber');
-    }
-    if (command.responseTimeMs != null && command.responseTimeMs! < 0) {
-      throw ArgumentError.value(command.responseTimeMs, 'responseTimeMs');
+    final occurredAt = _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
+    if (!LearningEvidenceContract.validAttempt(
+      id: command.id,
+      ownerId: command.ownerId,
+      sessionId: command.sessionId,
+      wordId: command.wordId,
+      promptMode: command.promptMode,
+      responseTimeMs: command.responseTimeMs,
+      attemptNumber: command.attemptNumber,
+      occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+      providerProvenance: command.providerProvenance,
+    )) {
+      throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }
   }
 
   void _validateReading(ReadingProgressCommand command) {
-    _required(command.eventId, 'eventId');
-    _required(command.ownerId, 'ownerId');
-    _required(command.documentId, 'documentId');
-    _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
-    if (command.documentRevision < 1 || command.position < 0) {
-      throw ArgumentError('invalid reading revision or position');
+    final occurredAt = _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
+    if (!LearningEvidenceContract.validReading(
+      eventId: command.eventId,
+      ownerId: command.ownerId,
+      documentId: command.documentId,
+      documentRevision: command.documentRevision,
+      eventType: command.isCompleted ? 'completed' : 'checkpoint',
+      position: command.position,
+      occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+    )) {
+      throw ArgumentError.value(command, 'command', 'invalid reading evidence');
     }
   }
 

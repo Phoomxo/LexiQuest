@@ -76,44 +76,59 @@ void main() {
     // Section 2: Mode Navigation & Main Navigation Audit
     // -------------------------------------------------------------
     testWidgets(
-      'Section 2 Audit: ChooseModeScreen renders mode grid and Avatar Gear button',
+      'Section 2 Audit: ChooseModeScreen renders verified local activities',
       (WidgetTester tester) async {
         await tester.pumpWidget(const MaterialApp(home: ChooseModeScreen()));
         await tester.pumpAndSettle();
 
-        expect(find.textContaining('เลือกรูปแบบการเรียนรู้'), findsOneWidget);
-        expect(find.textContaining('Avatar Gear'), findsOneWidget);
+        expect(find.text('เลือกกิจกรรมการเรียน'), findsOneWidget);
+        expect(find.text('Quiz จากคลังคำศัพท์'), findsOneWidget);
+        expect(find.textContaining('Avatar Gear'), findsNothing);
       },
     );
 
     testWidgets(
-      'Section 2 Audit: MainNavigationScreen switches across all 5 primary tabs',
+      'Section 2 Audit: MainNavigationScreen switches across all 6 primary tabs',
       (WidgetTester tester) async {
         await tester.pumpWidget(
           const MaterialApp(home: MainNavigationScreen()),
         );
         await tester.pumpAndSettle();
 
-        // Tab 0: Learn
-        expect(find.text('เรียนรู้'), findsOneWidget);
+        // Tab 0: Vocabulary
+        expect(
+          tester
+              .widgetList<NavigationDestination>(
+                find.byType(NavigationDestination),
+              )
+              .map((destination) => destination.label),
+          <String>[
+            'คลังคำศัพท์',
+            'เรียนรู้',
+            'สถิติ',
+            'จุดอ่อน',
+            'รางวัล',
+            'โปรไฟล์',
+          ],
+        );
 
-        // Tab 1: Analytics
-        await tester.tap(find.byType(NavigationDestination).at(1));
+        // Tab 2: Analytics
+        await tester.tap(find.byType(NavigationDestination).at(2));
         await tester.pumpAndSettle();
         expect(find.byType(MasteryDashboardScreen), findsOneWidget);
 
-        // Tab 2: Weakness Clinic
-        await tester.tap(find.byType(NavigationDestination).at(2));
+        // Tab 3: Weakness Clinic
+        await tester.tap(find.byType(NavigationDestination).at(3));
         await tester.pumpAndSettle();
         expect(find.byType(WeaknessClinicScreen), findsOneWidget);
 
-        // Tab 3: Achievements
-        await tester.tap(find.byType(NavigationDestination).at(3));
+        // Tab 4: Achievements
+        await tester.tap(find.byType(NavigationDestination).at(4));
         await tester.pumpAndSettle();
         expect(find.byType(AchievementsScreen), findsOneWidget);
 
-        // Tab 4: Profile
-        await tester.tap(find.byType(NavigationDestination).at(4));
+        // Tab 5: Profile
+        await tester.tap(find.byType(NavigationDestination).at(5));
         await tester.pumpAndSettle();
         expect(find.byType(ProfileSettingsScreen), findsOneWidget);
       },

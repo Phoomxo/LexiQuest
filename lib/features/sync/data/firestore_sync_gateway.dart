@@ -215,9 +215,7 @@ final class FirestoreSyncCodec {
   }) => <String, Object?>{
     'schemaVersion': mutation.payloadVersion,
     'operationId': mutation.operationId,
-    'entityType': mutation.collection == SyncCollection.categories
-        ? 'category'
-        : 'word',
+    'entityType': mutation.collection.entityType,
     'entityId': mutation.entityId,
     'operationKind': mutation.operationKind.name,
     'baseRevision': mutation.baseRevision,

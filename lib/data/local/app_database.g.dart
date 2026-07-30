@@ -6481,6 +6481,18 @@ class $ReadingEventsTable extends ReadingEvents
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _documentRevisionMeta = const VerificationMeta(
+    'documentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> documentRevision = GeneratedColumn<int>(
+    'document_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
   static const VerificationMeta _eventTypeMeta = const VerificationMeta(
     'eventType',
   );
@@ -6519,6 +6531,7 @@ class $ReadingEventsTable extends ReadingEvents
     id,
     ownerId,
     documentId,
+    documentRevision,
     eventType,
     position,
     occurredAtUtcMs,
@@ -6555,6 +6568,15 @@ class $ReadingEventsTable extends ReadingEvents
       );
     } else if (isInserting) {
       context.missing(_documentIdMeta);
+    }
+    if (data.containsKey('document_revision')) {
+      context.handle(
+        _documentRevisionMeta,
+        documentRevision.isAcceptableOrUnknown(
+          data['document_revision']!,
+          _documentRevisionMeta,
+        ),
+      );
     }
     if (data.containsKey('event_type')) {
       context.handle(
@@ -6602,6 +6624,10 @@ class $ReadingEventsTable extends ReadingEvents
         DriftSqlType.string,
         data['${effectivePrefix}document_id'],
       )!,
+      documentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}document_revision'],
+      )!,
       eventType: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}event_type'],
@@ -6627,6 +6653,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
   final String id;
   final String ownerId;
   final String documentId;
+  final int documentRevision;
   final String eventType;
   final int? position;
   final int occurredAtUtcMs;
@@ -6634,6 +6661,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
     required this.id,
     required this.ownerId,
     required this.documentId,
+    required this.documentRevision,
     required this.eventType,
     this.position,
     required this.occurredAtUtcMs,
@@ -6644,6 +6672,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
     map['id'] = Variable<String>(id);
     map['owner_id'] = Variable<String>(ownerId);
     map['document_id'] = Variable<String>(documentId);
+    map['document_revision'] = Variable<int>(documentRevision);
     map['event_type'] = Variable<String>(eventType);
     if (!nullToAbsent || position != null) {
       map['position'] = Variable<int>(position);
@@ -6657,6 +6686,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
       id: Value(id),
       ownerId: Value(ownerId),
       documentId: Value(documentId),
+      documentRevision: Value(documentRevision),
       eventType: Value(eventType),
       position: position == null && nullToAbsent
           ? const Value.absent()
@@ -6674,6 +6704,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
       id: serializer.fromJson<String>(json['id']),
       ownerId: serializer.fromJson<String>(json['ownerId']),
       documentId: serializer.fromJson<String>(json['documentId']),
+      documentRevision: serializer.fromJson<int>(json['documentRevision']),
       eventType: serializer.fromJson<String>(json['eventType']),
       position: serializer.fromJson<int?>(json['position']),
       occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
@@ -6686,6 +6717,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
       'id': serializer.toJson<String>(id),
       'ownerId': serializer.toJson<String>(ownerId),
       'documentId': serializer.toJson<String>(documentId),
+      'documentRevision': serializer.toJson<int>(documentRevision),
       'eventType': serializer.toJson<String>(eventType),
       'position': serializer.toJson<int?>(position),
       'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
@@ -6696,6 +6728,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
     String? id,
     String? ownerId,
     String? documentId,
+    int? documentRevision,
     String? eventType,
     Value<int?> position = const Value.absent(),
     int? occurredAtUtcMs,
@@ -6703,6 +6736,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
     documentId: documentId ?? this.documentId,
+    documentRevision: documentRevision ?? this.documentRevision,
     eventType: eventType ?? this.eventType,
     position: position.present ? position.value : this.position,
     occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
@@ -6714,6 +6748,9 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
       documentId: data.documentId.present
           ? data.documentId.value
           : this.documentId,
+      documentRevision: data.documentRevision.present
+          ? data.documentRevision.value
+          : this.documentRevision,
       eventType: data.eventType.present ? data.eventType.value : this.eventType,
       position: data.position.present ? data.position.value : this.position,
       occurredAtUtcMs: data.occurredAtUtcMs.present
@@ -6728,6 +6765,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
           ..write('id: $id, ')
           ..write('ownerId: $ownerId, ')
           ..write('documentId: $documentId, ')
+          ..write('documentRevision: $documentRevision, ')
           ..write('eventType: $eventType, ')
           ..write('position: $position, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs')
@@ -6740,6 +6778,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
     id,
     ownerId,
     documentId,
+    documentRevision,
     eventType,
     position,
     occurredAtUtcMs,
@@ -6751,6 +6790,7 @@ class ReadingEvent extends DataClass implements Insertable<ReadingEvent> {
           other.id == this.id &&
           other.ownerId == this.ownerId &&
           other.documentId == this.documentId &&
+          other.documentRevision == this.documentRevision &&
           other.eventType == this.eventType &&
           other.position == this.position &&
           other.occurredAtUtcMs == this.occurredAtUtcMs);
@@ -6760,6 +6800,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
   final Value<String> id;
   final Value<String> ownerId;
   final Value<String> documentId;
+  final Value<int> documentRevision;
   final Value<String> eventType;
   final Value<int?> position;
   final Value<int> occurredAtUtcMs;
@@ -6768,6 +6809,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
     this.id = const Value.absent(),
     this.ownerId = const Value.absent(),
     this.documentId = const Value.absent(),
+    this.documentRevision = const Value.absent(),
     this.eventType = const Value.absent(),
     this.position = const Value.absent(),
     this.occurredAtUtcMs = const Value.absent(),
@@ -6777,6 +6819,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
     required String id,
     required String ownerId,
     required String documentId,
+    this.documentRevision = const Value.absent(),
     required String eventType,
     this.position = const Value.absent(),
     required int occurredAtUtcMs,
@@ -6790,6 +6833,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
     Expression<String>? id,
     Expression<String>? ownerId,
     Expression<String>? documentId,
+    Expression<int>? documentRevision,
     Expression<String>? eventType,
     Expression<int>? position,
     Expression<int>? occurredAtUtcMs,
@@ -6799,6 +6843,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
       if (id != null) 'id': id,
       if (ownerId != null) 'owner_id': ownerId,
       if (documentId != null) 'document_id': documentId,
+      if (documentRevision != null) 'document_revision': documentRevision,
       if (eventType != null) 'event_type': eventType,
       if (position != null) 'position': position,
       if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
@@ -6810,6 +6855,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
     Value<String>? id,
     Value<String>? ownerId,
     Value<String>? documentId,
+    Value<int>? documentRevision,
     Value<String>? eventType,
     Value<int?>? position,
     Value<int>? occurredAtUtcMs,
@@ -6819,6 +6865,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
       id: id ?? this.id,
       ownerId: ownerId ?? this.ownerId,
       documentId: documentId ?? this.documentId,
+      documentRevision: documentRevision ?? this.documentRevision,
       eventType: eventType ?? this.eventType,
       position: position ?? this.position,
       occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
@@ -6837,6 +6884,9 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
     }
     if (documentId.present) {
       map['document_id'] = Variable<String>(documentId.value);
+    }
+    if (documentRevision.present) {
+      map['document_revision'] = Variable<int>(documentRevision.value);
     }
     if (eventType.present) {
       map['event_type'] = Variable<String>(eventType.value);
@@ -6859,6 +6909,7 @@ class ReadingEventsCompanion extends UpdateCompanion<ReadingEvent> {
           ..write('id: $id, ')
           ..write('ownerId: $ownerId, ')
           ..write('documentId: $documentId, ')
+          ..write('documentRevision: $documentRevision, ')
           ..write('eventType: $eventType, ')
           ..write('position: $position, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
@@ -17605,6 +17656,7 @@ typedef $$ReadingEventsTableCreateCompanionBuilder =
       required String id,
       required String ownerId,
       required String documentId,
+      Value<int> documentRevision,
       required String eventType,
       Value<int?> position,
       required int occurredAtUtcMs,
@@ -17615,6 +17667,7 @@ typedef $$ReadingEventsTableUpdateCompanionBuilder =
       Value<String> id,
       Value<String> ownerId,
       Value<String> documentId,
+      Value<int> documentRevision,
       Value<String> eventType,
       Value<int?> position,
       Value<int> occurredAtUtcMs,
@@ -17663,6 +17716,11 @@ class $$ReadingEventsTableFilterComposer
 
   ColumnFilters<String> get documentId => $composableBuilder(
     column: $table.documentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get documentRevision => $composableBuilder(
+    column: $table.documentRevision,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17724,6 +17782,11 @@ class $$ReadingEventsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get documentRevision => $composableBuilder(
+    column: $table.documentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<String> get eventType => $composableBuilder(
     column: $table.eventType,
     builder: (column) => ColumnOrderings(column),
@@ -17777,6 +17840,11 @@ class $$ReadingEventsTableAnnotationComposer
 
   GeneratedColumn<String> get documentId => $composableBuilder(
     column: $table.documentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get documentRevision => $composableBuilder(
+    column: $table.documentRevision,
     builder: (column) => column,
   );
 
@@ -17846,6 +17914,7 @@ class $$ReadingEventsTableTableManager
                 Value<String> id = const Value.absent(),
                 Value<String> ownerId = const Value.absent(),
                 Value<String> documentId = const Value.absent(),
+                Value<int> documentRevision = const Value.absent(),
                 Value<String> eventType = const Value.absent(),
                 Value<int?> position = const Value.absent(),
                 Value<int> occurredAtUtcMs = const Value.absent(),
@@ -17854,6 +17923,7 @@ class $$ReadingEventsTableTableManager
                 id: id,
                 ownerId: ownerId,
                 documentId: documentId,
+                documentRevision: documentRevision,
                 eventType: eventType,
                 position: position,
                 occurredAtUtcMs: occurredAtUtcMs,
@@ -17864,6 +17934,7 @@ class $$ReadingEventsTableTableManager
                 required String id,
                 required String ownerId,
                 required String documentId,
+                Value<int> documentRevision = const Value.absent(),
                 required String eventType,
                 Value<int?> position = const Value.absent(),
                 required int occurredAtUtcMs,
@@ -17872,6 +17943,7 @@ class $$ReadingEventsTableTableManager
                 id: id,
                 ownerId: ownerId,
                 documentId: documentId,
+                documentRevision: documentRevision,
                 eventType: eventType,
                 position: position,
                 occurredAtUtcMs: occurredAtUtcMs,

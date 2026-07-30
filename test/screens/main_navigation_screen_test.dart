@@ -29,11 +29,11 @@ void main() {
 
       await tester.tap(find.byType(NavigationDestination).at(2));
       await tester.pumpAndSettle();
-      expect(find.text('Mastery & Analytics Dashboard'), findsOneWidget);
+      expect(find.text('ภาพรวมการเรียน'), findsOneWidget);
 
       await tester.tap(find.byType(NavigationDestination).at(3));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Weakness Clinic'), findsOneWidget);
+      expect(find.text('คลินิกจุดอ่อน'), findsOneWidget);
 
       await tester.tap(find.byType(NavigationDestination).at(4));
       await tester.pumpAndSettle();

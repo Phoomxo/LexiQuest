@@ -150,6 +150,48 @@ function writeFieldWord(db, {
   return batch.commit();
 }
 
+function writeFieldLearningEvent(db, {
+  uid = alice,
+  collection = 'attempts',
+  entityType = 'attempt',
+  entityId = 'attempt-1',
+  operationId = 'attempt-operation-1',
+  payload,
+} = {}) {
+  const resolvedPayload = payload ?? {
+    sessionId: 'session-1',
+    wordId: 'word-1',
+    promptMode: 'meaningChoice',
+    isCorrect: true,
+    responseTimeMs: 320,
+    attemptNumber: 1,
+    occurredAtUtcMs: 2000,
+    providerProvenance: null,
+  };
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, collection, entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload: resolvedPayload,
+    revision: 1,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1,
+    operationId,
+    entityType,
+    entityId,
+    operationKind: 'upsert',
+    baseRevision: 0,
+    resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -459,6 +501,116 @@ describe('field sync ownership and atomic revision contract', () => {
     await assertFails(writeFieldWord(db));
     await assertSucceeds(writeFieldCategory(db));
     await assertSucceeds(writeFieldWord(db));
+  });
+
+  it('accepts immutable attempt and reading evidence with atomic acknowledgements', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningEvent(db));
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'reading_events',
+        entityType: 'readingEvent',
+        entityId: 'reading-1',
+        operationId: 'reading-operation-1',
+        payload: {
+          documentId: 'article-1',
+          documentRevision: 1,
+          eventType: 'completed',
+          position: 6,
+          occurredAtUtcMs: 3000,
+        },
+      }),
+    );
+  });
+
+  it('keeps learning evidence create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningEvent(db));
+    const ref = doc(db, 'field_users', alice, 'attempts', 'attempt-1');
+    await assertFails(updateDoc(ref, { 'payload.isCorrect': false }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-1')));
+  });
+
+  it('accepts documented attempt number and response-time boundaries', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-boundary',
+        operationId: 'attempt-boundary-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2147483647,
+          attemptNumber: 1000000,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects a negative response time', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-negative-response',
+        operationId: 'attempt-negative-response-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: -1,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects an oversized prompt mode', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-long-prompt',
+        operationId: 'attempt-long-prompt-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'x'.repeat(61),
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+        },
+      }),
+    );
+  });
+
+  it('rejects extra learning evidence fields', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-extra',
+        operationId: 'attempt-extra-operation',
+        payload: {
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 10,
+          attemptNumber: 1,
+          occurredAtUtcMs: 2000,
+          providerProvenance: null,
+          rawAudio: 'must-not-sync',
+        },
+      }),
+    );
   });
 
   it('allows policy reads but denies client policy writes', async () => {
