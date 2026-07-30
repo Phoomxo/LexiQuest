@@ -57,6 +57,7 @@ void main() {
       await modelFile.writeAsBytes(modelBytes);
       final manifest = _manifest(modelBytes);
       final runtime = _FakeRuntime();
+      ModelDelegate? openedDelegate;
       final repository = _ModelRepository(
         _activeRecord(manifest, modelFile.path),
       );
@@ -65,8 +66,10 @@ void main() {
         repository: repository,
         downloadManager: _uncalledManager(repository, directory),
         openRuntime:
-            ({required path, required manifest, required delegate}) async =>
-                runtime,
+            ({required path, required manifest, required delegate}) async {
+              openedDelegate = delegate;
+              return runtime;
+            },
       );
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -91,6 +94,7 @@ void main() {
       );
 
       await scanner.initialize();
+      expect(openedDelegate, ModelDelegate.cpu);
       final result = await scanner.captureAndClassify();
       final accepted = await scanner.accept(result);
 

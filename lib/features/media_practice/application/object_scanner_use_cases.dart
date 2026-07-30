@@ -126,9 +126,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
     }
     try {
       await camera.initialize();
-      _runtime ??= await deviceModels.openActive(
-        delegate: ModelDelegate.xnnpack,
-      );
+      _runtime ??= await deviceModels.openActive(delegate: ModelDelegate.cpu);
     } on ModelLifecycleException {
       await camera.pause();
       throw const CameraPracticeException(CameraFailureCode.modelUnavailable);
