@@ -208,6 +208,38 @@ try {
     ) 'App Check enforcement requires observed valid signed-release traffic'
     $evidence.cloudControls.appCheckValidTrafficObserved = $true
 
+    $evidence.participantPackage.supportChannelRef =
+        'missing:private-support'
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True (
+        ($errors -join "`n") -match
+            'supportChannelRef must reference a real private channel'
+    ) 'an explicit missing private support channel blocks release'
+    $evidence.participantPackage.supportChannelRef =
+        'private:support-channel-record'
+
+    $evidence.participantPackage.researchProtocolRef =
+        'https://example.invalid/draft'
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True (
+        ($errors -join "`n") -match
+            'researchProtocolRef must reference a real private channel'
+    ) 'a public draft cannot satisfy private protocol approval evidence'
+    $evidence.participantPackage.researchProtocolRef =
+        'private:research-protocol'
+
     $evidence.devices[0].journeys.offlineRestartSync.status = 'pending'
     $errors = @(
         Test-LexiQuestFieldReleaseEvidence `
@@ -291,7 +323,9 @@ foreach ($needle in @(
     'Get-FileHash',
     'git status --porcelain',
     'docs/field',
-    'tool/cli/package-field-release.ps1'
+    'tool/cli/package-field-release.ps1',
+    'tool/cli/lib/field-release-evidence.ps1',
+    'tool/cli/new-field-release-evidence.ps1'
 )) {
     Assert-True $packagerText.Contains($needle) "packager contains $needle"
 }

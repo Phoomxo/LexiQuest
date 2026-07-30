@@ -55,6 +55,8 @@ try {
             android assets lib docs/field pubspec.yaml pubspec.lock `
             firebase.json firestore.rules firestore.indexes.json `
             tool/cli/package-field-release.ps1 `
+            tool/cli/lib/field-release-evidence.ps1 `
+            tool/cli/new-field-release-evidence.ps1 `
             tool/cli/verify-apk-model-runtime.ps1 `
             tool/cli/verify-field-release.ps1
     )

@@ -163,7 +163,14 @@ function Test-LexiQuestFieldReleaseEvidence {
         $value = [string]$package.$channel
         if (
             [string]::IsNullOrWhiteSpace($value) -or
-            $value -match '(?i)placeholder|owner_config|pending|todo|<.+>'
+            $value -match (
+                '(?i)placeholder|owner_config|pending|todo|missing|' +
+                'draft|unapproved|not.?configured|<.+>'
+            ) -or
+            (
+                $channel -in @('supportChannelRef', 'researchProtocolRef') -and
+                $value -notmatch '^private:'
+            )
         ) {
             $errors.Add(
                 "participantPackage.$channel must reference a real private channel."
