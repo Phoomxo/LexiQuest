@@ -121,6 +121,40 @@ final class LearningUseCases {
     return result;
   }
 
+  Future<ReadingProgressSnapshot?> loadReadingProgress({
+    required String documentId,
+    required int documentRevision,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    return repository.readReadingProgress(
+      ownerId: owner.id,
+      documentId: _requiredId(documentId, 'documentId'),
+      documentRevision: documentRevision,
+    );
+  }
+
+  Future<ReadingProgressSnapshot> saveReadingProgress({
+    required String documentId,
+    required int documentRevision,
+    required int position,
+    required bool isCompleted,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final result = await repository.saveReadingProgress(
+      ReadingProgressCommand(
+        eventId: 'reading-event:${_nextId()}',
+        ownerId: owner.id,
+        documentId: _requiredId(documentId, 'documentId'),
+        documentRevision: documentRevision,
+        position: position,
+        isCompleted: isCompleted,
+        occurredAtUtc: _now(),
+      ),
+    );
+    onLocalMutation?.call();
+    return result;
+  }
+
   List<QuizQuestion> _questions(List<QuizWord> words) {
     final allMeanings =
         words.map((word) => word.meaning).toSet().toList(growable: false)

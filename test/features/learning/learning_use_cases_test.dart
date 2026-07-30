@@ -120,4 +120,26 @@ void main() {
     expect(quiz.questions, isEmpty);
     expect(await database.select(database.learningSessions).get(), isEmpty);
   });
+
+  test('reading use cases save and restore owner-scoped progress', () async {
+    final empty = await useCases.loadReadingProgress(
+      documentId: 'article-1',
+      documentRevision: 1,
+    );
+    expect(empty, isNull);
+
+    final saved = await useCases.saveReadingProgress(
+      documentId: 'article-1',
+      documentRevision: 1,
+      position: 4,
+      isCompleted: false,
+    );
+    final restored = await useCases.loadReadingProgress(
+      documentId: 'article-1',
+      documentRevision: 1,
+    );
+
+    expect(saved.lastPosition, 4);
+    expect(restored, saved);
+  });
 }

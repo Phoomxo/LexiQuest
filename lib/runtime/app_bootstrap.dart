@@ -14,6 +14,8 @@ import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/progress/application/progress_use_cases.dart';
+import '../features/progress/data/drift_progress_queries.dart';
 import '../features/sync/application/sync_backoff.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_mutex.dart';
@@ -195,6 +197,11 @@ final class AppBootstrap {
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
     );
+    final progress = ProgressUseCases(
+      owners: localOwners,
+      queries: DriftProgressQueries(database),
+      nowUtc: () => DateTime.now().toUtc(),
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -214,6 +221,7 @@ final class AppBootstrap {
       syncEngine: syncEngine,
       syncTrigger: syncTrigger,
       learning: learning,
+      progress: progress,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       disposeResources: database.close,

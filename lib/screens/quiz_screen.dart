@@ -1,299 +1,238 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/services.dart';
+
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
-import 'speak_to_text_screen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class QuizScreen extends StatefulWidget {
-  final List<Map<String, dynamic>> vocabList;
-  final String? selectedCategoryId;
+  const QuizScreen({super.key, this.categoryId, this.learning});
 
-  const QuizScreen({
-    super.key,
-    required this.vocabList,
-    this.selectedCategoryId,
-  });
+  final String? categoryId;
+  final LearningUseCases? learning;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
-  int currentQuestionIndex = 0;
-  int correctAnswers = 0;
-  bool isAnswered = false;
-  bool isCorrect = false;
-  List<String> shuffledOptions = [];
-  int userPoints = 0;
-  String? backgroundUrl;
-
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  LearningUseCases? _learning;
+  Future<QuizSession>? _load;
+  QuizSession? _session;
+  int _index = 0;
+  bool _answered = false;
+  bool _saving = false;
+  String? _selected;
+  DateTime? _questionStartedAt;
 
   @override
-  void initState() {
-    super.initState();
-    _initializeOptions();
-    _loadBackground();
-  }
-
-  Future<void> _loadBackground() async {
-    final user = _auth.currentUser;
-    if (user != null) {
-      final doc = await FirebaseFirestore.instance
-          .collection('state')
-          .doc(user.uid)
-          .get();
-      if (doc.exists) {
-        setState(() {
-          backgroundUrl = doc.data()?['selectedWallpaper'];
-        });
-      }
-    }
-  }
-
-  void _initializeOptions() {
-    if (widget.vocabList.isEmpty) {
-      debugPrint("❌ คำศัพท์ว่าง! ตรวจสอบแหล่งที่มา");
-      return;
-    }
-
-    final currentQuestion = widget.vocabList[currentQuestionIndex];
-    final correctAnswer = currentQuestion['meaning'];
-
-    final fakeOptions =
-        widget.vocabList
-            .where((vocab) => vocab['meaning'] != correctAnswer)
-            .map((vocab) => vocab['meaning'])
-            .toList()
-          ..shuffle();
-
-    shuffledOptions = [correctAnswer, ...fakeOptions.take(3)]..shuffle();
-  }
-
-  void _checkAnswer(String selectedAnswer) {
-    final correctAnswer = widget.vocabList[currentQuestionIndex]['meaning'];
-
-    setState(() {
-      isAnswered = true;
-      if (selectedAnswer == correctAnswer) {
-        isCorrect = true;
-        correctAnswers++;
-        userPoints++;
-        HapticFeedback.lightImpact();
-      } else {
-        isCorrect = false;
-        HapticFeedback.vibrate();
-      }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    _learning =
+        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    final learning = _learning;
+    _load = learning == null
+        ? Future<QuizSession>.error(
+            StateError('local learning dependency unavailable'),
+          )
+        : learning.startQuiz(categoryId: widget.categoryId);
+    _load!.then((session) {
+      if (!mounted) return;
+      _session = session;
+      _questionStartedAt = DateTime.now();
     });
-  }
-
-  void _nextQuestion() {
-    if (currentQuestionIndex < widget.vocabList.length - 1) {
-      setState(() {
-        currentQuestionIndex++;
-        isAnswered = false;
-        isCorrect = false;
-        _initializeOptions();
-      });
-    } else {
-      _savePointsToFirestore().then((_) {
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => ScoreScreen(
-                correctAnswers: correctAnswers,
-                wrongAnswers: widget.vocabList.length - correctAnswers,
-              ),
-            ),
-          );
-        }
-      });
-    }
-  }
-
-  Future<void> _savePointsToFirestore() async {
-    final userRef = FirebaseFirestore.instance
-        .collection('users')
-        .doc(_auth.currentUser!.uid);
-    await userRef.set({
-      'totalPoints': FieldValue.increment(userPoints),
-      'gamesPlayed': FieldValue.increment(1),
-    }, SetOptions(merge: true));
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = widget.vocabList[currentQuestionIndex];
-    final word = currentQuestion['word'];
-    final partOfSpeech = currentQuestion['part_of_speech'];
-    final correctAnswer = currentQuestion['meaning'];
-
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'คำศัพท์ ${currentQuestionIndex + 1}/${widget.vocabList.length}',
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      appBar: AppBar(title: const Text('Quiz คำศัพท์')),
+      body: FutureBuilder<QuizSession>(
+        future: _load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const _QuizMessage(
+              icon: Icons.error_outline,
+              message:
+                  'เปิด Quiz ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final session = snapshot.data!;
+          if (session.isEmpty) {
+            return const _QuizMessage(
+              icon: Icons.library_add_outlined,
+              message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
+            );
+          }
+          return _buildQuestion(session);
+        },
+      ),
+    );
+  }
+
+  Widget _buildQuestion(QuizSession session) {
+    final question = session.questions[_index];
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Semantics(
+              label: 'คำถาม ${_index + 1} จาก ${session.questions.length}',
+              child: LinearProgressIndicator(
+                value: (_index + 1) / session.questions.length,
+              ),
             ),
-          ),
+            const SizedBox(height: 24),
+            Text(
+              question.word.spelling,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              question.word.partOfSpeech,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 24),
+            ...question.options.map(
+              (option) => Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: FilledButton.tonal(
+                  onPressed: _answered || _saving
+                      ? null
+                      : () => _record(question, option),
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size.fromHeight(52),
+                    backgroundColor: _answerColor(question, option),
+                  ),
+                  child: Text(option),
+                ),
+              ),
+            ),
+            const Spacer(),
+            if (_saving) const LinearProgressIndicator(),
+            if (_answered)
+              FilledButton(
+                onPressed: _saving ? null : _next,
+                child: Text(
+                  _index == session.questions.length - 1
+                      ? 'ดูผลการเรียน'
+                      : 'คำถามถัดไป',
+                ),
+              ),
+          ],
         ),
       ),
+    );
+  }
 
-      body: Container(
-        decoration: backgroundUrl != null
-            ? BoxDecoration(
-                image: DecorationImage(
-                  image: NetworkImage(backgroundUrl!),
-                  fit: BoxFit.cover,
-                ),
-              )
-            : null,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            children: [
-              // 🔵 Progress Bar
-              LinearProgressIndicator(
-                value: (currentQuestionIndex + 1) / widget.vocabList.length,
-                backgroundColor: Colors.grey.shade300,
-                color: const Color.fromARGB(255, 21, 153, 49),
-                minHeight: 8,
-              ),
-              const SizedBox(height: 20),
+  Color? _answerColor(QuizQuestion question, String option) {
+    if (!_answered) return null;
+    if (option == question.correctAnswer) return Colors.green.shade100;
+    if (option == _selected) return Colors.red.shade100;
+    return null;
+  }
 
-              // 📌 คำศัพท์และ Part of Speech
-              Card(
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(20.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'คำศัพท์',
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        word,
-                        style: const TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        partOfSpeech,
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey.shade700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+  Future<void> _record(QuizQuestion question, String option) async {
+    final learning = _learning;
+    final session = _session;
+    if (learning == null || session == null) return;
+    final correct = option == question.correctAnswer;
+    setState(() {
+      _saving = true;
+      _selected = option;
+    });
+    final elapsed = DateTime.now().difference(
+      _questionStartedAt ?? DateTime.now(),
+    );
+    try {
+      await learning.recordAnswer(
+        sessionId: session.id,
+        wordId: question.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: correct,
+        responseTimeMs: elapsed.inMilliseconds,
+        attemptNumber: _index + 1,
+      );
+      if (!mounted) return;
+      if (correct) {
+        await HapticFeedback.lightImpact();
+      } else {
+        await HapticFeedback.vibrate();
+      }
+      setState(() {
+        _answered = true;
+        _saving = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
+      );
+    }
+  }
 
-              const SizedBox(height: 20),
-
-              // 🏆 ตัวเลือกคำตอบ
-              ...shuffledOptions.map((option) {
-                return GestureDetector(
-                  onTap: isAnswered ? null : () => _checkAnswer(option),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 300),
-                    curve: Curves.easeInOut,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                      color: isAnswered
-                          ? (option == correctAnswer
-                                ? Colors.green.withValues(alpha: 0.7)
-                                : Colors.red.withValues(alpha: 0.7))
-                          : Colors.blue.shade100,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Center(
-                      child: Text(
-                        option,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              }),
-
-              const SizedBox(height: 20),
-
-              // 🔜 ปุ่มไปต่อ
-              ElevatedButton(
-                onPressed: isAnswered
-                    ? () {
-                        if (isCorrect) {
-                          // ถ้าตอบถูกให้ไปฝึกออกเสียง
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SpeakToTextScreen(
-                                correctWord: widget
-                                    .vocabList[currentQuestionIndex]['word'],
-                              ),
-                            ),
-                          ).then((_) => _nextQuestion());
-                        } else {
-                          // ถ้าตอบผิดให้ไปยังคำถามถัดไปทันที
-                          _nextQuestion();
-                        }
-                      }
-                    : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isAnswered
-                      ? (isCorrect
-                            ? Colors.green
-                            : Colors.red) // ✅ เปลี่ยนสีปุ่มตามเงื่อนไข
-                      : Colors.grey,
-                  padding: const EdgeInsets.symmetric(
-                    vertical: 14,
-                    horizontal: 50,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  shadowColor: Colors.black.withValues(alpha: 0.3),
-                  elevation: 5,
-                ),
-                child: const Text(
-                  'ไปต่อ',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            ],
+  Future<void> _next() async {
+    final session = _session!;
+    if (_index < session.questions.length - 1) {
+      setState(() {
+        _index++;
+        _answered = false;
+        _selected = null;
+        _questionStartedAt = DateTime.now();
+      });
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      final summary = await _learning!.finishSession(session.id);
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => ScoreScreen(
+            correctAnswers: summary.correctCount,
+            wrongAnswers: summary.wrongCount,
+            score: summary.score,
           ),
+        ),
+      );
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
+      );
+    }
+  }
+}
+
+class _QuizMessage extends StatelessWidget {
+  const _QuizMessage({required this.icon, required this.message});
+
+  final IconData icon;
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 48),
+            const SizedBox(height: 12),
+            Text(message, textAlign: TextAlign.center),
+          ],
         ),
       ),
     );

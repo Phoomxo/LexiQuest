@@ -50,8 +50,8 @@ void main() {
       await tester.tap(find.text('Complete & Continue'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Stage 6: Schedule Update'), findsOneWidget);
-      expect(find.text('Session Completed!'), findsOneWidget);
+      expect(find.text('Stage 6: Finish'), findsOneWidget);
+      expect(find.text('Ready to finish'), findsOneWidget);
     });
   });
 }

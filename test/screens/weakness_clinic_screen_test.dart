@@ -1,33 +1,78 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/models/srs_item.dart';
+import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 
 void main() {
-  testWidgets(
-    'WeaknessClinicScreen displays weakness items and practice button',
-    (WidgetTester tester) async {
-      final customItems = [
-        SrsItem(
-          word: 'ephemeral',
-          boxLevel: 1,
-          intervalDays: 1,
-          lastReviewedAt: DateTime.now(),
-          nextReviewAt: DateTime.now(),
-        ),
-      ];
+  testWidgets('displays weaknesses derived from attempt evidence', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: WeaknessClinicScreen(loader: () async => _snapshot)),
+    );
+    await tester.pumpAndSettle();
 
-      await tester.pumpWidget(
-        MaterialApp(home: WeaknessClinicScreen(customItems: customItems)),
-      );
-      await tester.pumpAndSettle();
+    expect(find.text('คลินิกจุดอ่อน'), findsOneWidget);
+    expect(find.text('ephemeral'), findsOneWidget);
+    expect(find.textContaining('ตอบผิด 2/3 ครั้ง'), findsOneWidget);
+    expect(find.text('ทบทวนคำที่ถึงกำหนด (1)'), findsOneWidget);
+  });
 
-      expect(
-        find.text('คลินิกซ่อมแซมจุดอ่อน (Weakness Clinic)'),
-        findsOneWidget,
-      );
-      expect(find.text('ephemeral'), findsOneWidget);
-      expect(find.text('เริ่มฝึกซ่อมจุดอ่อนทันที'), findsOneWidget);
-    },
-  );
+  testWidgets('new account shows sample size zero instead of sample words', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: WeaknessClinicScreen(loader: () async => _emptySnapshot),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
+    expect(find.text('ephemeral'), findsNothing);
+  });
 }
+
+const _snapshot = ProgressSnapshot(
+  sampleSize: 3,
+  correctCount: 1,
+  wrongCount: 2,
+  accuracy: 1 / 3,
+  points: 1,
+  completedSessions: 1,
+  streakDays: 1,
+  dueReviewCount: 1,
+  masteredWordCount: 0,
+  achievementCount: 1,
+  gameLevel: 1,
+  skills: [],
+  weaknesses: [
+    WeaknessEvidence(
+      wordId: 'word-1',
+      spelling: 'ephemeral',
+      meaning: 'ชั่วคราว',
+      sampleSize: 3,
+      incorrectCount: 2,
+      errorRate: 2 / 3,
+      dueAtUtc: null,
+    ),
+  ],
+  recommendations: [],
+);
+
+const _emptySnapshot = ProgressSnapshot(
+  sampleSize: 0,
+  correctCount: 0,
+  wrongCount: 0,
+  accuracy: null,
+  points: 0,
+  completedSessions: 0,
+  streakDays: 0,
+  dueReviewCount: 0,
+  masteredWordCount: 0,
+  achievementCount: 0,
+  gameLevel: 1,
+  skills: [],
+  weaknesses: [],
+  recommendations: [],
+);

@@ -1,184 +1,184 @@
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 
-class MasteryDashboardScreen extends StatelessWidget {
-  final double listeningScore;
-  final double pronunciationScore;
-  final double spellingScore;
-  final double retentionScore;
-  final int streakDays;
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
 
-  const MasteryDashboardScreen({
-    super.key,
-    this.listeningScore = 85.0,
-    this.pronunciationScore = 78.0,
-    this.spellingScore = 92.0,
-    this.retentionScore = 80.0,
-    this.streakDays = 5,
-  });
+typedef ProgressLoader = Future<ProgressSnapshot> Function();
+
+class MasteryDashboardScreen extends StatefulWidget {
+  const MasteryDashboardScreen({super.key, this.loader});
+
+  final ProgressLoader? loader;
+
+  @override
+  State<MasteryDashboardScreen> createState() => _MasteryDashboardScreenState();
+}
+
+class _MasteryDashboardScreenState extends State<MasteryDashboardScreen> {
+  Future<ProgressSnapshot>? _load;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    final loader =
+        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+    _load = loader == null
+        ? Future<ProgressSnapshot>.error(
+            StateError('progress dependency unavailable'),
+          )
+        : loader();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Mastery & Analytics Dashboard',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.indigo,
-        centerTitle: true,
+      appBar: AppBar(title: const Text('ภาพรวมการเรียน')),
+      body: FutureBuilder<ProgressSnapshot>(
+        future: _load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const _DashboardMessage(
+              'ไม่สามารถอ่านประวัติการเรียนในเครื่องได้',
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final progress = snapshot.data!;
+          if (progress.sampleSize == 0) {
+            return const _DashboardMessage(
+              'ยังไม่มีคำตอบที่บันทึกไว้\nจำนวนตัวอย่าง: 0',
+            );
+          }
+          return _DashboardBody(progress);
+        },
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
+    );
+  }
+}
+
+class _DashboardBody extends StatelessWidget {
+  const _DashboardBody(this.progress);
+
+  final ProgressSnapshot progress;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
           children: [
-            // Streak Card
-            Card(
-              elevation: 4,
-              color: Colors.orange.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.local_fire_department,
-                      color: Colors.deepOrange,
-                      size: 40,
-                    ),
-                    const SizedBox(width: 12),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          '$streakDays Days Streak!',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepOrange,
-                          ),
-                        ),
-                        const Text('ฝึกฝนต่อเนื่องรายวันยอดเยี่ยมมาก!'),
-                      ],
-                    ),
-                  ],
+            _MetricCard(
+              label: 'ความแม่นยำ',
+              value: '${((progress.accuracy ?? 0) * 100).toStringAsFixed(0)}%',
+            ),
+            _MetricCard(label: 'Streak', value: '${progress.streakDays} วัน'),
+            _MetricCard(label: 'คะแนน', value: '${progress.points}'),
+            _MetricCard(
+              label: 'Session ที่จบ',
+              value: '${progress.completedSessions}',
+            ),
+            _MetricCard(
+              label: 'ถึงกำหนดทบทวน',
+              value: '${progress.dueReviewCount}',
+            ),
+            _MetricCard(label: 'Level', value: '${progress.gameLevel}'),
+          ],
+        ),
+        const SizedBox(height: 20),
+        Text(
+          'ทักษะจากหลักฐานจริง',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        ...progress.skills.map((skill) => _SkillRow(skill)),
+        const SizedBox(height: 12),
+        Text(
+          'จำนวนตัวอย่างทั้งหมด: ${progress.sampleSize}',
+          textAlign: TextAlign.center,
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 150,
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.all(14),
+          child: Column(
+            children: [
+              Text(value, style: Theme.of(context).textTheme.headlineSmall),
+              const SizedBox(height: 4),
+              Text(label, textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _SkillRow extends StatelessWidget {
+  const _SkillRow(this.skill);
+
+  final SkillEvidence skill;
+
+  @override
+  Widget build(BuildContext context) {
+    final accuracy = skill.accuracy;
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(child: Text(skill.label)),
+                Text(
+                  accuracy == null
+                      ? 'ยังไม่มีข้อมูล'
+                      : '${(accuracy * 100).toStringAsFixed(0)}%',
                 ),
-              ),
+              ],
             ),
-            const SizedBox(height: 24),
-            const Text(
-              'แผนภูมิความเชี่ยวชาญทักษะ 4 ด้าน (Skill Radar)',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 20),
-            SizedBox(
-              height: 250,
-              child: RadarChart(
-                RadarChartData(
-                  radarShape: RadarShape.polygon,
-                  radarBorderData: const BorderSide(
-                    color: Colors.indigo,
-                    width: 2,
-                  ),
-                  gridBorderData: BorderSide(
-                    color: Colors.indigo.shade100,
-                    width: 1,
-                  ),
-                  titlePositionPercentageOffset: 0.2,
-                  getTitle: (index, angle) {
-                    switch (index) {
-                      case 0:
-                        return RadarChartTitle(
-                          text: 'Listening\n($listeningScore%)',
-                        );
-                      case 1:
-                        return RadarChartTitle(
-                          text: 'Pronunciation\n($pronunciationScore%)',
-                        );
-                      case 2:
-                        return RadarChartTitle(
-                          text: 'Spelling\n($spellingScore%)',
-                        );
-                      case 3:
-                        return RadarChartTitle(
-                          text: 'Retention\n($retentionScore%)',
-                        );
-                      default:
-                        return const RadarChartTitle(text: '');
-                    }
-                  },
-                  dataSets: [
-                    RadarDataSet(
-                      fillColor: Colors.indigo.withValues(alpha: 0.3),
-                      borderColor: Colors.indigo,
-                      entryRadius: 4,
-                      dataEntries: [
-                        RadarEntry(value: listeningScore),
-                        RadarEntry(value: pronunciationScore),
-                        RadarEntry(value: spellingScore),
-                        RadarEntry(value: retentionScore),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 30),
-            // Details List
-            _buildSkillTile('Listening (การฟัง)', listeningScore, Colors.blue),
-            _buildSkillTile(
-              'Pronunciation (การออกเสียง)',
-              pronunciationScore,
-              Colors.green,
-            ),
-            _buildSkillTile(
-              'Spelling (การสะกดคำ)',
-              spellingScore,
-              Colors.orange,
-            ),
-            _buildSkillTile(
-              'Retention (ความจำ SRS)',
-              retentionScore,
-              Colors.purple,
-            ),
+            const SizedBox(height: 8),
+            LinearProgressIndicator(value: accuracy ?? 0),
+            const SizedBox(height: 6),
+            Text('จำนวนตัวอย่าง: ${skill.sampleSize}'),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildSkillTile(String title, double score, Color color) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-              Text(
-                '${score.toStringAsFixed(1)}%',
-                style: TextStyle(fontWeight: FontWeight.bold, color: color),
-              ),
-            ],
-          ),
-          const SizedBox(height: 6),
-          LinearProgressIndicator(
-            value: score / 100.0,
-            backgroundColor: color.withValues(alpha: 0.2),
-            valueColor: AlwaysStoppedAnimation<Color>(color),
-            minHeight: 8,
-          ),
-        ],
+class _DashboardMessage extends StatelessWidget {
+  const _DashboardMessage(this.message);
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Text(message, textAlign: TextAlign.center),
       ),
     );
   }

@@ -178,6 +178,37 @@ final class DriftLearningRepository implements LearningRepository {
               mode: InsertMode.insertOrIgnore,
             );
       }
+      await _unlockAchievement(
+        ownerId: command.ownerId,
+        achievementId: 'first_answer',
+        sourceEventId: command.id,
+        unlockedAtUtc: command.occurredAtUtc,
+      );
+      if (command.isCorrect) {
+        await _unlockAchievement(
+          ownerId: command.ownerId,
+          achievementId: 'first_correct',
+          sourceEventId: command.id,
+          unlockedAtUtc: command.occurredAtUtc,
+        );
+        final correctExpression = database.answerAttempts.id.count();
+        final correctRow =
+            await (database.selectOnly(database.answerAttempts)
+                  ..addColumns([correctExpression])
+                  ..where(
+                    database.answerAttempts.ownerId.equals(command.ownerId) &
+                        database.answerAttempts.isCorrect.equals(true),
+                  ))
+                .getSingle();
+        if ((correctRow.read(correctExpression) ?? 0) >= 10) {
+          await _unlockAchievement(
+            ownerId: command.ownerId,
+            achievementId: 'ten_correct',
+            sourceEventId: command.id,
+            unlockedAtUtc: command.occurredAtUtc,
+          );
+        }
+      }
       return AnswerRecordResult(inserted: true, srs: next);
     });
   }
@@ -210,6 +241,20 @@ final class DriftLearningRepository implements LearningRepository {
             score: Value(score),
           ),
         );
+        await _unlockAchievement(
+          ownerId: ownerId,
+          achievementId: 'first_session',
+          sourceEventId: sessionId,
+          unlockedAtUtc: endedAtUtc,
+        );
+        if (total > 0 && row.wrongCount == 0) {
+          await _unlockAchievement(
+            ownerId: ownerId,
+            achievementId: 'perfect_session',
+            sourceEventId: sessionId,
+            unlockedAtUtc: endedAtUtc,
+          );
+        }
       }
       return LearningSessionSummary(
         id: row.id,
@@ -367,6 +412,28 @@ final class DriftLearningRepository implements LearningRepository {
       dueAtUtc: _fromEpoch(row.dueAtUtcMs),
       algorithmVersion: row.algorithmVersion,
     );
+  }
+
+  Future<void> _unlockAchievement({
+    required String ownerId,
+    required String achievementId,
+    required String sourceEventId,
+    required DateTime unlockedAtUtc,
+  }) async {
+    const definitionVersion = 1;
+    await database
+        .into(database.achievementUnlocks)
+        .insert(
+          db.AchievementUnlocksCompanion.insert(
+            id: 'achievement:$ownerId:$achievementId:$definitionVersion',
+            ownerId: ownerId,
+            achievementId: achievementId,
+            definitionVersion: definitionVersion,
+            sourceEventId: sourceEventId,
+            unlockedAtUtcMs: unlockedAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
   }
 
   Future<SrsSnapshot> _requiredSrs(String ownerId, String wordId) async {

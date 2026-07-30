@@ -97,6 +97,13 @@ void main() {
       await database.select(database.pointsLedgerEntries).get(),
       hasLength(1),
     );
+    final achievements = await database
+        .select(database.achievementUnlocks)
+        .get();
+    expect(achievements.map((row) => row.achievementId).toSet(), {
+      'first_answer',
+      'first_correct',
+    });
     final storedSession = await (database.select(
       database.learningSessions,
     )..where((row) => row.id.equals('session-1'))).getSingle();
