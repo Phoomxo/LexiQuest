@@ -1,8 +1,8 @@
 # LexiQuest Field-Test-Ready Development Program Design
 
-**Date:** 2026-07-30  
-**Status:** Approved master design for implementation  
-**Primary target:** Android APK for a 30-participant field trial  
+**Date:** 2026-07-30
+**Status:** Approved master design for implementation
+**Primary target:** Android APK for a 30-participant field trial
 **Development strategy:** Local-first data spine with end-to-end vertical slices
 
 ## 1. Purpose
