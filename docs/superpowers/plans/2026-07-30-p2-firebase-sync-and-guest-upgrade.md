@@ -25,6 +25,19 @@ cloud work is disabled or unavailable.
 | P2-E Android scheduling | Unique network-constrained WorkManager job plus foreground triggers and kill switch | Adapter tests + debug APK |
 | P2 Gate | Offline → restart → reconnect → sync is exact-once; cloud-off remains local-first | One bounded CLI gate |
 
+## Execution status
+
+| Package | Status | Evidence |
+|---|---|---|
+| P2-A schema migration | Complete | v1 fixture migrates to v2 without row loss |
+| P2-A sync contracts | Complete | Cursor, schema, payload, failure, acknowledgement, and policy tests pass |
+| P2-B Drift sync store | Complete | Lease, coalescing, retry, owner isolation, checkpoint, and conflict tests pass |
+| P2-B sync engine | Complete | Offline/reconnect exact-once, kill switch, push conflict, and mutex tests pass |
+| P2-C Firestore gateway and rules | In progress | Official transaction, cursor, and rules behavior reviewed |
+| P2-D guest ownership | Pending | Starts after Firestore contract is frozen |
+| P2-E Android scheduling | Pending | Starts after foreground engine composition |
+| P2 gate | Pending | Runs once after P2-C through P2-E |
+
 ## Development discipline
 
 - Use RED-GREEN-REFACTOR inside the owning package.
@@ -309,8 +322,10 @@ feat(sync): add bounded idempotent push-pull engine
 1. Require the authenticated UID to equal the mutation UID.
 2. Read `operations/{operationId}`.
 3. Return its stored acknowledgement if present.
-4. Read the entity document and validate base revision.
-5. Write the next entity revision and server timestamp.
+4. Read the entity document and validate the exact base revision.
+5. Write the mutation's higher local revision and server timestamp. Consecutive
+   offline revisions may be coalesced into one payload because P1 intentionally
+   reconstructs payloads from the authoritative latest entity.
 6. Write the immutable operation acknowledgement in the same transaction.
 
 **Pull:**
@@ -325,7 +340,8 @@ feat(sync): add bounded idempotent push-pull engine
 - Alice cannot read/write Bob's field path.
 - Anonymous and registered users can access only their own field path.
 - Entity field allow-lists and size bounds are enforced.
-- Revision cannot skip, regress, or overwrite a mismatched base.
+- Revision must advance above the exact base, cannot regress, and cannot
+  overwrite a mismatched base.
 - Operation acknowledgement is create-only and immutable.
 - `app_control/field` is client read-only.
 - Every unlisted field collection remains denied.
