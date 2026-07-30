@@ -8,8 +8,10 @@ geographically distributed field trial.
 **Accepted baseline:** Gates P0-P7 are complete. Their immutable evidence is
 recorded under `docs/development/`. This file supersedes every earlier
 incremental implementation plan; the approved master design remains the
-architecture contract. P8 automation is implemented and fail-closed; physical
-device, release-signing, production-control, and owner evidence remain pending.
+architecture contract. P8 automation is implemented and fail-closed. Permanent
+release signing and the production controls that can be configured without
+physical hardware are complete; physical-device and owner evidence remain
+pending.
 
 ## 1. Operating rules
 
@@ -331,11 +333,27 @@ Implemented locally:
 
 External acceptance remains open and cannot be synthesized by the repository:
 
-- dedicated release keystore and `android/key.properties`;
 - one low-, one mid-, and one high-tier physical Android device;
-- production App Check, budget alerts, asset links, and kill-switch evidence;
-- approved private research protocol and real feedback/support channels;
+- valid production App Check traffic followed by enforcement;
+- approved private research protocol and a private support channel;
 - completed real-device journeys, endurance records, and owner smoke approval.
+
+Completed production preparation:
+
+- a dedicated 4096-bit release key is stored outside the repository, with its
+  recovery secret protected by the current Windows account;
+- Firebase contains the release SHA-256 and an off-Play Play Integrity
+  configuration;
+- Cloud Billing is disabled, providing a zero-paid-cost boundary instead of
+  budget alerts;
+- both Firebase Hosting domains serve the signed package's Android App Links;
+- the production cloud kill switch was disabled, verified by the local offline
+  learning contract, restored, and re-read as enabled;
+- a signed release APK was installed on an Android 15 emulator. That preflight
+  exposed a release-only WorkManager/R8 constructor crash; a regression
+  contract and keep rule now prevent recurrence, and the rebuilt APK reaches
+  the resumed main activity without a fatal exception or ANR. Emulator results
+  are not accepted as physical-device evidence.
 
 Current evidence is recorded in
 `docs/development/p8-field-certification-gate-2026-07-30.md`.

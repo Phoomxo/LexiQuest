@@ -97,7 +97,8 @@ try {
         'privacy.md',
         'data.md',
         'limitations.md',
-        'feedback.md'
+        'feedback.md',
+        'protocol.md'
     )) {
         Set-Content -LiteralPath (Join-Path $tempRoot $document) `
             -Value 'verified contract fixture' -Encoding utf8
@@ -116,7 +117,11 @@ try {
         }
         cloudControls = [pscustomobject]@{
             appCheckConfigured = $true
+            appCheckValidTrafficObserved = $true
+            appCheckEnforced = $true
             budgetAlertsConfigured = $true
+            budgetAlertsNotApplicable = $false
+            billingMode = 'budgeted'
             assetLinksVerified = $true
             cloudKillSwitchVerified = $true
             appCheckEvidenceRef = 'private:app-check'
@@ -130,6 +135,7 @@ try {
             dataRightsGuide = 'data.md'
             knownLimitations = 'limitations.md'
             feedbackGuide = 'feedback.md'
+            researchProtocol = 'protocol.md'
             consentVersion = 1
             feedbackChannelRef = 'private:feedback-channel-record'
             supportChannelRef = 'private:support-channel-record'
@@ -158,6 +164,49 @@ try {
     )
     Assert-True ($errors.Count -eq 0) `
         'complete, reconciled evidence passes the pure validator'
+
+    $evidence.cloudControls.budgetAlertsConfigured = $false
+    $evidence.cloudControls.budgetAlertsNotApplicable = $true
+    $evidence.cloudControls.billingMode = 'noBillingAccount'
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True ($errors.Count -eq 0) `
+        'verified no-billing mode is accepted as the strictest cost boundary'
+    $evidence.cloudControls.budgetAlertsConfigured = $true
+    $evidence.cloudControls.budgetAlertsNotApplicable = $false
+    $evidence.cloudControls.billingMode = 'budgeted'
+
+    $evidence.cloudControls.appCheckEnforced = $false
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True (
+        ($errors -join "`n") -match 'appCheckEnforced must be true'
+    ) 'provider registration alone cannot satisfy App Check acceptance'
+    $evidence.cloudControls.appCheckEnforced = $true
+
+    $evidence.cloudControls.appCheckValidTrafficObserved = $false
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True (
+        ($errors -join "`n") -match
+            'appCheckValidTrafficObserved must be true'
+    ) 'App Check enforcement requires observed valid signed-release traffic'
+    $evidence.cloudControls.appCheckValidTrafficObserved = $true
 
     $evidence.devices[0].journeys.offlineRestartSync.status = 'pending'
     $errors = @(
@@ -206,6 +255,7 @@ $gateText = Get-Content -LiteralPath (
 ) -Raw -Encoding utf8
 foreach ($needle in @(
     'apksigner',
+    'V\d+',
     'Get-FileHash',
     'verify-product-completion.ps1',
     'verify-apk-model-runtime.ps1',
@@ -239,7 +289,9 @@ foreach ($needle in @(
     'apksigner',
     'signingCertificateSha256',
     'Get-FileHash',
-    'git status --porcelain'
+    'git status --porcelain',
+    'docs/field',
+    'tool/cli/package-field-release.ps1'
 )) {
     Assert-True $packagerText.Contains($needle) "packager contains $needle"
 }
@@ -252,13 +304,44 @@ foreach ($needle in @(
     'SupportChannelRef',
     'ResearchProtocolRef',
     'AppCheckConfigured',
+    'AppCheckValidTrafficObserved',
+    'AppCheckEnforced',
     'BudgetAlertsConfigured',
+    'NoBillingAccount',
     'AssetLinksVerified',
     'CloudKillSwitchVerified',
     'OwnerApproved',
     'DeviceEvidenceDirectory'
 )) {
     Assert-True $assemblerText.Contains($needle) "assembler contains $needle"
+}
+
+$budgetText = Get-Content -LiteralPath (
+    Join-Path $repoRoot 'tool/cli/configure-firebase-budget.cjs'
+) -Raw -Encoding utf8
+foreach ($needle in @(
+    'monthlyAmountThb = "500"',
+    '[0.5, 0.8, 1.0]',
+    'CURRENT_SPEND',
+    'disableDefaultIamRecipients: false',
+    'budgetAlertsNotApplicable: true',
+    'billingMode: "noBillingAccount"',
+    'A budget sends alerts; it is not a hard spending cap.'
+)) {
+    Assert-True $budgetText.Contains($needle) "budget control contains $needle"
+}
+
+$killSwitchText = Get-Content -LiteralPath (
+    Join-Path $repoRoot 'tool/cli/set-firebase-cloud-policy.cjs'
+) -Raw -Encoding utf8
+foreach ($needle in @(
+    'enable|disable|status',
+    'app_control/field',
+    'cloudSyncEnabled',
+    'Cloud sync policy did not reconcile.'
+)) {
+    Assert-True $killSwitchText.Contains($needle) `
+        "kill switch control contains $needle"
 }
 
 Write-Host (

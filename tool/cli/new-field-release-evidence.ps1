@@ -11,7 +11,10 @@ param(
     [Parameter(Mandatory)]
     [string]$ResearchProtocolRef,
     [switch]$AppCheckConfigured,
+    [switch]$AppCheckValidTrafficObserved,
+    [switch]$AppCheckEnforced,
     [switch]$BudgetAlertsConfigured,
+    [switch]$NoBillingAccount,
     [switch]$AssetLinksVerified,
     [switch]$CloudKillSwitchVerified,
     [string]$AppCheckEvidenceRef = '',
@@ -25,6 +28,10 @@ param(
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+
+if ($BudgetAlertsConfigured -and $NoBillingAccount) {
+    throw 'Choose budget alerts or no-billing mode, not both.'
+}
 
 function Resolve-RepositoryPath {
     param([Parameter(Mandatory)][string]$Path)
@@ -68,7 +75,16 @@ $evidence = [ordered]@{
     artifact = $manifest.artifact
     cloudControls = [ordered]@{
         appCheckConfigured = [bool]$AppCheckConfigured
+        appCheckValidTrafficObserved =
+            [bool]$AppCheckValidTrafficObserved
+        appCheckEnforced = [bool]$AppCheckEnforced
         budgetAlertsConfigured = [bool]$BudgetAlertsConfigured
+        budgetAlertsNotApplicable = [bool]$NoBillingAccount
+        billingMode = if ($NoBillingAccount) {
+            'noBillingAccount'
+        } else {
+            'budgeted'
+        }
         assetLinksVerified = [bool]$AssetLinksVerified
         cloudKillSwitchVerified = [bool]$CloudKillSwitchVerified
         appCheckEvidenceRef = $AppCheckEvidenceRef
@@ -82,6 +98,7 @@ $evidence = [ordered]@{
         dataRightsGuide = 'docs/data-export-and-deletion.md'
         knownLimitations = 'docs/known-limitations.md'
         feedbackGuide = 'docs/feedback-and-support.md'
+        researchProtocol = 'docs/research-protocol-v1.md'
         consentVersion = 1
         feedbackChannelRef = $FeedbackChannelRef
         supportChannelRef = $SupportChannelRef

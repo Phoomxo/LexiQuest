@@ -16,6 +16,7 @@
 migrate_working_dir/
 .worktrees/
 .firecrawl/
+.firebase/
 .glm-prompts/
 .zcode/
 supabase/.branches/

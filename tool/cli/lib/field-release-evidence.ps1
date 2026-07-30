@@ -86,13 +86,37 @@ function Test-LexiQuestFieldReleaseEvidence {
 
     foreach ($control in @(
         'appCheckConfigured',
-        'budgetAlertsConfigured',
+        'appCheckValidTrafficObserved',
+        'appCheckEnforced',
         'assetLinksVerified',
         'cloudKillSwitchVerified'
     )) {
         if ($Evidence.cloudControls.$control -ne $true) {
             $errors.Add("cloudControls.$control must be true.")
         }
+    }
+    if ([string]$Evidence.cloudControls.billingMode -eq 'noBillingAccount') {
+        if (
+            $Evidence.cloudControls.budgetAlertsConfigured -ne $false -or
+            $Evidence.cloudControls.budgetAlertsNotApplicable -ne $true
+        ) {
+            $errors.Add(
+                'No-billing mode requires alerts=false and notApplicable=true.'
+            )
+        }
+    } elseif ([string]$Evidence.cloudControls.billingMode -eq 'budgeted') {
+        if (
+            $Evidence.cloudControls.budgetAlertsConfigured -ne $true -or
+            $Evidence.cloudControls.budgetAlertsNotApplicable -ne $false
+        ) {
+            $errors.Add(
+                'Budgeted mode requires configured 50/80/100 alerts.'
+            )
+        }
+    } else {
+        $errors.Add(
+            'cloudControls.billingMode must be budgeted or noBillingAccount.'
+        )
     }
     foreach ($reference in @(
         'appCheckEvidenceRef',
@@ -115,7 +139,8 @@ function Test-LexiQuestFieldReleaseEvidence {
         'privacyNotice',
         'dataRightsGuide',
         'knownLimitations',
-        'feedbackGuide'
+        'feedbackGuide',
+        'researchProtocol'
     )) {
         $relative = [string]$package.$document
         if ([string]::IsNullOrWhiteSpace($relative)) {
@@ -138,7 +163,7 @@ function Test-LexiQuestFieldReleaseEvidence {
         $value = [string]$package.$channel
         if (
             [string]::IsNullOrWhiteSpace($value) -or
-            $value -match '(?i)placeholder|owner_config|todo|<.+>'
+            $value -match '(?i)placeholder|owner_config|pending|todo|<.+>'
         ) {
             $errors.Add(
                 "participantPackage.$channel must reference a real private channel."

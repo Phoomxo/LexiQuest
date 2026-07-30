@@ -6,8 +6,17 @@
 
 ## 1. เตรียมลายเซ็นและสร้างชุดติดตั้ง
 
-สร้าง `android/key.properties` จากไฟล์ตัวอย่างด้วย keystore ที่เจ้าของเก็บแยก
-จาก repository แล้วรัน:
+สร้าง release key หนึ่งครั้งด้วยคำสั่งด้านล่าง ระบบจะสุ่มรหัสผ่านด้วย
+cryptographic RNG เก็บ keystore แยกจาก repository และป้องกัน recovery secret
+ด้วย Windows DPAPI:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  tool/cli/initialize-release-signing.ps1
+```
+
+สำรองโฟลเดอร์ `%USERPROFILE%\.lexiquest\signing` แบบออฟไลน์ก่อนแจก APK
+จากนั้นรัน:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
@@ -37,7 +46,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
 
 ## 3. รวม evidence
 
-หลังตั้ง App Check, budget alert 50/80/100, asset links, kill switch,
+หลังตั้ง App Check, budget alert 50/80/100 (หรือยืนยันว่า Cloud Billing
+ไม่ได้เปิด), asset links, kill switch,
 ช่องทาง feedback/support และ owner smoke test จริงแล้ว ใช้:
 
 ```powershell
@@ -46,7 +56,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
   -FeedbackChannelRef 'private:configured-feedback-record' `
   -SupportChannelRef 'private:configured-support-record' `
   -ResearchProtocolRef 'private:approved-research-protocol' `
-  -AppCheckConfigured -BudgetAlertsConfigured -AssetLinksVerified `
+  -AppCheckConfigured -AppCheckValidTrafficObserved -AppCheckEnforced `
+  -NoBillingAccount -AssetLinksVerified `
   -CloudKillSwitchVerified -OwnerApproved `
   -AppCheckEvidenceRef 'private:app-check-record' `
   -BudgetAlertsEvidenceRef 'private:budget-record' `

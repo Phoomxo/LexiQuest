@@ -18,6 +18,11 @@ $required = @(
     'libtensorflowlite_jni.so',
     'libtensorflowlite_gpu_jni.so',
     'libtflite_custom_ops.so',
+    "ValidateSet('Auto', 'Debug', 'Release')",
+    'RelWithDebInfo',
+    '570E067F5EED5F3EB27C653D7650CB65846FECED0F5A4543CBFF80260493B10E',
+    'ED8A789CDE1266E388818DFA259101628942D336AF4B1A2D7D4264571D923FAB',
+    'B1E7A49EE12AEF57A65717536F205E4D0E6E17DE857A5BD4B75F02EEF9328D95',
     'Get-FileHash',
     'Unexpected model runtime libraries or ABIs',
     'GPU accelerator libraries must not be packaged'

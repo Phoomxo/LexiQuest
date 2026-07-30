@@ -52,8 +52,11 @@ try {
     }
     $relevantChanges = @(
         & git status --porcelain --untracked-files=all -- `
-            android lib pubspec.yaml pubspec.lock firebase.json `
-            firestore.rules firestore.indexes.json
+            android assets lib docs/field pubspec.yaml pubspec.lock `
+            firebase.json firestore.rules firestore.indexes.json `
+            tool/cli/package-field-release.ps1 `
+            tool/cli/verify-apk-model-runtime.ps1 `
+            tool/cli/verify-field-release.ps1
     )
     if ($relevantChanges.Count -gt 0) {
         throw (
@@ -93,7 +96,8 @@ try {
     }
     $certificateMatch = [regex]::Match(
         ($signatureOutput -join "`n"),
-        'Signer #1 certificate SHA-256 digest:\s*([A-Fa-f0-9:]{64,95})'
+        '(?m)^(?:Signer #1|V\d+(?:\.\d+)? Signer): ' +
+            'certificate SHA-256 digest:\s*([A-Fa-f0-9:]{64,95})$'
     )
     if (-not $certificateMatch.Success) {
         throw 'Unable to read the release signing certificate SHA-256.'
@@ -121,11 +125,11 @@ try {
             modelSha256 = $ModelSha256.ToUpperInvariant()
         }
     }
-    $manifest |
-        ConvertTo-Json -Depth 8 |
-        Set-Content -LiteralPath (
-            Join-Path $resolvedOutput 'release-manifest.json'
-        ) -Encoding utf8
+    [System.IO.File]::WriteAllText(
+        (Join-Path $resolvedOutput 'release-manifest.json'),
+        (($manifest | ConvertTo-Json -Depth 8) + [Environment]::NewLine),
+        [System.Text.UTF8Encoding]::new($false)
+    )
     Write-Host "Field release package created: $resolvedOutput" `
         -ForegroundColor Green
 }

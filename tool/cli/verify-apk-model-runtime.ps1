@@ -2,7 +2,9 @@
 param(
     [string]$ApkPath = 'build/app/outputs/flutter-apk/app-debug.apk',
     [string]$LiteRtNextAarPath =
-        'build/flutter_litert/tmp/downloadLitertJni/litert-2.1.5.aar'
+        'build/flutter_litert/tmp/downloadLitertJni/litert-2.1.5.aar',
+    [ValidateSet('Auto', 'Debug', 'Release')]
+    [string]$BuildMode = 'Auto'
 )
 
 Set-StrictMode -Version 3.0
@@ -21,6 +23,13 @@ $resolvedAar = if ([System.IO.Path]::IsPathRooted($LiteRtNextAarPath)) {
 }
 $expectedAarSha256 =
     'A162D1DDBDAD87C002B7EC7EB31A703F2761335E693F292F94091B3569D8AA37'
+$resolvedBuildMode = if ($BuildMode -ne 'Auto') {
+    $BuildMode
+} elseif ([System.IO.Path]::GetFileName($resolvedApk) -match '(?i)debug') {
+    'Debug'
+} else {
+    'Release'
+}
 
 if (-not (Test-Path -LiteralPath $resolvedApk -PathType Leaf)) {
     throw "APK is missing: $resolvedApk"
@@ -63,6 +72,19 @@ $expectedLibraries = [ordered]@{
         'F0B4F69DD1EC93E289A2A47CBF8623FF9403C1C71E72616B12FC25BA2D284A88'
     'lib/x86_64/libtflite_custom_ops.so' =
         '52143132085C15890859DB7DE74316AF109EC5A95D3F2C131131F33986A8B42F'
+}
+
+if ($resolvedBuildMode -eq 'Release') {
+    # flutter_litert compiles this project-owned JNI shim as RelWithDebInfo for
+    # release while the vendor LiteRT binaries remain byte-identical. Pin the
+    # reproducible release outputs separately instead of applying debug hashes
+    # to a correctly optimized release APK.
+    $expectedLibraries['lib/arm64-v8a/libtflite_custom_ops.so'] =
+        '570E067F5EED5F3EB27C653D7650CB65846FECED0F5A4543CBFF80260493B10E'
+    $expectedLibraries['lib/armeabi-v7a/libtflite_custom_ops.so'] =
+        'ED8A789CDE1266E388818DFA259101628942D336AF4B1A2D7D4264571D923FAB'
+    $expectedLibraries['lib/x86_64/libtflite_custom_ops.so'] =
+        'B1E7A49EE12AEF57A65717536F205E4D0E6E17DE857A5BD4B75F02EEF9328D95'
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -120,5 +142,7 @@ finally {
     $archive.Dispose()
 }
 
-Write-Host 'APK model runtime integrity: PASS' -ForegroundColor Green
+Write-Host (
+    'APK model runtime integrity ({0}): PASS' -f $resolvedBuildMode
+) -ForegroundColor Green
 exit 0

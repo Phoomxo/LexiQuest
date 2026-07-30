@@ -94,7 +94,8 @@ if ([int]$LASTEXITCODE -ne 0) {
 }
 $certificateMatch = [regex]::Match(
     ($signatureOutput -join "`n"),
-    'Signer #1 certificate SHA-256 digest:\s*([A-Fa-f0-9:]{64,95})'
+    '(?m)^(?:Signer #1|V\d+(?:\.\d+)? Signer): ' +
+        'certificate SHA-256 digest:\s*([A-Fa-f0-9:]{64,95})$'
 )
 if (-not $certificateMatch.Success) {
     throw 'apksigner did not report a SHA-256 signing certificate digest.'
