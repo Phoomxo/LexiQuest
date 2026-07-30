@@ -34,8 +34,8 @@ cloud work is disabled or unavailable.
 | P2-B Drift sync store | Complete | Lease, coalescing, retry, owner isolation, checkpoint, and conflict tests pass |
 | P2-B sync engine | Complete | Offline/reconnect exact-once, kill switch, push conflict, and mutex tests pass |
 | P2-C Firestore gateway and rules | Complete | Codec/gateway tests and 17 Firestore emulator rules tests pass |
-| P2-D guest ownership | In progress | Firestore contract is frozen; owner migration inventory is next |
-| P2-E Android scheduling | Pending | Starts after foreground engine composition |
+| P2-D guest ownership | Complete | 14-table inventory, collision remap, rollback, replay, logout, and anonymous binding tests pass |
+| P2-E Android scheduling | In progress | Cloud policy cache and runtime composition are next |
 | P2 gate | Pending | Runs once after P2-C through P2-E |
 
 ## Development discipline

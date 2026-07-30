@@ -1,5 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _FakeAnonymousAuthGateway implements AnonymousAuthGateway {
@@ -157,4 +161,93 @@ void main() {
       expect(failed.reason.toString(), isNot(contains(sentinel)));
     });
   });
+
+  group('OwnerBindingGuestSessionService', () {
+    test(
+      'binds the active local owner before reporting guest success',
+      () async {
+        final upgrades = _FakeOwnerUpgradeRepository();
+        final service = OwnerBindingGuestSessionService(
+          delegate: FirebaseGuestSessionService(
+            _FakeAnonymousAuthGateway(uid: 'anonymous-firebase-uid'),
+          ),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+        );
+
+        final result = await service.start();
+
+        expect(result, isA<GuestSessionStarted>());
+        expect(upgrades.ownerId, 'local-owner');
+        expect(upgrades.firebaseUid, 'anonymous-firebase-uid');
+      },
+    );
+
+    test('fails closed when local ownership cannot be bound', () async {
+      final service = OwnerBindingGuestSessionService(
+        delegate: FirebaseGuestSessionService(
+          _FakeAnonymousAuthGateway(uid: 'anonymous-firebase-uid'),
+        ),
+        localOwners: _FakeLocalOwnerRepository(error: StateError('db failed')),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+      );
+
+      final result = await service.start();
+
+      expect(
+        result,
+        isA<GuestSessionFailed>().having(
+          (failed) => failed.reason,
+          'reason',
+          GuestSessionFailure.unknown,
+        ),
+      );
+      expect(result.toString(), isNot(contains('db failed')));
+    });
+  });
+}
+
+final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
+  _FakeLocalOwnerRepository({this.error});
+
+  final Object? error;
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    final captured = error;
+    if (captured != null) throw captured;
+    return LocalOwner(
+      id: 'local-owner',
+      createdAtUtc: DateTime.utc(2026, 7, 30),
+    );
+  }
+}
+
+final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
+  String? ownerId;
+  String? firebaseUid;
+
+  @override
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<OwnerUpgradeResult> upgrade({
+    required String activeOwnerId,
+    required String firebaseUid,
+  }) async {
+    ownerId = activeOwnerId;
+    this.firebaseUid = firebaseUid;
+    return OwnerUpgradeResult(
+      targetOwnerId: activeOwnerId,
+      mode: OwnerUpgradeMode.anonymousBound,
+      conflictCount: 0,
+    );
+  }
 }

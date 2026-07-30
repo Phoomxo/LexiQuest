@@ -13,6 +13,12 @@ class _StubGuestSessionService implements GuestSessionService {
   }
 }
 
+final class _SuccessfulGuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'anonymous-bootstrap-user');
+}
+
 AppConfig _validConfig() => AppConfig.fromValues(
   voiceApiUrl: 'https://voice.example.com',
   aiApiUrl: 'https://ai.example.com',
@@ -206,5 +212,30 @@ void main() {
         isTrue,
       );
     });
+
+    test(
+      'production composition binds anonymous auth to local ownership',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _SuccessfulGuestSessionService(),
+          bindGuestOwnership: true,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final result = await dependencies.guestSessionService.start();
+        final owner = await (database.select(
+          database.localOwners,
+        )..where((row) => row.isActive.equals(true))).getSingle();
+
+        expect(result, isA<GuestSessionStarted>());
+        expect(owner.firebaseUid, 'anonymous-bootstrap-user');
+        expect(owner.accountState, 'firebaseBound');
+      },
+    );
   });
 }

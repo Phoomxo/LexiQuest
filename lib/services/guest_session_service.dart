@@ -1,5 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../features/identity/application/upgrade_guest_owner.dart';
+import '../features/identity/domain/local_owner_repository.dart';
+
 enum GuestSessionFailure {
   firebaseUnavailable,
   providerDisabled,
@@ -81,5 +84,41 @@ final class FirebaseGuestSessionService implements GuestSessionService {
     } catch (_) {
       return const GuestSessionFailed(GuestSessionFailure.unknown);
     }
+  }
+}
+
+final class OwnerBindingGuestSessionService implements GuestSessionService {
+  factory OwnerBindingGuestSessionService({
+    required GuestSessionService delegate,
+    required LocalOwnerRepository localOwners,
+    required UpgradeGuestOwner upgradeGuestOwner,
+  }) => OwnerBindingGuestSessionService._(
+    delegate,
+    localOwners,
+    upgradeGuestOwner,
+  );
+
+  const OwnerBindingGuestSessionService._(
+    this._delegate,
+    this._localOwners,
+    this._upgradeGuestOwner,
+  );
+
+  final GuestSessionService _delegate;
+  final LocalOwnerRepository _localOwners;
+  final UpgradeGuestOwner _upgradeGuestOwner;
+
+  @override
+  Future<GuestSessionResult> start() async {
+    final result = await _delegate.start();
+    if (result case GuestSessionStarted(:final uid)) {
+      try {
+        final owner = await _localOwners.getOrCreateActiveOwner();
+        await _upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
+      } catch (_) {
+        return const GuestSessionFailed(GuestSessionFailure.unknown);
+      }
+    }
+    return result;
   }
 }

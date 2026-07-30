@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../services/guest_session_service.dart';
@@ -19,6 +20,7 @@ final class AppDependencies {
     this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
     this.database,
     this.localOwners,
+    this.upgradeGuestOwner,
     this.vocabulary,
     this.vocabularyImporter,
     this.disposeResources,
@@ -31,6 +33,7 @@ final class AppDependencies {
   final FieldFeatureRegistry fieldFeatures;
   final AppDatabase? database;
   final LocalOwnerRepository? localOwners;
+  final UpgradeGuestOwner? upgradeGuestOwner;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final Future<void> Function()? disposeResources;

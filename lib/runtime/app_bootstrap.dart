@@ -6,6 +6,8 @@ import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
+import '../features/identity/application/upgrade_guest_owner.dart';
+import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -59,6 +61,7 @@ final class AppBootstrap {
     required this.loadConfig,
     required this.guestSessionService,
     required this.createDatabase,
+    this.bindGuestOwnership = false,
   });
 
   factory AppBootstrap.production() {
@@ -68,6 +71,7 @@ final class AppBootstrap {
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
+      bindGuestOwnership: true,
     );
   }
 
@@ -76,6 +80,7 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
+  final bool bindGuestOwnership;
 
   Future<AppDependencies> initialize() async {
     final database = createDatabase();
@@ -87,6 +92,20 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
     );
     await localOwners.getOrCreateActiveOwner();
+    final ownerUpgrades = DriftOwnerUpgradeRepository(
+      database,
+      nowUtc: () => DateTime.now().toUtc(),
+      generateConflictId: idGenerator.v4,
+      generateOwnerId: idGenerator.v4,
+    );
+    final upgradeGuestOwner = UpgradeGuestOwner(ownerUpgrades);
+    final exposedGuestSession = bindGuestOwnership
+        ? OwnerBindingGuestSessionService(
+            delegate: guestSessionService,
+            localOwners: localOwners,
+            upgradeGuestOwner: upgradeGuestOwner,
+          )
+        : guestSessionService;
     final vocabulary = VocabularyUseCases(
       owners: localOwners,
       vocabulary: DriftVocabularyRepository(database),
@@ -113,10 +132,11 @@ final class AppBootstrap {
             : RuntimeAvailability.ready,
       ),
       config: config,
-      guestSessionService: guestSessionService,
+      guestSessionService: exposedGuestSession,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       database: database,
       localOwners: localOwners,
+      upgradeGuestOwner: upgradeGuestOwner,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       disposeResources: database.close,
