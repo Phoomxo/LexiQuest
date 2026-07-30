@@ -6,6 +6,8 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_result.dart';
@@ -24,13 +26,15 @@ final class ClaimedSyncOperation {
 
 final class DriftSyncStore {
   DriftSyncStore(this.database)
-    : projections = DriftLearningProjectionRebuilder(database);
+    : projections = DriftLearningProjectionRebuilder(database),
+      rewardProjections = DriftRewardProjectionRebuilder(database);
 
   static const int maxClaimLimit = 50;
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
   final DriftLearningProjectionRebuilder projections;
+  final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
 
   Future<bool> tryAcquireRunLease({
@@ -349,7 +353,8 @@ final class DriftSyncStore {
         throw StateError('outbox operation lease does not match');
       }
       if (cloudEntity.collection == SyncCollection.attempts ||
-          cloudEntity.collection == SyncCollection.readingEvents) {
+          cloudEntity.collection == SyncCollection.readingEvents ||
+          cloudEntity.collection == SyncCollection.rewardTransactions) {
         await _resolveImmutableConflict(
           operation: operation,
           cloudEntity: cloudEntity,
@@ -405,6 +410,7 @@ final class DriftSyncStore {
           );
         case SyncCollection.attempts:
         case SyncCollection.readingEvents:
+        case SyncCollection.rewardTransactions:
           throw const InvalidSyncPayloadFailure();
       }
       await (database.update(
@@ -457,6 +463,8 @@ final class DriftSyncStore {
             await _applyAttempt(canonicalOwnerId, entity);
           case SyncCollection.readingEvents:
             await _applyReadingEvent(canonicalOwnerId, entity);
+          case SyncCollection.rewardTransactions:
+            await _applyRewardTransaction(canonicalOwnerId, entity);
         }
       }
 
@@ -624,6 +632,29 @@ final class DriftSyncStore {
             'occurredAtUtcMs': event.occurredAtUtcMs,
           },
         );
+      case 'rewardTransaction':
+        final transaction =
+            await (database.select(database.rewardTransactions)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
+        if (transaction == null) {
+          throw StateError('outbox reward transaction was not found');
+        }
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.rewardTransactions,
+          entityId: transaction.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: operation.payloadVersion,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(transaction.occurredAtUtcMs),
+          payload: _rewardTransactionPayload(transaction),
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -664,6 +695,7 @@ final class DriftSyncStore {
             );
       case 'attempt':
       case 'readingEvent':
+      case 'rewardTransaction':
         // Immutable evidence has no mutable cloud revision columns. The
         // acknowledged outbox row is the durable local receipt.
         return;
@@ -731,6 +763,15 @@ final class DriftSyncStore {
                 ))
                 .getSingle();
         return _readingEventPayload(event);
+      case 'rewardTransaction':
+        final transaction =
+            await (database.select(database.rewardTransactions)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return _rewardTransactionPayload(transaction);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -843,6 +884,7 @@ final class DriftSyncStore {
         sessionId: existing.sessionId,
       );
       await projections.rebuildAchievements(ownerId);
+      await rewardProjections.rebuild(ownerId);
       return;
     }
     final payload = entity.payload;
@@ -914,6 +956,7 @@ final class DriftSyncStore {
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
     await projections.rebuildAchievements(ownerId);
+    await rewardProjections.rebuild(ownerId);
   }
 
   Future<void> _applyReadingEvent(String ownerId, SyncEntity entity) async {
@@ -972,6 +1015,83 @@ final class DriftSyncStore {
       documentId: documentId,
       documentRevision: documentRevision,
     );
+  }
+
+  Future<void> _applyRewardTransaction(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
+    _requireImmutableEntity(entity, SyncCollection.rewardTransactions);
+    final existing =
+        await (database.select(database.rewardTransactions)..where(
+              (row) =>
+                  row.id.equals(entity.entityId) & row.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    if (existing != null) {
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _rewardTransactionPayload(existing),
+      );
+      await rewardProjections.rebuild(ownerId);
+      return;
+    }
+
+    final payload = entity.payload;
+    final idempotencyKey = _requiredString(payload, 'idempotencyKey');
+    final transactionType = _requiredString(payload, 'transactionType');
+    final amount = _requiredInt(payload, 'amount');
+    final itemId = _requiredString(payload, 'itemId');
+    final slot = _requiredString(payload, 'slot');
+    final catalogVersion = _requiredInt(payload, 'catalogVersion');
+    final sourceEventId = _optionalString(payload, 'sourceEventId');
+    final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
+    final item = RewardCatalog.byId(itemId);
+    if (item == null ||
+        catalogVersion != RewardCatalog.version ||
+        item.catalogVersion != catalogVersion ||
+        item.slot != slot ||
+        (transactionType == 'purchase' && amount != -item.price) ||
+        (transactionType == 'equip' && amount != 0) ||
+        (transactionType != 'purchase' && transactionType != 'equip') ||
+        occurredAtUtcMs < 0) {
+      throw const InvalidSyncPayloadFailure();
+    }
+
+    final idempotencyCollision =
+        await (database.select(database.rewardTransactions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.idempotencyKey.equals(idempotencyKey),
+            ))
+            .getSingleOrNull();
+    if (idempotencyCollision != null) {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _rewardTransactionPayload(idempotencyCollision),
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+      return;
+    }
+
+    await database
+        .into(database.rewardTransactions)
+        .insert(
+          db.RewardTransactionsCompanion.insert(
+            id: entity.entityId,
+            ownerId: ownerId,
+            idempotencyKey: idempotencyKey,
+            transactionType: transactionType,
+            amount: amount,
+            itemId: Value(itemId),
+            catalogVersion: catalogVersion,
+            sourceEventId: Value(sourceEventId),
+            occurredAtUtcMs: occurredAtUtcMs,
+          ),
+        );
+    await rewardProjections.rebuild(ownerId);
   }
 
   Future<void> _handleExistingImmutable({
@@ -1143,6 +1263,7 @@ final class DriftSyncStore {
         };
       case SyncCollection.attempts:
       case SyncCollection.readingEvents:
+      case SyncCollection.rewardTransactions:
         throw const InvalidSyncPayloadFailure();
     }
 
@@ -1235,6 +1356,24 @@ Map<String, Object?> _readingEventPayload(db.ReadingEvent event) =>
       'position': event.position,
       'occurredAtUtcMs': event.occurredAtUtcMs,
     };
+
+Map<String, Object?> _rewardTransactionPayload(
+  db.RewardTransaction transaction,
+) {
+  final item = transaction.itemId == null
+      ? null
+      : RewardCatalog.byId(transaction.itemId!);
+  return <String, Object?>{
+    'idempotencyKey': transaction.idempotencyKey,
+    'transactionType': transaction.transactionType,
+    'amount': transaction.amount,
+    'itemId': transaction.itemId,
+    'slot': item?.slot,
+    'catalogVersion': transaction.catalogVersion,
+    'sourceEventId': transaction.sourceEventId,
+    'occurredAtUtcMs': transaction.occurredAtUtcMs,
+  };
+}
 
 void _requireImmutableEntity(
   SyncEntity entity,

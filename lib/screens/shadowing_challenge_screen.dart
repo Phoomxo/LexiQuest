@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
@@ -12,14 +13,16 @@ import '../voice/voice_service_factory.dart';
 class ShadowingChallengeScreen extends StatefulWidget {
   const ShadowingChallengeScreen({
     super.key,
-    required this.referenceSentence,
+    this.referenceSentence,
     this.voiceProvider,
     this.speechPractice,
+    this.learning,
   });
 
-  final String referenceSentence;
+  final String? referenceSentence;
   final VoiceProvider? voiceProvider;
   final SpeechPracticeUseCases? speechPractice;
+  final LearningUseCases? learning;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -31,6 +34,12 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   late final VoiceProvider _voice;
   bool _ownsVoice = false;
   SpeechPracticeUseCases? _speech;
+  LearningUseCases? _learning;
+  String? _referenceSentence;
+  String? _wordId;
+  String? _sessionId;
+  Future<void>? _learningLoad;
+  bool _evidenceSaved = false;
   bool _listening = false;
   String _transcript = '';
   String? _error;
@@ -42,6 +51,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     WidgetsBinding.instance.addObserver(this);
     _voice = widget.voiceProvider ?? VoiceServiceFactory.create();
     _ownsVoice = widget.voiceProvider == null;
+    _referenceSentence = widget.referenceSentence;
   }
 
   @override
@@ -50,18 +60,50 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     _speech ??=
         widget.speechPractice ??
         AppDependenciesScope.maybeOf(context)?.speechPractice;
+    _learning ??=
+        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    if (_referenceSentence == null && _learningLoad == null) {
+      _learningLoad = _loadLocalPrompt();
+    }
+  }
+
+  Future<void> _loadLocalPrompt() async {
+    final learning = _learning;
+    if (learning == null) {
+      if (mounted) {
+        setState(() => _error = 'ไม่สามารถอ่านคำศัพท์ในเครื่องได้');
+      }
+      return;
+    }
+    try {
+      final session = await learning.startQuiz(limit: 1);
+      if (!mounted) return;
+      if (session.isEmpty) {
+        setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');
+        return;
+      }
+      setState(() {
+        _sessionId = session.id;
+        _wordId = session.questions.single.word.id;
+        _referenceSentence = session.questions.single.word.spelling;
+      });
+    } catch (_) {
+      if (mounted) setState(() => _error = 'ไม่สามารถเริ่มการฝึกพูดได้');
+    }
   }
 
   Future<void> _playReference() async {
+    final reference = _referenceSentence;
+    if (reference == null) return;
     try {
       await _voice.speak(
         VoiceRequest.create(
-          text: widget.referenceSentence,
+          text: reference,
           language: 'en',
           voiceId: 'device-default',
           speed: 1,
           mode: VoiceMode.practice,
-          contentId: 'shadowing:${widget.referenceSentence.hashCode}',
+          contentId: 'shadowing:${reference.hashCode}',
           contentType: 'shadowing-reference',
         ),
       );
@@ -91,14 +133,17 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         locale: 'en-US',
         onEvent: (event) {
           if (!mounted) return;
+          final reference = _referenceSentence;
+          if (reference == null) return;
+          final assessment = speech.assess(target: reference, event: event);
           setState(() {
             _transcript = event.transcript;
-            _assessment = speech.assess(
-              target: widget.referenceSentence,
-              event: event,
-            );
+            _assessment = assessment;
             if (event.isFinal) _listening = false;
           });
+          if (event.isFinal) {
+            unawaited(_recordEvidence(event, assessment));
+          }
         },
         onFailure: (failure) {
           if (!mounted) return;
@@ -114,6 +159,40 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       if (mounted) setState(() => _listening = speech.isListening);
     } on SpeechPracticeException catch (error) {
       if (mounted) setState(() => _error = _failureText(error.code));
+    }
+  }
+
+  Future<void> _recordEvidence(
+    SpeechRecognitionEvent event,
+    TranscriptPronunciationAssessment assessment,
+  ) async {
+    final learning = _learning;
+    final sessionId = _sessionId;
+    final wordId = _wordId;
+    if (_evidenceSaved ||
+        learning == null ||
+        sessionId == null ||
+        wordId == null) {
+      return;
+    }
+    _evidenceSaved = true;
+    try {
+      await learning.recordAnswer(
+        sessionId: sessionId,
+        wordId: wordId,
+        promptMode: 'shadowing',
+        isCorrect: assessment.similarityPercent >= 80,
+        responseTimeMs: null,
+        attemptNumber: 1,
+        providerProvenance:
+            '${event.engine}:${event.locale}:transcript-similarity-v1',
+      );
+      await learning.finishSession(sessionId);
+    } catch (_) {
+      _evidenceSaved = false;
+      if (mounted) {
+        setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
+      }
     }
   }
 
@@ -146,27 +225,28 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   @override
   Widget build(BuildContext context) {
     final assessment = _assessment;
+    final reference = _referenceSentence;
     return Scaffold(
       appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Text(
-              widget.referenceSentence,
-              style: Theme.of(context).textTheme.headlineSmall,
-            ),
+            if (reference == null && _error == null)
+              const Center(child: CircularProgressIndicator())
+            else if (reference != null)
+              Text(reference, style: Theme.of(context).textTheme.headlineSmall),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               key: const ValueKey<String>('shadowing-play-reference'),
-              onPressed: _playReference,
+              onPressed: reference == null ? null : _playReference,
               icon: const Icon(Icons.volume_up_outlined),
               label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
             ),
             const SizedBox(height: 12),
             FilledButton.icon(
               key: const ValueKey<String>('shadowing-listen-button'),
-              onPressed: _toggleListening,
+              onPressed: reference == null ? null : _toggleListening,
               icon: Icon(_listening ? Icons.stop : Icons.mic),
               label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
             ),
@@ -184,6 +264,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
                         Text(
                           'ความเหมือนของข้อความ: '
                           '${assessment.similarityPercent}%',
+                        ),
+                        const Text(
+                          'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
                         ),
                         Text(
                           'เอนจิน: ${assessment.engine} '

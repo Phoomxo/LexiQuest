@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
@@ -14,10 +15,12 @@ final class DriftLearningRepository implements LearningRepository {
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,
-       );
+       ),
+       rewardProjections = DriftRewardProjectionRebuilder(database);
 
   final db.AppDatabase database;
   final DriftLearningProjectionRebuilder projections;
+  final DriftRewardProjectionRebuilder rewardProjections;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -92,6 +95,7 @@ final class DriftLearningRepository implements LearningRepository {
           sessionId: command.sessionId,
         );
         await projections.rebuildAchievements(command.ownerId);
+        await rewardProjections.rebuild(command.ownerId);
         return AnswerRecordResult(inserted: false, srs: srs);
       }
 
@@ -143,6 +147,7 @@ final class DriftLearningRepository implements LearningRepository {
         sessionId: command.sessionId,
       );
       await projections.rebuildAchievements(command.ownerId);
+      await rewardProjections.rebuild(command.ownerId);
       await _appendImmutableOutbox(
         ownerId: command.ownerId,
         entityType: 'attempt',

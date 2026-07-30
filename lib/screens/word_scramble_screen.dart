@@ -1,6 +1,25 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
+
 import 'fill_in_the_blanks_screen.dart';
+import '../navigation/app_routes.dart';
+
+List<String> createStableScramble(String word) {
+  final letters = word.characters.toList();
+  if (letters.length < 2) return letters;
+  var shift =
+      word.runes.fold<int>(0, (sum, rune) => sum + rune) % letters.length;
+  if (shift == 0) shift = 1;
+  final result = <String>[...letters.skip(shift), ...letters.take(shift)];
+  if (result.join() == word) {
+    final different = result.indexWhere((letter) => letter != result.first);
+    if (different > 0) {
+      final first = result.first;
+      result[0] = result[different];
+      result[different] = first;
+    }
+  }
+  return result;
+}
 
 class WordScrambleScreen extends StatefulWidget {
   final String word;
@@ -23,31 +42,32 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   }
 
   void _scrambleWord() {
-    scrambledLetters = widget.word.split('');
-    scrambledLetters.shuffle(Random());
+    scrambledLetters = createStableScramble(widget.word);
     userAnswer = List.filled(scrambledLetters.length, null);
     usedIndexes.clear();
   }
 
   void _checkAnswer() {
     if (userAnswer.join() == widget.word) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ ถูกต้อง! กำลังไปหน้าถัดไป...")),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('ถูกต้อง กำลังไปหน้าถัดไป')));
       Future.delayed(const Duration(seconds: 1), () {
         if (mounted) {
-          Navigator.pushReplacement(
+          AppNavigator.pushPage<void>(
             context,
-            MaterialPageRoute(
+            AppPage<void>(
+              name: 'learning/fill-blanks',
               builder: (context) => FillInTheBlanksScreen(word: widget.word),
             ),
+            replace: true,
           );
         }
       });
     } else {
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text("❌ ผิด! ลองอีกครั้ง")));
+      ).showSnackBar(const SnackBar(content: Text('ยังไม่ถูก ลองอีกครั้ง')));
     }
   }
 
@@ -60,22 +80,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("เกมเรียงตัวอักษร"),
-        centerTitle: true,
-        backgroundColor: Colors.purple,
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigo],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
+      appBar: AppBar(title: const Text('เกมเรียงตัวอักษร')),
+      body: SafeArea(
         child: Center(
           child: SingleChildScrollView(
-            // เพิ่ม SingleChildScrollView
+            padding: const EdgeInsets.all(24),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
@@ -99,16 +108,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                           height: 50,
                           decoration: BoxDecoration(
                             color: userAnswer[index] != null
-                                ? Colors.greenAccent.shade200
-                                : Colors.grey.shade300,
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
                             borderRadius: BorderRadius.circular(10),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black26,
-                                blurRadius: 4,
-                                offset: Offset(2, 2),
-                              ),
-                            ],
                           ),
                           alignment: Alignment.center,
                           child: Text(
@@ -147,40 +151,14 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                   }),
                 ),
                 const SizedBox(height: 20),
-                ElevatedButton(
+                FilledButton(
                   onPressed: _checkAnswer,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    "ตรวจสอบคำตอบ",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  child: const Text('ตรวจสอบคำตอบ'),
                 ),
                 const SizedBox(height: 10),
-                ElevatedButton(
+                OutlinedButton(
                   onPressed: _resetGame,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.redAccent,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 40,
-                      vertical: 15,
-                    ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                  ),
-                  child: const Text(
-                    "เริ่มใหม่",
-                    style: TextStyle(fontSize: 18, color: Colors.white),
-                  ),
+                  child: const Text('เริ่มใหม่'),
                 ),
               ],
             ),
@@ -196,17 +174,11 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
       height: 50,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: isDragging ? Colors.blue.shade200 : Colors.white,
+        color: isDragging
+            ? Theme.of(context).colorScheme.secondaryContainer
+            : Theme.of(context).colorScheme.surfaceContainer,
         borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: Colors.black),
-        boxShadow: [
-          if (!isDragging)
-            BoxShadow(
-              color: Colors.black26,
-              blurRadius: 4,
-              offset: Offset(2, 2),
-            ),
-        ],
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Text(
         letter,

@@ -192,6 +192,31 @@ function writeFieldLearningEvent(db, {
   return batch.commit();
 }
 
+function writeFieldRewardTransaction(db, {
+  uid = alice,
+  entityId = 'reward-1',
+  operationId = 'reward-operation-1',
+  payload,
+} = {}) {
+  return writeFieldLearningEvent(db, {
+    uid,
+    collection: 'reward_transactions',
+    entityType: 'rewardTransaction',
+    entityId,
+    operationId,
+    payload: payload ?? {
+      idempotencyKey: 'purchase-tap-1',
+      transactionType: 'purchase',
+      amount: -80,
+      itemId: 'theme_ocean',
+      slot: 'theme',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: 4000,
+    },
+  });
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -530,6 +555,72 @@ describe('field sync ownership and atomic revision contract', () => {
     await assertFails(updateDoc(ref, { 'payload.isCorrect': false }));
     await assertFails(deleteDoc(ref));
     await assertFails(getDoc(doc(authDb(bob), 'field_users', alice, 'attempts', 'attempt-1')));
+  });
+
+  it('accepts catalog-bound reward purchases and equipment as immutable events', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldRewardTransaction(db));
+    await assertSucceeds(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-equip-1',
+        operationId: 'reward-equip-operation-1',
+        payload: {
+          idempotencyKey: 'equip-reward-1',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: 'theme_ocean',
+          slot: 'theme',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 5000,
+        },
+      }),
+    );
+    const ref = doc(
+      db,
+      'field_users',
+      alice,
+      'reward_transactions',
+      'reward-1',
+    );
+    await assertFails(updateDoc(ref, { 'payload.amount': 0 }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  it('rejects reward transactions with a client-invented price or slot', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-price',
+        operationId: 'reward-price-operation',
+        payload: {
+          idempotencyKey: 'bad-price',
+          transactionType: 'purchase',
+          amount: -1,
+          itemId: 'theme_ocean',
+          slot: 'theme',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 4000,
+        },
+      }),
+    );
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-slot',
+        operationId: 'reward-slot-operation',
+        payload: {
+          idempotencyKey: 'bad-slot',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: 'theme_ocean',
+          slot: 'weapon',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 4000,
+        },
+      }),
+    );
   });
 
   it('accepts documented attempt number and response-time boundaries', async () => {

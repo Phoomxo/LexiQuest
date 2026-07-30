@@ -5,6 +5,7 @@ enum FieldFeature {
   reading,
   mastery,
   weakness,
+  ghostDuel,
   achievements,
   shop,
   objectScanner,

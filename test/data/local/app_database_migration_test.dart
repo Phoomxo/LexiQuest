@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version five with learning indexes', () async {
+  test('new databases use schema version six with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 5);
+    expect(database.schemaVersion, 6);
 
     final categoryColumns = await _columnNames(
       database,
@@ -52,6 +52,14 @@ void main() {
     );
     expect(tables, contains('runtime_flags'));
     expect(
+      tables,
+      containsAll(<String>[
+        'reward_transactions',
+        'owned_reward_items',
+        'equipped_reward_items',
+      ]),
+    );
+    expect(
       await _columnNames(database, 'reading_events'),
       contains('document_revision'),
     );
@@ -77,7 +85,7 @@ void main() {
   });
 
   test(
-    'schema one upgrades to a complete schema five without row loss',
+    'schema one upgrades to a complete schema six without row loss',
     () async {
       final executor = NativeDatabase.memory(setup: _createSchemaOneFixture);
       final database = AppDatabase(executor);
@@ -116,7 +124,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 5);
+      expect(version, 6);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -194,7 +202,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        5,
+        6,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -221,7 +229,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        5,
+        6,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');
@@ -244,6 +252,9 @@ const _expectedTables = <String>{
   'reading_events',
   'points_ledger_entries',
   'achievement_unlocks',
+  'reward_transactions',
+  'owned_reward_items',
+  'equipped_reward_items',
   'outbox_operations',
   'sync_checkpoints',
   'sync_conflicts',

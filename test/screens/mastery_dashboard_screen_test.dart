@@ -16,7 +16,10 @@ void main() {
     expect(find.text('7 วัน'), findsOneWidget);
     expect(find.text('Listening'), findsOneWidget);
     expect(find.text('จำนวนตัวอย่าง: 4'), findsOneWidget);
-    expect(find.text('จำนวนตัวอย่างทั้งหมด: 10'), findsOneWidget);
+    expect(
+      find.text('จำนวนตัวอย่างทั้งหมด: 10 • อัลกอริทึมเวอร์ชัน 1'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('empty evidence shows sample size zero', (tester) async {

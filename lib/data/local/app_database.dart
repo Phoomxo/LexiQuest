@@ -26,6 +26,9 @@ part 'app_database.g.dart';
     ReadingEvents,
     PointsLedgerEntries,
     AchievementUnlocks,
+    RewardTransactions,
+    OwnedRewardItems,
+    EquippedRewardItems,
     OutboxOperations,
     SyncCheckpoints,
     SyncConflicts,
@@ -39,7 +42,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 5;
+  int get schemaVersion => 6;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -133,6 +136,9 @@ final class AppDatabase extends _$AppDatabase {
           modelDownloads.failureCode,
         );
       }
+      if (from < 6) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -210,6 +216,15 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('achievement_unlocks')) {
       await migrator.createTable(achievementUnlocks);
+    }
+    if (!await _tableExists('reward_transactions')) {
+      await migrator.createTable(rewardTransactions);
+    }
+    if (!await _tableExists('owned_reward_items')) {
+      await migrator.createTable(ownedRewardItems);
+    }
+    if (!await _tableExists('equipped_reward_items')) {
+      await migrator.createTable(equippedRewardItems);
     }
     if (!await _tableExists('outbox_operations')) {
       await migrator.createTable(outboxOperations);

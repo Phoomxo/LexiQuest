@@ -1,172 +1,102 @@
 import 'package:flutter/material.dart';
-import '../models/achievement_badge.dart';
 
-class AchievementsScreen extends StatelessWidget {
-  final List<AchievementBadge>? badges;
-  final int coins;
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
 
-  const AchievementsScreen({super.key, this.badges, this.coins = 250});
+typedef AchievementProgressLoader = Future<ProgressSnapshot> Function();
+
+class AchievementsScreen extends StatefulWidget {
+  const AchievementsScreen({super.key, this.loader});
+
+  final AchievementProgressLoader? loader;
+
+  @override
+  State<AchievementsScreen> createState() => _AchievementsScreenState();
+}
+
+class _AchievementsScreenState extends State<AchievementsScreen> {
+  Future<ProgressSnapshot>? _load;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    final loader =
+        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+    _load = loader == null
+        ? Future<ProgressSnapshot>.error(
+            StateError('progress dependency unavailable'),
+          )
+        : loader();
+  }
 
   @override
   Widget build(BuildContext context) {
-    final displayBadges =
-        badges ??
-        [
-          const AchievementBadge(
-            id: 'streak_3',
-            title: 'นักเรียนต่อเนื่อง 3 วัน',
-            description: 'ทบทวนคำศัพท์ติดต่อกัน 3 วัน',
-            isUnlocked: true,
-            coinReward: 50,
-          ),
-          const AchievementBadge(
-            id: 'shadow_master',
-            title: 'ผู้เชี่ยวชาญการออกเสียง',
-            description: 'ทำคะแนน Shadowing ได้มากกว่า 90%',
-            isUnlocked: true,
-            coinReward: 100,
-          ),
-          const AchievementBadge(
-            id: 'dictation_pro',
-            title: 'เซียนสะกดคำ',
-            description: 'ทำคะแนน Dictation ได้ 100%',
-            isUnlocked: false,
-            coinReward: 150,
-          ),
-        ];
-
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ตราความสำเร็จ & รางวัล (Achievements)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.amber.shade800,
-        centerTitle: true,
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            Card(
-              elevation: 4,
-              color: Colors.amber.shade100,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.monetization_on,
-                          color: Colors.amber.shade900,
-                          size: 36,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          '$coins เหรียญสะสม',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.amber.shade900,
-                          ),
-                        ),
-                      ],
-                    ),
-                    ElevatedButton.icon(
-                      onPressed: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'ร้านค้าปลดล็อกธีมวอลเปเปอร์กำลังเปิดให้บริการ!',
-                            ),
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.shopping_bag),
-                      label: const Text('ร้านค้า'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.amber.shade900,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                  ],
+      appBar: AppBar(title: const Text('ความสำเร็จ')),
+      body: FutureBuilder<ProgressSnapshot>(
+        future: _load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('ไม่สามารถอ่านประวัติความสำเร็จในเครื่องได้'),
+            );
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final progress = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.toll_outlined),
+                  title: const Text('คะแนนสะสม'),
+                  trailing: Text('${progress.points}'),
+                  subtitle: Text(
+                    'หลักฐานคำตอบ ${progress.sampleSize} รายการ · อัลกอริทึม v${progress.algorithmVersion}',
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            Expanded(
-              child: GridView.builder(
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.9,
-                ),
-                itemCount: displayBadges.length,
-                itemBuilder: (context, index) {
-                  final badge = displayBadges[index];
-                  return Card(
-                    elevation: badge.isUnlocked ? 4 : 1,
-                    color: badge.isUnlocked
-                        ? Colors.amber.shade50
-                        : Colors.grey.shade200,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      side: BorderSide(
-                        color: badge.isUnlocked
-                            ? Colors.amber
-                            : Colors.grey.shade400,
-                        width: 1.5,
-                      ),
+              const SizedBox(height: 8),
+              if (progress.achievements.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 48),
+                  child: Center(
+                    child: Text(
+                      'ยังไม่มีความสำเร็จที่ปลดล็อก\nจำนวนหลักฐาน: 0',
+                      textAlign: TextAlign.center,
                     ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12.0),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            badge.isUnlocked ? Icons.stars : Icons.lock,
-                            size: 44,
-                            color: badge.isUnlocked
-                                ? Colors.amber.shade800
-                                : Colors.grey,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            badge.title,
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: badge.isUnlocked
-                                  ? Colors.black87
-                                  : Colors.grey.shade700,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            badge.description,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ],
+                  ),
+                )
+              else
+                for (final achievement in progress.achievements)
+                  Card(
+                    child: ListTile(
+                      leading: const Icon(Icons.workspace_premium_outlined),
+                      title: Text(_title(achievement.id)),
+                      subtitle: Text(
+                        'หลักฐาน ${achievement.sourceEventId} · นิยาม v${achievement.definitionVersion}',
                       ),
+                      trailing: Text(_date(achievement.unlockedAtUtc)),
                     ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+                  ),
+            ],
+          );
+        },
       ),
     );
   }
+
+  String _title(String id) => switch (id) {
+    'first_answer' => 'บันทึกคำตอบครั้งแรก',
+    'first_session' => 'เรียนจบเซสชันแรก',
+    'perfect_session' => 'ตอบถูกครบทั้งเซสชัน',
+    _ => id,
+  };
+
+  String _date(DateTime value) =>
+      '${value.day.toString().padLeft(2, '0')}/'
+      '${value.month.toString().padLeft(2, '0')}/${value.year}';
 }

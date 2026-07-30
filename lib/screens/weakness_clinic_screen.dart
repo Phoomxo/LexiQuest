@@ -4,6 +4,7 @@ import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
 import 'mastery_dashboard_screen.dart';
 import 'srs_flashcards_screen.dart';
+import '../navigation/app_routes.dart';
 
 class WeaknessClinicScreen extends StatefulWidget {
   const WeaknessClinicScreen({super.key, this.loader});
@@ -75,7 +76,9 @@ class _WeaknessBody extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           child: Text(
-            'จัดอันดับจากสัดส่วนคำตอบผิด จำนวนตัวอย่างทั้งหมด ${progress.sampleSize}',
+            'จัดอันดับจากสัดส่วนคำตอบผิด จำนวนตัวอย่างทั้งหมด '
+            '${progress.sampleSize} • อัลกอริทึมเวอร์ชัน '
+            '${progress.algorithmVersion}',
           ),
         ),
         Expanded(
@@ -103,8 +106,10 @@ class _WeaknessBody extends StatelessWidget {
           child: FilledButton.icon(
             onPressed: progress.dueReviewCount == 0
                 ? null
-                : () => Navigator.of(context).push(
-                    MaterialPageRoute(
+                : () => AppNavigator.pushPage<void>(
+                    context,
+                    AppPage<void>(
+                      name: 'learning/weakness-srs',
                       builder: (_) => const SrsFlashcardsScreen(),
                     ),
                   ),

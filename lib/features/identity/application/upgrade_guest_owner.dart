@@ -30,4 +30,18 @@ final class UpgradeGuestOwner {
       firebaseUid: canonicalUid,
     );
   }
+
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+    return _repository.createLocalGuestAfterLogout();
+  }
+
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) {
+    return _repository.rollbackLocalGuestLogout(
+      previousOwnerId: previousOwnerId,
+      guestOwnerId: guestOwnerId,
+    );
+  }
 }

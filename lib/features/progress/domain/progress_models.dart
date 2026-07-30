@@ -46,6 +46,20 @@ final class LearningRecommendation {
   final int sampleSize;
 }
 
+final class AchievementEvidence {
+  const AchievementEvidence({
+    required this.id,
+    required this.definitionVersion,
+    required this.sourceEventId,
+    required this.unlockedAtUtc,
+  });
+
+  final String id;
+  final int definitionVersion;
+  final String sourceEventId;
+  final DateTime unlockedAtUtc;
+}
+
 final class ProgressSnapshot {
   const ProgressSnapshot({
     required this.sampleSize,
@@ -62,6 +76,10 @@ final class ProgressSnapshot {
     required this.skills,
     required this.weaknesses,
     required this.recommendations,
+    this.achievements = const [],
+    this.algorithmVersion = 1,
+    this.averageResponseTimeMs,
+    this.latestEvidenceAtUtc,
   });
 
   final int sampleSize;
@@ -78,4 +96,8 @@ final class ProgressSnapshot {
   final List<SkillEvidence> skills;
   final List<WeaknessEvidence> weaknesses;
   final List<LearningRecommendation> recommendations;
+  final List<AchievementEvidence> achievements;
+  final int algorithmVersion;
+  final double? averageResponseTimeMs;
+  final DateTime? latestEvidenceAtUtc;
 }

@@ -98,7 +98,8 @@ class _DashboardBody extends StatelessWidget {
         ...progress.skills.map((skill) => _SkillRow(skill)),
         const SizedBox(height: 12),
         Text(
-          'จำนวนตัวอย่างทั้งหมด: ${progress.sampleSize}',
+          'จำนวนตัวอย่างทั้งหมด: ${progress.sampleSize} • '
+          'อัลกอริทึมเวอร์ชัน ${progress.algorithmVersion}',
           textAlign: TextAlign.center,
           style: Theme.of(context).textTheme.bodySmall,
         ),

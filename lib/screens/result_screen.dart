@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'main_navigation_screen.dart';
+import '../navigation/app_routes.dart';
 
 class ResultScreen extends StatelessWidget {
   final int score;
@@ -32,13 +32,7 @@ class ResultScreen extends StatelessWidget {
             const SizedBox(height: 30),
             ElevatedButton(
               onPressed: () {
-                Navigator.pushAndRemoveUntil(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => const MainNavigationScreen(),
-                  ), // เปลี่ยนเป็นหน้าหลักของคุณ
-                  (Route<dynamic> route) => false, // ลบ Stack ทั้งหมด
-                );
+                AppNavigator.resetTo<void>(context, AppRoute.home);
               },
               child: const Text('กลับหน้าหลัก'),
             ),

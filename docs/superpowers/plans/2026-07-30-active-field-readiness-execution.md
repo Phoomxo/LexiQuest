@@ -68,6 +68,21 @@ architecture contract.
 - real device model, camera, microphone, TTS, STT, GPU, and thermal behavior;
 - release signing, installation upgrade, and 30-minute endurance.
 
+### Accepted implementation packages P4 to P7
+
+- P4 verified LiteRT lifecycle, resumable model delivery, CPU-safe inference,
+  benchmark reporting, and tested GPU allowlisting.
+- P5 real camera lifecycle, object inference, microphone/STT, pronunciation
+  evidence, and platform-safe fallback states.
+- P6 Android Keystore-backed Gemini BYOK, real REST transport, typed provider
+  failures, redaction, and evidence-bounded tutor context.
+- P7 evidence-derived progress/games, synchronized reward transactions,
+  real exports, typed navigation, Material 3/accessibility, complete account
+  flows, anonymous cloud namespace rehome, and cloud operations controls.
+- Final P7 gate passed format, complete static analysis, bounded product and
+  sync regressions, Auth emulator, 25 Firestore rules tests, debug APK,
+  model-runtime integrity, diff checks, and independent blocker review.
+
 ## 4. P4 — On-device model lifecycle
 
 ### P4.1 Inventory and contract freeze

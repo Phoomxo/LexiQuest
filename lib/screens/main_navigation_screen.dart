@@ -4,12 +4,15 @@ import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
+import '../navigation/app_routes.dart';
 import 'achievements_screen.dart';
 import 'ai_tutor_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
 import 'gemini_settings_screen.dart';
+import 'ghost_shadow_duel_screen.dart';
+import 'export_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
@@ -126,11 +129,12 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return '${buildInfo.version} · ${buildInfo.buildId}';
   }
 
-  void _pushLegacyDestination(Widget destination) {
+  void _pushDestination(String name, Widget destination) {
     _scaffoldKey.currentState?.closeDrawer();
-    Navigator.of(
+    AppNavigator.pushPage<void>(
       context,
-    ).push(MaterialPageRoute<void>(builder: (_) => destination));
+      AppPage<void>(name: name, builder: (_) => destination),
+    );
   }
 
   @override
@@ -177,42 +181,66 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                 ListTile(
                   leading: const Icon(Icons.shopping_bag),
                   title: const Text('ร้านค้า'),
-                  onTap: () => _pushLegacyDestination(const ShopPage()),
+                  onTap: () =>
+                      _pushDestination('rewards/shop', const ShopPage()),
                 ),
               if (features.isVisible(FieldFeature.objectScanner))
                 ListTile(
                   leading: const Icon(Icons.document_scanner_outlined),
                   title: const Text('สแกนวัตถุ'),
-                  onTap: () =>
-                      _pushLegacyDestination(const ObjectScannerScreen()),
+                  onTap: () => _pushDestination(
+                    'practice/object-scanner',
+                    const ObjectScannerScreen(),
+                  ),
                 ),
               if (features.isVisible(FieldFeature.speechPractice))
                 ListTile(
                   leading: const Icon(Icons.mic_none),
                   title: const Text('ฝึกพูดตามเสียง'),
-                  onTap: () => _pushLegacyDestination(
-                    const ShadowingChallengeScreen(
-                      referenceSentence: 'Practice makes progress.',
-                    ),
+                  onTap: () => _pushDestination(
+                    'practice/shadowing',
+                    const ShadowingChallengeScreen(),
+                  ),
+                ),
+              if (features.isVisible(FieldFeature.ghostDuel))
+                ListTile(
+                  leading: const Icon(Icons.sports_esports_outlined),
+                  title: const Text('ดวลกับสถิติเดิม'),
+                  onTap: () => _pushDestination(
+                    'learning/ghost-duel',
+                    const GhostShadowDuelScreen(),
                   ),
                 ),
               if (features.isVisible(FieldFeature.aiTutor)) ...[
                 ListTile(
                   leading: const Icon(Icons.chat_bubble_outline),
                   title: const Text('AI Tutor'),
-                  onTap: () => _pushLegacyDestination(const AiTutorScreen()),
+                  onTap: () =>
+                      _pushDestination('gemini/tutor', const AiTutorScreen()),
                 ),
                 ListTile(
                   leading: const Icon(Icons.key_outlined),
                   title: const Text('ตั้งค่า Gemini BYOK'),
-                  onTap: () =>
-                      _pushLegacyDestination(const GeminiSettingsScreen()),
+                  onTap: () => _pushDestination(
+                    'gemini/settings',
+                    const GeminiSettingsScreen(),
+                  ),
                 ),
               ],
+              if (features.isVisible(FieldFeature.export))
+                ListTile(
+                  leading: const Icon(Icons.file_download_outlined),
+                  title: const Text('ส่งออกข้อมูล'),
+                  onTap: () => _pushDestination(
+                    'export/center',
+                    const ExportCenterScreen(),
+                  ),
+                ),
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('ตั้งค่า'),
-                onTap: () => _pushLegacyDestination(const SettingScreen()),
+                onTap: () =>
+                    _pushDestination('settings', const SettingScreen()),
               ),
               const Divider(),
               Padding(

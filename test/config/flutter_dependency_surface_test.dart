@@ -48,6 +48,7 @@ void main() {
       'confetti',
       'cached_network_image',
       'google_mlkit_image_labeling',
+      'google_fonts',
     ];
 
     expect(manifest.existsSync(), isTrue);
@@ -64,8 +65,8 @@ void main() {
     const retained = <String>[
       'firebase_core',
       'firebase_auth',
+      'firebase_app_check',
       'cloud_firestore',
-      'google_fonts',
       'speech_to_text',
       'flutter_tts',
       'fl_chart',
@@ -78,6 +79,8 @@ void main() {
       'permission_handler',
       'image',
       'flutter_secure_storage',
+      'pdf',
+      'file_selector',
     ];
 
     for (final name in retained) {

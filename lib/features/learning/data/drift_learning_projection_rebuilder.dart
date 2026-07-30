@@ -58,9 +58,13 @@ final class DriftLearningProjectionRebuilder {
     }
 
     final next = state!;
+    await (database.delete(database.srsStates)..where(
+          (row) => row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+        ))
+        .go();
     await database
         .into(database.srsStates)
-        .insertOnConflictUpdate(
+        .insert(
           db.SrsStatesCompanion.insert(
             id: 'srs:$ownerId:$wordId',
             ownerId: ownerId,
@@ -183,9 +187,16 @@ final class DriftLearningProjectionRebuilder {
         updatedAtUtcMs = event.occurredAtUtcMs;
       }
     }
+    await (database.delete(database.readingProgressEntries)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.documentId.equals(documentId) &
+              row.documentRevision.equals(documentRevision),
+        ))
+        .go();
     await database
         .into(database.readingProgressEntries)
-        .insertOnConflictUpdate(
+        .insert(
           db.ReadingProgressEntriesCompanion.insert(
             id: 'reading:$ownerId:$documentId:$documentRevision',
             ownerId: ownerId,
@@ -211,9 +222,16 @@ final class DriftLearningProjectionRebuilder {
     required db.AnswerAttempt source,
   }) async {
     const definitionVersion = 1;
+    await (database.delete(database.achievementUnlocks)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.achievementId.equals(achievementId) &
+              row.definitionVersion.equals(definitionVersion),
+        ))
+        .go();
     await database
         .into(database.achievementUnlocks)
-        .insertOnConflictUpdate(
+        .insert(
           db.AchievementUnlocksCompanion.insert(
             id: 'achievement:$ownerId:$achievementId:$definitionVersion',
             ownerId: ownerId,

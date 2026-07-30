@@ -1,317 +1,181 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/local_user_progress_store.dart';
-import 'achievements_screen.dart';
-import 'avatar_equipment_screen.dart';
-import 'export_center_screen.dart';
-import 'select_wallpaper_screen.dart';
+
+import '../features/account/application/account_use_cases.dart';
+import '../features/account/domain/account_contracts.dart';
+import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
+import '../runtime/app_runtime_status.dart';
 
 class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key});
+  const SettingScreen({super.key, this.account});
+
+  final AccountUseCases? account;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
 }
 
 class _SettingScreenState extends State<SettingScreen> {
-  firebase_auth.FirebaseAuth? _auth;
-  FirebaseFirestore? _firestore;
-  Map<String, dynamic>? _profileData;
-  IconData _selectedIcon = Icons.account_circle;
-
-  firebase_auth.User? get _currentUser => _auth?.currentUser;
+  AccountUseCases? _account;
+  bool _busy = false;
 
   @override
-  void initState() {
-    super.initState();
-    _auth = _resolveAuth();
-    _firestore = _resolveFirestore();
-    if (_currentUser != null) {
-      _fetchUserProfile();
-    }
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _account ??=
+        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
   }
 
-  firebase_auth.FirebaseAuth? _resolveAuth() {
-    try {
-      return firebase_auth.FirebaseAuth.instance;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  FirebaseFirestore? _resolveFirestore() {
-    try {
-      return FirebaseFirestore.instance;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  Future<void> _fetchUserProfile() async {
-    final firestore = _firestore;
-    final user = _currentUser;
-    if (firestore == null || user == null) return;
-
-    try {
-      final doc = await firestore.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        if (!mounted) return;
-        setState(() {
-          _profileData = doc.data();
-        });
-      }
-    } catch (_) {
-      // Profile remains unavailable without surfacing provider diagnostics.
-    }
-  }
-
-  void _logout() async {
-    final auth = _auth;
-    if (auth == null) return;
-    await auth.signOut();
-    if (!mounted) return;
-    Navigator.pushReplacementNamed(context, '/login');
-  }
-
-  void _showIconPicker() {
-    showModalBottomSheet(
+  Future<void> _changePassword() async {
+    final current = TextEditingController();
+    final next = TextEditingController();
+    final submitted = await showDialog<bool>(
       context: context,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20.0)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: GridView.count(
-            crossAxisCount: 4,
-            padding: const EdgeInsets.all(10),
-            children:
-                [
-                  Icons.emoji_emotions,
-                  Icons.emoji_events,
-                  Icons.emoji_food_beverage,
-                  Icons.emoji_nature,
-                  Icons.emoji_objects,
-                  Icons.emoji_people,
-                  Icons.auto_awesome,
-                  Icons.auto_fix_high,
-                  Icons.auto_stories,
-                  Icons.local_florist,
-                  Icons.star,
-                  Icons.wb_sunny,
-                  Icons.nightlight,
-                  Icons.self_improvement,
-                  Icons.volunteer_activism,
-                  Icons.favorite,
-                  Icons.mood,
-                  Icons.mood_bad,
-                  Icons.cake,
-                  Icons.party_mode,
-                  Icons.sports_esports,
-                  Icons.music_note,
-                  Icons.library_music,
-                  Icons.piano,
-                  Icons.headset,
-                  Icons.pets,
-                  Icons.toys,
-                  Icons.beach_access,
-                  Icons.snowboarding,
-                  Icons.skateboarding,
-                  Icons.airplanemode_active,
-                  Icons.directions_boat,
-                  Icons.directions_bus,
-                  Icons.directions_car,
-                  Icons.train,
-                  Icons.fireplace,
-                  Icons.celebration,
-                  Icons.festival,
-                  Icons.brightness_5,
-                  Icons.auto_awesome_mosaic,
-                ].map((iconData) {
-                  return IconButton(
-                    icon: CircleAvatar(
-                      radius: 30,
-                      backgroundColor:
-                          Colors.primaries[iconData.codePoint %
-                              Colors.primaries.length],
-                      child: Icon(iconData, size: 40, color: Colors.white),
-                    ),
-                    onPressed: () {
-                      setState(() {
-                        _selectedIcon = iconData;
-                      });
-                      Navigator.pop(context);
-                    },
-                  );
-                }).toList(),
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('เปลี่ยนรหัสผ่าน'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: current,
+              obscureText: true,
+              decoration: const InputDecoration(labelText: 'รหัสผ่านปัจจุบัน'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: next,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'รหัสผ่านใหม่อย่างน้อย 8 ตัวอักษร',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ยกเลิก'),
           ),
-        );
-      },
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('บันทึก'),
+          ),
+        ],
+      ),
     );
+    if (submitted != true || !mounted) {
+      current.dispose();
+      next.dispose();
+      return;
+    }
+    final currentPassword = current.text;
+    final newPassword = next.text;
+    current.dispose();
+    next.dispose();
+    final account = _account;
+    if (account == null) return;
+    setState(() => _busy = true);
+    try {
+      await account.changePassword(
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+      );
+      if (mounted) _show('เปลี่ยนรหัสผ่านแล้ว');
+    } on AccountException catch (error) {
+      if (mounted) {
+        _show(
+          error.code == AccountFailureCode.requiresRecentLogin
+              ? 'กรุณาเข้าสู่ระบบใหม่ก่อนเปลี่ยนรหัสผ่าน'
+              : 'เปลี่ยนรหัสผ่านไม่สำเร็จ',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
   }
 
-  Widget _buildProfileItem(String title, String value) {
-    return Card(
-      elevation: 3,
-      margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 12.0),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        title: Text(
-          title,
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-        ),
-        trailing: Text(value, style: const TextStyle(fontSize: 16)),
-      ),
-    );
+  Future<void> _logout() async {
+    final account = _account;
+    if (account == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      await account.signOutToLocalGuest();
+      if (!mounted) return;
+      await AppNavigator.resetTo<void>(context, AppRoute.login);
+    } on AccountException {
+      if (mounted) _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _show(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final session = _account?.currentSession;
+    final cloudReady =
+        dependencies?.runtimeStatus.firebase == RuntimeAvailability.ready;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'Settings',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
-        ),
-        backgroundColor: Colors.deepPurpleAccent,
-        actions: [
-          IconButton(icon: const Icon(Icons.logout), onPressed: _logout),
-        ],
-      ),
-      body: _profileData == null
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  GestureDetector(
-                    onTap: _showIconPicker,
-                    child: CircleAvatar(
-                      radius: 60,
-                      backgroundColor:
-                          Colors.primaries[_selectedIcon.codePoint %
-                              Colors.primaries.length],
-                      child: Icon(_selectedIcon, size: 80, color: Colors.white),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildProfileItem(
-                    'First Name',
-                    _profileData?['first_name'] ?? '',
-                  ),
-                  _buildProfileItem(
-                    'Last Name',
-                    _profileData?['last_name'] ?? '',
-                  ),
-                  _buildProfileItem(
-                    'Age',
-                    _profileData?['age']?.toString() ?? '',
-                  ),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    alignment: WrapAlignment.center,
-                    children: [
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => SelectWallpaperScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.wallpaper, size: 18),
-                        label: const Text('เปลี่ยนวอลเปเปอร์'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurpleAccent,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) =>
-                                  const AvatarEquipmentScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.shield, size: 18),
-                        label: const Text('อุปกรณ์ Avatar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple.shade700,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const AchievementsScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.emoji_events, size: 18),
-                        label: const Text('เหรียญรางวัล'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const ExportCenterScreen(),
-                            ),
-                          );
-                        },
-                        icon: const Icon(Icons.download_for_offline, size: 18),
-                        label: const Text('ส่งออกข้อมูล'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.indigo.shade800,
-                          foregroundColor: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  OutlinedButton.icon(
-                    onPressed: () async {
-                      final messenger = ScaffoldMessenger.of(context);
-                      await LocalUserProgressStore().clearAll();
-                      if (!mounted) return;
-                      messenger.showSnackBar(
-                        const SnackBar(
-                          content: Text(
-                            '🧹 เคลียร์ข้อมูลสถิติและฐานข้อมูลเริ่มต้นใหม่ทั้งหมดเรียบร้อยแล้ว!',
-                          ),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    },
-                    icon: const Icon(
-                      Icons.cleaning_services,
-                      color: Colors.redAccent,
-                    ),
-                    label: const Text(
-                      '🧹 เคลียร์ข้อมูลสถิติเริ่มต้นใหม่ (Reset DB)',
-                      style: TextStyle(
-                        color: Colors.redAccent,
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
+      appBar: AppBar(title: const Text('ตั้งค่า')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          Card(
+            child: ListTile(
+              leading: Icon(
+                session == null ? Icons.person_outline : Icons.verified_user,
+              ),
+              title: Text(session?.email ?? 'โหมด Guest'),
+              subtitle: Text(
+                session == null
+                    ? 'ข้อมูลการเรียนอยู่ในเครื่องและอัปเกรดบัญชีได้ภายหลัง'
+                    : session.emailVerified
+                    ? 'ยืนยันอีเมลแล้ว'
+                    : 'รอยืนยันอีเมล',
               ),
             ),
+          ),
+          Card(
+            child: ListTile(
+              leading: Icon(
+                cloudReady
+                    ? Icons.cloud_done_outlined
+                    : Icons.cloud_off_outlined,
+              ),
+              title: Text(cloudReady ? 'Cloud พร้อมใช้งาน' : 'Cloud ไม่พร้อม'),
+              subtitle: const Text('การเรียนออฟไลน์ยังทำงานได้ตามปกติ'),
+            ),
+          ),
+          if (session != null && !session.isAnonymous) ...[
+            ListTile(
+              minTileHeight: 48,
+              leading: const Icon(Icons.password_outlined),
+              title: const Text('เปลี่ยนรหัสผ่าน'),
+              onTap: _busy ? null : _changePassword,
+            ),
+            ListTile(
+              minTileHeight: 48,
+              leading: const Icon(Icons.logout),
+              title: const Text('ออกจากระบบ'),
+              subtitle: const Text(
+                'สร้างพื้นที่ Guest ใหม่โดยไม่ลบข้อมูลบัญชี',
+              ),
+              onTap: _busy ? null : _logout,
+            ),
+          ],
+          if (_busy)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
     );
   }
 }

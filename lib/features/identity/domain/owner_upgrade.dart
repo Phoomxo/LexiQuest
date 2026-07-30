@@ -24,6 +24,11 @@ abstract interface class OwnerUpgradeRepository {
   });
 
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout();
+
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  });
 }
 
 const Set<String> ownerUpgradeInventory = <String>{
@@ -38,6 +43,9 @@ const Set<String> ownerUpgradeInventory = <String>{
   'reading_events',
   'points_ledger_entries',
   'achievement_unlocks',
+  'reward_transactions',
+  'owned_reward_items',
+  'equipped_reward_items',
   'outbox_operations',
   'sync_checkpoints',
   'sync_conflicts',

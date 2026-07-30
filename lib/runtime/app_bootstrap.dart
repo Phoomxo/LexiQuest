@@ -3,8 +3,11 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -12,12 +15,18 @@ import 'package:uuid/uuid.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
+import '../features/account/application/account_use_cases.dart';
+import '../features/account/data/firebase_account_gateway.dart';
+import '../features/account/domain/account_contracts.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/application/model_download_manager.dart';
 import '../features/device_model/data/drift_model_download_repository.dart';
 import '../features/device_model/data/http_model_byte_source.dart';
 import '../features/device_model/data/litert_image_classifier.dart';
 import '../features/device_model/domain/model_manifest.dart';
+import '../features/export/application/export_use_cases.dart';
+import '../features/export/data/drift_export_reader.dart';
+import '../features/export/data/file_selector_export_store.dart';
 import '../features/gemini/application/gemini_tutor_use_cases.dart';
 import '../features/gemini/data/gemini_rest_gateway.dart';
 import '../features/gemini/data/secure_gemini_settings_store.dart';
@@ -33,6 +42,8 @@ import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
+import '../features/rewards/application/reward_use_cases.dart';
+import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/sync/application/sync_backoff.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_mutex.dart';
@@ -55,6 +66,7 @@ typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
+typedef AccountGatewayFactory = AccountGateway Function();
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -69,6 +81,10 @@ const _productionCloudSyncEnabled = bool.fromEnvironment(
   'LEXIQUEST_CLOUD_SYNC_ENABLED',
   defaultValue: true,
 );
+const _productionAppCheckDebug = bool.fromEnvironment(
+  'LEXIQUEST_APP_CHECK_DEBUG',
+  defaultValue: !kReleaseMode,
+);
 
 bool _productionSupabaseInitialized = false;
 
@@ -78,6 +94,11 @@ Future<void> _initializeFirebaseProduction() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
+  await FirebaseAppCheck.instance.activate(
+    providerAndroid: _productionAppCheckDebug
+        ? const AndroidDebugProvider()
+        : const AndroidPlayIntegrityProvider(),
+  );
 }
 
 Future<void> _initializeSupabaseProduction() async {
@@ -101,6 +122,7 @@ final class AppBootstrap {
     required this.createDatabase,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
+    this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
   });
 
@@ -116,6 +138,8 @@ final class AppBootstrap {
         firestore: FirebaseFirestore.instance,
         auth: FirebaseAuth.instance,
       ),
+      accountGatewayFactory: () =>
+          FirebaseAccountGateway(FirebaseAuth.instance),
       cloudSyncEnabled: _productionCloudSyncEnabled,
     );
   }
@@ -127,6 +151,7 @@ final class AppBootstrap {
   final AppDatabaseFactory createDatabase;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
+  final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
 
   Future<AppDependencies> initialize() async {
@@ -146,7 +171,22 @@ final class AppBootstrap {
       generateOwnerId: idGenerator.v4,
     );
     final upgradeGuestOwner = UpgradeGuestOwner(ownerUpgrades);
-    final firebase = await _availability(initializeFirebase);
+    var firebase = await _availability(initializeFirebase);
+    final createAccountGateway = accountGatewayFactory;
+    AccountUseCases? account;
+    if (firebase == RuntimeAvailability.ready && createAccountGateway != null) {
+      final candidate = AccountUseCases(
+        gateway: createAccountGateway(),
+        owners: localOwners,
+        upgradeGuestOwner: upgradeGuestOwner,
+      );
+      try {
+        await candidate.reconcileLocalOwner();
+        account = candidate;
+      } catch (_) {
+        firebase = RuntimeAvailability.unavailable;
+      }
+    }
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
     SyncEngine? syncEngine;
@@ -219,6 +259,21 @@ final class AppBootstrap {
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final rewards = RewardUseCases(
+      owners: localOwners,
+      repository: DriftRewardRepository(database),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+      onLocalMutation: notifyLocalMutation,
+    );
+    final exports = ExportUseCases(
+      owners: localOwners,
+      reader: DriftExportReader(database),
+      store: const FileSelectorExportStore(),
+      nowUtc: () => DateTime.now().toUtc(),
+      loadThaiFont: () =>
+          rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+    );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());
     final modelDownloadManager = ModelDownloadManager(
@@ -278,9 +333,12 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       learning: learning,
       progress: progress,
+      rewards: rewards,
+      exports: exports,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       deviceModels: deviceModels,
+      account: account,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       speechPractice: speechPractice,

@@ -1,165 +1,108 @@
 import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import 'register_form_screen.dart';
+
+import '../features/account/application/account_use_cases.dart';
+import '../features/account/domain/account_contracts.dart';
+import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
 
 class OTPScreen extends StatefulWidget {
+  const OTPScreen({super.key, required this.email, this.account});
+
   final String email;
-  const OTPScreen({super.key, required this.email});
+  final AccountUseCases? account;
 
   @override
   State<OTPScreen> createState() => _OTPScreenState();
 }
 
 class _OTPScreenState extends State<OTPScreen> {
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
+  AccountUseCases? _account;
+  bool _busy = false;
 
-  /// ✅ ตรวจสอบว่าอีเมลได้รับการยืนยันแล้วหรือไม่
-  Future<void> _checkEmailVerified() async {
-    setState(() => _isLoading = true);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _account ??=
+        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
+  }
 
+  Future<void> _check() async {
+    final account = _account;
+    if (account == null || _busy) {
+      _show('ระบบยืนยันอีเมลไม่พร้อมใช้งาน');
+      return;
+    }
+    setState(() => _busy = true);
     try {
-      bool isVerified = await _authService.isEmailVerified();
-
-      if (isVerified) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('✅ อีเมลได้รับการยืนยันแล้ว!')),
-        );
-
-        // 👉 ไปที่หน้ากรอกข้อมูลสมัครสมาชิก
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => RegisterFormScreen(email: widget.email),
-          ),
-        );
-      } else {
-        if (!mounted) return;
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(const SnackBar(content: Text('⚠ กรุณายืนยันอีเมลก่อน')));
-      }
-    } catch (e) {
+      final session = await account.refreshVerification();
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '❌ ตรวจสอบอีเมลล้มเหลว: ${AuthService.getErrorMessage(e)}',
-          ),
-        ),
-      );
+      if (session.emailVerified) {
+        await AppNavigator.resetTo<void>(context, AppRoute.home);
+      } else {
+        _show('กรุณายืนยันอีเมลก่อน');
+      }
+    } on AccountException {
+      if (mounted) _show('ตรวจสอบสถานะยืนยันอีเมลไม่สำเร็จ');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  /// ✅ ให้ Firebase ส่งอีเมลยืนยันใหม่ผ่านผู้ใช้ปัจจุบัน
-  Future<void> _resendVerificationEmail() async {
+  Future<void> _resend() async {
+    final account = _account;
+    if (account == null || _busy) return;
+    setState(() => _busy = true);
     try {
-      await _authService.resendVerificationEmail();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('📩 ส่งอีเมลยืนยันใหม่แล้ว!')),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            '❌ ไม่สามารถส่งอีเมลยืนยันใหม่: ${AuthService.getErrorMessage(e)}',
-          ),
-        ),
-      );
+      await account.resendVerification();
+      if (mounted) _show('ส่งอีเมลยืนยันอีกครั้งแล้ว');
+    } on AccountException {
+      if (mounted) _show('ส่งอีเมลยืนยันไม่สำเร็จ');
+    } finally {
+      if (mounted) setState(() => _busy = false);
     }
+  }
+
+  void _show(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigo],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+      appBar: AppBar(title: const Text('ยืนยันอีเมล')),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            children: [
+              const Icon(Icons.mark_email_unread_outlined, size: 72),
+              const SizedBox(height: 16),
+              Text(
+                'ส่งลิงก์ยืนยันไปที่\n${widget.email}',
+                textAlign: TextAlign.center,
               ),
-              elevation: 5,
-              color: Colors.white.withValues(alpha: 0.9),
-              child: Padding(
-                padding: const EdgeInsets.all(25.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(Icons.email, size: 80, color: Colors.deepPurple),
-                    const SizedBox(height: 15),
-                    Text(
-                      'ยืนยันอีเมลของคุณ',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.deepPurple.shade700,
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 15),
-                    Text(
-                      '📩 เราได้ส่งอีเมลยืนยันไปที่:\n${widget.email}',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    const SizedBox(height: 15),
-                    const Text(
-                      '✉ กรุณาตรวจสอบอีเมลของคุณและกดยืนยัน',
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 20),
-
-                    _isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton.icon(
-                            onPressed: _checkEmailVerified,
-                            icon: const Icon(
-                              Icons.check_circle,
-                              color: Colors.white,
-                            ),
-                            label: const Text(
-                              '✅ ฉันได้ยืนยันแล้ว',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.white,
-                              ),
-                            ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.green,
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 50,
-                              ),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                    const SizedBox(height: 10),
-                    TextButton.icon(
-                      onPressed: _resendVerificationEmail,
-                      icon: const Icon(Icons.refresh, color: Colors.deepPurple),
-                      label: const Text('🔄 ส่งอีเมลยืนยันใหม่'),
-                    ),
-                  ],
+              const SizedBox(height: 24),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: FilledButton(
+                  onPressed: _busy ? null : _check,
+                  child: const Text('ฉันยืนยันอีเมลแล้ว'),
                 ),
               ),
-            ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 48,
+                width: double.infinity,
+                child: TextButton(
+                  onPressed: _busy ? null : _resend,
+                  child: const Text('ส่งอีเมลยืนยันใหม่'),
+                ),
+              ),
+              if (_busy) const CircularProgressIndicator(),
+            ],
           ),
         ),
       ),

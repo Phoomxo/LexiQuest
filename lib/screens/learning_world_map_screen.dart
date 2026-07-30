@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'cefr_selection_screen.dart';
+import '../navigation/app_routes.dart';
 
 class CampaignNode {
   final String level;
@@ -96,9 +97,10 @@ class LearningWorldMapScreen extends StatelessWidget {
                 InkWell(
                   onTap: node.isUnlocked
                       ? () {
-                          Navigator.push(
+                          AppNavigator.pushPage<void>(
                             context,
-                            MaterialPageRoute(
+                            AppPage<void>(
+                              name: 'learning/cefr',
                               builder: (context) => const CefrSelectionScreen(),
                             ),
                           );

@@ -82,6 +82,45 @@ final class LearningUseCases {
     );
   }
 
+  Future<QuizSession> startWeaknessPractice({
+    required Iterable<String> wordIds,
+    int limit = 20,
+  }) async {
+    if (limit < 1 || limit > 100) {
+      throw RangeError.range(limit, 1, 100, 'limit');
+    }
+    final requested = wordIds.map((id) => _requiredId(id, 'wordId')).toSet();
+    if (requested.isEmpty) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    final words = await repository.listQuizWords(ownerId: owner.id, limit: 100);
+    final selected = words
+        .where((word) => requested.contains(word.id))
+        .take(limit)
+        .toList(growable: false);
+    if (selected.isEmpty) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final now = _now();
+    final sessionId = 'session:${_nextId()}';
+    await repository.startSession(
+      LearningSessionDraft(
+        id: sessionId,
+        ownerId: owner.id,
+        activityType: 'ghostDuel',
+        startedAtUtc: now,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+    );
+    return QuizSession(
+      id: sessionId,
+      questions: _questions(selected),
+      startedAtUtc: now,
+    );
+  }
+
   Future<AnswerRecordResult> recordAnswer({
     required String sessionId,
     required String wordId,

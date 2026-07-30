@@ -7851,6 +7851,1420 @@ class AchievementUnlocksCompanion extends UpdateCompanion<AchievementUnlock> {
   }
 }
 
+class $RewardTransactionsTable extends RewardTransactions
+    with TableInfo<$RewardTransactionsTable, RewardTransaction> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RewardTransactionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _idempotencyKeyMeta = const VerificationMeta(
+    'idempotencyKey',
+  );
+  @override
+  late final GeneratedColumn<String> idempotencyKey = GeneratedColumn<String>(
+    'idempotency_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _transactionTypeMeta = const VerificationMeta(
+    'transactionType',
+  );
+  @override
+  late final GeneratedColumn<String> transactionType = GeneratedColumn<String>(
+    'transaction_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _amountMeta = const VerificationMeta('amount');
+  @override
+  late final GeneratedColumn<int> amount = GeneratedColumn<int>(
+    'amount',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _catalogVersionMeta = const VerificationMeta(
+    'catalogVersion',
+  );
+  @override
+  late final GeneratedColumn<int> catalogVersion = GeneratedColumn<int>(
+    'catalog_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceEventIdMeta = const VerificationMeta(
+    'sourceEventId',
+  );
+  @override
+  late final GeneratedColumn<String> sourceEventId = GeneratedColumn<String>(
+    'source_event_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _occurredAtUtcMsMeta = const VerificationMeta(
+    'occurredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> occurredAtUtcMs = GeneratedColumn<int>(
+    'occurred_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    idempotencyKey,
+    transactionType,
+    amount,
+    itemId,
+    catalogVersion,
+    sourceEventId,
+    occurredAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'reward_transactions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RewardTransaction> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('idempotency_key')) {
+      context.handle(
+        _idempotencyKeyMeta,
+        idempotencyKey.isAcceptableOrUnknown(
+          data['idempotency_key']!,
+          _idempotencyKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_idempotencyKeyMeta);
+    }
+    if (data.containsKey('transaction_type')) {
+      context.handle(
+        _transactionTypeMeta,
+        transactionType.isAcceptableOrUnknown(
+          data['transaction_type']!,
+          _transactionTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_transactionTypeMeta);
+    }
+    if (data.containsKey('amount')) {
+      context.handle(
+        _amountMeta,
+        amount.isAcceptableOrUnknown(data['amount']!, _amountMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_amountMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    }
+    if (data.containsKey('catalog_version')) {
+      context.handle(
+        _catalogVersionMeta,
+        catalogVersion.isAcceptableOrUnknown(
+          data['catalog_version']!,
+          _catalogVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_catalogVersionMeta);
+    }
+    if (data.containsKey('source_event_id')) {
+      context.handle(
+        _sourceEventIdMeta,
+        sourceEventId.isAcceptableOrUnknown(
+          data['source_event_id']!,
+          _sourceEventIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('occurred_at_utc_ms')) {
+      context.handle(
+        _occurredAtUtcMsMeta,
+        occurredAtUtcMs.isAcceptableOrUnknown(
+          data['occurred_at_utc_ms']!,
+          _occurredAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, idempotencyKey},
+  ];
+  @override
+  RewardTransaction map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RewardTransaction(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      idempotencyKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}idempotency_key'],
+      )!,
+      transactionType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}transaction_type'],
+      )!,
+      amount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}amount'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      ),
+      catalogVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}catalog_version'],
+      )!,
+      sourceEventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_event_id'],
+      ),
+      occurredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}occurred_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $RewardTransactionsTable createAlias(String alias) {
+    return $RewardTransactionsTable(attachedDatabase, alias);
+  }
+}
+
+class RewardTransaction extends DataClass
+    implements Insertable<RewardTransaction> {
+  final String id;
+  final String ownerId;
+  final String idempotencyKey;
+  final String transactionType;
+  final int amount;
+  final String? itemId;
+  final int catalogVersion;
+  final String? sourceEventId;
+  final int occurredAtUtcMs;
+  const RewardTransaction({
+    required this.id,
+    required this.ownerId,
+    required this.idempotencyKey,
+    required this.transactionType,
+    required this.amount,
+    this.itemId,
+    required this.catalogVersion,
+    this.sourceEventId,
+    required this.occurredAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['idempotency_key'] = Variable<String>(idempotencyKey);
+    map['transaction_type'] = Variable<String>(transactionType);
+    map['amount'] = Variable<int>(amount);
+    if (!nullToAbsent || itemId != null) {
+      map['item_id'] = Variable<String>(itemId);
+    }
+    map['catalog_version'] = Variable<int>(catalogVersion);
+    if (!nullToAbsent || sourceEventId != null) {
+      map['source_event_id'] = Variable<String>(sourceEventId);
+    }
+    map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
+    return map;
+  }
+
+  RewardTransactionsCompanion toCompanion(bool nullToAbsent) {
+    return RewardTransactionsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      idempotencyKey: Value(idempotencyKey),
+      transactionType: Value(transactionType),
+      amount: Value(amount),
+      itemId: itemId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(itemId),
+      catalogVersion: Value(catalogVersion),
+      sourceEventId: sourceEventId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sourceEventId),
+      occurredAtUtcMs: Value(occurredAtUtcMs),
+    );
+  }
+
+  factory RewardTransaction.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RewardTransaction(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      idempotencyKey: serializer.fromJson<String>(json['idempotencyKey']),
+      transactionType: serializer.fromJson<String>(json['transactionType']),
+      amount: serializer.fromJson<int>(json['amount']),
+      itemId: serializer.fromJson<String?>(json['itemId']),
+      catalogVersion: serializer.fromJson<int>(json['catalogVersion']),
+      sourceEventId: serializer.fromJson<String?>(json['sourceEventId']),
+      occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'idempotencyKey': serializer.toJson<String>(idempotencyKey),
+      'transactionType': serializer.toJson<String>(transactionType),
+      'amount': serializer.toJson<int>(amount),
+      'itemId': serializer.toJson<String?>(itemId),
+      'catalogVersion': serializer.toJson<int>(catalogVersion),
+      'sourceEventId': serializer.toJson<String?>(sourceEventId),
+      'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
+    };
+  }
+
+  RewardTransaction copyWith({
+    String? id,
+    String? ownerId,
+    String? idempotencyKey,
+    String? transactionType,
+    int? amount,
+    Value<String?> itemId = const Value.absent(),
+    int? catalogVersion,
+    Value<String?> sourceEventId = const Value.absent(),
+    int? occurredAtUtcMs,
+  }) => RewardTransaction(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+    transactionType: transactionType ?? this.transactionType,
+    amount: amount ?? this.amount,
+    itemId: itemId.present ? itemId.value : this.itemId,
+    catalogVersion: catalogVersion ?? this.catalogVersion,
+    sourceEventId: sourceEventId.present
+        ? sourceEventId.value
+        : this.sourceEventId,
+    occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+  );
+  RewardTransaction copyWithCompanion(RewardTransactionsCompanion data) {
+    return RewardTransaction(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      idempotencyKey: data.idempotencyKey.present
+          ? data.idempotencyKey.value
+          : this.idempotencyKey,
+      transactionType: data.transactionType.present
+          ? data.transactionType.value
+          : this.transactionType,
+      amount: data.amount.present ? data.amount.value : this.amount,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      catalogVersion: data.catalogVersion.present
+          ? data.catalogVersion.value
+          : this.catalogVersion,
+      sourceEventId: data.sourceEventId.present
+          ? data.sourceEventId.value
+          : this.sourceEventId,
+      occurredAtUtcMs: data.occurredAtUtcMs.present
+          ? data.occurredAtUtcMs.value
+          : this.occurredAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RewardTransaction(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('transactionType: $transactionType, ')
+          ..write('amount: $amount, ')
+          ..write('itemId: $itemId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('sourceEventId: $sourceEventId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    idempotencyKey,
+    transactionType,
+    amount,
+    itemId,
+    catalogVersion,
+    sourceEventId,
+    occurredAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RewardTransaction &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.idempotencyKey == this.idempotencyKey &&
+          other.transactionType == this.transactionType &&
+          other.amount == this.amount &&
+          other.itemId == this.itemId &&
+          other.catalogVersion == this.catalogVersion &&
+          other.sourceEventId == this.sourceEventId &&
+          other.occurredAtUtcMs == this.occurredAtUtcMs);
+}
+
+class RewardTransactionsCompanion extends UpdateCompanion<RewardTransaction> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> idempotencyKey;
+  final Value<String> transactionType;
+  final Value<int> amount;
+  final Value<String?> itemId;
+  final Value<int> catalogVersion;
+  final Value<String?> sourceEventId;
+  final Value<int> occurredAtUtcMs;
+  final Value<int> rowid;
+  const RewardTransactionsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.idempotencyKey = const Value.absent(),
+    this.transactionType = const Value.absent(),
+    this.amount = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.catalogVersion = const Value.absent(),
+    this.sourceEventId = const Value.absent(),
+    this.occurredAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RewardTransactionsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String idempotencyKey,
+    required String transactionType,
+    required int amount,
+    this.itemId = const Value.absent(),
+    required int catalogVersion,
+    this.sourceEventId = const Value.absent(),
+    required int occurredAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       idempotencyKey = Value(idempotencyKey),
+       transactionType = Value(transactionType),
+       amount = Value(amount),
+       catalogVersion = Value(catalogVersion),
+       occurredAtUtcMs = Value(occurredAtUtcMs);
+  static Insertable<RewardTransaction> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? idempotencyKey,
+    Expression<String>? transactionType,
+    Expression<int>? amount,
+    Expression<String>? itemId,
+    Expression<int>? catalogVersion,
+    Expression<String>? sourceEventId,
+    Expression<int>? occurredAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
+      if (transactionType != null) 'transaction_type': transactionType,
+      if (amount != null) 'amount': amount,
+      if (itemId != null) 'item_id': itemId,
+      if (catalogVersion != null) 'catalog_version': catalogVersion,
+      if (sourceEventId != null) 'source_event_id': sourceEventId,
+      if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RewardTransactionsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? idempotencyKey,
+    Value<String>? transactionType,
+    Value<int>? amount,
+    Value<String?>? itemId,
+    Value<int>? catalogVersion,
+    Value<String?>? sourceEventId,
+    Value<int>? occurredAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return RewardTransactionsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+      transactionType: transactionType ?? this.transactionType,
+      amount: amount ?? this.amount,
+      itemId: itemId ?? this.itemId,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      sourceEventId: sourceEventId ?? this.sourceEventId,
+      occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (idempotencyKey.present) {
+      map['idempotency_key'] = Variable<String>(idempotencyKey.value);
+    }
+    if (transactionType.present) {
+      map['transaction_type'] = Variable<String>(transactionType.value);
+    }
+    if (amount.present) {
+      map['amount'] = Variable<int>(amount.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (catalogVersion.present) {
+      map['catalog_version'] = Variable<int>(catalogVersion.value);
+    }
+    if (sourceEventId.present) {
+      map['source_event_id'] = Variable<String>(sourceEventId.value);
+    }
+    if (occurredAtUtcMs.present) {
+      map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RewardTransactionsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('transactionType: $transactionType, ')
+          ..write('amount: $amount, ')
+          ..write('itemId: $itemId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('sourceEventId: $sourceEventId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $OwnedRewardItemsTable extends OwnedRewardItems
+    with TableInfo<$OwnedRewardItemsTable, OwnedRewardItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $OwnedRewardItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _catalogVersionMeta = const VerificationMeta(
+    'catalogVersion',
+  );
+  @override
+  late final GeneratedColumn<int> catalogVersion = GeneratedColumn<int>(
+    'catalog_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _acquiredByTransactionIdMeta =
+      const VerificationMeta('acquiredByTransactionId');
+  @override
+  late final GeneratedColumn<String> acquiredByTransactionId =
+      GeneratedColumn<String>(
+        'acquired_by_transaction_id',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+        defaultConstraints: GeneratedColumn.constraintIsAlways(
+          'REFERENCES reward_transactions (id)',
+        ),
+      );
+  static const VerificationMeta _acquiredAtUtcMsMeta = const VerificationMeta(
+    'acquiredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> acquiredAtUtcMs = GeneratedColumn<int>(
+    'acquired_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    itemId,
+    catalogVersion,
+    acquiredByTransactionId,
+    acquiredAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'owned_reward_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<OwnedRewardItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('catalog_version')) {
+      context.handle(
+        _catalogVersionMeta,
+        catalogVersion.isAcceptableOrUnknown(
+          data['catalog_version']!,
+          _catalogVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_catalogVersionMeta);
+    }
+    if (data.containsKey('acquired_by_transaction_id')) {
+      context.handle(
+        _acquiredByTransactionIdMeta,
+        acquiredByTransactionId.isAcceptableOrUnknown(
+          data['acquired_by_transaction_id']!,
+          _acquiredByTransactionIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_acquiredByTransactionIdMeta);
+    }
+    if (data.containsKey('acquired_at_utc_ms')) {
+      context.handle(
+        _acquiredAtUtcMsMeta,
+        acquiredAtUtcMs.isAcceptableOrUnknown(
+          data['acquired_at_utc_ms']!,
+          _acquiredAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_acquiredAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, itemId},
+  ];
+  @override
+  OwnedRewardItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return OwnedRewardItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      catalogVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}catalog_version'],
+      )!,
+      acquiredByTransactionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}acquired_by_transaction_id'],
+      )!,
+      acquiredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}acquired_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $OwnedRewardItemsTable createAlias(String alias) {
+    return $OwnedRewardItemsTable(attachedDatabase, alias);
+  }
+}
+
+class OwnedRewardItem extends DataClass implements Insertable<OwnedRewardItem> {
+  final String id;
+  final String ownerId;
+  final String itemId;
+  final int catalogVersion;
+  final String acquiredByTransactionId;
+  final int acquiredAtUtcMs;
+  const OwnedRewardItem({
+    required this.id,
+    required this.ownerId,
+    required this.itemId,
+    required this.catalogVersion,
+    required this.acquiredByTransactionId,
+    required this.acquiredAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['item_id'] = Variable<String>(itemId);
+    map['catalog_version'] = Variable<int>(catalogVersion);
+    map['acquired_by_transaction_id'] = Variable<String>(
+      acquiredByTransactionId,
+    );
+    map['acquired_at_utc_ms'] = Variable<int>(acquiredAtUtcMs);
+    return map;
+  }
+
+  OwnedRewardItemsCompanion toCompanion(bool nullToAbsent) {
+    return OwnedRewardItemsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      itemId: Value(itemId),
+      catalogVersion: Value(catalogVersion),
+      acquiredByTransactionId: Value(acquiredByTransactionId),
+      acquiredAtUtcMs: Value(acquiredAtUtcMs),
+    );
+  }
+
+  factory OwnedRewardItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return OwnedRewardItem(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      catalogVersion: serializer.fromJson<int>(json['catalogVersion']),
+      acquiredByTransactionId: serializer.fromJson<String>(
+        json['acquiredByTransactionId'],
+      ),
+      acquiredAtUtcMs: serializer.fromJson<int>(json['acquiredAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'itemId': serializer.toJson<String>(itemId),
+      'catalogVersion': serializer.toJson<int>(catalogVersion),
+      'acquiredByTransactionId': serializer.toJson<String>(
+        acquiredByTransactionId,
+      ),
+      'acquiredAtUtcMs': serializer.toJson<int>(acquiredAtUtcMs),
+    };
+  }
+
+  OwnedRewardItem copyWith({
+    String? id,
+    String? ownerId,
+    String? itemId,
+    int? catalogVersion,
+    String? acquiredByTransactionId,
+    int? acquiredAtUtcMs,
+  }) => OwnedRewardItem(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    itemId: itemId ?? this.itemId,
+    catalogVersion: catalogVersion ?? this.catalogVersion,
+    acquiredByTransactionId:
+        acquiredByTransactionId ?? this.acquiredByTransactionId,
+    acquiredAtUtcMs: acquiredAtUtcMs ?? this.acquiredAtUtcMs,
+  );
+  OwnedRewardItem copyWithCompanion(OwnedRewardItemsCompanion data) {
+    return OwnedRewardItem(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      catalogVersion: data.catalogVersion.present
+          ? data.catalogVersion.value
+          : this.catalogVersion,
+      acquiredByTransactionId: data.acquiredByTransactionId.present
+          ? data.acquiredByTransactionId.value
+          : this.acquiredByTransactionId,
+      acquiredAtUtcMs: data.acquiredAtUtcMs.present
+          ? data.acquiredAtUtcMs.value
+          : this.acquiredAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnedRewardItem(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('itemId: $itemId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('acquiredByTransactionId: $acquiredByTransactionId, ')
+          ..write('acquiredAtUtcMs: $acquiredAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    itemId,
+    catalogVersion,
+    acquiredByTransactionId,
+    acquiredAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is OwnedRewardItem &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.itemId == this.itemId &&
+          other.catalogVersion == this.catalogVersion &&
+          other.acquiredByTransactionId == this.acquiredByTransactionId &&
+          other.acquiredAtUtcMs == this.acquiredAtUtcMs);
+}
+
+class OwnedRewardItemsCompanion extends UpdateCompanion<OwnedRewardItem> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> itemId;
+  final Value<int> catalogVersion;
+  final Value<String> acquiredByTransactionId;
+  final Value<int> acquiredAtUtcMs;
+  final Value<int> rowid;
+  const OwnedRewardItemsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.catalogVersion = const Value.absent(),
+    this.acquiredByTransactionId = const Value.absent(),
+    this.acquiredAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  OwnedRewardItemsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String itemId,
+    required int catalogVersion,
+    required String acquiredByTransactionId,
+    required int acquiredAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       itemId = Value(itemId),
+       catalogVersion = Value(catalogVersion),
+       acquiredByTransactionId = Value(acquiredByTransactionId),
+       acquiredAtUtcMs = Value(acquiredAtUtcMs);
+  static Insertable<OwnedRewardItem> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? itemId,
+    Expression<int>? catalogVersion,
+    Expression<String>? acquiredByTransactionId,
+    Expression<int>? acquiredAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (itemId != null) 'item_id': itemId,
+      if (catalogVersion != null) 'catalog_version': catalogVersion,
+      if (acquiredByTransactionId != null)
+        'acquired_by_transaction_id': acquiredByTransactionId,
+      if (acquiredAtUtcMs != null) 'acquired_at_utc_ms': acquiredAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  OwnedRewardItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? itemId,
+    Value<int>? catalogVersion,
+    Value<String>? acquiredByTransactionId,
+    Value<int>? acquiredAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return OwnedRewardItemsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      itemId: itemId ?? this.itemId,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      acquiredByTransactionId:
+          acquiredByTransactionId ?? this.acquiredByTransactionId,
+      acquiredAtUtcMs: acquiredAtUtcMs ?? this.acquiredAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (catalogVersion.present) {
+      map['catalog_version'] = Variable<int>(catalogVersion.value);
+    }
+    if (acquiredByTransactionId.present) {
+      map['acquired_by_transaction_id'] = Variable<String>(
+        acquiredByTransactionId.value,
+      );
+    }
+    if (acquiredAtUtcMs.present) {
+      map['acquired_at_utc_ms'] = Variable<int>(acquiredAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('OwnedRewardItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('itemId: $itemId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('acquiredByTransactionId: $acquiredByTransactionId, ')
+          ..write('acquiredAtUtcMs: $acquiredAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $EquippedRewardItemsTable extends EquippedRewardItems
+    with TableInfo<$EquippedRewardItemsTable, EquippedRewardItem> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EquippedRewardItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _slotMeta = const VerificationMeta('slot');
+  @override
+  late final GeneratedColumn<String> slot = GeneratedColumn<String>(
+    'slot',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _itemIdMeta = const VerificationMeta('itemId');
+  @override
+  late final GeneratedColumn<String> itemId = GeneratedColumn<String>(
+    'item_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _equippedAtUtcMsMeta = const VerificationMeta(
+    'equippedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> equippedAtUtcMs = GeneratedColumn<int>(
+    'equipped_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    slot,
+    itemId,
+    equippedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'equipped_reward_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EquippedRewardItem> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('slot')) {
+      context.handle(
+        _slotMeta,
+        slot.isAcceptableOrUnknown(data['slot']!, _slotMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_slotMeta);
+    }
+    if (data.containsKey('item_id')) {
+      context.handle(
+        _itemIdMeta,
+        itemId.isAcceptableOrUnknown(data['item_id']!, _itemIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_itemIdMeta);
+    }
+    if (data.containsKey('equipped_at_utc_ms')) {
+      context.handle(
+        _equippedAtUtcMsMeta,
+        equippedAtUtcMs.isAcceptableOrUnknown(
+          data['equipped_at_utc_ms']!,
+          _equippedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_equippedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, slot},
+  ];
+  @override
+  EquippedRewardItem map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EquippedRewardItem(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      slot: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}slot'],
+      )!,
+      itemId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}item_id'],
+      )!,
+      equippedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}equipped_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $EquippedRewardItemsTable createAlias(String alias) {
+    return $EquippedRewardItemsTable(attachedDatabase, alias);
+  }
+}
+
+class EquippedRewardItem extends DataClass
+    implements Insertable<EquippedRewardItem> {
+  final String id;
+  final String ownerId;
+  final String slot;
+  final String itemId;
+  final int equippedAtUtcMs;
+  const EquippedRewardItem({
+    required this.id,
+    required this.ownerId,
+    required this.slot,
+    required this.itemId,
+    required this.equippedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['slot'] = Variable<String>(slot);
+    map['item_id'] = Variable<String>(itemId);
+    map['equipped_at_utc_ms'] = Variable<int>(equippedAtUtcMs);
+    return map;
+  }
+
+  EquippedRewardItemsCompanion toCompanion(bool nullToAbsent) {
+    return EquippedRewardItemsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      slot: Value(slot),
+      itemId: Value(itemId),
+      equippedAtUtcMs: Value(equippedAtUtcMs),
+    );
+  }
+
+  factory EquippedRewardItem.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EquippedRewardItem(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      slot: serializer.fromJson<String>(json['slot']),
+      itemId: serializer.fromJson<String>(json['itemId']),
+      equippedAtUtcMs: serializer.fromJson<int>(json['equippedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'slot': serializer.toJson<String>(slot),
+      'itemId': serializer.toJson<String>(itemId),
+      'equippedAtUtcMs': serializer.toJson<int>(equippedAtUtcMs),
+    };
+  }
+
+  EquippedRewardItem copyWith({
+    String? id,
+    String? ownerId,
+    String? slot,
+    String? itemId,
+    int? equippedAtUtcMs,
+  }) => EquippedRewardItem(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    slot: slot ?? this.slot,
+    itemId: itemId ?? this.itemId,
+    equippedAtUtcMs: equippedAtUtcMs ?? this.equippedAtUtcMs,
+  );
+  EquippedRewardItem copyWithCompanion(EquippedRewardItemsCompanion data) {
+    return EquippedRewardItem(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      slot: data.slot.present ? data.slot.value : this.slot,
+      itemId: data.itemId.present ? data.itemId.value : this.itemId,
+      equippedAtUtcMs: data.equippedAtUtcMs.present
+          ? data.equippedAtUtcMs.value
+          : this.equippedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EquippedRewardItem(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('slot: $slot, ')
+          ..write('itemId: $itemId, ')
+          ..write('equippedAtUtcMs: $equippedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(id, ownerId, slot, itemId, equippedAtUtcMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EquippedRewardItem &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.slot == this.slot &&
+          other.itemId == this.itemId &&
+          other.equippedAtUtcMs == this.equippedAtUtcMs);
+}
+
+class EquippedRewardItemsCompanion extends UpdateCompanion<EquippedRewardItem> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> slot;
+  final Value<String> itemId;
+  final Value<int> equippedAtUtcMs;
+  final Value<int> rowid;
+  const EquippedRewardItemsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.slot = const Value.absent(),
+    this.itemId = const Value.absent(),
+    this.equippedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EquippedRewardItemsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String slot,
+    required String itemId,
+    required int equippedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       slot = Value(slot),
+       itemId = Value(itemId),
+       equippedAtUtcMs = Value(equippedAtUtcMs);
+  static Insertable<EquippedRewardItem> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? slot,
+    Expression<String>? itemId,
+    Expression<int>? equippedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (slot != null) 'slot': slot,
+      if (itemId != null) 'item_id': itemId,
+      if (equippedAtUtcMs != null) 'equipped_at_utc_ms': equippedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EquippedRewardItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? slot,
+    Value<String>? itemId,
+    Value<int>? equippedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return EquippedRewardItemsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      slot: slot ?? this.slot,
+      itemId: itemId ?? this.itemId,
+      equippedAtUtcMs: equippedAtUtcMs ?? this.equippedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (slot.present) {
+      map['slot'] = Variable<String>(slot.value);
+    }
+    if (itemId.present) {
+      map['item_id'] = Variable<String>(itemId.value);
+    }
+    if (equippedAtUtcMs.present) {
+      map['equipped_at_utc_ms'] = Variable<int>(equippedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EquippedRewardItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('slot: $slot, ')
+          ..write('itemId: $itemId, ')
+          ..write('equippedAtUtcMs: $equippedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $OutboxOperationsTable extends OutboxOperations
     with TableInfo<$OutboxOperationsTable, OutboxOperation> {
   @override
@@ -11011,6 +12425,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $PointsLedgerEntriesTable(this);
   late final $AchievementUnlocksTable achievementUnlocks =
       $AchievementUnlocksTable(this);
+  late final $RewardTransactionsTable rewardTransactions =
+      $RewardTransactionsTable(this);
+  late final $OwnedRewardItemsTable ownedRewardItems = $OwnedRewardItemsTable(
+    this,
+  );
+  late final $EquippedRewardItemsTable equippedRewardItems =
+      $EquippedRewardItemsTable(this);
   late final $OutboxOperationsTable outboxOperations = $OutboxOperationsTable(
     this,
   );
@@ -11038,6 +12459,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     readingEvents,
     pointsLedgerEntries,
     achievementUnlocks,
+    rewardTransactions,
+    ownedRewardItems,
+    equippedRewardItems,
     outboxOperations,
     syncCheckpoints,
     syncConflicts,
@@ -11309,6 +12733,71 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _achievementUnlocksRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$RewardTransactionsTable, List<RewardTransaction>>
+  _rewardTransactionsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.rewardTransactions,
+        aliasName: 'local_owners__id__reward_transactions__owner_id',
+      );
+
+  $$RewardTransactionsTableProcessedTableManager get rewardTransactionsRefs {
+    final manager = $$RewardTransactionsTableTableManager(
+      $_db,
+      $_db.rewardTransactions,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _rewardTransactionsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$OwnedRewardItemsTable, List<OwnedRewardItem>>
+  _ownedRewardItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.ownedRewardItems,
+    aliasName: 'local_owners__id__owned_reward_items__owner_id',
+  );
+
+  $$OwnedRewardItemsTableProcessedTableManager get ownedRewardItemsRefs {
+    final manager = $$OwnedRewardItemsTableTableManager(
+      $_db,
+      $_db.ownedRewardItems,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _ownedRewardItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $EquippedRewardItemsTable,
+    List<EquippedRewardItem>
+  >
+  _equippedRewardItemsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.equippedRewardItems,
+        aliasName: 'local_owners__id__equipped_reward_items__owner_id',
+      );
+
+  $$EquippedRewardItemsTableProcessedTableManager get equippedRewardItemsRefs {
+    final manager = $$EquippedRewardItemsTableTableManager(
+      $_db,
+      $_db.equippedRewardItems,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _equippedRewardItemsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -11680,6 +13169,81 @@ class $$LocalOwnersTableFilterComposer
           }) => $$AchievementUnlocksTableFilterComposer(
             $db: $db,
             $table: $db.achievementUnlocks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> rewardTransactionsRefs(
+    Expression<bool> Function($$RewardTransactionsTableFilterComposer f) f,
+  ) {
+    final $$RewardTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.rewardTransactions,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RewardTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.rewardTransactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> ownedRewardItemsRefs(
+    Expression<bool> Function($$OwnedRewardItemsTableFilterComposer f) f,
+  ) {
+    final $$OwnedRewardItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ownedRewardItems,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnedRewardItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.ownedRewardItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> equippedRewardItemsRefs(
+    Expression<bool> Function($$EquippedRewardItemsTableFilterComposer f) f,
+  ) {
+    final $$EquippedRewardItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.equippedRewardItems,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EquippedRewardItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.equippedRewardItems,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -12120,6 +13684,83 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> rewardTransactionsRefs<T extends Object>(
+    Expression<T> Function($$RewardTransactionsTableAnnotationComposer a) f,
+  ) {
+    final $$RewardTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.rewardTransactions,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RewardTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.rewardTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> ownedRewardItemsRefs<T extends Object>(
+    Expression<T> Function($$OwnedRewardItemsTableAnnotationComposer a) f,
+  ) {
+    final $$OwnedRewardItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ownedRewardItems,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnedRewardItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ownedRewardItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> equippedRewardItemsRefs<T extends Object>(
+    Expression<T> Function($$EquippedRewardItemsTableAnnotationComposer a) f,
+  ) {
+    final $$EquippedRewardItemsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.equippedRewardItems,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$EquippedRewardItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.equippedRewardItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> outboxOperationsRefs<T extends Object>(
     Expression<T> Function($$OutboxOperationsTableAnnotationComposer a) f,
   ) {
@@ -12221,6 +13862,9 @@ class $$LocalOwnersTableTableManager
             bool readingEventsRefs,
             bool pointsLedgerEntriesRefs,
             bool achievementUnlocksRefs,
+            bool rewardTransactionsRefs,
+            bool ownedRewardItemsRefs,
+            bool equippedRewardItemsRefs,
             bool outboxOperationsRefs,
             bool syncCheckpointsRefs,
             bool syncConflictsRefs,
@@ -12294,6 +13938,9 @@ class $$LocalOwnersTableTableManager
                 readingEventsRefs = false,
                 pointsLedgerEntriesRefs = false,
                 achievementUnlocksRefs = false,
+                rewardTransactionsRefs = false,
+                ownedRewardItemsRefs = false,
+                equippedRewardItemsRefs = false,
                 outboxOperationsRefs = false,
                 syncCheckpointsRefs = false,
                 syncConflictsRefs = false,
@@ -12312,6 +13959,9 @@ class $$LocalOwnersTableTableManager
                     if (readingEventsRefs) db.readingEvents,
                     if (pointsLedgerEntriesRefs) db.pointsLedgerEntries,
                     if (achievementUnlocksRefs) db.achievementUnlocks,
+                    if (rewardTransactionsRefs) db.rewardTransactions,
+                    if (ownedRewardItemsRefs) db.ownedRewardItems,
+                    if (equippedRewardItemsRefs) db.equippedRewardItems,
                     if (outboxOperationsRefs) db.outboxOperations,
                     if (syncCheckpointsRefs) db.syncCheckpoints,
                     if (syncConflictsRefs) db.syncConflicts,
@@ -12550,6 +14200,69 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (rewardTransactionsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          RewardTransaction
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._rewardTransactionsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).rewardTransactionsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (ownedRewardItemsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          OwnedRewardItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._ownedRewardItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ownedRewardItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (equippedRewardItemsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          EquippedRewardItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._equippedRewardItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).equippedRewardItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (outboxOperationsRefs)
                         await $_getPrefetchedData<
                           LocalOwner,
@@ -12645,6 +14358,9 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool readingEventsRefs,
         bool pointsLedgerEntriesRefs,
         bool achievementUnlocksRefs,
+        bool rewardTransactionsRefs,
+        bool ownedRewardItemsRefs,
+        bool equippedRewardItemsRefs,
         bool outboxOperationsRefs,
         bool syncCheckpointsRefs,
         bool syncConflictsRefs,
@@ -18810,6 +20526,1306 @@ typedef $$AchievementUnlocksTableProcessedTableManager =
       AchievementUnlock,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$RewardTransactionsTableCreateCompanionBuilder =
+    RewardTransactionsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String idempotencyKey,
+      required String transactionType,
+      required int amount,
+      Value<String?> itemId,
+      required int catalogVersion,
+      Value<String?> sourceEventId,
+      required int occurredAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$RewardTransactionsTableUpdateCompanionBuilder =
+    RewardTransactionsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> idempotencyKey,
+      Value<String> transactionType,
+      Value<int> amount,
+      Value<String?> itemId,
+      Value<int> catalogVersion,
+      Value<String?> sourceEventId,
+      Value<int> occurredAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$RewardTransactionsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $RewardTransactionsTable,
+          RewardTransaction
+        > {
+  $$RewardTransactionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('reward_transactions__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$OwnedRewardItemsTable, List<OwnedRewardItem>>
+  _ownedRewardItemsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.ownedRewardItems,
+    aliasName:
+        'reward_transactions__id__owned_reward_items__acquired_by_transaction_id',
+  );
+
+  $$OwnedRewardItemsTableProcessedTableManager get ownedRewardItemsRefs {
+    final manager =
+        $$OwnedRewardItemsTableTableManager($_db, $_db.ownedRewardItems).filter(
+          (f) => f.acquiredByTransactionId.id.sqlEquals(
+            $_itemColumn<String>('id')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _ownedRewardItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$RewardTransactionsTableFilterComposer
+    extends Composer<_$AppDatabase, $RewardTransactionsTable> {
+  $$RewardTransactionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get transactionType => $composableBuilder(
+    column: $table.transactionType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceEventId => $composableBuilder(
+    column: $table.sourceEventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> ownedRewardItemsRefs(
+    Expression<bool> Function($$OwnedRewardItemsTableFilterComposer f) f,
+  ) {
+    final $$OwnedRewardItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ownedRewardItems,
+      getReferencedColumn: (t) => t.acquiredByTransactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnedRewardItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.ownedRewardItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RewardTransactionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RewardTransactionsTable> {
+  $$RewardTransactionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get transactionType => $composableBuilder(
+    column: $table.transactionType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get amount => $composableBuilder(
+    column: $table.amount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceEventId => $composableBuilder(
+    column: $table.sourceEventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$RewardTransactionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RewardTransactionsTable> {
+  $$RewardTransactionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get transactionType => $composableBuilder(
+    column: $table.transactionType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get amount =>
+      $composableBuilder(column: $table.amount, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceEventId => $composableBuilder(
+    column: $table.sourceEventId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> ownedRewardItemsRefs<T extends Object>(
+    Expression<T> Function($$OwnedRewardItemsTableAnnotationComposer a) f,
+  ) {
+    final $$OwnedRewardItemsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.ownedRewardItems,
+      getReferencedColumn: (t) => t.acquiredByTransactionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$OwnedRewardItemsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.ownedRewardItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$RewardTransactionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RewardTransactionsTable,
+          RewardTransaction,
+          $$RewardTransactionsTableFilterComposer,
+          $$RewardTransactionsTableOrderingComposer,
+          $$RewardTransactionsTableAnnotationComposer,
+          $$RewardTransactionsTableCreateCompanionBuilder,
+          $$RewardTransactionsTableUpdateCompanionBuilder,
+          (RewardTransaction, $$RewardTransactionsTableReferences),
+          RewardTransaction,
+          PrefetchHooks Function({bool ownerId, bool ownedRewardItemsRefs})
+        > {
+  $$RewardTransactionsTableTableManager(
+    _$AppDatabase db,
+    $RewardTransactionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RewardTransactionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RewardTransactionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RewardTransactionsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> idempotencyKey = const Value.absent(),
+                Value<String> transactionType = const Value.absent(),
+                Value<int> amount = const Value.absent(),
+                Value<String?> itemId = const Value.absent(),
+                Value<int> catalogVersion = const Value.absent(),
+                Value<String?> sourceEventId = const Value.absent(),
+                Value<int> occurredAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RewardTransactionsCompanion(
+                id: id,
+                ownerId: ownerId,
+                idempotencyKey: idempotencyKey,
+                transactionType: transactionType,
+                amount: amount,
+                itemId: itemId,
+                catalogVersion: catalogVersion,
+                sourceEventId: sourceEventId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String idempotencyKey,
+                required String transactionType,
+                required int amount,
+                Value<String?> itemId = const Value.absent(),
+                required int catalogVersion,
+                Value<String?> sourceEventId = const Value.absent(),
+                required int occurredAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => RewardTransactionsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                idempotencyKey: idempotencyKey,
+                transactionType: transactionType,
+                amount: amount,
+                itemId: itemId,
+                catalogVersion: catalogVersion,
+                sourceEventId: sourceEventId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$RewardTransactionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, ownedRewardItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (ownedRewardItemsRefs) db.ownedRewardItems,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$RewardTransactionsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$RewardTransactionsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (ownedRewardItemsRefs)
+                        await $_getPrefetchedData<
+                          RewardTransaction,
+                          $RewardTransactionsTable,
+                          OwnedRewardItem
+                        >(
+                          currentTable: table,
+                          referencedTable: $$RewardTransactionsTableReferences
+                              ._ownedRewardItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$RewardTransactionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).ownedRewardItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.acquiredByTransactionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$RewardTransactionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RewardTransactionsTable,
+      RewardTransaction,
+      $$RewardTransactionsTableFilterComposer,
+      $$RewardTransactionsTableOrderingComposer,
+      $$RewardTransactionsTableAnnotationComposer,
+      $$RewardTransactionsTableCreateCompanionBuilder,
+      $$RewardTransactionsTableUpdateCompanionBuilder,
+      (RewardTransaction, $$RewardTransactionsTableReferences),
+      RewardTransaction,
+      PrefetchHooks Function({bool ownerId, bool ownedRewardItemsRefs})
+    >;
+typedef $$OwnedRewardItemsTableCreateCompanionBuilder =
+    OwnedRewardItemsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String itemId,
+      required int catalogVersion,
+      required String acquiredByTransactionId,
+      required int acquiredAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$OwnedRewardItemsTableUpdateCompanionBuilder =
+    OwnedRewardItemsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> itemId,
+      Value<int> catalogVersion,
+      Value<String> acquiredByTransactionId,
+      Value<int> acquiredAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$OwnedRewardItemsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $OwnedRewardItemsTable, OwnedRewardItem> {
+  $$OwnedRewardItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('owned_reward_items__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $RewardTransactionsTable _acquiredByTransactionIdTable(
+    _$AppDatabase db,
+  ) => db.rewardTransactions.createAlias(
+    'owned_reward_items__acquired_by_transaction_id__reward_transactions__id',
+  );
+
+  $$RewardTransactionsTableProcessedTableManager get acquiredByTransactionId {
+    final $_column = $_itemColumn<String>('acquired_by_transaction_id')!;
+
+    final manager = $$RewardTransactionsTableTableManager(
+      $_db,
+      $_db.rewardTransactions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(
+      _acquiredByTransactionIdTable($_db),
+    );
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$OwnedRewardItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $OwnedRewardItemsTable> {
+  $$OwnedRewardItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get acquiredAtUtcMs => $composableBuilder(
+    column: $table.acquiredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RewardTransactionsTableFilterComposer get acquiredByTransactionId {
+    final $$RewardTransactionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.acquiredByTransactionId,
+      referencedTable: $db.rewardTransactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RewardTransactionsTableFilterComposer(
+            $db: $db,
+            $table: $db.rewardTransactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OwnedRewardItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $OwnedRewardItemsTable> {
+  $$OwnedRewardItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get acquiredAtUtcMs => $composableBuilder(
+    column: $table.acquiredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RewardTransactionsTableOrderingComposer get acquiredByTransactionId {
+    final $$RewardTransactionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.acquiredByTransactionId,
+      referencedTable: $db.rewardTransactions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$RewardTransactionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.rewardTransactions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$OwnedRewardItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $OwnedRewardItemsTable> {
+  $$OwnedRewardItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get acquiredAtUtcMs => $composableBuilder(
+    column: $table.acquiredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$RewardTransactionsTableAnnotationComposer get acquiredByTransactionId {
+    final $$RewardTransactionsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.acquiredByTransactionId,
+          referencedTable: $db.rewardTransactions,
+          getReferencedColumn: (t) => t.id,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$RewardTransactionsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.rewardTransactions,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return composer;
+  }
+}
+
+class $$OwnedRewardItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $OwnedRewardItemsTable,
+          OwnedRewardItem,
+          $$OwnedRewardItemsTableFilterComposer,
+          $$OwnedRewardItemsTableOrderingComposer,
+          $$OwnedRewardItemsTableAnnotationComposer,
+          $$OwnedRewardItemsTableCreateCompanionBuilder,
+          $$OwnedRewardItemsTableUpdateCompanionBuilder,
+          (OwnedRewardItem, $$OwnedRewardItemsTableReferences),
+          OwnedRewardItem,
+          PrefetchHooks Function({bool ownerId, bool acquiredByTransactionId})
+        > {
+  $$OwnedRewardItemsTableTableManager(
+    _$AppDatabase db,
+    $OwnedRewardItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$OwnedRewardItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$OwnedRewardItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$OwnedRewardItemsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<int> catalogVersion = const Value.absent(),
+                Value<String> acquiredByTransactionId = const Value.absent(),
+                Value<int> acquiredAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => OwnedRewardItemsCompanion(
+                id: id,
+                ownerId: ownerId,
+                itemId: itemId,
+                catalogVersion: catalogVersion,
+                acquiredByTransactionId: acquiredByTransactionId,
+                acquiredAtUtcMs: acquiredAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String itemId,
+                required int catalogVersion,
+                required String acquiredByTransactionId,
+                required int acquiredAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => OwnedRewardItemsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                itemId: itemId,
+                catalogVersion: catalogVersion,
+                acquiredByTransactionId: acquiredByTransactionId,
+                acquiredAtUtcMs: acquiredAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$OwnedRewardItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, acquiredByTransactionId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$OwnedRewardItemsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$OwnedRewardItemsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (acquiredByTransactionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn:
+                                        table.acquiredByTransactionId,
+                                    referencedTable:
+                                        $$OwnedRewardItemsTableReferences
+                                            ._acquiredByTransactionIdTable(db),
+                                    referencedColumn:
+                                        $$OwnedRewardItemsTableReferences
+                                            ._acquiredByTransactionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$OwnedRewardItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $OwnedRewardItemsTable,
+      OwnedRewardItem,
+      $$OwnedRewardItemsTableFilterComposer,
+      $$OwnedRewardItemsTableOrderingComposer,
+      $$OwnedRewardItemsTableAnnotationComposer,
+      $$OwnedRewardItemsTableCreateCompanionBuilder,
+      $$OwnedRewardItemsTableUpdateCompanionBuilder,
+      (OwnedRewardItem, $$OwnedRewardItemsTableReferences),
+      OwnedRewardItem,
+      PrefetchHooks Function({bool ownerId, bool acquiredByTransactionId})
+    >;
+typedef $$EquippedRewardItemsTableCreateCompanionBuilder =
+    EquippedRewardItemsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String slot,
+      required String itemId,
+      required int equippedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$EquippedRewardItemsTableUpdateCompanionBuilder =
+    EquippedRewardItemsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> slot,
+      Value<String> itemId,
+      Value<int> equippedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$EquippedRewardItemsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $EquippedRewardItemsTable,
+          EquippedRewardItem
+        > {
+  $$EquippedRewardItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('equipped_reward_items__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$EquippedRewardItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $EquippedRewardItemsTable> {
+  $$EquippedRewardItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get slot => $composableBuilder(
+    column: $table.slot,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get equippedAtUtcMs => $composableBuilder(
+    column: $table.equippedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EquippedRewardItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $EquippedRewardItemsTable> {
+  $$EquippedRewardItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get slot => $composableBuilder(
+    column: $table.slot,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get itemId => $composableBuilder(
+    column: $table.itemId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get equippedAtUtcMs => $composableBuilder(
+    column: $table.equippedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EquippedRewardItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $EquippedRewardItemsTable> {
+  $$EquippedRewardItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get slot =>
+      $composableBuilder(column: $table.slot, builder: (column) => column);
+
+  GeneratedColumn<String> get itemId =>
+      $composableBuilder(column: $table.itemId, builder: (column) => column);
+
+  GeneratedColumn<int> get equippedAtUtcMs => $composableBuilder(
+    column: $table.equippedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EquippedRewardItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EquippedRewardItemsTable,
+          EquippedRewardItem,
+          $$EquippedRewardItemsTableFilterComposer,
+          $$EquippedRewardItemsTableOrderingComposer,
+          $$EquippedRewardItemsTableAnnotationComposer,
+          $$EquippedRewardItemsTableCreateCompanionBuilder,
+          $$EquippedRewardItemsTableUpdateCompanionBuilder,
+          (EquippedRewardItem, $$EquippedRewardItemsTableReferences),
+          EquippedRewardItem,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$EquippedRewardItemsTableTableManager(
+    _$AppDatabase db,
+    $EquippedRewardItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EquippedRewardItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EquippedRewardItemsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$EquippedRewardItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> slot = const Value.absent(),
+                Value<String> itemId = const Value.absent(),
+                Value<int> equippedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EquippedRewardItemsCompanion(
+                id: id,
+                ownerId: ownerId,
+                slot: slot,
+                itemId: itemId,
+                equippedAtUtcMs: equippedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String slot,
+                required String itemId,
+                required int equippedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => EquippedRewardItemsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                slot: slot,
+                itemId: itemId,
+                equippedAtUtcMs: equippedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EquippedRewardItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$EquippedRewardItemsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$EquippedRewardItemsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$EquippedRewardItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EquippedRewardItemsTable,
+      EquippedRewardItem,
+      $$EquippedRewardItemsTableFilterComposer,
+      $$EquippedRewardItemsTableOrderingComposer,
+      $$EquippedRewardItemsTableAnnotationComposer,
+      $$EquippedRewardItemsTableCreateCompanionBuilder,
+      $$EquippedRewardItemsTableUpdateCompanionBuilder,
+      (EquippedRewardItem, $$EquippedRewardItemsTableReferences),
+      EquippedRewardItem,
+      PrefetchHooks Function({bool ownerId})
+    >;
 typedef $$OutboxOperationsTableCreateCompanionBuilder =
     OutboxOperationsCompanion Function({
       required String operationId,
@@ -20719,6 +23735,12 @@ class $AppDatabaseManager {
       $$PointsLedgerEntriesTableTableManager(_db, _db.pointsLedgerEntries);
   $$AchievementUnlocksTableTableManager get achievementUnlocks =>
       $$AchievementUnlocksTableTableManager(_db, _db.achievementUnlocks);
+  $$RewardTransactionsTableTableManager get rewardTransactions =>
+      $$RewardTransactionsTableTableManager(_db, _db.rewardTransactions);
+  $$OwnedRewardItemsTableTableManager get ownedRewardItems =>
+      $$OwnedRewardItemsTableTableManager(_db, _db.ownedRewardItems);
+  $$EquippedRewardItemsTableTableManager get equippedRewardItems =>
+      $$EquippedRewardItemsTableTableManager(_db, _db.equippedRewardItems);
   $$OutboxOperationsTableTableManager get outboxOperations =>
       $$OutboxOperationsTableTableManager(_db, _db.outboxOperations);
   $$SyncCheckpointsTableTableManager get syncCheckpoints =>

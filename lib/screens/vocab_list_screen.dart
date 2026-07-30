@@ -6,6 +6,7 @@ import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
 import 'add_multiple_words_screen.dart';
 import 'add_vocab_screen.dart';
+import '../navigation/app_routes.dart';
 
 class VocabListScreen extends StatefulWidget {
   const VocabListScreen({
@@ -121,8 +122,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
                     heroTag: 'words-import',
                     tooltip: 'นำเข้าคำศัพท์',
                     onPressed: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute<void>(
+                      AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'vocabulary/import',
                           builder: (_) => AddMultipleWordsScreen(
                             categoryId: widget.categoryId,
                             categoryName: widget.categoryName,
@@ -151,8 +154,10 @@ class _VocabListScreenState extends State<VocabListScreen> {
     VocabularyUseCases useCases, {
     VocabularyWord? word,
   }) {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
         builder: (_) => AddWordScreen(
           categoryId: widget.categoryId,
           vocabulary: useCases,

@@ -1,182 +1,112 @@
 import 'package:flutter/material.dart';
-import '../models/user_rank.dart';
-import '../services/rank_service.dart';
-import '../widgets/accent_selector_widget.dart';
+
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
+
+typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
 
 class ProfileSettingsScreen extends StatefulWidget {
-  final String userName;
-  final int totalXp;
-  final int totalCoins;
-  final RankService? rankService;
+  const ProfileSettingsScreen({super.key, this.loader});
 
-  const ProfileSettingsScreen({
-    super.key,
-    this.userName = 'คุณเพชร (Khun Phet)',
-    this.totalXp = 1800,
-    this.totalCoins = 350,
-    this.rankService,
-  });
+  final ProfileProgressLoader? loader;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  late final RankService _rankService;
-  late UserRank _userRank;
-  VoiceAccent _selectedAccent = VoiceAccent.us;
-  double _speechSpeed = 1.0;
+  Future<ProgressSnapshot>? _load;
 
   @override
-  void initState() {
-    super.initState();
-    _rankService = widget.rankService ?? const RankService();
-    _userRank = _rankService.calculateRank(widget.totalXp);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    final loader =
+        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+    _load = loader == null
+        ? Future<ProgressSnapshot>.error(
+            StateError('progress dependency unavailable'),
+          )
+        : loader();
   }
 
   @override
   Widget build(BuildContext context) {
+    final account = AppDependenciesScope.maybeOf(
+      context,
+    )?.account?.currentSession;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'โปรไฟล์และการตั้งค่า (Profile & Settings)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.indigo.shade800,
-        centerTitle: true,
+      appBar: AppBar(title: const Text('โปรไฟล์')),
+      body: FutureBuilder<ProgressSnapshot>(
+        future: _load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('ไม่สามารถอ่านข้อมูลในเครื่องได้'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final progress = snapshot.data!;
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: ListTile(
+                  leading: const CircleAvatar(
+                    child: Icon(Icons.person_outline),
+                  ),
+                  title: Text(account?.email ?? 'ผู้เรียน Guest'),
+                  subtitle: Text(
+                    account == null
+                        ? 'ข้อมูลอยู่ในเครื่อง'
+                        : account.emailVerified
+                        ? 'บัญชียืนยันแล้ว'
+                        : 'รอยืนยันอีเมล',
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              _Metric(label: 'คะแนนสะสม', value: '${progress.points}'),
+              _Metric(label: 'Streak', value: '${progress.streakDays} วัน'),
+              _Metric(
+                label: 'ระดับจากคะแนนจริง',
+                value: '${progress.gameLevel}',
+              ),
+              _Metric(
+                label: 'คำตอบที่ใช้คำนวณ',
+                value: '${progress.sampleSize}',
+              ),
+              _Metric(
+                label: 'ความสำเร็จที่ปลดล็อก',
+                value: '${progress.achievementCount}',
+              ),
+              Padding(
+                padding: const EdgeInsets.all(12),
+                child: Text(
+                  'อัลกอริทึม v${progress.algorithmVersion} · '
+                  'ไม่มีคะแนนหรืออันดับตัวอย่าง',
+                ),
+              ),
+            ],
+          );
+        },
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          children: [
-            // Profile Card
-            Card(
-              elevation: 4,
-              color: Colors.indigo.shade50,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(20.0),
-                child: Row(
-                  children: [
-                    CircleAvatar(
-                      radius: 36,
-                      backgroundColor: Colors.indigo,
-                      child: Text(
-                        widget.userName.substring(0, 2),
-                        style: const TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.userName,
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.indigo,
-                            ),
-                          ),
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 4,
-                            ),
-                            decoration: BoxDecoration(
-                              color: Colors.amber.shade700,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              'ยศ: ${_userRank.tier.nameEn} (${_userRank.tier.nameTh})',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'สะสม: ${widget.totalXp} XP | ${widget.totalCoins} เหรียญ',
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
+    );
+  }
+}
 
-            // Settings Card
-            Card(
-              elevation: 2,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      '⚙️ ตั้งค่าเสียง AI OmniVoice',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    AccentSelectorWidget(
-                      selectedAccent: _selectedAccent,
-                      onAccentChanged: (accent) {
-                        setState(() {
-                          _selectedAccent = accent;
-                        });
-                      },
-                    ),
-                    const Divider(height: 30),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text('ความเร็วเสียงอ่านเริ่มต้น:'),
-                        Text(
-                          '${_speechSpeed.toStringAsFixed(2)}x',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Colors.indigo,
-                          ),
-                        ),
-                      ],
-                    ),
-                    Slider(
-                      value: _speechSpeed,
-                      min: 0.5,
-                      max: 1.5,
-                      divisions: 4,
-                      activeColor: Colors.indigo,
-                      onChanged: (val) {
-                        setState(() {
-                          _speechSpeed = val;
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+class _Metric extends StatelessWidget {
+  const _Metric({required this.label, required this.value});
+
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      child: ListTile(
+        title: Text(label),
+        trailing: Text(value, style: Theme.of(context).textTheme.titleLarge),
       ),
     );
   }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
+import '../navigation/app_routes.dart';
 import 'srs_flashcards_screen.dart';
 import 'weakness_clinic_screen.dart';
 
@@ -59,8 +60,12 @@ class ChooseModeScreen extends StatelessWidget {
   }
 
   Future<void> _openCategoryQuiz(BuildContext context) async {
-    final categoryId = await Navigator.of(context).push<String>(
-      MaterialPageRoute(builder: (_) => const SelectCategoryForQuiz()),
+    final categoryId = await AppNavigator.pushPage<String>(
+      context,
+      AppPage<String>(
+        name: 'learning/category-selector',
+        builder: (_) => const SelectCategoryForQuiz(),
+      ),
     );
     if (categoryId != null && context.mounted) {
       await _push(context, QuizScreen(categoryId: categoryId));
@@ -68,9 +73,10 @@ class ChooseModeScreen extends StatelessWidget {
   }
 
   Future<void> _push(BuildContext context, Widget screen) {
-    return Navigator.of(
+    return AppNavigator.pushPage<void>(
       context,
-    ).push<void>(MaterialPageRoute(builder: (_) => screen));
+      AppPage<void>(name: 'learning/activity', builder: (_) => screen),
+    );
   }
 }
 

@@ -6,6 +6,7 @@ import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../navigation/app_routes.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
@@ -233,8 +234,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       _isListening = false;
       _isGenerating = false;
     });
-    await Navigator.of(context).push(
-      MaterialPageRoute<void>(
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'gemini/settings',
         builder: (_) => GeminiSettingsScreen(geminiTutor: _tutor),
       ),
     );

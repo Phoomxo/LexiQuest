@@ -4,6 +4,7 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_category.dart';
 import '../features/vocabulary/domain/vocabulary_failure.dart';
 import '../runtime/app_dependencies.dart';
+import '../navigation/app_routes.dart';
 import 'vocab_list_screen.dart';
 
 class CategoriesPage extends StatelessWidget {
@@ -57,8 +58,10 @@ class CategoriesPage extends StatelessWidget {
                               _confirmDelete(context, useCases, category),
                         ),
                         onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute<void>(
+                          AppNavigator.pushPage<void>(
+                            context,
+                            AppPage<void>(
+                              name: 'vocabulary/category',
                               builder: (_) => VocabListScreen(
                                 categoryId: category.id,
                                 categoryName: category.name,

@@ -4,22 +4,23 @@ import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 
 void main() {
   group('BuildFieldFeatureRegistry', () {
-    test('field defaults expose only the local vocabulary foundation', () {
+    test('field defaults expose completed product features honestly', () {
       const registry = BuildFieldFeatureRegistry.fieldDefaults();
 
       expect(
         registry.stateOf(FieldFeature.vocabulary),
         FieldFeatureState.enabled,
       );
-      expect(registry.stateOf(FieldFeature.quiz), FieldFeatureState.hidden);
-      expect(registry.stateOf(FieldFeature.reading), FieldFeatureState.hidden);
-      expect(registry.stateOf(FieldFeature.srs), FieldFeatureState.hidden);
-      expect(registry.stateOf(FieldFeature.shop), FieldFeatureState.hidden);
+      expect(registry.stateOf(FieldFeature.quiz), FieldFeatureState.enabled);
+      expect(registry.stateOf(FieldFeature.reading), FieldFeatureState.enabled);
+      expect(registry.stateOf(FieldFeature.srs), FieldFeatureState.enabled);
+      expect(registry.stateOf(FieldFeature.shop), FieldFeatureState.enabled);
       expect(
         registry.stateOf(FieldFeature.objectScanner),
-        FieldFeatureState.hidden,
+        FieldFeatureState.limited,
       );
-      expect(registry.stateOf(FieldFeature.aiTutor), FieldFeatureState.hidden);
+      expect(registry.stateOf(FieldFeature.aiTutor), FieldFeatureState.limited);
+      expect(registry.stateOf(FieldFeature.export), FieldFeatureState.enabled);
     });
 
     test('isVisible excludes hidden features and admits limited features', () {

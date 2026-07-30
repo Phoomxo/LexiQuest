@@ -21,7 +21,9 @@ val releaseSigningReady = keystoreProperties["storeFile"] != null &&
 android {
     namespace = "com.lexiquest.app"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    // Pinned because the APK integrity gate verifies locally compiled LiteRT
+    // custom-op binaries byte-for-byte.
+    ndkVersion = "28.2.13676358"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17

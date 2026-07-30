@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/cefr_service.dart';
 import 'srs_flashcards_screen.dart';
+import '../navigation/app_routes.dart';
 
 class CefrSelectionScreen extends StatefulWidget {
   final CefrService? cefrService;
@@ -165,9 +166,10 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
                                 },
                               )
                               .toList();
-                          Navigator.push(
+                          AppNavigator.pushPage<void>(
                             context,
-                            MaterialPageRoute(
+                            AppPage<void>(
+                              name: 'learning/cefr-srs',
                               builder: (context) =>
                                   SrsFlashcardsScreen(wordList: wordMaps),
                             ),

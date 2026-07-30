@@ -21,7 +21,7 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 5);
+    expect(database.schemaVersion, 6);
     expect(
       tableNames,
       containsAll(<String>[
@@ -38,6 +38,9 @@ void main() {
         'reading_events',
         'points_ledger_entries',
         'achievement_unlocks',
+        'reward_transactions',
+        'owned_reward_items',
+        'equipped_reward_items',
         'outbox_operations',
         'sync_checkpoints',
         'sync_conflicts',

@@ -1,23 +1,37 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
-  testWidgets('ProfileSettingsScreen displays user rank and accent settings', (
-    WidgetTester tester,
-  ) async {
+  testWidgets('profile renders only evidence-derived progress', (tester) async {
     await tester.pumpWidget(
-      const MaterialApp(
-        home: ProfileSettingsScreen(
-          userName: 'คุณเพชร (Khun Phet)',
-          totalXp: 2000,
-        ),
-      ),
+      MaterialApp(home: ProfileSettingsScreen(loader: () async => _progress)),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('คุณเพชร (Khun Phet)'), findsOneWidget);
-    expect(find.text('ยศ: Gold (ทอง)'), findsOneWidget);
-    expect(find.text('⚙️ ตั้งค่าเสียง AI OmniVoice'), findsOneWidget);
+    expect(find.text('ผู้เรียน Guest'), findsOneWidget);
+    expect(find.text('42'), findsOneWidget);
+    expect(find.text('7 วัน'), findsOneWidget);
+    expect(find.text('10'), findsOneWidget);
+    expect(find.textContaining('อัลกอริทึม v1'), findsOneWidget);
+    expect(find.textContaining('Khun Phet'), findsNothing);
   });
 }
+
+const _progress = ProgressSnapshot(
+  sampleSize: 10,
+  correctCount: 8,
+  wrongCount: 2,
+  accuracy: .8,
+  points: 42,
+  completedSessions: 2,
+  streakDays: 7,
+  dueReviewCount: 1,
+  masteredWordCount: 2,
+  achievementCount: 1,
+  gameLevel: 3,
+  skills: [],
+  weaknesses: [],
+  recommendations: [],
+);

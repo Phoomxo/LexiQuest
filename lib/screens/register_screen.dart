@@ -1,205 +1,147 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'login_screen.dart';
-import '../services/auth_service.dart';
-import 'otp_screen.dart';
+
+import '../features/account/application/account_use_cases.dart';
+import '../features/account/domain/account_contracts.dart';
+import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  const RegisterScreen({super.key, this.account});
+
+  final AccountUseCases? account;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final TextEditingController _emailController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  AccountUseCases? _account;
+  bool _busy = false;
+  bool _consent = false;
+  bool _obscure = true;
 
-  bool _isValidEmail(String email) {
-    final RegExp regex = RegExp(
-      r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$",
-    );
-    return regex.hasMatch(email);
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _account ??=
+        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
   }
 
-  Future<void> _sendVerificationEmail() async {
-    setState(() => _isLoading = true);
-
-    try {
-      String email = _emailController.text.trim();
-      String password = _passwordController.text.trim();
-
-      if (!_isValidEmail(email)) {
-        throw Exception('รูปแบบอีเมลไม่ถูกต้อง โปรดตรวจสอบอีกครั้ง');
-      }
-      if (password.length < 4) {
-        throw Exception('รหัสผ่านต้องมีความยาวอย่างน้อย 4 ตัวอักษร');
-      }
-
-      await _authService.sendEmailVerification(email, password);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('✅ สร้างบัญชีเรียบร้อย! กำลังนำท่านไปขั้นตอนถัดไป...'),
-          backgroundColor: Colors.green,
-        ),
-      );
-
-      // ไปที่หน้ารอการยืนยัน OTP / ขั้นตอนถัดไป
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => OTPScreen(email: email)),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      final String errorMessage = AuthService.getErrorMessage(e);
-      final bool isEmailInUse =
-          e is FirebaseAuthException && e.code == 'email-already-in-use';
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.error_outline, color: Colors.white),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  errorMessage,
-                  style: const TextStyle(color: Colors.white),
-                ),
-              ),
-            ],
-          ),
-          backgroundColor: Colors.redAccent,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-          action: isEmailInUse
-              ? SnackBarAction(
-                  label: 'เข้าสู่ระบบ',
-                  textColor: Colors.amber,
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const LoginScreen(),
-                      ),
-                    );
-                  },
-                )
-              : null,
-        ),
-      );
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
+  Future<void> _register() async {
+    final account = _account;
+    if (!_consent) {
+      _show('กรุณายอมรับประกาศความเป็นส่วนตัวก่อน');
+      return;
     }
+    if (account == null || _busy) {
+      _show('ระบบบัญชีออนไลน์ไม่พร้อม');
+      return;
+    }
+    setState(() => _busy = true);
+    try {
+      final session = await account.register(
+        email: _email.text,
+        password: _password.text,
+      );
+      if (!mounted) return;
+      await AppNavigator.replace<void, void>(
+        context,
+        AppRoute.emailVerification,
+        arguments: EmailVerificationArgs(session.email ?? _email.text),
+      );
+    } on AccountException catch (error) {
+      if (mounted) _show(_failure(error.code));
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  void _show(String message) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  @override
+  void dispose() {
+    _email.dispose();
+    _password.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.purple, Colors.blueAccent],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Card(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              elevation: 5,
-              child: Padding(
-                padding: const EdgeInsets.all(25.0),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      '📝 สมัครสมาชิก (Register)',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    const Text(
-                      'กรอกอีเมลเพื่อสร้างบัญชีเรียนรู้คำศัพท์ภาษาอังกฤษ',
-                      style: TextStyle(fontSize: 13, color: Colors.grey),
-                    ),
-                    const SizedBox(height: 20),
-                    TextField(
-                      controller: _emailController,
-                      decoration: const InputDecoration(
-                        labelText: 'อีเมล (Email)',
-                        hintText: 'กรอกอีเมลของคุณ',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.email),
-                      ),
-                    ),
-                    const SizedBox(height: 15),
-                    TextField(
-                      controller: _passwordController,
-                      decoration: const InputDecoration(
-                        labelText: 'ตั้งรหัสผ่าน (Password)',
-                        hintText: 'ตั้งรหัสผ่าน 6 ตัวอักษรขึ้นไป',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.lock),
-                      ),
-                      obscureText: true,
-                    ),
-                    const SizedBox(height: 20),
-                    _isLoading
-                        ? const CircularProgressIndicator()
-                        : ElevatedButton(
-                            onPressed: _sendVerificationEmail,
-                            style: ElevatedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(
-                                vertical: 14,
-                                horizontal: 50,
-                              ),
-                              backgroundColor: Colors.blueAccent,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: const Text(
-                              'ส่งอีเมลยืนยัน (Send Email)',
-                              style: TextStyle(
-                                fontSize: 18,
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => const LoginScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'มีบัญชีอยู่แล้วใช่ไหม? เข้าสู่ระบบที่นี่ (Login)',
-                      ),
-                    ),
-                  ],
+      appBar: AppBar(title: const Text('สร้างบัญชี')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            const Text(
+              'ข้อมูลการเรียนในเครื่องจะย้ายเข้าสู่บัญชีหลังสมัครสำเร็จ '
+              'โดยไม่ลบประวัติ Guest',
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _email,
+              enabled: !_busy,
+              keyboardType: TextInputType.emailAddress,
+              autofillHints: const [AutofillHints.email],
+              decoration: const InputDecoration(labelText: 'อีเมล'),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: _password,
+              enabled: !_busy,
+              obscureText: _obscure,
+              autofillHints: const [AutofillHints.newPassword],
+              decoration: InputDecoration(
+                labelText: 'รหัสผ่านอย่างน้อย 8 ตัวอักษร',
+                suffixIcon: IconButton(
+                  tooltip: _obscure ? 'แสดงรหัสผ่าน' : 'ซ่อนรหัสผ่าน',
+                  onPressed: () => setState(() => _obscure = !_obscure),
+                  icon: Icon(
+                    _obscure ? Icons.visibility : Icons.visibility_off,
+                  ),
                 ),
               ),
             ),
-          ),
+            CheckboxListTile(
+              value: _consent,
+              contentPadding: EdgeInsets.zero,
+              onChanged: _busy
+                  ? null
+                  : (value) => setState(() => _consent = value ?? false),
+              title: const Text(
+                'ยอมรับประกาศความเป็นส่วนตัวและเงื่อนไขทดลองใช้',
+              ),
+            ),
+            const SizedBox(height: 12),
+            SizedBox(
+              height: 48,
+              child: FilledButton(
+                onPressed: _busy ? null : _register,
+                child: const Text('สมัครและส่งอีเมลยืนยัน'),
+              ),
+            ),
+            if (_busy)
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+          ],
         ),
       ),
     );
   }
+
+  String _failure(AccountFailureCode code) => switch (code) {
+    AccountFailureCode.invalidEmail => 'รูปแบบอีเมลไม่ถูกต้อง',
+    AccountFailureCode.weakPassword => 'รหัสผ่านต้องมีอย่างน้อย 8 ตัวอักษร',
+    AccountFailureCode.emailInUse => 'อีเมลนี้ถูกใช้แล้ว',
+    AccountFailureCode.network => 'ไม่สามารถเชื่อมต่อเครือข่ายได้',
+    _ => 'สมัครบัญชีไม่สำเร็จ กรุณาลองใหม่',
+  };
 }

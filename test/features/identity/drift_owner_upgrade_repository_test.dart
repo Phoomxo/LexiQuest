@@ -1,5 +1,5 @@
 import 'package:drift/native.dart';
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
@@ -117,13 +117,14 @@ void main() {
       );
       final operation = await database
           .customSelect(
-            'SELECT owner_id, entity_id FROM outbox_operations '
+            'SELECT owner_id, entity_id, state FROM outbox_operations '
             'WHERE operation_id = ?',
             variables: const [Variable<String>('operation-guest')],
           )
           .getSingle();
       expect(operation.read<String>('owner_id'), 'account-owner');
       expect(operation.read<String>('entity_id'), 'word-target');
+      expect(operation.read<String>('state'), 'superseded');
       expect(
         await database
             .customSelect(
@@ -195,6 +196,182 @@ void main() {
       expect(active.firebaseUid, isNull);
     },
   );
+
+  test('logout rollback restores the previous account owner', () async {
+    final guest = await repository.createLocalGuestAfterLogout();
+
+    await repository.rollbackLocalGuestLogout(
+      previousOwnerId: 'guest-owner',
+      guestOwnerId: guest.targetOwnerId,
+    );
+
+    final active = await (database.select(
+      database.localOwners,
+    )..where((row) => row.isActive.equals(true))).getSingle();
+    expect(active.id, 'guest-owner');
+    expect(
+      await (database.select(
+        database.localOwners,
+      )..where((row) => row.id.equals(guest.targetOwnerId))).getSingleOrNull(),
+      isNull,
+    );
+  });
+
+  test(
+    'merge rebuilds SRS and reading projections from combined evidence',
+    () async {
+      await _seedProjectionCollisionGraph(database);
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final srs =
+          await (database.select(database.srsStates)..where(
+                (row) =>
+                    row.ownerId.equals('account-owner') &
+                    row.wordId.equals('word-target'),
+              ))
+              .getSingle();
+      expect(srs.repetitions, 2);
+      final reading =
+          await (database.select(database.readingProgressEntries)..where(
+                (row) =>
+                    row.ownerId.equals('account-owner') &
+                    row.documentId.equals('shared-doc') &
+                    row.documentRevision.equals(1),
+              ))
+              .getSingle();
+      expect(reading.lastPosition, 42);
+      expect(reading.isCompleted, isTrue);
+    },
+  );
+
+  test('merge preserves colliding reward evidence and debits once', () async {
+    for (final ownerId in ['guest-owner', 'account-owner']) {
+      await database.customInsert(
+        "INSERT INTO points_ledger_entries "
+        "(id, owner_id, idempotency_key, entry_type, amount, "
+        "occurred_at_utc_ms) VALUES "
+        "('seed:$ownerId', '$ownerId', 'seed:$ownerId', 'learning', 100, 1)",
+      );
+    }
+    await database.customInsert(
+      "INSERT INTO reward_transactions VALUES "
+      "('reward-target', 'account-owner', 'same-tap', 'purchase', -80, "
+      "'theme_ocean', 1, NULL, 2)",
+    );
+    await database.customInsert(
+      "INSERT INTO reward_transactions VALUES "
+      "('reward-guest', 'guest-owner', 'same-tap', 'purchase', -80, "
+      "'theme_ocean', 1, NULL, 2)",
+    );
+
+    final result = await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+
+    expect(result.conflictCount, 1);
+    expect(
+      await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.ownerId.equals('account-owner'))).get(),
+      hasLength(2),
+    );
+    expect(
+      await (database.select(
+        database.ownedRewardItems,
+      )..where((row) => row.ownerId.equals('account-owner'))).get(),
+      hasLength(1),
+    );
+    final ledger = await (database.select(
+      database.pointsLedgerEntries,
+    )..where((row) => row.ownerId.equals('account-owner'))).get();
+    expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 120);
+  });
+
+  test(
+    'merge rehomes acknowledged anonymous cloud data to account sync',
+    () async {
+      await _seedEveryOwnerScopedTable(database);
+      await database.customUpdate(
+        "UPDATE local_owners SET firebase_uid = 'anonymous-user' "
+        "WHERE id = 'guest-owner'",
+      );
+      await database.customUpdate(
+        'UPDATE vocabulary_categories SET cloud_revision = 4, '
+        'last_acknowledged_at_utc_ms = 40, server_updated_at_utc_ms = 40 '
+        "WHERE owner_id = 'guest-owner'",
+      );
+      await database.customUpdate(
+        'UPDATE vocabulary_words SET cloud_revision = 4, '
+        'last_acknowledged_at_utc_ms = 40, server_updated_at_utc_ms = 40 '
+        "WHERE owner_id = 'guest-owner'",
+      );
+      await database.customUpdate(
+        "UPDATE outbox_operations SET state = 'acknowledged', "
+        'base_revision = 3, acknowledged_at_utc_ms = 40 '
+        "WHERE owner_id = 'guest-owner'",
+      );
+      await database.customUpdate(
+        "UPDATE sync_checkpoints SET server_cursor = 'anonymous-cursor', "
+        "last_success_at_utc_ms = 40 WHERE owner_id = 'guest-owner'",
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final category = await (database.select(
+        database.vocabularyCategories,
+      )..where((row) => row.id.equals('category-1'))).getSingle();
+      final word = await (database.select(
+        database.vocabularyWords,
+      )..where((row) => row.id.equals('word-1'))).getSingle();
+      expect(category.cloudRevision, 0);
+      expect(category.lastAcknowledgedAtUtcMs, isNull);
+      expect(word.cloudRevision, 0);
+      expect(word.serverUpdatedAtUtcMs, isNull);
+      final rehomedOutbox = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.ownerId.equals('account-owner'))).get();
+      for (final entityType in const [
+        'category',
+        'word',
+        'attempt',
+        'readingEvent',
+        'rewardTransaction',
+      ]) {
+        expect(
+          rehomedOutbox.where((row) => row.entityType == entityType),
+          isNotEmpty,
+          reason: '$entityType was not queued for the account namespace',
+        );
+      }
+      expect(
+        rehomedOutbox
+            .where(
+              (row) => const {
+                'category',
+                'word',
+                'attempt',
+                'readingEvent',
+                'rewardTransaction',
+              }.contains(row.entityType),
+            )
+            .every((row) => row.state == 'pending' && row.baseRevision == 0),
+        isTrue,
+      );
+      final checkpoint = await (database.select(
+        database.syncCheckpoints,
+      )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+      expect(checkpoint.serverCursor, isNull);
+      expect(checkpoint.lastSuccessAtUtcMs, isNull);
+    },
+  );
 }
 
 Future<void> _seedOwners(AppDatabase database) async {
@@ -260,11 +437,29 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   );
   await database.customInsert(
     "INSERT INTO points_ledger_entries VALUES "
-    "('points-1', 'guest-owner', 'answer:1', 'quiz', 10, 'attempt-1', 20)",
+    "('points-1', 'guest-owner', 'answer:1', 'quiz', 200, 'attempt-1', 20)",
   );
   await database.customInsert(
     "INSERT INTO achievement_unlocks VALUES "
     "('achievement-1', 'guest-owner', 'first-answer', 1, 'attempt-1', 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO reward_transactions VALUES "
+    "('reward-1', 'guest-owner', 'reward-key-1', 'purchase', -80, "
+    "'theme_ocean', 1, NULL, 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO reward_transactions VALUES "
+    "('reward-equip-1', 'guest-owner', 'reward-equip-key-1', 'equip', 0, "
+    "'theme_ocean', 1, NULL, 21)",
+  );
+  await database.customInsert(
+    "INSERT INTO owned_reward_items VALUES "
+    "('owned-1', 'guest-owner', 'theme_ocean', 1, 'reward-1', 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO equipped_reward_items VALUES "
+    "('equipped-1', 'guest-owner', 'theme', 'theme_ocean', 20)",
   );
   await database.customInsert(
     "INSERT INTO outbox_operations "
@@ -339,6 +534,45 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
     "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
     "created_at_utc_ms) VALUES "
     "('operation-guest', 'guest-owner', 'word', 'word-guest', 'upsert', 2)",
+  );
+}
+
+Future<void> _seedProjectionCollisionGraph(AppDatabase database) async {
+  await _seedCollisionGraph(database);
+  await database.customInsert(
+    "INSERT INTO learning_sessions VALUES "
+    "('session-target', 'account-owner', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
+  );
+  await database.customInsert(
+    "INSERT INTO answer_attempts VALUES "
+    "('attempt-target', 'account-owner', 'session-target', 'word-target', "
+    "'meaning', 1, 10, 1, 1, NULL)",
+  );
+  await database.customInsert(
+    "INSERT INTO srs_states VALUES "
+    "('srs-target', 'account-owner', 'word-target', 1, 1, 1, 1, 0, 1, 2, 1)",
+  );
+  await database.customInsert(
+    "INSERT INTO srs_states VALUES "
+    "('srs-guest', 'guest-owner', 'word-guest', 1, 1, 1, 1, 0, 2, 3, 1)",
+  );
+  await database.customInsert(
+    "INSERT INTO reading_progress_entries VALUES "
+    "('reading-target', 'account-owner', 'shared-doc', 1, 5, 0, 1)",
+  );
+  await database.customInsert(
+    "INSERT INTO reading_progress_entries VALUES "
+    "('reading-guest', 'guest-owner', 'shared-doc', 1, 42, 1, 2)",
+  );
+  await database.customInsert(
+    "INSERT INTO reading_events VALUES "
+    "('reading-event-target', 'account-owner', 'shared-doc', 1, "
+    "'position', 5, 1)",
+  );
+  await database.customInsert(
+    "INSERT INTO reading_events VALUES "
+    "('reading-event-guest', 'guest-owner', 'shared-doc', 1, "
+    "'completed', 42, 2)",
   );
 }
 

@@ -4,7 +4,13 @@ import 'sync_failure.dart';
 
 const int currentSyncPayloadVersion = 1;
 
-enum SyncCollection { categories, words, attempts, readingEvents }
+enum SyncCollection {
+  categories,
+  words,
+  attempts,
+  readingEvents,
+  rewardTransactions,
+}
 
 extension SyncCollectionWireName on SyncCollection {
   String get wireName => switch (this) {
@@ -12,6 +18,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.words => 'words',
     SyncCollection.attempts => 'attempts',
     SyncCollection.readingEvents => 'reading_events',
+    SyncCollection.rewardTransactions => 'reward_transactions',
   };
 
   String get entityType => switch (this) {
@@ -19,6 +26,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.words => 'word',
     SyncCollection.attempts => 'attempt',
     SyncCollection.readingEvents => 'readingEvent',
+    SyncCollection.rewardTransactions => 'rewardTransaction',
   };
 }
 

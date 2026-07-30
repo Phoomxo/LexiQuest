@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/custom_wordbook_importer.dart';
 import 'srs_flashcards_screen.dart';
+import '../navigation/app_routes.dart';
 
 class WordbookImportScreen extends StatefulWidget {
   final CustomWordbookImporter? importer;
@@ -164,9 +165,10 @@ class _WordbookImportScreenState extends State<WordbookImportScreen> {
               ),
               ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.push(
+                  AppNavigator.pushPage<void>(
                     context,
-                    MaterialPageRoute(
+                    AppPage<void>(
+                      name: 'learning/import-srs',
                       builder: (context) =>
                           SrsFlashcardsScreen(wordList: _parsedWords),
                     ),

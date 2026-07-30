@@ -37,7 +37,7 @@ void main() {
 
       await tester.tap(find.byType(NavigationDestination).at(4));
       await tester.pumpAndSettle();
-      expect(find.textContaining('Achievements'), findsOneWidget);
+      expect(find.text('ความสำเร็จ'), findsOneWidget);
 
       await tester.tap(find.byType(NavigationDestination).at(5));
       await tester.pumpAndSettle();
@@ -45,7 +45,7 @@ void main() {
     },
   );
 
-  testWidgets('field composition hides every unverified destination', (
+  testWidgets('field composition exposes completed field destinations', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(
@@ -61,11 +61,22 @@ void main() {
       tester
           .widgetList<NavigationDestination>(find.byType(NavigationDestination))
           .map((destination) => destination.label),
-      <String>['คลังคำศัพท์', 'โปรไฟล์'],
+      <String>[
+        'คลังคำศัพท์',
+        'เรียนรู้',
+        'สถิติ',
+        'จุดอ่อน',
+        'รางวัล',
+        'โปรไฟล์',
+      ],
     );
-    expect(find.text('ร้านค้า'), findsNothing);
-    expect(find.text('สถิติ'), findsNothing);
-    expect(find.text('จุดอ่อน'), findsNothing);
-    expect(find.text('รางวัล'), findsNothing);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('legacy-drawer-button')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('ร้านค้า'), findsOneWidget);
+    expect(find.text('สแกนวัตถุ'), findsOneWidget);
+    expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
+    expect(find.text('AI Tutor'), findsOneWidget);
   });
 }

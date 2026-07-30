@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -70,9 +69,7 @@ void main() {
   });
 
   group('MainNavigationScreen build identity', () {
-    setUp(() {
-      GoogleFonts.config.allowRuntimeFetching = false;
-    });
+    setUp(() {});
 
     testWidgets('drawer renders version and buildId under build-identity', (
       tester,
@@ -80,6 +77,11 @@ void main() {
       const buildInfo = AppBuildInfo(version: '9.9.9+9', buildId: 'feedface');
       await _pumpHome(tester, buildInfo);
       await _openDrawer(tester);
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey<String>('build-identity')),
+        300,
+        scrollable: find.byType(Scrollable).last,
+      );
 
       final identity = tester.widget<Text>(
         find.byKey(const ValueKey<String>('build-identity')),

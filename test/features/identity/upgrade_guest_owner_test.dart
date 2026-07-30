@@ -38,6 +38,14 @@ final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   @override
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) {
+    throw UnimplementedError();
+  }
+
+  @override
   Future<OwnerUpgradeResult> upgrade({
     required String activeOwnerId,
     required String firebaseUid,

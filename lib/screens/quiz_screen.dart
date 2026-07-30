@@ -5,6 +5,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
+import '../navigation/app_routes.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({super.key, this.categoryId, this.learning});
@@ -196,14 +197,17 @@ class _QuizScreenState extends State<QuizScreen> {
     try {
       final summary = await _learning!.finishSession(session.id);
       if (!mounted) return;
-      await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/score',
           builder: (_) => ScoreScreen(
             correctAnswers: summary.correctCount,
             wrongAnswers: summary.wrongCount,
             score: summary.score,
           ),
         ),
+        replace: true,
       );
     } catch (_) {
       if (!mounted) return;

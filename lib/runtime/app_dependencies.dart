@@ -2,13 +2,16 @@ import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
+import '../features/account/application/account_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
+import '../features/export/application/export_use_cases.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -33,9 +36,12 @@ final class AppDependencies {
     this.syncTrigger,
     this.learning,
     this.progress,
+    this.rewards,
     this.vocabulary,
     this.vocabularyImporter,
     this.deviceModels,
+    this.account,
+    this.exports,
     this.geminiTutor,
     this.objectScanner,
     this.speechPractice,
@@ -54,9 +60,12 @@ final class AppDependencies {
   final SyncTrigger? syncTrigger;
   final LearningUseCases? learning;
   final ProgressUseCases? progress;
+  final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final DeviceModelUseCases? deviceModels;
+  final AccountUseCases? account;
+  final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;

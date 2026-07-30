@@ -121,6 +121,24 @@ void main() {
     expect(await database.select(database.learningSessions).get(), isEmpty);
   });
 
+  test(
+    'weakness practice selects only requested local evidence words',
+    () async {
+      final session = await useCases.startWeaknessPractice(
+        wordIds: const ['word-3', 'word-1', 'missing'],
+      );
+
+      expect(session.questions.map((question) => question.word.id).toSet(), {
+        'word-1',
+        'word-3',
+      });
+      final stored = await database
+          .select(database.learningSessions)
+          .getSingle();
+      expect(stored.activityType, 'ghostDuel');
+    },
+  );
+
   test('reading use cases save and restore owner-scoped progress', () async {
     final empty = await useCases.loadReadingProgress(
       documentId: 'article-1',

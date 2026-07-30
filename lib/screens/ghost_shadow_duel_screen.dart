@@ -1,393 +1,294 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../features/progress/domain/progress_models.dart';
+import '../runtime/app_dependencies.dart';
 import '../services/ghost_shadow_duel_service.dart';
 
+typedef GhostProgressLoader = Future<ProgressSnapshot> Function();
+
 class GhostShadowDuelScreen extends StatefulWidget {
-  const GhostShadowDuelScreen({super.key});
+  const GhostShadowDuelScreen({super.key, this.progressLoader, this.learning});
+
+  final GhostProgressLoader? progressLoader;
+  final LearningUseCases? learning;
 
   @override
   State<GhostShadowDuelScreen> createState() => _GhostShadowDuelScreenState();
 }
 
 class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
-  late GhostOpponent _opponent;
-  late final GhostSnapshot _ghostSnapshot;
-
+  LearningUseCases? _learning;
+  Future<_DuelData>? _load;
+  final _answer = TextEditingController();
+  final _stopwatch = Stopwatch();
+  int _index = 0;
   int _playerHp = 100;
-  int _ghostHp = 100;
-  int _currentWordIndex = 0;
-  final TextEditingController _answerController = TextEditingController();
-  final List<String> _battleLog = [];
-  bool _isDuelOver = false;
-  bool _playerWon = false;
-  final Stopwatch _stopwatch = Stopwatch();
-
-  final List<String> _sampleWords = [
-    'perseverance',
-    'resilience',
-    'meticulous',
-    'eloquent',
-    'paradigm',
-  ];
+  int _ghostHp = 0;
+  bool _saving = false;
+  bool _finished = false;
+  bool _sessionClosed = false;
+  final List<String> _log = <String>[];
 
   @override
-  void initState() {
-    super.initState();
-    _ghostSnapshot = GhostSnapshot(
-      recordedAt: DateTime.now().subtract(const Duration(days: 7)),
-      accuracyRate: 0.85,
-      avgResponseTimeMs: 3200,
-      weakWords: _sampleWords,
-    );
-
-    _opponent = GhostShadowDuelService.generateShadowOpponent(_ghostSnapshot);
-    _ghostHp = _opponent.maxHp;
-    _battleLog.add('⚔️ การดวลกับร่างเงาในอดีต (Shadow Self) เริ่มต้นขึ้นแล้ว!');
-    _stopwatch.start();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _learning ??= widget.learning ?? dependencies?.learning;
+    final loader = widget.progressLoader ?? dependencies?.progress?.load;
+    if (loader == null) {
+      _load = Future<_DuelData>.error(
+        StateError('learning evidence dependency unavailable'),
+      );
+      return;
+    }
+    _load = _loadDuel(loader, _learning);
   }
 
-  void _submitAnswer() {
-    if (_isDuelOver) return;
-
-    final input = _answerController.text.trim().toLowerCase();
-    final targetWord = _sampleWords[_currentWordIndex];
-    final isCorrect = (input == targetWord);
-    final responseTimeMs = _stopwatch.elapsedMilliseconds.toDouble();
-    _stopwatch.reset();
-    _stopwatch.start();
-
-    final turnResult = GhostShadowDuelService.evaluateTurn(
-      playerResponseTimeMs: responseTimeMs,
-      isCorrect: isCorrect,
-      snapshot: _ghostSnapshot,
+  Future<_DuelData> _loadDuel(
+    GhostProgressLoader loadProgress,
+    LearningUseCases? learning,
+  ) async {
+    final progress = await loadProgress();
+    if (progress.sampleSize == 0 || progress.weaknesses.isEmpty) {
+      return _DuelData.empty(progress);
+    }
+    if (learning == null) {
+      throw StateError('learning dependency unavailable');
+    }
+    final session = await learning.startWeaknessPractice(
+      wordIds: progress.weaknesses.map((item) => item.wordId),
     );
+    if (session.isEmpty) return _DuelData.empty(progress);
+    final averageMs = progress.averageResponseTimeMs ?? 3000;
+    final ghostSnapshot = GhostSnapshot(
+      recordedAt:
+          progress.latestEvidenceAtUtc ??
+          DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      accuracyRate: progress.accuracy ?? 0,
+      avgResponseTimeMs: averageMs,
+      weakWords: session.questions
+          .map((question) => question.word.spelling)
+          .toList(growable: false),
+    );
+    final opponent = GhostShadowDuelService.generateShadowOpponent(
+      ghostSnapshot,
+    );
+    _ghostHp = opponent.maxHp;
+    _stopwatch.start();
+    return _DuelData(
+      progress: progress,
+      session: session,
+      snapshot: ghostSnapshot,
+      opponent: opponent,
+    );
+  }
 
-    setState(() {
-      _answerController.clear();
-      if (turnResult.playerHitGhost) {
-        _ghostHp = (_ghostHp - turnResult.damageDealt).clamp(
-          0,
-          _opponent.maxHp,
-        );
-        _battleLog.insert(
-          0,
-          '💥 [คำว่า "$targetWord"] คุณโจมตีใส่ร่างเงา ${turnResult.damageDealt} DMG! (${turnResult.message})',
-        );
-      } else {
-        _playerHp = (_playerHp - 15).clamp(0, 100);
-        _battleLog.insert(
-          0,
-          '💔 [คำว่า "$targetWord"] คุณตอบผิด โดนร่างเงาสวนกลับ 15 DMG! (${turnResult.message})',
+  Future<void> _submit(_DuelData data) async {
+    if (_saving || _finished) return;
+    final input = _answer.text.trim().toLowerCase();
+    if (input.isEmpty) return;
+    final question = data.session.questions[_index];
+    final responseMs = _stopwatch.elapsedMilliseconds;
+    final correct = input == question.word.spelling.trim().toLowerCase();
+    setState(() => _saving = true);
+    try {
+      await _learning!.recordAnswer(
+        sessionId: data.session.id,
+        wordId: question.word.id,
+        promptMode: 'ghostSpelling',
+        isCorrect: correct,
+        responseTimeMs: responseMs,
+        attemptNumber: _index + 1,
+        providerProvenance: 'local:ghost-duel:v1',
+      );
+      final turn = GhostShadowDuelService.evaluateTurn(
+        playerResponseTimeMs: responseMs.toDouble(),
+        isCorrect: correct,
+        snapshot: data.snapshot,
+      );
+      if (!mounted) return;
+      setState(() {
+        _answer.clear();
+        if (turn.playerHitGhost) {
+          _ghostHp = (_ghostHp - turn.damageDealt).clamp(
+            0,
+            data.opponent.maxHp,
+          );
+          _log.insert(
+            0,
+            '${question.word.spelling}: ถูก · $responseMs ms · ${turn.damageDealt} damage',
+          );
+        } else {
+          _playerHp = (_playerHp - 15).clamp(0, 100);
+          _log.insert(0, '${question.word.spelling}: ผิด · $responseMs ms');
+        }
+        _index += 1;
+        _finished =
+            _ghostHp == 0 ||
+            _playerHp == 0 ||
+            _index >= data.session.questions.length;
+        _stopwatch
+          ..reset()
+          ..start();
+      });
+      if (_finished) await _closeSession(data.session.id);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองใหม่')),
         );
       }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
-      if (_ghostHp <= 0) {
-        _isDuelOver = true;
-        _playerWon = true;
-        _battleLog.insert(
-          0,
-          '🎉 ชัยชนะ! คุณสามารถเอาชนะร่างเงาของตนเองในอดีตสำเร็จ (+500 XP, +50 Gems)',
-        );
-      } else if (_playerHp <= 0) {
-        _isDuelOver = true;
-        _playerWon = false;
-        _battleLog.insert(
-          0,
-          '☠️ ร่างเงาเอาชนะคุณในรอบนี้! ลองฝึกทบทวนคำศัพท์แล้วกลับมาท้าประลองใหม่',
-        );
-      } else {
-        _currentWordIndex = (_currentWordIndex + 1) % _sampleWords.length;
-      }
-    });
+  Future<void> _closeSession(String sessionId) async {
+    if (_sessionClosed) return;
+    _sessionClosed = true;
+    await _learning?.finishSession(sessionId);
   }
 
   @override
   void dispose() {
-    _answerController.dispose();
+    final load = _load;
+    if (load != null) {
+      unawaited(
+        load.then((data) {
+          if (!data.session.isEmpty) return _closeSession(data.session.id);
+        }),
+      );
+    }
     _stopwatch.stop();
+    _answer.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentWord = _sampleWords[_currentWordIndex];
-
     return Scaffold(
-      backgroundColor: const Color(0xFF0D0A1A),
-      appBar: AppBar(
-        title: const Text(
-          'Ghost Shadow Duel (ดวลร่างเงาอดีต)',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Ghost Opponent Card
-            Card(
-              color: const Color(0xFF1F1538),
-              elevation: 8,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-                side: const BorderSide(color: Colors.purpleAccent, width: 2),
+      appBar: AppBar(title: const Text('ดวลกับสถิติเดิม')),
+      body: FutureBuilder<_DuelData>(
+        future: _load,
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text('ไม่สามารถอ่านประวัติการเรียนได้'));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          final data = snapshot.data!;
+          if (data.session.isEmpty) {
+            return Center(
+              child: Text(
+                'ยังไม่มีจุดอ่อนจากคำตอบจริงสำหรับเริ่มเกม\n'
+                'จำนวนหลักฐาน: ${data.progress.sampleSize}',
+                textAlign: TextAlign.center,
               ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          backgroundColor: Colors.purple,
-                          child: Icon(
-                            Icons.person_outline,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _opponent.name,
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
-                              ),
-                              Text(
-                                'เวลาตอบเฉลี่ยในอดีต: ${(_ghostSnapshot.avgResponseTimeMs / 1000).toStringAsFixed(1)}s',
-                                style: TextStyle(
-                                  color: Colors.purple.shade200,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Chip(
-                          backgroundColor: Colors.purple.shade800,
-                          label: Text(
-                            'HP: $_ghostHp/${_opponent.maxHp}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    LinearProgressIndicator(
-                      value: _ghostHp / _opponent.maxHp,
-                      backgroundColor: Colors.purple.shade900,
-                      valueColor: const AlwaysStoppedAnimation<Color>(
-                        Colors.pinkAccent,
+            );
+          }
+          final question = _finished ? null : data.session.questions[_index];
+          return ListView(
+            padding: const EdgeInsets.all(16),
+            children: [
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    children: [
+                      Text(data.opponent.name),
+                      const SizedBox(height: 8),
+                      LinearProgressIndicator(
+                        value: _ghostHp / data.opponent.maxHp,
                       ),
-                      minHeight: 10,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // Player Status Card
-            Card(
-              color: Colors.indigo.shade900,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'พลังชีวิตของคุณ (Player HP):',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
+                      const SizedBox(height: 8),
+                      Text(
+                        'หลักฐาน ${data.progress.sampleSize} คำตอบ · '
+                        'ความแม่นยำ ${((data.progress.accuracy ?? 0) * 100).round()}% · '
+                        'เวลาเฉลี่ย ${data.snapshot.avgResponseTimeMs.round()} ms · '
+                        'อัลกอริทึม v${data.progress.algorithmVersion}',
                       ),
-                    ),
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.favorite,
-                          color: _playerHp > 30
-                              ? Colors.redAccent
-                              : Colors.orange,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          '$_playerHp/100',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-
-            // Target Prompt Card
-            if (!_isDuelOver) ...[
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.purple.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: Colors.purple.shade200),
-                ),
-                child: Column(
-                  children: [
-                    const Text(
-                      'พิมพ์สเปลคำศัพท์ต่อไปนี้ให้ถูกต้องและไวกว่าร่างเงา:',
-                      style: TextStyle(color: Colors.grey, fontSize: 13),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      currentWord,
-                      style: const TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.purple,
-                        letterSpacing: 1.2,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              const SizedBox(height: 12),
+              Text('พลังผู้เรียน $_playerHp · พลังสถิติเดิม $_ghostHp'),
               const SizedBox(height: 16),
-
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _answerController,
-                      decoration: InputDecoration(
-                        hintText: 'พิมพ์คำศัพท์ที่ตรงกัน...',
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onSubmitted: (_) => _submitAnswer(),
-                    ),
+              if (question != null) ...[
+                Text(
+                  question.word.meaning,
+                  key: const ValueKey<String>('ghost-prompt'),
+                  style: Theme.of(context).textTheme.headlineSmall,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _answer,
+                  enabled: !_saving,
+                  textInputAction: TextInputAction.done,
+                  decoration: const InputDecoration(
+                    labelText: 'พิมพ์คำศัพท์ภาษาอังกฤษ',
                   ),
-                  const SizedBox(width: 12),
-                  ElevatedButton(
-                    onPressed: _submitAnswer,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.purple.shade700,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 20,
-                        vertical: 16,
-                      ),
-                    ),
-                    child: const Text('โจมตี ⚔️'),
-                  ),
-                ],
-              ),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: _playerWon ? Colors.green.shade50 : Colors.red.shade50,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: _playerWon ? Colors.green : Colors.red,
+                  onSubmitted: (_) => _submit(data),
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  height: 48,
+                  child: FilledButton(
+                    onPressed: _saving ? null : () => _submit(data),
+                    child: Text(_saving ? 'กำลังบันทึก' : 'ตอบ'),
                   ),
                 ),
-                child: Column(
-                  children: [
-                    Icon(
-                      _playerWon
-                          ? Icons.emoji_events
-                          : Icons.sentiment_very_dissatisfied,
-                      size: 60,
-                      color: _playerWon ? Colors.amber : Colors.red,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _playerWon
-                          ? 'ชัยชนะเหนือร่างเงา!'
-                          : 'พ่ายแพ้ในศึกครั้งนี้',
-                      style: TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: _playerWon
-                            ? Colors.green.shade900
-                            : Colors.red.shade900,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          _playerHp = 100;
-                          _ghostHp = _opponent.maxHp;
-                          _isDuelOver = false;
-                          _currentWordIndex = 0;
-                          _battleLog.clear();
-                          _battleLog.add('⚔️ การดวลรอบใหม่เริ่มขึ้นแล้ว!');
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: _playerWon ? Colors.green : Colors.red,
-                        foregroundColor: Colors.white,
-                      ),
-                      child: const Text('เล่นอีกครั้ง 🔄'),
-                    ),
-                  ],
+              ] else
+                Text(
+                  'จบเกมแล้ว · บันทึก ${_log.length} คำตอบจริง',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.titleMedium,
                 ),
-              ),
+              const SizedBox(height: 16),
+              for (final entry in _log) ListTile(title: Text(entry)),
             ],
-            const SizedBox(height: 24),
-
-            // Battle Log
-            const Text(
-              'ประวัติการต่อสู้ (Battle Log):',
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              height: 180,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.blueGrey.shade900,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: ListView.builder(
-                itemCount: _battleLog.length,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 4),
-                    child: Text(
-                      _battleLog[index],
-                      style: const TextStyle(
-                        color: Colors.cyanAccent,
-                        fontSize: 13,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
+}
+
+final class _DuelData {
+  const _DuelData({
+    required this.progress,
+    required this.session,
+    required this.snapshot,
+    required this.opponent,
+  });
+
+  factory _DuelData.empty(ProgressSnapshot progress) => _DuelData(
+    progress: progress,
+    session: const QuizSession(id: '', questions: [], startedAtUtc: null),
+    snapshot: GhostSnapshot(
+      recordedAt: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      accuracyRate: 0,
+      avgResponseTimeMs: 0,
+      weakWords: const [],
+    ),
+    opponent: const GhostOpponent(
+      name: '',
+      maxHp: 1,
+      currentHp: 1,
+      attackIntervalSeconds: 1,
+      battleWords: [],
+    ),
+  );
+
+  final ProgressSnapshot progress;
+  final QuizSession session;
+  final GhostSnapshot snapshot;
+  final GhostOpponent opponent;
 }

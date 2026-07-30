@@ -22,6 +22,10 @@ final class DriftProgressQueries {
             .get();
     final correctCount = attempts.where((row) => row.isCorrect).length;
     final wrongCount = attempts.length - correctCount;
+    final responseTimes = attempts
+        .map((row) => row.responseTimeMs)
+        .whereType<int>()
+        .toList(growable: false);
     final pointsExpression = database.pointsLedgerEntries.amount.sum();
     final pointsRow =
         await (database.selectOnly(database.pointsLedgerEntries)
@@ -65,6 +69,11 @@ final class DriftProgressQueries {
               ..addColumns([achievementCountExpression])
               ..where(database.achievementUnlocks.ownerId.equals(ownerId)))
             .getSingle();
+    final achievementRows =
+        await (database.select(database.achievementUnlocks)
+              ..where((row) => row.ownerId.equals(ownerId))
+              ..orderBy([(row) => OrderingTerm.asc(row.unlockedAtUtcMs)]))
+            .get();
 
     final weaknesses = await _loadWeaknesses(ownerId);
     return ProgressSnapshot(
@@ -96,6 +105,29 @@ final class DriftProgressQueries {
             ),
           )
           .toList(growable: false),
+      achievements: achievementRows
+          .map(
+            (row) => AchievementEvidence(
+              id: row.achievementId,
+              definitionVersion: row.definitionVersion,
+              sourceEventId: row.sourceEventId,
+              unlockedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                row.unlockedAtUtcMs,
+                isUtc: true,
+              ),
+            ),
+          )
+          .toList(growable: false),
+      algorithmVersion: 1,
+      averageResponseTimeMs: responseTimes.isEmpty
+          ? null
+          : responseTimes.reduce((a, b) => a + b) / responseTimes.length,
+      latestEvidenceAtUtc: attempts.isEmpty
+          ? null
+          : DateTime.fromMillisecondsSinceEpoch(
+              attempts.last.occurredAtUtcMs,
+              isUtc: true,
+            ),
     );
   }
 

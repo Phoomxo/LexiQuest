@@ -2,15 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'config/m3_theme.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
 import 'features/sync/application/sync_trigger.dart';
 import 'features/sync/platform/background_sync_scheduler.dart';
 import 'features/sync/platform/workmanager_sync_scheduler.dart';
-import 'screens/main_navigation_screen.dart';
-import 'screens/login_screen.dart';
-import 'screens/register_screen.dart';
+import 'navigation/app_route_factory.dart';
+import 'navigation/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -80,38 +79,18 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'LexiQuest - AI Vocab Learning',
-        theme: ThemeData(
-          useMaterial3: true,
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple,
-            primary: Colors.deepPurple,
-            secondary: Colors.indigo,
-            tertiary: Colors.teal,
-          ),
-          textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme),
-          cardTheme: CardThemeData(
-            elevation: 4,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-          ),
-          appBarTheme: const AppBarTheme(
-            centerTitle: true,
-            elevation: 0,
-            backgroundColor: Colors.transparent,
-          ),
-        ),
-        initialRoute: '/login',
-        routes: {
-          '/login': (context) => LoginScreen(
-            guestSessionService: AppDependenciesScope.of(
-              context,
-            ).guestSessionService,
-          ),
-          '/register': (context) => const RegisterScreen(),
-          '/home': (context) => const MainNavigationScreen(),
-        },
+        theme: M3Theme.lightTheme,
+        darkTheme: M3Theme.darkTheme,
+        themeMode: ThemeMode.system,
+        initialRoute: _initialRoute(),
+        onGenerateRoute: AppRouteFactory.onGenerateRoute,
       ),
     );
+  }
+
+  String _initialRoute() {
+    final platformRoute =
+        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
+    return platformRoute == '/' ? AppRoute.login.path : platformRoute;
   }
 }

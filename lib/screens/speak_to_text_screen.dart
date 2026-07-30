@@ -10,6 +10,7 @@ import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
 import 'word_scramble_screen.dart';
+import '../navigation/app_routes.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   const SpeakToTextScreen({
@@ -274,12 +275,14 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: assessment?.isExactMatch == true
-                  ? () => Navigator.pushReplacement(
+                  ? () => AppNavigator.pushPage<void>(
                       context,
-                      MaterialPageRoute<void>(
+                      AppPage<void>(
+                        name: 'learning/word-scramble',
                         builder: (_) =>
                             WordScrambleScreen(word: widget.correctWord),
                       ),
+                      replace: true,
                     )
                   : () => Navigator.maybePop(context),
               child: Text(
