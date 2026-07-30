@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/screens/speak_to_text_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -104,4 +106,53 @@ void main() {
 
     expect(fakeVoice.stopCalls, greaterThanOrEqualTo(1));
   });
+
+  testWidgets('cancels microphone when app leaves foreground', (tester) async {
+    final gateway = _LifecycleSpeechGateway();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voiceProvider: FakeVoiceProvider(),
+          speechPractice: SpeechPracticeUseCases(gateway),
+        ),
+      ),
+    );
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+    await tester.pump();
+
+    expect(gateway.cancelCalls, 1);
+  });
+}
+
+final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
+  int cancelCalls = 0;
+
+  @override
+  bool get isListening => false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {}
+
+  @override
+  Future<void> stop() async {}
 }

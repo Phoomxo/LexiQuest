@@ -1,313 +1,306 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
-import '../utils/pronunciation_evaluator.dart';
+
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
 import 'word_scramble_screen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
-  final String correctWord;
-  final VoiceProvider? voiceProvider;
-
   const SpeakToTextScreen({
     super.key,
     required this.correctWord,
     this.voiceProvider,
+    this.speechPractice,
+    this.sessionId,
+    this.wordId,
+    this.attemptNumber = 1,
   });
+
+  final String correctWord;
+  final VoiceProvider? voiceProvider;
+  final SpeechPracticeUseCases? speechPractice;
+  final String? sessionId;
+  final String? wordId;
+  final int attemptNumber;
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
 }
 
-class _SpeakToTextScreenState extends State<SpeakToTextScreen> {
-  late stt.SpeechToText _speech;
-  late final VoiceProvider _voiceProvider;
-  bool _ownsVoiceProvider = false;
-  bool isListening = false;
-  String spokenText = ''; // ข้อความที่ผู้ใช้พูด
-  bool isCorrect = false;
+class _SpeakToTextScreenState extends State<SpeakToTextScreen>
+    with WidgetsBindingObserver {
+  late final VoiceProvider _voice;
+  bool _ownsVoice = false;
+  SpeechPracticeUseCases? _speech;
+  LearningUseCases? _learning;
+  bool _listening = false;
+  String _transcript = '';
+  String? _error;
+  TranscriptPronunciationAssessment? _assessment;
+  DateTime? _startedAtUtc;
 
   @override
   void initState() {
     super.initState();
-    _speech = stt.SpeechToText();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _speakWord(); // พูดคำศัพท์ทันทีเมื่อเริ่มหน้าจอ
-    });
+    WidgetsBinding.instance.addObserver(this);
+    _voice = widget.voiceProvider ?? VoiceServiceFactory.create();
+    _ownsVoice = widget.voiceProvider == null;
+    WidgetsBinding.instance.addPostFrameCallback((_) => _speakWord());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
+    _learning ??= dependencies?.learning;
   }
 
   Future<void> _speakWord() async {
     try {
-      await _voiceProvider.speak(
+      await _voice.speak(
         VoiceRequest.create(
           text: widget.correctWord,
           language: 'en',
-          voiceId: 'teacher_female',
-          speed: 1.0,
+          voiceId: 'device-default',
+          speed: 1,
           mode: VoiceMode.practice,
           contentId: widget.correctWord,
           contentType: 'vocabulary_word',
         ),
       );
-    } catch (e) {
-      debugPrint('Error speaking word: $e');
+    } catch (_) {
+      if (mounted) setState(() => _error = 'ระบบอ่านออกเสียงไม่พร้อมใช้งาน');
     }
   }
 
-  void _startListening() async {
-    bool available = await _speech.initialize(
-      onStatus: (status) => debugPrint('Speech status: $status'),
-      onError: (error) => debugPrint('Speech error: $error'),
-    );
-    if (available) {
-      setState(() {
-        isListening = true;
-        spokenText = ''; // ล้างข้อความก่อนเริ่มพูดใหม่
-      });
-      _speech.listen(
-        onResult: (result) {
+  Future<void> _startListening() async {
+    final speech = _speech;
+    if (speech == null) {
+      setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งานบนอุปกรณ์นี้');
+      return;
+    }
+    setState(() {
+      _error = null;
+      _transcript = '';
+      _assessment = null;
+    });
+    _startedAtUtc = DateTime.now().toUtc();
+    try {
+      await speech.start(
+        locale: 'en-US',
+        onEvent: _onSpeechEvent,
+        onFailure: (failure) {
+          if (!mounted) return;
           setState(() {
-            spokenText = result.recognizedWords; // อัปเดตข้อความที่ผู้ใช้พูด
-            isCorrect =
-                spokenText.toLowerCase() ==
-                widget.correctWord.toLowerCase(); // ตรวจสอบความถูกต้อง
+            _listening = false;
+            _error = _speechFailureText(failure);
           });
         },
-        listenOptions: stt.SpeechListenOptions(
-          localeId: 'en-US',
-          listenFor: const Duration(seconds: 10),
-          partialResults: true,
-        ),
+        onStatus: (status) {
+          if (!mounted) return;
+          setState(() => _listening = status == 'listening');
+        },
       );
-    } else {
-      setState(() {
-        isListening = false;
-      });
+      if (mounted) setState(() => _listening = speech.isListening);
+    } on SpeechPracticeException catch (error) {
+      if (mounted) {
+        setState(() {
+          _listening = false;
+          _error = _speechFailureText(error.code);
+        });
+      }
     }
   }
 
-  void _stopListening() {
+  void _onSpeechEvent(SpeechRecognitionEvent event) {
+    if (!mounted) return;
+    final assessment = _speech!.assess(
+      target: widget.correctWord,
+      event: event,
+    );
     setState(() {
-      isListening = false;
+      _transcript = event.transcript;
+      _assessment = assessment;
+      if (event.isFinal) _listening = false;
     });
-    _speech.stop();
+    if (event.isFinal) unawaited(_recordEvidence(assessment));
+  }
+
+  Future<void> _recordEvidence(
+    TranscriptPronunciationAssessment assessment,
+  ) async {
+    final learning = _learning;
+    final sessionId = widget.sessionId;
+    final wordId = widget.wordId;
+    if (learning == null || sessionId == null || wordId == null) return;
+    final elapsed = _startedAtUtc == null
+        ? null
+        : DateTime.now().toUtc().difference(_startedAtUtc!).inMilliseconds;
+    try {
+      await learning.recordAnswer(
+        sessionId: sessionId,
+        wordId: wordId,
+        promptMode: 'pronunciationTranscript',
+        isCorrect: assessment.isExactMatch,
+        responseTimeMs: elapsed,
+        attemptNumber: widget.attemptNumber,
+        providerProvenance:
+            '${assessment.engine}|${assessment.locale}|${assessment.method}',
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+      }
+    }
+  }
+
+  Future<void> _stopListening() async {
+    await _speech?.stop();
+    if (mounted) setState(() => _listening = false);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      unawaited(_cancelForLifecycle());
+    }
+  }
+
+  Future<void> _cancelForLifecycle() async {
+    await _speech?.cancel();
+    if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
-    _speech.stop();
-    _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
+    WidgetsBinding.instance.removeObserver(this);
+    unawaited(_speech?.cancel());
+    unawaited(_voice.stop());
+    if (_ownsVoice && _voice is ManagedVoiceService) {
+      _voice.dispose();
     }
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final assessment = _assessment;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'ฝึกพูดคำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      appBar: AppBar(title: const Text('ฝึกออกเสียง')),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(24),
+          children: [
+            Text('พูดคำว่า', style: Theme.of(context).textTheme.titleLarge),
+            const SizedBox(height: 8),
+            Semantics(
+              button: true,
+              label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
+              child: InkWell(
+                onTap: _speakWord,
+                borderRadius: BorderRadius.circular(12),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          widget.correctWord,
+                          style: Theme.of(context).textTheme.headlineMedium,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.volume_up),
+                    ],
+                  ),
+                ),
+              ),
             ),
-          ),
-        ),
-      ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [Colors.deepPurple, Colors.indigo],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // 📢 แสดงคำศัพท์ที่ต้องพูด
-              const Text(
-                'พูดคำว่า:',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 10),
-              GestureDetector(
-                onTap: _speakWord, // แตะเพื่อให้พูดคำศัพท์ซ้ำ
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      widget.correctWord,
-                      style: const TextStyle(
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.yellowAccent,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    const Icon(
-                      Icons.volume_up,
-                      color: Colors.yellowAccent,
-                      size: 32,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 30),
-
-              // 🗣️ แสดงผลคำที่ผู้ใช้พูด
-              Container(
+            const SizedBox(height: 24),
+            Card(
+              child: Padding(
                 padding: const EdgeInsets.all(16),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.8),
-                  borderRadius: BorderRadius.circular(12),
-                ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      spokenText.isEmpty ? 'พูดอะไรบางอย่าง...' : spokenText,
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black,
-                      ),
-                      textAlign: TextAlign.center,
+                      _transcript.isEmpty
+                          ? 'ระบบจะแสดงข้อความที่ได้ยินที่นี่'
+                          : _transcript,
+                      key: const ValueKey<String>('speech-transcript'),
                     ),
-                    const SizedBox(height: 10),
-                    if (spokenText.isNotEmpty) ...[
-                      Builder(
-                        builder: (context) {
-                          final diff = PronunciationEvaluator.evaluate(
-                            widget.correctWord,
-                            spokenText,
-                          );
-                          return Column(
-                            children: [
-                              Text(
-                                'Accuracy: ${diff.scorePercentage}%',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: isCorrect
-                                      ? Colors.green.shade800
-                                      : Colors.red.shade800,
-                                ),
-                              ),
-                              const SizedBox(height: 6),
-                              Icon(
-                                isCorrect ? Icons.check_circle : Icons.cancel,
-                                color: isCorrect ? Colors.green : Colors.red,
-                                size: 40,
-                              ),
-                            ],
-                          );
-                        },
+                    if (assessment != null) ...[
+                      const SizedBox(height: 12),
+                      Text(
+                        'ความเหมือนของข้อความ: '
+                        '${assessment.similarityPercent}%',
                       ),
+                      Text(
+                        'วิธีวัด: ${assessment.method}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                      const Text('ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้'),
                     ],
                   ],
                 ),
               ),
-
-              const SizedBox(height: 40),
-
-              // 🎙️ ปุ่มเริ่มและหยุดพูด
-              GestureDetector(
-                onTapDown: (_) => _startListening(),
-                onTapUp: (_) => _stopListening(),
-                child: AnimatedContainer(
-                  duration: const Duration(milliseconds: 300),
-                  curve: Curves.easeInOut,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: isListening ? Colors.green : Colors.red,
-                    boxShadow: [
-                      BoxShadow(
-                        color: isListening
-                            ? Colors.greenAccent
-                            : Colors.redAccent,
-                        blurRadius: isListening ? 10 : 5,
-                        spreadRadius: 3,
-                      ),
-                    ],
-                  ),
-                  child: const CircleAvatar(
-                    radius: 40,
-                    backgroundColor: Colors.transparent,
-                    child: Icon(Icons.mic, color: Colors.white, size: 40),
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 20),
-
-              // ✅ ปุ่มไปต่อ
-              ElevatedButton(
-                onPressed: () {
-                  if (isCorrect) {
-                    // ✅ ถ้าพูดถูก ให้ไป WordScrambleScreen
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) =>
-                            WordScrambleScreen(word: widget.correctWord),
-                      ),
-                    );
-                  } else {
-                    // ❌ ถ้าพูดผิด ให้กลับไป QuizScreen
-                    Navigator.pop(context);
-                  }
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: isCorrect
-                      ? Colors.green
-                      : Colors.red, // ✅ สีปุ่มเปลี่ยนตามเงื่อนไข
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 50,
-                    vertical: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                ),
-                child: Text(
-                  isCorrect ? 'ไปเกมเรียงคำ' : 'กลับไปแบบทดสอบ',
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 12),
+              Text(
+                _error!,
+                key: const ValueKey<String>('speech-error'),
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
               ),
             ],
-          ),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              key: const ValueKey<String>('speech-listen-button'),
+              onPressed: _listening ? _stopListening : _startListening,
+              icon: Icon(_listening ? Icons.stop : Icons.mic),
+              label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton(
+              onPressed: assessment?.isExactMatch == true
+                  ? () => Navigator.pushReplacement(
+                      context,
+                      MaterialPageRoute<void>(
+                        builder: (_) =>
+                            WordScrambleScreen(word: widget.correctWord),
+                      ),
+                    )
+                  : () => Navigator.maybePop(context),
+              child: Text(
+                assessment?.isExactMatch == true
+                    ? 'ไปเกมเรียงคำ'
+                    : 'กลับไปแบบทดสอบ',
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  String _speechFailureText(SpeechFailureCode code) => switch (code) {
+    SpeechFailureCode.permissionDenied => 'ไม่ได้รับสิทธิ์ใช้ไมโครโฟน',
+    SpeechFailureCode.permissionPermanentlyDenied =>
+      'สิทธิ์ไมโครโฟนถูกปิดถาวร กรุณาเปิดจากการตั้งค่าระบบ',
+    SpeechFailureCode.noMatch => 'ไม่ได้ยินคำพูดที่ชัดเจน กรุณาลองอีกครั้ง',
+    SpeechFailureCode.cancelled => 'ยกเลิกการฟังแล้ว',
+    SpeechFailureCode.unavailable ||
+    SpeechFailureCode.engine => 'ระบบรู้จำเสียงไม่พร้อมใช้งาน',
+  };
 }

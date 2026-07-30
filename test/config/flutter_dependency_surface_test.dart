@@ -48,7 +48,6 @@ void main() {
       'confetti',
       'cached_network_image',
       'google_mlkit_image_labeling',
-      'camera',
     ];
 
     expect(manifest.existsSync(), isTrue);
@@ -75,6 +74,9 @@ void main() {
       'shared_preferences',
       'flutter_speed_dial',
       'audioplayers',
+      'camera',
+      'permission_handler',
+      'image',
     ];
 
     for (final name in retained) {

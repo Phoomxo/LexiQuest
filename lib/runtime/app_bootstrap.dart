@@ -23,6 +23,11 @@ import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/media_practice/application/image_preprocessor.dart';
+import '../features/media_practice/application/object_scanner_use_cases.dart';
+import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/media_practice/data/plugin_camera_gateway.dart';
+import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/sync/application/sync_backoff.dart';
@@ -234,6 +239,15 @@ final class AppBootstrap {
             delegate: delegate,
           ),
     );
+    final objectScanner = ObjectScannerUseCases(
+      camera: PluginCameraGateway(),
+      deviceModels: deviceModels,
+      vocabulary: vocabulary,
+      preprocessor: const DartImagePreprocessor(),
+    );
+    final speechPractice = SpeechPracticeUseCases(
+      PluginSpeechRecognitionGateway(),
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -257,7 +271,11 @@ final class AppBootstrap {
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       deviceModels: deviceModels,
+      objectScanner: objectScanner,
+      speechPractice: speechPractice,
       disposeResources: () async {
+        await objectScanner.dispose();
+        await speechPractice.dispose();
         await deviceModels.dispose();
         modelByteSource.close();
         await database.close();

@@ -8,8 +8,10 @@ import 'achievements_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
+import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 
@@ -174,6 +176,23 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   leading: const Icon(Icons.shopping_bag),
                   title: const Text('ร้านค้า'),
                   onTap: () => _pushLegacyDestination(const ShopPage()),
+                ),
+              if (features.isVisible(FieldFeature.objectScanner))
+                ListTile(
+                  leading: const Icon(Icons.document_scanner_outlined),
+                  title: const Text('สแกนวัตถุ'),
+                  onTap: () =>
+                      _pushLegacyDestination(const ObjectScannerScreen()),
+                ),
+              if (features.isVisible(FieldFeature.speechPractice))
+                ListTile(
+                  leading: const Icon(Icons.mic_none),
+                  title: const Text('ฝึกพูดตามเสียง'),
+                  onTap: () => _pushLegacyDestination(
+                    const ShadowingChallengeScreen(
+                      referenceSentence: 'Practice makes progress.',
+                    ),
+                  ),
                 ),
               ListTile(
                 leading: const Icon(Icons.settings),
