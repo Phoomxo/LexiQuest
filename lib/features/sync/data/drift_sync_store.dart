@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart';
 
@@ -10,10 +11,12 @@ import '../domain/sync_result.dart';
 final class ClaimedSyncOperation {
   const ClaimedSyncOperation({
     required this.leaseToken,
+    required this.attemptCount,
     required this.mutation,
   });
 
   final String leaseToken;
+  final int attemptCount;
   final PushMutation mutation;
 }
 
@@ -128,6 +131,7 @@ final class DriftSyncStore {
           claimed.add(
             ClaimedSyncOperation(
               leaseToken: canonicalLeaseToken,
+              attemptCount: selected.attemptCount + 1,
               mutation: await _reconstructMutation(
                 selected,
                 firebaseUid: canonicalUid,
@@ -221,6 +225,128 @@ final class DriftSyncStore {
         failureCode: Value(failure.code.name),
       ),
     );
+  }
+
+  Future<void> markTerminalFailure({
+    required String operationId,
+    required String leaseToken,
+    required SyncFailure failure,
+  }) async {
+    final canonicalOperationId = _requiredId(operationId, 'operationId');
+    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    if (failure.retryable) {
+      throw ArgumentError.value(failure, 'failure', 'must not be retryable');
+    }
+    final operation =
+        await (database.select(database.outboxOperations)
+              ..where((row) => row.operationId.equals(canonicalOperationId)))
+            .getSingleOrNull();
+    if (operation == null ||
+        operation.state != 'inFlight' ||
+        operation.leaseToken != canonicalLeaseToken) {
+      throw StateError('outbox operation lease does not match');
+    }
+    final state = failure is UnauthenticatedSyncFailure
+        ? 'blockedAuth'
+        : 'permanentFailure';
+    await (database.update(
+      database.outboxOperations,
+    )..where((row) => row.operationId.equals(canonicalOperationId))).write(
+      db.OutboxOperationsCompanion(
+        state: Value(state),
+        nextAttemptAtUtcMs: const Value(null),
+        leaseToken: const Value(null),
+        leaseExpiresAtUtcMs: const Value(null),
+        failureCode: Value(failure.code.name),
+      ),
+    );
+  }
+
+  Future<void> resolvePushConflict({
+    required ClaimedSyncOperation claim,
+    required SyncEntity cloudEntity,
+    required DateTime resolvedAtUtc,
+  }) async {
+    _requireUtc(resolvedAtUtc, 'resolvedAtUtc');
+    final mutation = claim.mutation;
+    if (mutation.collection != cloudEntity.collection ||
+        mutation.entityId != cloudEntity.entityId) {
+      throw ArgumentError.value(
+        cloudEntity.entityId,
+        'cloudEntity',
+        'must identify the claimed entity',
+      );
+    }
+
+    await database.transaction(() async {
+      final operation =
+          await (database.select(database.outboxOperations)
+                ..where((row) => row.operationId.equals(mutation.operationId)))
+              .getSingleOrNull();
+      if (operation == null ||
+          operation.state != 'inFlight' ||
+          operation.leaseToken != claim.leaseToken) {
+        throw StateError('outbox operation lease does not match');
+      }
+
+      final localSnapshot = await _localSnapshot(operation);
+      final cloudSnapshot = <String, Object?>{
+        'collection': cloudEntity.collection.wireName,
+        'entityId': cloudEntity.entityId,
+        'revision': cloudEntity.revision,
+        'isDeleted': cloudEntity.isDeleted,
+        'payloadVersion': cloudEntity.payloadVersion,
+        'clientUpdatedAtUtcMs':
+            cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        'serverUpdatedAtUtcMicros':
+            cloudEntity.serverUpdatedAtUtc.microsecondsSinceEpoch,
+        'payload': cloudEntity.payload,
+      };
+      await database
+          .into(database.syncConflicts)
+          .insert(
+            db.SyncConflictsCompanion.insert(
+              id: 'conflict:${operation.operationId}:${cloudEntity.revision}',
+              ownerId: operation.ownerId,
+              entityType: operation.entityType,
+              entityId: operation.entityId,
+              localRevision: mutation.localRevision,
+              cloudRevision: cloudEntity.revision,
+              resolutionPolicy: 'highestAcknowledgedRevision',
+              outcome: 'cloudWins',
+              localSnapshotJson: Value(jsonEncode(localSnapshot)),
+              cloudSnapshotJson: Value(jsonEncode(cloudSnapshot)),
+              resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+
+      switch (cloudEntity.collection) {
+        case SyncCollection.categories:
+          await _applyCategory(
+            operation.ownerId,
+            cloudEntity,
+            handlePendingConflict: false,
+          );
+        case SyncCollection.words:
+          await _applyWord(
+            operation.ownerId,
+            cloudEntity,
+            handlePendingConflict: false,
+          );
+      }
+      await (database.update(
+        database.outboxOperations,
+      )..where((row) => row.operationId.equals(operation.operationId))).write(
+        const db.OutboxOperationsCompanion(
+          state: Value('conflictResolved'),
+          leaseToken: Value(null),
+          leaseExpiresAtUtcMs: Value(null),
+          nextAttemptAtUtcMs: Value(null),
+          failureCode: Value('cloudWins'),
+        ),
+      );
+    });
   }
 
   Future<SyncCursor?> readCheckpoint(
@@ -404,7 +530,60 @@ final class DriftSyncStore {
     }
   }
 
-  Future<void> _applyCategory(String ownerId, SyncEntity entity) async {
+  Future<Map<String, Object?>> _localSnapshot(
+    db.OutboxOperation operation,
+  ) async {
+    switch (operation.entityType) {
+      case 'category':
+        final category =
+            await (database.select(database.vocabularyCategories)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return <String, Object?>{
+          'entityId': category.id,
+          'localRevision': category.localRevision,
+          'cloudRevision': category.cloudRevision,
+          'name': category.name,
+          'normalizedName': category.normalizedName,
+          'sortOrder': category.sortOrder,
+          'isDeleted': category.isDeleted,
+          'updatedAtUtcMs': category.updatedAtUtcMs,
+        };
+      case 'word':
+        final word =
+            await (database.select(database.vocabularyWords)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return <String, Object?>{
+          'entityId': word.id,
+          'localRevision': word.localRevision,
+          'cloudRevision': word.cloudRevision,
+          'categoryId': word.categoryId,
+          'spelling': word.spelling,
+          'meaning': word.meaning,
+          'partOfSpeech': word.partOfSpeech,
+          'isDeleted': word.isDeleted,
+          'updatedAtUtcMs': word.updatedAtUtcMs,
+        };
+      default:
+        throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  Future<void> _applyCategory(
+    String ownerId,
+    SyncEntity entity, {
+    bool handlePendingConflict = true,
+  }) async {
+    if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
+      return;
+    }
     final payload = entity.payload;
     final name = _requiredString(payload, 'name');
     final normalizedName =
@@ -436,7 +615,14 @@ final class DriftSyncStore {
         );
   }
 
-  Future<void> _applyWord(String ownerId, SyncEntity entity) async {
+  Future<void> _applyWord(
+    String ownerId,
+    SyncEntity entity, {
+    bool handlePendingConflict = true,
+  }) async {
+    if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
+      return;
+    }
     final payload = entity.payload;
     final spelling = _requiredString(payload, 'spelling');
     final meaning = _requiredString(payload, 'meaning');
@@ -475,6 +661,128 @@ final class DriftSyncStore {
             updatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
           ),
         );
+  }
+
+  Future<bool> _preparePullApply(String ownerId, SyncEntity entity) async {
+    late final int localRevision;
+    late final int cloudRevision;
+    late final int? serverUpdatedAtUtcMs;
+    late final Map<String, Object?> localSnapshot;
+
+    switch (entity.collection) {
+      case SyncCollection.categories:
+        final current =
+            await (database.select(database.vocabularyCategories)..where(
+                  (row) =>
+                      row.id.equals(entity.entityId) &
+                      row.ownerId.equals(ownerId),
+                ))
+                .getSingleOrNull();
+        if (current == null) return true;
+        localRevision = current.localRevision;
+        cloudRevision = current.cloudRevision;
+        serverUpdatedAtUtcMs = current.serverUpdatedAtUtcMs;
+        localSnapshot = <String, Object?>{
+          'entityId': current.id,
+          'localRevision': current.localRevision,
+          'cloudRevision': current.cloudRevision,
+          'name': current.name,
+          'normalizedName': current.normalizedName,
+          'sortOrder': current.sortOrder,
+          'isDeleted': current.isDeleted,
+          'updatedAtUtcMs': current.updatedAtUtcMs,
+        };
+      case SyncCollection.words:
+        final current =
+            await (database.select(database.vocabularyWords)..where(
+                  (row) =>
+                      row.id.equals(entity.entityId) &
+                      row.ownerId.equals(ownerId),
+                ))
+                .getSingleOrNull();
+        if (current == null) return true;
+        localRevision = current.localRevision;
+        cloudRevision = current.cloudRevision;
+        serverUpdatedAtUtcMs = current.serverUpdatedAtUtcMs;
+        localSnapshot = <String, Object?>{
+          'entityId': current.id,
+          'localRevision': current.localRevision,
+          'cloudRevision': current.cloudRevision,
+          'categoryId': current.categoryId,
+          'spelling': current.spelling,
+          'meaning': current.meaning,
+          'partOfSpeech': current.partOfSpeech,
+          'isDeleted': current.isDeleted,
+          'updatedAtUtcMs': current.updatedAtUtcMs,
+        };
+    }
+
+    final incomingServerMs = entity.serverUpdatedAtUtc.millisecondsSinceEpoch;
+    if (entity.revision < cloudRevision ||
+        (entity.revision == cloudRevision &&
+            serverUpdatedAtUtcMs != null &&
+            incomingServerMs <= serverUpdatedAtUtcMs)) {
+      return false;
+    }
+    if (localRevision <= cloudRevision) return true;
+
+    final cloudSnapshot = <String, Object?>{
+      'collection': entity.collection.wireName,
+      'entityId': entity.entityId,
+      'revision': entity.revision,
+      'isDeleted': entity.isDeleted,
+      'payloadVersion': entity.payloadVersion,
+      'clientUpdatedAtUtcMs': entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      'serverUpdatedAtUtcMicros':
+          entity.serverUpdatedAtUtc.microsecondsSinceEpoch,
+      'payload': entity.payload,
+    };
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id:
+                'conflict:pull:${entity.collection.wireName}:'
+                '${entity.entityId}:$localRevision:${entity.revision}',
+            ownerId: ownerId,
+            entityType: entity.collection == SyncCollection.categories
+                ? 'category'
+                : 'word',
+            entityId: entity.entityId,
+            localRevision: localRevision,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'highestAcknowledgedRevision',
+            outcome: 'cloudWins',
+            localSnapshotJson: Value(jsonEncode(localSnapshot)),
+            cloudSnapshotJson: Value(jsonEncode(cloudSnapshot)),
+            resolvedAtUtcMs: incomingServerMs,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    await (database.update(database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityId.equals(entity.entityId) &
+              row.entityType.equals(
+                entity.collection == SyncCollection.categories
+                    ? 'category'
+                    : 'word',
+              ) &
+              (row.state.equals('pending') |
+                  row.state.equals('retryWaiting') |
+                  row.state.equals('inFlight') |
+                  row.state.equals('blockedAuth')),
+        ))
+        .write(
+          const db.OutboxOperationsCompanion(
+            state: Value('conflictResolved'),
+            leaseToken: Value(null),
+            leaseExpiresAtUtcMs: Value(null),
+            nextAttemptAtUtcMs: Value(null),
+            failureCode: Value('cloudWins'),
+          ),
+        );
+    return true;
   }
 }
 

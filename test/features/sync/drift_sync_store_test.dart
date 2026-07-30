@@ -1,4 +1,4 @@
-import 'package:drift/drift.dart' hide isNull;
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -271,6 +271,67 @@ void main() {
     expect(due, hasLength(1));
   });
 
+  test(
+    'push conflict records evidence and applies acknowledged cloud state',
+    () async {
+      await _insertCategory(
+        database,
+        ownerId: 'owner-a',
+        id: 'category:travel',
+        name: 'Local edit',
+        revision: 2,
+      );
+      await _insertOutbox(
+        database,
+        ownerId: 'owner-a',
+        operationId: 'category:travel:2:upsert',
+        entityId: 'category:travel',
+        baseRevision: 0,
+        createdAtUtcMs: 1,
+      );
+      final claim = (await store.claimPending(
+        ownerId: 'owner-a',
+        firebaseUid: 'firebase-a',
+        limit: 1,
+        leaseToken: 'lease-a',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: nowUtc,
+      )).single;
+
+      await store.resolvePushConflict(
+        claim: claim,
+        cloudEntity: SyncEntity(
+          collection: SyncCollection.categories,
+          entityId: 'category:travel',
+          revision: 1,
+          isDeleted: false,
+          payloadVersion: 1,
+          clientUpdatedAtUtc: nowUtc,
+          serverUpdatedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+          payload: const <String, Object?>{'name': 'Cloud edit'},
+        ),
+        resolvedAtUtc: nowUtc.add(const Duration(seconds: 2)),
+      );
+
+      final category = await database
+          .select(database.vocabularyCategories)
+          .getSingle();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      final conflict = await database
+          .select(database.syncConflicts)
+          .getSingle();
+      expect(category.name, 'Cloud edit');
+      expect(category.localRevision, 1);
+      expect(category.cloudRevision, 1);
+      expect(operation.state, 'conflictResolved');
+      expect(conflict.outcome, 'cloudWins');
+      expect(conflict.localSnapshotJson, isNotNull);
+      expect(conflict.cloudSnapshotJson, isNotNull);
+    },
+  );
+
   test('failed pull transaction does not advance its checkpoint', () async {
     final page = PullPage(
       changes: <SyncEntity>[
@@ -347,6 +408,64 @@ void main() {
       cursor,
     );
   });
+
+  test(
+    'pull conflict retires losing local outbox and records snapshots',
+    () async {
+      await _insertCategory(
+        database,
+        ownerId: 'owner-a',
+        id: 'category:travel',
+        name: 'Local edit',
+        revision: 2,
+      );
+      await _insertOutbox(
+        database,
+        ownerId: 'owner-a',
+        operationId: 'category:travel:2:upsert',
+        entityId: 'category:travel',
+        baseRevision: 0,
+        createdAtUtcMs: 1,
+      );
+      final cursor = SyncCursor(
+        serverUpdatedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+        documentId: 'category:travel',
+      );
+
+      await store.applyPullPage(
+        ownerId: 'owner-a',
+        collection: SyncCollection.categories,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.categories,
+              entityId: 'category:travel',
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: nowUtc,
+              serverUpdatedAtUtc: cursor.serverUpdatedAtUtc,
+              payload: const <String, Object?>{'name': 'Cloud edit'},
+            ),
+          ],
+          nextCursor: cursor,
+          hasMore: false,
+        ),
+      );
+
+      final category = await database
+          .select(database.vocabularyCategories)
+          .getSingle();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      final conflicts = await database.select(database.syncConflicts).get();
+      expect(category.name, 'Cloud edit');
+      expect(operation.state, 'conflictResolved');
+      expect(conflicts, hasLength(1));
+      expect(conflicts.single.outcome, 'cloudWins');
+    },
+  );
 }
 
 Future<void> _insertOwner(AppDatabase database, String ownerId) {
