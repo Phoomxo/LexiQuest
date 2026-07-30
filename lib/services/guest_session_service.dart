@@ -39,6 +39,8 @@ abstract interface class AnonymousAuthGateway {
   Future<String?> signInAnonymously();
 }
 
+typedef GuestRetryDelay = Future<void> Function(Duration delay);
+
 final class FirebaseAnonymousAuthGateway implements AnonymousAuthGateway {
   const FirebaseAnonymousAuthGateway();
 
@@ -95,31 +97,55 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     required LocalOwnerRepository localOwners,
     required UpgradeGuestOwner upgradeGuestOwner,
     void Function()? onOwnerBound,
+    GuestRetryDelay? retryDelay,
+    int maxCloudBindingAttempts = 8,
   }) => OwnerBindingGuestSessionService._(
     delegate,
     localOwners,
     upgradeGuestOwner,
     onOwnerBound,
+    retryDelay ?? ((delay) => Future<void>.delayed(delay)),
+    maxCloudBindingAttempts,
   );
 
-  const OwnerBindingGuestSessionService._(
+  OwnerBindingGuestSessionService._(
     this._delegate,
     this._localOwners,
     this._upgradeGuestOwner,
     this._onOwnerBound,
-  );
+    this._retryDelay,
+    this._maxCloudBindingAttempts,
+  ) {
+    if (_maxCloudBindingAttempts < 1) {
+      throw ArgumentError.value(
+        _maxCloudBindingAttempts,
+        'maxCloudBindingAttempts',
+        'must be positive',
+      );
+    }
+  }
 
   final GuestSessionService _delegate;
   final LocalOwnerRepository _localOwners;
   final UpgradeGuestOwner _upgradeGuestOwner;
   final void Function()? _onOwnerBound;
+  final GuestRetryDelay _retryDelay;
+  final int _maxCloudBindingAttempts;
+  Future<void>? _cloudBinding;
 
   @override
   Future<GuestSessionResult> start() async {
     try {
       final owner = await _localOwners.getOrCreateActiveOwner();
       if (owner.firebaseUid == null) {
-        unawaited(_bindAnonymousOwner(owner.id));
+        final binding = _cloudBinding ??= _bindAnonymousOwner(owner.id);
+        unawaited(
+          binding.whenComplete(() {
+            if (identical(_cloudBinding, binding)) {
+              _cloudBinding = null;
+            }
+          }),
+        );
       }
       return GuestSessionStarted(uid: owner.firebaseUid ?? owner.id);
     } catch (_) {
@@ -128,15 +154,26 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
   }
 
   Future<void> _bindAnonymousOwner(String ownerId) async {
-    try {
-      final result = await _delegate.start();
-      if (result case GuestSessionStarted(:final uid)) {
-        await _upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
-        _onOwnerBound?.call();
+    for (var attempt = 0; attempt < _maxCloudBindingAttempts; attempt++) {
+      try {
+        final result = await _delegate.start();
+        if (result case GuestSessionStarted(:final uid)) {
+          await _upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
+          _onOwnerBound?.call();
+          return;
+        }
+        if (result case GuestSessionFailed(
+          reason: GuestSessionFailure.providerDisabled,
+        )) {
+          return;
+        }
+      } catch (_) {
+        // Treat unexpected provider failures as transient within the bounded
+        // retry window. Local learning remains available throughout.
       }
-    } catch (_) {
-      // Guest learning is local-first. Anonymous cloud binding is retried by a
-      // later online session and must never prevent or terminate offline use.
+      if (attempt + 1 < _maxCloudBindingAttempts) {
+        await _retryDelay(const Duration(seconds: 15));
+      }
     }
   }
 }

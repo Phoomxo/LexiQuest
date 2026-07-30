@@ -212,6 +212,32 @@ void main() {
       },
     );
 
+    test('retries transient cloud binding without blocking local use', () async {
+      final upgrades = _FakeOwnerUpgradeRepository();
+      final delegate = _SequencedGuestSessionService(<GuestSessionResult>[
+        const GuestSessionFailed(GuestSessionFailure.network),
+        const GuestSessionStarted(uid: 'anonymous-after-reconnect'),
+      ]);
+      final delays = <Duration>[];
+      final service = OwnerBindingGuestSessionService(
+        delegate: delegate,
+        localOwners: _FakeLocalOwnerRepository(),
+        upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+        retryDelay: (delay) async {
+          delays.add(delay);
+        },
+        maxCloudBindingAttempts: 2,
+      );
+
+      final result = await service.start();
+      await upgrades.upgraded.future;
+
+      expect(result, isA<GuestSessionStarted>());
+      expect(delegate.startCalls, 2);
+      expect(delays, const <Duration>[Duration(seconds: 15)]);
+      expect(upgrades.firebaseUid, 'anonymous-after-reconnect');
+    });
+
     test('fails closed when local ownership cannot be bound', () async {
       final service = OwnerBindingGuestSessionService(
         delegate: FirebaseGuestSessionService(
@@ -239,6 +265,19 @@ void main() {
 final class _PendingGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() => Completer<GuestSessionResult>().future;
+}
+
+final class _SequencedGuestSessionService implements GuestSessionService {
+  _SequencedGuestSessionService(this.results);
+
+  final List<GuestSessionResult> results;
+  int startCalls = 0;
+
+  @override
+  Future<GuestSessionResult> start() async {
+    final index = startCalls++;
+    return results[index];
+  }
 }
 
 final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
