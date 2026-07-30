@@ -43,6 +43,7 @@ $firebaseShaPath = Join-Path $repoRoot `
     'tool\cli\configure-firebase-release-sha.cjs'
 $appCheckPath = Join-Path $repoRoot `
     'tool\cli\configure-firebase-app-check.cjs'
+$googleServicesPath = Join-Path $repoRoot 'android\app\google-services.json'
 
 if (-not (Test-Path -LiteralPath $gradlePath)) {
     Write-Host ("FAIL: missing {0}" -f $gradlePath) -ForegroundColor Red
@@ -148,6 +149,36 @@ if (Test-Path -LiteralPath $appCheckPath) {
         'App Check enforcement remains gated on physical acceptance'
     Assert-NoMatch $appCheck 'enforcement:\s*["'']ENFORCED' `
         'automation cannot prematurely claim App Check enforcement'
+}
+
+Assert-True (Test-Path -LiteralPath $googleServicesPath) `
+    'Android Firebase client configuration exists'
+if (
+    (Test-Path -LiteralPath $googleServicesPath) -and
+    (Test-Path -LiteralPath $firebaseShaPath) -and
+    (Test-Path -LiteralPath $appCheckPath)
+) {
+    $googleServices =
+        Get-Content -LiteralPath $googleServicesPath -Raw -Encoding utf8 |
+            ConvertFrom-Json
+    $androidClient = @(
+        $googleServices.client |
+            Where-Object {
+                $_.client_info.android_client_info.package_name -eq
+                    'com.lexiquest.app'
+            }
+    )
+    Assert-True ($androidClient.Count -eq 1) `
+        'google-services contains exactly one LexiQuest Android client'
+    if ($androidClient.Count -eq 1) {
+        $configuredAppId = [string]$androidClient[0].client_info.mobilesdk_app_id
+        $firebaseSha = [System.IO.File]::ReadAllText($firebaseShaPath)
+        $appCheck = [System.IO.File]::ReadAllText($appCheckPath)
+        Assert-Match $firebaseSha ([regex]::Escape($configuredAppId)) `
+            'release SHA registration targets the packaged Firebase app id'
+        Assert-Match $appCheck ([regex]::Escape($configuredAppId)) `
+            'App Check configuration targets the packaged Firebase app id'
+    }
 }
 
 Write-Host ("Android release signing tests: {0} passed, {1} failed" -f $script:Passed, $script:Failed)
