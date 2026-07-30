@@ -35,6 +35,180 @@ service cloud.firestore {
             || request.auth.token.firebase.sign_in_provider != 'anonymous');
     }
 
+    function ownsFieldUser(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+
+    function fieldEntityEnvelopeOk(entityId) {
+      return request.resource.data is map
+        && request.resource.data.keys().hasOnly([
+             'schemaVersion', 'entityId', 'payload', 'revision', 'isDeleted',
+             'clientUpdatedAtUtcMs', 'serverUpdatedAt', 'lastOperationId'
+           ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.entityId == entityId
+        && request.resource.data.entityId is string
+        && request.resource.data.entityId.size() > 0
+        && request.resource.data.entityId.size() <= 256
+        && request.resource.data.payload is map
+        && request.resource.data.revision is int
+        && request.resource.data.revision > 0
+        && request.resource.data.isDeleted is bool
+        && request.resource.data.clientUpdatedAtUtcMs is int
+        && request.resource.data.clientUpdatedAtUtcMs >= 0
+        && request.resource.data.serverUpdatedAt == request.time
+        && request.resource.data.lastOperationId is string
+        && request.resource.data.lastOperationId.size() > 0
+        && request.resource.data.lastOperationId.size() <= 256;
+    }
+
+    function fieldCategoryPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'name', 'normalizedName', 'sortOrder', 'isDeleted',
+          'createdAtUtcMs', 'updatedAtUtcMs'
+        ])
+        && payload.name is string
+        && payload.name.size() > 0
+        && payload.name.size() <= 120
+        && payload.normalizedName is string
+        && payload.normalizedName.size() > 0
+        && payload.normalizedName.size() <= 120
+        && payload.sortOrder is int
+        && payload.sortOrder >= 0
+        && payload.isDeleted is bool
+        && payload.isDeleted == request.resource.data.isDeleted
+        && payload.createdAtUtcMs is int
+        && payload.createdAtUtcMs >= 0
+        && payload.updatedAtUtcMs is int
+        && payload.updatedAtUtcMs >= payload.createdAtUtcMs;
+    }
+
+    function fieldWordPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'categoryId', 'spelling', 'normalizedSpelling', 'meaning',
+          'normalizedMeaning', 'partOfSpeech', 'cefrLevel', 'source',
+          'isGlobal', 'isDeleted', 'createdAtUtcMs', 'updatedAtUtcMs'
+        ])
+        && payload.categoryId is string
+        && payload.categoryId.size() > 0
+        && payload.categoryId.size() <= 256
+        && payload.spelling is string
+        && payload.spelling.size() > 0
+        && payload.spelling.size() <= 200
+        && payload.normalizedSpelling is string
+        && payload.normalizedSpelling.size() > 0
+        && payload.normalizedSpelling.size() <= 200
+        && payload.meaning is string
+        && payload.meaning.size() > 0
+        && payload.meaning.size() <= 1000
+        && payload.normalizedMeaning is string
+        && payload.normalizedMeaning.size() > 0
+        && payload.normalizedMeaning.size() <= 1000
+        && payload.partOfSpeech is string
+        && payload.partOfSpeech.size() <= 60
+        && (payload.cefrLevel == null
+            || (payload.cefrLevel is string
+                && payload.cefrLevel.size() <= 20))
+        && payload.source is string
+        && payload.source.size() > 0
+        && payload.source.size() <= 60
+        && payload.isGlobal is bool
+        && payload.isDeleted is bool
+        && payload.isDeleted == request.resource.data.isDeleted
+        && payload.createdAtUtcMs is int
+        && payload.createdAtUtcMs >= 0
+        && payload.updatedAtUtcMs is int
+        && payload.updatedAtUtcMs >= payload.createdAtUtcMs;
+    }
+
+    function fieldWordCategoryExists(uid) {
+      return existsAfter(
+        /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
+      );
+    }
+
+    function fieldOperationAfter(uid, operationId) {
+      return getAfter(
+        /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId)
+      ).data;
+    }
+
+    function fieldOperationLinksEntity(uid, entityType, entityId) {
+      let operation = fieldOperationAfter(
+        uid,
+        request.resource.data.lastOperationId
+      );
+      return operation.schemaVersion == 1
+        && operation.operationId == request.resource.data.lastOperationId
+        && operation.entityType == entityType
+        && operation.entityId == entityId
+        && operation.resultingRevision == request.resource.data.revision
+        && operation.baseRevision
+             == (resource == null ? 0 : resource.data.revision)
+        && operation.resultingRevision > operation.baseRevision
+        && ((operation.operationKind == 'delete'
+             && request.resource.data.isDeleted)
+            || (operation.operationKind == 'upsert'
+                && !request.resource.data.isDeleted));
+    }
+
+    function fieldOperationEnvelopeOk(operationId) {
+      return request.resource.data is map
+        && request.resource.data.keys().hasOnly([
+             'schemaVersion', 'operationId', 'entityType', 'entityId',
+             'operationKind', 'baseRevision', 'resultingRevision',
+             'acknowledgedAt'
+           ])
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.operationId == operationId
+        && request.resource.data.operationId is string
+        && request.resource.data.operationId.size() > 0
+        && request.resource.data.operationId.size() <= 256
+        && request.resource.data.entityType in ['category', 'word']
+        && request.resource.data.entityId is string
+        && request.resource.data.entityId.size() > 0
+        && request.resource.data.entityId.size() <= 256
+        && request.resource.data.operationKind in ['upsert', 'delete']
+        && request.resource.data.baseRevision is int
+        && request.resource.data.baseRevision >= 0
+        && request.resource.data.resultingRevision is int
+        && request.resource.data.resultingRevision
+             > request.resource.data.baseRevision
+        && request.resource.data.acknowledgedAt == request.time;
+    }
+
+    function fieldOperationMatchesCategory(uid) {
+      let entityId = request.resource.data.entityId;
+      let beforePath =
+        /databases/$(database)/documents/field_users/$(uid)/categories/$(entityId);
+      let entity = getAfter(beforePath).data;
+      return ((!exists(beforePath)
+               && request.resource.data.baseRevision == 0)
+              || (exists(beforePath)
+                  && get(beforePath).data.revision
+                     == request.resource.data.baseRevision))
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == request.resource.data.resultingRevision;
+    }
+
+    function fieldOperationMatchesWord(uid) {
+      let entityId = request.resource.data.entityId;
+      let beforePath =
+        /databases/$(database)/documents/field_users/$(uid)/words/$(entityId);
+      let entity = getAfter(beforePath).data;
+      return ((!exists(beforePath)
+               && request.resource.data.baseRevision == 0)
+              || (exists(beforePath)
+                  && get(beforePath).data.revision
+                     == request.resource.data.baseRevision))
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == request.resource.data.resultingRevision;
+    }
+
     // True when the categories/{categoryId} document is owned by the signed-in
     // user. Used to authorize the nested words subcollection, whose own
     // user_id field is unreliably populated (incl. empty strings from the
@@ -137,6 +311,50 @@ service cloud.firestore {
         && stateAfterDoc.data.totalPoints
              == stateDoc.data.totalPoints
                 - request.resource.data.total_price;
+    }
+
+    // -------------------------------------------------------------------------
+    // field_users/{uid} - versioned local-first sync mirror. The owner path is
+    // the authorization boundary. Entity and immutable operation writes must
+    // be committed atomically and must agree on the exact base/result revision.
+    // -------------------------------------------------------------------------
+    match /field_users/{uid} {
+      allow read, write: if false;
+
+      match /categories/{categoryId} {
+        allow read: if ownsFieldUser(uid);
+        allow create, update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(categoryId)
+          && fieldCategoryPayloadOk()
+          && fieldOperationLinksEntity(uid, 'category', categoryId);
+        allow delete: if false;
+      }
+
+      match /words/{wordId} {
+        allow read: if ownsFieldUser(uid);
+        allow create, update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(wordId)
+          && fieldWordPayloadOk()
+          && fieldWordCategoryExists(uid)
+          && fieldOperationLinksEntity(uid, 'word', wordId);
+        allow delete: if false;
+      }
+
+      match /operations/{operationId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldOperationEnvelopeOk(operationId)
+          && ((request.resource.data.entityType == 'category'
+               && fieldOperationMatchesCategory(uid))
+              || (request.resource.data.entityType == 'word'
+                  && fieldOperationMatchesWord(uid)));
+        allow update, delete: if false;
+      }
+    }
+
+    match /app_control/field {
+      allow read: if isSignedIn();
+      allow write: if false;
     }
 
     // -------------------------------------------------------------------------

@@ -18,6 +18,7 @@ const {
 
 const projectId = 'demo-lexiquest-rules-test';
 const alice = 'alice_uid';
+const bob = 'bob_uid';
 const productId = 'wallpaper_neon';
 const purchaseId = `${alice}_${productId}`;
 let testEnv;
@@ -46,6 +47,107 @@ function purchaseData(totalPrice = 50) {
     total_price: totalPrice,
     created_at: serverTimestamp(),
   };
+}
+
+function fieldCategoryData({
+  entityId = 'category-1',
+  operationId = 'operation-1',
+  revision = 1,
+} = {}) {
+  return {
+    schemaVersion: 1,
+    entityId,
+    payload: {
+      name: 'Travel',
+      normalizedName: 'travel',
+      sortOrder: 0,
+      isDeleted: false,
+      createdAtUtcMs: 1000,
+      updatedAtUtcMs: 2000,
+    },
+    revision,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  };
+}
+
+function fieldOperationData({
+  operationId = 'operation-1',
+  entityId = 'category-1',
+  baseRevision = 0,
+  resultingRevision = 1,
+} = {}) {
+  return {
+    schemaVersion: 1,
+    operationId,
+    entityType: 'category',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision,
+    resultingRevision,
+    acknowledgedAt: serverTimestamp(),
+  };
+}
+
+function writeFieldCategory(db, options = {}) {
+  const uid = options.uid ?? alice;
+  const entityId = options.entityId ?? 'category-1';
+  const operationId = options.operationId ?? 'operation-1';
+  const batch = writeBatch(db);
+  batch.set(
+    doc(db, 'field_users', uid, 'categories', entityId),
+    fieldCategoryData({ ...options, entityId, operationId }),
+  );
+  batch.set(
+    doc(db, 'field_users', uid, 'operations', operationId),
+    fieldOperationData({ ...options, entityId, operationId }),
+  );
+  return batch.commit();
+}
+
+function writeFieldWord(db, {
+  uid = alice,
+  entityId = 'word-1',
+  operationId = 'word-operation-1',
+  categoryId = 'category-1',
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'words', entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload: {
+      categoryId,
+      spelling: 'station',
+      normalizedSpelling: 'station',
+      meaning: 'สถานี',
+      normalizedMeaning: 'สถานี',
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'manual',
+      isGlobal: false,
+      isDeleted: false,
+      createdAtUtcMs: 1000,
+      updatedAtUtcMs: 2000,
+    },
+    revision: 1,
+    isDeleted: false,
+    clientUpdatedAtUtcMs: 2000,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1,
+    operationId,
+    entityType: 'word',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision: 0,
+    resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
 }
 
 before(async () => {
@@ -230,6 +332,148 @@ describe('anonymous user isolation & cross-account integrity contract', () => {
     await assertFails(
       setDoc(doc(db, 'state', alice), {
         totalPoints: 99999,
+      }),
+    );
+  });
+});
+
+describe('field sync ownership and atomic revision contract', () => {
+  it('allows registered and anonymous owners to atomically create their own entity', async () => {
+    const registeredDb = authDb();
+    await assertSucceeds(writeFieldCategory(registeredDb));
+
+    const anonymousDb = authDb('anon_field', true);
+    await assertSucceeds(
+      writeFieldCategory(anonymousDb, {
+        uid: 'anon_field',
+        entityId: 'category-anon',
+        operationId: 'operation-anon',
+      }),
+    );
+  });
+
+  it('denies cross-user reads and writes', async () => {
+    await assertSucceeds(writeFieldCategory(authDb()));
+    const bobDb = authDb(bob);
+
+    await assertFails(
+      getDoc(doc(bobDb, 'field_users', alice, 'categories', 'category-1')),
+    );
+    await assertFails(
+      writeFieldCategory(bobDb, {
+        uid: alice,
+        entityId: 'category-by-bob',
+        operationId: 'operation-by-bob',
+      }),
+    );
+  });
+
+  it('denies an entity write without its immutable operation acknowledgement', async () => {
+    const db = authDb();
+    await assertFails(
+      setDoc(
+        doc(db, 'field_users', alice, 'categories', 'category-1'),
+        fieldCategoryData(),
+      ),
+    );
+  });
+
+  it('denies extra entity fields and a mismatched document id', async () => {
+    const db = authDb();
+    const extra = writeBatch(db);
+    extra.set(
+      doc(db, 'field_users', alice, 'categories', 'category-extra'),
+      {
+        ...fieldCategoryData({
+          entityId: 'category-extra',
+          operationId: 'operation-extra',
+        }),
+        leakedField: 'not allowed',
+      },
+    );
+    extra.set(
+      doc(db, 'field_users', alice, 'operations', 'operation-extra'),
+      fieldOperationData({
+        entityId: 'category-extra',
+        operationId: 'operation-extra',
+      }),
+    );
+    await assertFails(extra.commit());
+
+    const mismatch = writeBatch(db);
+    mismatch.set(
+      doc(db, 'field_users', alice, 'categories', 'category-path'),
+      fieldCategoryData({
+        entityId: 'different',
+        operationId: 'operation-mismatch',
+      }),
+    );
+    mismatch.set(
+      doc(db, 'field_users', alice, 'operations', 'operation-mismatch'),
+      fieldOperationData({
+        entityId: 'different',
+        operationId: 'operation-mismatch',
+      }),
+    );
+    await assertFails(mismatch.commit());
+  });
+
+  it('requires the exact current base revision and advancing result', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldCategory(db));
+
+    await assertFails(
+      writeFieldCategory(db, {
+        operationId: 'operation-stale',
+        baseRevision: 0,
+        revision: 2,
+        resultingRevision: 2,
+      }),
+    );
+    await assertSucceeds(
+      writeFieldCategory(db, {
+        operationId: 'operation-2',
+        baseRevision: 1,
+        revision: 2,
+        resultingRevision: 2,
+      }),
+    );
+  });
+
+  it('keeps operation acknowledgements immutable', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldCategory(db));
+    await assertFails(
+      updateDoc(
+        doc(db, 'field_users', alice, 'operations', 'operation-1'),
+        { resultingRevision: 999 },
+      ),
+    );
+    await assertFails(
+      deleteDoc(doc(db, 'field_users', alice, 'operations', 'operation-1')),
+    );
+  });
+
+  it('requires each synchronized word to reference an existing cloud category', async () => {
+    const db = authDb();
+    await assertFails(writeFieldWord(db));
+    await assertSucceeds(writeFieldCategory(db));
+    await assertSucceeds(writeFieldWord(db));
+  });
+
+  it('allows policy reads but denies client policy writes', async () => {
+    await testEnv.withSecurityRulesDisabled(async (context) => {
+      await setDoc(doc(context.firestore(), 'app_control', 'field'), {
+        schemaVersion: 1,
+        cloudSyncEnabled: true,
+      });
+    });
+    const db = authDb();
+    await assertSucceeds(getDoc(doc(db, 'app_control', 'field')));
+    await assertFails(
+      setDoc(doc(db, 'app_control', 'field'), {
+        schemaVersion: 1,
+        cloudSyncEnabled: false,
       }),
     );
   });
