@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
+import 'field_feature_registry.dart';
 
 final class AppDependencies {
   const AppDependencies({
@@ -11,12 +12,14 @@ final class AppDependencies {
     required this.config,
     required this.guestSessionService,
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
+    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
   });
 
   final AppRuntimeStatus runtimeStatus;
   final AppConfig? config;
   final GuestSessionService guestSessionService;
   final AppBuildInfo buildInfo;
+  final FieldFeatureRegistry fieldFeatures;
 
   @override
   String toString() => 'AppDependencies';

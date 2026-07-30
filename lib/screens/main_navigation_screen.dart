@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
+import '../runtime/field_feature.dart';
+import '../runtime/field_feature_registry.dart';
 import 'achievements_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
@@ -11,9 +14,14 @@ import 'shop_page.dart';
 import 'weakness_clinic_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
-  final int initialIndex;
+  const MainNavigationScreen({
+    super.key,
+    this.initialIndex = 0,
+    this.featureRegistry,
+  });
 
-  const MainNavigationScreen({super.key, this.initialIndex = 0});
+  final int initialIndex;
+  final FieldFeatureRegistry? featureRegistry;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -22,28 +30,82 @@ class MainNavigationScreen extends StatefulWidget {
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int _currentIndex;
-
-  final List<Widget> _screens = const [
-    ChooseModeScreen(),
-    MasteryDashboardScreen(),
-    WeaknessClinicScreen(),
-    AchievementsScreen(),
-    ProfileSettingsScreen(),
-  ];
+  List<_NavigationEntry> _entries = const [];
 
   @override
   void initState() {
     super.initState();
-    _currentIndex = widget.initialIndex.clamp(0, _screens.length - 1);
+    _currentIndex = widget.initialIndex;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _entries = _buildEntries(_fieldFeatures(context));
+    _currentIndex = _currentIndex.clamp(0, _entries.length - 1);
+  }
+
+  FieldFeatureRegistry _fieldFeatures(BuildContext context) {
+    return widget.featureRegistry ??
+        AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
+        const BuildFieldFeatureRegistry.allEnabled();
+  }
+
+  List<_NavigationEntry> _buildEntries(FieldFeatureRegistry features) {
+    return [
+      if (features.isVisible(FieldFeature.vocabulary))
+        _NavigationEntry(
+          screen: CategoriesPage(),
+          icon: Icons.menu_book_outlined,
+          selectedIcon: Icons.menu_book,
+          label: 'คลังคำศัพท์',
+        ),
+      if (features.isVisible(FieldFeature.quiz) ||
+          features.isVisible(FieldFeature.srs) ||
+          features.isVisible(FieldFeature.reading))
+        const _NavigationEntry(
+          screen: ChooseModeScreen(),
+          icon: Icons.school_outlined,
+          selectedIcon: Icons.school,
+          label: 'เรียนรู้',
+        ),
+      if (features.isVisible(FieldFeature.mastery))
+        const _NavigationEntry(
+          screen: MasteryDashboardScreen(),
+          icon: Icons.analytics_outlined,
+          selectedIcon: Icons.analytics,
+          label: 'สถิติ',
+        ),
+      if (features.isVisible(FieldFeature.weakness))
+        const _NavigationEntry(
+          screen: WeaknessClinicScreen(),
+          icon: Icons.healing_outlined,
+          selectedIcon: Icons.healing,
+          label: 'จุดอ่อน',
+        ),
+      if (features.isVisible(FieldFeature.achievements))
+        const _NavigationEntry(
+          screen: AchievementsScreen(),
+          icon: Icons.emoji_events_outlined,
+          selectedIcon: Icons.emoji_events,
+          label: 'รางวัล',
+        ),
+      const _NavigationEntry(
+        screen: ProfileSettingsScreen(),
+        icon: Icons.person_outlined,
+        selectedIcon: Icons.person,
+        label: 'โปรไฟล์',
+      ),
+    ];
   }
 
   String _runtimeStatusSummary(BuildContext context) {
     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
     if (status == null) {
-      return 'โหมดทดสอบ · ระบบอาจไม่พร้อมใช้งาน';
+      return 'โหมดทดสอบ · ระบบภายนอกอาจยังไม่พร้อมใช้งาน';
     }
     if (status.isFullyReady) {
-      return 'ระบบพร้อมใช้งาน';
+      return 'ระบบภายนอกพร้อมใช้งาน';
     }
 
     final unavailable = <String>[
@@ -51,7 +113,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       if (status.supabase != RuntimeAvailability.ready) 'Supabase',
       if (status.backends != RuntimeAvailability.ready) 'AI/Voice',
     ];
-    return '${unavailable.join(' · ')} ยังไม่พร้อมใช้งาน';
+    return '${unavailable.join(' · ')} ยังไม่พร้อม — การเรียนในเครื่องยังใช้ได้';
   }
 
   String _buildIdentity(BuildContext context) {
@@ -69,11 +131,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final features = _fieldFeatures(context);
     return Scaffold(
       key: _scaffoldKey,
-      body: IndexedStack(index: _currentIndex, children: _screens),
+      body: IndexedStack(
+        index: _currentIndex,
+        children: [for (final entry in _entries) entry.screen],
+      ),
       floatingActionButton: FloatingActionButton.small(
         key: const ValueKey<String>('legacy-drawer-button'),
+        heroTag: 'main-navigation-drawer',
         tooltip: 'เปิดเมนูเพิ่มเติม',
         onPressed: () => _scaffoldKey.currentState?.openDrawer(),
         child: const Icon(Icons.menu),
@@ -91,19 +158,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   style: TextStyle(color: Colors.white, fontSize: 22),
                 ),
               ),
-              ListTile(
-                leading: const Icon(Icons.menu_book),
-                title: const Text('คลังหมวดหมู่'),
-                onTap: () => _pushLegacyDestination(CategoriesPage()),
-              ),
-              ListTile(
-                leading: const Icon(Icons.shopping_bag),
-                title: const Text('ร้านค้า'),
-                onTap: () => _pushLegacyDestination(const ShopPage()),
-              ),
+              if (features.isVisible(FieldFeature.vocabulary))
+                ListTile(
+                  leading: const Icon(Icons.menu_book),
+                  title: const Text('คลังคำศัพท์'),
+                  onTap: () {
+                    _scaffoldKey.currentState?.closeDrawer();
+                    setState(() {
+                      _currentIndex = 0;
+                    });
+                  },
+                ),
+              if (features.isVisible(FieldFeature.shop))
+                ListTile(
+                  leading: const Icon(Icons.shopping_bag),
+                  title: const Text('ร้านค้า'),
+                  onTap: () => _pushLegacyDestination(const ShopPage()),
+                ),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('ตั้งค่าเดิม'),
+                title: const Text('ตั้งค่า'),
                 onTap: () => _pushLegacyDestination(const SettingScreen()),
               ),
               const Divider(),
@@ -138,34 +212,29 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             _currentIndex = index;
           });
         },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.school_outlined),
-            selectedIcon: Icon(Icons.school),
-            label: 'เรียนรู้',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.analytics_outlined),
-            selectedIcon: Icon(Icons.analytics),
-            label: 'สถิติ',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.healing_outlined),
-            selectedIcon: Icon(Icons.healing),
-            label: 'จุดอ่อน',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.emoji_events_outlined),
-            selectedIcon: Icon(Icons.emoji_events),
-            label: 'รางวัล',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outlined),
-            selectedIcon: Icon(Icons.person),
-            label: 'โปรไฟล์',
-          ),
+        destinations: [
+          for (final entry in _entries)
+            NavigationDestination(
+              icon: Icon(entry.icon),
+              selectedIcon: Icon(entry.selectedIcon),
+              label: entry.label,
+            ),
         ],
       ),
     );
   }
+}
+
+final class _NavigationEntry {
+  const _NavigationEntry({
+    required this.screen,
+    required this.icon,
+    required this.selectedIcon,
+    required this.label,
+  });
+
+  final Widget screen;
+  final IconData icon;
+  final IconData selectedIcon;
+  final String label;
 }

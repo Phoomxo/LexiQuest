@@ -7,7 +7,6 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
-import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _FakeGuestSessionService implements GuestSessionService {
@@ -55,14 +54,16 @@ void main() {
     GoogleFonts.config.allowRuntimeFetching = false;
   });
 
-  testWidgets('/home resolves to the canonical learning shell', (tester) async {
+  testWidgets('/home resolves to the field-safe shell', (tester) async {
     await _pumpHome(tester);
 
     expect(find.byType(MainNavigationScreen), findsOneWidget);
     expect(find.byKey(_drawerButtonKey), findsOneWidget);
   });
 
-  testWidgets('shell has exactly five ordered destinations', (tester) async {
+  testWidgets('field shell exposes vocabulary and profile only', (
+    tester,
+  ) async {
     await _pumpHome(tester);
 
     final destinations = tester
@@ -74,17 +75,13 @@ void main() {
         )
         .toList();
 
-    expect(destinations, hasLength(5));
     expect(destinations.map((destination) => destination.label), <String>[
-      'เรียนรู้',
-      'สถิติ',
-      'จุดอ่อน',
-      'รางวัล',
+      'คลังคำศัพท์',
       'โปรไฟล์',
     ]);
   });
 
-  testWidgets('all destinations switch the persistent IndexedStack', (
+  testWidgets('field destinations switch the persistent IndexedStack', (
     tester,
   ) async {
     await _pumpHome(tester);
@@ -98,56 +95,46 @@ void main() {
       matching: find.byType(NavigationDestination),
     );
 
-    for (var index = 0; index < 5; index++) {
+    for (var index = 0; index < 2; index++) {
       await tester.tap(destinations.at(index));
       await tester.pump(const Duration(milliseconds: 50));
       expect(tester.widget<IndexedStack>(stackFinder).index, index);
     }
   });
 
-  testWidgets('drawer lists legacy destinations and safe runtime status', (
+  testWidgets('drawer hides shop and explains degraded cloud safely', (
     tester,
   ) async {
     await _pumpHome(tester, ready: false);
     await _openDrawer(tester);
 
-    expect(find.text('คลังหมวดหมู่'), findsOneWidget);
-    expect(find.text('ร้านค้า'), findsOneWidget);
-    expect(find.text('ตั้งค่าเดิม'), findsOneWidget);
+    expect(find.text('คลังคำศัพท์'), findsWidgets);
+    expect(find.text('ร้านค้า'), findsNothing);
+    expect(find.text('ตั้งค่า'), findsOneWidget);
 
     final status = tester.widget<Text>(
       find.byKey(const ValueKey<String>('runtime-status-summary')),
     );
-    expect(status.data, contains('ไม่พร้อม'));
+    expect(status.data, contains('การเรียนในเครื่องยังใช้ได้'));
   });
 
-  testWidgets('drawer category item reaches CategoriesPage', (tester) async {
+  testWidgets('drawer vocabulary item keeps the category workspace selected', (
+    tester,
+  ) async {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('คลังหมวดหมู่'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
+    await tester.tap(find.text('คลังคำศัพท์').last);
+    await tester.pumpAndSettle();
 
     expect(find.byType(CategoriesPage), findsOneWidget);
-  });
-
-  testWidgets('drawer shop item reaches ShopPage', (tester) async {
-    await _pumpHome(tester);
-    await _openDrawer(tester);
-
-    await tester.tap(find.text('ร้านค้า'));
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 350));
-
-    expect(find.byType(ShopPage), findsOneWidget);
   });
 
   testWidgets('drawer settings item reaches SettingScreen', (tester) async {
     await _pumpHome(tester);
     await _openDrawer(tester);
 
-    await tester.tap(find.text('ตั้งค่าเดิม'));
+    await tester.tap(find.text('ตั้งค่า'));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 350));
 
