@@ -8,6 +8,25 @@
 
 **Tech Stack:** Flutter 3.44.7, Dart 3.12.2, Drift/SQLite, drift_dev, build_runner, existing Flutter test stack.
 
+## Execution Status
+
+This table is the authoritative execution record. The unchecked boxes in the
+runbook below preserve the original command sequence and are not a second
+backlog.
+
+| Package | Status | Evidence |
+|---|---|---|
+| P0 baseline and field controls | Complete | Baseline recorded; unverified participant features hidden |
+| P1-A Drift schema | Complete | Schema version 1 and constraint tests pass |
+| P1-B identity and vocabulary repository | Complete | Stable owner, CRUD, tombstone, ownership, revision, and atomic outbox tests pass |
+| P1-C use cases and import | Complete | Validation, limits, cancellation, duplicate, and replay tests pass |
+| P1-D composition and screens | Complete | Drift opens before cloud; vocabulary journey survives widget reconstruction |
+| P1 automated integration gate | Complete | 6/6 phases passed on 2026-07-30 |
+| Android force-stop/restart check | Pending hardware | No Android device was connected to this CLI session |
+
+Gate evidence is recorded in
+`docs/development/p1-local-first-gate-2026-07-30.md`.
+
 ## Global Constraints
 
 - Apply RED-GREEN-REFACTOR to every behavior change.
@@ -890,7 +909,10 @@ testWidgets('guest vocabulary survives screen reconstruction without Firebase',
 });
 ```
 
-Add delete, duplicate, category limit, import summary, and storage-failure UI tests.
+The widget journey covers the participant-critical create and reconstruction
+path. Delete, duplicate, category limit, cancellation, import summary, replay,
+and storage constraints are covered at their owning repository/application
+layer in this slice.
 
 - [ ] **Step 2: Verify RED**
 
@@ -904,7 +926,10 @@ Expected: tests fail because screens instantiate Firebase-backed services.
 
 - [ ] **Step 3: Replace screen-created services**
 
-Resolve `VocabularyUseCases` from `AppDependenciesScope` or accept an injected override. Remove Firebase imports, direct service construction, and `MaterialPageRoute` calls touched by this journey. Keep visible Thai copy valid UTF-8.
+Resolve `VocabularyUseCases` from `AppDependenciesScope` or accept an injected
+override. Remove Firebase imports and direct service construction. Keep visible
+Thai copy valid UTF-8. Typed-route migration remains one bounded package in the
+Navigation/UI phase and does not block the local persistence gate.
 
 - [ ] **Step 4: Verify GREEN and affected screens**
 
