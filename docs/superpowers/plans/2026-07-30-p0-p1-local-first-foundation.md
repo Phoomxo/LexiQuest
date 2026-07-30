@@ -203,9 +203,9 @@ test('field defaults expose only evidence-backed foundation features', () {
   const registry = BuildFieldFeatureRegistry.fieldDefaults();
 
   expect(registry.stateOf(FieldFeature.vocabulary), FieldFeatureState.enabled);
-  expect(registry.stateOf(FieldFeature.quiz), FieldFeatureState.enabled);
-  expect(registry.stateOf(FieldFeature.reading), FieldFeatureState.enabled);
-  expect(registry.stateOf(FieldFeature.srs), FieldFeatureState.enabled);
+  expect(registry.stateOf(FieldFeature.quiz), FieldFeatureState.hidden);
+  expect(registry.stateOf(FieldFeature.reading), FieldFeatureState.hidden);
+  expect(registry.stateOf(FieldFeature.srs), FieldFeatureState.hidden);
   expect(registry.stateOf(FieldFeature.shop), FieldFeatureState.hidden);
   expect(registry.stateOf(FieldFeature.objectScanner), FieldFeatureState.hidden);
   expect(registry.stateOf(FieldFeature.aiTutor), FieldFeatureState.hidden);
@@ -241,9 +241,6 @@ final class BuildFieldFeatureRegistry implements FieldFeatureRegistry {
   const BuildFieldFeatureRegistry.fieldDefaults()
       : _states = const {
           FieldFeature.vocabulary: FieldFeatureState.enabled,
-          FieldFeature.quiz: FieldFeatureState.enabled,
-          FieldFeature.srs: FieldFeatureState.enabled,
-          FieldFeature.reading: FieldFeatureState.enabled,
         };
 
   final Map<FieldFeature, FieldFeatureState> _states;
