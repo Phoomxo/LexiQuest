@@ -1,6 +1,10 @@
 import 'package:flutter/widgets.dart';
 
 import '../config/app_config.dart';
+import '../data/local/app_database.dart';
+import '../features/identity/domain/local_owner_repository.dart';
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -13,6 +17,10 @@ final class AppDependencies {
     required this.guestSessionService,
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
+    this.database,
+    this.localOwners,
+    this.vocabulary,
+    this.vocabularyImporter,
   });
 
   final AppRuntimeStatus runtimeStatus;
@@ -20,6 +28,10 @@ final class AppDependencies {
   final GuestSessionService guestSessionService;
   final AppBuildInfo buildInfo;
   final FieldFeatureRegistry fieldFeatures;
+  final AppDatabase? database;
+  final LocalOwnerRepository? localOwners;
+  final VocabularyUseCases? vocabulary;
+  final ImportVocabulary? vocabularyImporter;
 
   @override
   String toString() => 'AppDependencies';

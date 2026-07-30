@@ -16,6 +16,7 @@ class _FakeGuestSessionService implements GuestSessionService {
 AppDependencies _dependencies(AppBuildInfo buildInfo) {
   return AppDependencies(
     runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
       firebase: RuntimeAvailability.ready,
       supabase: RuntimeAvailability.ready,
       backends: RuntimeAvailability.ready,

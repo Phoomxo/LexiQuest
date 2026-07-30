@@ -1,5 +1,7 @@
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -17,11 +19,18 @@ AppConfig _validConfig() => AppConfig.fromValues(
   isDebug: false,
 );
 
+AppDatabase _testDatabase() {
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  return database;
+}
+
 void main() {
   group('AppBootstrap.initialize', () {
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: () => expectedConfig,
@@ -36,8 +45,31 @@ void main() {
       expect(identical(dependencies.config, expectedConfig), isTrue);
     });
 
+    test(
+      'creates the active local owner before exposing dependencies',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final owners = await database.select(database.localOwners).get();
+
+        expect(dependencies.localOwners, isNotNull);
+        expect(owners, hasLength(1));
+        expect(owners.single.isActive, isTrue);
+      },
+    );
+
     test('records Firebase failure and still returns', () async {
+      final database = _testDatabase();
       final bootstrap = AppBootstrap(
+        createDatabase: () => database,
         initializeFirebase: () async => throw StateError('firebase-down'),
         initializeSupabase: () async {},
         loadConfig: _validConfig,
@@ -50,6 +82,9 @@ void main() {
         dependencies.runtimeStatus.firebase,
         RuntimeAvailability.unavailable,
       );
+      expect(dependencies.runtimeStatus.localData, RuntimeAvailability.ready);
+      expect(identical(dependencies.database, database), isTrue);
+      expect(dependencies.vocabulary, isNotNull);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
       expect(dependencies.config, isNotNull);
@@ -57,6 +92,7 @@ void main() {
 
     test('records Supabase failure and still returns', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: _validConfig,
@@ -75,6 +111,7 @@ void main() {
 
     test('records config failure with null config', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: () => throw const AppConfigException('invalid config'),
@@ -94,6 +131,7 @@ void main() {
 
     test('represents multiple failures independently', () async {
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async => throw StateError('firebase-down'),
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: () => throw const AppConfigException('invalid config'),
@@ -122,6 +160,7 @@ void main() {
       const supabaseSentinel = 'SUPABASE-SECRET-7c9f3a';
       const configSentinel = 'CONFIG-SECRET-7c9f3a';
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async => throw StateError(firebaseSentinel),
         initializeSupabase: () async => throw StateError(supabaseSentinel),
         loadConfig: () => throw const AppConfigException(configSentinel),
@@ -153,6 +192,7 @@ void main() {
     test('retains exact injected GuestSessionService identity', () async {
       final guestSessionService = _StubGuestSessionService();
       final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
         initializeFirebase: () async {},
         initializeSupabase: () async {},
         loadConfig: _validConfig,

@@ -24,6 +24,7 @@ AppDependencies _dependencies({bool ready = true}) {
       : RuntimeAvailability.unavailable;
   return AppDependencies(
     runtimeStatus: AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
       firebase: availability,
       supabase: availability,
       backends: availability,

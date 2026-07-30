@@ -1,8 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
+import '../data/local/app_database.dart';
 import '../firebase_options.dart';
+import '../features/identity/data/drift_local_owner_repository.dart';
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
+import '../features/vocabulary/data/drift_vocabulary_repository.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -11,6 +18,7 @@ import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
 typedef AppConfigLoader = AppConfig Function();
+typedef AppDatabaseFactory = AppDatabase Function();
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -50,6 +58,7 @@ final class AppBootstrap {
     required this.initializeSupabase,
     required this.loadConfig,
     required this.guestSessionService,
+    required this.createDatabase,
   });
 
   factory AppBootstrap.production() {
@@ -58,6 +67,7 @@ final class AppBootstrap {
       initializeSupabase: _initializeSupabaseProduction,
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
+      createDatabase: AppDatabase.production,
     );
   }
 
@@ -65,14 +75,37 @@ final class AppBootstrap {
   final RuntimeInitializer initializeSupabase;
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
+  final AppDatabaseFactory createDatabase;
 
   Future<AppDependencies> initialize() async {
+    final database = createDatabase();
+    await database.customSelect('SELECT 1').getSingle();
+    final idGenerator = const Uuid();
+    final localOwners = DriftLocalOwnerRepository(
+      database,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    await localOwners.getOrCreateActiveOwner();
+    final vocabulary = VocabularyUseCases(
+      owners: localOwners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    final vocabularyImporter = ImportVocabulary(
+      owners: localOwners,
+      repository: DriftVocabularyImportRepository(database),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
     final firebase = await _availability(initializeFirebase);
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
         firebase: firebase,
         supabase: supabase,
         backends: config == null
@@ -82,6 +115,10 @@ final class AppBootstrap {
       config: config,
       guestSessionService: guestSessionService,
       buildInfo: const AppBuildInfo.fromEnvironment(),
+      database: database,
+      localOwners: localOwners,
+      vocabulary: vocabulary,
+      vocabularyImporter: vocabularyImporter,
     );
   }
 
