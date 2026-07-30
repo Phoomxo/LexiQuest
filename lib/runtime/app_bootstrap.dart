@@ -12,6 +12,8 @@ import '../firebase_options.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/data/drift_learning_repository.dart';
 import '../features/sync/application/sync_backoff.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_mutex.dart';
@@ -185,6 +187,14 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    final learning = LearningUseCases(
+      owners: localOwners,
+      repository: DriftLearningRepository(database),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+      buildInfo: const AppBuildInfo.fromEnvironment(),
+      onLocalMutation: notifyLocalMutation,
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -203,6 +213,7 @@ final class AppBootstrap {
       upgradeGuestOwner: upgradeGuestOwner,
       syncEngine: syncEngine,
       syncTrigger: syncTrigger,
+      learning: learning,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       disposeResources: database.close,

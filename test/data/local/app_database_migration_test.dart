@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version two with sync metadata', () async {
+  test('new databases use schema version three with learning indexes', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 2);
+    expect(database.schemaVersion, 3);
 
     final categoryColumns = await _columnNames(
       database,
@@ -51,6 +51,21 @@ void main() {
       containsAll(<String>['local_snapshot_json', 'cloud_snapshot_json']),
     );
     expect(tables, contains('runtime_flags'));
+    final indexes = await database
+        .customSelect(
+          "SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'idx_learning_%'",
+        )
+        .map((row) => row.read<String>('name'))
+        .get();
+    expect(
+      indexes,
+      containsAll(<String>[
+        'idx_learning_sessions_owner_started',
+        'idx_learning_attempts_owner_word_time',
+        'idx_learning_srs_owner_due',
+        'idx_learning_reading_owner_document',
+      ]),
+    );
   });
 
   test('schema one data migrates to schema two without row loss', () async {
@@ -91,7 +106,7 @@ void main() {
         )
         .getSingle();
 
-    expect(version, 2);
+    expect(version, 3);
     expect(category.read<String>('name'), 'Travel');
     expect(category.read<int>('cloud_revision'), 0);
     expect(word.read<String>('spelling'), 'station');

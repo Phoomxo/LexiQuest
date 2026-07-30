@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/learning/application/learning_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -25,6 +26,7 @@ final class AppDependencies {
     this.upgradeGuestOwner,
     this.syncEngine,
     this.syncTrigger,
+    this.learning,
     this.vocabulary,
     this.vocabularyImporter,
     this.disposeResources,
@@ -40,6 +42,7 @@ final class AppDependencies {
   final UpgradeGuestOwner? upgradeGuestOwner;
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
+  final LearningUseCases? learning;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final Future<void> Function()? disposeResources;

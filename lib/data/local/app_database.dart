@@ -39,7 +39,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -89,9 +89,44 @@ final class AppDatabase extends _$AppDatabase {
         );
         await migrator.createTable(runtimeFlags);
       }
+      if (from < 3) {
+        await _createLearningIndexes();
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
+      await _createLearningIndexes();
     },
   );
+
+  Future<void> _createLearningIndexes() async {
+    final tableNames = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table'",
+    ).map((row) => row.read<String>('name')).get();
+    final tables = tableNames.toSet();
+    if (tables.contains('learning_sessions')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_learning_sessions_owner_started '
+        'ON learning_sessions(owner_id, started_at_utc_ms)',
+      );
+    }
+    if (tables.contains('answer_attempts')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_learning_attempts_owner_word_time '
+        'ON answer_attempts(owner_id, word_id, occurred_at_utc_ms)',
+      );
+    }
+    if (tables.contains('srs_states')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_learning_srs_owner_due '
+        'ON srs_states(owner_id, due_at_utc_ms)',
+      );
+    }
+    if (tables.contains('reading_progress_entries')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_learning_reading_owner_document '
+        'ON reading_progress_entries(owner_id, document_id, document_revision)',
+      );
+    }
+  }
 }
