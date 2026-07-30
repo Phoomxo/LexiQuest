@@ -1,172 +1,190 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import '../ai/ai_models.dart';
-import '../ai/ai_service_factory.dart';
-import '../ai/content_provider.dart';
+
+import '../features/gemini/domain/gemini_contracts.dart';
+import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/media_practice/domain/media_practice_contracts.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import '../voice/voice_provider.dart';
 import '../voice/voice_service_factory.dart';
+import 'gemini_settings_screen.dart';
 
-class ChatMessage {
-  final String sender;
-  final String text;
-  final bool isUser;
-  final String? grammarRating;
-
+final class ChatMessage {
   const ChatMessage({
     required this.sender,
     required this.text,
     required this.isUser,
-    this.grammarRating,
+    this.model,
   });
+
+  final String sender;
+  final String text;
+  final bool isUser;
+  final String? model;
 }
 
 class AiTutorScreen extends StatefulWidget {
-  final VoiceProvider? voiceProvider;
-  final ContentProvider? contentProvider;
+  const AiTutorScreen({
+    super.key,
+    this.voiceProvider,
+    this.geminiTutor,
+    this.speechPractice,
+  });
 
-  const AiTutorScreen({super.key, this.voiceProvider, this.contentProvider});
+  final VoiceProvider? voiceProvider;
+  final GeminiTutorController? geminiTutor;
+  final SpeechPracticeUseCases? speechPractice;
 
   @override
   State<AiTutorScreen> createState() => _AiTutorScreenState();
 }
 
-class _AiTutorScreenState extends State<AiTutorScreen> {
-  late final VoiceProvider _voiceProvider;
-  late final ContentProvider _contentProvider;
-  bool _ownsVoiceProvider = false;
-  bool _ownsContentProvider = false;
-  bool _isGenerating = false;
-  final TextEditingController _inputController = TextEditingController();
-  String _selectedScenario = 'Job Interview';
-  bool _isListeningMic = false;
-
-  final List<ChatMessage> _messages = [
-    const ChatMessage(
-      sender: 'AI Tutor',
-      text:
-          'Hello! Welcome to the interview. Could you please introduce yourself and tell me about your qualifications?',
-      isUser: false,
-    ),
+class _AiTutorScreenState extends State<AiTutorScreen>
+    with WidgetsBindingObserver {
+  static const _scenarios = [
+    'Job Interview',
+    'Airport Check-in',
+    'Cafe Ordering',
+    'Academic Conference',
+    'Hotel Check-in',
   ];
+
+  late final VoiceProvider _voiceProvider;
+  bool _ownsVoiceProvider = false;
+  GeminiTutorController? _tutor;
+  SpeechPracticeUseCases? _speech;
+  final TextEditingController _inputController = TextEditingController();
+  final List<ChatMessage> _messages = [];
+  GeminiCancellation? _generationCancellation;
+  String _selectedScenario = _scenarios.first;
+  bool _isGenerating = false;
+  bool _isListening = false;
+  bool _hasKey = false;
+  String? _error;
+  int _interactionEpoch = 0;
 
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
-    if (widget.contentProvider != null) {
-      _contentProvider = widget.contentProvider!;
-      _ownsContentProvider = false;
-    } else {
-      _contentProvider = AiServiceFactory.create();
-      _ownsContentProvider = true;
+    WidgetsBinding.instance.addObserver(this);
+    _voiceProvider = widget.voiceProvider ?? VoiceServiceFactory.create();
+    _ownsVoiceProvider = widget.voiceProvider == null;
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final resolvedTutor = widget.geminiTutor ?? dependencies?.geminiTutor;
+    _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
+    if (!identical(resolvedTutor, _tutor)) {
+      _tutor = resolvedTutor;
+      unawaited(_loadKeyStatus());
     }
   }
 
-  void _sendMessage([String? spokenText]) {
+  Future<void> _loadKeyStatus() async {
+    final tutor = _tutor;
+    if (tutor == null) return;
+    try {
+      final status = await tutor.loadSettings();
+      if (mounted) setState(() => _hasKey = status.hasKey);
+    } on GeminiException {
+      if (mounted) setState(() => _hasKey = false);
+    }
+  }
+
+  Future<void> _sendMessage([String? spokenText]) async {
+    final tutor = _tutor;
     final text = (spokenText ?? _inputController.text).trim();
     if (text.isEmpty || _isGenerating) return;
-
-    final grammarRating = text.length > 15
-        ? 'CEFR B2 | Grammar: Excellent (95%)'
-        : 'CEFR B1 | Grammar: Good (82%)';
-
+    if (tutor == null) {
+      setState(() => _error = 'ระบบ Gemini ยังไม่พร้อมใช้งาน');
+      return;
+    }
+    final cancellation = GeminiCancellation();
+    final epoch = ++_interactionEpoch;
+    _generationCancellation = cancellation;
     setState(() {
-      _messages.add(
-        ChatMessage(
-          sender: 'You',
-          text: text,
-          isUser: true,
-          grammarRating: grammarRating,
-        ),
-      );
+      _messages.add(ChatMessage(sender: 'คุณ', text: text, isUser: true));
       _inputController.clear();
-      _isListeningMic = false;
+      _isListening = false;
       _isGenerating = true;
+      _error = null;
     });
-
-    _generateAiReply(scenario: _selectedScenario, userText: text).then((reply) {
-      if (!mounted) return;
+    try {
+      final reply = await tutor.reply(
+        scenario: _selectedScenario,
+        learnerMessage: text,
+        cancellation: cancellation,
+      );
+      if (!mounted || epoch != _interactionEpoch) return;
       setState(() {
         _messages.add(
-          ChatMessage(sender: 'AI Tutor', text: reply, isUser: false),
+          ChatMessage(
+            sender: 'AI Tutor',
+            text: reply.text,
+            isUser: false,
+            model: reply.model,
+          ),
         );
-        _isGenerating = false;
       });
-      _speakAiResponse(reply);
-    });
+      unawaited(_speakAiResponse(reply.text));
+    } on GeminiException catch (error) {
+      if (mounted && epoch == _interactionEpoch) {
+        setState(() => _error = _geminiFailureText(error.code));
+      }
+    } finally {
+      if (mounted && epoch == _interactionEpoch) {
+        setState(() => _isGenerating = false);
+      }
+      if (epoch == _interactionEpoch &&
+          identical(_generationCancellation, cancellation)) {
+        _generationCancellation = null;
+      }
+    }
   }
 
-  /// Generates the AI tutor's reply via the content provider.
-  ///
-  /// Falls back to a scenario-aware canned response when the provider is
-  /// unavailable, so the screen never hangs and the demo always works
-  /// offline (the canned text is labelled clearly in code as a fallback so
-  /// the thesis can distinguish live-model runs from offline runs).
-  Future<String> _generateAiReply({
-    required String scenario,
-    required String userText,
-  }) async {
-    final prompt =
-        'You are an AI English tutor simulating a "$scenario" conversation. '
-        'The learner just said: "$userText". '
-        'Reply in ONE short, natural English sentence that advances the '
-        'conversation at CEFR B1-B2 level.';
+  Future<void> _toggleMicListening() async {
+    final speech = _speech;
+    if (_isListening) {
+      await speech?.cancel();
+      if (mounted) setState(() => _isListening = false);
+      return;
+    }
+    if (speech == null) {
+      setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งาน');
+      return;
+    }
+    setState(() => _error = null);
     try {
-      final response = await _contentProvider.generate(
-        ContentRequest.create(
-          text: prompt,
-          kind: ContentKind.explanation,
-          cefr: CefrLevel.b2,
-          language: 'en',
-        ),
+      await speech.start(
+        locale: 'en-US',
+        onEvent: (event) {
+          if (!mounted) return;
+          if (event.isFinal) {
+            setState(() => _isListening = false);
+            if (event.transcript.trim().isNotEmpty) {
+              unawaited(_sendMessage(event.transcript));
+            }
+          }
+        },
+        onFailure: (failure) {
+          if (!mounted) return;
+          setState(() {
+            _isListening = false;
+            _error = _speechFailureText(failure);
+          });
+        },
+        onStatus: (status) {
+          if (mounted) setState(() => _isListening = status == 'listening');
+        },
       );
-      return response.text;
-    } on AiFailure catch (failure) {
-      debugPrint(
-        'AiTutor: provider ${failure.category.name}; using canned fallback',
-      );
-      return _cannedFallbackReply(scenario);
-    } on Object catch (error) {
-      debugPrint('AiTutor: ${error.runtimeType}; using canned fallback');
-      return _cannedFallbackReply(scenario);
-    }
-  }
-
-  /// Scenario-aware canned replies used only when the live provider fails.
-  /// Kept deterministic (no random) so an offline demo is reproducible.
-  String _cannedFallbackReply(String scenario) {
-    switch (scenario) {
-      case 'Airport Check-in':
-        return 'May I please see your passport and booking reference number?';
-      case 'Cafe Ordering':
-        return 'Welcome to LexiCafe! Would you prefer a latte or a cappuccino today?';
-      case 'Academic Conference':
-        return 'Fascinating findings! How did you control for confounding variables in your methodology?';
-      case 'Hotel Check-in':
-        return 'Welcome to our hotel! Did you reserve a deluxe suite with ocean view?';
-      default:
-        return 'That sounds impressive! What would you say is your greatest strength in team collaboration?';
-    }
-  }
-
-  void _toggleMicListening() {
-    if (_isListeningMic) {
-      setState(() => _isListeningMic = false);
-    } else {
-      setState(() => _isListeningMic = true);
-      Future.delayed(const Duration(milliseconds: 1200), () {
-        if (mounted && _isListeningMic) {
-          _sendMessage(
-            'I have three years of experience in software engineering and academic research.',
-          );
-        }
-      });
+      if (mounted) setState(() => _isListening = speech.isListening);
+    } on SpeechPracticeException catch (error) {
+      if (mounted) setState(() => _error = _speechFailureText(error.code));
     }
   }
 
@@ -176,26 +194,63 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
         VoiceRequest.create(
           text: text,
           language: 'en',
-          voiceId: 'teacher_female',
-          speed: 1.0,
+          voiceId: 'device-default',
+          speed: 1,
           mode: VoiceMode.practice,
-          contentId: 'ai_tutor_response',
+          contentId: 'gemini-tutor-response',
           contentType: 'ai_tutor',
         ),
       );
-    } catch (_) {}
+    } on Object {
+      // The verified text reply remains usable when device TTS is unavailable.
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      unawaited(_cancelAudioForLifecycle());
+    }
+  }
+
+  Future<void> _cancelAudioForLifecycle() async {
+    await _speech?.cancel();
+    await _voiceProvider.stop();
+    if (mounted && _isListening) setState(() => _isListening = false);
+  }
+
+  Future<void> _openGeminiSettings() async {
+    _interactionEpoch += 1;
+    _generationCancellation?.cancel();
+    _generationCancellation = null;
+    await _speech?.cancel();
+    await _voiceProvider.stop();
+    if (!mounted) return;
+    setState(() {
+      _isListening = false;
+      _isGenerating = false;
+    });
+    await Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => GeminiSettingsScreen(geminiTutor: _tutor),
+      ),
+    );
+    await _loadKeyStatus();
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _interactionEpoch += 1;
+    _generationCancellation?.cancel();
+    unawaited(_speech?.cancel());
+    unawaited(_voiceProvider.stop());
     _inputController.dispose();
-    _voiceProvider.stop();
     if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
       _voiceProvider.dispose();
-    }
-    final provider = _contentProvider;
-    if (_ownsContentProvider && provider is ManagedAiService) {
-      provider.dispose();
     }
     super.dispose();
   }
@@ -204,204 +259,197 @@ class _AiTutorScreenState extends State<AiTutorScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'จำลองบทสนทนา AI Tutor (Voice-to-Voice)',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            fontSize: 16,
+        title: const Text('AI Tutor'),
+        actions: [
+          IconButton(
+            tooltip: 'ตั้งค่า Gemini',
+            onPressed: _openGeminiSettings,
+            icon: const Icon(Icons.key_outlined),
           ),
-        ),
-        backgroundColor: Colors.indigo.shade900,
-        centerTitle: true,
+        ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
+      body: SafeArea(
         child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.indigo.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.indigo.shade200),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  const Text(
-                    'ฉากจำลองสนทนา:',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.indigo,
-                    ),
-                  ),
-                  DropdownButton<String>(
-                    value: _selectedScenario,
-                    underline: const SizedBox(),
-                    items: const [
-                      DropdownMenuItem(
-                        value: 'Job Interview',
-                        child: Text('💼 Job Interview'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Airport Check-in',
-                        child: Text('✈️ Airport Check-in'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Cafe Ordering',
-                        child: Text('☕ Cafe Ordering'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Academic Conference',
-                        child: Text('🎓 Academic Conference'),
-                      ),
-                      DropdownMenuItem(
-                        value: 'Hotel Check-in',
-                        child: Text('🏨 Hotel Check-in'),
-                      ),
-                    ],
-                    onChanged: (val) {
-                      if (val != null) {
-                        setState(() {
-                          _selectedScenario = val;
-                          _messages.add(
-                            ChatMessage(
-                              sender: 'AI Tutor',
-                              text:
-                                  'Switched to $val scenario! Let\'s begin practicing.',
-                              isUser: false,
-                            ),
-                          );
-                        });
-                      }
-                    },
-                  ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedScenario,
+                decoration: const InputDecoration(
+                  labelText: 'สถานการณ์สนทนา',
+                  border: OutlineInputBorder(),
+                ),
+                items: [
+                  for (final scenario in _scenarios)
+                    DropdownMenuItem(value: scenario, child: Text(scenario)),
                 ],
+                onChanged: _isGenerating
+                    ? null
+                    : (value) {
+                        if (value != null) {
+                          setState(() => _selectedScenario = value);
+                        }
+                      },
               ),
             ),
-            const SizedBox(height: 8),
-            if (_isListeningMic) ...[
-              Container(
-                padding: const EdgeInsets.all(8),
-                margin: const EdgeInsets.only(bottom: 8),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.mic, color: Colors.red),
-                    SizedBox(width: 8),
-                    Text(
-                      'กำลังฟังเสียงพูดของคุณ... (Speaking)',
-                      style: TextStyle(
-                        color: Colors.red,
-                        fontWeight: FontWeight.bold,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text(
+                _hasKey
+                    ? 'ข้อความจะส่งไป Gemini ตามการยินยอมที่บันทึกไว้'
+                    : 'เพิ่ม Gemini API key ก่อนเริ่มใช้งาน',
+                key: const ValueKey<String>('ai-tutor-key-status'),
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+            Expanded(
+              child: _messages.isEmpty
+                  ? const Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(24),
+                        child: Text(
+                          'ยังไม่มีบทสนทนา เลือกสถานการณ์แล้วพิมพ์หรือพูด'
+                          'ภาษาอังกฤษเพื่อเรียก Gemini จริง',
+                          textAlign: TextAlign.center,
+                        ),
                       ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: _messages.length,
+                      itemBuilder: (context, index) {
+                        final message = _messages[index];
+                        return Align(
+                          alignment: message.isUser
+                              ? Alignment.centerRight
+                              : Alignment.centerLeft,
+                          child: Card(
+                            color: message.isUser
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                            child: Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    message.sender,
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelMedium,
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(message.text),
+                                  if (message.model != null)
+                                    Text(
+                                      'ผู้ให้บริการ: ${message.model}',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall,
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+            if (_error != null)
+              Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Text(
+                  _error!,
+                  key: const ValueKey<String>('ai-tutor-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ),
+            if (_isGenerating)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    const Expanded(child: LinearProgressIndicator()),
+                    TextButton(
+                      onPressed: () => _generationCancellation?.cancel(),
+                      child: const Text('ยกเลิก'),
                     ),
                   ],
                 ),
               ),
-            ],
-            const Divider(),
-            Expanded(
-              child: ListView.builder(
-                itemCount: _messages.length,
-                itemBuilder: (context, index) {
-                  final msg = _messages[index];
-                  return Align(
-                    alignment: msg.isUser
-                        ? Alignment.centerRight
-                        : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 6),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: msg.isUser
-                            ? Colors.indigo.shade100
-                            : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(12),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+              child: Row(
+                children: [
+                  IconButton(
+                    key: const ValueKey<String>('ai-tutor-mic'),
+                    tooltip: _isListening ? 'หยุดฟัง' : 'พูดภาษาอังกฤษ',
+                    onPressed: _isGenerating ? null : _toggleMicListening,
+                    icon: Icon(_isListening ? Icons.stop : Icons.mic_none),
+                  ),
+                  Expanded(
+                    child: TextField(
+                      key: const ValueKey<String>('ai-tutor-input'),
+                      controller: _inputController,
+                      enabled: !_isGenerating,
+                      maxLength: 500,
+                      minLines: 1,
+                      maxLines: 3,
+                      decoration: const InputDecoration(
+                        hintText: 'พิมพ์ภาษาอังกฤษ...',
+                        border: OutlineInputBorder(),
+                        counterText: '',
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                msg.sender,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
-                                  color: msg.isUser
-                                      ? Colors.indigo
-                                      : Colors.grey.shade800,
-                                ),
-                              ),
-                              if (msg.grammarRating != null) ...[
-                                const SizedBox(width: 8),
-                                Container(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 6,
-                                    vertical: 2,
-                                  ),
-                                  decoration: BoxDecoration(
-                                    color: Colors.green.shade100,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: Text(
-                                    msg.grammarRating!,
-                                    style: const TextStyle(
-                                      fontSize: 10,
-                                      color: Colors.green,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ],
-                          ),
-                          const SizedBox(height: 4),
-                          Text(msg.text, style: const TextStyle(fontSize: 15)),
-                        ],
-                      ),
+                      onSubmitted: (_) => _sendMessage(),
                     ),
-                  );
-                },
+                  ),
+                  IconButton(
+                    key: const ValueKey<String>('ai-tutor-send'),
+                    tooltip: 'ส่ง',
+                    onPressed: _isGenerating ? null : () => _sendMessage(),
+                    icon: const Icon(Icons.send),
+                  ),
+                ],
               ),
-            ),
-            Row(
-              children: [
-                IconButton(
-                  icon: Icon(
-                    _isListeningMic ? Icons.mic : Icons.mic_none,
-                    color: _isListeningMic ? Colors.red : Colors.indigo,
-                  ),
-                  onPressed: _toggleMicListening,
-                ),
-                Expanded(
-                  child: TextField(
-                    controller: _inputController,
-                    decoration: InputDecoration(
-                      hintText: 'พิมพ์ หรือกดไมค์เพื่อพูดภาษาอังกฤษ...',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.send, color: Colors.indigo),
-                  onPressed: () => _sendMessage(),
-                ),
-              ],
             ),
           ],
         ),
       ),
     );
   }
+
+  String _geminiFailureText(GeminiFailureCode code) => switch (code) {
+    GeminiFailureCode.missingKey =>
+      'ยังไม่มี Gemini API key กรุณาเปิดหน้าตั้งค่า',
+    GeminiFailureCode.consentRequired =>
+      'ยังไม่ได้ยินยอมส่งข้อความไป Gemini กรุณาเปิดหน้าตั้งค่า',
+    GeminiFailureCode.invalidKey => 'Gemini API key ไม่ถูกต้องหรือถูกบล็อก',
+    GeminiFailureCode.quota => 'โควตาหรือเพดานใช้งาน Gemini เต็มแล้ว',
+    GeminiFailureCode.offline =>
+      'อุปกรณ์ออฟไลน์ ข้อมูลการเรียนในเครื่องยังใช้ได้',
+    GeminiFailureCode.timeout => 'Gemini ตอบกลับช้าเกินกำหนด กรุณาลองใหม่',
+    GeminiFailureCode.providerUnavailable =>
+      'Gemini ไม่พร้อมใช้งานชั่วคราว ข้อมูลในเครื่องไม่ได้รับผลกระทบ',
+    GeminiFailureCode.malformedResponse => 'Gemini ส่งคำตอบที่อ่านไม่ได้',
+    GeminiFailureCode.blocked => 'คำขอถูกระบบความปลอดภัยของ Gemini ปฏิเสธ',
+    GeminiFailureCode.cancelled => 'ยกเลิกคำขอ Gemini แล้ว',
+    GeminiFailureCode.validation => 'ข้อความไม่ถูกต้องหรือยาวเกินกำหนด',
+    GeminiFailureCode.secureStorage =>
+      'ที่จัดเก็บ key แบบปลอดภัยไม่พร้อมใช้งาน',
+  };
+
+  String _speechFailureText(SpeechFailureCode code) => switch (code) {
+    SpeechFailureCode.permissionDenied => 'ไม่ได้รับสิทธิ์ใช้ไมโครโฟน',
+    SpeechFailureCode.permissionPermanentlyDenied =>
+      'สิทธิ์ไมโครโฟนถูกปิดถาวร กรุณาเปิดจากการตั้งค่าระบบ',
+    SpeechFailureCode.noMatch => 'ไม่ได้ยินคำพูดที่ชัดเจน กรุณาลองอีกครั้ง',
+    SpeechFailureCode.cancelled => 'ยกเลิกการฟังแล้ว',
+    SpeechFailureCode.unavailable ||
+    SpeechFailureCode.engine => 'ระบบรู้จำเสียงไม่พร้อมใช้งาน',
+  };
 }

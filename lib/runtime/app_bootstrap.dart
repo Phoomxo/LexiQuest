@@ -18,6 +18,9 @@ import '../features/device_model/data/drift_model_download_repository.dart';
 import '../features/device_model/data/http_model_byte_source.dart';
 import '../features/device_model/data/litert_image_classifier.dart';
 import '../features/device_model/domain/model_manifest.dart';
+import '../features/gemini/application/gemini_tutor_use_cases.dart';
+import '../features/gemini/data/gemini_rest_gateway.dart';
+import '../features/gemini/data/secure_gemini_settings_store.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -248,6 +251,13 @@ final class AppBootstrap {
     final speechPractice = SpeechPracticeUseCases(
       PluginSpeechRecognitionGateway(),
     );
+    final geminiHttpClient = http.Client();
+    final geminiTutor = GeminiTutorUseCases(
+      store: SecureGeminiSettingsStore.production(),
+      gateway: GeminiRestGateway(client: geminiHttpClient),
+      loadProgress: progress.load,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -271,9 +281,12 @@ final class AppBootstrap {
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
       deviceModels: deviceModels,
+      geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       speechPractice: speechPractice,
       disposeResources: () async {
+        await geminiTutor.dispose();
+        geminiHttpClient.close();
         await objectScanner.dispose();
         await speechPractice.dispose();
         await deviceModels.dispose();

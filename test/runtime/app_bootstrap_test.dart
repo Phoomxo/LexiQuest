@@ -54,6 +54,9 @@ void main() {
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
       expect(identical(dependencies.config, expectedConfig), isTrue);
       expect(dependencies.deviceModels, isNotNull);
+      expect(dependencies.objectScanner, isNotNull);
+      expect(dependencies.speechPractice, isNotNull);
+      expect(dependencies.geminiTutor, isNotNull);
     });
 
     test(

@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
+import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -35,6 +36,7 @@ final class AppDependencies {
     this.vocabulary,
     this.vocabularyImporter,
     this.deviceModels,
+    this.geminiTutor,
     this.objectScanner,
     this.speechPractice,
     this.disposeResources,
@@ -55,6 +57,7 @@ final class AppDependencies {
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final DeviceModelUseCases? deviceModels;
+  final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;
   final Future<void> Function()? disposeResources;

@@ -5,9 +5,11 @@ import '../runtime/app_runtime_status.dart';
 import '../runtime/field_feature.dart';
 import '../runtime/field_feature_registry.dart';
 import 'achievements_screen.dart';
+import 'ai_tutor_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
+import 'gemini_settings_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
 import 'setting_screen.dart';
@@ -194,6 +196,19 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     ),
                   ),
                 ),
+              if (features.isVisible(FieldFeature.aiTutor)) ...[
+                ListTile(
+                  leading: const Icon(Icons.chat_bubble_outline),
+                  title: const Text('AI Tutor'),
+                  onTap: () => _pushLegacyDestination(const AiTutorScreen()),
+                ),
+                ListTile(
+                  leading: const Icon(Icons.key_outlined),
+                  title: const Text('ตั้งค่า Gemini BYOK'),
+                  onTap: () =>
+                      _pushLegacyDestination(const GeminiSettingsScreen()),
+                ),
+              ],
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('ตั้งค่า'),

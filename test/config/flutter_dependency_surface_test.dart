@@ -77,6 +77,7 @@ void main() {
       'camera',
       'permission_handler',
       'image',
+      'flutter_secure_storage',
     ];
 
     for (final name in retained) {
