@@ -13,7 +13,10 @@ class _FakeGuestSessionService implements GuestSessionService {
       const GuestSessionStarted(uid: 'app-build-info-test');
 }
 
-AppDependencies _dependencies(AppBuildInfo buildInfo) {
+AppDependencies _dependencies(
+  AppBuildInfo buildInfo, {
+  Future<void> Function()? disposeResources,
+}) {
   return AppDependencies(
     runtimeStatus: const AppRuntimeStatus(
       localData: RuntimeAvailability.ready,
@@ -24,6 +27,7 @@ AppDependencies _dependencies(AppBuildInfo buildInfo) {
     config: null,
     guestSessionService: _FakeGuestSessionService(),
     buildInfo: buildInfo,
+    disposeResources: disposeResources,
   );
 }
 
@@ -79,5 +83,23 @@ void main() {
       expect(identity.data, contains('9.9.9+9'));
       expect(identity.data, contains('feedface'));
     });
+  });
+
+  testWidgets('MyApp disposes runtime resources exactly once', (tester) async {
+    var disposeCalls = 0;
+    final dependencies = _dependencies(
+      const AppBuildInfo.fromEnvironment(),
+      disposeResources: () async {
+        disposeCalls++;
+      },
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+    await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+    await dependencies.dispose();
+
+    expect(disposeCalls, 1);
   });
 }

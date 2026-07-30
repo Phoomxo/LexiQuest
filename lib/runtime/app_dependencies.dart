@@ -11,7 +11,7 @@ import 'app_runtime_status.dart';
 import 'field_feature_registry.dart';
 
 final class AppDependencies {
-  const AppDependencies({
+  AppDependencies({
     required this.runtimeStatus,
     required this.config,
     required this.guestSessionService,
@@ -21,6 +21,7 @@ final class AppDependencies {
     this.localOwners,
     this.vocabulary,
     this.vocabularyImporter,
+    this.disposeResources,
   });
 
   final AppRuntimeStatus runtimeStatus;
@@ -32,6 +33,12 @@ final class AppDependencies {
   final LocalOwnerRepository? localOwners;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
+  final Future<void> Function()? disposeResources;
+  Future<void>? _disposeFuture;
+
+  Future<void> dispose() {
+    return _disposeFuture ??= disposeResources?.call() ?? Future<void>.value();
+  }
 
   @override
   String toString() => 'AppDependencies';

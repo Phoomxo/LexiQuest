@@ -119,6 +119,7 @@ final class AppBootstrap {
       localOwners: localOwners,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,
+      disposeResources: database.close,
     );
   }
 

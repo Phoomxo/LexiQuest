@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'runtime/app_bootstrap.dart';
@@ -12,15 +14,34 @@ Future<void> main() async {
   runApp(MyApp(dependencies: dependencies));
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key, required this.dependencies});
 
   final AppDependencies dependencies;
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void didUpdateWidget(covariant MyApp oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.dependencies, widget.dependencies)) {
+      unawaited(oldWidget.dependencies.dispose());
+    }
+  }
+
+  @override
+  void dispose() {
+    unawaited(widget.dependencies.dispose());
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AppDependenciesScope(
-      dependencies: dependencies,
+      dependencies: widget.dependencies,
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         title: 'LexiQuest - AI Vocab Learning',
