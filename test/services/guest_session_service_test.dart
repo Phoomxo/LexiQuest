@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
@@ -164,7 +166,33 @@ void main() {
 
   group('OwnerBindingGuestSessionService', () {
     test(
-      'binds the active local owner before reporting guest success',
+      'starts the local guest without waiting for anonymous Firebase',
+      () async {
+        final service = OwnerBindingGuestSessionService(
+          delegate: _PendingGuestSessionService(),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(
+            _FakeOwnerUpgradeRepository(),
+          ),
+        );
+
+        final result = await service.start().timeout(
+          const Duration(milliseconds: 100),
+        );
+
+        expect(
+          result,
+          isA<GuestSessionStarted>().having(
+            (started) => started.uid,
+            'local owner id',
+            'local-owner',
+          ),
+        );
+      },
+    );
+
+    test(
+      'binds the active local owner in the background when online',
       () async {
         final upgrades = _FakeOwnerUpgradeRepository();
         final service = OwnerBindingGuestSessionService(
@@ -176,6 +204,7 @@ void main() {
         );
 
         final result = await service.start();
+        await upgrades.upgraded.future;
 
         expect(result, isA<GuestSessionStarted>());
         expect(upgrades.ownerId, 'local-owner');
@@ -207,6 +236,11 @@ void main() {
   });
 }
 
+final class _PendingGuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() => Completer<GuestSessionResult>().future;
+}
+
 final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
   _FakeLocalOwnerRepository({this.error});
 
@@ -231,6 +265,7 @@ final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
 final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
   String? ownerId;
   String? firebaseUid;
+  final Completer<void> upgraded = Completer<void>();
 
   @override
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
@@ -252,6 +287,9 @@ final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }) async {
     ownerId = activeOwnerId;
     this.firebaseUid = firebaseUid;
+    if (!upgraded.isCompleted) {
+      upgraded.complete();
+    }
     return OwnerUpgradeResult(
       targetOwnerId: activeOwnerId,
       mode: OwnerUpgradeMode.anonymousBound,

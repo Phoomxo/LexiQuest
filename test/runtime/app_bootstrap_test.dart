@@ -236,13 +236,20 @@ void main() {
 
         final dependencies = await bootstrap.initialize();
         final result = await dependencies.guestSessionService.start();
-        final owner = await (database.select(
-          database.localOwners,
-        )..where((row) => row.isActive.equals(true))).getSingle();
+        LocalOwner? owner;
+        for (var attempt = 0; attempt < 20; attempt++) {
+          owner = await (database.select(
+            database.localOwners,
+          )..where((row) => row.isActive.equals(true))).getSingle();
+          if (owner.firebaseUid == 'anonymous-bootstrap-user') {
+            break;
+          }
+          await Future<void>.delayed(const Duration(milliseconds: 5));
+        }
 
         expect(result, isA<GuestSessionStarted>());
-        expect(owner.firebaseUid, 'anonymous-bootstrap-user');
-        expect(owner.accountState, 'firebaseBound');
+        expect(owner?.firebaseUid, 'anonymous-bootstrap-user');
+        expect(owner?.accountState, 'firebaseBound');
       },
     );
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -114,16 +116,27 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
 
   @override
   Future<GuestSessionResult> start() async {
-    final result = await _delegate.start();
-    if (result case GuestSessionStarted(:final uid)) {
-      try {
-        final owner = await _localOwners.getOrCreateActiveOwner();
-        await _upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
-        _onOwnerBound?.call();
-      } catch (_) {
-        return const GuestSessionFailed(GuestSessionFailure.unknown);
+    try {
+      final owner = await _localOwners.getOrCreateActiveOwner();
+      if (owner.firebaseUid == null) {
+        unawaited(_bindAnonymousOwner(owner.id));
       }
+      return GuestSessionStarted(uid: owner.firebaseUid ?? owner.id);
+    } catch (_) {
+      return const GuestSessionFailed(GuestSessionFailure.unknown);
     }
-    return result;
+  }
+
+  Future<void> _bindAnonymousOwner(String ownerId) async {
+    try {
+      final result = await _delegate.start();
+      if (result case GuestSessionStarted(:final uid)) {
+        await _upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
+        _onOwnerBound?.call();
+      }
+    } catch (_) {
+      // Guest learning is local-first. Anonymous cloud binding is retried by a
+      // later online session and must never prevent or terminate offline use.
+    }
   }
 }
