@@ -124,6 +124,51 @@ void main() {
     expect(operationIds, hasLength(2));
   });
 
+  test(
+    'run lease is atomic, token-owned, and reclaimable after expiry',
+    () async {
+      final otherStore = DriftSyncStore(database);
+      final results = await Future.wait([
+        store.tryAcquireRunLease(
+          ownerId: 'owner-a',
+          leaseToken: 'run-a',
+          nowUtc: nowUtc,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        otherStore.tryAcquireRunLease(
+          ownerId: 'owner-a',
+          leaseToken: 'run-b',
+          nowUtc: nowUtc,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+      ]);
+      expect(results.where((acquired) => acquired), hasLength(1));
+
+      await store.releaseRunLease(
+        ownerId: 'owner-a',
+        leaseToken: 'not-the-owner',
+      );
+      expect(
+        await otherStore.tryAcquireRunLease(
+          ownerId: 'owner-a',
+          leaseToken: 'run-c',
+          nowUtc: nowUtc.add(const Duration(minutes: 9)),
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isFalse,
+      );
+      expect(
+        await otherStore.tryAcquireRunLease(
+          ownerId: 'owner-a',
+          leaseToken: 'run-c',
+          nowUtc: nowUtc.add(const Duration(minutes: 10)),
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+    },
+  );
+
   test('claims remain isolated to the requested local owner', () async {
     await _seedOneCategoryOperation(database);
     await _insertOwner(database, 'owner-b');

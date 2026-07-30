@@ -36,7 +36,7 @@ cloud work is disabled or unavailable.
 | P2-C Firestore gateway and rules | Complete | Codec/gateway tests and 17 Firestore emulator rules tests pass |
 | P2-D guest ownership | Complete | 14-table inventory, collision remap, rollback, replay, logout, and anonymous binding tests pass |
 | P2-E Android scheduling | Complete | Connected unique periodic work, callback result mapping, scheduler tests, and debug APK pass |
-| P2 gate | In progress | One bounded CLI gate is being assembled |
+| P2 gate | Complete (automated) | 7/7 phases pass; real Android journey remains field certification evidence |
 
 ## Development discipline
 
@@ -509,16 +509,16 @@ The script runs once, fail-fast:
 
 ## P2 completion gate
 
-- [ ] Schema-1 databases migrate to schema 2 without data loss.
-- [ ] Offline operations synchronize exactly once after reconnection.
-- [ ] Push replay and process restart cannot duplicate cloud entities.
-- [ ] Pull checkpoint advances only after a full transaction.
-- [ ] Conflict and tombstone behavior is deterministic and recorded.
-- [ ] Guest upgrade preserves every owner-scoped table.
-- [ ] Cloud kill switch leaves local vocabulary usable.
-- [ ] Foreground and background sync cannot overlap for one owner.
-- [ ] Firestore rules prevent cross-user access and malformed writes.
-- [ ] Focused analyzer/tests, emulator tests, and Android debug build pass.
+- [x] Schema-1 databases migrate to schema 2 without data loss.
+- [x] Offline operations synchronize exactly once after reconnection.
+- [x] Push replay and process restart cannot duplicate cloud entities.
+- [x] Pull checkpoint advances only after a full transaction.
+- [x] Conflict and tombstone behavior is deterministic and recorded.
+- [x] Guest upgrade preserves every owner-scoped table.
+- [x] Cloud kill switch leaves local vocabulary usable.
+- [x] Foreground and background sync cannot overlap for one owner.
+- [x] Firestore rules prevent cross-user access and malformed writes.
+- [x] Focused analyzer/tests, emulator tests, and Android debug build pass.
 - [ ] Real Android background/reconnect journey is recorded when hardware is
       attached.
 

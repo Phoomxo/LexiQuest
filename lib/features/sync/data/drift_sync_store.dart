@@ -29,6 +29,62 @@ final class DriftSyncStore {
   final db.AppDatabase database;
   Future<void> _claimGate = Future<void>.value();
 
+  Future<bool> tryAcquireRunLease({
+    required String ownerId,
+    required String leaseToken,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
+    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    _requireUtc(nowUtc, 'nowUtc');
+    if (leaseDuration <= Duration.zero) {
+      throw ArgumentError.value(
+        leaseDuration,
+        'leaseDuration',
+        'must be positive',
+      );
+    }
+    final key = 'syncRunLease:$canonicalOwnerId';
+    final nowMs = nowUtc.millisecondsSinceEpoch;
+    final changed = await database.customUpdate(
+      '''
+      INSERT INTO runtime_flags
+        ("key", bool_value, source, updated_at_utc_ms, expires_at_utc_ms)
+      VALUES (?, 1, ?, ?, ?)
+      ON CONFLICT("key") DO UPDATE SET
+        bool_value = 1,
+        source = excluded.source,
+        updated_at_utc_ms = excluded.updated_at_utc_ms,
+        expires_at_utc_ms = excluded.expires_at_utc_ms
+      WHERE runtime_flags.bool_value = 0
+         OR runtime_flags.expires_at_utc_ms IS NULL
+         OR runtime_flags.expires_at_utc_ms <= ?
+      ''',
+      variables: [
+        Variable<String>(key),
+        Variable<String>(canonicalLeaseToken),
+        Variable<int>(nowMs),
+        Variable<int>(nowUtc.add(leaseDuration).millisecondsSinceEpoch),
+        Variable<int>(nowMs),
+      ],
+      updates: {database.runtimeFlags},
+    );
+    return changed == 1;
+  }
+
+  Future<void> releaseRunLease({
+    required String ownerId,
+    required String leaseToken,
+  }) async {
+    final key = 'syncRunLease:${_requiredId(ownerId, 'ownerId')}';
+    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    await (database.delete(database.runtimeFlags)..where(
+          (row) => row.key.equals(key) & row.source.equals(canonicalLeaseToken),
+        ))
+        .go();
+  }
+
   Future<List<ClaimedSyncOperation>> claimPending({
     required String ownerId,
     required String firebaseUid,

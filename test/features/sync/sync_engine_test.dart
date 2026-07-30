@@ -156,7 +156,7 @@ void main() {
     expect(conflicts, hasLength(1));
   });
 
-  test('foreground and background runs cannot overlap for one owner', () async {
+  test('separate foreground and background isolates cannot overlap', () async {
     await _seedCategoryOperation(database);
     final pushEntered = Completer<void>();
     final releasePush = Completer<void>();
@@ -169,12 +169,12 @@ void main() {
         acknowledgedAtUtc: nowUtc,
       );
     };
-    final sharedMutex = SyncMutex();
-    final syncEngine = engine(mutex: sharedMutex);
+    final foregroundEngine = engine(mutex: SyncMutex());
+    final backgroundEngine = engine(mutex: SyncMutex());
 
-    final firstRun = syncEngine.run();
+    final firstRun = foregroundEngine.run();
     await pushEntered.future;
-    final secondResult = await syncEngine.run();
+    final secondResult = await backgroundEngine.run();
     releasePush.complete();
     final firstResult = await firstRun;
 

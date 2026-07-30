@@ -55,6 +55,7 @@ final class SyncEngine {
   static const int pushLimit = 50;
   static const int pullLimit = 100;
   static const Duration leaseDuration = Duration(minutes: 5);
+  static const Duration runLeaseDuration = Duration(minutes: 10);
 
   final LocalOwnerRepository owners;
   final DriftSyncStore store;
@@ -77,6 +78,23 @@ final class SyncEngine {
       return const SyncRunResult(status: SyncRunStatus.skippedUnauthenticated);
     }
     if (!mutex.tryAcquire(owner.id)) {
+      return const SyncRunResult(status: SyncRunStatus.alreadyRunning);
+    }
+    final runLeaseToken = generateLeaseToken();
+    final bool acquiredRunLease;
+    try {
+      acquiredRunLease = await store.tryAcquireRunLease(
+        ownerId: owner.id,
+        leaseToken: runLeaseToken,
+        nowUtc: _currentUtc(),
+        leaseDuration: runLeaseDuration,
+      );
+    } catch (_) {
+      mutex.release(owner.id);
+      rethrow;
+    }
+    if (!acquiredRunLease) {
+      mutex.release(owner.id);
       return const SyncRunResult(status: SyncRunStatus.alreadyRunning);
     }
 
@@ -177,6 +195,7 @@ final class SyncEngine {
         retryRecommended: retryRecommended,
       );
     } finally {
+      await store.releaseRunLease(ownerId: owner.id, leaseToken: runLeaseToken);
       mutex.release(owner.id);
     }
   }
