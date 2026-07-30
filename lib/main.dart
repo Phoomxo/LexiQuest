@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
 import 'features/sync/application/sync_trigger.dart';
+import 'features/sync/platform/background_sync_scheduler.dart';
+import 'features/sync/platform/workmanager_sync_scheduler.dart';
 import 'screens/main_navigation_screen.dart';
 import 'screens/login_screen.dart';
 import 'screens/register_screen.dart';
@@ -13,6 +16,20 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final dependencies = await AppBootstrap.production().initialize();
   runApp(MyApp(dependencies: dependencies));
+  final owners = dependencies.localOwners;
+  if (owners != null) {
+    final scheduler = WorkmanagerSyncScheduler(
+      client: const PluginWorkmanagerClient(),
+      isAndroid: !kIsWeb && defaultTargetPlatform == TargetPlatform.android,
+      cloudSyncEnabled: const bool.fromEnvironment(
+        'LEXIQUEST_CLOUD_SYNC_ENABLED',
+        defaultValue: true,
+      ),
+    );
+    unawaited(
+      scheduleBackgroundSyncSafely(scheduler: scheduler, owners: owners),
+    );
+  }
 }
 
 class MyApp extends StatefulWidget {

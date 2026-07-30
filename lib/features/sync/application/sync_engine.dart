@@ -28,6 +28,7 @@ final class SyncRunResult {
     this.pulled = 0,
     this.conflicts = 0,
     this.failures = 0,
+    this.retryRecommended = false,
   });
 
   final SyncRunStatus status;
@@ -35,6 +36,7 @@ final class SyncRunResult {
   final int pulled;
   final int conflicts;
   final int failures;
+  final bool retryRecommended;
 }
 
 final class SyncEngine {
@@ -83,6 +85,7 @@ final class SyncEngine {
     var conflicts = 0;
     var failures = 0;
     var providerUnavailable = false;
+    var retryRecommended = false;
     try {
       final claimed = await store.claimPending(
         ownerId: owner.id,
@@ -113,6 +116,7 @@ final class SyncEngine {
           }
         } on SyncFailure catch (failure) {
           failures++;
+          retryRecommended = retryRecommended || failure.retryable;
           if (failure.retryable) {
             await store.markRetry(
               operationId: claim.mutation.operationId,
@@ -155,8 +159,9 @@ final class SyncEngine {
               page: page,
             );
             pulled += page.changes.length;
-          } on SyncFailure {
+          } on SyncFailure catch (failure) {
             failures++;
+            retryRecommended = retryRecommended || failure.retryable;
           }
         }
       }
@@ -169,6 +174,7 @@ final class SyncEngine {
         pulled: pulled,
         conflicts: conflicts,
         failures: failures,
+        retryRecommended: retryRecommended,
       );
     } finally {
       mutex.release(owner.id);

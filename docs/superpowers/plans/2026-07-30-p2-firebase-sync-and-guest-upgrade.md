@@ -35,8 +35,8 @@ cloud work is disabled or unavailable.
 | P2-B sync engine | Complete | Offline/reconnect exact-once, kill switch, push conflict, and mutex tests pass |
 | P2-C Firestore gateway and rules | Complete | Codec/gateway tests and 17 Firestore emulator rules tests pass |
 | P2-D guest ownership | Complete | 14-table inventory, collision remap, rollback, replay, logout, and anonymous binding tests pass |
-| P2-E Android scheduling | In progress | Cloud policy cache and runtime composition are next |
-| P2 gate | Pending | Runs once after P2-C through P2-E |
+| P2-E Android scheduling | Complete | Connected unique periodic work, callback result mapping, scheduler tests, and debug APK pass |
+| P2 gate | In progress | One bounded CLI gate is being assembled |
 
 ## Development discipline
 
