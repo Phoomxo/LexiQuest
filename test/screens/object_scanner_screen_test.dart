@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/device_model/application/model_benchmark.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
@@ -162,6 +163,31 @@ void main() {
     );
     expect(find.textContaining('ยังไม่มีโมเดลที่ตรวจสอบแล้ว'), findsOneWidget);
   });
+  testWidgets('runs bounded CPU and XNNPACK benchmarks on demand', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner();
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voiceProvider: _FakeVoice(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(
+      find.byKey(const ValueKey('object-scanner-benchmark-model')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(scanner.benchmarkCalls, 1);
+    expect(find.textContaining('CPU n=10'), findsOneWidget);
+    expect(find.textContaining('XNNPACK n=10'), findsOneWidget);
+  });
 }
 
 final class _FakeScanner implements ObjectScannerController {
@@ -170,6 +196,7 @@ final class _FakeScanner implements ObjectScannerController {
   int acceptCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
+  int benchmarkCalls = 0;
   @override
   bool isReady = false;
 
@@ -206,6 +233,41 @@ final class _FakeScanner implements ObjectScannerController {
 
   @override
   Future<ModelDownloadRecord?> modelStatus() async => null;
+
+  @override
+  Future<List<ModelBenchmarkResult>> benchmarkModel({
+    String deviceTier = 'field-device',
+    int warmupRuns = 3,
+    int measuredRuns = 20,
+  }) async {
+    benchmarkCalls += 1;
+    return const [
+      ModelBenchmarkResult(
+        delegate: ModelDelegate.cpu,
+        modelId: 'model',
+        modelVersion: 'model-v1',
+        deviceTier: 'field-device',
+        sampleSize: 10,
+        medianMicros: 1000,
+        p90Micros: 1200,
+        minimumMicros: 900,
+        maximumMicros: 1300,
+        peakWorkingSetBytes: 1000000,
+      ),
+      ModelBenchmarkResult(
+        delegate: ModelDelegate.xnnpack,
+        modelId: 'model',
+        modelVersion: 'model-v1',
+        deviceTier: 'field-device',
+        sampleSize: 10,
+        medianMicros: 500,
+        p90Micros: 700,
+        minimumMicros: 450,
+        maximumMicros: 750,
+        peakWorkingSetBytes: 1100000,
+      ),
+    ];
+  }
 
   @override
   Future<ObjectScanResult> captureAndClassify({

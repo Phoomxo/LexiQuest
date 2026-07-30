@@ -74,6 +74,72 @@ void main() {
     );
     expect(repository.record.state, ModelDownloadState.failed);
   });
+
+  test('benchmarks CPU and XNNPACK with bounded real runtime runs', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'lexiquest-model-benchmark-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final bytes = utf8.encode('model');
+    final file = File('${directory.path}${Platform.pathSeparator}model.tflite');
+    await file.writeAsBytes(bytes);
+    final manifest = ModelManifest(
+      id: 'vision',
+      version: '1',
+      minimumAppVersion: '1.0.0+1',
+      sourceUri: Uri.https('models.example', '/model.tflite'),
+      license: 'Apache-2.0',
+      licenseUri: Uri.https('models.example', '/LICENSE'),
+      expectedSha256: sha256.convert(bytes).toString(),
+      expectedBytes: bytes.length,
+      inputShape: const [1, 1, 1, 1],
+      inputType: ModelTensorType.uint8,
+      outputShape: const [1, 1],
+      outputType: ModelTensorType.uint8,
+      inputEncoding: ModelInputEncoding.rawUint8Rgb,
+      labelAssetName: 'labels.txt',
+      supportedDelegates: const {ModelDelegate.cpu, ModelDelegate.xnnpack},
+    );
+    final repository = _UseCaseRepository(
+      ModelDownloadRecord(
+        id: manifest.recordId,
+        modelVersion: manifest.version,
+        sourceUrl: manifest.sourceUri.toString(),
+        expectedChecksum: manifest.expectedSha256,
+        expectedBytes: bytes.length,
+        downloadedBytes: bytes.length,
+        retryCount: 0,
+        state: ModelDownloadState.active,
+        updatedAtUtc: DateTime.utc(2026, 7, 30),
+        localPath: file.path,
+      ),
+    );
+    final runtimes = <ModelDelegate, _FakeImageRuntime>{};
+    final useCases = DeviceModelUseCases(
+      manifest: manifest,
+      repository: repository,
+      downloadManager: _uncalledDownloadManager(),
+      openRuntime:
+          ({required path, required manifest, required delegate}) async {
+            return runtimes[delegate] = _FakeImageRuntime(delegate);
+          },
+    );
+
+    final results = await useCases.benchmarkActive(
+      deviceTier: 'mid',
+      warmupRuns: 1,
+      measuredRuns: 10,
+    );
+
+    expect(results.map((result) => result.delegate), [
+      ModelDelegate.cpu,
+      ModelDelegate.xnnpack,
+    ]);
+    expect(results.every((result) => result.sampleSize == 10), isTrue);
+    expect(results.every((result) => result.deviceTier == 'mid'), isTrue);
+    expect(runtimes.values.every((runtime) => runtime.runCalls == 11), isTrue);
+    expect(runtimes.values.every((runtime) => runtime.closed), isTrue);
+  });
 }
 
 final class _UseCaseRepository implements ModelDownloadRepository {
@@ -133,8 +199,12 @@ final class _ThrowingVerifier implements ModelFileVerifier {
 }
 
 final class _FakeImageRuntime implements ImageClassifierRuntime {
+  _FakeImageRuntime([this.delegate = ModelDelegate.xnnpack]);
+
   @override
-  ModelDelegate get delegate => ModelDelegate.xnnpack;
+  final ModelDelegate delegate;
+  int runCalls = 0;
+  bool closed = false;
 
   @override
   Future<List<ModelClassification>> classify(
@@ -143,8 +213,12 @@ final class _FakeImageRuntime implements ImageClassifierRuntime {
   }) async => const [];
 
   @override
-  void close() {}
+  void close() {
+    closed = true;
+  }
 
   @override
-  Future<void> run(Uint8List input) async {}
+  Future<void> run(Uint8List input) async {
+    runCalls += 1;
+  }
 }

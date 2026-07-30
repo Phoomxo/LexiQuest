@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/device_model/application/model_benchmark.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
@@ -28,10 +29,12 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   bool _initializing = true;
   bool _capturing = false;
   bool _downloading = false;
+  bool _benchmarking = false;
   bool _modelUnavailable = false;
   bool _accepted = false;
   String? _error;
   ObjectScanResult? _result;
+  List<ModelBenchmarkResult> _benchmarks = const [];
   ModelCancellation? _cancellation;
 
   @override
@@ -135,6 +138,32 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     } finally {
       if (mounted) setState(() => _downloading = false);
       _cancellation = null;
+    }
+  }
+
+  Future<void> _benchmarkModel() async {
+    final scanner = _scanner;
+    if (scanner == null || _benchmarking) return;
+    setState(() {
+      _benchmarking = true;
+      _benchmarks = const [];
+      _error = null;
+    });
+    try {
+      final results = await scanner.benchmarkModel();
+      if (mounted) setState(() => _benchmarks = results);
+    } on ModelLifecycleException {
+      if (mounted) {
+        setState(
+          () => _error = 'ไม่สามารถทดสอบประสิทธิภาพโมเดลบนเครื่องนี้ได้',
+        );
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'การทดสอบประสิทธิภาพโมเดลไม่สำเร็จ');
+      }
+    } finally {
+      if (mounted) setState(() => _benchmarking = false);
     }
   }
 
@@ -249,6 +278,41 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                 _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
               ),
             ),
+            if (scanner?.isReady == true) ...[
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                key: const ValueKey<String>('object-scanner-benchmark-model'),
+                onPressed: _benchmarking || _capturing ? null : _benchmarkModel,
+                icon: _benchmarking
+                    ? const SizedBox.square(
+                        dimension: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.speed_outlined),
+                label: Text(
+                  _benchmarking
+                      ? 'กำลังทดสอบ CPU/XNNPACK...'
+                      : 'ทดสอบประสิทธิภาพ CPU/XNNPACK',
+                ),
+              ),
+            ],
+            if (_benchmarks.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Card(
+                key: const ValueKey<String>('object-scanner-benchmark-result'),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('ผลทดสอบโมเดลบนเครื่องนี้'),
+                      for (final result in _benchmarks)
+                        Text(_benchmarkSummary(result)),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             if (_modelUnavailable) ...[
               const SizedBox(height: 8),
               OutlinedButton.icon(
@@ -303,6 +367,16 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     CameraFailureCode.unavailable ||
     CameraFailureCode.initializationFailed => 'กล้องไม่พร้อมใช้งานบนอุปกรณ์นี้',
   };
+
+  String _benchmarkSummary(ModelBenchmarkResult result) {
+    final medianMs = (result.medianMicros / 1000).toStringAsFixed(1);
+    final p90Ms = (result.p90Micros / 1000).toStringAsFixed(1);
+    final peakMb = (result.peakWorkingSetBytes / (1024 * 1024)).toStringAsFixed(
+      1,
+    );
+    return '${result.delegate.name.toUpperCase()} n=${result.sampleSize} '
+        'median=$medianMs ms p90=$p90Ms ms peakRSS=$peakMb MB';
+  }
 }
 
 final class _ResultCard extends StatelessWidget {

@@ -158,6 +158,51 @@ void main() {
     expect(result.matchedClassification?.confidence, 0.73);
     expect(result.vocabulary?.englishWord, 'apple');
   });
+
+  test('reports an unusable inference as an invalid image', () async {
+    final directory = await Directory.systemTemp.createTemp(
+      'scanner-invalid-image-',
+    );
+    addTearDown(() => directory.delete(recursive: true));
+    final modelBytes = utf8.encode('verified-test-model');
+    final modelFile = File('${directory.path}/model.tflite');
+    await modelFile.writeAsBytes(modelBytes);
+    final manifest = _manifest(modelBytes);
+    final repository = _ModelRepository(
+      _activeRecord(manifest, modelFile.path),
+    );
+    final runtime = _FakeRuntime()
+      ..classifications = const [
+        ModelClassification(index: 0, label: 'background', confidence: 0.99),
+        ModelClassification(index: 1, label: 'Apple', confidence: 0.14),
+      ];
+    final scanner = ObjectScannerUseCases(
+      camera: _FakeCamera(),
+      deviceModels: DeviceModelUseCases(
+        manifest: manifest,
+        repository: repository,
+        downloadManager: _uncalledManager(repository, directory),
+        openRuntime:
+            ({required path, required manifest, required delegate}) async =>
+                runtime,
+      ),
+      vocabulary: _throwingVocabulary(),
+      preprocessor: _FakePreprocessor(),
+    );
+
+    await scanner.initialize();
+
+    await expectLater(
+      scanner.captureAndClassify(),
+      throwsA(
+        isA<CameraPracticeException>().having(
+          (error) => error.code,
+          'code',
+          CameraFailureCode.invalidImage,
+        ),
+      ),
+    );
+  });
 }
 
 ModelManifest _manifest(List<int> bytes) => ModelManifest(

@@ -1,6 +1,7 @@
 import 'package:flutter/widgets.dart';
 
 import '../../device_model/application/device_model_use_cases.dart';
+import '../../device_model/application/model_benchmark.dart';
 import '../../device_model/domain/model_lifecycle.dart';
 import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../../vocabulary/domain/vocabulary_category.dart';
@@ -20,6 +21,12 @@ abstract interface class ObjectScannerController {
   Future<ModelDownloadRecord?> modelStatus();
 
   Future<ModelDownloadRecord> downloadModel({ModelCancellation? cancellation});
+
+  Future<List<ModelBenchmarkResult>> benchmarkModel({
+    String deviceTier = 'field-device',
+    int warmupRuns = 3,
+    int measuredRuns = 20,
+  });
 
   Future<ObjectScanResult> captureAndClassify({
     ModelCancellation? cancellation,
@@ -88,6 +95,19 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   }
 
   @override
+  Future<List<ModelBenchmarkResult>> benchmarkModel({
+    String deviceTier = 'field-device',
+    int warmupRuns = 3,
+    int measuredRuns = 20,
+  }) {
+    return deviceModels.benchmarkActive(
+      deviceTier: deviceTier,
+      warmupRuns: warmupRuns,
+      measuredRuns: measuredRuns,
+    );
+  }
+
+  @override
   Future<void> initialize() async {
     _checkNotDisposed();
     final permission = await camera.requestPermission();
@@ -151,7 +171,7 @@ final class ObjectScannerUseCases implements ObjectScannerController {
           )
           .toList(growable: false);
       if (usable.isEmpty) {
-        throw const CameraPracticeException(CameraFailureCode.unavailable);
+        throw const CameraPracticeException(CameraFailureCode.invalidImage);
       }
       ScannedVocabulary? mapped;
       ModelClassification? matchedClassification;

@@ -130,6 +130,33 @@ void main() {
     },
   );
 
+  test(
+    'a new process retries permission failures once after cloud recovery',
+    () async {
+      await _seedCategoryOperation(database);
+      gateway.pushFailure = const PermissionDeniedSyncFailure();
+
+      final deniedResult = await engine().run();
+      var operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      expect(deniedResult.status, SyncRunStatus.partialFailure);
+      expect(operation.state, 'permanentFailure');
+      expect(operation.failureCode, SyncFailureCode.permissionDenied.name);
+
+      gateway.pushFailure = null;
+      final recoveredResult = await engine().run();
+      operation = await database.select(database.outboxOperations).getSingle();
+      final replayResult = await engine().run();
+
+      expect(recoveredResult.status, SyncRunStatus.completed);
+      expect(operation.state, 'acknowledged');
+      expect(gateway.appliedOperationIds, {'category:travel:1:upsert'});
+      expect(replayResult.pushed, 0);
+      expect(gateway.appliedOperationIds, hasLength(1));
+    },
+  );
+
   test('push conflict records evidence and selects cloud state', () async {
     await _seedCategoryOperation(database);
     gateway.pushResult = PushConflict(

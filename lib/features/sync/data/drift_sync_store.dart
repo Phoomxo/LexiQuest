@@ -93,6 +93,33 @@ final class DriftSyncStore {
         .go();
   }
 
+  Future<int> requeuePermissionDeniedFailures({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) {
+    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
+    _requireUtc(nowUtc, 'nowUtc');
+    return database.customUpdate(
+      '''
+      UPDATE outbox_operations
+      SET state = 'retryWaiting',
+          next_attempt_at_utc_ms = ?,
+          lease_token = NULL,
+          lease_expires_at_utc_ms = NULL,
+          failure_code = NULL
+      WHERE owner_id = ?
+        AND state = 'permanentFailure'
+        AND failure_code = ?
+      ''',
+      variables: [
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+        Variable<String>(canonicalOwnerId),
+        Variable<String>(SyncFailureCode.permissionDenied.name),
+      ],
+      updates: {database.outboxOperations},
+    );
+  }
+
   Future<List<ClaimedSyncOperation>> claimPending({
     required String ownerId,
     required String firebaseUid,

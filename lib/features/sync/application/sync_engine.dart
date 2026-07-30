@@ -66,6 +66,7 @@ final class SyncEngine {
   final SyncUtcNow nowUtc;
   final SyncLeaseTokenGenerator generateLeaseToken;
   final SyncJitterSource jitter;
+  final Set<String> _permissionRecoveryAttemptedOwners = <String>{};
 
   Future<SyncRunResult> run() async {
     final policy = await policyProvider();
@@ -105,6 +106,12 @@ final class SyncEngine {
     var providerUnavailable = false;
     var retryRecommended = false;
     try {
+      if (_permissionRecoveryAttemptedOwners.add(owner.id)) {
+        await store.requeuePermissionDeniedFailures(
+          ownerId: owner.id,
+          nowUtc: _currentUtc(),
+        );
+      }
       final claimed = await store.claimPending(
         ownerId: owner.id,
         firebaseUid: firebaseUid,

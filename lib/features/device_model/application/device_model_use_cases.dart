@@ -1,9 +1,11 @@
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 
 import '../domain/model_lifecycle.dart';
 import '../domain/model_manifest.dart';
+import 'model_benchmark.dart';
 import 'model_download_manager.dart';
 
 typedef ImageRuntimeFactory =
@@ -40,6 +42,43 @@ final class DeviceModelUseCases {
   }
 
   Future<void> dispose() => downloadManager.dispose();
+
+  Future<List<ModelBenchmarkResult>> benchmarkActive({
+    required String deviceTier,
+    int warmupRuns = 3,
+    int measuredRuns = 20,
+  }) async {
+    final tensorElements = manifest.inputShape.fold<int>(
+      1,
+      (product, dimension) => product * dimension,
+    );
+    final bytesPerElement = switch (manifest.inputType) {
+      ModelTensorType.uint8 => 1,
+      ModelTensorType.float32 => 4,
+    };
+    final input = Uint8List(tensorElements * bytesPerElement);
+    final results = <ModelBenchmarkResult>[];
+    for (final delegate in const [ModelDelegate.cpu, ModelDelegate.xnnpack]) {
+      if (!manifest.supportedDelegates.contains(delegate)) continue;
+      final runtime = await openActive(delegate: delegate);
+      try {
+        results.add(
+          await ModelBenchmark(runtime: runtime).run(
+            input: input,
+            delegate: delegate,
+            modelId: manifest.id,
+            modelVersion: manifest.version,
+            deviceTier: deviceTier,
+            warmupRuns: warmupRuns,
+            measuredRuns: measuredRuns,
+          ),
+        );
+      } finally {
+        runtime.close();
+      }
+    }
+    return List<ModelBenchmarkResult>.unmodifiable(results);
+  }
 
   Future<ImageClassifierRuntime> openActive({
     ModelDelegate delegate = ModelDelegate.xnnpack,
