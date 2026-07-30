@@ -43,6 +43,8 @@ $firebaseShaPath = Join-Path $repoRoot `
     'tool\cli\configure-firebase-release-sha.cjs'
 $appCheckPath = Join-Path $repoRoot `
     'tool\cli\configure-firebase-app-check.cjs'
+$appCheckEnforcementPath = Join-Path $repoRoot `
+    'tool\cli\set-firebase-app-check-enforcement.cjs'
 $googleServicesPath = Join-Path $repoRoot 'android\app\google-services.json'
 
 if (-not (Test-Path -LiteralPath $gradlePath)) {
@@ -153,6 +155,22 @@ if (Test-Path -LiteralPath $appCheckPath) {
 
 Assert-True (Test-Path -LiteralPath $googleServicesPath) `
     'Android Firebase client configuration exists'
+Assert-True (Test-Path -LiteralPath $appCheckEnforcementPath) `
+    'Firebase App Check enforcement controller exists'
+if (Test-Path -LiteralPath $appCheckEnforcementPath) {
+    $appCheckEnforcement =
+        [System.IO.File]::ReadAllText($appCheckEnforcementPath)
+    Assert-Match $appCheckEnforcement 'firestore\.googleapis\.com' `
+        'App Check enforcement controller targets Firestore'
+    Assert-Match $appCheckEnforcement `
+        '\["enable", "disable", "status"\]' `
+        'App Check enforcement controller supports safe status and rollback'
+    Assert-Match $appCheckEnforcement 'updateMask:\s*"enforcementMode"' `
+        'App Check enforcement controller mutates only enforcementMode'
+    Assert-NoMatch $appCheckEnforcement `
+        '(?i)(access_token|refresh_token|authorization)' `
+        'App Check enforcement evidence never handles authentication tokens'
+}
 if (
     (Test-Path -LiteralPath $googleServicesPath) -and
     (Test-Path -LiteralPath $firebaseShaPath) -and
