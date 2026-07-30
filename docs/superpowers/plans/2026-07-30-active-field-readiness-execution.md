@@ -5,10 +5,11 @@
 **Target:** A release-signed Android APK ready for a 30-participant,
 geographically distributed field trial.
 
-**Accepted baseline:** Gates P0-P3 are complete. Their immutable evidence is
+**Accepted baseline:** Gates P0-P7 are complete. Their immutable evidence is
 recorded under `docs/development/`. This file supersedes every earlier
 incremental implementation plan; the approved master design remains the
-architecture contract.
+architecture contract. P8 automation is implemented and fail-closed; physical
+device, release-signing, production-control, and owner evidence remain pending.
 
 ## 1. Operating rules
 
@@ -308,6 +309,36 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-product-comp
 ```
 
 ## 8. P8 — Field certification and release
+
+### P8 implementation status
+
+Implemented locally:
+
+- versioned, owner-scoped research consent with explicit acceptance,
+  withdrawal, and continued offline learning after decline/withdrawal;
+- research export that fails closed without active consent while personal
+  CSV/PDF/Anki export remains available;
+- release packaging that requires owner-controlled signing material, verifies
+  the APK certificate, and records APK/model hashes and build identity;
+- physical-device evidence collection that rejects emulators, pseudonymizes
+  device serials, installs the exact APK, and leaves unexecuted journeys
+  `pending`;
+- one evidence assembler and one strict final gate covering three device tiers,
+  mandatory journeys, CPU/XNNPACK, honest GPU availability, 30-minute
+  endurance, Cloud controls, participant documents, and owner approval;
+- Thai installation, privacy/consent, data/export/delete, feedback/support,
+  known-limitations, and release-operator documentation.
+
+External acceptance remains open and cannot be synthesized by the repository:
+
+- dedicated release keystore and `android/key.properties`;
+- one low-, one mid-, and one high-tier physical Android device;
+- production App Check, budget alerts, asset links, and kill-switch evidence;
+- approved private research protocol and real feedback/support channels;
+- completed real-device journeys, endurance records, and owner smoke approval.
+
+Current evidence is recorded in
+`docs/development/p8-field-certification-gate-2026-07-30.md`.
 
 ### P8.1 Automated participant journeys
 

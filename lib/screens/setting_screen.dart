@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 
 class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key, this.account});
+  const SettingScreen({super.key, this.account, this.researchConsent});
 
   final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
@@ -17,13 +19,16 @@ class SettingScreen extends StatefulWidget {
 
 class _SettingScreenState extends State<SettingScreen> {
   AccountUseCases? _account;
+  ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _account ??=
-        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _account ??= widget.account ?? dependencies?.account;
+    _researchConsent ??=
+        widget.researchConsent ?? dependencies?.researchConsent;
   }
 
   Future<void> _changePassword() async {
@@ -115,6 +120,22 @@ class _SettingScreenState extends State<SettingScreen> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
+  Future<void> _changeResearchConsent(bool accept) async {
+    final consent = _researchConsent;
+    if (consent == null || _busy) return;
+    setState(() => _busy = true);
+    try {
+      if (accept) {
+        await consent.accept();
+      } else {
+        await consent.withdraw();
+      }
+      if (mounted) setState(() {});
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final dependencies = AppDependenciesScope.maybeOf(context);
@@ -141,6 +162,37 @@ class _SettingScreenState extends State<SettingScreen> {
               ),
             ),
           ),
+          if (_researchConsent case final consent?)
+            FutureBuilder(
+              future: consent.load(),
+              builder: (context, snapshot) {
+                final accepted = snapshot.data?.accepted ?? false;
+                return Card(
+                  child: ListTile(
+                    minTileHeight: 64,
+                    leading: Icon(
+                      accepted
+                          ? Icons.fact_check_outlined
+                          : Icons.assignment_outlined,
+                    ),
+                    title: const Text('ความยินยอมงานวิจัย'),
+                    subtitle: Text(
+                      accepted
+                          ? 'ยินยอมฉบับ ${ResearchConsentUseCases.currentVersion} — ถอนความยินยอมได้'
+                          : 'ยังไม่ยินยอม ข้อมูลจะไม่ถูกส่งออกเป็นชุดวิจัย',
+                    ),
+                    trailing: TextButton(
+                      onPressed:
+                          snapshot.connectionState == ConnectionState.waiting ||
+                              _busy
+                          ? null
+                          : () => _changeResearchConsent(!accepted),
+                      child: Text(accepted ? 'ถอน' : 'ยินยอม'),
+                    ),
+                  ),
+                );
+              },
+            ),
           Card(
             child: ListTile(
               leading: Icon(

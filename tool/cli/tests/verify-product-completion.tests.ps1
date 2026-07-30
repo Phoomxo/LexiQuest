@@ -13,6 +13,7 @@ foreach ($needle in @(
     'dart format --output=none --set-exit-if-changed',
     'flutter analyze',
     'test/features/account',
+    'test/features/consent',
     'test/features/export',
     'test/features/rewards',
     'test/features/sync',

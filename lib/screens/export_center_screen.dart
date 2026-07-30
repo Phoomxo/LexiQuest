@@ -168,6 +168,8 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
   String _failureText(ExportFailureCode code) => switch (code) {
     ExportFailureCode.noSelection => 'กรุณาเลือกข้อมูลอย่างน้อยหนึ่งประเภท',
     ExportFailureCode.noData => 'ไม่มีข้อมูลจริงสำหรับรูปแบบที่เลือก (N=0)',
+    ExportFailureCode.consentRequired =>
+      'ต้องยินยอมเข้าร่วมการทดลองก่อนส่งออกชุดข้อมูลวิจัย',
     ExportFailureCode.cancelled => 'ยกเลิกการส่งออกแล้ว',
     ExportFailureCode.permissionDenied => 'ไม่มีสิทธิ์เขียนไฟล์ไปยังตำแหน่งนี้',
     ExportFailureCode.insufficientSpace => 'พื้นที่จัดเก็บไม่เพียงพอ',

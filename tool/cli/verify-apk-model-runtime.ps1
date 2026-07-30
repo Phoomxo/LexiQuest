@@ -9,8 +9,16 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
-$resolvedApk = Join-Path $repoRoot $ApkPath
-$resolvedAar = Join-Path $repoRoot $LiteRtNextAarPath
+$resolvedApk = if ([System.IO.Path]::IsPathRooted($ApkPath)) {
+    [System.IO.Path]::GetFullPath($ApkPath)
+} else {
+    [System.IO.Path]::GetFullPath((Join-Path $repoRoot $ApkPath))
+}
+$resolvedAar = if ([System.IO.Path]::IsPathRooted($LiteRtNextAarPath)) {
+    [System.IO.Path]::GetFullPath($LiteRtNextAarPath)
+} else {
+    [System.IO.Path]::GetFullPath((Join-Path $repoRoot $LiteRtNextAarPath))
+}
 $expectedAarSha256 =
     'A162D1DDBDAD87C002B7EC7EB31A703F2761335E693F292F94091B3569D8AA37'
 

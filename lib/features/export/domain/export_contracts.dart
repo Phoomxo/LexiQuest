@@ -52,6 +52,7 @@ final class ExportSaveResult {
 enum ExportFailureCode {
   noSelection,
   noData,
+  consentRequired,
   cancelled,
   permissionDenied,
   insufficientSpace,

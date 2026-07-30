@@ -23,6 +23,7 @@ supabase/.temp/
 firestore-debug.log
 tool/cli/.runtime/
 tool/cli/logs/
+field/evidence/
 node_modules/
 android/build/
 .idea/

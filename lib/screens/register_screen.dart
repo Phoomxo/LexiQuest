@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/research_consent_dialog.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key, this.account});
+  const RegisterScreen({super.key, this.account, this.researchConsent});
 
   final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -18,15 +21,19 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   AccountUseCases? _account;
+  ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
   bool _consent = false;
+  bool _researchAcceptedFromDetails = false;
   bool _obscure = true;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _account ??=
-        widget.account ?? AppDependenciesScope.maybeOf(context)?.account;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _account ??= widget.account ?? dependencies?.account;
+    _researchConsent ??=
+        widget.researchConsent ?? dependencies?.researchConsent;
   }
 
   Future<void> _register() async {
@@ -45,6 +52,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
         email: _email.text,
         password: _password.text,
       );
+      if (!mounted) return;
+      final researchConsent = _researchConsent;
+      if (researchConsent != null) {
+        final accepted =
+            _researchAcceptedFromDetails ||
+            await showResearchConsentDialog(context);
+        if (accepted) {
+          await researchConsent.accept();
+        } else {
+          await researchConsent.withdraw();
+        }
+      }
       if (!mounted) return;
       await AppNavigator.replace<void, void>(
         context,
@@ -113,10 +132,27 @@ class _RegisterScreenState extends State<RegisterScreen> {
               contentPadding: EdgeInsets.zero,
               onChanged: _busy
                   ? null
-                  : (value) => setState(() => _consent = value ?? false),
+                  : (value) => setState(() {
+                      _consent = value ?? false;
+                      if (!_consent) _researchAcceptedFromDetails = false;
+                    }),
               title: const Text(
-                'ยอมรับประกาศความเป็นส่วนตัวและเงื่อนไขทดลองใช้',
+                'อ่านและรับทราบประกาศความเป็นส่วนตัวและเงื่อนไขทดลองใช้',
               ),
+            ),
+            TextButton(
+              onPressed: _busy
+                  ? null
+                  : () async {
+                      final accepted = await showResearchConsentDialog(context);
+                      if (mounted && accepted) {
+                        setState(() {
+                          _consent = true;
+                          _researchAcceptedFromDetails = true;
+                        });
+                      }
+                    },
+              child: const Text('อ่านรายละเอียดการเข้าร่วมและการใช้ข้อมูล'),
             ),
             const SizedBox(height: 12),
             SizedBox(

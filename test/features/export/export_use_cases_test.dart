@@ -8,6 +8,8 @@ import 'package:vocab_learning_app/features/export/application/export_use_cases.
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +26,12 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 7, 30),
     );
     await owners.getOrCreateActiveOwner();
+    final consent = ResearchConsentUseCases(
+      owners: owners,
+      repository: DriftResearchConsentRepository(database),
+      nowUtc: () => DateTime.utc(2026, 7, 30),
+    );
+    await consent.accept();
     exports = ExportUseCases(
       owners: owners,
       reader: DriftExportReader(database),
@@ -31,6 +39,7 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+      researchConsent: consent,
     );
     await _seed(database);
   });
@@ -95,6 +104,31 @@ void main() {
     expect(parsed['schemaVersion'], 1);
     expect(parsed['timeZone'], 'UTC');
     expect((parsed['attempts'] as List).single['evidenceId'], 'attempt-1');
+  });
+
+  test('research dataset export stops after consent withdrawal', () async {
+    await exports.researchConsent.withdraw();
+
+    await expectLater(
+      exports.prepare(
+        format: ExportFormat.researchJson,
+        selection: _all,
+        cancellation: ExportCancellation(),
+      ),
+      throwsA(
+        isA<ExportException>().having(
+          (error) => error.code,
+          'code',
+          ExportFailureCode.consentRequired,
+        ),
+      ),
+    );
+    final personal = await exports.prepare(
+      format: ExportFormat.csv,
+      selection: _all,
+      cancellation: ExportCancellation(),
+    );
+    expect(personal.recordCount, 3);
   });
 
   test('Anki exports only real vocabulary and stable evidence id', () async {

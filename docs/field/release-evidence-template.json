@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 1,
+  "releaseId": "<OWNER_CONFIG_REQUIRED>",
+  "artifact": {
+    "apkPath": "build/field-release/lexiquest-1.0.0+1.apk",
+    "apkSha256": "<FROM_RELEASE_MANIFEST>",
+    "signingCertificateSha256": "<FROM_RELEASE_MANIFEST>",
+    "packageName": "com.lexiquest.app",
+    "versionName": "1.0.0",
+    "versionCode": 1,
+    "buildId": "<FROM_RELEASE_MANIFEST>",
+    "modelSha256": "D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B"
+  },
+  "cloudControls": {
+    "appCheckConfigured": false,
+    "budgetAlertsConfigured": false,
+    "assetLinksVerified": false,
+    "cloudKillSwitchVerified": false,
+    "appCheckEvidenceRef": "",
+    "budgetAlertsEvidenceRef": "",
+    "assetLinksEvidenceRef": "",
+    "cloudKillSwitchEvidenceRef": ""
+  },
+  "participantPackage": {
+    "installGuide": "docs/install-and-update.md",
+    "privacyNotice": "docs/privacy-and-consent-v1.md",
+    "dataRightsGuide": "docs/data-export-and-deletion.md",
+    "knownLimitations": "docs/known-limitations.md",
+    "feedbackGuide": "docs/feedback-and-support.md",
+    "consentVersion": 1,
+    "feedbackChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
+    "supportChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
+    "researchProtocolRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>"
+  },
+  "devices": [],
+  "ownerApproval": {
+    "approved": false,
+    "apkSha256": "<FROM_RELEASE_MANIFEST>",
+    "approvedAtUtc": "",
+    "approverRole": "owner",
+    "evidenceRef": ""
+  }
+}

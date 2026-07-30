@@ -18,6 +18,8 @@ import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/device_model/application/model_download_manager.dart';
 import '../features/device_model/data/drift_model_download_repository.dart';
@@ -259,6 +261,11 @@ final class AppBootstrap {
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final researchConsent = ResearchConsentUseCases(
+      owners: localOwners,
+      repository: DriftResearchConsentRepository(database),
+      nowUtc: () => DateTime.now().toUtc(),
+    );
     final rewards = RewardUseCases(
       owners: localOwners,
       repository: DriftRewardRepository(database),
@@ -273,6 +280,7 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+      researchConsent: researchConsent,
     );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());
@@ -339,6 +347,7 @@ final class AppBootstrap {
       vocabularyImporter: vocabularyImporter,
       deviceModels: deviceModels,
       account: account,
+      researchConsent: researchConsent,
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       speechPractice: speechPractice,

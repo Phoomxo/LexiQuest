@@ -103,7 +103,8 @@ try {
             'firestore-rules-security.tests.ps1',
             'model-loading-security.tests.ps1',
             'android-manifest-security.tests.ps1',
-            'android-release-signing.tests.ps1'
+            'android-release-signing.tests.ps1',
+            'verify-field-release.tests.ps1'
         )
         foreach ($contractTest in $contractTests) {
             & powershell -NoProfile -ExecutionPolicy Bypass -File `

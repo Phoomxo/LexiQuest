@@ -2,15 +2,23 @@ import 'package:flutter/material.dart';
 
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../services/guest_session_service.dart';
+import '../widgets/research_consent_dialog.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, this.guestSessionService, this.account});
+  const LoginScreen({
+    super.key,
+    this.guestSessionService,
+    this.account,
+    this.researchConsent,
+  });
 
   final GuestSessionService? guestSessionService;
   final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -21,6 +29,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _password = TextEditingController();
   GuestSessionService? _guest;
   AccountUseCases? _account;
+  ResearchConsentUseCases? _researchConsent;
   bool _busy = false;
   bool _obscure = true;
 
@@ -30,6 +39,8 @@ class _LoginScreenState extends State<LoginScreen> {
     final dependencies = AppDependenciesScope.maybeOf(context);
     _guest ??= widget.guestSessionService ?? dependencies?.guestSessionService;
     _account ??= widget.account ?? dependencies?.account;
+    _researchConsent ??=
+        widget.researchConsent ?? dependencies?.researchConsent;
   }
 
   Future<void> _signIn() async {
@@ -44,6 +55,8 @@ class _LoginScreenState extends State<LoginScreen> {
         email: _email.text,
         password: _password.text,
       );
+      if (!mounted) return;
+      await _ensureResearchConsentDecision();
       if (!mounted) return;
       if (session.emailVerified) {
         await AppNavigator.resetTo<void>(context, AppRoute.home);
@@ -64,6 +77,8 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _startGuest() async {
     final guest = _guest;
     if (guest == null || _busy) return;
+    await _ensureResearchConsentDecision();
+    if (!mounted) return;
     setState(() => _busy = true);
     final result = await guest.start();
     if (!mounted) return;
@@ -72,6 +87,19 @@ class _LoginScreenState extends State<LoginScreen> {
       await AppNavigator.resetTo<void>(context, AppRoute.home);
     } else {
       _show('เริ่มโหมด Guest ไม่สำเร็จ กรุณาตรวจเครือข่ายหรือลองใหม่');
+    }
+  }
+
+  Future<void> _ensureResearchConsentDecision() async {
+    final consent = _researchConsent;
+    if (consent == null) return;
+    final current = await consent.load();
+    if (current.accepted || current.withdrawnAtUtc != null || !mounted) return;
+    final accepted = await showResearchConsentDialog(context);
+    if (accepted) {
+      await consent.accept();
+    } else {
+      await consent.withdraw();
     }
   }
 

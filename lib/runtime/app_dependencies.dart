@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
+import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
@@ -41,6 +42,7 @@ final class AppDependencies {
     this.vocabularyImporter,
     this.deviceModels,
     this.account,
+    this.researchConsent,
     this.exports,
     this.geminiTutor,
     this.objectScanner,
@@ -65,6 +67,7 @@ final class AppDependencies {
   final ImportVocabulary? vocabularyImporter;
   final DeviceModelUseCases? deviceModels;
   final AccountUseCases? account;
+  final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;

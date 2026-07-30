@@ -1,7 +1,12 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -22,12 +27,17 @@ class _CompleterGuestSessionService implements GuestSessionService {
 
 const guestModeButtonKey = ValueKey<String>('guest-mode-button');
 
-Widget _loginHarness({required GuestSessionService guestSessionService}) {
+Widget _loginHarness({
+  required GuestSessionService guestSessionService,
+  ResearchConsentUseCases? researchConsent,
+}) {
   return MaterialApp(
     initialRoute: '/login',
     routes: <String, WidgetBuilder>{
-      '/login': (context) =>
-          LoginScreen(guestSessionService: guestSessionService),
+      '/login': (context) => LoginScreen(
+        guestSessionService: guestSessionService,
+        researchConsent: researchConsent,
+      ),
       '/home': (context) =>
           const Scaffold(body: Center(child: Text('HOME_SCREEN_REACHED'))),
     },
@@ -140,4 +150,43 @@ void main() {
     expect(find.text('HOME_SCREEN_REACHED'), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+    'declining research export still permits offline guest learning',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'consent-owner',
+        nowUtc: () => DateTime.utc(2026, 7, 30),
+      );
+      final consent = ResearchConsentUseCases(
+        owners: owners,
+        repository: DriftResearchConsentRepository(database),
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      );
+      final service = _CompleterGuestSessionService();
+      await tester.pumpWidget(
+        _loginHarness(guestSessionService: service, researchConsent: consent),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(guestModeButtonKey));
+      await tester.pumpAndSettle();
+      expect(find.text('ยังไม่ยินยอม'), findsOneWidget);
+
+      await tester.tap(find.text('ยังไม่ยินยอม'));
+      await tester.pump();
+      expect(service.startCalls, 1);
+
+      final status = await consent.load();
+      expect(status.accepted, isFalse);
+      expect(status.withdrawnAtUtc, isNotNull);
+
+      service.complete(const GuestSessionStarted(uid: 'guest-uid-123'));
+      await tester.pumpAndSettle();
+      expect(find.text('HOME_SCREEN_REACHED'), findsOneWidget);
+    },
+  );
 }

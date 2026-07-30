@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../identity/domain/local_owner_repository.dart';
+import '../../consent/application/research_consent_use_cases.dart';
 import '../data/drift_export_reader.dart';
 import '../domain/export_contracts.dart';
 
@@ -18,6 +19,7 @@ final class ExportUseCases {
     required this.store,
     required this.nowUtc,
     required this.loadThaiFont,
+    required this.researchConsent,
   });
 
   final LocalOwnerRepository owners;
@@ -25,6 +27,7 @@ final class ExportUseCases {
   final ExportArtifactStore store;
   final ExportUtcNow nowUtc;
   final ExportFontLoader loadThaiFont;
+  final ResearchConsentUseCases researchConsent;
 
   Future<ExportArtifact> prepare({
     required ExportFormat format,
@@ -33,6 +36,10 @@ final class ExportUseCases {
   }) async {
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
+    }
+    if (format == ExportFormat.researchJson &&
+        !(await researchConsent.load()).accepted) {
+      throw const ExportException(ExportFailureCode.consentRequired);
     }
     cancellation.throwIfCancelled();
     final owner = await owners.getOrCreateActiveOwner();
