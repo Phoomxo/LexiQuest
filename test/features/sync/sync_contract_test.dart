@@ -76,6 +76,24 @@ void main() {
       );
     });
 
+    test('push mutation can collapse consecutive local revisions', () {
+      final mutation = PushMutation(
+        operationId: 'operation:3',
+        firebaseUid: 'uid-a',
+        collection: SyncCollection.words,
+        entityId: 'word:station',
+        operationKind: SyncOperationKind.upsert,
+        payloadVersion: 1,
+        baseRevision: 0,
+        localRevision: 3,
+        clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
+        payload: const <String, Object?>{'spelling': 'station'},
+      );
+
+      expect(mutation.baseRevision, 0);
+      expect(mutation.localRevision, 3);
+    });
+
     test('push acknowledgement requires UTC time and valid revisions', () {
       expect(
         () => PushAcknowledged(

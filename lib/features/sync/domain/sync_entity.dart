@@ -81,11 +81,11 @@ final class PushMutation {
     _requirePayloadVersion(payloadVersion);
     _requireRevision(baseRevision, 'baseRevision', allowZero: true);
     _requireRevision(localRevision, 'localRevision');
-    if (localRevision != baseRevision + 1) {
+    if (localRevision <= baseRevision) {
       throw ArgumentError.value(
         localRevision,
         'localRevision',
-        'must be exactly one greater than baseRevision',
+        'must be greater than baseRevision',
       );
     }
     _requireUtc(clientUpdatedAtUtc, 'clientUpdatedAtUtc');
