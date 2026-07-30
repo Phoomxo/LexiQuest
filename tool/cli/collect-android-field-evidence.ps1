@@ -36,6 +36,25 @@ function Invoke-AdbValue {
     return ([string]$value).Trim()
 }
 
+function Get-InstalledVersionCode {
+    param(
+        [Parameter(Mandatory)][string]$Serial,
+        [Parameter(Mandatory)][string]$PackageName
+    )
+
+    $packageOutput = @(
+        & adb -s $Serial shell dumpsys package $PackageName 2>$null
+    )
+    $versionMatch = [regex]::Match(
+        ($packageOutput -join "`n"),
+        '(?m)^\s*versionCode=(\d+)\b'
+    )
+    if (-not $versionMatch.Success) {
+        return $null
+    }
+    return [int]$versionMatch.Groups[1].Value
+}
+
 if ($null -eq (Get-Command adb -ErrorAction SilentlyContinue)) {
     throw 'adb is required to collect physical Android evidence.'
 }
@@ -66,6 +85,13 @@ $apkPath = [string]$releaseManifest.artifact.apkPath
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
     throw "Release APK is missing: $apkPath"
 }
+$targetVersionCode = [int]$releaseManifest.artifact.versionCode
+if ($targetVersionCode -lt 1) {
+    throw 'Release manifest versionCode must be a positive integer.'
+}
+$priorVersionCode = Get-InstalledVersionCode `
+    -Serial $serial `
+    -PackageName 'com.lexiquest.app'
 
 $installOutput = & adb -s $serial install -r $apkPath 2>&1
 if ([int]$LASTEXITCODE -ne 0 -or ($installOutput -join "`n") -notmatch 'Success') {
@@ -134,10 +160,22 @@ foreach ($name in Get-LexiQuestRequiredFieldJourneys) {
         notes = ''
     }
 }
-$journeys.cleanInstall = [ordered]@{
-    status = 'pass'
-    evidenceRef = 'adb-install-and-launch'
-    notes = 'Collector installed and launched this exact APK.'
+if ($null -eq $priorVersionCode) {
+    $journeys.cleanInstall = [ordered]@{
+        status = 'pass'
+        evidenceRef = "adb-clean-install:versionCode=$targetVersionCode"
+        notes = 'Package was absent before this exact APK was installed.'
+    }
+} elseif ($priorVersionCode -lt $targetVersionCode) {
+    $journeys.upgradeInstall = [ordered]@{
+        status = 'pass'
+        evidenceRef = (
+            'adb-upgrade-install:versionCode={0}-to-{1}' -f
+                $priorVersionCode,
+                $targetVersionCode
+        )
+        notes = 'A lower installed version was upgraded in place.'
+    }
 }
 
 $recordedAt = [DateTime]::UtcNow

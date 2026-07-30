@@ -304,10 +304,23 @@ foreach ($needle in @(
     'pseudonymousDeviceId',
     "status = 'pending'",
     'install -r',
+    'Get-InstalledVersionCode',
+    'priorVersionCode',
+    'targetVersionCode',
     'Get-LexiQuestRequiredFieldJourneys'
 )) {
     Assert-True $collectorText.Contains($needle) "collector contains $needle"
 }
+Assert-True (
+    $collectorText.Contains('$priorVersionCode -lt $targetVersionCode')
+) 'collector distinguishes a real version upgrade from a same-version reinstall'
+Assert-True (
+    $collectorText -match (
+        '(?s)if\s*\(\$null\s+-eq\s+\$priorVersionCode\)\s*\{' +
+        '.*?\$journeys\.cleanInstall\s*=\s*\[ordered\]@\{' +
+        '.*?status\s*=\s*''pass''.*?\}'
+    )
+) 'collector labels clean install pass only after proving the package was absent'
 Assert-True (
     $collectorText -notmatch "(?m)status\s*=\s*'pass'.*(camera|speech|gemini)"
 ) 'collector never fabricates camera, speech, or Gemini passes'
