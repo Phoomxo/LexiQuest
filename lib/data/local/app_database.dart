@@ -5,6 +5,7 @@ import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/progress_tables.dart';
+import 'tables/runtime_tables.dart';
 import 'tables/sync_tables.dart';
 import 'tables/vocabulary_tables.dart';
 
@@ -28,6 +29,7 @@ part 'app_database.g.dart';
     OutboxOperations,
     SyncCheckpoints,
     SyncConflicts,
+    RuntimeFlags,
     ModelDownloads,
   ],
 )
@@ -37,11 +39,57 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
     onCreate: (migrator) => migrator.createAll(),
+    onUpgrade: (migrator, from, to) async {
+      if (from < 2) {
+        await migrator.addColumn(
+          vocabularyCategories,
+          vocabularyCategories.cloudRevision,
+        );
+        await migrator.addColumn(
+          vocabularyCategories,
+          vocabularyCategories.lastAcknowledgedAtUtcMs,
+        );
+        await migrator.addColumn(
+          vocabularyCategories,
+          vocabularyCategories.serverUpdatedAtUtcMs,
+        );
+        await migrator.addColumn(
+          vocabularyWords,
+          vocabularyWords.cloudRevision,
+        );
+        await migrator.addColumn(
+          vocabularyWords,
+          vocabularyWords.lastAcknowledgedAtUtcMs,
+        );
+        await migrator.addColumn(
+          vocabularyWords,
+          vocabularyWords.serverUpdatedAtUtcMs,
+        );
+        await migrator.addColumn(outboxOperations, outboxOperations.leaseToken);
+        await migrator.addColumn(
+          outboxOperations,
+          outboxOperations.leaseExpiresAtUtcMs,
+        );
+        await migrator.addColumn(
+          outboxOperations,
+          outboxOperations.lastAttemptAtUtcMs,
+        );
+        await migrator.addColumn(
+          syncConflicts,
+          syncConflicts.localSnapshotJson,
+        );
+        await migrator.addColumn(
+          syncConflicts,
+          syncConflicts.cloudSnapshotJson,
+        );
+        await migrator.createTable(runtimeFlags);
+      }
+    },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
     },

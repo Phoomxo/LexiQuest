@@ -9,6 +9,9 @@ class VocabularyCategories extends Table {
   TextColumn get normalizedName => text()();
   IntColumn get sortOrder => integer().withDefault(const Constant(0))();
   IntColumn get localRevision => integer().withDefault(const Constant(1))();
+  IntColumn get cloudRevision => integer().withDefault(const Constant(0))();
+  IntColumn get lastAcknowledgedAtUtcMs => integer().nullable()();
+  IntColumn get serverUpdatedAtUtcMs => integer().nullable()();
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   IntColumn get createdAtUtcMs => integer()();
   IntColumn get updatedAtUtcMs => integer()();
@@ -35,6 +38,9 @@ class VocabularyWords extends Table {
   TextColumn get source => text().withDefault(const Constant('manual'))();
   BoolColumn get isGlobal => boolean().withDefault(const Constant(false))();
   IntColumn get localRevision => integer().withDefault(const Constant(1))();
+  IntColumn get cloudRevision => integer().withDefault(const Constant(0))();
+  IntColumn get lastAcknowledgedAtUtcMs => integer().nullable()();
+  IntColumn get serverUpdatedAtUtcMs => integer().nullable()();
   BoolColumn get isDeleted => boolean().withDefault(const Constant(false))();
   IntColumn get createdAtUtcMs => integer()();
   IntColumn get updatedAtUtcMs => integer()();

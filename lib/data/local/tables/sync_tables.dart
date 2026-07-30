@@ -13,6 +13,9 @@ class OutboxOperations extends Table {
   TextColumn get state => text().withDefault(const Constant('pending'))();
   IntColumn get attemptCount => integer().withDefault(const Constant(0))();
   IntColumn get nextAttemptAtUtcMs => integer().nullable()();
+  TextColumn get leaseToken => text().nullable()();
+  IntColumn get leaseExpiresAtUtcMs => integer().nullable()();
+  IntColumn get lastAttemptAtUtcMs => integer().nullable()();
   IntColumn get createdAtUtcMs => integer()();
   IntColumn get acknowledgedAtUtcMs => integer().nullable()();
   TextColumn get failureCode => text().nullable()();
@@ -46,6 +49,8 @@ class SyncConflicts extends Table {
   IntColumn get cloudRevision => integer()();
   TextColumn get resolutionPolicy => text()();
   TextColumn get outcome => text()();
+  TextColumn get localSnapshotJson => text().nullable()();
+  TextColumn get cloudSnapshotJson => text().nullable()();
   IntColumn get resolvedAtUtcMs => integer()();
 
   @override

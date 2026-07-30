@@ -13,7 +13,7 @@ void main() {
     await database.close();
   });
 
-  test('schema version one creates every field data-spine table', () async {
+  test('current schema creates every field data-spine table', () async {
     final tableNames = await database
         .customSelect(
           "SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name",
@@ -21,7 +21,7 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 1);
+    expect(database.schemaVersion, 2);
     expect(
       tableNames,
       containsAll(<String>[

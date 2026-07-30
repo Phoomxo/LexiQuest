@@ -963,6 +963,39 @@ class $VocabularyCategoriesTable extends VocabularyCategories
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -1008,6 +1041,9 @@ class $VocabularyCategoriesTable extends VocabularyCategories
     normalizedName,
     sortOrder,
     localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
@@ -1068,6 +1104,33 @@ class $VocabularyCategoriesTable extends VocabularyCategories
         localRevision.isAcceptableOrUnknown(
           data['local_revision']!,
           _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
         ),
       );
     }
@@ -1136,6 +1199,18 @@ class $VocabularyCategoriesTable extends VocabularyCategories
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
       )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
@@ -1165,6 +1240,9 @@ class VocabularyCategory extends DataClass
   final String normalizedName;
   final int sortOrder;
   final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
   final bool isDeleted;
   final int createdAtUtcMs;
   final int updatedAtUtcMs;
@@ -1175,6 +1253,9 @@ class VocabularyCategory extends DataClass
     required this.normalizedName,
     required this.sortOrder,
     required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
     required this.isDeleted,
     required this.createdAtUtcMs,
     required this.updatedAtUtcMs,
@@ -1188,6 +1269,15 @@ class VocabularyCategory extends DataClass
     map['normalized_name'] = Variable<String>(normalizedName);
     map['sort_order'] = Variable<int>(sortOrder);
     map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
@@ -1202,6 +1292,13 @@ class VocabularyCategory extends DataClass
       normalizedName: Value(normalizedName),
       sortOrder: Value(sortOrder),
       localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
       isDeleted: Value(isDeleted),
       createdAtUtcMs: Value(createdAtUtcMs),
       updatedAtUtcMs: Value(updatedAtUtcMs),
@@ -1220,6 +1317,13 @@ class VocabularyCategory extends DataClass
       normalizedName: serializer.fromJson<String>(json['normalizedName']),
       sortOrder: serializer.fromJson<int>(json['sortOrder']),
       localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
@@ -1235,6 +1339,11 @@ class VocabularyCategory extends DataClass
       'normalizedName': serializer.toJson<String>(normalizedName),
       'sortOrder': serializer.toJson<int>(sortOrder),
       'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
@@ -1248,6 +1357,9 @@ class VocabularyCategory extends DataClass
     String? normalizedName,
     int? sortOrder,
     int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
     bool? isDeleted,
     int? createdAtUtcMs,
     int? updatedAtUtcMs,
@@ -1258,6 +1370,13 @@ class VocabularyCategory extends DataClass
     normalizedName: normalizedName ?? this.normalizedName,
     sortOrder: sortOrder ?? this.sortOrder,
     localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
@@ -1274,6 +1393,15 @@ class VocabularyCategory extends DataClass
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAtUtcMs: data.createdAtUtcMs.present
           ? data.createdAtUtcMs.value
@@ -1293,6 +1421,9 @@ class VocabularyCategory extends DataClass
           ..write('normalizedName: $normalizedName, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs')
@@ -1308,6 +1439,9 @@ class VocabularyCategory extends DataClass
     normalizedName,
     sortOrder,
     localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
@@ -1322,6 +1456,9 @@ class VocabularyCategory extends DataClass
           other.normalizedName == this.normalizedName &&
           other.sortOrder == this.sortOrder &&
           other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
           other.isDeleted == this.isDeleted &&
           other.createdAtUtcMs == this.createdAtUtcMs &&
           other.updatedAtUtcMs == this.updatedAtUtcMs);
@@ -1335,6 +1472,9 @@ class VocabularyCategoriesCompanion
   final Value<String> normalizedName;
   final Value<int> sortOrder;
   final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
   final Value<bool> isDeleted;
   final Value<int> createdAtUtcMs;
   final Value<int> updatedAtUtcMs;
@@ -1346,6 +1486,9 @@ class VocabularyCategoriesCompanion
     this.normalizedName = const Value.absent(),
     this.sortOrder = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAtUtcMs = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
@@ -1358,6 +1501,9 @@ class VocabularyCategoriesCompanion
     required String normalizedName,
     this.sortOrder = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
     this.isDeleted = const Value.absent(),
     required int createdAtUtcMs,
     required int updatedAtUtcMs,
@@ -1375,6 +1521,9 @@ class VocabularyCategoriesCompanion
     Expression<String>? normalizedName,
     Expression<int>? sortOrder,
     Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
     Expression<bool>? isDeleted,
     Expression<int>? createdAtUtcMs,
     Expression<int>? updatedAtUtcMs,
@@ -1387,6 +1536,11 @@ class VocabularyCategoriesCompanion
       if (normalizedName != null) 'normalized_name': normalizedName,
       if (sortOrder != null) 'sort_order': sortOrder,
       if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
@@ -1401,6 +1555,9 @@ class VocabularyCategoriesCompanion
     Value<String>? normalizedName,
     Value<int>? sortOrder,
     Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
     Value<bool>? isDeleted,
     Value<int>? createdAtUtcMs,
     Value<int>? updatedAtUtcMs,
@@ -1413,6 +1570,10 @@ class VocabularyCategoriesCompanion
       normalizedName: normalizedName ?? this.normalizedName,
       sortOrder: sortOrder ?? this.sortOrder,
       localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
@@ -1441,6 +1602,19 @@ class VocabularyCategoriesCompanion
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
@@ -1465,6 +1639,9 @@ class VocabularyCategoriesCompanion
           ..write('normalizedName: $normalizedName, ')
           ..write('sortOrder: $sortOrder, ')
           ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
@@ -1621,6 +1798,39 @@ class $VocabularyWordsTable extends VocabularyWords
     requiredDuringInsert: false,
     defaultValue: const Constant(1),
   );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _isDeletedMeta = const VerificationMeta(
     'isDeleted',
   );
@@ -1672,6 +1882,9 @@ class $VocabularyWordsTable extends VocabularyWords
     source,
     isGlobal,
     localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
@@ -1785,6 +1998,33 @@ class $VocabularyWordsTable extends VocabularyWords
         ),
       );
     }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
     if (data.containsKey('is_deleted')) {
       context.handle(
         _isDeletedMeta,
@@ -1874,6 +2114,18 @@ class $VocabularyWordsTable extends VocabularyWords
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
       )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
       isDeleted: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}is_deleted'],
@@ -1908,6 +2160,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
   final String source;
   final bool isGlobal;
   final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
   final bool isDeleted;
   final int createdAtUtcMs;
   final int updatedAtUtcMs;
@@ -1924,6 +2179,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     required this.source,
     required this.isGlobal,
     required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
     required this.isDeleted,
     required this.createdAtUtcMs,
     required this.updatedAtUtcMs,
@@ -1945,6 +2203,15 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     map['source'] = Variable<String>(source);
     map['is_global'] = Variable<bool>(isGlobal);
     map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
     map['is_deleted'] = Variable<bool>(isDeleted);
     map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
@@ -1967,6 +2234,13 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       source: Value(source),
       isGlobal: Value(isGlobal),
       localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
       isDeleted: Value(isDeleted),
       createdAtUtcMs: Value(createdAtUtcMs),
       updatedAtUtcMs: Value(updatedAtUtcMs),
@@ -1993,6 +2267,13 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       source: serializer.fromJson<String>(json['source']),
       isGlobal: serializer.fromJson<bool>(json['isGlobal']),
       localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
       isDeleted: serializer.fromJson<bool>(json['isDeleted']),
       createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
@@ -2014,6 +2295,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       'source': serializer.toJson<String>(source),
       'isGlobal': serializer.toJson<bool>(isGlobal),
       'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
       'isDeleted': serializer.toJson<bool>(isDeleted),
       'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
@@ -2033,6 +2319,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     String? source,
     bool? isGlobal,
     int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
     bool? isDeleted,
     int? createdAtUtcMs,
     int? updatedAtUtcMs,
@@ -2049,6 +2338,13 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     source: source ?? this.source,
     isGlobal: isGlobal ?? this.isGlobal,
     localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
     isDeleted: isDeleted ?? this.isDeleted,
     createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
@@ -2077,6 +2373,15 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
       isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
       createdAtUtcMs: data.createdAtUtcMs.present
           ? data.createdAtUtcMs.value
@@ -2102,6 +2407,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           ..write('source: $source, ')
           ..write('isGlobal: $isGlobal, ')
           ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs')
@@ -2123,6 +2431,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     source,
     isGlobal,
     localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
@@ -2143,6 +2454,9 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           other.source == this.source &&
           other.isGlobal == this.isGlobal &&
           other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
           other.isDeleted == this.isDeleted &&
           other.createdAtUtcMs == this.createdAtUtcMs &&
           other.updatedAtUtcMs == this.updatedAtUtcMs);
@@ -2161,6 +2475,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
   final Value<String> source;
   final Value<bool> isGlobal;
   final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
   final Value<bool> isDeleted;
   final Value<int> createdAtUtcMs;
   final Value<int> updatedAtUtcMs;
@@ -2178,6 +2495,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.source = const Value.absent(),
     this.isGlobal = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
     this.isDeleted = const Value.absent(),
     this.createdAtUtcMs = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
@@ -2196,6 +2516,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.source = const Value.absent(),
     this.isGlobal = const Value.absent(),
     this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
     this.isDeleted = const Value.absent(),
     required int createdAtUtcMs,
     required int updatedAtUtcMs,
@@ -2223,6 +2546,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Expression<String>? source,
     Expression<bool>? isGlobal,
     Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
     Expression<bool>? isDeleted,
     Expression<int>? createdAtUtcMs,
     Expression<int>? updatedAtUtcMs,
@@ -2241,6 +2567,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       if (source != null) 'source': source,
       if (isGlobal != null) 'is_global': isGlobal,
       if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
       if (isDeleted != null) 'is_deleted': isDeleted,
       if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
@@ -2261,6 +2592,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Value<String>? source,
     Value<bool>? isGlobal,
     Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
     Value<bool>? isDeleted,
     Value<int>? createdAtUtcMs,
     Value<int>? updatedAtUtcMs,
@@ -2279,6 +2613,10 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       source: source ?? this.source,
       isGlobal: isGlobal ?? this.isGlobal,
       localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
       isDeleted: isDeleted ?? this.isDeleted,
       createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
@@ -2325,6 +2663,19 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
     if (isDeleted.present) {
       map['is_deleted'] = Variable<bool>(isDeleted.value);
     }
@@ -2355,6 +2706,9 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
           ..write('source: $source, ')
           ..write('isGlobal: $isGlobal, ')
           ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
           ..write('isDeleted: $isDeleted, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
@@ -7566,6 +7920,37 @@ class $OutboxOperationsTable extends OutboxOperations
     type: DriftSqlType.int,
     requiredDuringInsert: false,
   );
+  static const VerificationMeta _leaseTokenMeta = const VerificationMeta(
+    'leaseToken',
+  );
+  @override
+  late final GeneratedColumn<String> leaseToken = GeneratedColumn<String>(
+    'lease_token',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _leaseExpiresAtUtcMsMeta =
+      const VerificationMeta('leaseExpiresAtUtcMs');
+  @override
+  late final GeneratedColumn<int> leaseExpiresAtUtcMs = GeneratedColumn<int>(
+    'lease_expires_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _lastAttemptAtUtcMsMeta =
+      const VerificationMeta('lastAttemptAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAttemptAtUtcMs = GeneratedColumn<int>(
+    'last_attempt_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
     'createdAtUtcMs',
   );
@@ -7610,6 +7995,9 @@ class $OutboxOperationsTable extends OutboxOperations
     state,
     attemptCount,
     nextAttemptAtUtcMs,
+    leaseToken,
+    leaseExpiresAtUtcMs,
+    lastAttemptAtUtcMs,
     createdAtUtcMs,
     acknowledgedAtUtcMs,
     failureCode,
@@ -7714,6 +8102,30 @@ class $OutboxOperationsTable extends OutboxOperations
         ),
       );
     }
+    if (data.containsKey('lease_token')) {
+      context.handle(
+        _leaseTokenMeta,
+        leaseToken.isAcceptableOrUnknown(data['lease_token']!, _leaseTokenMeta),
+      );
+    }
+    if (data.containsKey('lease_expires_at_utc_ms')) {
+      context.handle(
+        _leaseExpiresAtUtcMsMeta,
+        leaseExpiresAtUtcMs.isAcceptableOrUnknown(
+          data['lease_expires_at_utc_ms']!,
+          _leaseExpiresAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_attempt_at_utc_ms')) {
+      context.handle(
+        _lastAttemptAtUtcMsMeta,
+        lastAttemptAtUtcMs.isAcceptableOrUnknown(
+          data['last_attempt_at_utc_ms']!,
+          _lastAttemptAtUtcMsMeta,
+        ),
+      );
+    }
     if (data.containsKey('created_at_utc_ms')) {
       context.handle(
         _createdAtUtcMsMeta,
@@ -7792,6 +8204,18 @@ class $OutboxOperationsTable extends OutboxOperations
         DriftSqlType.int,
         data['${effectivePrefix}next_attempt_at_utc_ms'],
       ),
+      leaseToken: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}lease_token'],
+      ),
+      leaseExpiresAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lease_expires_at_utc_ms'],
+      ),
+      lastAttemptAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_attempt_at_utc_ms'],
+      ),
       createdAtUtcMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}created_at_utc_ms'],
@@ -7824,6 +8248,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
   final String state;
   final int attemptCount;
   final int? nextAttemptAtUtcMs;
+  final String? leaseToken;
+  final int? leaseExpiresAtUtcMs;
+  final int? lastAttemptAtUtcMs;
   final int createdAtUtcMs;
   final int? acknowledgedAtUtcMs;
   final String? failureCode;
@@ -7838,6 +8265,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     required this.state,
     required this.attemptCount,
     this.nextAttemptAtUtcMs,
+    this.leaseToken,
+    this.leaseExpiresAtUtcMs,
+    this.lastAttemptAtUtcMs,
     required this.createdAtUtcMs,
     this.acknowledgedAtUtcMs,
     this.failureCode,
@@ -7856,6 +8286,15 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     map['attempt_count'] = Variable<int>(attemptCount);
     if (!nullToAbsent || nextAttemptAtUtcMs != null) {
       map['next_attempt_at_utc_ms'] = Variable<int>(nextAttemptAtUtcMs);
+    }
+    if (!nullToAbsent || leaseToken != null) {
+      map['lease_token'] = Variable<String>(leaseToken);
+    }
+    if (!nullToAbsent || leaseExpiresAtUtcMs != null) {
+      map['lease_expires_at_utc_ms'] = Variable<int>(leaseExpiresAtUtcMs);
+    }
+    if (!nullToAbsent || lastAttemptAtUtcMs != null) {
+      map['last_attempt_at_utc_ms'] = Variable<int>(lastAttemptAtUtcMs);
     }
     map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
     if (!nullToAbsent || acknowledgedAtUtcMs != null) {
@@ -7881,6 +8320,15 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       nextAttemptAtUtcMs: nextAttemptAtUtcMs == null && nullToAbsent
           ? const Value.absent()
           : Value(nextAttemptAtUtcMs),
+      leaseToken: leaseToken == null && nullToAbsent
+          ? const Value.absent()
+          : Value(leaseToken),
+      leaseExpiresAtUtcMs: leaseExpiresAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(leaseExpiresAtUtcMs),
+      lastAttemptAtUtcMs: lastAttemptAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAttemptAtUtcMs),
       createdAtUtcMs: Value(createdAtUtcMs),
       acknowledgedAtUtcMs: acknowledgedAtUtcMs == null && nullToAbsent
           ? const Value.absent()
@@ -7907,6 +8355,11 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       state: serializer.fromJson<String>(json['state']),
       attemptCount: serializer.fromJson<int>(json['attemptCount']),
       nextAttemptAtUtcMs: serializer.fromJson<int?>(json['nextAttemptAtUtcMs']),
+      leaseToken: serializer.fromJson<String?>(json['leaseToken']),
+      leaseExpiresAtUtcMs: serializer.fromJson<int?>(
+        json['leaseExpiresAtUtcMs'],
+      ),
+      lastAttemptAtUtcMs: serializer.fromJson<int?>(json['lastAttemptAtUtcMs']),
       createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
       acknowledgedAtUtcMs: serializer.fromJson<int?>(
         json['acknowledgedAtUtcMs'],
@@ -7928,6 +8381,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       'state': serializer.toJson<String>(state),
       'attemptCount': serializer.toJson<int>(attemptCount),
       'nextAttemptAtUtcMs': serializer.toJson<int?>(nextAttemptAtUtcMs),
+      'leaseToken': serializer.toJson<String?>(leaseToken),
+      'leaseExpiresAtUtcMs': serializer.toJson<int?>(leaseExpiresAtUtcMs),
+      'lastAttemptAtUtcMs': serializer.toJson<int?>(lastAttemptAtUtcMs),
       'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
       'acknowledgedAtUtcMs': serializer.toJson<int?>(acknowledgedAtUtcMs),
       'failureCode': serializer.toJson<String?>(failureCode),
@@ -7945,6 +8401,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     String? state,
     int? attemptCount,
     Value<int?> nextAttemptAtUtcMs = const Value.absent(),
+    Value<String?> leaseToken = const Value.absent(),
+    Value<int?> leaseExpiresAtUtcMs = const Value.absent(),
+    Value<int?> lastAttemptAtUtcMs = const Value.absent(),
     int? createdAtUtcMs,
     Value<int?> acknowledgedAtUtcMs = const Value.absent(),
     Value<String?> failureCode = const Value.absent(),
@@ -7961,6 +8420,13 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     nextAttemptAtUtcMs: nextAttemptAtUtcMs.present
         ? nextAttemptAtUtcMs.value
         : this.nextAttemptAtUtcMs,
+    leaseToken: leaseToken.present ? leaseToken.value : this.leaseToken,
+    leaseExpiresAtUtcMs: leaseExpiresAtUtcMs.present
+        ? leaseExpiresAtUtcMs.value
+        : this.leaseExpiresAtUtcMs,
+    lastAttemptAtUtcMs: lastAttemptAtUtcMs.present
+        ? lastAttemptAtUtcMs.value
+        : this.lastAttemptAtUtcMs,
     createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
     acknowledgedAtUtcMs: acknowledgedAtUtcMs.present
         ? acknowledgedAtUtcMs.value
@@ -7993,6 +8459,15 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
       nextAttemptAtUtcMs: data.nextAttemptAtUtcMs.present
           ? data.nextAttemptAtUtcMs.value
           : this.nextAttemptAtUtcMs,
+      leaseToken: data.leaseToken.present
+          ? data.leaseToken.value
+          : this.leaseToken,
+      leaseExpiresAtUtcMs: data.leaseExpiresAtUtcMs.present
+          ? data.leaseExpiresAtUtcMs.value
+          : this.leaseExpiresAtUtcMs,
+      lastAttemptAtUtcMs: data.lastAttemptAtUtcMs.present
+          ? data.lastAttemptAtUtcMs.value
+          : this.lastAttemptAtUtcMs,
       createdAtUtcMs: data.createdAtUtcMs.present
           ? data.createdAtUtcMs.value
           : this.createdAtUtcMs,
@@ -8018,6 +8493,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
           ..write('state: $state, ')
           ..write('attemptCount: $attemptCount, ')
           ..write('nextAttemptAtUtcMs: $nextAttemptAtUtcMs, ')
+          ..write('leaseToken: $leaseToken, ')
+          ..write('leaseExpiresAtUtcMs: $leaseExpiresAtUtcMs, ')
+          ..write('lastAttemptAtUtcMs: $lastAttemptAtUtcMs, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('acknowledgedAtUtcMs: $acknowledgedAtUtcMs, ')
           ..write('failureCode: $failureCode')
@@ -8037,6 +8515,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
     state,
     attemptCount,
     nextAttemptAtUtcMs,
+    leaseToken,
+    leaseExpiresAtUtcMs,
+    lastAttemptAtUtcMs,
     createdAtUtcMs,
     acknowledgedAtUtcMs,
     failureCode,
@@ -8055,6 +8536,9 @@ class OutboxOperation extends DataClass implements Insertable<OutboxOperation> {
           other.state == this.state &&
           other.attemptCount == this.attemptCount &&
           other.nextAttemptAtUtcMs == this.nextAttemptAtUtcMs &&
+          other.leaseToken == this.leaseToken &&
+          other.leaseExpiresAtUtcMs == this.leaseExpiresAtUtcMs &&
+          other.lastAttemptAtUtcMs == this.lastAttemptAtUtcMs &&
           other.createdAtUtcMs == this.createdAtUtcMs &&
           other.acknowledgedAtUtcMs == this.acknowledgedAtUtcMs &&
           other.failureCode == this.failureCode);
@@ -8071,6 +8555,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
   final Value<String> state;
   final Value<int> attemptCount;
   final Value<int?> nextAttemptAtUtcMs;
+  final Value<String?> leaseToken;
+  final Value<int?> leaseExpiresAtUtcMs;
+  final Value<int?> lastAttemptAtUtcMs;
   final Value<int> createdAtUtcMs;
   final Value<int?> acknowledgedAtUtcMs;
   final Value<String?> failureCode;
@@ -8086,6 +8573,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     this.state = const Value.absent(),
     this.attemptCount = const Value.absent(),
     this.nextAttemptAtUtcMs = const Value.absent(),
+    this.leaseToken = const Value.absent(),
+    this.leaseExpiresAtUtcMs = const Value.absent(),
+    this.lastAttemptAtUtcMs = const Value.absent(),
     this.createdAtUtcMs = const Value.absent(),
     this.acknowledgedAtUtcMs = const Value.absent(),
     this.failureCode = const Value.absent(),
@@ -8102,6 +8592,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     this.state = const Value.absent(),
     this.attemptCount = const Value.absent(),
     this.nextAttemptAtUtcMs = const Value.absent(),
+    this.leaseToken = const Value.absent(),
+    this.leaseExpiresAtUtcMs = const Value.absent(),
+    this.lastAttemptAtUtcMs = const Value.absent(),
     required int createdAtUtcMs,
     this.acknowledgedAtUtcMs = const Value.absent(),
     this.failureCode = const Value.absent(),
@@ -8123,6 +8616,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     Expression<String>? state,
     Expression<int>? attemptCount,
     Expression<int>? nextAttemptAtUtcMs,
+    Expression<String>? leaseToken,
+    Expression<int>? leaseExpiresAtUtcMs,
+    Expression<int>? lastAttemptAtUtcMs,
     Expression<int>? createdAtUtcMs,
     Expression<int>? acknowledgedAtUtcMs,
     Expression<String>? failureCode,
@@ -8140,6 +8636,11 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
       if (attemptCount != null) 'attempt_count': attemptCount,
       if (nextAttemptAtUtcMs != null)
         'next_attempt_at_utc_ms': nextAttemptAtUtcMs,
+      if (leaseToken != null) 'lease_token': leaseToken,
+      if (leaseExpiresAtUtcMs != null)
+        'lease_expires_at_utc_ms': leaseExpiresAtUtcMs,
+      if (lastAttemptAtUtcMs != null)
+        'last_attempt_at_utc_ms': lastAttemptAtUtcMs,
       if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
       if (acknowledgedAtUtcMs != null)
         'acknowledged_at_utc_ms': acknowledgedAtUtcMs,
@@ -8159,6 +8660,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     Value<String>? state,
     Value<int>? attemptCount,
     Value<int?>? nextAttemptAtUtcMs,
+    Value<String?>? leaseToken,
+    Value<int?>? leaseExpiresAtUtcMs,
+    Value<int?>? lastAttemptAtUtcMs,
     Value<int>? createdAtUtcMs,
     Value<int?>? acknowledgedAtUtcMs,
     Value<String?>? failureCode,
@@ -8175,6 +8679,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
       state: state ?? this.state,
       attemptCount: attemptCount ?? this.attemptCount,
       nextAttemptAtUtcMs: nextAttemptAtUtcMs ?? this.nextAttemptAtUtcMs,
+      leaseToken: leaseToken ?? this.leaseToken,
+      leaseExpiresAtUtcMs: leaseExpiresAtUtcMs ?? this.leaseExpiresAtUtcMs,
+      lastAttemptAtUtcMs: lastAttemptAtUtcMs ?? this.lastAttemptAtUtcMs,
       createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
       acknowledgedAtUtcMs: acknowledgedAtUtcMs ?? this.acknowledgedAtUtcMs,
       failureCode: failureCode ?? this.failureCode,
@@ -8215,6 +8722,15 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
     if (nextAttemptAtUtcMs.present) {
       map['next_attempt_at_utc_ms'] = Variable<int>(nextAttemptAtUtcMs.value);
     }
+    if (leaseToken.present) {
+      map['lease_token'] = Variable<String>(leaseToken.value);
+    }
+    if (leaseExpiresAtUtcMs.present) {
+      map['lease_expires_at_utc_ms'] = Variable<int>(leaseExpiresAtUtcMs.value);
+    }
+    if (lastAttemptAtUtcMs.present) {
+      map['last_attempt_at_utc_ms'] = Variable<int>(lastAttemptAtUtcMs.value);
+    }
     if (createdAtUtcMs.present) {
       map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
     }
@@ -8243,6 +8759,9 @@ class OutboxOperationsCompanion extends UpdateCompanion<OutboxOperation> {
           ..write('state: $state, ')
           ..write('attemptCount: $attemptCount, ')
           ..write('nextAttemptAtUtcMs: $nextAttemptAtUtcMs, ')
+          ..write('leaseToken: $leaseToken, ')
+          ..write('leaseExpiresAtUtcMs: $leaseExpiresAtUtcMs, ')
+          ..write('lastAttemptAtUtcMs: $lastAttemptAtUtcMs, ')
           ..write('createdAtUtcMs: $createdAtUtcMs, ')
           ..write('acknowledgedAtUtcMs: $acknowledgedAtUtcMs, ')
           ..write('failureCode: $failureCode, ')
@@ -8741,6 +9260,30 @@ class $SyncConflictsTable extends SyncConflicts
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _localSnapshotJsonMeta = const VerificationMeta(
+    'localSnapshotJson',
+  );
+  @override
+  late final GeneratedColumn<String> localSnapshotJson =
+      GeneratedColumn<String>(
+        'local_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _cloudSnapshotJsonMeta = const VerificationMeta(
+    'cloudSnapshotJson',
+  );
+  @override
+  late final GeneratedColumn<String> cloudSnapshotJson =
+      GeneratedColumn<String>(
+        'cloud_snapshot_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
   static const VerificationMeta _resolvedAtUtcMsMeta = const VerificationMeta(
     'resolvedAtUtcMs',
   );
@@ -8762,6 +9305,8 @@ class $SyncConflictsTable extends SyncConflicts
     cloudRevision,
     resolutionPolicy,
     outcome,
+    localSnapshotJson,
+    cloudSnapshotJson,
     resolvedAtUtcMs,
   ];
   @override
@@ -8846,6 +9391,24 @@ class $SyncConflictsTable extends SyncConflicts
     } else if (isInserting) {
       context.missing(_outcomeMeta);
     }
+    if (data.containsKey('local_snapshot_json')) {
+      context.handle(
+        _localSnapshotJsonMeta,
+        localSnapshotJson.isAcceptableOrUnknown(
+          data['local_snapshot_json']!,
+          _localSnapshotJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_snapshot_json')) {
+      context.handle(
+        _cloudSnapshotJsonMeta,
+        cloudSnapshotJson.isAcceptableOrUnknown(
+          data['cloud_snapshot_json']!,
+          _cloudSnapshotJsonMeta,
+        ),
+      );
+    }
     if (data.containsKey('resolved_at_utc_ms')) {
       context.handle(
         _resolvedAtUtcMsMeta,
@@ -8898,6 +9461,14 @@ class $SyncConflictsTable extends SyncConflicts
         DriftSqlType.string,
         data['${effectivePrefix}outcome'],
       )!,
+      localSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_snapshot_json'],
+      ),
+      cloudSnapshotJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cloud_snapshot_json'],
+      ),
       resolvedAtUtcMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}resolved_at_utc_ms'],
@@ -8920,6 +9491,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
   final int cloudRevision;
   final String resolutionPolicy;
   final String outcome;
+  final String? localSnapshotJson;
+  final String? cloudSnapshotJson;
   final int resolvedAtUtcMs;
   const SyncConflict({
     required this.id,
@@ -8930,6 +9503,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
     required this.cloudRevision,
     required this.resolutionPolicy,
     required this.outcome,
+    this.localSnapshotJson,
+    this.cloudSnapshotJson,
     required this.resolvedAtUtcMs,
   });
   @override
@@ -8943,6 +9518,12 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
     map['cloud_revision'] = Variable<int>(cloudRevision);
     map['resolution_policy'] = Variable<String>(resolutionPolicy);
     map['outcome'] = Variable<String>(outcome);
+    if (!nullToAbsent || localSnapshotJson != null) {
+      map['local_snapshot_json'] = Variable<String>(localSnapshotJson);
+    }
+    if (!nullToAbsent || cloudSnapshotJson != null) {
+      map['cloud_snapshot_json'] = Variable<String>(cloudSnapshotJson);
+    }
     map['resolved_at_utc_ms'] = Variable<int>(resolvedAtUtcMs);
     return map;
   }
@@ -8957,6 +9538,12 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
       cloudRevision: Value(cloudRevision),
       resolutionPolicy: Value(resolutionPolicy),
       outcome: Value(outcome),
+      localSnapshotJson: localSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localSnapshotJson),
+      cloudSnapshotJson: cloudSnapshotJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cloudSnapshotJson),
       resolvedAtUtcMs: Value(resolvedAtUtcMs),
     );
   }
@@ -8975,6 +9562,12 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
       cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
       resolutionPolicy: serializer.fromJson<String>(json['resolutionPolicy']),
       outcome: serializer.fromJson<String>(json['outcome']),
+      localSnapshotJson: serializer.fromJson<String?>(
+        json['localSnapshotJson'],
+      ),
+      cloudSnapshotJson: serializer.fromJson<String?>(
+        json['cloudSnapshotJson'],
+      ),
       resolvedAtUtcMs: serializer.fromJson<int>(json['resolvedAtUtcMs']),
     );
   }
@@ -8990,6 +9583,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
       'cloudRevision': serializer.toJson<int>(cloudRevision),
       'resolutionPolicy': serializer.toJson<String>(resolutionPolicy),
       'outcome': serializer.toJson<String>(outcome),
+      'localSnapshotJson': serializer.toJson<String?>(localSnapshotJson),
+      'cloudSnapshotJson': serializer.toJson<String?>(cloudSnapshotJson),
       'resolvedAtUtcMs': serializer.toJson<int>(resolvedAtUtcMs),
     };
   }
@@ -9003,6 +9598,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
     int? cloudRevision,
     String? resolutionPolicy,
     String? outcome,
+    Value<String?> localSnapshotJson = const Value.absent(),
+    Value<String?> cloudSnapshotJson = const Value.absent(),
     int? resolvedAtUtcMs,
   }) => SyncConflict(
     id: id ?? this.id,
@@ -9013,6 +9610,12 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
     cloudRevision: cloudRevision ?? this.cloudRevision,
     resolutionPolicy: resolutionPolicy ?? this.resolutionPolicy,
     outcome: outcome ?? this.outcome,
+    localSnapshotJson: localSnapshotJson.present
+        ? localSnapshotJson.value
+        : this.localSnapshotJson,
+    cloudSnapshotJson: cloudSnapshotJson.present
+        ? cloudSnapshotJson.value
+        : this.cloudSnapshotJson,
     resolvedAtUtcMs: resolvedAtUtcMs ?? this.resolvedAtUtcMs,
   );
   SyncConflict copyWithCompanion(SyncConflictsCompanion data) {
@@ -9033,6 +9636,12 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
           ? data.resolutionPolicy.value
           : this.resolutionPolicy,
       outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      localSnapshotJson: data.localSnapshotJson.present
+          ? data.localSnapshotJson.value
+          : this.localSnapshotJson,
+      cloudSnapshotJson: data.cloudSnapshotJson.present
+          ? data.cloudSnapshotJson.value
+          : this.cloudSnapshotJson,
       resolvedAtUtcMs: data.resolvedAtUtcMs.present
           ? data.resolvedAtUtcMs.value
           : this.resolvedAtUtcMs,
@@ -9050,6 +9659,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
           ..write('cloudRevision: $cloudRevision, ')
           ..write('resolutionPolicy: $resolutionPolicy, ')
           ..write('outcome: $outcome, ')
+          ..write('localSnapshotJson: $localSnapshotJson, ')
+          ..write('cloudSnapshotJson: $cloudSnapshotJson, ')
           ..write('resolvedAtUtcMs: $resolvedAtUtcMs')
           ..write(')'))
         .toString();
@@ -9065,6 +9676,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
     cloudRevision,
     resolutionPolicy,
     outcome,
+    localSnapshotJson,
+    cloudSnapshotJson,
     resolvedAtUtcMs,
   );
   @override
@@ -9079,6 +9692,8 @@ class SyncConflict extends DataClass implements Insertable<SyncConflict> {
           other.cloudRevision == this.cloudRevision &&
           other.resolutionPolicy == this.resolutionPolicy &&
           other.outcome == this.outcome &&
+          other.localSnapshotJson == this.localSnapshotJson &&
+          other.cloudSnapshotJson == this.cloudSnapshotJson &&
           other.resolvedAtUtcMs == this.resolvedAtUtcMs);
 }
 
@@ -9091,6 +9706,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
   final Value<int> cloudRevision;
   final Value<String> resolutionPolicy;
   final Value<String> outcome;
+  final Value<String?> localSnapshotJson;
+  final Value<String?> cloudSnapshotJson;
   final Value<int> resolvedAtUtcMs;
   final Value<int> rowid;
   const SyncConflictsCompanion({
@@ -9102,6 +9719,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
     this.cloudRevision = const Value.absent(),
     this.resolutionPolicy = const Value.absent(),
     this.outcome = const Value.absent(),
+    this.localSnapshotJson = const Value.absent(),
+    this.cloudSnapshotJson = const Value.absent(),
     this.resolvedAtUtcMs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
@@ -9114,6 +9733,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
     required int cloudRevision,
     required String resolutionPolicy,
     required String outcome,
+    this.localSnapshotJson = const Value.absent(),
+    this.cloudSnapshotJson = const Value.absent(),
     required int resolvedAtUtcMs,
     this.rowid = const Value.absent(),
   }) : id = Value(id),
@@ -9134,6 +9755,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
     Expression<int>? cloudRevision,
     Expression<String>? resolutionPolicy,
     Expression<String>? outcome,
+    Expression<String>? localSnapshotJson,
+    Expression<String>? cloudSnapshotJson,
     Expression<int>? resolvedAtUtcMs,
     Expression<int>? rowid,
   }) {
@@ -9146,6 +9769,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
       if (cloudRevision != null) 'cloud_revision': cloudRevision,
       if (resolutionPolicy != null) 'resolution_policy': resolutionPolicy,
       if (outcome != null) 'outcome': outcome,
+      if (localSnapshotJson != null) 'local_snapshot_json': localSnapshotJson,
+      if (cloudSnapshotJson != null) 'cloud_snapshot_json': cloudSnapshotJson,
       if (resolvedAtUtcMs != null) 'resolved_at_utc_ms': resolvedAtUtcMs,
       if (rowid != null) 'rowid': rowid,
     });
@@ -9160,6 +9785,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
     Value<int>? cloudRevision,
     Value<String>? resolutionPolicy,
     Value<String>? outcome,
+    Value<String?>? localSnapshotJson,
+    Value<String?>? cloudSnapshotJson,
     Value<int>? resolvedAtUtcMs,
     Value<int>? rowid,
   }) {
@@ -9172,6 +9799,8 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
       cloudRevision: cloudRevision ?? this.cloudRevision,
       resolutionPolicy: resolutionPolicy ?? this.resolutionPolicy,
       outcome: outcome ?? this.outcome,
+      localSnapshotJson: localSnapshotJson ?? this.localSnapshotJson,
+      cloudSnapshotJson: cloudSnapshotJson ?? this.cloudSnapshotJson,
       resolvedAtUtcMs: resolvedAtUtcMs ?? this.resolvedAtUtcMs,
       rowid: rowid ?? this.rowid,
     );
@@ -9204,6 +9833,12 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
     if (outcome.present) {
       map['outcome'] = Variable<String>(outcome.value);
     }
+    if (localSnapshotJson.present) {
+      map['local_snapshot_json'] = Variable<String>(localSnapshotJson.value);
+    }
+    if (cloudSnapshotJson.present) {
+      map['cloud_snapshot_json'] = Variable<String>(cloudSnapshotJson.value);
+    }
     if (resolvedAtUtcMs.present) {
       map['resolved_at_utc_ms'] = Variable<int>(resolvedAtUtcMs.value);
     }
@@ -9224,7 +9859,387 @@ class SyncConflictsCompanion extends UpdateCompanion<SyncConflict> {
           ..write('cloudRevision: $cloudRevision, ')
           ..write('resolutionPolicy: $resolutionPolicy, ')
           ..write('outcome: $outcome, ')
+          ..write('localSnapshotJson: $localSnapshotJson, ')
+          ..write('cloudSnapshotJson: $cloudSnapshotJson, ')
           ..write('resolvedAtUtcMs: $resolvedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $RuntimeFlagsTable extends RuntimeFlags
+    with TableInfo<$RuntimeFlagsTable, RuntimeFlag> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $RuntimeFlagsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _keyMeta = const VerificationMeta('key');
+  @override
+  late final GeneratedColumn<String> key = GeneratedColumn<String>(
+    'key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _boolValueMeta = const VerificationMeta(
+    'boolValue',
+  );
+  @override
+  late final GeneratedColumn<bool> boolValue = GeneratedColumn<bool>(
+    'bool_value',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("bool_value" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _sourceMeta = const VerificationMeta('source');
+  @override
+  late final GeneratedColumn<String> source = GeneratedColumn<String>(
+    'source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('local'),
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresAtUtcMsMeta = const VerificationMeta(
+    'expiresAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> expiresAtUtcMs = GeneratedColumn<int>(
+    'expires_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    key,
+    boolValue,
+    source,
+    updatedAtUtcMs,
+    expiresAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'runtime_flags';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<RuntimeFlag> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('key')) {
+      context.handle(
+        _keyMeta,
+        key.isAcceptableOrUnknown(data['key']!, _keyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_keyMeta);
+    }
+    if (data.containsKey('bool_value')) {
+      context.handle(
+        _boolValueMeta,
+        boolValue.isAcceptableOrUnknown(data['bool_value']!, _boolValueMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_boolValueMeta);
+    }
+    if (data.containsKey('source')) {
+      context.handle(
+        _sourceMeta,
+        source.isAcceptableOrUnknown(data['source']!, _sourceMeta),
+      );
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('expires_at_utc_ms')) {
+      context.handle(
+        _expiresAtUtcMsMeta,
+        expiresAtUtcMs.isAcceptableOrUnknown(
+          data['expires_at_utc_ms']!,
+          _expiresAtUtcMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {key};
+  @override
+  RuntimeFlag map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return RuntimeFlag(
+      key: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}key'],
+      )!,
+      boolValue: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}bool_value'],
+      )!,
+      source: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      expiresAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expires_at_utc_ms'],
+      ),
+    );
+  }
+
+  @override
+  $RuntimeFlagsTable createAlias(String alias) {
+    return $RuntimeFlagsTable(attachedDatabase, alias);
+  }
+}
+
+class RuntimeFlag extends DataClass implements Insertable<RuntimeFlag> {
+  final String key;
+  final bool boolValue;
+  final String source;
+  final int updatedAtUtcMs;
+  final int? expiresAtUtcMs;
+  const RuntimeFlag({
+    required this.key,
+    required this.boolValue,
+    required this.source,
+    required this.updatedAtUtcMs,
+    this.expiresAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['key'] = Variable<String>(key);
+    map['bool_value'] = Variable<bool>(boolValue);
+    map['source'] = Variable<String>(source);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    if (!nullToAbsent || expiresAtUtcMs != null) {
+      map['expires_at_utc_ms'] = Variable<int>(expiresAtUtcMs);
+    }
+    return map;
+  }
+
+  RuntimeFlagsCompanion toCompanion(bool nullToAbsent) {
+    return RuntimeFlagsCompanion(
+      key: Value(key),
+      boolValue: Value(boolValue),
+      source: Value(source),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      expiresAtUtcMs: expiresAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresAtUtcMs),
+    );
+  }
+
+  factory RuntimeFlag.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return RuntimeFlag(
+      key: serializer.fromJson<String>(json['key']),
+      boolValue: serializer.fromJson<bool>(json['boolValue']),
+      source: serializer.fromJson<String>(json['source']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      expiresAtUtcMs: serializer.fromJson<int?>(json['expiresAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'key': serializer.toJson<String>(key),
+      'boolValue': serializer.toJson<bool>(boolValue),
+      'source': serializer.toJson<String>(source),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'expiresAtUtcMs': serializer.toJson<int?>(expiresAtUtcMs),
+    };
+  }
+
+  RuntimeFlag copyWith({
+    String? key,
+    bool? boolValue,
+    String? source,
+    int? updatedAtUtcMs,
+    Value<int?> expiresAtUtcMs = const Value.absent(),
+  }) => RuntimeFlag(
+    key: key ?? this.key,
+    boolValue: boolValue ?? this.boolValue,
+    source: source ?? this.source,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    expiresAtUtcMs: expiresAtUtcMs.present
+        ? expiresAtUtcMs.value
+        : this.expiresAtUtcMs,
+  );
+  RuntimeFlag copyWithCompanion(RuntimeFlagsCompanion data) {
+    return RuntimeFlag(
+      key: data.key.present ? data.key.value : this.key,
+      boolValue: data.boolValue.present ? data.boolValue.value : this.boolValue,
+      source: data.source.present ? data.source.value : this.source,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      expiresAtUtcMs: data.expiresAtUtcMs.present
+          ? data.expiresAtUtcMs.value
+          : this.expiresAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RuntimeFlag(')
+          ..write('key: $key, ')
+          ..write('boolValue: $boolValue, ')
+          ..write('source: $source, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('expiresAtUtcMs: $expiresAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(key, boolValue, source, updatedAtUtcMs, expiresAtUtcMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is RuntimeFlag &&
+          other.key == this.key &&
+          other.boolValue == this.boolValue &&
+          other.source == this.source &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.expiresAtUtcMs == this.expiresAtUtcMs);
+}
+
+class RuntimeFlagsCompanion extends UpdateCompanion<RuntimeFlag> {
+  final Value<String> key;
+  final Value<bool> boolValue;
+  final Value<String> source;
+  final Value<int> updatedAtUtcMs;
+  final Value<int?> expiresAtUtcMs;
+  final Value<int> rowid;
+  const RuntimeFlagsCompanion({
+    this.key = const Value.absent(),
+    this.boolValue = const Value.absent(),
+    this.source = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.expiresAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  RuntimeFlagsCompanion.insert({
+    required String key,
+    required bool boolValue,
+    this.source = const Value.absent(),
+    required int updatedAtUtcMs,
+    this.expiresAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : key = Value(key),
+       boolValue = Value(boolValue),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<RuntimeFlag> custom({
+    Expression<String>? key,
+    Expression<bool>? boolValue,
+    Expression<String>? source,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? expiresAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (key != null) 'key': key,
+      if (boolValue != null) 'bool_value': boolValue,
+      if (source != null) 'source': source,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (expiresAtUtcMs != null) 'expires_at_utc_ms': expiresAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  RuntimeFlagsCompanion copyWith({
+    Value<String>? key,
+    Value<bool>? boolValue,
+    Value<String>? source,
+    Value<int>? updatedAtUtcMs,
+    Value<int?>? expiresAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return RuntimeFlagsCompanion(
+      key: key ?? this.key,
+      boolValue: boolValue ?? this.boolValue,
+      source: source ?? this.source,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      expiresAtUtcMs: expiresAtUtcMs ?? this.expiresAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (key.present) {
+      map['key'] = Variable<String>(key.value);
+    }
+    if (boolValue.present) {
+      map['bool_value'] = Variable<bool>(boolValue.value);
+    }
+    if (source.present) {
+      map['source'] = Variable<String>(source.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (expiresAtUtcMs.present) {
+      map['expires_at_utc_ms'] = Variable<int>(expiresAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('RuntimeFlagsCompanion(')
+          ..write('key: $key, ')
+          ..write('boolValue: $boolValue, ')
+          ..write('source: $source, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('expiresAtUtcMs: $expiresAtUtcMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9898,6 +10913,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     this,
   );
   late final $SyncConflictsTable syncConflicts = $SyncConflictsTable(this);
+  late final $RuntimeFlagsTable runtimeFlags = $RuntimeFlagsTable(this);
   late final $ModelDownloadsTable modelDownloads = $ModelDownloadsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
@@ -9920,6 +10936,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     outboxOperations,
     syncCheckpoints,
     syncConflicts,
+    runtimeFlags,
     modelDownloads,
   ];
   @override
@@ -11889,6 +12906,9 @@ typedef $$VocabularyCategoriesTableCreateCompanionBuilder =
       required String normalizedName,
       Value<int> sortOrder,
       Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
       Value<bool> isDeleted,
       required int createdAtUtcMs,
       required int updatedAtUtcMs,
@@ -11902,6 +12922,9 @@ typedef $$VocabularyCategoriesTableUpdateCompanionBuilder =
       Value<String> normalizedName,
       Value<int> sortOrder,
       Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
       Value<bool> isDeleted,
       Value<int> createdAtUtcMs,
       Value<int> updatedAtUtcMs,
@@ -12011,6 +13034,21 @@ class $$VocabularyCategoriesTableFilterComposer
 
   ColumnFilters<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12137,6 +13175,21 @@ class $$VocabularyCategoriesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
@@ -12201,6 +13254,21 @@ class $$VocabularyCategoriesTableAnnotationComposer
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
     builder: (column) => column,
   );
 
@@ -12338,6 +13406,9 @@ class $$VocabularyCategoriesTableTableManager
                 Value<String> normalizedName = const Value.absent(),
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<int> createdAtUtcMs = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
@@ -12349,6 +13420,9 @@ class $$VocabularyCategoriesTableTableManager
                 normalizedName: normalizedName,
                 sortOrder: sortOrder,
                 localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
@@ -12362,6 +13436,9 @@ class $$VocabularyCategoriesTableTableManager
                 required String normalizedName,
                 Value<int> sortOrder = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 required int createdAtUtcMs,
                 required int updatedAtUtcMs,
@@ -12373,6 +13450,9 @@ class $$VocabularyCategoriesTableTableManager
                 normalizedName: normalizedName,
                 sortOrder: sortOrder,
                 localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
@@ -12516,6 +13596,9 @@ typedef $$VocabularyWordsTableCreateCompanionBuilder =
       Value<String> source,
       Value<bool> isGlobal,
       Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
       Value<bool> isDeleted,
       required int createdAtUtcMs,
       required int updatedAtUtcMs,
@@ -12535,6 +13618,9 @@ typedef $$VocabularyWordsTableUpdateCompanionBuilder =
       Value<String> source,
       Value<bool> isGlobal,
       Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
       Value<bool> isDeleted,
       Value<int> createdAtUtcMs,
       Value<int> updatedAtUtcMs,
@@ -12678,6 +13764,21 @@ class $$VocabularyWordsTableFilterComposer
 
   ColumnFilters<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -12852,6 +13953,21 @@ class $$VocabularyWordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get isDeleted => $composableBuilder(
     column: $table.isDeleted,
     builder: (column) => ColumnOrderings(column),
@@ -12959,6 +14075,21 @@ class $$VocabularyWordsTableAnnotationComposer
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
     builder: (column) => column,
   );
 
@@ -13120,6 +14251,9 @@ class $$VocabularyWordsTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<bool> isGlobal = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 Value<int> createdAtUtcMs = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
@@ -13137,6 +14271,9 @@ class $$VocabularyWordsTableTableManager
                 source: source,
                 isGlobal: isGlobal,
                 localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
@@ -13156,6 +14293,9 @@ class $$VocabularyWordsTableTableManager
                 Value<String> source = const Value.absent(),
                 Value<bool> isGlobal = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
                 Value<bool> isDeleted = const Value.absent(),
                 required int createdAtUtcMs,
                 required int updatedAtUtcMs,
@@ -13173,6 +14313,9 @@ class $$VocabularyWordsTableTableManager
                 source: source,
                 isGlobal: isGlobal,
                 localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
                 isDeleted: isDeleted,
                 createdAtUtcMs: createdAtUtcMs,
                 updatedAtUtcMs: updatedAtUtcMs,
@@ -17553,6 +18696,9 @@ typedef $$OutboxOperationsTableCreateCompanionBuilder =
       Value<String> state,
       Value<int> attemptCount,
       Value<int?> nextAttemptAtUtcMs,
+      Value<String?> leaseToken,
+      Value<int?> leaseExpiresAtUtcMs,
+      Value<int?> lastAttemptAtUtcMs,
       required int createdAtUtcMs,
       Value<int?> acknowledgedAtUtcMs,
       Value<String?> failureCode,
@@ -17570,6 +18716,9 @@ typedef $$OutboxOperationsTableUpdateCompanionBuilder =
       Value<String> state,
       Value<int> attemptCount,
       Value<int?> nextAttemptAtUtcMs,
+      Value<String?> leaseToken,
+      Value<int?> leaseExpiresAtUtcMs,
+      Value<int?> lastAttemptAtUtcMs,
       Value<int> createdAtUtcMs,
       Value<int?> acknowledgedAtUtcMs,
       Value<String?> failureCode,
@@ -17654,6 +18803,21 @@ class $$OutboxOperationsTableFilterComposer
 
   ColumnFilters<int> get nextAttemptAtUtcMs => $composableBuilder(
     column: $table.nextAttemptAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get leaseToken => $composableBuilder(
+    column: $table.leaseToken,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get leaseExpiresAtUtcMs => $composableBuilder(
+    column: $table.leaseExpiresAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAttemptAtUtcMs => $composableBuilder(
+    column: $table.lastAttemptAtUtcMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -17750,6 +18914,21 @@ class $$OutboxOperationsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get leaseToken => $composableBuilder(
+    column: $table.leaseToken,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get leaseExpiresAtUtcMs => $composableBuilder(
+    column: $table.leaseExpiresAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAttemptAtUtcMs => $composableBuilder(
+    column: $table.lastAttemptAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
     column: $table.createdAtUtcMs,
     builder: (column) => ColumnOrderings(column),
@@ -17839,6 +19018,21 @@ class $$OutboxOperationsTableAnnotationComposer
     builder: (column) => column,
   );
 
+  GeneratedColumn<String> get leaseToken => $composableBuilder(
+    column: $table.leaseToken,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get leaseExpiresAtUtcMs => $composableBuilder(
+    column: $table.leaseExpiresAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAttemptAtUtcMs => $composableBuilder(
+    column: $table.lastAttemptAtUtcMs,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
     column: $table.createdAtUtcMs,
     builder: (column) => column,
@@ -17918,6 +19112,9 @@ class $$OutboxOperationsTableTableManager
                 Value<String> state = const Value.absent(),
                 Value<int> attemptCount = const Value.absent(),
                 Value<int?> nextAttemptAtUtcMs = const Value.absent(),
+                Value<String?> leaseToken = const Value.absent(),
+                Value<int?> leaseExpiresAtUtcMs = const Value.absent(),
+                Value<int?> lastAttemptAtUtcMs = const Value.absent(),
                 Value<int> createdAtUtcMs = const Value.absent(),
                 Value<int?> acknowledgedAtUtcMs = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
@@ -17933,6 +19130,9 @@ class $$OutboxOperationsTableTableManager
                 state: state,
                 attemptCount: attemptCount,
                 nextAttemptAtUtcMs: nextAttemptAtUtcMs,
+                leaseToken: leaseToken,
+                leaseExpiresAtUtcMs: leaseExpiresAtUtcMs,
+                lastAttemptAtUtcMs: lastAttemptAtUtcMs,
                 createdAtUtcMs: createdAtUtcMs,
                 acknowledgedAtUtcMs: acknowledgedAtUtcMs,
                 failureCode: failureCode,
@@ -17950,6 +19150,9 @@ class $$OutboxOperationsTableTableManager
                 Value<String> state = const Value.absent(),
                 Value<int> attemptCount = const Value.absent(),
                 Value<int?> nextAttemptAtUtcMs = const Value.absent(),
+                Value<String?> leaseToken = const Value.absent(),
+                Value<int?> leaseExpiresAtUtcMs = const Value.absent(),
+                Value<int?> lastAttemptAtUtcMs = const Value.absent(),
                 required int createdAtUtcMs,
                 Value<int?> acknowledgedAtUtcMs = const Value.absent(),
                 Value<String?> failureCode = const Value.absent(),
@@ -17965,6 +19168,9 @@ class $$OutboxOperationsTableTableManager
                 state: state,
                 attemptCount: attemptCount,
                 nextAttemptAtUtcMs: nextAttemptAtUtcMs,
+                leaseToken: leaseToken,
+                leaseExpiresAtUtcMs: leaseExpiresAtUtcMs,
+                lastAttemptAtUtcMs: lastAttemptAtUtcMs,
                 createdAtUtcMs: createdAtUtcMs,
                 acknowledgedAtUtcMs: acknowledgedAtUtcMs,
                 failureCode: failureCode,
@@ -18381,6 +19587,8 @@ typedef $$SyncConflictsTableCreateCompanionBuilder =
       required int cloudRevision,
       required String resolutionPolicy,
       required String outcome,
+      Value<String?> localSnapshotJson,
+      Value<String?> cloudSnapshotJson,
       required int resolvedAtUtcMs,
       Value<int> rowid,
     });
@@ -18394,6 +19602,8 @@ typedef $$SyncConflictsTableUpdateCompanionBuilder =
       Value<int> cloudRevision,
       Value<String> resolutionPolicy,
       Value<String> outcome,
+      Value<String?> localSnapshotJson,
+      Value<String?> cloudSnapshotJson,
       Value<int> resolvedAtUtcMs,
       Value<int> rowid,
     });
@@ -18465,6 +19675,16 @@ class $$SyncConflictsTableFilterComposer
 
   ColumnFilters<String> get outcome => $composableBuilder(
     column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localSnapshotJson => $composableBuilder(
+    column: $table.localSnapshotJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cloudSnapshotJson => $composableBuilder(
+    column: $table.cloudSnapshotJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -18541,6 +19761,16 @@ class $$SyncConflictsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get localSnapshotJson => $composableBuilder(
+    column: $table.localSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cloudSnapshotJson => $composableBuilder(
+    column: $table.cloudSnapshotJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get resolvedAtUtcMs => $composableBuilder(
     column: $table.resolvedAtUtcMs,
     builder: (column) => ColumnOrderings(column),
@@ -18608,6 +19838,16 @@ class $$SyncConflictsTableAnnotationComposer
   GeneratedColumn<String> get outcome =>
       $composableBuilder(column: $table.outcome, builder: (column) => column);
 
+  GeneratedColumn<String> get localSnapshotJson => $composableBuilder(
+    column: $table.localSnapshotJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cloudSnapshotJson => $composableBuilder(
+    column: $table.cloudSnapshotJson,
+    builder: (column) => column,
+  );
+
   GeneratedColumn<int> get resolvedAtUtcMs => $composableBuilder(
     column: $table.resolvedAtUtcMs,
     builder: (column) => column,
@@ -18673,6 +19913,8 @@ class $$SyncConflictsTableTableManager
                 Value<int> cloudRevision = const Value.absent(),
                 Value<String> resolutionPolicy = const Value.absent(),
                 Value<String> outcome = const Value.absent(),
+                Value<String?> localSnapshotJson = const Value.absent(),
+                Value<String?> cloudSnapshotJson = const Value.absent(),
                 Value<int> resolvedAtUtcMs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => SyncConflictsCompanion(
@@ -18684,6 +19926,8 @@ class $$SyncConflictsTableTableManager
                 cloudRevision: cloudRevision,
                 resolutionPolicy: resolutionPolicy,
                 outcome: outcome,
+                localSnapshotJson: localSnapshotJson,
+                cloudSnapshotJson: cloudSnapshotJson,
                 resolvedAtUtcMs: resolvedAtUtcMs,
                 rowid: rowid,
               ),
@@ -18697,6 +19941,8 @@ class $$SyncConflictsTableTableManager
                 required int cloudRevision,
                 required String resolutionPolicy,
                 required String outcome,
+                Value<String?> localSnapshotJson = const Value.absent(),
+                Value<String?> cloudSnapshotJson = const Value.absent(),
                 required int resolvedAtUtcMs,
                 Value<int> rowid = const Value.absent(),
               }) => SyncConflictsCompanion.insert(
@@ -18708,6 +19954,8 @@ class $$SyncConflictsTableTableManager
                 cloudRevision: cloudRevision,
                 resolutionPolicy: resolutionPolicy,
                 outcome: outcome,
+                localSnapshotJson: localSnapshotJson,
+                cloudSnapshotJson: cloudSnapshotJson,
                 resolvedAtUtcMs: resolvedAtUtcMs,
                 rowid: rowid,
               ),
@@ -18777,6 +20025,210 @@ typedef $$SyncConflictsTableProcessedTableManager =
       (SyncConflict, $$SyncConflictsTableReferences),
       SyncConflict,
       PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$RuntimeFlagsTableCreateCompanionBuilder =
+    RuntimeFlagsCompanion Function({
+      required String key,
+      required bool boolValue,
+      Value<String> source,
+      required int updatedAtUtcMs,
+      Value<int?> expiresAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$RuntimeFlagsTableUpdateCompanionBuilder =
+    RuntimeFlagsCompanion Function({
+      Value<String> key,
+      Value<bool> boolValue,
+      Value<String> source,
+      Value<int> updatedAtUtcMs,
+      Value<int?> expiresAtUtcMs,
+      Value<int> rowid,
+    });
+
+class $$RuntimeFlagsTableFilterComposer
+    extends Composer<_$AppDatabase, $RuntimeFlagsTable> {
+  $$RuntimeFlagsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get boolValue => $composableBuilder(
+    column: $table.boolValue,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$RuntimeFlagsTableOrderingComposer
+    extends Composer<_$AppDatabase, $RuntimeFlagsTable> {
+  $$RuntimeFlagsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get key => $composableBuilder(
+    column: $table.key,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get boolValue => $composableBuilder(
+    column: $table.boolValue,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get source => $composableBuilder(
+    column: $table.source,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$RuntimeFlagsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $RuntimeFlagsTable> {
+  $$RuntimeFlagsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get key =>
+      $composableBuilder(column: $table.key, builder: (column) => column);
+
+  GeneratedColumn<bool> get boolValue =>
+      $composableBuilder(column: $table.boolValue, builder: (column) => column);
+
+  GeneratedColumn<String> get source =>
+      $composableBuilder(column: $table.source, builder: (column) => column);
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expiresAtUtcMs => $composableBuilder(
+    column: $table.expiresAtUtcMs,
+    builder: (column) => column,
+  );
+}
+
+class $$RuntimeFlagsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $RuntimeFlagsTable,
+          RuntimeFlag,
+          $$RuntimeFlagsTableFilterComposer,
+          $$RuntimeFlagsTableOrderingComposer,
+          $$RuntimeFlagsTableAnnotationComposer,
+          $$RuntimeFlagsTableCreateCompanionBuilder,
+          $$RuntimeFlagsTableUpdateCompanionBuilder,
+          (
+            RuntimeFlag,
+            BaseReferences<_$AppDatabase, $RuntimeFlagsTable, RuntimeFlag>,
+          ),
+          RuntimeFlag,
+          PrefetchHooks Function()
+        > {
+  $$RuntimeFlagsTableTableManager(_$AppDatabase db, $RuntimeFlagsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$RuntimeFlagsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$RuntimeFlagsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$RuntimeFlagsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> key = const Value.absent(),
+                Value<bool> boolValue = const Value.absent(),
+                Value<String> source = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int?> expiresAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RuntimeFlagsCompanion(
+                key: key,
+                boolValue: boolValue,
+                source: source,
+                updatedAtUtcMs: updatedAtUtcMs,
+                expiresAtUtcMs: expiresAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String key,
+                required bool boolValue,
+                Value<String> source = const Value.absent(),
+                required int updatedAtUtcMs,
+                Value<int?> expiresAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => RuntimeFlagsCompanion.insert(
+                key: key,
+                boolValue: boolValue,
+                source: source,
+                updatedAtUtcMs: updatedAtUtcMs,
+                expiresAtUtcMs: expiresAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$RuntimeFlagsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $RuntimeFlagsTable,
+      RuntimeFlag,
+      $$RuntimeFlagsTableFilterComposer,
+      $$RuntimeFlagsTableOrderingComposer,
+      $$RuntimeFlagsTableAnnotationComposer,
+      $$RuntimeFlagsTableCreateCompanionBuilder,
+      $$RuntimeFlagsTableUpdateCompanionBuilder,
+      (
+        RuntimeFlag,
+        BaseReferences<_$AppDatabase, $RuntimeFlagsTable, RuntimeFlag>,
+      ),
+      RuntimeFlag,
+      PrefetchHooks Function()
     >;
 typedef $$ModelDownloadsTableCreateCompanionBuilder =
     ModelDownloadsCompanion Function({
@@ -19126,6 +20578,8 @@ class $AppDatabaseManager {
       $$SyncCheckpointsTableTableManager(_db, _db.syncCheckpoints);
   $$SyncConflictsTableTableManager get syncConflicts =>
       $$SyncConflictsTableTableManager(_db, _db.syncConflicts);
+  $$RuntimeFlagsTableTableManager get runtimeFlags =>
+      $$RuntimeFlagsTableTableManager(_db, _db.runtimeFlags);
   $$ModelDownloadsTableTableManager get modelDownloads =>
       $$ModelDownloadsTableTableManager(_db, _db.modelDownloads);
 }
