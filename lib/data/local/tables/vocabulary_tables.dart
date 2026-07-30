@@ -86,6 +86,6 @@ class VocabularyImportRows extends Table {
 
   @override
   List<Set<Column<Object>>> get uniqueKeys => [
-    {importId, payloadHash},
+    {importId, rowNumber},
   ];
 }

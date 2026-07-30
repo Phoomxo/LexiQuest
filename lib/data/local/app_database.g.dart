@@ -3271,7 +3271,7 @@ class $VocabularyImportRowsTable extends VocabularyImportRows
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
   List<Set<GeneratedColumn>> get uniqueKeys => [
-    {importId, payloadHash},
+    {importId, rowNumber},
   ];
   @override
   VocabularyImportRow map(Map<String, dynamic> data, {String? tablePrefix}) {
