@@ -1,19 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
+
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
+import '../runtime/app_dependencies.dart';
 import 'add_multiple_words_screen.dart';
-import '../models/word_model.dart';
-import '../services/word_service.dart';
 import 'add_vocab_screen.dart';
 
 class VocabListScreen extends StatefulWidget {
-  final String categoryId;
-  final String categoryName;
-
   const VocabListScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
+    this.vocabulary,
+    this.importer,
   });
+
+  final String categoryId;
+  final String categoryName;
+  final VocabularyUseCases? vocabulary;
+  final ImportVocabulary? importer;
 
   @override
   State<VocabListScreen> createState() => _VocabListScreenState();
@@ -21,259 +27,172 @@ class VocabListScreen extends StatefulWidget {
 
 class _VocabListScreenState extends State<VocabListScreen> {
   final TextEditingController _searchController = TextEditingController();
-  late WordService wordService;
-  String searchQuery = "";
+  String _query = '';
 
   @override
-  void initState() {
-    super.initState();
-    wordService = WordService(categoryId: widget.categoryId);
-  }
-
-  /// 🔥 ฟังก์ชันแสดง Dialog ยืนยันการลบคำศัพท์
-  void showDeleteConfirmationDialog(BuildContext context, Word word) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'ลบคำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Text(
-          'คุณต้องการลบ "${word.word}" ใช่หรือไม่?',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          TextButton(
-            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text(
-              'ลบ',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              await wordService.deleteWord(word.id!);
-              if (context.mounted) {
-                Navigator.pop(context);
-              }
-              setState(() {});
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  void showDeleteAllWordsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: const Text(
-          'ลบคำศัพท์ทั้งหมด',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: const Text(
-          'คุณต้องการลบคำศัพท์ทั้งหมดในหมวดหมู่นี้ใช่หรือไม่?',
-          textAlign: TextAlign.center,
-        ),
-        actions: [
-          TextButton(
-            child: const Text('ยกเลิก', style: TextStyle(color: Colors.grey)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text(
-              'ลบทั้งหมด',
-              style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-            ),
-            onPressed: () async {
-              await wordService.deleteAllWords();
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              if (!mounted) return;
-              setState(() {});
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFloatingActionButton() {
-    return SpeedDial(
-      animatedIcon: AnimatedIcons.menu_close,
-      backgroundColor: Colors.deepPurple,
-      foregroundColor: Colors.white,
-      overlayColor: Colors.black,
-      overlayOpacity: 0.3,
-      spacing: 12,
-      spaceBetweenChildren: 10,
-      children: [
-        SpeedDialChild(
-          child: const Icon(Icons.add, color: Colors.white),
-          backgroundColor: Colors.blue,
-          label: 'เพิ่มคำศัพท์',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    AddWordScreen(categoryId: widget.categoryId),
-              ),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.playlist_add, color: Colors.white),
-          backgroundColor: Colors.green,
-          label: 'เพิ่มหลายคำ (Datamuse)',
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => AddMultipleWordsScreen(
-                  categoryId: widget.categoryId,
-                  categoryName: widget.categoryName,
-                ),
-              ),
-            );
-          },
-        ),
-        SpeedDialChild(
-          child: const Icon(Icons.delete_forever, color: Colors.white),
-          backgroundColor: Colors.red,
-          label: 'ลบคำศัพท์ทั้งหมด',
-          onTap: () {
-            showDeleteAllWordsDialog(context);
-          },
-        ),
-      ],
-    );
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final useCases =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
+    final importer =
+        widget.importer ??
+        AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          widget.categoryName,
-          style: const TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: "ค้นหาคำศัพท์...",
-                prefixIcon: const Icon(Icons.search),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(20),
+      appBar: AppBar(title: Text(widget.categoryName)),
+      body: useCases == null
+          ? const Center(child: Text('ฐานข้อมูลในเครื่องไม่พร้อมใช้งาน'))
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SearchBar(
+                    controller: _searchController,
+                    hintText: 'ค้นหาคำศัพท์',
+                    leading: const Icon(Icons.search),
+                    onChanged: (value) {
+                      setState(() => _query = value.trim().toLowerCase());
+                    },
+                  ),
                 ),
-              ),
-              onChanged: (query) {
-                setState(() {
-                  searchQuery = query.toLowerCase();
-                });
-              },
+                Expanded(
+                  child: StreamBuilder<List<VocabularyWord>>(
+                    stream: useCases.watchWords(widget.categoryId),
+                    builder: (context, snapshot) {
+                      if (snapshot.hasError) {
+                        return const Center(
+                          child: Text('อ่านคำศัพท์ไม่สำเร็จ'),
+                        );
+                      }
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+                      final words = snapshot.data!
+                          .where(
+                            (word) =>
+                                _query.isEmpty ||
+                                word.normalizedSpelling.contains(_query) ||
+                                word.normalizedMeaning.contains(_query),
+                          )
+                          .toList();
+                      if (words.isEmpty) {
+                        return const Center(
+                          child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'),
+                        );
+                      }
+                      return ListView.builder(
+                        padding: const EdgeInsets.only(bottom: 96),
+                        itemCount: words.length,
+                        itemBuilder: (context, index) {
+                          final word = words[index];
+                          return ListTile(
+                            title: Text(word.spelling),
+                            subtitle: Text(
+                              '${word.meaning} · ${word.partOfSpeech}',
+                            ),
+                            onTap: () =>
+                                _openWordEditor(context, useCases, word: word),
+                            trailing: IconButton(
+                              tooltip: 'ลบคำศัพท์',
+                              icon: const Icon(Icons.delete_outline),
+                              onPressed: () =>
+                                  _deleteWord(context, useCases, word),
+                            ),
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-          Expanded(
-            child: StreamBuilder<List<Word>>(
-              stream: wordService.getWordsStream(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (snapshot.hasError) {
-                  return const Center(
-                    child: Text('เกิดข้อผิดพลาดในการโหลดคำศัพท์'),
-                  );
-                }
-
-                final words = snapshot.data ?? [];
-                final filteredWords = words
-                    .where(
-                      (word) => word.word.toLowerCase().contains(searchQuery),
-                    )
-                    .toList();
-
-                if (filteredWords.isEmpty) {
-                  return const Center(child: Text('ยังไม่มีคำศัพท์ในหมวดนี้'));
-                }
-
-                return ListView.builder(
-                  itemCount: filteredWords.length,
-                  itemBuilder: (context, index) {
-                    final word = filteredWords[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 15,
-                        vertical: 8,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      elevation: 4,
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 10,
-                        ),
-                        title: Text(
-                          word.word,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
+      floatingActionButton: useCases == null
+          ? null
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                if (importer != null)
+                  FloatingActionButton.small(
+                    heroTag: 'words-import',
+                    tooltip: 'นำเข้าคำศัพท์',
+                    onPressed: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => AddMultipleWordsScreen(
+                            categoryId: widget.categoryId,
+                            categoryName: widget.categoryName,
+                            importer: importer,
                           ),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('${word.meaning} (${word.partOfSpeech})'),
-                            if (word.userId == '')
-                              const Text(
-                                '🔗 คำศัพท์นี้ถูกเพิ่มจาก Datamuse API',
-                                style: TextStyle(
-                                  color: Colors.blue,
-                                  fontSize: 12,
-                                ),
-                              ),
-                          ],
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () =>
-                              showDeleteConfirmationDialog(context, word),
-                        ),
-                      ),
-                    );
-                  },
-                );
-              },
+                      );
+                    },
+                    child: const Icon(Icons.file_upload_outlined),
+                  ),
+                const SizedBox(height: 12),
+                FloatingActionButton.extended(
+                  key: const ValueKey('add-word'),
+                  heroTag: 'words-add',
+                  onPressed: () => _openWordEditor(context, useCases),
+                  icon: const Icon(Icons.add),
+                  label: const Text('เพิ่มคำศัพท์'),
+                ),
+              ],
             ),
+    );
+  }
+
+  void _openWordEditor(
+    BuildContext context,
+    VocabularyUseCases useCases, {
+    VocabularyWord? word,
+  }) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => AddWordScreen(
+          categoryId: widget.categoryId,
+          vocabulary: useCases,
+          word: word,
+        ),
+      ),
+    );
+  }
+
+  Future<void> _deleteWord(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    VocabularyWord word,
+  ) async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ลบคำศัพท์'),
+        content: Text('ลบ “${word.spelling}” หรือไม่'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ยกเลิก'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('ลบ'),
           ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButton(),
     );
+    if (accepted != true) return;
+    try {
+      await useCases.deleteWord(word.id);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ลบคำศัพท์ไม่สำเร็จ')));
+      }
+    }
   }
 }

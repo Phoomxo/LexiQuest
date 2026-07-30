@@ -1,232 +1,124 @@
 import 'package:flutter/material.dart';
-import '../models/suggestion_model.dart';
-import '../models/word_model.dart';
-import '../services/word_service.dart';
-import '../services/suggestion_service.dart';
+
+import '../features/vocabulary/application/import_vocabulary.dart';
+import '../features/vocabulary/domain/vocabulary_import.dart';
+import '../runtime/app_dependencies.dart';
 
 class AddMultipleWordsScreen extends StatefulWidget {
-  final String categoryId;
-  final String categoryName;
-
   const AddMultipleWordsScreen({
     super.key,
     required this.categoryId,
     required this.categoryName,
+    this.importer,
   });
+
+  final String categoryId;
+  final String categoryName;
+  final ImportVocabulary? importer;
 
   @override
   State<AddMultipleWordsScreen> createState() => _AddMultipleWordsScreenState();
 }
 
 class _AddMultipleWordsScreenState extends State<AddMultipleWordsScreen> {
-  final TextEditingController _numWordsController = TextEditingController();
-  late WordService wordService;
-  late SuggestionService suggestionService;
-  bool _isLoading = false;
-  List<SuggestedWord> suggestedWords = [];
+  final TextEditingController _rowsController = TextEditingController();
+  bool _saving = false;
+  bool _cancelled = false;
 
   @override
-  void initState() {
-    super.initState();
-    wordService = WordService(categoryId: widget.categoryId);
-    suggestionService = SuggestionService();
-  }
-
-  /// 🔥 ปุ่มเดียวสำหรับดึงคำศัพท์และบันทึกทันที
-  Future<void> _fetchAndSaveWords() async {
-    int numWords = int.tryParse(_numWordsController.text) ?? 0;
-    if (numWords <= 0 || numWords > 50) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('กรุณาระบุจำนวนคำระหว่าง 1-50')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    try {
-      // ✅ ดึงคำศัพท์จาก API
-      suggestedWords = await suggestionService.fetchWords(
-        widget.categoryName,
-        numWords,
-      );
-      setState(() {}); // 🔥 อัปเดต UI แสดงคำศัพท์ที่ดึงมา
-
-      // ✅ แปลงเป็น Word และบันทึกลง Firestore
-      List<Word> wordsToAdd = suggestedWords.map((word) {
-        return Word(
-          word: word.word,
-          meaning: word.meaning,
-          partOfSpeech: word.partOfSpeech,
-          userId: '',
-          isGlobal: false,
-          createdAt: DateTime.now(),
-        );
-      }).toList();
-
-      await wordService.addMultipleWords(wordsToAdd);
-
-      if (!mounted) return;
-
-      // ✅ แสดงข้อความแจ้งเตือน
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('เพิ่มคำศัพท์จำนวน ${wordsToAdd.length} คำสำเร็จ!'),
-        ),
-      );
-
-      // ✅ ปิดหน้าหลังจากบันทึกเสร็จ
-      Navigator.pop(context);
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('เกิดข้อผิดพลาด: $e')));
-    }
-
-    setState(() => _isLoading = false);
+  void dispose() {
+    _cancelled = true;
+    _rowsController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final importer =
+        widget.importer ??
+        AppDependenciesScope.maybeOf(context)?.vocabularyImporter;
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'เพิ่มหลายคำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+      appBar: AppBar(title: Text('นำเข้าคำศัพท์ · ${widget.categoryName}')),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          const Text('ใส่หนึ่งคำต่อบรรทัดในรูปแบบ\nคำศัพท์,ความหมาย,ชนิดของคำ'),
+          const SizedBox(height: 12),
+          TextField(
+            key: const ValueKey('import-rows-field'),
+            controller: _rowsController,
+            minLines: 8,
+            maxLines: 16,
+            decoration: const InputDecoration(
+              hintText: 'station,สถานี,noun\ntravel,เดินทาง,verb',
+              border: OutlineInputBorder(),
             ),
           ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            // 🔢 กรอกจำนวนคำศัพท์ที่ต้องการเพิ่ม
-            TextField(
-              controller: _numWordsController,
-              keyboardType: TextInputType.number,
-              style: const TextStyle(fontSize: 18, color: Colors.black),
-              decoration: InputDecoration(
-                labelText: 'จำนวนคำศัพท์ (1-50)',
-                labelStyle: const TextStyle(color: Colors.deepPurple),
-                focusedBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(
-                    color: Colors.deepPurple,
-                    width: 2,
-                  ),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderSide: const BorderSide(color: Colors.grey, width: 1),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            // 🔥 ปุ่มเดียวสำหรับดึงและบันทึกทันที
-            ElevatedButton(
-              onPressed: _isLoading ? null : _fetchAndSaveWords,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                backgroundColor: Colors.deepPurple,
-                elevation: 5,
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.cloud_download, color: Colors.white),
-                  const SizedBox(width: 8),
-                  Text(
-                    _isLoading ? 'กำลังโหลด...' : 'ดึงและบันทึกคำศัพท์',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
-
-            _isLoading
-                ? const Center(
-                    child: CircularProgressIndicator(color: Colors.deepPurple),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            key: const ValueKey('import-words'),
+            onPressed: _saving || importer == null
+                ? null
+                : () => _import(importer),
+            icon: _saving
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : Expanded(
-                    child: suggestedWords.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'ยังไม่มีคำศัพท์ กรุณากด "ดึงและบันทึกคำศัพท์"',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: suggestedWords.length,
-                            itemBuilder: (context, index) {
-                              final word = suggestedWords[index];
-                              return Card(
-                                margin: const EdgeInsets.symmetric(vertical: 8),
-                                elevation: 5,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(15),
-                                ),
-                                child: ListTile(
-                                  contentPadding: const EdgeInsets.all(12),
-                                  tileColor: Colors.white.withValues(
-                                    alpha: 0.95,
-                                  ),
-                                  title: Text(
-                                    word.word,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.deepPurple,
-                                    ),
-                                  ),
-                                  subtitle: Text(
-                                    '${word.meaning} (${word.partOfSpeech})',
-                                    style: const TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.black87,
-                                    ),
-                                  ),
-                                  leading: CircleAvatar(
-                                    backgroundColor: Colors.indigo,
-                                    child: Text(
-                                      word.word[0].toUpperCase(),
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                  ),
-          ],
-        ),
+                : const Icon(Icons.file_upload_outlined),
+            label: const Text('นำเข้า'),
+          ),
+        ],
       ),
     );
+  }
+
+  Future<void> _import(ImportVocabulary importer) async {
+    setState(() {
+      _saving = true;
+      _cancelled = false;
+    });
+    try {
+      final rows = <Map<String, String>>[];
+      for (final line in _rowsController.text.split(RegExp(r'\r?\n'))) {
+        if (line.trim().isEmpty) continue;
+        final columns = line.split(',');
+        rows.add({
+          'word': columns.isNotEmpty ? columns[0] : '',
+          'meaning': columns.length > 1 ? columns[1] : '',
+          'partOfSpeech': columns.length > 2 ? columns[2] : '',
+        });
+      }
+      final result = await importer(
+        categoryId: widget.categoryId,
+        rows: rows,
+        sourceName: 'manual-import',
+        isCancelled: () => _cancelled,
+      );
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'เพิ่ม ${result.accepted} · ซ้ำ ${result.duplicates} · '
+            'ไม่ผ่าน ${result.rejected.length}',
+          ),
+        ),
+      );
+      Navigator.pop(context);
+    } on VocabularyImportCancelled {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('ยกเลิกการนำเข้าแล้ว')));
+      }
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(const SnackBar(content: Text('นำเข้าคำศัพท์ไม่สำเร็จ')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 }

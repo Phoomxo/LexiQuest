@@ -1,245 +1,218 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
-import '../models/category_model.dart';
-import '../services/category_service.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_category.dart';
+import '../features/vocabulary/domain/vocabulary_failure.dart';
+import '../runtime/app_dependencies.dart';
+import 'vocab_list_screen.dart';
 
 class CategoriesPage extends StatelessWidget {
-  final CategoryService _categoryService = CategoryService();
+  const CategoriesPage({super.key, this.vocabulary});
 
-  CategoriesPage({super.key});
+  final VocabularyUseCases? vocabulary;
 
-  // 🔄 เพิ่มหมวดหมู่เริ่มต้นเมื่อผู้ใช้สมัครใหม่ (เรียกใช้ครั้งเดียว)
-  Future<void> _addDefaultCategoriesForNewUser(BuildContext context) async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final prefs = await SharedPreferences.getInstance();
-        final categoriesAdded = prefs.getBool('categories_added') ?? false;
-
-        if (!categoriesAdded) {
-          await _categoryService.addDefaultCategoriesForNewUser(user.uid);
-          await prefs.setBool('categories_added', true);
-        }
-      }
-    } catch (_) {
-      // Safe offline shell: cloud initialization is optional at app bootstrap.
-    }
-  }
-
-  /// 🔹 ดึงจำนวนคำศัพท์ในหมวดหมู่
-  Future<int> getWordCount(String categoryId) async {
-    QuerySnapshot wordsSnapshot = await FirebaseFirestore.instance
-        .collection('categories')
-        .doc(categoryId)
-        .collection('words')
-        .get();
-    return wordsSnapshot.size;
-  }
-
-  /// 🔥 ฟังก์ชันลบหมวดหมู่
-  void _deleteCategory(
-    BuildContext context,
-    String categoryId,
-    String categoryName,
-  ) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('ลบหมวดหมู่'),
-        content: Text('คุณต้องการลบหมวด "$categoryName" ใช่หรือไม่?'),
-        actions: [
-          TextButton(
-            child: const Text('ยกเลิก'),
-            onPressed: () => Navigator.pop(context),
-          ),
-          TextButton(
-            child: const Text('ลบ', style: TextStyle(color: Colors.red)),
-            onPressed: () async {
-              await _categoryService.deleteCategory(categoryId);
-              if (!context.mounted) return;
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('ลบหมวด "$categoryName" สำเร็จ!')),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  VocabularyUseCases? _useCases(BuildContext context) =>
+      vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
 
   @override
   Widget build(BuildContext context) {
-    _addDefaultCategoriesForNewUser(context); // เรียกเมื่อโหลดหน้าแรก
-
+    final useCases = _useCases(context);
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          'หมวดหมู่คำศัพท์',
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
-        ),
-        centerTitle: true,
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.deepPurple, Colors.indigo],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-        ),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10),
-        child: StreamBuilder<List<Category>>(
-          stream: _categoryService.getCategoriesStream(),
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            if (snapshot.hasError) {
-              return const Center(child: Text('เกิดข้อผิดพลาดในการโหลดข้อมูล'));
-            }
-
-            final categories = snapshot.data ?? [];
-            if (categories.isEmpty) {
-              return const Center(child: Text('ไม่มีหมวดหมู่ในขณะนี้'));
-            }
-
-            return GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 10,
-                mainAxisSpacing: 10,
-                childAspectRatio: 1.3,
-              ),
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                final category = categories[index];
-
-                return FutureBuilder<int>(
-                  future: getWordCount(category.id!),
-                  builder: (context, wordCountSnapshot) {
-                    int wordCount = wordCountSnapshot.data ?? 0;
-
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => VocabListScreen(
-                              categoryId: category.id!,
-                              categoryName: category.name,
-                            ),
-                          ),
-                        );
-                      },
-                      onLongPress: () =>
-                          _deleteCategory(context, category.id!, category.name),
-                      child: Card(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
+      appBar: AppBar(title: const Text('คลังคำศัพท์')),
+      body: useCases == null
+          ? const _LocalDataUnavailable()
+          : StreamBuilder<List<VocabularyCategory>>(
+              stream: useCases.watchCategories(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return _FailureState(onRetry: () {});
+                }
+                if (!snapshot.hasData) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                final categories = snapshot.data!;
+                if (categories.isEmpty) {
+                  return const Center(
+                    child: Text(
+                      'ยังไม่มีหมวดหมู่\nเพิ่มหมวดหมู่เพื่อเริ่มเก็บคำศัพท์',
+                      textAlign: TextAlign.center,
+                    ),
+                  );
+                }
+                return ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: categories.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
+                  itemBuilder: (context, index) {
+                    final category = categories[index];
+                    return Card(
+                      child: ListTile(
+                        leading: const Icon(Icons.folder_outlined),
+                        title: Text(category.name),
+                        subtitle: const Text('แตะเพื่อดูคำศัพท์'),
+                        trailing: IconButton(
+                          tooltip: 'ลบหมวดหมู่',
+                          icon: const Icon(Icons.delete_outline),
+                          onPressed: () =>
+                              _confirmDelete(context, useCases, category),
                         ),
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              _getCategoryIcon(category.name),
-                              size: 40,
-                              color: Colors.deepPurple,
-                            ),
-                            const SizedBox(height: 10),
-                            Text(
-                              category.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute<void>(
+                              builder: (_) => VocabListScreen(
+                                categoryId: category.id,
+                                categoryName: category.name,
+                                vocabulary: useCases,
                               ),
                             ),
-                            const SizedBox(height: 5),
-                            Text(
-                              '$wordCount/50 คำ',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: wordCount >= 50
-                                    ? Colors.red
-                                    : Colors.black,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
+                          );
+                        },
                       ),
                     );
                   },
                 );
               },
-            );
-          },
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddCategoryDialog(context),
-        label: const Text(
-          'เพิ่มหมวดหมู่',
-          style: TextStyle(color: Colors.white),
-        ),
-        icon: const Icon(Icons.add, color: Colors.white),
-        backgroundColor: Colors.deepPurple,
-      ),
+            ),
+      floatingActionButton: useCases == null
+          ? null
+          : FloatingActionButton.extended(
+              key: const ValueKey('add-category'),
+              heroTag: 'categories-add',
+              onPressed: () => _showAddCategory(context, useCases),
+              icon: const Icon(Icons.add),
+              label: const Text('เพิ่มหมวดหมู่'),
+            ),
     );
   }
 
-  IconData _getCategoryIcon(String categoryName) {
-    switch (categoryName.toLowerCase()) {
-      case 'สัตว์':
-        return Icons.pets;
-      case 'อาหาร':
-        return Icons.fastfood;
-      case 'สถานที่':
-        return Icons.location_on;
-      case 'กีฬา':
-        return Icons.sports_soccer;
-      case 'อาชีพ':
-        return Icons.work;
-      default:
-        return Icons.category;
-    }
-  }
-
-  void _showAddCategoryDialog(BuildContext context) {
-    TextEditingController addController = TextEditingController();
-    showDialog(
+  Future<void> _showAddCategory(
+    BuildContext context,
+    VocabularyUseCases useCases,
+  ) async {
+    final controller = TextEditingController();
+    await showDialog<void>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('เพิ่มหมวดหมู่'),
         content: TextField(
-          controller: addController,
+          key: const ValueKey('category-name-field'),
+          controller: controller,
+          autofocus: true,
+          maxLength: maxCategoryNameLength,
           decoration: const InputDecoration(labelText: 'ชื่อหมวดหมู่'),
+          onSubmitted: (_) =>
+              _saveCategory(dialogContext, useCases, controller.text),
         ),
         actions: [
           TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('ยกเลิก'),
-            onPressed: () => Navigator.pop(context),
           ),
+          FilledButton(
+            key: const ValueKey('save-category'),
+            onPressed: () =>
+                _saveCategory(dialogContext, useCases, controller.text),
+            child: const Text('บันทึก'),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+  }
+
+  Future<void> _saveCategory(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    String name,
+  ) async {
+    try {
+      await useCases.createCategory(name);
+      if (context.mounted) Navigator.pop(context);
+    } on InvalidVocabularyFailure {
+      if (context.mounted) {
+        _showMessage(context, 'กรุณากรอกชื่อหมวดหมู่ให้ถูกต้อง');
+      }
+    } on DuplicateVocabularyFailure {
+      if (context.mounted) {
+        _showMessage(context, 'มีหมวดหมู่นี้แล้ว');
+      }
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'บันทึกหมวดหมู่ไม่สำเร็จ');
+      }
+    }
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    VocabularyUseCases useCases,
+    VocabularyCategory category,
+  ) async {
+    final accepted = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('ลบหมวดหมู่'),
+        content: Text('ลบ “${category.name}” และซ่อนคำศัพท์ในหมวดนี้หรือไม่'),
+        actions: [
           TextButton(
-            child: const Text('เพิ่ม'),
-            onPressed: () async {
-              final categoryName = addController.text.trim();
-              if (categoryName.isNotEmpty) {
-                await _categoryService.addCategory(categoryName);
-              }
-              if (!context.mounted) return;
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('ยกเลิก'),
           ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('ลบ'),
+          ),
+        ],
+      ),
+    );
+    if (accepted != true) return;
+    try {
+      await useCases.deleteCategory(category.id);
+    } catch (_) {
+      if (context.mounted) {
+        _showMessage(context, 'ลบหมวดหมู่ไม่สำเร็จ');
+      }
+    }
+  }
+
+  void _showMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _LocalDataUnavailable extends StatelessWidget {
+  const _LocalDataUnavailable();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Padding(
+        padding: EdgeInsets.all(24),
+        child: Text(
+          'เปิดฐานข้อมูลในเครื่องไม่สำเร็จ\nกรุณาปิดและเปิดแอปใหม่',
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+}
+
+class _FailureState extends StatelessWidget {
+  const _FailureState({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('อ่านหมวดหมู่ไม่สำเร็จ'),
+          const SizedBox(height: 8),
+          OutlinedButton(onPressed: onRetry, child: const Text('ลองใหม่')),
         ],
       ),
     );
