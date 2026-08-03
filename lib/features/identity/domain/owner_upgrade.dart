@@ -49,4 +49,5 @@ const Set<String> ownerUpgradeInventory = <String>{
   'outbox_operations',
   'sync_checkpoints',
   'sync_conflicts',
+  'events_v2',
 };

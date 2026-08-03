@@ -492,6 +492,17 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('conflict-1', 'guest-owner', 'word', 'word-1', 1, 2, "
     "'cloudWins', 'cloudApplied', 20)",
   );
+  await database.customInsert(
+    "INSERT INTO events_v2 "
+    "(event_id, event_type, event_version, occurred_at_utc, recorded_at_utc, "
+    "actor_identity, owner_id, aggregate_type, aggregate_id, idempotency_key, "
+    "consent_context_json, app_version, build_id, privacy_classification, "
+    "payload_json) VALUES "
+    "('evt-seed-1', 'QuizCompleted', 1, '2026-08-04T10:00:00.000Z', "
+    "'2026-08-04T10:00:01.000Z', 'guest-owner', 'guest-owner', "
+    "'LearningSession', 'sess-1', 'idem-seed-1', '{}', "
+    "'1.0.0', 'sha1', 'anonymized', '{}')",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

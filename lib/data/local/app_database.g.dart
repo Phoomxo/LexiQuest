@@ -12397,6 +12397,1340 @@ class ModelDownloadsCompanion extends UpdateCompanion<ModelDownload> {
   }
 }
 
+class $EventsV2Table extends EventsV2
+    with TableInfo<$EventsV2Table, EventsV2Data> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $EventsV2Table(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventTypeMeta = const VerificationMeta(
+    'eventType',
+  );
+  @override
+  late final GeneratedColumn<String> eventType = GeneratedColumn<String>(
+    'event_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _eventVersionMeta = const VerificationMeta(
+    'eventVersion',
+  );
+  @override
+  late final GeneratedColumn<int> eventVersion = GeneratedColumn<int>(
+    'event_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _occurredAtUtcMeta = const VerificationMeta(
+    'occurredAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> occurredAtUtc =
+      GeneratedColumn<DateTime>(
+        'occurred_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _recordedAtUtcMeta = const VerificationMeta(
+    'recordedAtUtc',
+  );
+  @override
+  late final GeneratedColumn<DateTime> recordedAtUtc =
+      GeneratedColumn<DateTime>(
+        'recorded_at_utc',
+        aliasedName,
+        false,
+        type: DriftSqlType.dateTime,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _actorIdentityMeta = const VerificationMeta(
+    'actorIdentity',
+  );
+  @override
+  late final GeneratedColumn<String> actorIdentity = GeneratedColumn<String>(
+    'actor_identity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _tenantContextJsonMeta = const VerificationMeta(
+    'tenantContextJson',
+  );
+  @override
+  late final GeneratedColumn<String> tenantContextJson =
+      GeneratedColumn<String>(
+        'tenant_context_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _aggregateTypeMeta = const VerificationMeta(
+    'aggregateType',
+  );
+  @override
+  late final GeneratedColumn<String> aggregateType = GeneratedColumn<String>(
+    'aggregate_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _aggregateIdMeta = const VerificationMeta(
+    'aggregateId',
+  );
+  @override
+  late final GeneratedColumn<String> aggregateId = GeneratedColumn<String>(
+    'aggregate_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _correlationIdMeta = const VerificationMeta(
+    'correlationId',
+  );
+  @override
+  late final GeneratedColumn<String> correlationId = GeneratedColumn<String>(
+    'correlation_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _causationIdMeta = const VerificationMeta(
+    'causationId',
+  );
+  @override
+  late final GeneratedColumn<String> causationId = GeneratedColumn<String>(
+    'causation_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _idempotencyKeyMeta = const VerificationMeta(
+    'idempotencyKey',
+  );
+  @override
+  late final GeneratedColumn<String> idempotencyKey = GeneratedColumn<String>(
+    'idempotency_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _consentContextJsonMeta =
+      const VerificationMeta('consentContextJson');
+  @override
+  late final GeneratedColumn<String> consentContextJson =
+      GeneratedColumn<String>(
+        'consent_context_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _experimentContextJsonMeta =
+      const VerificationMeta('experimentContextJson');
+  @override
+  late final GeneratedColumn<String> experimentContextJson =
+      GeneratedColumn<String>(
+        'experiment_context_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<String> contentRevision = GeneratedColumn<String>(
+    'content_revision',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _policyVersionMeta = const VerificationMeta(
+    'policyVersion',
+  );
+  @override
+  late final GeneratedColumn<String> policyVersion = GeneratedColumn<String>(
+    'policy_version',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _appVersionMeta = const VerificationMeta(
+    'appVersion',
+  );
+  @override
+  late final GeneratedColumn<String> appVersion = GeneratedColumn<String>(
+    'app_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _buildIdMeta = const VerificationMeta(
+    'buildId',
+  );
+  @override
+  late final GeneratedColumn<String> buildId = GeneratedColumn<String>(
+    'build_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _providerProvenanceJsonMeta =
+      const VerificationMeta('providerProvenanceJson');
+  @override
+  late final GeneratedColumn<String> providerProvenanceJson =
+      GeneratedColumn<String>(
+        'provider_provenance_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _privacyClassificationMeta =
+      const VerificationMeta('privacyClassification');
+  @override
+  late final GeneratedColumn<String> privacyClassification =
+      GeneratedColumn<String>(
+        'privacy_classification',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _payloadJsonMeta = const VerificationMeta(
+    'payloadJson',
+  );
+  @override
+  late final GeneratedColumn<String> payloadJson = GeneratedColumn<String>(
+    'payload_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    eventId,
+    eventType,
+    eventVersion,
+    occurredAtUtc,
+    recordedAtUtc,
+    actorIdentity,
+    ownerId,
+    tenantContextJson,
+    aggregateType,
+    aggregateId,
+    correlationId,
+    causationId,
+    idempotencyKey,
+    consentContextJson,
+    experimentContextJson,
+    contentRevision,
+    policyVersion,
+    appVersion,
+    buildId,
+    providerProvenanceJson,
+    privacyClassification,
+    payloadJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'events_v2';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<EventsV2Data> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('event_type')) {
+      context.handle(
+        _eventTypeMeta,
+        eventType.isAcceptableOrUnknown(data['event_type']!, _eventTypeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventTypeMeta);
+    }
+    if (data.containsKey('event_version')) {
+      context.handle(
+        _eventVersionMeta,
+        eventVersion.isAcceptableOrUnknown(
+          data['event_version']!,
+          _eventVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_eventVersionMeta);
+    }
+    if (data.containsKey('occurred_at_utc')) {
+      context.handle(
+        _occurredAtUtcMeta,
+        occurredAtUtc.isAcceptableOrUnknown(
+          data['occurred_at_utc']!,
+          _occurredAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtUtcMeta);
+    }
+    if (data.containsKey('recorded_at_utc')) {
+      context.handle(
+        _recordedAtUtcMeta,
+        recordedAtUtc.isAcceptableOrUnknown(
+          data['recorded_at_utc']!,
+          _recordedAtUtcMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recordedAtUtcMeta);
+    }
+    if (data.containsKey('actor_identity')) {
+      context.handle(
+        _actorIdentityMeta,
+        actorIdentity.isAcceptableOrUnknown(
+          data['actor_identity']!,
+          _actorIdentityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_actorIdentityMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('tenant_context_json')) {
+      context.handle(
+        _tenantContextJsonMeta,
+        tenantContextJson.isAcceptableOrUnknown(
+          data['tenant_context_json']!,
+          _tenantContextJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('aggregate_type')) {
+      context.handle(
+        _aggregateTypeMeta,
+        aggregateType.isAcceptableOrUnknown(
+          data['aggregate_type']!,
+          _aggregateTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggregateTypeMeta);
+    }
+    if (data.containsKey('aggregate_id')) {
+      context.handle(
+        _aggregateIdMeta,
+        aggregateId.isAcceptableOrUnknown(
+          data['aggregate_id']!,
+          _aggregateIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_aggregateIdMeta);
+    }
+    if (data.containsKey('correlation_id')) {
+      context.handle(
+        _correlationIdMeta,
+        correlationId.isAcceptableOrUnknown(
+          data['correlation_id']!,
+          _correlationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('causation_id')) {
+      context.handle(
+        _causationIdMeta,
+        causationId.isAcceptableOrUnknown(
+          data['causation_id']!,
+          _causationIdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('idempotency_key')) {
+      context.handle(
+        _idempotencyKeyMeta,
+        idempotencyKey.isAcceptableOrUnknown(
+          data['idempotency_key']!,
+          _idempotencyKeyMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_idempotencyKeyMeta);
+    }
+    if (data.containsKey('consent_context_json')) {
+      context.handle(
+        _consentContextJsonMeta,
+        consentContextJson.isAcceptableOrUnknown(
+          data['consent_context_json']!,
+          _consentContextJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_consentContextJsonMeta);
+    }
+    if (data.containsKey('experiment_context_json')) {
+      context.handle(
+        _experimentContextJsonMeta,
+        experimentContextJson.isAcceptableOrUnknown(
+          data['experiment_context_json']!,
+          _experimentContextJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('policy_version')) {
+      context.handle(
+        _policyVersionMeta,
+        policyVersion.isAcceptableOrUnknown(
+          data['policy_version']!,
+          _policyVersionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('app_version')) {
+      context.handle(
+        _appVersionMeta,
+        appVersion.isAcceptableOrUnknown(data['app_version']!, _appVersionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_appVersionMeta);
+    }
+    if (data.containsKey('build_id')) {
+      context.handle(
+        _buildIdMeta,
+        buildId.isAcceptableOrUnknown(data['build_id']!, _buildIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_buildIdMeta);
+    }
+    if (data.containsKey('provider_provenance_json')) {
+      context.handle(
+        _providerProvenanceJsonMeta,
+        providerProvenanceJson.isAcceptableOrUnknown(
+          data['provider_provenance_json']!,
+          _providerProvenanceJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('privacy_classification')) {
+      context.handle(
+        _privacyClassificationMeta,
+        privacyClassification.isAcceptableOrUnknown(
+          data['privacy_classification']!,
+          _privacyClassificationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_privacyClassificationMeta);
+    }
+    if (data.containsKey('payload_json')) {
+      context.handle(
+        _payloadJsonMeta,
+        payloadJson.isAcceptableOrUnknown(
+          data['payload_json']!,
+          _payloadJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_payloadJsonMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, idempotencyKey},
+  ];
+  @override
+  EventsV2Data map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return EventsV2Data(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+      eventType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_type'],
+      )!,
+      eventVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}event_version'],
+      )!,
+      occurredAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}occurred_at_utc'],
+      )!,
+      recordedAtUtc: attachedDatabase.typeMapping.read(
+        DriftSqlType.dateTime,
+        data['${effectivePrefix}recorded_at_utc'],
+      )!,
+      actorIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}actor_identity'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      tenantContextJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tenant_context_json'],
+      ),
+      aggregateType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggregate_type'],
+      )!,
+      aggregateId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}aggregate_id'],
+      )!,
+      correlationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}correlation_id'],
+      ),
+      causationId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}causation_id'],
+      ),
+      idempotencyKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}idempotency_key'],
+      )!,
+      consentContextJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}consent_context_json'],
+      )!,
+      experimentContextJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}experiment_context_json'],
+      ),
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_revision'],
+      ),
+      policyVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}policy_version'],
+      ),
+      appVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}app_version'],
+      )!,
+      buildId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}build_id'],
+      )!,
+      providerProvenanceJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_provenance_json'],
+      ),
+      privacyClassification: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}privacy_classification'],
+      )!,
+      payloadJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}payload_json'],
+      )!,
+    );
+  }
+
+  @override
+  $EventsV2Table createAlias(String alias) {
+    return $EventsV2Table(attachedDatabase, alias);
+  }
+}
+
+class EventsV2Data extends DataClass implements Insertable<EventsV2Data> {
+  final String eventId;
+  final String eventType;
+  final int eventVersion;
+  final DateTime occurredAtUtc;
+  final DateTime recordedAtUtc;
+  final String actorIdentity;
+  final String ownerId;
+  final String? tenantContextJson;
+  final String aggregateType;
+  final String aggregateId;
+  final String? correlationId;
+  final String? causationId;
+  final String idempotencyKey;
+  final String consentContextJson;
+  final String? experimentContextJson;
+  final String? contentRevision;
+  final String? policyVersion;
+  final String appVersion;
+  final String buildId;
+  final String? providerProvenanceJson;
+  final String privacyClassification;
+  final String payloadJson;
+  const EventsV2Data({
+    required this.eventId,
+    required this.eventType,
+    required this.eventVersion,
+    required this.occurredAtUtc,
+    required this.recordedAtUtc,
+    required this.actorIdentity,
+    required this.ownerId,
+    this.tenantContextJson,
+    required this.aggregateType,
+    required this.aggregateId,
+    this.correlationId,
+    this.causationId,
+    required this.idempotencyKey,
+    required this.consentContextJson,
+    this.experimentContextJson,
+    this.contentRevision,
+    this.policyVersion,
+    required this.appVersion,
+    required this.buildId,
+    this.providerProvenanceJson,
+    required this.privacyClassification,
+    required this.payloadJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['event_id'] = Variable<String>(eventId);
+    map['event_type'] = Variable<String>(eventType);
+    map['event_version'] = Variable<int>(eventVersion);
+    map['occurred_at_utc'] = Variable<DateTime>(occurredAtUtc);
+    map['recorded_at_utc'] = Variable<DateTime>(recordedAtUtc);
+    map['actor_identity'] = Variable<String>(actorIdentity);
+    map['owner_id'] = Variable<String>(ownerId);
+    if (!nullToAbsent || tenantContextJson != null) {
+      map['tenant_context_json'] = Variable<String>(tenantContextJson);
+    }
+    map['aggregate_type'] = Variable<String>(aggregateType);
+    map['aggregate_id'] = Variable<String>(aggregateId);
+    if (!nullToAbsent || correlationId != null) {
+      map['correlation_id'] = Variable<String>(correlationId);
+    }
+    if (!nullToAbsent || causationId != null) {
+      map['causation_id'] = Variable<String>(causationId);
+    }
+    map['idempotency_key'] = Variable<String>(idempotencyKey);
+    map['consent_context_json'] = Variable<String>(consentContextJson);
+    if (!nullToAbsent || experimentContextJson != null) {
+      map['experiment_context_json'] = Variable<String>(experimentContextJson);
+    }
+    if (!nullToAbsent || contentRevision != null) {
+      map['content_revision'] = Variable<String>(contentRevision);
+    }
+    if (!nullToAbsent || policyVersion != null) {
+      map['policy_version'] = Variable<String>(policyVersion);
+    }
+    map['app_version'] = Variable<String>(appVersion);
+    map['build_id'] = Variable<String>(buildId);
+    if (!nullToAbsent || providerProvenanceJson != null) {
+      map['provider_provenance_json'] = Variable<String>(
+        providerProvenanceJson,
+      );
+    }
+    map['privacy_classification'] = Variable<String>(privacyClassification);
+    map['payload_json'] = Variable<String>(payloadJson);
+    return map;
+  }
+
+  EventsV2Companion toCompanion(bool nullToAbsent) {
+    return EventsV2Companion(
+      eventId: Value(eventId),
+      eventType: Value(eventType),
+      eventVersion: Value(eventVersion),
+      occurredAtUtc: Value(occurredAtUtc),
+      recordedAtUtc: Value(recordedAtUtc),
+      actorIdentity: Value(actorIdentity),
+      ownerId: Value(ownerId),
+      tenantContextJson: tenantContextJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(tenantContextJson),
+      aggregateType: Value(aggregateType),
+      aggregateId: Value(aggregateId),
+      correlationId: correlationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(correlationId),
+      causationId: causationId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(causationId),
+      idempotencyKey: Value(idempotencyKey),
+      consentContextJson: Value(consentContextJson),
+      experimentContextJson: experimentContextJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(experimentContextJson),
+      contentRevision: contentRevision == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentRevision),
+      policyVersion: policyVersion == null && nullToAbsent
+          ? const Value.absent()
+          : Value(policyVersion),
+      appVersion: Value(appVersion),
+      buildId: Value(buildId),
+      providerProvenanceJson: providerProvenanceJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerProvenanceJson),
+      privacyClassification: Value(privacyClassification),
+      payloadJson: Value(payloadJson),
+    );
+  }
+
+  factory EventsV2Data.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return EventsV2Data(
+      eventId: serializer.fromJson<String>(json['eventId']),
+      eventType: serializer.fromJson<String>(json['eventType']),
+      eventVersion: serializer.fromJson<int>(json['eventVersion']),
+      occurredAtUtc: serializer.fromJson<DateTime>(json['occurredAtUtc']),
+      recordedAtUtc: serializer.fromJson<DateTime>(json['recordedAtUtc']),
+      actorIdentity: serializer.fromJson<String>(json['actorIdentity']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      tenantContextJson: serializer.fromJson<String?>(
+        json['tenantContextJson'],
+      ),
+      aggregateType: serializer.fromJson<String>(json['aggregateType']),
+      aggregateId: serializer.fromJson<String>(json['aggregateId']),
+      correlationId: serializer.fromJson<String?>(json['correlationId']),
+      causationId: serializer.fromJson<String?>(json['causationId']),
+      idempotencyKey: serializer.fromJson<String>(json['idempotencyKey']),
+      consentContextJson: serializer.fromJson<String>(
+        json['consentContextJson'],
+      ),
+      experimentContextJson: serializer.fromJson<String?>(
+        json['experimentContextJson'],
+      ),
+      contentRevision: serializer.fromJson<String?>(json['contentRevision']),
+      policyVersion: serializer.fromJson<String?>(json['policyVersion']),
+      appVersion: serializer.fromJson<String>(json['appVersion']),
+      buildId: serializer.fromJson<String>(json['buildId']),
+      providerProvenanceJson: serializer.fromJson<String?>(
+        json['providerProvenanceJson'],
+      ),
+      privacyClassification: serializer.fromJson<String>(
+        json['privacyClassification'],
+      ),
+      payloadJson: serializer.fromJson<String>(json['payloadJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'eventId': serializer.toJson<String>(eventId),
+      'eventType': serializer.toJson<String>(eventType),
+      'eventVersion': serializer.toJson<int>(eventVersion),
+      'occurredAtUtc': serializer.toJson<DateTime>(occurredAtUtc),
+      'recordedAtUtc': serializer.toJson<DateTime>(recordedAtUtc),
+      'actorIdentity': serializer.toJson<String>(actorIdentity),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'tenantContextJson': serializer.toJson<String?>(tenantContextJson),
+      'aggregateType': serializer.toJson<String>(aggregateType),
+      'aggregateId': serializer.toJson<String>(aggregateId),
+      'correlationId': serializer.toJson<String?>(correlationId),
+      'causationId': serializer.toJson<String?>(causationId),
+      'idempotencyKey': serializer.toJson<String>(idempotencyKey),
+      'consentContextJson': serializer.toJson<String>(consentContextJson),
+      'experimentContextJson': serializer.toJson<String?>(
+        experimentContextJson,
+      ),
+      'contentRevision': serializer.toJson<String?>(contentRevision),
+      'policyVersion': serializer.toJson<String?>(policyVersion),
+      'appVersion': serializer.toJson<String>(appVersion),
+      'buildId': serializer.toJson<String>(buildId),
+      'providerProvenanceJson': serializer.toJson<String?>(
+        providerProvenanceJson,
+      ),
+      'privacyClassification': serializer.toJson<String>(privacyClassification),
+      'payloadJson': serializer.toJson<String>(payloadJson),
+    };
+  }
+
+  EventsV2Data copyWith({
+    String? eventId,
+    String? eventType,
+    int? eventVersion,
+    DateTime? occurredAtUtc,
+    DateTime? recordedAtUtc,
+    String? actorIdentity,
+    String? ownerId,
+    Value<String?> tenantContextJson = const Value.absent(),
+    String? aggregateType,
+    String? aggregateId,
+    Value<String?> correlationId = const Value.absent(),
+    Value<String?> causationId = const Value.absent(),
+    String? idempotencyKey,
+    String? consentContextJson,
+    Value<String?> experimentContextJson = const Value.absent(),
+    Value<String?> contentRevision = const Value.absent(),
+    Value<String?> policyVersion = const Value.absent(),
+    String? appVersion,
+    String? buildId,
+    Value<String?> providerProvenanceJson = const Value.absent(),
+    String? privacyClassification,
+    String? payloadJson,
+  }) => EventsV2Data(
+    eventId: eventId ?? this.eventId,
+    eventType: eventType ?? this.eventType,
+    eventVersion: eventVersion ?? this.eventVersion,
+    occurredAtUtc: occurredAtUtc ?? this.occurredAtUtc,
+    recordedAtUtc: recordedAtUtc ?? this.recordedAtUtc,
+    actorIdentity: actorIdentity ?? this.actorIdentity,
+    ownerId: ownerId ?? this.ownerId,
+    tenantContextJson: tenantContextJson.present
+        ? tenantContextJson.value
+        : this.tenantContextJson,
+    aggregateType: aggregateType ?? this.aggregateType,
+    aggregateId: aggregateId ?? this.aggregateId,
+    correlationId: correlationId.present
+        ? correlationId.value
+        : this.correlationId,
+    causationId: causationId.present ? causationId.value : this.causationId,
+    idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+    consentContextJson: consentContextJson ?? this.consentContextJson,
+    experimentContextJson: experimentContextJson.present
+        ? experimentContextJson.value
+        : this.experimentContextJson,
+    contentRevision: contentRevision.present
+        ? contentRevision.value
+        : this.contentRevision,
+    policyVersion: policyVersion.present
+        ? policyVersion.value
+        : this.policyVersion,
+    appVersion: appVersion ?? this.appVersion,
+    buildId: buildId ?? this.buildId,
+    providerProvenanceJson: providerProvenanceJson.present
+        ? providerProvenanceJson.value
+        : this.providerProvenanceJson,
+    privacyClassification: privacyClassification ?? this.privacyClassification,
+    payloadJson: payloadJson ?? this.payloadJson,
+  );
+  EventsV2Data copyWithCompanion(EventsV2Companion data) {
+    return EventsV2Data(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      eventType: data.eventType.present ? data.eventType.value : this.eventType,
+      eventVersion: data.eventVersion.present
+          ? data.eventVersion.value
+          : this.eventVersion,
+      occurredAtUtc: data.occurredAtUtc.present
+          ? data.occurredAtUtc.value
+          : this.occurredAtUtc,
+      recordedAtUtc: data.recordedAtUtc.present
+          ? data.recordedAtUtc.value
+          : this.recordedAtUtc,
+      actorIdentity: data.actorIdentity.present
+          ? data.actorIdentity.value
+          : this.actorIdentity,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      tenantContextJson: data.tenantContextJson.present
+          ? data.tenantContextJson.value
+          : this.tenantContextJson,
+      aggregateType: data.aggregateType.present
+          ? data.aggregateType.value
+          : this.aggregateType,
+      aggregateId: data.aggregateId.present
+          ? data.aggregateId.value
+          : this.aggregateId,
+      correlationId: data.correlationId.present
+          ? data.correlationId.value
+          : this.correlationId,
+      causationId: data.causationId.present
+          ? data.causationId.value
+          : this.causationId,
+      idempotencyKey: data.idempotencyKey.present
+          ? data.idempotencyKey.value
+          : this.idempotencyKey,
+      consentContextJson: data.consentContextJson.present
+          ? data.consentContextJson.value
+          : this.consentContextJson,
+      experimentContextJson: data.experimentContextJson.present
+          ? data.experimentContextJson.value
+          : this.experimentContextJson,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      policyVersion: data.policyVersion.present
+          ? data.policyVersion.value
+          : this.policyVersion,
+      appVersion: data.appVersion.present
+          ? data.appVersion.value
+          : this.appVersion,
+      buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      providerProvenanceJson: data.providerProvenanceJson.present
+          ? data.providerProvenanceJson.value
+          : this.providerProvenanceJson,
+      privacyClassification: data.privacyClassification.present
+          ? data.privacyClassification.value
+          : this.privacyClassification,
+      payloadJson: data.payloadJson.present
+          ? data.payloadJson.value
+          : this.payloadJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventsV2Data(')
+          ..write('eventId: $eventId, ')
+          ..write('eventType: $eventType, ')
+          ..write('eventVersion: $eventVersion, ')
+          ..write('occurredAtUtc: $occurredAtUtc, ')
+          ..write('recordedAtUtc: $recordedAtUtc, ')
+          ..write('actorIdentity: $actorIdentity, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('tenantContextJson: $tenantContextJson, ')
+          ..write('aggregateType: $aggregateType, ')
+          ..write('aggregateId: $aggregateId, ')
+          ..write('correlationId: $correlationId, ')
+          ..write('causationId: $causationId, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('consentContextJson: $consentContextJson, ')
+          ..write('experimentContextJson: $experimentContextJson, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('policyVersion: $policyVersion, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write('providerProvenanceJson: $providerProvenanceJson, ')
+          ..write('privacyClassification: $privacyClassification, ')
+          ..write('payloadJson: $payloadJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hashAll([
+    eventId,
+    eventType,
+    eventVersion,
+    occurredAtUtc,
+    recordedAtUtc,
+    actorIdentity,
+    ownerId,
+    tenantContextJson,
+    aggregateType,
+    aggregateId,
+    correlationId,
+    causationId,
+    idempotencyKey,
+    consentContextJson,
+    experimentContextJson,
+    contentRevision,
+    policyVersion,
+    appVersion,
+    buildId,
+    providerProvenanceJson,
+    privacyClassification,
+    payloadJson,
+  ]);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is EventsV2Data &&
+          other.eventId == this.eventId &&
+          other.eventType == this.eventType &&
+          other.eventVersion == this.eventVersion &&
+          other.occurredAtUtc == this.occurredAtUtc &&
+          other.recordedAtUtc == this.recordedAtUtc &&
+          other.actorIdentity == this.actorIdentity &&
+          other.ownerId == this.ownerId &&
+          other.tenantContextJson == this.tenantContextJson &&
+          other.aggregateType == this.aggregateType &&
+          other.aggregateId == this.aggregateId &&
+          other.correlationId == this.correlationId &&
+          other.causationId == this.causationId &&
+          other.idempotencyKey == this.idempotencyKey &&
+          other.consentContextJson == this.consentContextJson &&
+          other.experimentContextJson == this.experimentContextJson &&
+          other.contentRevision == this.contentRevision &&
+          other.policyVersion == this.policyVersion &&
+          other.appVersion == this.appVersion &&
+          other.buildId == this.buildId &&
+          other.providerProvenanceJson == this.providerProvenanceJson &&
+          other.privacyClassification == this.privacyClassification &&
+          other.payloadJson == this.payloadJson);
+}
+
+class EventsV2Companion extends UpdateCompanion<EventsV2Data> {
+  final Value<String> eventId;
+  final Value<String> eventType;
+  final Value<int> eventVersion;
+  final Value<DateTime> occurredAtUtc;
+  final Value<DateTime> recordedAtUtc;
+  final Value<String> actorIdentity;
+  final Value<String> ownerId;
+  final Value<String?> tenantContextJson;
+  final Value<String> aggregateType;
+  final Value<String> aggregateId;
+  final Value<String?> correlationId;
+  final Value<String?> causationId;
+  final Value<String> idempotencyKey;
+  final Value<String> consentContextJson;
+  final Value<String?> experimentContextJson;
+  final Value<String?> contentRevision;
+  final Value<String?> policyVersion;
+  final Value<String> appVersion;
+  final Value<String> buildId;
+  final Value<String?> providerProvenanceJson;
+  final Value<String> privacyClassification;
+  final Value<String> payloadJson;
+  final Value<int> rowid;
+  const EventsV2Companion({
+    this.eventId = const Value.absent(),
+    this.eventType = const Value.absent(),
+    this.eventVersion = const Value.absent(),
+    this.occurredAtUtc = const Value.absent(),
+    this.recordedAtUtc = const Value.absent(),
+    this.actorIdentity = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.tenantContextJson = const Value.absent(),
+    this.aggregateType = const Value.absent(),
+    this.aggregateId = const Value.absent(),
+    this.correlationId = const Value.absent(),
+    this.causationId = const Value.absent(),
+    this.idempotencyKey = const Value.absent(),
+    this.consentContextJson = const Value.absent(),
+    this.experimentContextJson = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.policyVersion = const Value.absent(),
+    this.appVersion = const Value.absent(),
+    this.buildId = const Value.absent(),
+    this.providerProvenanceJson = const Value.absent(),
+    this.privacyClassification = const Value.absent(),
+    this.payloadJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  EventsV2Companion.insert({
+    required String eventId,
+    required String eventType,
+    required int eventVersion,
+    required DateTime occurredAtUtc,
+    required DateTime recordedAtUtc,
+    required String actorIdentity,
+    required String ownerId,
+    this.tenantContextJson = const Value.absent(),
+    required String aggregateType,
+    required String aggregateId,
+    this.correlationId = const Value.absent(),
+    this.causationId = const Value.absent(),
+    required String idempotencyKey,
+    required String consentContextJson,
+    this.experimentContextJson = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.policyVersion = const Value.absent(),
+    required String appVersion,
+    required String buildId,
+    this.providerProvenanceJson = const Value.absent(),
+    required String privacyClassification,
+    required String payloadJson,
+    this.rowid = const Value.absent(),
+  }) : eventId = Value(eventId),
+       eventType = Value(eventType),
+       eventVersion = Value(eventVersion),
+       occurredAtUtc = Value(occurredAtUtc),
+       recordedAtUtc = Value(recordedAtUtc),
+       actorIdentity = Value(actorIdentity),
+       ownerId = Value(ownerId),
+       aggregateType = Value(aggregateType),
+       aggregateId = Value(aggregateId),
+       idempotencyKey = Value(idempotencyKey),
+       consentContextJson = Value(consentContextJson),
+       appVersion = Value(appVersion),
+       buildId = Value(buildId),
+       privacyClassification = Value(privacyClassification),
+       payloadJson = Value(payloadJson);
+  static Insertable<EventsV2Data> custom({
+    Expression<String>? eventId,
+    Expression<String>? eventType,
+    Expression<int>? eventVersion,
+    Expression<DateTime>? occurredAtUtc,
+    Expression<DateTime>? recordedAtUtc,
+    Expression<String>? actorIdentity,
+    Expression<String>? ownerId,
+    Expression<String>? tenantContextJson,
+    Expression<String>? aggregateType,
+    Expression<String>? aggregateId,
+    Expression<String>? correlationId,
+    Expression<String>? causationId,
+    Expression<String>? idempotencyKey,
+    Expression<String>? consentContextJson,
+    Expression<String>? experimentContextJson,
+    Expression<String>? contentRevision,
+    Expression<String>? policyVersion,
+    Expression<String>? appVersion,
+    Expression<String>? buildId,
+    Expression<String>? providerProvenanceJson,
+    Expression<String>? privacyClassification,
+    Expression<String>? payloadJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (eventType != null) 'event_type': eventType,
+      if (eventVersion != null) 'event_version': eventVersion,
+      if (occurredAtUtc != null) 'occurred_at_utc': occurredAtUtc,
+      if (recordedAtUtc != null) 'recorded_at_utc': recordedAtUtc,
+      if (actorIdentity != null) 'actor_identity': actorIdentity,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (tenantContextJson != null) 'tenant_context_json': tenantContextJson,
+      if (aggregateType != null) 'aggregate_type': aggregateType,
+      if (aggregateId != null) 'aggregate_id': aggregateId,
+      if (correlationId != null) 'correlation_id': correlationId,
+      if (causationId != null) 'causation_id': causationId,
+      if (idempotencyKey != null) 'idempotency_key': idempotencyKey,
+      if (consentContextJson != null)
+        'consent_context_json': consentContextJson,
+      if (experimentContextJson != null)
+        'experiment_context_json': experimentContextJson,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (policyVersion != null) 'policy_version': policyVersion,
+      if (appVersion != null) 'app_version': appVersion,
+      if (buildId != null) 'build_id': buildId,
+      if (providerProvenanceJson != null)
+        'provider_provenance_json': providerProvenanceJson,
+      if (privacyClassification != null)
+        'privacy_classification': privacyClassification,
+      if (payloadJson != null) 'payload_json': payloadJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  EventsV2Companion copyWith({
+    Value<String>? eventId,
+    Value<String>? eventType,
+    Value<int>? eventVersion,
+    Value<DateTime>? occurredAtUtc,
+    Value<DateTime>? recordedAtUtc,
+    Value<String>? actorIdentity,
+    Value<String>? ownerId,
+    Value<String?>? tenantContextJson,
+    Value<String>? aggregateType,
+    Value<String>? aggregateId,
+    Value<String?>? correlationId,
+    Value<String?>? causationId,
+    Value<String>? idempotencyKey,
+    Value<String>? consentContextJson,
+    Value<String?>? experimentContextJson,
+    Value<String?>? contentRevision,
+    Value<String?>? policyVersion,
+    Value<String>? appVersion,
+    Value<String>? buildId,
+    Value<String?>? providerProvenanceJson,
+    Value<String>? privacyClassification,
+    Value<String>? payloadJson,
+    Value<int>? rowid,
+  }) {
+    return EventsV2Companion(
+      eventId: eventId ?? this.eventId,
+      eventType: eventType ?? this.eventType,
+      eventVersion: eventVersion ?? this.eventVersion,
+      occurredAtUtc: occurredAtUtc ?? this.occurredAtUtc,
+      recordedAtUtc: recordedAtUtc ?? this.recordedAtUtc,
+      actorIdentity: actorIdentity ?? this.actorIdentity,
+      ownerId: ownerId ?? this.ownerId,
+      tenantContextJson: tenantContextJson ?? this.tenantContextJson,
+      aggregateType: aggregateType ?? this.aggregateType,
+      aggregateId: aggregateId ?? this.aggregateId,
+      correlationId: correlationId ?? this.correlationId,
+      causationId: causationId ?? this.causationId,
+      idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+      consentContextJson: consentContextJson ?? this.consentContextJson,
+      experimentContextJson:
+          experimentContextJson ?? this.experimentContextJson,
+      contentRevision: contentRevision ?? this.contentRevision,
+      policyVersion: policyVersion ?? this.policyVersion,
+      appVersion: appVersion ?? this.appVersion,
+      buildId: buildId ?? this.buildId,
+      providerProvenanceJson:
+          providerProvenanceJson ?? this.providerProvenanceJson,
+      privacyClassification:
+          privacyClassification ?? this.privacyClassification,
+      payloadJson: payloadJson ?? this.payloadJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (eventType.present) {
+      map['event_type'] = Variable<String>(eventType.value);
+    }
+    if (eventVersion.present) {
+      map['event_version'] = Variable<int>(eventVersion.value);
+    }
+    if (occurredAtUtc.present) {
+      map['occurred_at_utc'] = Variable<DateTime>(occurredAtUtc.value);
+    }
+    if (recordedAtUtc.present) {
+      map['recorded_at_utc'] = Variable<DateTime>(recordedAtUtc.value);
+    }
+    if (actorIdentity.present) {
+      map['actor_identity'] = Variable<String>(actorIdentity.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (tenantContextJson.present) {
+      map['tenant_context_json'] = Variable<String>(tenantContextJson.value);
+    }
+    if (aggregateType.present) {
+      map['aggregate_type'] = Variable<String>(aggregateType.value);
+    }
+    if (aggregateId.present) {
+      map['aggregate_id'] = Variable<String>(aggregateId.value);
+    }
+    if (correlationId.present) {
+      map['correlation_id'] = Variable<String>(correlationId.value);
+    }
+    if (causationId.present) {
+      map['causation_id'] = Variable<String>(causationId.value);
+    }
+    if (idempotencyKey.present) {
+      map['idempotency_key'] = Variable<String>(idempotencyKey.value);
+    }
+    if (consentContextJson.present) {
+      map['consent_context_json'] = Variable<String>(consentContextJson.value);
+    }
+    if (experimentContextJson.present) {
+      map['experiment_context_json'] = Variable<String>(
+        experimentContextJson.value,
+      );
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<String>(contentRevision.value);
+    }
+    if (policyVersion.present) {
+      map['policy_version'] = Variable<String>(policyVersion.value);
+    }
+    if (appVersion.present) {
+      map['app_version'] = Variable<String>(appVersion.value);
+    }
+    if (buildId.present) {
+      map['build_id'] = Variable<String>(buildId.value);
+    }
+    if (providerProvenanceJson.present) {
+      map['provider_provenance_json'] = Variable<String>(
+        providerProvenanceJson.value,
+      );
+    }
+    if (privacyClassification.present) {
+      map['privacy_classification'] = Variable<String>(
+        privacyClassification.value,
+      );
+    }
+    if (payloadJson.present) {
+      map['payload_json'] = Variable<String>(payloadJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('EventsV2Companion(')
+          ..write('eventId: $eventId, ')
+          ..write('eventType: $eventType, ')
+          ..write('eventVersion: $eventVersion, ')
+          ..write('occurredAtUtc: $occurredAtUtc, ')
+          ..write('recordedAtUtc: $recordedAtUtc, ')
+          ..write('actorIdentity: $actorIdentity, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('tenantContextJson: $tenantContextJson, ')
+          ..write('aggregateType: $aggregateType, ')
+          ..write('aggregateId: $aggregateId, ')
+          ..write('correlationId: $correlationId, ')
+          ..write('causationId: $causationId, ')
+          ..write('idempotencyKey: $idempotencyKey, ')
+          ..write('consentContextJson: $consentContextJson, ')
+          ..write('experimentContextJson: $experimentContextJson, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('policyVersion: $policyVersion, ')
+          ..write('appVersion: $appVersion, ')
+          ..write('buildId: $buildId, ')
+          ..write('providerProvenanceJson: $providerProvenanceJson, ')
+          ..write('privacyClassification: $privacyClassification, ')
+          ..write('payloadJson: $payloadJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -12441,6 +13775,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $SyncConflictsTable syncConflicts = $SyncConflictsTable(this);
   late final $RuntimeFlagsTable runtimeFlags = $RuntimeFlagsTable(this);
   late final $ModelDownloadsTable modelDownloads = $ModelDownloadsTable(this);
+  late final $EventsV2Table eventsV2 = $EventsV2Table(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -12467,6 +13802,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     syncConflicts,
     runtimeFlags,
     modelDownloads,
+    eventsV2,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -12857,6 +14193,24 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_syncConflictsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$EventsV2Table, List<EventsV2Data>>
+  _eventsV2RefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.eventsV2,
+    aliasName: 'local_owners__id__events_v2__owner_id',
+  );
+
+  $$EventsV2TableProcessedTableManager get eventsV2Refs {
+    final manager = $$EventsV2TableTableManager(
+      $_db,
+      $_db.eventsV2,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_eventsV2RefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -13319,6 +14673,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$SyncConflictsTableFilterComposer(
             $db: $db,
             $table: $db.syncConflicts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> eventsV2Refs(
+    Expression<bool> Function($$EventsV2TableFilterComposer f) f,
+  ) {
+    final $$EventsV2TableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventsV2,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsV2TableFilterComposer(
+            $db: $db,
+            $table: $db.eventsV2,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -13835,6 +15214,31 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> eventsV2Refs<T extends Object>(
+    Expression<T> Function($$EventsV2TableAnnotationComposer a) f,
+  ) {
+    final $$EventsV2TableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.eventsV2,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$EventsV2TableAnnotationComposer(
+            $db: $db,
+            $table: $db.eventsV2,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -13868,6 +15272,7 @@ class $$LocalOwnersTableTableManager
             bool outboxOperationsRefs,
             bool syncCheckpointsRefs,
             bool syncConflictsRefs,
+            bool eventsV2Refs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -13944,6 +15349,7 @@ class $$LocalOwnersTableTableManager
                 outboxOperationsRefs = false,
                 syncCheckpointsRefs = false,
                 syncConflictsRefs = false,
+                eventsV2Refs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -13965,6 +15371,7 @@ class $$LocalOwnersTableTableManager
                     if (outboxOperationsRefs) db.outboxOperations,
                     if (syncCheckpointsRefs) db.syncCheckpoints,
                     if (syncConflictsRefs) db.syncConflicts,
+                    if (eventsV2Refs) db.eventsV2,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -14326,6 +15733,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (eventsV2Refs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          EventsV2Data
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._eventsV2RefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).eventsV2Refs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -14364,6 +15792,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool outboxOperationsRefs,
         bool syncCheckpointsRefs,
         bool syncConflictsRefs,
+        bool eventsV2Refs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -23702,6 +25131,682 @@ typedef $$ModelDownloadsTableProcessedTableManager =
       ModelDownload,
       PrefetchHooks Function()
     >;
+typedef $$EventsV2TableCreateCompanionBuilder =
+    EventsV2Companion Function({
+      required String eventId,
+      required String eventType,
+      required int eventVersion,
+      required DateTime occurredAtUtc,
+      required DateTime recordedAtUtc,
+      required String actorIdentity,
+      required String ownerId,
+      Value<String?> tenantContextJson,
+      required String aggregateType,
+      required String aggregateId,
+      Value<String?> correlationId,
+      Value<String?> causationId,
+      required String idempotencyKey,
+      required String consentContextJson,
+      Value<String?> experimentContextJson,
+      Value<String?> contentRevision,
+      Value<String?> policyVersion,
+      required String appVersion,
+      required String buildId,
+      Value<String?> providerProvenanceJson,
+      required String privacyClassification,
+      required String payloadJson,
+      Value<int> rowid,
+    });
+typedef $$EventsV2TableUpdateCompanionBuilder =
+    EventsV2Companion Function({
+      Value<String> eventId,
+      Value<String> eventType,
+      Value<int> eventVersion,
+      Value<DateTime> occurredAtUtc,
+      Value<DateTime> recordedAtUtc,
+      Value<String> actorIdentity,
+      Value<String> ownerId,
+      Value<String?> tenantContextJson,
+      Value<String> aggregateType,
+      Value<String> aggregateId,
+      Value<String?> correlationId,
+      Value<String?> causationId,
+      Value<String> idempotencyKey,
+      Value<String> consentContextJson,
+      Value<String?> experimentContextJson,
+      Value<String?> contentRevision,
+      Value<String?> policyVersion,
+      Value<String> appVersion,
+      Value<String> buildId,
+      Value<String?> providerProvenanceJson,
+      Value<String> privacyClassification,
+      Value<String> payloadJson,
+      Value<int> rowid,
+    });
+
+final class $$EventsV2TableReferences
+    extends BaseReferences<_$AppDatabase, $EventsV2Table, EventsV2Data> {
+  $$EventsV2TableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('events_v2__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$EventsV2TableFilterComposer
+    extends Composer<_$AppDatabase, $EventsV2Table> {
+  $$EventsV2TableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get eventType => $composableBuilder(
+    column: $table.eventType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get eventVersion => $composableBuilder(
+    column: $table.eventVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get occurredAtUtc => $composableBuilder(
+    column: $table.occurredAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<DateTime> get recordedAtUtc => $composableBuilder(
+    column: $table.recordedAtUtc,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get actorIdentity => $composableBuilder(
+    column: $table.actorIdentity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tenantContextJson => $composableBuilder(
+    column: $table.tenantContextJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggregateType => $composableBuilder(
+    column: $table.aggregateType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get aggregateId => $composableBuilder(
+    column: $table.aggregateId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get correlationId => $composableBuilder(
+    column: $table.correlationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get causationId => $composableBuilder(
+    column: $table.causationId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get consentContextJson => $composableBuilder(
+    column: $table.consentContextJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get experimentContextJson => $composableBuilder(
+    column: $table.experimentContextJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerProvenanceJson => $composableBuilder(
+    column: $table.providerProvenanceJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get privacyClassification => $composableBuilder(
+    column: $table.privacyClassification,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventsV2TableOrderingComposer
+    extends Composer<_$AppDatabase, $EventsV2Table> {
+  $$EventsV2TableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get eventType => $composableBuilder(
+    column: $table.eventType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get eventVersion => $composableBuilder(
+    column: $table.eventVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get occurredAtUtc => $composableBuilder(
+    column: $table.occurredAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<DateTime> get recordedAtUtc => $composableBuilder(
+    column: $table.recordedAtUtc,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get actorIdentity => $composableBuilder(
+    column: $table.actorIdentity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tenantContextJson => $composableBuilder(
+    column: $table.tenantContextJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggregateType => $composableBuilder(
+    column: $table.aggregateType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get aggregateId => $composableBuilder(
+    column: $table.aggregateId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get correlationId => $composableBuilder(
+    column: $table.correlationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get causationId => $composableBuilder(
+    column: $table.causationId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get consentContextJson => $composableBuilder(
+    column: $table.consentContextJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get experimentContextJson => $composableBuilder(
+    column: $table.experimentContextJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get buildId => $composableBuilder(
+    column: $table.buildId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerProvenanceJson => $composableBuilder(
+    column: $table.providerProvenanceJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get privacyClassification => $composableBuilder(
+    column: $table.privacyClassification,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventsV2TableAnnotationComposer
+    extends Composer<_$AppDatabase, $EventsV2Table> {
+  $$EventsV2TableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+
+  GeneratedColumn<String> get eventType =>
+      $composableBuilder(column: $table.eventType, builder: (column) => column);
+
+  GeneratedColumn<int> get eventVersion => $composableBuilder(
+    column: $table.eventVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get occurredAtUtc => $composableBuilder(
+    column: $table.occurredAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<DateTime> get recordedAtUtc => $composableBuilder(
+    column: $table.recordedAtUtc,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get actorIdentity => $composableBuilder(
+    column: $table.actorIdentity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tenantContextJson => $composableBuilder(
+    column: $table.tenantContextJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get aggregateType => $composableBuilder(
+    column: $table.aggregateType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get aggregateId => $composableBuilder(
+    column: $table.aggregateId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get correlationId => $composableBuilder(
+    column: $table.correlationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get causationId => $composableBuilder(
+    column: $table.causationId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get idempotencyKey => $composableBuilder(
+    column: $table.idempotencyKey,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get consentContextJson => $composableBuilder(
+    column: $table.consentContextJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get experimentContextJson => $composableBuilder(
+    column: $table.experimentContextJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get policyVersion => $composableBuilder(
+    column: $table.policyVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get appVersion => $composableBuilder(
+    column: $table.appVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get buildId =>
+      $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<String> get providerProvenanceJson => $composableBuilder(
+    column: $table.providerProvenanceJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get privacyClassification => $composableBuilder(
+    column: $table.privacyClassification,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get payloadJson => $composableBuilder(
+    column: $table.payloadJson,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$EventsV2TableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $EventsV2Table,
+          EventsV2Data,
+          $$EventsV2TableFilterComposer,
+          $$EventsV2TableOrderingComposer,
+          $$EventsV2TableAnnotationComposer,
+          $$EventsV2TableCreateCompanionBuilder,
+          $$EventsV2TableUpdateCompanionBuilder,
+          (EventsV2Data, $$EventsV2TableReferences),
+          EventsV2Data,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$EventsV2TableTableManager(_$AppDatabase db, $EventsV2Table table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$EventsV2TableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$EventsV2TableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$EventsV2TableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> eventId = const Value.absent(),
+                Value<String> eventType = const Value.absent(),
+                Value<int> eventVersion = const Value.absent(),
+                Value<DateTime> occurredAtUtc = const Value.absent(),
+                Value<DateTime> recordedAtUtc = const Value.absent(),
+                Value<String> actorIdentity = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String?> tenantContextJson = const Value.absent(),
+                Value<String> aggregateType = const Value.absent(),
+                Value<String> aggregateId = const Value.absent(),
+                Value<String?> correlationId = const Value.absent(),
+                Value<String?> causationId = const Value.absent(),
+                Value<String> idempotencyKey = const Value.absent(),
+                Value<String> consentContextJson = const Value.absent(),
+                Value<String?> experimentContextJson = const Value.absent(),
+                Value<String?> contentRevision = const Value.absent(),
+                Value<String?> policyVersion = const Value.absent(),
+                Value<String> appVersion = const Value.absent(),
+                Value<String> buildId = const Value.absent(),
+                Value<String?> providerProvenanceJson = const Value.absent(),
+                Value<String> privacyClassification = const Value.absent(),
+                Value<String> payloadJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => EventsV2Companion(
+                eventId: eventId,
+                eventType: eventType,
+                eventVersion: eventVersion,
+                occurredAtUtc: occurredAtUtc,
+                recordedAtUtc: recordedAtUtc,
+                actorIdentity: actorIdentity,
+                ownerId: ownerId,
+                tenantContextJson: tenantContextJson,
+                aggregateType: aggregateType,
+                aggregateId: aggregateId,
+                correlationId: correlationId,
+                causationId: causationId,
+                idempotencyKey: idempotencyKey,
+                consentContextJson: consentContextJson,
+                experimentContextJson: experimentContextJson,
+                contentRevision: contentRevision,
+                policyVersion: policyVersion,
+                appVersion: appVersion,
+                buildId: buildId,
+                providerProvenanceJson: providerProvenanceJson,
+                privacyClassification: privacyClassification,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String eventId,
+                required String eventType,
+                required int eventVersion,
+                required DateTime occurredAtUtc,
+                required DateTime recordedAtUtc,
+                required String actorIdentity,
+                required String ownerId,
+                Value<String?> tenantContextJson = const Value.absent(),
+                required String aggregateType,
+                required String aggregateId,
+                Value<String?> correlationId = const Value.absent(),
+                Value<String?> causationId = const Value.absent(),
+                required String idempotencyKey,
+                required String consentContextJson,
+                Value<String?> experimentContextJson = const Value.absent(),
+                Value<String?> contentRevision = const Value.absent(),
+                Value<String?> policyVersion = const Value.absent(),
+                required String appVersion,
+                required String buildId,
+                Value<String?> providerProvenanceJson = const Value.absent(),
+                required String privacyClassification,
+                required String payloadJson,
+                Value<int> rowid = const Value.absent(),
+              }) => EventsV2Companion.insert(
+                eventId: eventId,
+                eventType: eventType,
+                eventVersion: eventVersion,
+                occurredAtUtc: occurredAtUtc,
+                recordedAtUtc: recordedAtUtc,
+                actorIdentity: actorIdentity,
+                ownerId: ownerId,
+                tenantContextJson: tenantContextJson,
+                aggregateType: aggregateType,
+                aggregateId: aggregateId,
+                correlationId: correlationId,
+                causationId: causationId,
+                idempotencyKey: idempotencyKey,
+                consentContextJson: consentContextJson,
+                experimentContextJson: experimentContextJson,
+                contentRevision: contentRevision,
+                policyVersion: policyVersion,
+                appVersion: appVersion,
+                buildId: buildId,
+                providerProvenanceJson: providerProvenanceJson,
+                privacyClassification: privacyClassification,
+                payloadJson: payloadJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$EventsV2TableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$EventsV2TableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$EventsV2TableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$EventsV2TableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $EventsV2Table,
+      EventsV2Data,
+      $$EventsV2TableFilterComposer,
+      $$EventsV2TableOrderingComposer,
+      $$EventsV2TableAnnotationComposer,
+      $$EventsV2TableCreateCompanionBuilder,
+      $$EventsV2TableUpdateCompanionBuilder,
+      (EventsV2Data, $$EventsV2TableReferences),
+      EventsV2Data,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -23751,4 +25856,6 @@ class $AppDatabaseManager {
       $$RuntimeFlagsTableTableManager(_db, _db.runtimeFlags);
   $$ModelDownloadsTableTableManager get modelDownloads =>
       $$ModelDownloadsTableTableManager(_db, _db.modelDownloads);
+  $$EventsV2TableTableManager get eventsV2 =>
+      $$EventsV2TableTableManager(_db, _db.eventsV2);
 }

@@ -24,6 +24,10 @@ enum Feature {
   speechPractice,
   aiTutor,
   export,
+
+  /// V2 shadow mode — runs the V2 reward pipeline in dry-run mode alongside
+  /// production.  Disabled by default; enable in debug builds only.
+  shadowRewardV2,
 }
 
 /// Availability state of a [Feature].
@@ -92,6 +96,7 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.speechPractice: FeatureState.enabled,
         Feature.aiTutor: FeatureState.enabled,
         Feature.export: FeatureState.enabled,
+        Feature.shadowRewardV2: FeatureState.enabled,
       };
 
   final Map<Feature, FeatureState> _states;

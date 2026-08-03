@@ -12,6 +12,18 @@ library;
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/learning/learning_event.dart';
 
+// ─── ID generation helper ─────────────────────────────────────────────────────
+
+/// Simple pseudo-UUID generator that doesn't require an external package.
+/// Uses timestamp + counter to ensure uniqueness within a process lifetime.
+int _counter = 0;
+
+String _generateEventId(DateTime now) {
+  final ts = now.millisecondsSinceEpoch;
+  final seq = ++_counter;
+  return 'evt_v2_${ts}_$seq';
+}
+
 /// Adapts a legacy [LearningEvent] (schema version 1) to [EventEnvelopeV2].
 final class EventV1ToV2Adapter {
   const EventV1ToV2Adapter({
@@ -99,11 +111,57 @@ final class EventV1ToV2Adapter {
   String _aggregateId(LearningEvent v1) =>
       'v1-session-${v1.pseudonymousUserId}';
 
-  /// Generates a deterministic idempotency key from V1 content.
-  ///
-  /// The key is stable: adapting the same event twice produces the same key,
-  /// which allows safe replay via the uniqueness constraint on
-  /// `(owner_identity, idempotency_key)` in schema v7.
+  /// Idempotency key from V1 content.
   String _idempotencyKey(LearningEvent v1) =>
       'v1_${v1.pseudonymousUserId}_${v1.occurredAtUtc.millisecondsSinceEpoch}';
+
+  /// Convenience method that builds an [EventEnvelopeV2] directly from the
+  /// raw parameters of [LearningUseCases.recordAnswer], bypassing the
+  /// intermediate [LearningEvent] DTO.
+  ///
+  /// Used exclusively by the shadow reward orchestrator hook so that the
+  /// shadow path does not need to reconstruct a [LearningEvent] externally.
+  EventEnvelopeV2 adaptFromCommand({
+    required String ownerId,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required DateTime occurredAtUtc,
+    required String appVersion,
+    required String buildId,
+    String? providerProvenance,
+  }) {
+    final now = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
+    final eventId = _generateEventId(now);
+    final idemKey = 'v2_${ownerId}_${now.millisecondsSinceEpoch}_$sessionId';
+
+    return EventEnvelopeV2(
+      eventId: eventId,
+      eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
+      eventVersion: 1,
+      occurredAtUtc: now,
+      recordedAtUtc: now,
+      actorIdentity: ownerId,
+      ownerIdentity: ownerId,
+      aggregateType: 'LearningSession',
+      aggregateId: sessionId,
+      idempotencyKey: idemKey,
+      consentContext: consentContext,
+      appVersion: appVersion,
+      buildId: buildId,
+      privacyClassification: PrivacyClassification.anonymized,
+      payload: {
+        'wordId': wordId,
+        'promptMode': promptMode,
+        'correct': isCorrect,
+        'score': isCorrect ? 100 : 0,
+        if (responseTimeMs != null) 'responseTimeMs': responseTimeMs,
+        'attemptNumber': attemptNumber,
+        if (providerProvenance != null) 'providerProvenance': providerProvenance,
+      },
+    );
+  }
 }

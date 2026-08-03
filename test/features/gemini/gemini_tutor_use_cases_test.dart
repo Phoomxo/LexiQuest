@@ -189,7 +189,7 @@ ProgressSnapshot _progress() => ProgressSnapshot(
   correctCount: 7,
   wrongCount: 3,
   accuracy: 0.7,
-  points: 70,
+  totalXp: 70,
   completedSessions: 2,
   streakDays: 1,
   dueReviewCount: 3,

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
@@ -34,6 +35,7 @@ part 'app_database.g.dart';
     SyncConflicts,
     RuntimeFlags,
     ModelDownloads,
+    EventsV2,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -42,7 +44,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 6;
+  int get schemaVersion => 7;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -139,12 +141,28 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 6) {
         await _createMissingTables(migrator);
       }
+      if (from < 7) {
+        await _createMissingTables(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
+      await _createEventIndexes();
     },
   );
+
+  Future<void> _createEventIndexes() async {
+    final tables = await customSelect(
+      "SELECT name FROM sqlite_master WHERE type = 'table'",
+    ).map((row) => row.read<String>('name')).get();
+    if (tables.contains('events_v2')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_events_v2_owner_occurred '
+        'ON events_v2(owner_id, occurred_at_utc)',
+      );
+    }
+  }
 
   Future<void> _createLearningIndexes() async {
     final tableNames = await customSelect(
@@ -240,6 +258,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('model_downloads')) {
       await migrator.createTable(modelDownloads);
+    }
+    if (!await _tableExists('events_v2')) {
+      await migrator.createTable(eventsV2);
     }
   }
 

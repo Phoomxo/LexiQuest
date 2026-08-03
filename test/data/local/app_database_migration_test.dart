@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version six with product tables', () async {
+  test('new databases use schema version seven with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 6);
+    expect(database.schemaVersion, 7);
 
     final categoryColumns = await _columnNames(
       database,
@@ -124,7 +124,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 6);
+      expect(version, 7);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');

@@ -219,19 +219,18 @@ void main() {
       expect(content.contains('SAFE') || content.contains('safe'), isTrue);
     });
 
-    test('confirms no v7+ migration exists in codebase', () {
-      // Cross-check: no from < 7 in app_database.dart
+    test('confirms v7 migration deployed, no v8+ migration exists yet', () {
       final dbContent = _read('lib/data/local/app_database.dart');
-      expect(dbContent.contains('from < 7'), isFalse,
-          reason: 'No schema v7 migration code should exist yet');
+      expect(dbContent.contains('from < 7'), isTrue,
+          reason: 'Schema v7 migration must exist after Week 5-6');
       expect(dbContent.contains('from < 8'), isFalse);
       expect(dbContent.contains('from < 9'), isFalse);
     });
 
-    test('current schemaVersion in code is 6', () {
+    test('current schemaVersion in code is 7', () {
       final dbContent = _read('lib/data/local/app_database.dart');
-      expect(dbContent.contains('schemaVersion => 6'), isTrue,
-          reason: 'app_database.dart schemaVersion must be 6');
+      expect(dbContent.contains('schemaVersion => 7'), isTrue,
+          reason: 'app_database.dart schemaVersion must be 7 after Week 5-6');
     });
   });
 

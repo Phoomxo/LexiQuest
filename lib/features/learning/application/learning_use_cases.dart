@@ -1,5 +1,7 @@
 import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
+import '../../events/application/event_v1_to_v2_adapter.dart';
+import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 
@@ -15,6 +17,8 @@ final class LearningUseCases {
     required this.nowUtc,
     required this.buildInfo,
     this.onLocalMutation,
+    this.shadowOrchestrator,
+    this.eventAdapter,
   });
 
   final LocalOwnerRepository owners;
@@ -23,6 +27,14 @@ final class LearningUseCases {
   final LearningUtcNow nowUtc;
   final AppBuildInfo buildInfo;
   final LearningMutationNotifier? onLocalMutation;
+
+  /// Shadow mode — when non-null, every recorded answer is also run through
+  /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
+  final ShadowRewardOrchestrator? shadowOrchestrator;
+
+  /// Required when [shadowOrchestrator] is non-null; adapts V1 commands to
+  /// [EventEnvelopeV2] for shadow processing.
+  final EventV1ToV2Adapter? eventAdapter;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
     final owner = await owners.getOrCreateActiveOwner();
@@ -146,6 +158,32 @@ final class LearningUseCases {
       ),
     );
     onLocalMutation?.call();
+
+    // Shadow V2 reward pipeline — runs after production succeeds.
+    // Errors are swallowed: shadow mode must never break production.
+    final shadow = shadowOrchestrator;
+    final adapter = eventAdapter;
+    if (shadow != null && adapter != null) {
+      try {
+        final v2Event = adapter.adaptFromCommand(
+          ownerId: owner.id,
+          sessionId: _requiredId(sessionId, 'sessionId'),
+          wordId: _requiredId(wordId, 'wordId'),
+          promptMode: _requiredId(promptMode, 'promptMode'),
+          isCorrect: isCorrect,
+          responseTimeMs: responseTimeMs,
+          attemptNumber: attemptNumber,
+          occurredAtUtc: _now(),
+          providerProvenance: providerProvenance,
+          appVersion: buildInfo.version,
+          buildId: buildInfo.buildId,
+        );
+        await shadow.processShadow(v2Event);
+      } catch (_) {
+        // Intentionally swallowed — shadow mode must never break production.
+      }
+    }
+
     return result;
   }
 

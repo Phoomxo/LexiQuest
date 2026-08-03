@@ -120,7 +120,7 @@ void main() {
 
     expect(result.sampleSize, 2);
     expect(result.accuracy, 0.5);
-    expect(result.points, 1);
+    expect(result.totalXp, 1);
     expect(result.completedSessions, 1);
     expect(result.streakDays, 2);
     expect(result.weaknesses.single.wordId, 'word-1');
