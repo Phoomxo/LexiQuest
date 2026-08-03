@@ -32,7 +32,7 @@ final class DriftProgressQueries {
               ..addColumns([pointsExpression])
               ..where(database.pointsLedgerEntries.ownerId.equals(ownerId)))
             .getSingle();
-    final points = pointsRow.read(pointsExpression) ?? 0;
+    final totalXp = pointsRow.read(pointsExpression) ?? 0;
     final completedCount = database.learningSessions.id.count();
     final completedRow =
         await (database.selectOnly(database.learningSessions)
@@ -81,7 +81,7 @@ final class DriftProgressQueries {
       correctCount: correctCount,
       wrongCount: wrongCount,
       accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
-      points: points,
+      totalXp: totalXp,
       completedSessions: completedRow.read(completedCount) ?? 0,
       streakDays: _streakDays(
         attempts.map((row) => row.occurredAtUtcMs),
@@ -90,7 +90,7 @@ final class DriftProgressQueries {
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
-      gameLevel: (points ~/ 20) + 1,
+      gameLevel: (totalXp ~/ 20) + 1,
       skills: _skills(attempts),
       weaknesses: weaknesses,
       recommendations: weaknesses

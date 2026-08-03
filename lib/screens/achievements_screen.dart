@@ -53,7 +53,7 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.toll_outlined),
                   title: const Text('คะแนนสะสม'),
-                  trailing: Text('${progress.points}'),
+                  trailing: Text('${progress.totalXp}'),
                   subtitle: Text(
                     'หลักฐานคำตอบ ${progress.sampleSize} รายการ · อัลกอริทึม v${progress.algorithmVersion}',
                   ),

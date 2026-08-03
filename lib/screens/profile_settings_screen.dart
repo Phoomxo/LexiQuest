@@ -66,7 +66,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              _Metric(label: 'คะแนนสะสม', value: '${progress.points}'),
+              _Metric(label: 'XP สะสม', value: '${progress.totalXp}'),
               _Metric(label: 'Streak', value: '${progress.streakDays} วัน'),
               _Metric(
                 label: 'ระดับจากคะแนนจริง',

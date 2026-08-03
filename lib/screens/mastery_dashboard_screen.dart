@@ -77,7 +77,7 @@ class _DashboardBody extends StatelessWidget {
               value: '${((progress.accuracy ?? 0) * 100).toStringAsFixed(0)}%',
             ),
             _MetricCard(label: 'Streak', value: '${progress.streakDays} วัน'),
-            _MetricCard(label: 'คะแนน', value: '${progress.points}'),
+            _MetricCard(label: 'XP', value: '${progress.totalXp}'),
             _MetricCard(
               label: 'Session ที่จบ',
               value: '${progress.completedSessions}',

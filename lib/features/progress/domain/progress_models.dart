@@ -66,7 +66,7 @@ final class ProgressSnapshot {
     required this.correctCount,
     required this.wrongCount,
     required this.accuracy,
-    required this.points,
+    required this.totalXp,
     required this.completedSessions,
     required this.streakDays,
     required this.dueReviewCount,
@@ -86,7 +86,7 @@ final class ProgressSnapshot {
   final int correctCount;
   final int wrongCount;
   final double? accuracy;
-  final int points;
+  final int totalXp;
   final int completedSessions;
   final int streakDays;
   final int dueReviewCount;
