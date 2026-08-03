@@ -23,6 +23,10 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
 import 'field_feature_registry.dart';
+import 'registries/consent_registry.dart';
+import 'registries/entitlement_registry.dart';
+import 'registries/experiment_registry.dart';
+import 'registries/feature_registry.dart';
 
 final class AppDependencies {
   AppDependencies({
@@ -31,6 +35,10 @@ final class AppDependencies {
     required this.guestSessionService,
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
+    this.features = const BuildFeatureRegistry.fieldDefaults(),
+    this.experiments = const NoOpExperimentRegistry(),
+    this.consents = const NoOpConsentRegistry(),
+    this.entitlements = const NoOpEntitlementRegistry(),
     this.database,
     this.localOwners,
     this.upgradeGuestOwner,
@@ -57,6 +65,11 @@ final class AppDependencies {
   final GuestSessionService guestSessionService;
   final AppBuildInfo buildInfo;
   final FieldFeatureRegistry fieldFeatures;
+  // V2 registries — use these for new code; FieldFeatureRegistry is legacy.
+  final FeatureRegistry features;
+  final ExperimentRegistry experiments;
+  final ConsentRegistry consents;
+  final EntitlementRegistry entitlements;
   final AppDatabase? database;
   final LocalOwnerRepository? localOwners;
   final UpgradeGuestOwner? upgradeGuestOwner;
