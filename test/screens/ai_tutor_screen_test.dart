@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/media_practice/application/speech_pr
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
@@ -16,7 +17,7 @@ void main() {
     final tutor = _FakeGeminiTutor();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voiceProvider: _FakeVoice(), geminiTutor: tutor),
+        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), geminiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();
@@ -44,7 +45,7 @@ void main() {
       );
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voiceProvider: _FakeVoice(), geminiTutor: tutor),
+        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), geminiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();
@@ -72,7 +73,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
           geminiTutor: tutor,
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
@@ -92,7 +93,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
           geminiTutor: _FakeGeminiTutor(),
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
@@ -115,7 +116,7 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
           geminiTutor: _FakeGeminiTutor(),
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
@@ -140,7 +141,7 @@ void main() {
     final voice = _FakeVoice();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voiceProvider: voice, geminiTutor: tutor),
+        home: AiTutorScreen(voice: VoiceUseCases(voice), geminiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();

@@ -1,20 +1,19 @@
 import 'package:flutter/material.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class CefrArticleReaderScreen extends StatefulWidget {
   final String title;
   final String content;
   final String cefrLevel;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
   const CefrArticleReaderScreen({
     super.key,
     required this.title,
     required this.content,
     required this.cefrLevel,
-    this.voiceProvider,
+    this.voice,
   });
 
   @override
@@ -23,20 +22,15 @@ class CefrArticleReaderScreen extends StatefulWidget {
 }
 
 class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
   String? _selectedWord;
 
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
   }
 
   Future<void> _speakWord(String word) async {
@@ -61,9 +55,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
   @override
   void dispose() {
     _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

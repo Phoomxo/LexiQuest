@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
@@ -34,7 +35,7 @@ void main() {
             title: 'Learning Languages',
             content: 'Practice brings great opportunity for everyone',
             cefrLevel: 'B1',
-            voiceProvider: fakeVoice,
+            voice: VoiceUseCases(fakeVoice),
           ),
         ),
       );

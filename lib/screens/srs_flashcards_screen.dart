@@ -6,22 +6,21 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../services/srs_service.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class SrsFlashcardsScreen extends StatefulWidget {
   const SrsFlashcardsScreen({
     super.key,
     this.wordList,
-    this.voiceProvider,
+    this.voice,
     this.srsService,
     this.learning,
   });
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
   final List<Map<String, String>>? wordList;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
   final SrsService? srsService;
   final LearningUseCases? learning;
 
@@ -31,7 +30,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
 
 class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     with SingleTickerProviderStateMixin {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   late final bool _ownsVoiceProvider;
   late final AnimationController _controller;
   late final Animation<double> _animation;
@@ -48,8 +47,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void initState() {
     super.initState();
-    _voiceProvider = widget.voiceProvider ?? VoiceServiceFactory.create();
-    _ownsVoiceProvider = widget.voiceProvider == null;
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -197,9 +196,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   void dispose() {
     _controller.dispose();
     _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

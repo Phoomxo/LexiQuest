@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../services/background_audio_player_service.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class SmartAudioPlaylistScreen extends StatefulWidget {
   final List<Map<String, String>> wordList;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
   const SmartAudioPlaylistScreen({
     super.key,
     required this.wordList,
-    this.voiceProvider,
+    this.voice,
   });
 
   @override
@@ -19,7 +18,7 @@ class SmartAudioPlaylistScreen extends StatefulWidget {
 }
 
 class _SmartAudioPlaylistScreenState extends State<SmartAudioPlaylistScreen> {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   late final BackgroundAudioPlayerService _playerService;
   bool _ownsVoiceProvider = false;
   int _currentIndex = 0;
@@ -27,14 +26,9 @@ class _SmartAudioPlaylistScreenState extends State<SmartAudioPlaylistScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
-    _playerService = BackgroundAudioPlayerService(_voiceProvider);
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
+    _playerService = BackgroundAudioPlayerService(_voiceProvider.provider);
   }
 
   void _togglePlaylist() {
@@ -59,9 +53,7 @@ class _SmartAudioPlaylistScreenState extends State<SmartAudioPlaylistScreen> {
   @override
   void dispose() {
     _playerService.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

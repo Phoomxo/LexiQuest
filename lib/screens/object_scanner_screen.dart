@@ -7,15 +7,14 @@ import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
-  const ObjectScannerScreen({super.key, this.scanner, this.voiceProvider});
+  const ObjectScannerScreen({super.key, this.scanner, this.voice});
 
   final ObjectScannerController? scanner;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
   @override
   State<ObjectScannerScreen> createState() => _ObjectScannerScreenState();
@@ -24,7 +23,7 @@ class ObjectScannerScreen extends StatefulWidget {
 class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     with WidgetsBindingObserver {
   ObjectScannerController? _scanner;
-  late final VoiceProvider _voice;
+  late final VoiceUseCases _voice;
   bool _ownsVoice = false;
   bool _initializing = true;
   bool _capturing = false;
@@ -41,8 +40,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voiceProvider ?? VoiceServiceFactory.create();
-    _ownsVoice = widget.voiceProvider == null;
+    _voice = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoice = widget.voice == null;
   }
 
   @override
@@ -228,9 +227,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final scanner = _scanner;
     if (scanner != null) unawaited(scanner.pause());
     _voice.stop();
-    if (_ownsVoice && _voice is ManagedVoiceService) {
-      _voice.dispose();
-    }
+    _voice.disposeIfOwned(_ownsVoice);
     // Runtime-owned scanners are disposed by AppDependencies. Injected test
     // scanners are owned by the caller.
     super.dispose();

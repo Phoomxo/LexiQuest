@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
+import '../features/voice/application/voice_use_cases.dart';
 
 class PhoneticSymbol {
   final String ipa;
@@ -16,16 +15,16 @@ class PhoneticSymbol {
 }
 
 class PhoneticExplorerScreen extends StatefulWidget {
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
-  const PhoneticExplorerScreen({super.key, this.voiceProvider});
+  const PhoneticExplorerScreen({super.key, this.voice});
 
   @override
   State<PhoneticExplorerScreen> createState() => _PhoneticExplorerScreenState();
 }
 
 class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
   String? _selectedIpa;
 
@@ -65,13 +64,8 @@ class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
   }
 
   Future<void> _speakWord(PhoneticSymbol symbol) async {
@@ -96,9 +90,7 @@ class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
   @override
   void dispose() {
     _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

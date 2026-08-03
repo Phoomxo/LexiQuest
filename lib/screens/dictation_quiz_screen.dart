@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class DictationQuizScreen extends StatefulWidget {
   final String targetWord;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
   const DictationQuizScreen({
     super.key,
     required this.targetWord,
-    this.voiceProvider,
+    this.voice,
   });
 
   @override
@@ -18,7 +17,7 @@ class DictationQuizScreen extends StatefulWidget {
 }
 
 class _DictationQuizScreenState extends State<DictationQuizScreen> {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
@@ -26,13 +25,8 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _playAudio(speed: 1.0);
     });
@@ -68,9 +62,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
   void dispose() {
     _textController.dispose();
     _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

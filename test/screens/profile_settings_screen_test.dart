@@ -24,7 +24,7 @@ const _progress = ProgressSnapshot(
   correctCount: 8,
   wrongCount: 2,
   accuracy: .8,
-  points: 42,
+  totalXp: 42,
   completedSessions: 2,
   streakDays: 7,
   dueReviewCount: 1,

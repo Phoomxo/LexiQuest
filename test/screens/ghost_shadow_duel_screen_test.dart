@@ -27,7 +27,7 @@ const _empty = ProgressSnapshot(
   correctCount: 0,
   wrongCount: 0,
   accuracy: null,
-  points: 0,
+  totalXp: 0,
   completedSessions: 0,
   streakDays: 0,
   dueReviewCount: 0,

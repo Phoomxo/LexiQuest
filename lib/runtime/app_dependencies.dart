@@ -18,6 +18,7 @@ import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -47,6 +48,7 @@ final class AppDependencies {
     this.geminiTutor,
     this.objectScanner,
     this.speechPractice,
+    this.voice,
     this.disposeResources,
   });
 
@@ -72,6 +74,7 @@ final class AppDependencies {
   final GeminiTutorController? geminiTutor;
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;
+  final VoiceUseCases? voice;
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
 

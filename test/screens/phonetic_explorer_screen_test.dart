@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/phonetic_explorer_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
@@ -29,7 +30,7 @@ void main() {
       final fakeVoice = FakeVoiceProvider();
 
       await tester.pumpWidget(
-        MaterialApp(home: PhoneticExplorerScreen(voiceProvider: fakeVoice)),
+        MaterialApp(home: PhoneticExplorerScreen(voice: VoiceUseCases(fakeVoice))),
       );
       await tester.pumpAndSettle();
 

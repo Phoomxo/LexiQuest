@@ -4,6 +4,7 @@ import 'package:vocab_learning_app/features/media_practice/application/speech_pr
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/screens/speak_to_text_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
@@ -45,7 +46,7 @@ void main() {
         MaterialApp(
           home: SpeakToTextScreen(
             correctWord: 'apple',
-            voiceProvider: fakeVoice,
+            voice: VoiceUseCases(fakeVoice),
           ),
         ),
       );
@@ -70,7 +71,7 @@ void main() {
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'banana',
-          voiceProvider: fakeVoice,
+          voice: VoiceUseCases(fakeVoice),
         ),
       ),
     );
@@ -96,7 +97,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SpeakToTextScreen(correctWord: 'cat', voiceProvider: fakeVoice),
+        home: SpeakToTextScreen(correctWord: 'cat', voice: VoiceUseCases(fakeVoice)),
       ),
     );
     await tester.pumpAndSettle();
@@ -113,7 +114,7 @@ void main() {
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'cat',
-          voiceProvider: FakeVoiceProvider(),
+          voice: VoiceUseCases(FakeVoiceProvider()),
           speechPractice: SpeechPracticeUseCases(gateway),
         ),
       ),

@@ -1,18 +1,17 @@
 import 'package:flutter/material.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
+import '../features/voice/application/voice_use_cases.dart';
 
 class SentenceScrambleScreen extends StatefulWidget {
   final String targetSentence;
   final String translation;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
 
   const SentenceScrambleScreen({
     super.key,
     required this.targetSentence,
     this.translation = '',
-    this.voiceProvider,
+    this.voice,
   });
 
   @override
@@ -20,7 +19,7 @@ class SentenceScrambleScreen extends StatefulWidget {
 }
 
 class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
   late List<String> _originalWords;
   late List<String> _scrambledWords;
@@ -30,13 +29,8 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
   @override
   void initState() {
     super.initState();
-    if (widget.voiceProvider != null) {
-      _voiceProvider = widget.voiceProvider!;
-      _ownsVoiceProvider = false;
-    } else {
-      _voiceProvider = VoiceServiceFactory.create();
-      _ownsVoiceProvider = true;
-    }
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
 
     _originalWords = widget.targetSentence.trim().split(RegExp(r'\s+'));
     _scrambledWords = List<String>.from(_originalWords)..shuffle();
@@ -98,9 +92,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
   @override
   void dispose() {
     _voiceProvider.stop();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

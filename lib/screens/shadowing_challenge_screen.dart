@@ -6,21 +6,20 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 
 class ShadowingChallengeScreen extends StatefulWidget {
   const ShadowingChallengeScreen({
     super.key,
     this.referenceSentence,
-    this.voiceProvider,
+    this.voice,
     this.speechPractice,
     this.learning,
   });
 
   final String? referenceSentence;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
 
@@ -31,7 +30,7 @@ class ShadowingChallengeScreen extends StatefulWidget {
 
 class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     with WidgetsBindingObserver {
-  late final VoiceProvider _voice;
+  late final VoiceUseCases _voice;
   bool _ownsVoice = false;
   SpeechPracticeUseCases? _speech;
   LearningUseCases? _learning;
@@ -49,8 +48,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voiceProvider ?? VoiceServiceFactory.create();
-    _ownsVoice = widget.voiceProvider == null;
+    _voice = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoice = widget.voice == null;
     _referenceSentence = widget.referenceSentence;
   }
 
@@ -216,9 +215,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());
     unawaited(_voice.stop());
-    if (_ownsVoice && _voice is ManagedVoiceService) {
-      _voice.dispose();
-    }
+    _voice.disposeIfOwned(_ownsVoice);
     super.dispose();
   }
 

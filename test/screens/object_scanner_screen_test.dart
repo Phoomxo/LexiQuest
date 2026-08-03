@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.da
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
 import 'package:vocab_learning_app/services/object_vocabulary_database.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
@@ -21,7 +22,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );
@@ -62,7 +63,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );
@@ -89,7 +90,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );
@@ -122,7 +123,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );
@@ -151,7 +152,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );
@@ -173,7 +174,7 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voiceProvider: _FakeVoice(),
+          voice: VoiceUseCases(_FakeVoice()),
         ),
       ),
     );

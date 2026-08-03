@@ -6,9 +6,8 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 import 'word_scramble_screen.dart';
 import '../navigation/app_routes.dart';
 
@@ -16,7 +15,7 @@ class SpeakToTextScreen extends StatefulWidget {
   const SpeakToTextScreen({
     super.key,
     required this.correctWord,
-    this.voiceProvider,
+    this.voice,
     this.speechPractice,
     this.sessionId,
     this.wordId,
@@ -24,7 +23,7 @@ class SpeakToTextScreen extends StatefulWidget {
   });
 
   final String correctWord;
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final String? sessionId;
   final String? wordId;
@@ -36,7 +35,7 @@ class SpeakToTextScreen extends StatefulWidget {
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     with WidgetsBindingObserver {
-  late final VoiceProvider _voice;
+  late final VoiceUseCases _voice;
   bool _ownsVoice = false;
   SpeechPracticeUseCases? _speech;
   LearningUseCases? _learning;
@@ -50,8 +49,8 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voiceProvider ?? VoiceServiceFactory.create();
-    _ownsVoice = widget.voiceProvider == null;
+    _voice = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoice = widget.voice == null;
     WidgetsBinding.instance.addPostFrameCallback((_) => _speakWord());
   }
 
@@ -187,9 +186,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     WidgetsBinding.instance.removeObserver(this);
     unawaited(_speech?.cancel());
     unawaited(_voice.stop());
-    if (_ownsVoice && _voice is ManagedVoiceService) {
-      _voice.dispose();
-    }
+    _voice.disposeIfOwned(_ownsVoice);
     super.dispose();
   }
 

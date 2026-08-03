@@ -7,9 +7,8 @@ import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import '../voice/voice_provider.dart';
-import '../voice/voice_service_factory.dart';
 import 'gemini_settings_screen.dart';
 
 final class ChatMessage {
@@ -29,12 +28,12 @@ final class ChatMessage {
 class AiTutorScreen extends StatefulWidget {
   const AiTutorScreen({
     super.key,
-    this.voiceProvider,
+    this.voice,
     this.geminiTutor,
     this.speechPractice,
   });
 
-  final VoiceProvider? voiceProvider;
+  final VoiceUseCases? voice;
   final GeminiTutorController? geminiTutor;
   final SpeechPracticeUseCases? speechPractice;
 
@@ -52,7 +51,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     'Hotel Check-in',
   ];
 
-  late final VoiceProvider _voiceProvider;
+  late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
   GeminiTutorController? _tutor;
   SpeechPracticeUseCases? _speech;
@@ -70,8 +69,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voiceProvider = widget.voiceProvider ?? VoiceServiceFactory.create();
-    _ownsVoiceProvider = widget.voiceProvider == null;
+    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
+    _ownsVoiceProvider = widget.voice == null;
   }
 
   @override
@@ -252,9 +251,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     unawaited(_speech?.cancel());
     unawaited(_voiceProvider.stop());
     _inputController.dispose();
-    if (_ownsVoiceProvider && _voiceProvider is ManagedVoiceService) {
-      _voiceProvider.dispose();
-    }
+    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 
