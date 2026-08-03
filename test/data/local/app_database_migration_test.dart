@@ -202,7 +202,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        6,
+        7, // schema v7 added events_v2 table (Week 5-6)
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +229,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        6,
+        7, // schema v7 added events_v2 table (Week 5-6)
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

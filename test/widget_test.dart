@@ -10,20 +10,14 @@ void main() {
     // Verify the Login title appears
     expect(find.textContaining('เข้าสู่ระบบ'), findsWidgets);
 
-    // Verify Email and Password TextFields are present
-    expect(find.widgetWithText(TextField, 'อีเมล (Email)'), findsOneWidget);
-    expect(
-      find.widgetWithText(TextField, 'รหัสผ่าน (Password)'),
-      findsOneWidget,
-    );
+    // Verify Email and Password TextFields are present (Thai-only labels since localization update)
+    expect(find.widgetWithText(TextField, 'อีเมล'), findsOneWidget);
+    expect(find.widgetWithText(TextField, 'รหัสผ่าน'), findsOneWidget);
 
-    // Verify the Login button
-    expect(
-      find.widgetWithText(ElevatedButton, 'เข้าสู่ระบบ (Login)'),
-      findsOneWidget,
-    );
+    // Verify the Login button (FilledButton since UI refresh)
+    expect(find.widgetWithText(FilledButton, 'เข้าสู่ระบบ'), findsOneWidget);
 
     // Verify the registration prompt
-    expect(find.textContaining('สมัครสมาชิก'), findsOneWidget);
+    expect(find.textContaining('สร้างบัญชีใหม่'), findsOneWidget);
   });
 }
