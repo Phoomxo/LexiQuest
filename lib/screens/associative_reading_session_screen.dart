@@ -250,7 +250,8 @@ class _AssociativeReadingSessionScreenState
       try {
         await _associativeLearning.saveAssociation(
           AssociationRecord(
-            associationId: 'assoc:${widget.targetWords[i]}:${now.millisecondsSinceEpoch}:$i',
+            associationId:
+                'assoc:${widget.targetWords[i]}:${now.millisecondsSinceEpoch}:$i',
             ownerId: ownerId,
             wordKey: widget.targetWords[i],
             type: 'keyword',
@@ -421,8 +422,11 @@ class _AssociativeReadingSessionScreenState
                   children: [
                     Row(
                       children: [
-                        const Icon(Icons.lightbulb_outline,
-                            size: 16, color: Colors.amber),
+                        const Icon(
+                          Icons.lightbulb_outline,
+                          size: 16,
+                          color: Colors.amber,
+                        ),
                         const SizedBox(width: 6),
                         Text(
                           widget.targetWords[i],
@@ -472,15 +476,15 @@ class _AssociativeReadingSessionScreenState
           children: [
             const Icon(Icons.fact_check_outlined, size: 48),
             const SizedBox(height: 12),
-            const Text('Ready to finish',
-                style: TextStyle(fontWeight: FontWeight.bold)),
+            const Text(
+              'Ready to finish',
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
             const SizedBox(height: 8),
             if (total > 0)
               Text('Recall score: $correct / $total')
             else
-              const Text(
-                'Tap Finish Session to save completion.',
-              ),
+              const Text('Tap Finish Session to save completion.'),
           ],
         );
     }

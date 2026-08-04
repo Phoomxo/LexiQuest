@@ -121,10 +121,9 @@ final class InMemoryAssociativeLearningAdapter
   Future<List<AssociationRecord>> getAssociationsForWord(
     String ownerId,
     String wordKey,
-  ) async =>
-      _associations.values
-          .where((a) => a.ownerId == ownerId && a.wordKey == wordKey)
-          .toList(growable: false);
+  ) async => _associations.values
+      .where((a) => a.ownerId == ownerId && a.wordKey == wordKey)
+      .toList(growable: false);
 
   @override
   Future<void> deleteAssociation(String associationId) async =>
@@ -134,8 +133,7 @@ final class InMemoryAssociativeLearningAdapter
   Future<AssociativeMemoryState?> getMemoryState(
     String ownerId,
     String wordKey,
-  ) async =>
-      _states['$ownerId:$wordKey'];
+  ) async => _states['$ownerId:$wordKey'];
 
   @override
   Future<void> updateMemoryState(AssociativeMemoryState state) async =>
@@ -145,7 +143,5 @@ final class InMemoryAssociativeLearningAdapter
   Future<List<AssociativeMemoryState>> getAllMemoryStates(
     String ownerId,
   ) async =>
-      _states.values
-          .where((s) => s.ownerId == ownerId)
-          .toList(growable: false);
+      _states.values.where((s) => s.ownerId == ownerId).toList(growable: false);
 }

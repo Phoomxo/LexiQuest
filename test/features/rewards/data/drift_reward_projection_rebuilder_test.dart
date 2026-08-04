@@ -17,7 +17,9 @@ import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 AppDatabase _openMemory() => AppDatabase(NativeDatabase.memory());
 
 Future<void> _seedOwner(AppDatabase db) async {
-  await db.into(db.localOwners).insert(
+  await db
+      .into(db.localOwners)
+      .insert(
         LocalOwnersCompanion.insert(
           id: 'owner-reward-rebuild',
           createdAtUtcMs: 1,
@@ -27,7 +29,9 @@ Future<void> _seedOwner(AppDatabase db) async {
 
 /// Seed an XP balance in PointsLedgerEntries (purchase engine reads this).
 Future<void> _seedXpBalance(AppDatabase db, int amount) async {
-  await db.into(db.pointsLedgerEntries).insert(
+  await db
+      .into(db.pointsLedgerEntries)
+      .insert(
         PointsLedgerEntriesCompanion.insert(
           id: 'xp-seed',
           ownerId: 'owner-reward-rebuild',
@@ -46,7 +50,9 @@ Future<void> _insertPurchaseTx(
   required int price,
   required int seqMs,
 }) async {
-  await db.into(db.rewardTransactions).insert(
+  await db
+      .into(db.rewardTransactions)
+      .insert(
         RewardTransactionsCompanion.insert(
           id: txId,
           ownerId: 'owner-reward-rebuild',
@@ -74,53 +80,65 @@ void main() {
     test('rebuild grants OwnedRewardItem when balance is sufficient', () async {
       // ocean theme costs 80 coins
       await _seedXpBalance(db, 200);
-      await _insertPurchaseTx(db,
-          txId: 'tx-ocean', itemId: 'theme_ocean', price: 80, seqMs: 1000);
+      await _insertPurchaseTx(
+        db,
+        txId: 'tx-ocean',
+        itemId: 'theme_ocean',
+        price: 80,
+        seqMs: 1000,
+      );
 
       final rebuilder = DriftRewardProjectionRebuilder(db);
       await rebuilder.rebuild('owner-reward-rebuild');
 
-      final owned = await (db.select(db.ownedRewardItems)
-            ..where((row) => row.ownerId.equals('owner-reward-rebuild')))
-          .get();
+      final owned = await (db.select(
+        db.ownedRewardItems,
+      )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
       expect(owned.length, 1);
       expect(owned.first.itemId, 'theme_ocean');
     });
 
     test('rebuild skips purchase when balance is insufficient', () async {
       await _seedXpBalance(db, 10); // only 10, ocean theme costs 80
-      await _insertPurchaseTx(db,
-          txId: 'tx-ocean-broke',
-          itemId: 'theme_ocean',
-          price: 80,
-          seqMs: 1000);
+      await _insertPurchaseTx(
+        db,
+        txId: 'tx-ocean-broke',
+        itemId: 'theme_ocean',
+        price: 80,
+        seqMs: 1000,
+      );
 
       final rebuilder = DriftRewardProjectionRebuilder(db);
       await rebuilder.rebuild('owner-reward-rebuild');
 
-      final owned = await (db.select(db.ownedRewardItems)
-            ..where((row) => row.ownerId.equals('owner-reward-rebuild')))
-          .get();
+      final owned = await (db.select(
+        db.ownedRewardItems,
+      )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
       expect(owned, isEmpty);
     });
 
-    test('rebuild is idempotent — running twice yields same owned items', () async {
-      await _seedXpBalance(db, 200);
-      await _insertPurchaseTx(db,
+    test(
+      'rebuild is idempotent — running twice yields same owned items',
+      () async {
+        await _seedXpBalance(db, 200);
+        await _insertPurchaseTx(
+          db,
           txId: 'tx-ocean-idem',
           itemId: 'theme_ocean',
           price: 80,
-          seqMs: 1000);
+          seqMs: 1000,
+        );
 
-      final rebuilder = DriftRewardProjectionRebuilder(db);
-      await rebuilder.rebuild('owner-reward-rebuild');
-      await rebuilder.rebuild('owner-reward-rebuild');
+        final rebuilder = DriftRewardProjectionRebuilder(db);
+        await rebuilder.rebuild('owner-reward-rebuild');
+        await rebuilder.rebuild('owner-reward-rebuild');
 
-      final owned = await (db.select(db.ownedRewardItems)
-            ..where((row) => row.ownerId.equals('owner-reward-rebuild')))
-          .get();
-      // rebuild deletes + re-inserts — must not double-count
-      expect(owned.length, 1);
-    });
+        final owned = await (db.select(
+          db.ownedRewardItems,
+        )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
+        // rebuild deletes + re-inserts — must not double-count
+        expect(owned.length, 1);
+      },
+    );
   });
 }

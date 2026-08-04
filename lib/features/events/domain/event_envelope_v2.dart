@@ -25,8 +25,10 @@ final class TenantContext {
 
   Map<String, dynamic> toJson() => {'tenantId': tenantId, 'role': role};
 
-  factory TenantContext.fromJson(Map<String, dynamic> j) =>
-      TenantContext(tenantId: j['tenantId'] as String, role: j['role'] as String);
+  factory TenantContext.fromJson(Map<String, dynamic> j) => TenantContext(
+    tenantId: j['tenantId'] as String,
+    role: j['role'] as String,
+  );
 }
 
 /// Consent grants that were active at the moment the event was recorded.
@@ -92,11 +94,12 @@ final class ExperimentContext {
     'assignedAtUtc': assignedAtUtc.toIso8601String(),
   };
 
-  factory ExperimentContext.fromJson(Map<String, dynamic> j) => ExperimentContext(
-    experimentId: j['experimentId'] as String,
-    variantId: j['variantId'] as String,
-    assignedAtUtc: DateTime.parse(j['assignedAtUtc'] as String),
-  );
+  factory ExperimentContext.fromJson(Map<String, dynamic> j) =>
+      ExperimentContext(
+        experimentId: j['experimentId'] as String,
+        variantId: j['variantId'] as String,
+        assignedAtUtc: DateTime.parse(j['assignedAtUtc'] as String),
+      );
 }
 
 /// Which AI or voice provider produced the output that this event records.
@@ -277,8 +280,9 @@ final class EventEnvelopeV2 {
       recordedAtUtc: DateTime.parse(j['recordedAtUtc'] as String),
       actorIdentity: j['actorIdentity'] as String,
       ownerIdentity: j['ownerIdentity'] as String,
-      tenantContext:
-          tenantJson != null ? TenantContext.fromJson(tenantJson) : null,
+      tenantContext: tenantJson != null
+          ? TenantContext.fromJson(tenantJson)
+          : null,
       aggregateType: j['aggregateType'] as String,
       aggregateId: j['aggregateId'] as String,
       correlationId: j['correlationId'] as String?,
@@ -287,14 +291,16 @@ final class EventEnvelopeV2 {
       consentContext: ConsentContext.fromJson(
         j['consentContext'] as Map<String, dynamic>,
       ),
-      experimentContext:
-          expJson != null ? ExperimentContext.fromJson(expJson) : null,
+      experimentContext: expJson != null
+          ? ExperimentContext.fromJson(expJson)
+          : null,
       contentRevision: j['contentRevision'] as String?,
       policyVersion: j['policyVersion'] as String?,
       appVersion: j['appVersion'] as String,
       buildId: j['buildId'] as String,
-      providerProvenance:
-          provJson != null ? ProviderProvenance.fromJson(provJson) : null,
+      providerProvenance: provJson != null
+          ? ProviderProvenance.fromJson(provJson)
+          : null,
       privacyClassification: PrivacyClassification.values.byName(
         j['privacyClassification'] as String,
       ),

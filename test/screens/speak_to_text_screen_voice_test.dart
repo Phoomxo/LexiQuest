@@ -97,7 +97,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SpeakToTextScreen(correctWord: 'cat', voice: VoiceUseCases(fakeVoice)),
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: VoiceUseCases(fakeVoice),
+        ),
       ),
     );
     await tester.pumpAndSettle();

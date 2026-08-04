@@ -108,10 +108,8 @@ final class DebugConsoleShadowLogger implements ShadowLogger {
 ///
 /// Injected as a function to keep the orchestrator independent of the reward
 /// repository type.
-typedef CanGrantCheck = Future<bool> Function(
-  String ownerId,
-  String idempotencyKey,
-);
+typedef CanGrantCheck =
+    Future<bool> Function(String ownerId, String idempotencyKey);
 
 // ─── Orchestrator ─────────────────────────────────────────────────────────────
 
@@ -176,7 +174,10 @@ final class ShadowRewardOrchestrator {
       );
 
       // 3. Idempotency check — would this grant succeed?
-      final wouldSucceed = await canGrant(event.ownerIdentity, event.idempotencyKey);
+      final wouldSucceed = await canGrant(
+        event.ownerIdentity,
+        event.idempotencyKey,
+      );
 
       // 4. Log the decision (never write to reward_transactions)
       logger.logEntry(

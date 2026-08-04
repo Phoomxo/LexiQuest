@@ -86,8 +86,11 @@ void main() {
       );
 
       final state = await streakUseCases.getCurrentStreak();
-      expect(state.currentStreakDays, 1,
-          reason: 'first recordAnswer must start streak at 1');
+      expect(
+        state.currentStreakDays,
+        1,
+        reason: 'first recordAnswer must start streak at 1',
+      );
     });
 
     test('streakEventSink null = no crash (streak not wired)', () async {
@@ -124,11 +127,15 @@ void main() {
         attemptNumber: 1,
       );
 
-      final days = await DriftStreakRepository(database)
-          .getLearningDays('owner-sli');
+      final days = await DriftStreakRepository(
+        database,
+      ).getLearningDays('owner-sli');
       expect(days, hasLength(1));
-      expect(days.first, '2026-08-04',
-          reason: 'learning day log must record Bangkok date');
+      expect(
+        days.first,
+        '2026-08-04',
+        reason: 'learning day log must record Bangkok date',
+      );
     });
 
     test('streak outcome is sameDay on second answer same session', () async {
@@ -153,8 +160,11 @@ void main() {
       );
 
       final state = await streakUseCases.getCurrentStreak();
-      expect(state.currentStreakDays, 1,
-          reason: 'same-day answer must not extend streak');
+      expect(
+        state.currentStreakDays,
+        1,
+        reason: 'same-day answer must not extend streak',
+      );
     });
   });
 }

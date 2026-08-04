@@ -15,8 +15,11 @@ void main() {
         expect(def.questId, isNotEmpty);
         expect(def.objectives, isNotEmpty);
         expect(def.type, QuestType.daily);
-        expect(def.expiresIn, isNotNull,
-            reason: 'daily quests must expire after 24 h');
+        expect(
+          def.expiresIn,
+          isNotNull,
+          reason: 'daily quests must expire after 24 h',
+        );
         expect(def.reward.xpAmount, greaterThan(0));
       }
     });
@@ -28,8 +31,11 @@ void main() {
         expect(def.questId, isNotEmpty);
         expect(def.objectives, isNotEmpty);
         expect(def.type, QuestType.weekly);
-        expect(def.expiresIn, isNotNull,
-            reason: 'weekly quests must expire after 7 days');
+        expect(
+          def.expiresIn,
+          isNotNull,
+          reason: 'weekly quests must expire after 7 days',
+        );
         expect(def.reward.xpAmount, greaterThan(0));
       }
     });
@@ -37,8 +43,11 @@ void main() {
     test('no duplicate questIds across allQuests', () {
       final ids = QuestCatalogProvider.allQuests.map((d) => d.questId).toList();
       final uniqueIds = ids.toSet();
-      expect(uniqueIds.length, ids.length,
-          reason: 'each quest must have a unique ID in the catalog');
+      expect(
+        uniqueIds.length,
+        ids.length,
+        reason: 'each quest must have a unique ID in the catalog',
+      );
     });
 
     test('weekly reward > daily reward (incentive ordering)', () {
@@ -48,8 +57,11 @@ void main() {
       final weeklyXp = QuestCatalogProvider.weeklyQuests
           .map((d) => d.reward.xpAmount)
           .reduce((a, b) => a + b);
-      expect(weeklyXp, greaterThan(dailyXp),
-          reason: 'weekly quests must offer more XP than daily quests');
+      expect(
+        weeklyXp,
+        greaterThan(dailyXp),
+        reason: 'weekly quests must offer more XP than daily quests',
+      );
     });
 
     test('objectives use correct V2 event type', () {

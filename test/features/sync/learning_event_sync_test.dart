@@ -54,7 +54,7 @@ void main() {
       leaseToken: 'lease-1',
       leaseDuration: const Duration(minutes: 5),
       nowUtc: now,
-    // Phase 0 W12-13: recordAnswer also enqueues srsState outbox.
+      // Phase 0 W12-13: recordAnswer also enqueues srsState outbox.
     )).firstWhere((c) => c.mutation.collection == SyncCollection.attempts);
 
     expect(claim.mutation.collection, SyncCollection.attempts);
@@ -372,8 +372,8 @@ void main() {
       leaseToken: 'lease-ack',
       leaseDuration: const Duration(minutes: 5),
       nowUtc: now,
-    // Phase 0 W12-13: recordAnswer now also enqueues a srsState outbox op.
-    // Filter to the attempt operation specifically.
+      // Phase 0 W12-13: recordAnswer now also enqueues a srsState outbox op.
+      // Filter to the attempt operation specifically.
     )).firstWhere((c) => c.mutation.collection == SyncCollection.attempts);
     final acknowledgement = PushAcknowledged(
       operationId: claim.mutation.operationId,
@@ -392,9 +392,10 @@ void main() {
       acknowledgement: acknowledgement,
     );
 
-    final outbox = await (database.select(database.outboxOperations)
-          ..where((r) => r.operationId.equals(claim.mutation.operationId)))
-        .getSingle();
+    final outbox =
+        await (database.select(database.outboxOperations)
+              ..where((r) => r.operationId.equals(claim.mutation.operationId)))
+            .getSingle();
     expect(outbox.state, 'acknowledged');
     expect(
       outbox.acknowledgedAtUtcMs,

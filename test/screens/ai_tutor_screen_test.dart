@@ -17,7 +17,10 @@ void main() {
     final tutor = _FakeGeminiTutor();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), geminiTutor: tutor),
+        home: AiTutorScreen(
+          voice: VoiceUseCases(_FakeVoice()),
+          geminiTutor: tutor,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -45,7 +48,10 @@ void main() {
       );
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), geminiTutor: tutor),
+        home: AiTutorScreen(
+          voice: VoiceUseCases(_FakeVoice()),
+          geminiTutor: tutor,
+        ),
       ),
     );
     await tester.pumpAndSettle();

@@ -6,11 +6,7 @@ class DictationQuizScreen extends StatefulWidget {
   final String targetWord;
   final VoiceUseCases? voice;
 
-  const DictationQuizScreen({
-    super.key,
-    required this.targetWord,
-    this.voice,
-  });
+  const DictationQuizScreen({super.key, required this.targetWord, this.voice});
 
   @override
   State<DictationQuizScreen> createState() => _DictationQuizScreenState();

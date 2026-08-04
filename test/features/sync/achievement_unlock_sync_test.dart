@@ -62,59 +62,58 @@ void main() {
         ),
       );
 
-      final rows = await (database.select(database.achievementUnlocks)
-            ..where((r) => r.ownerId.equals(_ownerId)))
-          .get();
+      final rows = await (database.select(
+        database.achievementUnlocks,
+      )..where((r) => r.ownerId.equals(_ownerId))).get();
       expect(rows, hasLength(1));
       expect(rows.first.achievementId, 'first-answer');
       expect(rows.first.definitionVersion, 1);
     });
 
-    test('applyPullPage is idempotent — duplicate pull is insertOrIgnore',
-        () async {
-      // First pull.
-      await store.applyPullPage(
-        ownerId: _ownerId,
-        collection: SyncCollection.achievementUnlocks,
-        page: PullPage(
-          changes: [_achievementEntity()],
-          nextCursor: SyncCursor(
-            serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
-            documentId: 'ach-unlock-1',
+    test(
+      'applyPullPage is idempotent — duplicate pull is insertOrIgnore',
+      () async {
+        // First pull.
+        await store.applyPullPage(
+          ownerId: _ownerId,
+          collection: SyncCollection.achievementUnlocks,
+          page: PullPage(
+            changes: [_achievementEntity()],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+              documentId: 'ach-unlock-1',
+            ),
+            hasMore: false,
           ),
-          hasMore: false,
-        ),
-      );
-      // Second pull with same entity — must not duplicate.
-      await store.applyPullPage(
-        ownerId: _ownerId,
-        collection: SyncCollection.achievementUnlocks,
-        page: PullPage(
-          changes: [_achievementEntity()],
-          nextCursor: SyncCursor(
-            serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
-            documentId: 'ach-unlock-1',
+        );
+        // Second pull with same entity — must not duplicate.
+        await store.applyPullPage(
+          ownerId: _ownerId,
+          collection: SyncCollection.achievementUnlocks,
+          page: PullPage(
+            changes: [_achievementEntity()],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+              documentId: 'ach-unlock-1',
+            ),
+            hasMore: false,
           ),
-          hasMore: false,
-        ),
-      );
+        );
 
-      final rows = await (database.select(database.achievementUnlocks)
-            ..where((r) => r.ownerId.equals(_ownerId)))
-          .get();
-      expect(rows, hasLength(1),
-          reason: 'idempotent pull must not create duplicate unlock');
-    });
+        final rows = await (database.select(
+          database.achievementUnlocks,
+        )..where((r) => r.ownerId.equals(_ownerId))).get();
+        expect(
+          rows,
+          hasLength(1),
+          reason: 'idempotent pull must not create duplicate unlock',
+        );
+      },
+    );
 
     test('achievement unlock wire name is correct', () {
-      expect(
-        SyncCollection.achievementUnlocks.wireName,
-        'achievement_unlocks',
-      );
-      expect(
-        SyncCollection.achievementUnlocks.entityType,
-        'achievementUnlock',
-      );
+      expect(SyncCollection.achievementUnlocks.wireName, 'achievement_unlocks');
+      expect(SyncCollection.achievementUnlocks.entityType, 'achievementUnlock');
     });
 
     test('srsStates wire name is correct', () {

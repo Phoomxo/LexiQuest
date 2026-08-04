@@ -41,9 +41,9 @@ final class DriftQuestRepository implements QuestRepository {
 
   @override
   Future<QuestDefinition?> getDefinition(String questId) async {
-    final row = await (_database.select(_database.questDefinitions)
-          ..where((t) => t.questId.equals(questId)))
-        .getSingleOrNull();
+    final row = await (_database.select(
+      _database.questDefinitions,
+    )..where((t) => t.questId.equals(questId))).getSingleOrNull();
     return row == null ? null : _rowToDefinition(row);
   }
 
@@ -149,19 +149,19 @@ final class DriftQuestRepository implements QuestRepository {
     int? completedAtUtcMs,
     int? expiredAtUtcMs,
   }) async {
-    await (_database.update(_database.questInstances)
-          ..where((t) => t.instanceId.equals(instanceId)))
-        .write(
-          db.QuestInstancesCompanion(
-            state: Value(state),
-            completedAtUtcMs: completedAtUtcMs != null
-                ? Value(completedAtUtcMs)
-                : const Value.absent(),
-            expiredAtUtcMs: expiredAtUtcMs != null
-                ? Value(expiredAtUtcMs)
-                : const Value.absent(),
-          ),
-        );
+    await (_database.update(
+      _database.questInstances,
+    )..where((t) => t.instanceId.equals(instanceId))).write(
+      db.QuestInstancesCompanion(
+        state: Value(state),
+        completedAtUtcMs: completedAtUtcMs != null
+            ? Value(completedAtUtcMs)
+            : const Value.absent(),
+        expiredAtUtcMs: expiredAtUtcMs != null
+            ? Value(expiredAtUtcMs)
+            : const Value.absent(),
+      ),
+    );
   }
 
   Future<List<QuestInstance>> _queryInstances(
@@ -181,13 +181,11 @@ final class DriftQuestRepository implements QuestRepository {
 
     final instanceIds = instanceRows.map((r) => r.instanceId).toList();
     final progressRows = await (_database.select(
-          _database.questObjectiveProgress,
-        )..where((t) => t.instanceId.isIn(instanceIds)))
-        .get();
+      _database.questObjectiveProgress,
+    )..where((t) => t.instanceId.isIn(instanceIds))).get();
 
     // Group progress rows by instanceId.
-    final progressByInstance =
-        <String, List<db.QuestObjectiveProgressData>>{};
+    final progressByInstance = <String, List<db.QuestObjectiveProgressData>>{};
     for (final p in progressRows) {
       progressByInstance.putIfAbsent(p.instanceId, () => []).add(p);
     }
@@ -200,8 +198,8 @@ final class DriftQuestRepository implements QuestRepository {
   // ── Serialisation helpers ─────────────────────────────────────────────────
 
   QuestDefinition _rowToDefinition(db.QuestDefinition row) {
-    final objectivesRaw =
-        (jsonDecode(row.objectivesJson) as List).cast<Map<String, dynamic>>();
+    final objectivesRaw = (jsonDecode(row.objectivesJson) as List)
+        .cast<Map<String, dynamic>>();
     final objectives = objectivesRaw
         .map(
           (o) => QuestObjective(
@@ -233,7 +231,9 @@ final class DriftQuestRepository implements QuestRepository {
       type: QuestType.values.byName(row.type),
       objectives: objectives,
       reward: reward,
-      expiresIn: expiresInMs != null ? Duration(milliseconds: expiresInMs) : null,
+      expiresIn: expiresInMs != null
+          ? Duration(milliseconds: expiresInMs)
+          : null,
       tags: tags,
     );
   }
@@ -248,8 +248,8 @@ final class DriftQuestRepository implements QuestRepository {
             objectiveId: p.objectiveId,
             currentCount: p.currentCount,
             targetCount: p.targetCount,
-            sourceEventIds:
-                (jsonDecode(p.sourceEventIdsJson) as List).cast<String>(),
+            sourceEventIds: (jsonDecode(p.sourceEventIdsJson) as List)
+                .cast<String>(),
           ),
         )
         .toList(growable: false);
@@ -259,37 +259,43 @@ final class DriftQuestRepository implements QuestRepository {
       questId: row.questId,
       ownerId: row.ownerId,
       catalogVersion: row.catalogVersion,
-      assignedAtUtc:
-          DateTime.fromMillisecondsSinceEpoch(row.assignedAtUtcMs, isUtc: true),
+      assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        row.assignedAtUtcMs,
+        isUtc: true,
+      ),
       state: QuestInstanceState.values.byName(row.state),
       progress: progress,
       completedAtUtc: row.completedAtUtcMs != null
-          ? DateTime.fromMillisecondsSinceEpoch(row.completedAtUtcMs!,
-              isUtc: true)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              row.completedAtUtcMs!,
+              isUtc: true,
+            )
           : null,
       expiredAtUtc: row.expiredAtUtcMs != null
-          ? DateTime.fromMillisecondsSinceEpoch(row.expiredAtUtcMs!,
-              isUtc: true)
+          ? DateTime.fromMillisecondsSinceEpoch(
+              row.expiredAtUtcMs!,
+              isUtc: true,
+            )
           : null,
     );
   }
 
   String _encodeObjectives(List<QuestObjective> objectives) => jsonEncode(
-        objectives
-            .map(
-              (o) => <String, dynamic>{
-                'objectiveId': o.objectiveId,
-                'description': o.description,
-                'targetCount': o.targetCount,
-                'eventType': o.criteria.eventType,
-                'filters': o.criteria.filters,
-              },
-            )
-            .toList(),
-      );
+    objectives
+        .map(
+          (o) => <String, dynamic>{
+            'objectiveId': o.objectiveId,
+            'description': o.description,
+            'targetCount': o.targetCount,
+            'eventType': o.criteria.eventType,
+            'filters': o.criteria.filters,
+          },
+        )
+        .toList(),
+  );
 
   String _encodeReward(RewardSpec reward) => jsonEncode(<String, dynamic>{
-        'xpAmount': reward.xpAmount,
-        'rewardItemId': reward.rewardItemId,
-      });
+    'xpAmount': reward.xpAmount,
+    'rewardItemId': reward.rewardItemId,
+  });
 }

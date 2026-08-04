@@ -64,11 +64,9 @@ class QuestInstances extends Table {
   /// Primary key: matches [QuestInstance.instanceId].
   TextColumn get instanceId => text()();
 
-  TextColumn get questId =>
-      text().references(QuestDefinitions, #questId)();
+  TextColumn get questId => text().references(QuestDefinitions, #questId)();
 
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
 
   IntColumn get catalogVersion => integer()();
 
@@ -98,9 +96,11 @@ class QuestInstances extends Table {
 class QuestObjectiveProgress extends Table {
   TextColumn get id => text()();
 
-  TextColumn get instanceId =>
-      text().references(QuestInstances, #instanceId,
-          onDelete: KeyAction.cascade)();
+  TextColumn get instanceId => text().references(
+    QuestInstances,
+    #instanceId,
+    onDelete: KeyAction.cascade,
+  )();
 
   TextColumn get objectiveId => text()();
 

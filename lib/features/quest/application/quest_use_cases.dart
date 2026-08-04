@@ -183,7 +183,9 @@ final class QuestUseCases {
         privacyClassification: sourceEvent.privacyClassification,
         payload: {
           'questId': completedEvent.questInstanceId.split(':').last,
-          'questType': _questTypeFromIdempotencyKey(completedEvent.idempotencyKey),
+          'questType': _questTypeFromIdempotencyKey(
+            completedEvent.idempotencyKey,
+          ),
           'objectiveEventIds': completedEvent.objectiveEventIds,
         },
       );

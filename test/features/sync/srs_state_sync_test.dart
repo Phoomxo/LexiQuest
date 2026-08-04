@@ -34,25 +34,25 @@ Future<void> _seedOwnerAndWord(db.AppDatabase database) async {
 }
 
 SyncEntity _srsEntity({String? wordId, int revision = 1}) => SyncEntity(
-      collection: SyncCollection.srsStates,
-      entityId: wordId ?? _wordId,
-      revision: revision,
-      isDeleted: false,
-      payloadVersion: 1,
-      clientUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 0),
-      serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
-      payload: const <String, Object?>{
-        'wordId': _wordId,
-        'stability': 2.5,
-        'difficulty': 5.0,
-        'intervalDays': 3,
-        'repetitions': 1,
-        'lapses': 0,
-        'lastReviewAtUtcMs': 1722758400000,
-        'dueAtUtcMs': 1723017600000,
-        'algorithmVersion': 1,
-      },
-    );
+  collection: SyncCollection.srsStates,
+  entityId: wordId ?? _wordId,
+  revision: revision,
+  isDeleted: false,
+  payloadVersion: 1,
+  clientUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 0),
+  serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+  payload: const <String, Object?>{
+    'wordId': _wordId,
+    'stability': 2.5,
+    'difficulty': 5.0,
+    'intervalDays': 3,
+    'repetitions': 1,
+    'lapses': 0,
+    'lastReviewAtUtcMs': 1722758400000,
+    'dueAtUtcMs': 1723017600000,
+    'algorithmVersion': 1,
+  },
+);
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -83,54 +83,59 @@ void main() {
         ),
       );
 
-      final rows = await (database.select(database.srsStates)
-            ..where((r) => r.wordId.equals(_wordId)))
-          .get();
+      final rows = await (database.select(
+        database.srsStates,
+      )..where((r) => r.wordId.equals(_wordId))).get();
       expect(rows, hasLength(1));
       expect(rows.first.intervalDays, 3);
       expect(rows.first.repetitions, 1);
     });
 
-    test('applyPullPage updates existing SRS state (last-write-wins)', () async {
-      // Seed an existing SRS state.
-      await database.customInsert(
-        "INSERT INTO srs_states "
-        "(id, owner_id, word_id, stability, difficulty, interval_days, "
-        "repetitions, lapses, last_review_at_utc_ms, due_at_utc_ms, "
-        "algorithm_version) VALUES "
-        "('$_srsId', '$_ownerId', '$_wordId', 1.0, 8.0, 1, 0, 0, NULL, "
-        "1722758400000, 1)",
-      );
+    test(
+      'applyPullPage updates existing SRS state (last-write-wins)',
+      () async {
+        // Seed an existing SRS state.
+        await database.customInsert(
+          "INSERT INTO srs_states "
+          "(id, owner_id, word_id, stability, difficulty, interval_days, "
+          "repetitions, lapses, last_review_at_utc_ms, due_at_utc_ms, "
+          "algorithm_version) VALUES "
+          "('$_srsId', '$_ownerId', '$_wordId', 1.0, 8.0, 1, 0, 0, NULL, "
+          "1722758400000, 1)",
+        );
 
-      await store.applyPullPage(
-        ownerId: _ownerId,
-        collection: SyncCollection.srsStates,
-        page: PullPage(
-          changes: [_srsEntity()],
-          nextCursor: SyncCursor(
-            serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
-            documentId: _wordId,
+        await store.applyPullPage(
+          ownerId: _ownerId,
+          collection: SyncCollection.srsStates,
+          page: PullPage(
+            changes: [_srsEntity()],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 4, 10, 1),
+              documentId: _wordId,
+            ),
+            hasMore: false,
           ),
-          hasMore: false,
-        ),
-      );
+        );
 
-      final rows = await (database.select(database.srsStates)
-            ..where((r) => r.wordId.equals(_wordId)))
-          .get();
-      expect(rows, hasLength(1));
-      expect(rows.first.stability, closeTo(2.5, 0.001));
-      expect(rows.first.intervalDays, 3,
-          reason: 'server state must overwrite local');
-    });
+        final rows = await (database.select(
+          database.srsStates,
+        )..where((r) => r.wordId.equals(_wordId))).get();
+        expect(rows, hasLength(1));
+        expect(rows.first.stability, closeTo(2.5, 0.001));
+        expect(
+          rows.first.intervalDays,
+          3,
+          reason: 'server state must overwrite local',
+        );
+      },
+    );
 
     test('srsState outbox is enqueued after recordAnswer', () async {
       // Verify outbox has no srsState row before any answer is recorded.
-      final outboxBefore = await (database.select(database.outboxOperations)
-            ..where((r) => r.entityType.equals('srsState')))
-          .get();
-      expect(outboxBefore, isEmpty,
-          reason: 'no srsState outbox before answer');
+      final outboxBefore = await (database.select(
+        database.outboxOperations,
+      )..where((r) => r.entityType.equals('srsState'))).get();
+      expect(outboxBefore, isEmpty, reason: 'no srsState outbox before answer');
     });
   });
 }

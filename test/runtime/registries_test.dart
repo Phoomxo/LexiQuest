@@ -15,8 +15,10 @@ void main() {
       // The experiment registry is entirely separate — enabling a feature
       // must not produce any cohort assignment.
       const experiments = NoOpExperimentRegistry();
-      final assignment =
-          experiments.getAssignment('ai_tutor_experiment', 'user1');
+      final assignment = experiments.getAssignment(
+        'ai_tutor_experiment',
+        'user1',
+      );
 
       expect(
         assignment.isUnassigned,
@@ -31,8 +33,7 @@ void main() {
       expect(features.isVisible(Feature.export), isFalse);
 
       const consents = NoOpConsentRegistry();
-      final state =
-          consents.check(ConsentPurpose.personalDataExport, 'user1');
+      final state = consents.check(ConsentPurpose.personalDataExport, 'user1');
 
       // Consent state is unknown regardless of feature state.
       expect(state, ConsentState.unknown);
@@ -93,15 +94,15 @@ void main() {
 
       // Each registry answers its own question; none bleeds into the others.
       expect(features.isVisible(Feature.aiTutor), isTrue);
-      expect(
-        experiments.getAssignment('ai_exp', 'u1').isUnassigned,
-        isTrue,
-      );
+      expect(experiments.getAssignment('ai_exp', 'u1').isUnassigned, isTrue);
       expect(
         consents.check(ConsentPurpose.aiProviderDataSharing, 'u1'),
         ConsentState.unknown,
       );
-      expect(entitlements.hasAccess(Entitlement.aiTutorUnlimited, 'u1'), isFalse);
+      expect(
+        entitlements.hasAccess(Entitlement.aiTutorUnlimited, 'u1'),
+        isFalse,
+      );
     });
   });
 }

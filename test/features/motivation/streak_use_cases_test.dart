@@ -34,9 +34,18 @@ void main() {
   const _tz = 'Asia/Bangkok';
 
   setUp(() async {
-    _clock = DateTime.utc(2026, 8, 4, 10, 0); // Mon 04 Aug 2026 10:00 UTC = 17:00 BKK
+    _clock = DateTime.utc(
+      2026,
+      8,
+      4,
+      10,
+      0,
+    ); // Mon 04 Aug 2026 10:00 UTC = 17:00 BKK
     database = db.AppDatabase(NativeDatabase.memory());
-    owner = LocalOwner(id: 'owner-streak', createdAtUtc: DateTime.utc(2026, 8, 4));
+    owner = LocalOwner(
+      id: 'owner-streak',
+      createdAtUtc: DateTime.utc(2026, 8, 4),
+    );
 
     await database.customInsert(
       "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
@@ -97,8 +106,9 @@ void main() {
       expect(update.after.currentStreakDays, 1);
 
       // LearningDayLog should have exactly one entry.
-      final days = await DriftStreakRepository(database)
-          .getLearningDays('owner-streak');
+      final days = await DriftStreakRepository(
+        database,
+      ).getLearningDays('owner-streak');
       expect(days, hasLength(1));
     });
 
@@ -154,7 +164,11 @@ void main() {
 
       final state = await useCases.getCurrentStreak();
       expect(state.currentStreakDays, 1);
-      expect(state.longestStreakDays, 3, reason: 'all-time best never decreases');
+      expect(
+        state.longestStreakDays,
+        3,
+        reason: 'all-time best never decreases',
+      );
     });
   });
 }

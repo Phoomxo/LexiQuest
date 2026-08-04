@@ -78,8 +78,9 @@ void main() {
 
     // ── Stage 4 — Memory Association ──────────────────────────────────────
 
-    testWidgets('Stage 4 saves associations via AssociativeLearningPort',
-        (tester) async {
+    testWidgets('Stage 4 saves associations via AssociativeLearningPort', (
+      tester,
+    ) async {
       final adapter = InMemoryAssociativeLearningAdapter();
 
       await tester.pumpWidget(
@@ -111,12 +112,13 @@ void main() {
       expect(find.text('Stage 5: Context Transfer'), findsOneWidget);
 
       // Association must be persisted in the in-memory adapter.
-      final associations =
-          await adapter.getAssociationsForWord('local', 'banana');
+      final associations = await adapter.getAssociationsForWord(
+        'local',
+        'banana',
+      );
       expect(associations, hasLength(1));
       expect(associations.first.content, 'yellow fruit');
       expect(associations.first.type, 'keyword');
     });
   });
 }
-

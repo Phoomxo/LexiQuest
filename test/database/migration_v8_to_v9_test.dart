@@ -51,7 +51,9 @@ void main() {
         "VALUES ('owner-streak', 'localGuest', ${now.millisecondsSinceEpoch})",
       );
 
-      await db.into(db.streakStates).insert(
+      await db
+          .into(db.streakStates)
+          .insert(
             StreakStatesCompanion.insert(
               ownerId: 'owner-streak',
               updatedAtUtcMs: now.millisecondsSinceEpoch,
@@ -64,37 +66,46 @@ void main() {
       expect(rows.first.freezeCount, 0);
     });
 
-    test('learning_day_log unique(owner_id, learning_day) prevents duplicates',
-        () async {
-      final now = DateTime.now().toUtc();
-      await db.customInsert(
-        "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
-        "VALUES ('owner-day', 'localGuest', ${now.millisecondsSinceEpoch})",
-      );
+    test(
+      'learning_day_log unique(owner_id, learning_day) prevents duplicates',
+      () async {
+        final now = DateTime.now().toUtc();
+        await db.customInsert(
+          "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+          "VALUES ('owner-day', 'localGuest', ${now.millisecondsSinceEpoch})",
+        );
 
-      await db.into(db.learningDayLog).insert(
-            LearningDayLogCompanion.insert(
-              id: 'day:owner-day:2026-08-04',
-              ownerId: 'owner-day',
-              learningDay: '2026-08-04',
-              firstSessionAtUtcMs: now.millisecondsSinceEpoch,
-            ),
-          );
+        await db
+            .into(db.learningDayLog)
+            .insert(
+              LearningDayLogCompanion.insert(
+                id: 'day:owner-day:2026-08-04',
+                ownerId: 'owner-day',
+                learningDay: '2026-08-04',
+                firstSessionAtUtcMs: now.millisecondsSinceEpoch,
+              ),
+            );
 
-      // Second insert with same (owner, day) must be ignored.
-      await db.into(db.learningDayLog).insert(
-            LearningDayLogCompanion.insert(
-              id: 'day:owner-day:2026-08-04',
-              ownerId: 'owner-day',
-              learningDay: '2026-08-04',
-              firstSessionAtUtcMs: now.millisecondsSinceEpoch + 3600000,
-            ),
-            mode: InsertMode.insertOrIgnore,
-          );
+        // Second insert with same (owner, day) must be ignored.
+        await db
+            .into(db.learningDayLog)
+            .insert(
+              LearningDayLogCompanion.insert(
+                id: 'day:owner-day:2026-08-04',
+                ownerId: 'owner-day',
+                learningDay: '2026-08-04',
+                firstSessionAtUtcMs: now.millisecondsSinceEpoch + 3600000,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
 
-      final rows = await db.select(db.learningDayLog).get();
-      expect(rows, hasLength(1),
-          reason: 'learning_day_log must be idempotent per (owner, day)');
-    });
+        final rows = await db.select(db.learningDayLog).get();
+        expect(
+          rows,
+          hasLength(1),
+          reason: 'learning_day_log must be idempotent per (owner, day)',
+        );
+      },
+    );
   });
 }

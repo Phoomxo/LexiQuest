@@ -6,25 +6,28 @@ import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-QuestDefinition _dailyVocabDef({int catalogVersion = 1, String questId = 'q-daily-vocab'}) => QuestDefinition(
-      questId: questId,
-      catalogVersion: catalogVersion,
-      title: 'Daily Vocabulary',
-      description: 'Review 10 words today',
-      type: QuestType.daily,
-      objectives: const [
-        QuestObjective(
-          objectiveId: 'obj-review',
-          description: 'Review words',
-          targetCount: 3,
-          criteria: ObjectiveCriteria(
-            eventType: 'QuizCompleted',
-            filters: {'correct': true},
-          ),
-        ),
-      ],
-      reward: const RewardSpec(xpAmount: 50),
-    );
+QuestDefinition _dailyVocabDef({
+  int catalogVersion = 1,
+  String questId = 'q-daily-vocab',
+}) => QuestDefinition(
+  questId: questId,
+  catalogVersion: catalogVersion,
+  title: 'Daily Vocabulary',
+  description: 'Review 10 words today',
+  type: QuestType.daily,
+  objectives: const [
+    QuestObjective(
+      objectiveId: 'obj-review',
+      description: 'Review words',
+      targetCount: 3,
+      criteria: ObjectiveCriteria(
+        eventType: 'QuizCompleted',
+        filters: {'correct': true},
+      ),
+    ),
+  ],
+  reward: const RewardSpec(xpAmount: 50),
+);
 
 QuestInstance _newInstance({
   String instanceId = 'inst-001',
@@ -125,7 +128,8 @@ void main() {
 
       await repo.startInstance(_newInstance(instanceId: 'inst-active'));
       await repo.startInstance(
-          _newInstance(instanceId: 'inst-done', questId: 'q-daily-vocab-2'));
+        _newInstance(instanceId: 'inst-done', questId: 'q-daily-vocab-2'),
+      );
       await repo.markCompleted('inst-done', DateTime.utc(2026, 8, 4, 12));
 
       final active = await repo.getActiveInstances('owner-test');
@@ -140,7 +144,8 @@ void main() {
 
       await repo.startInstance(_newInstance(instanceId: 'inst-a'));
       await repo.startInstance(
-          _newInstance(instanceId: 'inst-b', questId: 'q-daily-vocab-b'));
+        _newInstance(instanceId: 'inst-b', questId: 'q-daily-vocab-b'),
+      );
       await repo.markExpired('inst-b', DateTime.utc(2026, 8, 5));
 
       final all = await repo.getAllInstances('owner-test');

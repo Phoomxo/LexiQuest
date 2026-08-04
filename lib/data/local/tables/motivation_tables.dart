@@ -17,23 +17,19 @@ import 'identity_tables.dart';
 /// One row per owner.  Updated by [StreakUseCases.recordLearningDay] after
 /// each session.  The [TimezonePolicy] determines the learning-day boundary.
 class StreakStates extends Table {
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
 
   /// Number of consecutive learning days including today (or the last
   /// active day).  Reset to 0 if the learner missed a full day without
   /// using a freeze token.
-  IntColumn get currentStreakDays =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get currentStreakDays => integer().withDefault(const Constant(0))();
 
   /// All-time maximum streak — never decremented.
-  IntColumn get longestStreakDays =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get longestStreakDays => integer().withDefault(const Constant(0))();
 
   /// Remaining freeze tokens.  Incremented by daily/milestone rewards;
   /// decremented by [StreakUseCases.useFreezeToken].
-  IntColumn get freezeCount =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get freezeCount => integer().withDefault(const Constant(0))();
 
   /// UTC timestamp of the most recent session that counted toward the
   /// streak.  Null before the first session.
@@ -56,8 +52,7 @@ class LearningDayLog extends Table {
   /// Deterministic ID: `day:{ownerId}:{learningDay}`.
   TextColumn get id => text()();
 
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
 
   /// ISO-8601 date in the learner's local timezone: `'YYYY-MM-DD'`.
   /// Computed by [TimezonePolicy.getLearningDay].

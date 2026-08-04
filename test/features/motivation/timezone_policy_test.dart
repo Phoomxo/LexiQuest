@@ -14,59 +14,54 @@ void main() {
     test('23:59 Bangkok maps to Aug 4', () {
       // 2026-08-04 23:59 Bangkok = 2026-08-04 16:59 UTC
       final utc = DateTime.utc(2026, 8, 4, 16, 59);
-      expect(
-        TimezonePolicy.getLearningDay(utc, bangkok),
-        DateTime(2026, 8, 4),
-      );
+      expect(TimezonePolicy.getLearningDay(utc, bangkok), DateTime(2026, 8, 4));
     });
 
     test('00:01 Bangkok maps to Aug 5', () {
       // 2026-08-05 00:01 Bangkok = 2026-08-04 17:01 UTC
       final utc = DateTime.utc(2026, 8, 4, 17, 1);
-      expect(
-        TimezonePolicy.getLearningDay(utc, bangkok),
-        DateTime(2026, 8, 5),
-      );
+      expect(TimezonePolicy.getLearningDay(utc, bangkok), DateTime(2026, 8, 5));
     });
 
     test('midnight UTC is Aug 4 in Bangkok (UTC+7)', () {
       final utc = DateTime.utc(2026, 8, 4, 0, 0);
       // 2026-08-04 07:00 Bangkok → still Aug 4
-      expect(
-        TimezonePolicy.getLearningDay(utc, bangkok),
-        DateTime(2026, 8, 4),
-      );
+      expect(TimezonePolicy.getLearningDay(utc, bangkok), DateTime(2026, 8, 4));
     });
 
     test('New York 23:59 EDT (UTC-4) maps correctly', () {
       // 2026-08-04 23:59 EDT = 2026-08-05 03:59 UTC
       final utc = DateTime.utc(2026, 8, 5, 3, 59);
-      expect(
-        TimezonePolicy.getLearningDay(utc, newYork),
-        DateTime(2026, 8, 4),
-      );
+      expect(TimezonePolicy.getLearningDay(utc, newYork), DateTime(2026, 8, 4));
     });
   });
 
   group('isSameLearningDay', () {
-    test('learning day boundary is midnight in learner timezone — Golden Journey #11', () {
-      // 2026-08-04 23:59 Bangkok = UTC 16:59
-      final beforeMidnight = DateTime.utc(2026, 8, 4, 16, 59);
-      // 2026-08-05 00:01 Bangkok = UTC 17:01
-      final afterMidnight = DateTime.utc(2026, 8, 4, 17, 1);
+    test(
+      'learning day boundary is midnight in learner timezone — Golden Journey #11',
+      () {
+        // 2026-08-04 23:59 Bangkok = UTC 16:59
+        final beforeMidnight = DateTime.utc(2026, 8, 4, 16, 59);
+        // 2026-08-05 00:01 Bangkok = UTC 17:01
+        final afterMidnight = DateTime.utc(2026, 8, 4, 17, 1);
 
-      expect(
-        TimezonePolicy.isSameLearningDay(beforeMidnight, afterMidnight, bangkok),
-        isFalse,
-        reason: '23:59 and 00:01 are on different learning days',
-      );
-    });
+        expect(
+          TimezonePolicy.isSameLearningDay(
+            beforeMidnight,
+            afterMidnight,
+            bangkok,
+          ),
+          isFalse,
+          reason: '23:59 and 00:01 are on different learning days',
+        );
+      },
+    );
 
     test('two UTC times mapping to same Bangkok day are same learning day', () {
       // Bangkok is UTC+7; Aug 4 in Bangkok spans UTC 2026-08-03 17:00 → 2026-08-04 16:59.
       // Both instants below land on Bangkok Aug 4.
-      final t1 = DateTime.utc(2026, 8, 4, 0, 0);  // Bangkok 07:00 Aug 4
-      final t2 = DateTime.utc(2026, 8, 4, 9, 0);  // Bangkok 16:00 Aug 4
+      final t1 = DateTime.utc(2026, 8, 4, 0, 0); // Bangkok 07:00 Aug 4
+      final t2 = DateTime.utc(2026, 8, 4, 9, 0); // Bangkok 16:00 Aug 4
       expect(TimezonePolicy.isSameLearningDay(t1, t2, bangkok), isTrue);
     });
 

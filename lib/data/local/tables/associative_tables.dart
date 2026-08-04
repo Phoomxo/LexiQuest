@@ -19,8 +19,7 @@ import 'identity_tables.dart';
 class AssociationRecords extends Table {
   TextColumn get id => text()();
 
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
 
   /// The vocabulary word identifier (may be a Drift word ID or a plain
   /// display string for the associative reading prototype).
@@ -54,20 +53,15 @@ class AssociationRecords extends Table {
 class AssociativeMemoryStates extends Table {
   TextColumn get id => text()();
 
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
 
   TextColumn get wordKey => text()();
 
-  RealColumn get stability =>
-      real().withDefault(const Constant(1.0))();
-  RealColumn get difficulty =>
-      real().withDefault(const Constant(5.0))();
-  RealColumn get cueDependency =>
-      real().withDefault(const Constant(0.0))();
+  RealColumn get stability => real().withDefault(const Constant(1.0))();
+  RealColumn get difficulty => real().withDefault(const Constant(5.0))();
+  RealColumn get cueDependency => real().withDefault(const Constant(0.0))();
 
-  IntColumn get lapseCount =>
-      integer().withDefault(const Constant(0))();
+  IntColumn get lapseCount => integer().withDefault(const Constant(0))();
 
   IntColumn get lastReviewedAtUtcMs => integer().nullable()();
   IntColumn get nextDueAtUtcMs => integer()();

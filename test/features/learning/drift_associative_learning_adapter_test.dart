@@ -36,8 +36,10 @@ void main() {
         ),
       );
 
-      final associations =
-          await adapter.getAssociationsForWord('owner-da', 'banana');
+      final associations = await adapter.getAssociationsForWord(
+        'owner-da',
+        'banana',
+      );
       expect(associations, hasLength(1));
       expect(associations.first.content, 'yellow fruit');
       expect(associations.first.type, 'keyword');
@@ -64,8 +66,10 @@ void main() {
         ),
       );
 
-      final associations =
-          await adapter.getAssociationsForWord('owner-da', 'apple');
+      final associations = await adapter.getAssociationsForWord(
+        'owner-da',
+        'apple',
+      );
       expect(associations, hasLength(1));
       expect(associations.first.content, 'crunchy snack');
     });
@@ -82,8 +86,10 @@ void main() {
         ),
       );
       await adapter.deleteAssociation('assoc-del');
-      final associations =
-          await adapter.getAssociationsForWord('owner-da', 'grape');
+      final associations = await adapter.getAssociationsForWord(
+        'owner-da',
+        'grape',
+      );
       expect(associations, isEmpty);
     });
 
@@ -91,7 +97,8 @@ void main() {
       for (final word in ['cat', 'dog', 'cat']) {
         await adapter.saveAssociation(
           AssociationRecord(
-            associationId: 'assoc-$word-${DateTime.now().microsecondsSinceEpoch}',
+            associationId:
+                'assoc-$word-${DateTime.now().microsecondsSinceEpoch}',
             ownerId: 'owner-da',
             wordKey: word,
             type: word == 'cat' ? 'keyword' : 'story',
@@ -100,8 +107,10 @@ void main() {
           ),
         );
       }
-      final catAssociations =
-          await adapter.getAssociationsForWord('owner-da', 'cat');
+      final catAssociations = await adapter.getAssociationsForWord(
+        'owner-da',
+        'cat',
+      );
       expect(catAssociations, hasLength(1));
       expect(catAssociations.first.wordKey, 'cat');
     });

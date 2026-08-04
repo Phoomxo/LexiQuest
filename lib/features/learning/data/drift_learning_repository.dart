@@ -333,7 +333,8 @@ final class DriftLearningRepository implements LearningRepository {
     required DateTime unlockedAtUtc,
   }) async {
     const definitionVersion = 1;
-    final achievementId_ = 'achievement:$ownerId:$achievementId:$definitionVersion';
+    final achievementId_ =
+        'achievement:$ownerId:$achievementId:$definitionVersion';
     await database
         .into(database.achievementUnlocks)
         .insert(

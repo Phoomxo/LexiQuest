@@ -44,8 +44,10 @@ abstract final class StreakPolicy {
     }
 
     final lastDay = _learningDay(
-      DateTime.fromMillisecondsSinceEpoch(current.lastLearnedAtUtcMs!,
-          isUtc: true),
+      DateTime.fromMillisecondsSinceEpoch(
+        current.lastLearnedAtUtcMs!,
+        isUtc: true,
+      ),
       timezoneId,
     );
     final dayDiff = today.difference(lastDay).inDays;
@@ -134,14 +136,14 @@ final class StreakState {
   });
 
   const StreakState.initial({required String ownerId, required int nowMs})
-      : this(
-          ownerId: ownerId,
-          currentStreakDays: 0,
-          longestStreakDays: 0,
-          freezeCount: 0,
-          lastLearnedAtUtcMs: null,
-          updatedAtUtcMs: nowMs,
-        );
+    : this(
+        ownerId: ownerId,
+        currentStreakDays: 0,
+        longestStreakDays: 0,
+        freezeCount: 0,
+        lastLearnedAtUtcMs: null,
+        updatedAtUtcMs: nowMs,
+      );
 
   final String ownerId;
   final int currentStreakDays;
@@ -158,15 +160,14 @@ final class StreakState {
     int? freezeCount,
     int? lastLearnedAtUtcMs,
     int? updatedAtUtcMs,
-  }) =>
-      StreakState(
-        ownerId: ownerId,
-        currentStreakDays: currentStreakDays ?? this.currentStreakDays,
-        longestStreakDays: longestStreakDays ?? this.longestStreakDays,
-        freezeCount: freezeCount ?? this.freezeCount,
-        lastLearnedAtUtcMs: lastLearnedAtUtcMs ?? this.lastLearnedAtUtcMs,
-        updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
-      );
+  }) => StreakState(
+    ownerId: ownerId,
+    currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+    longestStreakDays: longestStreakDays ?? this.longestStreakDays,
+    freezeCount: freezeCount ?? this.freezeCount,
+    lastLearnedAtUtcMs: lastLearnedAtUtcMs ?? this.lastLearnedAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
 }
 
 /// The result of a [StreakPolicy.evaluate] call.

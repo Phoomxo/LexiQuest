@@ -34,30 +34,31 @@ void main() {
         "VALUES ('owner-v7', 'localGuest', ${now.millisecondsSinceEpoch})",
       );
 
-      await db.into(db.eventsV2).insert(
-        EventsV2Companion(
-          eventId: const Value('evt-v7-001'),
-          eventType: const Value('QuizCompleted'),
-          eventVersion: const Value(1),
-          occurredAtUtc: Value(now),
-          recordedAtUtc: Value(now),
-          actorIdentity: const Value('owner-v7'),
-          ownerId: const Value('owner-v7'),
-          aggregateType: const Value('LearningSession'),
-          aggregateId: const Value('sess-v7'),
-          idempotencyKey: const Value('idem-v7-001'),
-          consentContextJson: const Value('{}'),
-          appVersion: const Value('1.0.0'),
-          buildId: const Value('sha7777'),
-          privacyClassification: const Value('ownerOnly'),
-          payloadJson: const Value('{"score":100}'),
-        ),
-      );
+      await db
+          .into(db.eventsV2)
+          .insert(
+            EventsV2Companion(
+              eventId: const Value('evt-v7-001'),
+              eventType: const Value('QuizCompleted'),
+              eventVersion: const Value(1),
+              occurredAtUtc: Value(now),
+              recordedAtUtc: Value(now),
+              actorIdentity: const Value('owner-v7'),
+              ownerId: const Value('owner-v7'),
+              aggregateType: const Value('LearningSession'),
+              aggregateId: const Value('sess-v7'),
+              idempotencyKey: const Value('idem-v7-001'),
+              consentContextJson: const Value('{}'),
+              appVersion: const Value('1.0.0'),
+              buildId: const Value('sha7777'),
+              privacyClassification: const Value('ownerOnly'),
+              payloadJson: const Value('{"score":100}'),
+            ),
+          );
 
-      final rows =
-          await (db.select(db.eventsV2)
-                ..where((r) => r.eventId.equals('evt-v7-001')))
-              .get();
+      final rows = await (db.select(
+        db.eventsV2,
+      )..where((r) => r.eventId.equals('evt-v7-001'))).get();
       expect(rows, hasLength(1));
       expect(rows.first.eventType, 'QuizCompleted');
       expect(rows.first.payloadJson, '{"score":100}');
@@ -80,21 +81,21 @@ void main() {
         ownerId: const Value('owner-idem'),
         aggregateType: const Value('SrsSession'),
         aggregateId: const Value('srs-01'),
-          idempotencyKey: const Value('same-key'),
-          consentContextJson: const Value('{}'),
-          appVersion: const Value('1.0.0'),
-          buildId: const Value('sha7777'),
-          privacyClassification: const Value('anonymized'),
-          payloadJson: const Value('{}'),
+        idempotencyKey: const Value('same-key'),
+        consentContextJson: const Value('{}'),
+        appVersion: const Value('1.0.0'),
+        buildId: const Value('sha7777'),
+        privacyClassification: const Value('anonymized'),
+        payloadJson: const Value('{}'),
       );
 
       await db.into(db.eventsV2).insert(companion);
 
       // Second insert with same (owner_id, idempotencyKey) must fail.
       expect(
-        () => db.into(db.eventsV2).insert(
-          companion.copyWith(eventId: const Value('evt-idem-02')),
-        ),
+        () => db
+            .into(db.eventsV2)
+            .insert(companion.copyWith(eventId: const Value('evt-idem-02'))),
         throwsA(anything),
         reason:
             'Unique constraint on (owner_id, idempotency_key) must reject replays',
@@ -119,31 +120,32 @@ void main() {
         "VALUES ('owner-null', 'localGuest', ${now.millisecondsSinceEpoch})",
       );
 
-      await db.into(db.eventsV2).insert(
-        EventsV2Companion(
-          eventId: const Value('evt-null-01'),
-          eventType: const Value('X'),
-          eventVersion: const Value(1),
-          occurredAtUtc: Value(now),
-          recordedAtUtc: Value(now),
-          actorIdentity: const Value('owner-null'),
-          ownerId: const Value('owner-null'),
-          aggregateType: const Value('T'),
-          aggregateId: const Value('a'),
-          idempotencyKey: const Value('idem-null'),
-          consentContextJson: const Value('{}'),
-          appVersion: const Value('1.0.0'),
-          buildId: const Value('sha7777'),
-          privacyClassification: const Value('public'),
-          payloadJson: const Value('{}'),
-          // Nullable fields deliberately absent (should default to NULL)
-        ),
-      );
+      await db
+          .into(db.eventsV2)
+          .insert(
+            EventsV2Companion(
+              eventId: const Value('evt-null-01'),
+              eventType: const Value('X'),
+              eventVersion: const Value(1),
+              occurredAtUtc: Value(now),
+              recordedAtUtc: Value(now),
+              actorIdentity: const Value('owner-null'),
+              ownerId: const Value('owner-null'),
+              aggregateType: const Value('T'),
+              aggregateId: const Value('a'),
+              idempotencyKey: const Value('idem-null'),
+              consentContextJson: const Value('{}'),
+              appVersion: const Value('1.0.0'),
+              buildId: const Value('sha7777'),
+              privacyClassification: const Value('public'),
+              payloadJson: const Value('{}'),
+              // Nullable fields deliberately absent (should default to NULL)
+            ),
+          );
 
-      final row =
-          await (db.select(db.eventsV2)
-                ..where((r) => r.eventId.equals('evt-null-01')))
-              .getSingle();
+      final row = await (db.select(
+        db.eventsV2,
+      )..where((r) => r.eventId.equals('evt-null-01'))).getSingle();
       expect(row.tenantContextJson, isNull);
       expect(row.correlationId, isNull);
       expect(row.causationId, isNull);

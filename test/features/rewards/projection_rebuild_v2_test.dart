@@ -33,40 +33,40 @@ Future<void> _insertEvent(
   required Map<String, dynamic> payload,
 }) async {
   final now = DateTime.utc(2026, 8, 4, 10);
-  await db.into(db.eventsV2).insert(
-    EventsV2Companion(
-      eventId: Value(eventId),
-      eventType: Value(eventType),
-      eventVersion: const Value(1),
-      occurredAtUtc: Value(now),
-      recordedAtUtc: Value(now),
-      actorIdentity: Value(ownerId),
-      ownerId: Value(ownerId),
-      aggregateType: const Value('LearningSession'),
-      aggregateId: const Value('sess-rebuild'),
-      idempotencyKey: Value(idempotencyKey),
-      consentContextJson: const Value('{}'),
-      appVersion: const Value('1.0.0'),
-      buildId: const Value('sha-test'),
-      privacyClassification: const Value('anonymized'),
-      payloadJson: Value(jsonEncode(payload)),
-    ),
-  );
+  await db
+      .into(db.eventsV2)
+      .insert(
+        EventsV2Companion(
+          eventId: Value(eventId),
+          eventType: Value(eventType),
+          eventVersion: const Value(1),
+          occurredAtUtc: Value(now),
+          recordedAtUtc: Value(now),
+          actorIdentity: Value(ownerId),
+          ownerId: Value(ownerId),
+          aggregateType: const Value('LearningSession'),
+          aggregateId: const Value('sess-rebuild'),
+          idempotencyKey: Value(idempotencyKey),
+          consentContextJson: const Value('{}'),
+          appVersion: const Value('1.0.0'),
+          buildId: const Value('sha-test'),
+          privacyClassification: const Value('anonymized'),
+          payloadJson: Value(jsonEncode(payload)),
+        ),
+      );
 }
 
 Future<int> _getXpBalance(AppDatabase db, String ownerId) async {
-  final rows =
-      await (db.select(db.pointsLedgerEntries)
-            ..where((r) => r.ownerId.equals(ownerId)))
-          .get();
+  final rows = await (db.select(
+    db.pointsLedgerEntries,
+  )..where((r) => r.ownerId.equals(ownerId))).get();
   return rows.fold<int>(0, (sum, r) => sum + r.amount);
 }
 
 Future<int> _getCoinBalance(AppDatabase db, String ownerId) async {
-  final rows =
-      await (db.select(db.rewardTransactions)
-            ..where((r) => r.ownerId.equals(ownerId)))
-          .get();
+  final rows = await (db.select(
+    db.rewardTransactions,
+  )..where((r) => r.ownerId.equals(ownerId))).get();
   return rows.fold<int>(0, (sum, r) => sum + r.amount);
 }
 
@@ -107,26 +107,30 @@ void main() {
       );
 
       // 2. Seed matching ledger entries (as production V1 would have created)
-      await db.into(db.pointsLedgerEntries).insert(
-        PointsLedgerEntriesCompanion(
-          id: const Value('xp-rebuild-1'),
-          ownerId: Value(owner),
-          idempotencyKey: const Value('idem-quiz-1'),
-          entryType: const Value('quiz'),
-          amount: const Value(10),
-          sourceEventId: const Value('evt-quiz-1'),
-          occurredAtUtcMs: Value(DateTime.utc(2026, 8, 4, 10).millisecondsSinceEpoch),
-        ),
-      );
+      await db
+          .into(db.pointsLedgerEntries)
+          .insert(
+            PointsLedgerEntriesCompanion(
+              id: const Value('xp-rebuild-1'),
+              ownerId: Value(owner),
+              idempotencyKey: const Value('idem-quiz-1'),
+              entryType: const Value('quiz'),
+              amount: const Value(10),
+              sourceEventId: const Value('evt-quiz-1'),
+              occurredAtUtcMs: Value(
+                DateTime.utc(2026, 8, 4, 10).millisecondsSinceEpoch,
+              ),
+            ),
+          );
 
       // 3. Capture current XP balance before clearing
       final originalXp = await _getXpBalance(db, owner);
       expect(originalXp, 10);
 
       // 4. Clear the projection
-      await (db.delete(db.pointsLedgerEntries)
-            ..where((r) => r.ownerId.equals(owner)))
-          .go();
+      await (db.delete(
+        db.pointsLedgerEntries,
+      )..where((r) => r.ownerId.equals(owner))).go();
       expect(await _getXpBalance(db, owner), 0);
 
       // 5. Rebuild from evidence
@@ -136,13 +140,14 @@ void main() {
       // This test verifies the events_v2 table structure is correct for later
       // full V2 rebuilder wiring in Phase 0.
       // For now: confirm events_v2 rows were persisted with correct structure.
-      final events =
-          await (db.select(db.eventsV2)
-                ..where((r) => r.ownerId.equals(owner)))
-              .get();
+      final events = await (db.select(
+        db.eventsV2,
+      )..where((r) => r.ownerId.equals(owner))).get();
       expect(events, hasLength(2));
-      expect(events.map((e) => e.eventType).toSet(),
-          {'QuizCompleted', 'QuestCompleted'});
+      expect(events.map((e) => e.eventType).toSet(), {
+        'QuizCompleted',
+        'QuestCompleted',
+      });
       expect(
         events
             .map((e) => jsonDecode(e.payloadJson) as Map)
@@ -180,48 +185,61 @@ void main() {
       );
     });
 
-    test('DriftRewardProjectionRebuilder idempotency holds with V2 owner', () async {
-      const owner = 'owner-rebuild-idem';
-      await _seedOwner(db, owner);
+    test(
+      'DriftRewardProjectionRebuilder idempotency holds with V2 owner',
+      () async {
+        const owner = 'owner-rebuild-idem';
+        await _seedOwner(db, owner);
 
-      // Seed minimal XP entry
-      await db.into(db.pointsLedgerEntries).insert(
-        PointsLedgerEntriesCompanion(
-          id: const Value('xp-idem-seed'),
-          ownerId: Value(owner),
-          idempotencyKey: const Value('key-rebuild-idem'),
-          entryType: const Value('quiz'),
-          amount: const Value(50),
-          sourceEventId: const Value('evt-seed'),
-          occurredAtUtcMs: Value(DateTime.utc(2026, 8, 4).millisecondsSinceEpoch),
-        ),
-      );
+        // Seed minimal XP entry
+        await db
+            .into(db.pointsLedgerEntries)
+            .insert(
+              PointsLedgerEntriesCompanion(
+                id: const Value('xp-idem-seed'),
+                ownerId: Value(owner),
+                idempotencyKey: const Value('key-rebuild-idem'),
+                entryType: const Value('quiz'),
+                amount: const Value(50),
+                sourceEventId: const Value('evt-seed'),
+                occurredAtUtcMs: Value(
+                  DateTime.utc(2026, 8, 4).millisecondsSinceEpoch,
+                ),
+              ),
+            );
 
-      // Seed answer attempt for the rebuilder to work with
-      final session = await db.into(db.learningSessions).insertReturning(
-        LearningSessionsCompanion(
-          id: const Value('sess-idem-rebuild'),
-          ownerId: Value(owner),
-          activityType: const Value('quiz'),
-          state: const Value('completed'),
-          startedAtUtcMs: Value(DateTime.utc(2026, 8, 4).millisecondsSinceEpoch),
-          endedAtUtcMs: Value(DateTime.utc(2026, 8, 4, 0, 5).millisecondsSinceEpoch),
-          correctCount: const Value(1),
-          wrongCount: const Value(0),
-          appVersion: const Value('1.0.0'),
-          buildId: const Value('sha'),
-        ),
-      );
-      expect(session.id, 'sess-idem-rebuild');
+        // Seed answer attempt for the rebuilder to work with
+        final session = await db
+            .into(db.learningSessions)
+            .insertReturning(
+              LearningSessionsCompanion(
+                id: const Value('sess-idem-rebuild'),
+                ownerId: Value(owner),
+                activityType: const Value('quiz'),
+                state: const Value('completed'),
+                startedAtUtcMs: Value(
+                  DateTime.utc(2026, 8, 4).millisecondsSinceEpoch,
+                ),
+                endedAtUtcMs: Value(
+                  DateTime.utc(2026, 8, 4, 0, 5).millisecondsSinceEpoch,
+                ),
+                correctCount: const Value(1),
+                wrongCount: const Value(0),
+                appVersion: const Value('1.0.0'),
+                buildId: const Value('sha'),
+              ),
+            );
+        expect(session.id, 'sess-idem-rebuild');
 
-      final rebuilder = DriftRewardProjectionRebuilder(db);
-      await rebuilder.rebuild(owner);
-      final balance1 = await _getCoinBalance(db, owner);
+        final rebuilder = DriftRewardProjectionRebuilder(db);
+        await rebuilder.rebuild(owner);
+        final balance1 = await _getCoinBalance(db, owner);
 
-      await rebuilder.rebuild(owner);
-      final balance2 = await _getCoinBalance(db, owner);
+        await rebuilder.rebuild(owner);
+        final balance2 = await _getCoinBalance(db, owner);
 
-      expect(balance2, balance1, reason: 'Rebuild must be idempotent');
-    });
+        expect(balance2, balance1, reason: 'Rebuild must be idempotent');
+      },
+    );
   });
 }

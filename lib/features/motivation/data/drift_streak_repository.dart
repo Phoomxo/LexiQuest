@@ -12,13 +12,15 @@ final class DriftStreakRepository {
   // ── Read ──────────────────────────────────────────────────────────────────
 
   Future<StreakState> getOrCreate(String ownerId, int nowMs) async {
-    final row = await (_database.select(_database.streakStates)
-          ..where((t) => t.ownerId.equals(ownerId)))
-        .getSingleOrNull();
+    final row = await (_database.select(
+      _database.streakStates,
+    )..where((t) => t.ownerId.equals(ownerId))).getSingleOrNull();
     if (row != null) return _rowToState(row);
 
     // First access — create initial row.
-    await _database.into(_database.streakStates).insert(
+    await _database
+        .into(_database.streakStates)
+        .insert(
           db.StreakStatesCompanion.insert(
             ownerId: ownerId,
             updatedAtUtcMs: nowMs,
@@ -31,7 +33,9 @@ final class DriftStreakRepository {
   // ── Write ─────────────────────────────────────────────────────────────────
 
   Future<void> save(StreakState state) async {
-    await _database.into(_database.streakStates).insertOnConflictUpdate(
+    await _database
+        .into(_database.streakStates)
+        .insertOnConflictUpdate(
           db.StreakStatesCompanion(
             ownerId: Value(state.ownerId),
             currentStreakDays: Value(state.currentStreakDays),
@@ -54,7 +58,9 @@ final class DriftStreakRepository {
     required int firstSessionAtUtcMs,
   }) async {
     final id = 'day:$ownerId:$learningDay';
-    await _database.into(_database.learningDayLog).insert(
+    await _database
+        .into(_database.learningDayLog)
+        .insert(
           db.LearningDayLogCompanion.insert(
             id: id,
             ownerId: ownerId,
@@ -67,23 +73,22 @@ final class DriftStreakRepository {
 
   /// Returns all learning-day entries for [ownerId], newest first.
   Future<List<String>> getLearningDays(String ownerId) async {
-    final rows = await (_database.select(_database.learningDayLog)
-          ..where((t) => t.ownerId.equals(ownerId))
-          ..orderBy([
-            (t) => OrderingTerm.desc(t.firstSessionAtUtcMs),
-          ]))
-        .get();
+    final rows =
+        await (_database.select(_database.learningDayLog)
+              ..where((t) => t.ownerId.equals(ownerId))
+              ..orderBy([(t) => OrderingTerm.desc(t.firstSessionAtUtcMs)]))
+            .get();
     return rows.map((r) => r.learningDay).toList(growable: false);
   }
 
   // ── Private ───────────────────────────────────────────────────────────────
 
   StreakState _rowToState(db.StreakState row) => StreakState(
-        ownerId: row.ownerId,
-        currentStreakDays: row.currentStreakDays,
-        longestStreakDays: row.longestStreakDays,
-        freezeCount: row.freezeCount,
-        lastLearnedAtUtcMs: row.lastLearnedAtUtcMs,
-        updatedAtUtcMs: row.updatedAtUtcMs,
-      );
+    ownerId: row.ownerId,
+    currentStreakDays: row.currentStreakDays,
+    longestStreakDays: row.longestStreakDays,
+    freezeCount: row.freezeCount,
+    lastLearnedAtUtcMs: row.lastLearnedAtUtcMs,
+    updatedAtUtcMs: row.updatedAtUtcMs,
+  );
 }

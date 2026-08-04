@@ -160,7 +160,8 @@ final class EventV1ToV2Adapter {
         'score': isCorrect ? 100 : 0,
         if (responseTimeMs != null) 'responseTimeMs': responseTimeMs,
         'attemptNumber': attemptNumber,
-        if (providerProvenance != null) 'providerProvenance': providerProvenance,
+        if (providerProvenance != null)
+          'providerProvenance': providerProvenance,
       },
     );
   }

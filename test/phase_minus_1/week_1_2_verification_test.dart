@@ -56,8 +56,11 @@ void main() {
     });
 
     test('file exists', () {
-      expect(content, isNotEmpty,
-          reason: 'docs/v2-implementation/authority_matrix.md not found');
+      expect(
+        content,
+        isNotEmpty,
+        reason: 'docs/v2-implementation/authority_matrix.md not found',
+      );
     });
 
     test('covers all 21 Drift tables', () {
@@ -85,14 +88,20 @@ void main() {
         'ModelDownloads',
       ];
       for (final table in requiredTables) {
-        expect(content.contains(table), isTrue,
-            reason: 'Table $table not documented in authority_matrix.md');
+        expect(
+          content.contains(table),
+          isTrue,
+          reason: 'Table $table not documented in authority_matrix.md',
+        );
       }
     });
 
     test('documents PointsLedgerEntries dual-write conflict as CRITICAL', () {
-      expect(content.contains('CONFLICT') || content.contains('CRITICAL'), isTrue,
-          reason: 'PointsLedgerEntries dual-write conflict must be documented');
+      expect(
+        content.contains('CONFLICT') || content.contains('CRITICAL'),
+        isTrue,
+        reason: 'PointsLedgerEntries dual-write conflict must be documented',
+      );
     });
 
     test('documents SharedPreferences write paths', () {
@@ -100,13 +109,19 @@ void main() {
     });
 
     test('documents in-memory state as CRITICAL', () {
-      expect(content.contains('_currentStreakDays') || content.contains('in-memory'), isTrue,
-          reason: 'In-memory streak state must be documented');
+      expect(
+        content.contains('_currentStreakDays') || content.contains('in-memory'),
+        isTrue,
+        reason: 'In-memory streak state must be documented',
+      );
     });
 
     test('documents direct Firestore writes', () {
-      expect(content.contains('word_service') || content.contains('Firestore'), isTrue,
-          reason: 'Direct Firestore writes in word_service must be documented');
+      expect(
+        content.contains('word_service') || content.contains('Firestore'),
+        isTrue,
+        reason: 'Direct Firestore writes in word_service must be documented',
+      );
     });
 
     test('documents V2 action for every section', () {
@@ -126,8 +141,11 @@ void main() {
     });
 
     test('file exists', () {
-      expect(content, isNotEmpty,
-          reason: 'docs/v2-implementation/semantic_contract.md not found');
+      expect(
+        content,
+        isNotEmpty,
+        reason: 'docs/v2-implementation/semantic_contract.md not found',
+      );
     });
 
     test('defines XP as non-spendable', () {
@@ -156,8 +174,11 @@ void main() {
 
     test('defines Mastery as separate from XP and Coins', () {
       expect(content.contains('Mastery'), isTrue);
-      expect(content.contains('NOT affected by'), isTrue,
-          reason: 'Mastery must state what it is NOT affected by');
+      expect(
+        content.contains('NOT affected by'),
+        isTrue,
+        reason: 'Mastery must state what it is NOT affected by',
+      );
     });
 
     test('defines Quest with persistence requirement', () {
@@ -171,18 +192,27 @@ void main() {
 
     test('defines Streak with Drift storage requirement', () {
       expect(content.contains('Streak'), isTrue);
-      expect(content.contains('StreakStates') || content.contains('Drift table'), isTrue,
-          reason: 'Streak must require Drift storage, not in-memory');
+      expect(
+        content.contains('StreakStates') || content.contains('Drift table'),
+        isTrue,
+        reason: 'Streak must require Drift storage, not in-memory',
+      );
     });
 
     test('quarantines streak_and_daily_quest_service', () {
-      expect(content.contains('streak_and_daily_quest_service'), isTrue,
-          reason: 'streak_and_daily_quest_service must be listed as quarantined');
+      expect(
+        content.contains('streak_and_daily_quest_service'),
+        isTrue,
+        reason: 'streak_and_daily_quest_service must be listed as quarantined',
+      );
     });
 
     test('defines idempotency requirement for XP and Coins grants', () {
-      expect(content.contains('idempotencyKey'), isTrue,
-          reason: 'idempotencyKey required for all grant operations');
+      expect(
+        content.contains('idempotencyKey'),
+        isTrue,
+        reason: 'idempotencyKey required for all grant operations',
+      );
     });
   });
 
@@ -198,8 +228,11 @@ void main() {
     });
 
     test('file exists', () {
-      expect(content, isNotEmpty,
-          reason: 'docs/database/schema_audit_2026_08_04.md not found');
+      expect(
+        content,
+        isNotEmpty,
+        reason: 'docs/database/schema_audit_2026_08_04.md not found',
+      );
     });
 
     test('confirms current schema is version 6', () {
@@ -219,23 +252,41 @@ void main() {
       expect(content.contains('SAFE') || content.contains('safe'), isTrue);
     });
 
-    test('confirms v7 and v8 migrations deployed, no v9+ migration exists yet', () {
-      final dbContent = _read('lib/data/local/app_database.dart');
-      expect(dbContent.contains('from < 7'), isTrue,
-          reason: 'Schema v7 migration must exist after Week 5-6');
-      expect(dbContent.contains('from < 8'), isTrue,
-          reason: 'Schema v8 migration must exist after Phase 0 Week 10-11');
-      expect(dbContent.contains('from < 9'), isTrue,
-          reason: 'Schema v9 migration must exist after Phase 1 D7.2');
-      expect(dbContent.contains('from < 10'), isTrue,
-          reason: 'Schema v10 migration must exist after Phase 2 D8.3');
-      expect(dbContent.contains('from < 11'), isFalse);
-    });
+    test(
+      'confirms v7 and v8 migrations deployed, no v9+ migration exists yet',
+      () {
+        final dbContent = _read('lib/data/local/app_database.dart');
+        expect(
+          dbContent.contains('from < 7'),
+          isTrue,
+          reason: 'Schema v7 migration must exist after Week 5-6',
+        );
+        expect(
+          dbContent.contains('from < 8'),
+          isTrue,
+          reason: 'Schema v8 migration must exist after Phase 0 Week 10-11',
+        );
+        expect(
+          dbContent.contains('from < 9'),
+          isTrue,
+          reason: 'Schema v9 migration must exist after Phase 1 D7.2',
+        );
+        expect(
+          dbContent.contains('from < 10'),
+          isTrue,
+          reason: 'Schema v10 migration must exist after Phase 2 D8.3',
+        );
+        expect(dbContent.contains('from < 11'), isFalse);
+      },
+    );
 
     test('current schemaVersion in code is 10', () {
       final dbContent = _read('lib/data/local/app_database.dart');
-      expect(dbContent.contains('schemaVersion => 10'), isTrue,
-          reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3');
+      expect(
+        dbContent.contains('schemaVersion => 10'),
+        isTrue,
+        reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3',
+      );
     });
   });
 
@@ -251,21 +302,28 @@ void main() {
     });
 
     test('file exists', () {
-      expect(content, isNotEmpty,
-          reason: 'docs/database/schema_ledger.md not found');
+      expect(
+        content,
+        isNotEmpty,
+        reason: 'docs/database/schema_ledger.md not found',
+      );
     });
 
     test('records v1 through v6 history', () {
       for (final v in ['v1', 'v2', 'v3', 'v4', 'v5', 'v6']) {
-        expect(content.contains(v), isTrue,
-            reason: '$v must be in schema ledger history');
+        expect(
+          content.contains(v),
+          isTrue,
+          reason: '$v must be in schema ledger history',
+        );
       }
     });
 
     test('reserves v7 for EventEnvelopeV2', () {
       expect(content.contains('v7'), isTrue);
       expect(
-        content.contains('EventEnvelope') || content.contains('EventEnvelopeV2'),
+        content.contains('EventEnvelope') ||
+            content.contains('EventEnvelopeV2'),
         isTrue,
         reason: 'v7 must be reserved for EventEnvelopeV2',
       );
@@ -310,8 +368,12 @@ void main() {
     });
 
     test('file exists', () {
-      expect(content, isNotEmpty,
-          reason: 'docs/v2-implementation/service_quarantine_registry.md not found');
+      expect(
+        content,
+        isNotEmpty,
+        reason:
+            'docs/v2-implementation/service_quarantine_registry.md not found',
+      );
     });
 
     test('quarantines streak_and_daily_quest_service', () {
@@ -335,8 +397,12 @@ void main() {
     });
 
     test('provides V2 replacement for each quarantined service', () {
-      expect(content.contains('replacement') || content.contains('V2 replacement'), isTrue,
-          reason: 'Each quarantined service must have a V2 replacement documented');
+      expect(
+        content.contains('replacement') || content.contains('V2 replacement'),
+        isTrue,
+        reason:
+            'Each quarantined service must have a V2 replacement documented',
+      );
     });
 
     test('provides architecture fitness test snippet', () {
@@ -377,9 +443,11 @@ void main() {
         }
       }
 
-      expect(violations, isEmpty,
-          reason:
-              'Quarantine violations found:\n${violations.join('\n')}');
+      expect(
+        violations,
+        isEmpty,
+        reason: 'Quarantine violations found:\n${violations.join('\n')}',
+      );
     });
 
     test('lib/features/ does not write to SharedPreferences', () {
@@ -395,9 +463,13 @@ void main() {
         }
       }
 
-      expect(violations, isEmpty,
-          reason: 'lib/features/ must not use SharedPreferences:\n'
-              '${violations.join('\n')}');
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'lib/features/ must not use SharedPreferences:\n'
+            '${violations.join('\n')}',
+      );
     });
 
     test('lib/features/ does not use ambiguous "points" identifier', () {
@@ -424,9 +496,12 @@ void main() {
         }
       }
 
-      expect(violations, isEmpty,
-          reason:
-              'Ambiguous "points" usage in lib/features/:\n${violations.join('\n')}');
+      expect(
+        violations,
+        isEmpty,
+        reason:
+            'Ambiguous "points" usage in lib/features/:\n${violations.join('\n')}',
+      );
     });
   });
 }

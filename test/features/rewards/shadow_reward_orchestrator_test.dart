@@ -50,9 +50,7 @@ void main() {
       final logger = InMemoryShadowLogger();
       final orch = _makeOrchestrator(logger: logger);
 
-      await orch.processShadow(
-        _makeEvent(payload: {'correct': true}),
-      );
+      await orch.processShadow(_makeEvent(payload: {'correct': true}));
 
       expect(logger.entries, hasLength(1));
       expect(logger.entries.first.decision.result, EligibilityResult.eligible);
@@ -78,20 +76,29 @@ void main() {
       expect(logger.entries.first.wouldSucceed, isFalse);
     });
 
-    test('idempotency check: wouldSucceed=false when already granted', () async {
-      final logger = InMemoryShadowLogger();
-      final orch = _makeOrchestrator(
-        logger: logger,
-        canGrantResult: false, // already granted
-      );
+    test(
+      'idempotency check: wouldSucceed=false when already granted',
+      () async {
+        final logger = InMemoryShadowLogger();
+        final orch = _makeOrchestrator(
+          logger: logger,
+          canGrantResult: false, // already granted
+        );
 
-      await orch.processShadow(
-        _makeEvent(payload: {'correct': true}, idempotencyKey: 'already_used'),
-      );
+        await orch.processShadow(
+          _makeEvent(
+            payload: {'correct': true},
+            idempotencyKey: 'already_used',
+          ),
+        );
 
-      expect(logger.entries.first.wouldSucceed, isFalse);
-      expect(logger.entries.first.decision.result, EligibilityResult.eligible);
-    });
+        expect(logger.entries.first.wouldSucceed, isFalse);
+        expect(
+          logger.entries.first.decision.result,
+          EligibilityResult.eligible,
+        );
+      },
+    );
 
     test('shadow errors are swallowed — never propagate to caller', () async {
       final logger = InMemoryShadowLogger();
@@ -103,9 +110,7 @@ void main() {
       );
 
       // Must not throw
-      await throwingOrch.processShadow(
-        _makeEvent(payload: {'correct': true}),
-      );
+      await throwingOrch.processShadow(_makeEvent(payload: {'correct': true}));
 
       expect(logger.errors, hasLength(1));
     });
@@ -132,9 +137,9 @@ void main() {
 
     test('log entry serialises to JSON without error', () async {
       final logger = InMemoryShadowLogger();
-      await _makeOrchestrator(logger: logger).processShadow(
-        _makeEvent(payload: {'correct': true}),
-      );
+      await _makeOrchestrator(
+        logger: logger,
+      ).processShadow(_makeEvent(payload: {'correct': true}));
       expect(() => logger.entries.first.toJson(), returnsNormally);
     });
 

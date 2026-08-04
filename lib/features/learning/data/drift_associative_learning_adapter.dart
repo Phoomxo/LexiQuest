@@ -40,19 +40,19 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
     String ownerId,
     String wordKey,
   ) async {
-    final rows = await (_database.select(_database.associationRecords)
-          ..where(
-            (t) => t.ownerId.equals(ownerId) & t.wordKey.equals(wordKey),
-          ))
-        .get();
+    final rows =
+        await (_database.select(_database.associationRecords)..where(
+              (t) => t.ownerId.equals(ownerId) & t.wordKey.equals(wordKey),
+            ))
+            .get();
     return rows.map(_rowToAssociation).toList(growable: false);
   }
 
   @override
   Future<void> deleteAssociation(String associationId) async {
-    await (_database.delete(_database.associationRecords)
-          ..where((t) => t.id.equals(associationId)))
-        .go();
+    await (_database.delete(
+      _database.associationRecords,
+    )..where((t) => t.id.equals(associationId))).go();
   }
 
   // ── Memory states ──────────────────────────────────────────────────────────
@@ -62,11 +62,11 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
     String ownerId,
     String wordKey,
   ) async {
-    final row = await (_database.select(_database.associativeMemoryStates)
-          ..where(
-            (t) => t.ownerId.equals(ownerId) & t.wordKey.equals(wordKey),
-          ))
-        .getSingleOrNull();
+    final row =
+        await (_database.select(_database.associativeMemoryStates)..where(
+              (t) => t.ownerId.equals(ownerId) & t.wordKey.equals(wordKey),
+            ))
+            .getSingleOrNull();
     return row == null ? null : _rowToMemoryState(row);
   }
 
@@ -98,9 +98,9 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
   Future<List<AssociativeMemoryState>> getAllMemoryStates(
     String ownerId,
   ) async {
-    final rows = await (_database.select(_database.associativeMemoryStates)
-          ..where((t) => t.ownerId.equals(ownerId)))
-        .get();
+    final rows = await (_database.select(
+      _database.associativeMemoryStates,
+    )..where((t) => t.ownerId.equals(ownerId))).get();
     return rows.map(_rowToMemoryState).toList(growable: false);
   }
 
@@ -119,9 +119,7 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
         ),
       );
 
-  AssociativeMemoryState _rowToMemoryState(
-    db.AssociativeMemoryState row,
-  ) =>
+  AssociativeMemoryState _rowToMemoryState(db.AssociativeMemoryState row) =>
       AssociativeMemoryState(
         ownerId: row.ownerId,
         wordKey: row.wordKey,

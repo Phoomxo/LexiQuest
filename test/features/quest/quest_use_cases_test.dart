@@ -18,8 +18,7 @@ class _FakeOwners implements LocalOwnerRepository {
   Future<LocalOwner> getOrCreateActiveOwner() async => owner;
 
   @override
-  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async =>
-      owner;
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async => owner;
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -30,49 +29,47 @@ EventEnvelopeV2 _makeEvent({
   String eventType = 'QuizCompleted',
   Map<String, dynamic> payload = const {'correct': true},
   String ownerId = 'owner-uc',
-}) =>
-    EventEnvelopeV2(
-      eventId: 'evt-uc-${++_seq}',
-      eventType: eventType,
-      eventVersion: 1,
-      occurredAtUtc: DateTime.utc(2026, 8, 4, 10, 0),
-      recordedAtUtc: DateTime.utc(2026, 8, 4, 10, 0, 1),
-      actorIdentity: ownerId,
-      ownerIdentity: ownerId,
-      aggregateType: 'LearningSession',
-      aggregateId: 'sess-uc',
-      idempotencyKey: 'idem-uc-${_seq}',
-      consentContext: const ConsentContext.none(),
-      appVersion: '1.0',
-      buildId: 'sha',
-      privacyClassification: PrivacyClassification.anonymized,
-      payload: payload,
-    );
+}) => EventEnvelopeV2(
+  eventId: 'evt-uc-${++_seq}',
+  eventType: eventType,
+  eventVersion: 1,
+  occurredAtUtc: DateTime.utc(2026, 8, 4, 10, 0),
+  recordedAtUtc: DateTime.utc(2026, 8, 4, 10, 0, 1),
+  actorIdentity: ownerId,
+  ownerIdentity: ownerId,
+  aggregateType: 'LearningSession',
+  aggregateId: 'sess-uc',
+  idempotencyKey: 'idem-uc-${_seq}',
+  consentContext: const ConsentContext.none(),
+  appVersion: '1.0',
+  buildId: 'sha',
+  privacyClassification: PrivacyClassification.anonymized,
+  payload: payload,
+);
 
 QuestDefinition _singleObjectiveDef({
   String questId = 'q-uc-daily',
   int targetCount = 2,
   QuestType type = QuestType.daily,
-}) =>
-    QuestDefinition(
-      questId: questId,
-      catalogVersion: 1,
-      title: 'Test Quest',
-      description: 'Complete $targetCount quiz questions',
-      type: type,
-      objectives: [
-        QuestObjective(
-          objectiveId: 'obj-uc',
-          description: 'Answer correctly',
-          targetCount: targetCount,
-          criteria: const ObjectiveCriteria(
-            eventType: 'QuizCompleted',
-            filters: {'correct': true},
-          ),
-        ),
-      ],
-      reward: const RewardSpec(xpAmount: 50),
-    );
+}) => QuestDefinition(
+  questId: questId,
+  catalogVersion: 1,
+  title: 'Test Quest',
+  description: 'Complete $targetCount quiz questions',
+  type: type,
+  objectives: [
+    QuestObjective(
+      objectiveId: 'obj-uc',
+      description: 'Answer correctly',
+      targetCount: targetCount,
+      criteria: const ObjectiveCriteria(
+        eventType: 'QuizCompleted',
+        filters: {'correct': true},
+      ),
+    ),
+  ],
+  reward: const RewardSpec(xpAmount: 50),
+);
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -144,10 +141,7 @@ void main() {
       final def = _singleObjectiveDef(targetCount: 3);
       await useCases.startQuest(def);
 
-      final completed = await useCases.processEvent(
-        _makeEvent(),
-        [def],
-      );
+      final completed = await useCases.processEvent(_makeEvent(), [def]);
 
       expect(completed, isEmpty, reason: 'one event should not complete quest');
       final instances = await useCases.getActiveInstances();
@@ -158,80 +152,92 @@ void main() {
       final def = _singleObjectiveDef();
       await useCases.startQuest(def);
 
-      await useCases.processEvent(
-        _makeEvent(eventType: 'SrsReviewCompleted'),
-        [def],
-      );
+      await useCases.processEvent(_makeEvent(eventType: 'SrsReviewCompleted'), [
+        def,
+      ]);
 
       final instances = await useCases.getActiveInstances();
-      expect(instances.first.progress.first.currentCount, 0,
-          reason: 'non-matching event must not advance counter');
+      expect(
+        instances.first.progress.first.currentCount,
+        0,
+        reason: 'non-matching event must not advance counter',
+      );
     });
 
-    test('processEvent returns QuestCompletedEvent when all objectives met',
-        () async {
-      final def = _singleObjectiveDef(targetCount: 2);
-      await useCases.startQuest(def);
+    test(
+      'processEvent returns QuestCompletedEvent when all objectives met',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 2);
+        await useCases.startQuest(def);
 
-      await useCases.processEvent(_makeEvent(), [def]); // count=1
-      final completed = await useCases.processEvent(_makeEvent(), [def]); // count=2→complete
+        await useCases.processEvent(_makeEvent(), [def]); // count=1
+        final completed = await useCases.processEvent(_makeEvent(), [
+          def,
+        ]); // count=2→complete
 
-      expect(completed, hasLength(1));
-      expect(completed.first.questInstanceId, isNotEmpty);
-      expect(completed.first.idempotencyKey,
-          startsWith('quest_complete_'));
-      expect(completed.first.objectiveEventIds, hasLength(2));
-    });
+        expect(completed, hasLength(1));
+        expect(completed.first.questInstanceId, isNotEmpty);
+        expect(completed.first.idempotencyKey, startsWith('quest_complete_'));
+        expect(completed.first.objectiveEventIds, hasLength(2));
+      },
+    );
 
-    test('completed instance no longer appears in getActiveInstances',
-        () async {
-      final def = _singleObjectiveDef(targetCount: 1);
-      await useCases.startQuest(def);
-      await useCases.processEvent(_makeEvent(), [def]);
+    test(
+      'completed instance no longer appears in getActiveInstances',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 1);
+        await useCases.startQuest(def);
+        await useCases.processEvent(_makeEvent(), [def]);
 
-      final active = await useCases.getActiveInstances();
-      expect(active, isEmpty,
-          reason: 'completed instance must leave active list');
-    });
+        final active = await useCases.getActiveInstances();
+        expect(
+          active,
+          isEmpty,
+          reason: 'completed instance must leave active list',
+        );
+      },
+    );
 
     // ── expireStale ──────────────────────────────────────────────────────────
 
-    test('expireStale marks expired instances whose deadline has passed',
-        () async {
-      // Create definition with 1-hour expiry.
-      final def = QuestDefinition(
-        questId: 'q-expire',
-        catalogVersion: 1,
-        title: 'Expiring Quest',
-        description: 'Expires in 1 hour',
-        type: QuestType.daily,
-        objectives: const [
-          QuestObjective(
-            objectiveId: 'obj-expire',
-            description: 'Never complete',
-            targetCount: 99,
-            criteria: ObjectiveCriteria(eventType: 'QuizCompleted'),
-          ),
-        ],
-        reward: const RewardSpec(xpAmount: 10),
-        expiresIn: const Duration(hours: 1),
-      );
-      await useCases.startQuest(def);
+    test(
+      'expireStale marks expired instances whose deadline has passed',
+      () async {
+        // Create definition with 1-hour expiry.
+        final def = QuestDefinition(
+          questId: 'q-expire',
+          catalogVersion: 1,
+          title: 'Expiring Quest',
+          description: 'Expires in 1 hour',
+          type: QuestType.daily,
+          objectives: const [
+            QuestObjective(
+              objectiveId: 'obj-expire',
+              description: 'Never complete',
+              targetCount: 99,
+              criteria: ObjectiveCriteria(eventType: 'QuizCompleted'),
+            ),
+          ],
+          reward: const RewardSpec(xpAmount: 10),
+          expiresIn: const Duration(hours: 1),
+        );
+        await useCases.startQuest(def);
 
-      // Override nowUtc to 2 hours after assignment.
-      final lateUseCases = QuestUseCases(
-        repository: repo,
-        owners: _FakeOwners(testOwner),
-        generateId: () => 'id-late',
-        nowUtc: () => DateTime.utc(2026, 8, 4, 12, 0), // +2h
-        timezoneId: 'Asia/Bangkok',
-      );
+        // Override nowUtc to 2 hours after assignment.
+        final lateUseCases = QuestUseCases(
+          repository: repo,
+          owners: _FakeOwners(testOwner),
+          generateId: () => 'id-late',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 12, 0), // +2h
+          timezoneId: 'Asia/Bangkok',
+        );
 
-      await lateUseCases.expireStale();
+        await lateUseCases.expireStale();
 
-      final active = await repo.getActiveInstances('owner-uc');
-      expect(active, isEmpty, reason: 'expired quest must leave active list');
-    });
+        final active = await repo.getActiveInstances('owner-uc');
+        expect(active, isEmpty, reason: 'expired quest must leave active list');
+      },
+    );
 
     test('expireStale ignores instances without expiry', () async {
       final def = _singleObjectiveDef(); // no expiresIn
@@ -239,8 +245,11 @@ void main() {
       await useCases.expireStale();
 
       final active = await useCases.getActiveInstances();
-      expect(active, hasLength(1),
-          reason: 'quest with no deadline must not be expired');
+      expect(
+        active,
+        hasLength(1),
+        reason: 'quest with no deadline must not be expired',
+      );
     });
   });
 }

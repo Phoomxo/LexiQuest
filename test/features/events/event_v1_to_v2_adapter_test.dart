@@ -25,10 +25,7 @@ LearningEvent _makeV1({
   buildId: 'oldsha',
 );
 
-const _adapter = EventV1ToV2Adapter(
-  appVersion: '2.0.0',
-  buildId: 'newsha',
-);
+const _adapter = EventV1ToV2Adapter(appVersion: '2.0.0', buildId: 'newsha');
 
 void main() {
   group('EventV1ToV2Adapter — D3.4', () {

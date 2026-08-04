@@ -30,7 +30,9 @@ void main() {
       final fakeVoice = FakeVoiceProvider();
 
       await tester.pumpWidget(
-        MaterialApp(home: PhoneticExplorerScreen(voice: VoiceUseCases(fakeVoice))),
+        MaterialApp(
+          home: PhoneticExplorerScreen(voice: VoiceUseCases(fakeVoice)),
+        ),
       );
       await tester.pumpAndSettle();
 

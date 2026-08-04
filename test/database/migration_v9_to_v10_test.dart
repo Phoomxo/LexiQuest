@@ -24,17 +24,19 @@ void main() {
       expect(tables, hasLength(1));
     });
 
-    test('associative_memory_states table exists after fresh onCreate',
-        () async {
-      await db.customSelect('SELECT 1').get();
-      final tables = await db
-          .customSelect(
-            "SELECT name FROM sqlite_master "
-            "WHERE type='table' AND name='associative_memory_states'",
-          )
-          .get();
-      expect(tables, hasLength(1));
-    });
+    test(
+      'associative_memory_states table exists after fresh onCreate',
+      () async {
+        await db.customSelect('SELECT 1').get();
+        final tables = await db
+            .customSelect(
+              "SELECT name FROM sqlite_master "
+              "WHERE type='table' AND name='associative_memory_states'",
+            )
+            .get();
+        expect(tables, hasLength(1));
+      },
+    );
 
     test('fresh database reports schema version 10', () async {
       await db.customSelect('SELECT 1').get();
@@ -52,7 +54,9 @@ void main() {
         "VALUES ('owner-assoc', 'localGuest', ${now.millisecondsSinceEpoch})",
       );
 
-      await db.into(db.associationRecords).insert(
+      await db
+          .into(db.associationRecords)
+          .insert(
             AssociationRecordsCompanion.insert(
               id: 'assoc-1',
               ownerId: 'owner-assoc',
@@ -63,9 +67,9 @@ void main() {
             ),
           );
 
-      final rows = await (db.select(db.associationRecords)
-            ..where((t) => t.ownerId.equals('owner-assoc')))
-          .get();
+      final rows = await (db.select(
+        db.associationRecords,
+      )..where((t) => t.ownerId.equals('owner-assoc'))).get();
       expect(rows, hasLength(1));
       expect(rows.first.content, 'yellow fruit');
     });
@@ -78,7 +82,9 @@ void main() {
       );
 
       for (final content in ['first cue', 'updated cue']) {
-        await db.into(db.associationRecords).insert(
+        await db
+            .into(db.associationRecords)
+            .insert(
               AssociationRecordsCompanion.insert(
                 id: 'assoc-up-$content',
                 ownerId: 'owner-upsert',
@@ -91,10 +97,13 @@ void main() {
             );
       }
 
-      final rows = await (db.select(db.associationRecords)
-            ..where((t) =>
-                t.ownerId.equals('owner-upsert') & t.wordKey.equals('apple')))
-          .get();
+      final rows =
+          await (db.select(db.associationRecords)..where(
+                (t) =>
+                    t.ownerId.equals('owner-upsert') &
+                    t.wordKey.equals('apple'),
+              ))
+              .get();
       expect(rows, hasLength(1));
       expect(rows.first.content, 'updated cue');
     });

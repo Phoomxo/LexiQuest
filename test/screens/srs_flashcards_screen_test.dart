@@ -47,7 +47,10 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SrsFlashcardsScreen(wordList: wordList, voice: VoiceUseCases(fakeVoice)),
+        home: SrsFlashcardsScreen(
+          wordList: wordList,
+          voice: VoiceUseCases(fakeVoice),
+        ),
       ),
     );
     await tester.pumpAndSettle();

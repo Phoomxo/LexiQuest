@@ -23,8 +23,7 @@ class EventsV2 extends Table {
   // Field 6
   TextColumn get actorIdentity => text()();
   // Field 7 — FK to local_owners (column name owner_id matches project convention)
-  TextColumn get ownerId =>
-      text().references(LocalOwners, #id)();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
   // Field 8 — serialised TenantContext JSON (nullable)
   TextColumn get tenantContextJson => text().nullable()();
   // Field 9

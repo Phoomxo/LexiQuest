@@ -693,12 +693,13 @@ final class DriftSyncStore {
         );
       case 'srsState':
         // Entity ID for srsState outbox is the wordId (unique per owner-word).
-        final srs = await (database.select(database.srsStates)..where(
-              (row) =>
-                  row.wordId.equals(operation.entityId) &
-                  row.ownerId.equals(operation.ownerId),
-            ))
-            .getSingleOrNull();
+        final srs =
+            await (database.select(database.srsStates)..where(
+                  (row) =>
+                      row.wordId.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
         if (srs == null) throw StateError('outbox srsState was not found');
         return PushMutation(
           operationId: operation.operationId,
@@ -709,23 +710,22 @@ final class DriftSyncStore {
           payloadVersion: operation.payloadVersion,
           baseRevision: 0,
           localRevision: 1,
-          clientUpdatedAtUtc:
-              srs.lastReviewAtUtcMs != null
-                  ? _utc(srs.lastReviewAtUtcMs!)
-                  : DateTime.fromMillisecondsSinceEpoch(
-                      operation.createdAtUtcMs,
-                      isUtc: true,
-                    ),
+          clientUpdatedAtUtc: srs.lastReviewAtUtcMs != null
+              ? _utc(srs.lastReviewAtUtcMs!)
+              : DateTime.fromMillisecondsSinceEpoch(
+                  operation.createdAtUtcMs,
+                  isUtc: true,
+                ),
           payload: _srsStatePayload(srs),
         );
       case 'achievementUnlock':
-        final unlock = await (database.select(database.achievementUnlocks)
-              ..where(
-                (row) =>
-                    row.id.equals(operation.entityId) &
-                    row.ownerId.equals(operation.ownerId),
-              ))
-            .getSingleOrNull();
+        final unlock =
+            await (database.select(database.achievementUnlocks)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
         if (unlock == null) {
           throw StateError('outbox achievementUnlock was not found');
         }
@@ -865,21 +865,22 @@ final class DriftSyncStore {
                 .getSingle();
         return _rewardTransactionPayload(transaction);
       case 'srsState':
-        final srs = await (database.select(database.srsStates)..where(
-              (row) =>
-                  row.wordId.equals(operation.entityId) &
-                  row.ownerId.equals(operation.ownerId),
-            ))
-            .getSingle();
+        final srs =
+            await (database.select(database.srsStates)..where(
+                  (row) =>
+                      row.wordId.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
         return _srsStatePayload(srs);
       case 'achievementUnlock':
-        final unlock = await (database.select(database.achievementUnlocks)
-              ..where(
-                (row) =>
-                    row.id.equals(operation.entityId) &
-                    row.ownerId.equals(operation.ownerId),
-              ))
-            .getSingle();
+        final unlock =
+            await (database.select(database.achievementUnlocks)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
         return _achievementUnlockPayload(unlock);
       default:
         throw const InvalidSyncPayloadFailure();
@@ -1222,33 +1223,38 @@ final class DriftSyncStore {
     final algorithmVersion = _requiredInt(payload, 'algorithmVersion');
 
     // Verify word belongs to owner.
-    final word = await (database.select(database.vocabularyWords)
-          ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
-        .getSingleOrNull();
+    final word =
+        await (database.select(database.vocabularyWords)
+              ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
+            .getSingleOrNull();
     if (word == null) throw const InvalidSyncPayloadFailure();
 
     // Upsert: server state replaces local.
-    final existing = await (database.select(database.srsStates)
-          ..where((r) => r.wordId.equals(wordId) & r.ownerId.equals(ownerId)))
-        .getSingleOrNull();
+    final existing =
+        await (database.select(database.srsStates)..where(
+              (r) => r.wordId.equals(wordId) & r.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
 
     if (existing != null) {
-      await (database.update(database.srsStates)
-            ..where((r) => r.id.equals(existing.id)))
-          .write(
-            db.SrsStatesCompanion(
-              stability: Value(stability),
-              difficulty: Value(difficulty),
-              intervalDays: Value(intervalDays),
-              repetitions: Value(repetitions),
-              lapses: Value(lapses),
-              lastReviewAtUtcMs: Value(lastReviewAtUtcMs),
-              dueAtUtcMs: Value(dueAtUtcMs),
-              algorithmVersion: Value(algorithmVersion),
-            ),
-          );
+      await (database.update(
+        database.srsStates,
+      )..where((r) => r.id.equals(existing.id))).write(
+        db.SrsStatesCompanion(
+          stability: Value(stability),
+          difficulty: Value(difficulty),
+          intervalDays: Value(intervalDays),
+          repetitions: Value(repetitions),
+          lapses: Value(lapses),
+          lastReviewAtUtcMs: Value(lastReviewAtUtcMs),
+          dueAtUtcMs: Value(dueAtUtcMs),
+          algorithmVersion: Value(algorithmVersion),
+        ),
+      );
     } else {
-      await database.into(database.srsStates).insert(
+      await database
+          .into(database.srsStates)
+          .insert(
             db.SrsStatesCompanion.insert(
               id: entity.entityId,
               ownerId: ownerId,
@@ -1271,13 +1277,16 @@ final class DriftSyncStore {
   ///
   /// Immutable append-only: insertOrIgnore.  Once an achievement is unlocked
   /// it can never be revoked, so an existing row is authoritative.
-  Future<void> _applyAchievementUnlock(String ownerId, SyncEntity entity) async {
+  Future<void> _applyAchievementUnlock(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
     _requireImmutableEntity(entity, SyncCollection.achievementUnlocks);
-    final existing = await (database.select(database.achievementUnlocks)
-          ..where(
-            (r) => r.id.equals(entity.entityId) & r.ownerId.equals(ownerId),
-          ))
-        .getSingleOrNull();
+    final existing =
+        await (database.select(database.achievementUnlocks)..where(
+              (r) => r.id.equals(entity.entityId) & r.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
     if (existing != null) {
       await _handleExistingImmutable(
         ownerId: ownerId,
@@ -1292,7 +1301,9 @@ final class DriftSyncStore {
     final sourceEventId = _requiredString(payload, 'sourceEventId');
     final unlockedAtUtcMs = _requiredInt(payload, 'unlockedAtUtcMs');
 
-    await database.into(database.achievementUnlocks).insert(
+    await database
+        .into(database.achievementUnlocks)
+        .insert(
           db.AchievementUnlocksCompanion.insert(
             id: entity.entityId,
             ownerId: ownerId,
@@ -1589,20 +1600,18 @@ Map<String, Object?> _rewardTransactionPayload(
 }
 
 Map<String, Object?> _srsStatePayload(db.SrsState srs) => <String, Object?>{
-      'wordId': srs.wordId,
-      'stability': srs.stability,
-      'difficulty': srs.difficulty,
-      'intervalDays': srs.intervalDays,
-      'repetitions': srs.repetitions,
-      'lapses': srs.lapses,
-      'lastReviewAtUtcMs': srs.lastReviewAtUtcMs,
-      'dueAtUtcMs': srs.dueAtUtcMs,
-      'algorithmVersion': srs.algorithmVersion,
-    };
+  'wordId': srs.wordId,
+  'stability': srs.stability,
+  'difficulty': srs.difficulty,
+  'intervalDays': srs.intervalDays,
+  'repetitions': srs.repetitions,
+  'lapses': srs.lapses,
+  'lastReviewAtUtcMs': srs.lastReviewAtUtcMs,
+  'dueAtUtcMs': srs.dueAtUtcMs,
+  'algorithmVersion': srs.algorithmVersion,
+};
 
-Map<String, Object?> _achievementUnlockPayload(
-  db.AchievementUnlock unlock,
-) =>
+Map<String, Object?> _achievementUnlockPayload(db.AchievementUnlock unlock) =>
     <String, Object?>{
       'achievementId': unlock.achievementId,
       'definitionVersion': unlock.definitionVersion,

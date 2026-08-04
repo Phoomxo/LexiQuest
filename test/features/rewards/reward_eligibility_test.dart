@@ -121,10 +121,7 @@ void main() {
 
     test('toJson round-trips result and coinAmount', () {
       final d = RewardEligibilityDecision.evaluate(
-        _makeEvent(
-          eventType: 'QuizCompleted',
-          payload: {'correct': true},
-        ),
+        _makeEvent(eventType: 'QuizCompleted', payload: {'correct': true}),
       );
       final j = d.toJson();
       expect(j['result'], 'eligible');

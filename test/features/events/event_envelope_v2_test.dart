@@ -69,15 +69,28 @@ void main() {
       // 22 envelope fields plus schemaVersion envelope marker
       final expectedKeys = {
         'schemaVersion',
-        'eventId', 'eventType', 'eventVersion',
-        'occurredAtUtc', 'recordedAtUtc',
-        'actorIdentity', 'ownerIdentity',
-        'tenantContext', 'aggregateType', 'aggregateId',
-        'correlationId', 'causationId',
-        'idempotencyKey', 'consentContext', 'experimentContext',
-        'contentRevision', 'policyVersion',
-        'appVersion', 'buildId', 'providerProvenance',
-        'privacyClassification', 'payload',
+        'eventId',
+        'eventType',
+        'eventVersion',
+        'occurredAtUtc',
+        'recordedAtUtc',
+        'actorIdentity',
+        'ownerIdentity',
+        'tenantContext',
+        'aggregateType',
+        'aggregateId',
+        'correlationId',
+        'causationId',
+        'idempotencyKey',
+        'consentContext',
+        'experimentContext',
+        'contentRevision',
+        'policyVersion',
+        'appVersion',
+        'buildId',
+        'providerProvenance',
+        'privacyClassification',
+        'payload',
       };
       expect(json.keys.toSet(), expectedKeys);
     });
@@ -106,7 +119,10 @@ void main() {
         causationId: 'caus-9',
         contentRevision: 'rev-7',
         policyVersion: 'v2',
-        payload: {'score': 85, 'words': ['cat', 'dog']},
+        payload: {
+          'score': 85,
+          'words': ['cat', 'dog'],
+        },
       );
       final json = original.toJson();
       final restored = EventEnvelopeV2.fromJson(json);
@@ -118,7 +134,10 @@ void main() {
       expect(restored.recordedAtUtc, original.recordedAtUtc);
       expect(restored.actorIdentity, original.actorIdentity);
       expect(restored.ownerIdentity, original.ownerIdentity);
-      expect(restored.tenantContext!.tenantId, original.tenantContext!.tenantId);
+      expect(
+        restored.tenantContext!.tenantId,
+        original.tenantContext!.tenantId,
+      );
       expect(restored.aggregateType, original.aggregateType);
       expect(restored.aggregateId, original.aggregateId);
       expect(restored.correlationId, original.correlationId);
@@ -170,20 +189,20 @@ void main() {
     test('fromJson throws ArgumentError when idempotencyKey is empty', () {
       final json = _makeEvent().toJson();
       json['idempotencyKey'] = '';
-      expect(
-        () => EventEnvelopeV2.fromJson(json),
-        throwsArgumentError,
-      );
+      expect(() => EventEnvelopeV2.fromJson(json), throwsArgumentError);
     });
 
-    test('unknown JSON fields do not break deserialization — forward compat', () {
-      final json = _makeEvent().toJson();
-      json['futureField'] = 'added in v3';
-      json['anotherFutureField'] = 42;
-      // Must not throw; unknown keys are silently ignored.
-      final event = EventEnvelopeV2.fromJson(json);
-      expect(event.eventId, isNotEmpty);
-    });
+    test(
+      'unknown JSON fields do not break deserialization — forward compat',
+      () {
+        final json = _makeEvent().toJson();
+        json['futureField'] = 'added in v3';
+        json['anotherFutureField'] = 42;
+        // Must not throw; unknown keys are silently ignored.
+        final event = EventEnvelopeV2.fromJson(json);
+        expect(event.eventId, isNotEmpty);
+      },
+    );
 
     test('nullable fields are omitted from toJson when null', () {
       final event = _makeEvent(); // all nullables absent

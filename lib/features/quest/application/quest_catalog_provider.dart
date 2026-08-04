@@ -70,9 +70,9 @@ abstract final class QuestCatalogProvider {
 
   /// All built-in quests — daily first, then weekly.
   static List<QuestDefinition> get allQuests => [
-        ...dailyQuests,
-        ...weeklyQuests,
-      ];
+    ...dailyQuests,
+    ...weeklyQuests,
+  ];
 
   // ── Startup helper ─────────────────────────────────────────────────────────
 

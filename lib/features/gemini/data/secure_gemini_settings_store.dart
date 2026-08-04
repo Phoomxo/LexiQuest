@@ -21,8 +21,7 @@ const lexiQuestGeminiAndroidOptions = AndroidOptions(
   storageNamespace: 'lexiquest_gemini_byok_v2',
   resetOnError: false,
   migrateOnAlgorithmChange: false,
-  keyCipherAlgorithm:
-      KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
+  keyCipherAlgorithm: KeyCipherAlgorithm.RSA_ECB_OAEPwithSHA_256andMGF1Padding,
   storageCipherAlgorithm: StorageCipherAlgorithm.AES_GCM_NoPadding,
 );
 

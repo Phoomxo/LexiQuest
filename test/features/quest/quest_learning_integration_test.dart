@@ -30,24 +30,24 @@ const _ownerId = 'owner-qi';
 int _seq = 0;
 
 QuestDefinition _quizDef({int targetCount = 1}) => QuestDefinition(
-      questId: 'q-quiz-correct',
-      catalogVersion: 1,
-      title: 'Answer Correctly',
-      description: 'Answer $targetCount question(s) correctly',
-      type: QuestType.daily,
-      objectives: [
-        QuestObjective(
-          objectiveId: 'obj-correct',
-          description: 'Correct answers',
-          targetCount: targetCount,
-          criteria: const ObjectiveCriteria(
-            eventType: 'QuizCompleted',
-            filters: {'correct': true},
-          ),
-        ),
-      ],
-      reward: const RewardSpec(xpAmount: 50),
-    );
+  questId: 'q-quiz-correct',
+  catalogVersion: 1,
+  title: 'Answer Correctly',
+  description: 'Answer $targetCount question(s) correctly',
+  type: QuestType.daily,
+  objectives: [
+    QuestObjective(
+      objectiveId: 'obj-correct',
+      description: 'Correct answers',
+      targetCount: targetCount,
+      criteria: const ObjectiveCriteria(
+        eventType: 'QuizCompleted',
+        filters: {'correct': true},
+      ),
+    ),
+  ],
+  reward: const RewardSpec(xpAmount: 50),
+);
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -94,10 +94,7 @@ void main() {
       timezoneId: 'Asia/Bangkok',
     );
 
-    final adapter = EventV1ToV2Adapter(
-      appVersion: '1.0',
-      buildId: 'sha-test',
-    );
+    final adapter = EventV1ToV2Adapter(appVersion: '1.0', buildId: 'sha-test');
 
     // Wire QuestEventSink: forward V2 events to questUseCases.processEvent.
     final catalog = [_quizDef()];
@@ -137,8 +134,11 @@ void main() {
       // Quest still active; counter advanced to 1/2.
       final active = await questUseCases.getActiveInstances();
       expect(active, hasLength(1));
-      expect(active.first.progress.first.currentCount, 1,
-          reason: 'correct answer must advance quest counter');
+      expect(
+        active.first.progress.first.currentCount,
+        1,
+        reason: 'correct answer must advance quest counter',
+      );
     });
 
     test('incorrect answer does NOT advance quest', () async {
@@ -156,8 +156,11 @@ void main() {
 
       final active = await questUseCases.getActiveInstances();
       expect(active, hasLength(1));
-      expect(active.first.progress.first.currentCount, 0,
-          reason: 'incorrect answer must not advance quest counter');
+      expect(
+        active.first.progress.first.currentCount,
+        0,
+        reason: 'incorrect answer must not advance quest counter',
+      );
     });
 
     test('quest completes when target count reached', () async {
