@@ -211,13 +211,17 @@ test('features/ must not import quarantined services', () {
 
 ## Migration Timeline
 
-| Service | Target Week | Replacement |
-|---------|-------------|-------------|
-| `streak_and_daily_quest_service.dart` | Week 5-6 (D3.5) | `QuestUseCases` + `StreakProjection` |
-| `adaptive_daily_quest_service.dart` | Week 5-6 (D3.5) | `QuestDomainService` |
-| `srs_service.dart` | Phase 0 | `LearningUseCases.getDueWords()` |
-| `local_user_progress_store.dart` | Phase 0 | Drift tables + `ProgressUseCases` |
-| `word_service.dart` | Phase 0 | `VocabularyUseCases` |
-| `local_progress_repository.dart` | Phase 0 | `ProgressUseCases` |
+| Service | Target Week | Replacement | Status |
+|---------|-------------|-------------|--------|
+| `streak_and_daily_quest_service.dart` | Phase 0 Week 10-11 | `QuestUseCases` | ⚠️ `@Deprecated` added 2026-08-04; removal target Phase 1 |
+| `adaptive_daily_quest_service.dart` | Phase 0 Week 10-11 | `QuestUseCases` | ⚠️ Pending removal — no screen imports found |
+| `srs_service.dart` | Phase 0 Week 14-15 | `LearningUseCases.startDueReview()` | ✅ Removed from screens 2026-08-04; `@Deprecated` added |
+| `local_user_progress_store.dart` | Phase 1 | Drift tables + `ProgressUseCases` | 🔒 Still quarantined |
+| `word_service.dart` | Phase 1 | `VocabularyUseCases` | 🔒 Still quarantined |
+| `local_progress_repository.dart` | Phase 1 | `ProgressUseCases` | 🔒 Still quarantined |
+
+**Gate 1.5:** All 42 services categorized ✅ (6 quarantined, 8 keep, 28 evaluate)
+
+**Phase 0 progress (2026-08-04):** 2/6 quarantined services deprecated; `srs_service` removed from all screen imports.
 
 **Gate 1.5:** All 42 services categorized ✅ (6 quarantined, 8 keep, 28 evaluate)

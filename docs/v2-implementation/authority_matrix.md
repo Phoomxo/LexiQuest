@@ -42,6 +42,10 @@
 | 19 | `SyncConflicts` | `features/sync/data/drift_sync_store.dart` | None | LOW | Keep |
 | 20 | `RuntimeFlags` | `features/sync/data/drift_cloud_policy_cache.dart` | Delete: `drift_sync_store.dart` (stale cleanup only) | LOW | Keep — policy cache has clear authority |
 | 21 | `ModelDownloads` | `features/device_model/data/drift_model_download_repository.dart` | None | LOW | Keep |
+| 22 | `EventsV2` | `features/events/` (via EventV1ToV2Adapter) | Sync-in: none (append-only) | LOW | Phase -1 D3.2 — frozen contract |
+| 23 | `QuestDefinitions` | `features/quest/data/drift_quest_repository.dart` | None (catalog data) | LOW | Phase 0 D6.1 — no owner FK; catalog only |
+| 24 | `QuestInstances` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — owner-scoped, state machine |
+| 25 | `QuestObjectiveProgress` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — cascades from QuestInstances |
 
 ---
 

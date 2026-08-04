@@ -30,48 +30,52 @@
 
 ### v7 — EventEnvelopeV2 Storage
 **Reserved:** 2026-08-04  
-**Planned Week:** Week 5-6 (D3.2)  
-**Branch:** TBD (will be created in Week 5)  
-**PR:** TBD  
-**Status:** 🔒 RESERVED
+**Deployed:** 2026-08-04 (Phase -1 Week 5-6 D3.2)  
+**Branch:** feature/associative-reading-loop  
+**Commit:** `748fb51`  
+**Status:** ✅ DEPLOYED
 
-**Planned tables:**
+**Actual tables added:**
 ```
-EventEnvelopeV2Store          — append-only event log (22 fields)
-EventEnvelopeV2Inbox          — received events pending processing
-V1ToV2EventAdapterLog         — adapter run log for parity tracking
-```
-
-**Planned column additions:**
-```
-PointsLedgerEntries.semanticType  — 'xp' | 'legacy_points'
-  (if board approves rename: migrate to XpLedgerEntries instead)
-```
-
-**Migration safety:** 
-- Non-destructive (new tables + one nullable column)
-- Rollback: drop new tables, revert column (no data loss on downgrade)
-
----
-
-### v8 — Quest, Streak, and Mastery Foundation
-**Reserved:** 2026-08-04  
-**Planned Week:** Week 5-6 (D3.5) + Week 7-8  
-**Branch:** TBD  
-**PR:** TBD  
-**Status:** 🔒 RESERVED
-
-**Planned tables:**
-```
-QuestInstances                — persistent quest state (replaces in-memory DailyQuest)
-QuestCompletionEvents         — immutable completion log with idempotencyKey
-StreakStates                  — per-owner streak + freeze count (replaces in-memory)
-LearningDayLog                — one row per learning day per owner (for streak calc)
+events_v2  — append-only EventEnvelopeV2 log (22 columns)
+             PK: event_id
+             Unique: (owner_id, idempotency_key)
+             Index:  ON events_v2(owner_id, occurred_at_utc)
 ```
 
 **Migration safety:**
+- Non-destructive (new table only)
+- Rollback: downgrade to v6 safe (table was added, not modified)
+
+---
+
+### v8 — Quest Domain Persistence
+**Reserved:** 2026-08-04  
+**Deployed:** 2026-08-04 (Phase 0 Week 10-11 D6.1)  
+**Branch:** feature/associative-reading-loop  
+**Commit:** `1932d47`  
+**Status:** ✅ DEPLOYED
+
+**Actual tables added:**
+```
+quest_definitions        — catalog entries (no owner_id; shared content)
+                           PK: quest_id
+quest_instances          — per-learner state machine
+                           PK: instance_id
+                           Unique: (owner_id, quest_id)
+                           FK: owner_id → local_owners(id)
+                           FK: quest_id → quest_definitions(quest_id)
+quest_objective_progress — per-objective counters
+                           PK: id
+                           Unique: (instance_id, objective_id)
+                           FK: instance_id → quest_instances (CASCADE)
+```
+
+**ownerUpgradeInventory additions:** `quest_instances` (quest_objective_progress excluded — cascades from instance)
+
+**Migration safety:**
 - Non-destructive (new tables only)
-- Rollback: drop all 4 tables
+- Rollback: downgrade to v7 safe
 
 ---
 
