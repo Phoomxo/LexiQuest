@@ -85,6 +85,8 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.export: FeatureState.enabled,
         // V2 features hidden by default in production builds.
         // shadowRewardV2 and questV2 are opt-in for internal testing.
+        // Phase 1: questV2 promoted to limited (internal beta).
+        Feature.questV2: FeatureState.limited,
       };
 
   const BuildFeatureRegistry.allEnabled()

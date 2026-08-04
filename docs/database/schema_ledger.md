@@ -79,23 +79,29 @@ quest_objective_progress — per-objective counters
 
 ---
 
-### v9 — Identity Consolidation + V2 Projection Tables
+### v9 — Streak + Learning-Day Persistence
 **Reserved:** 2026-08-04  
-**Planned Week:** Week 7-8 (Shadow Mode)  
-**Branch:** TBD  
-**PR:** TBD  
-**Status:** 🔒 RESERVED
+**Deployed:** 2026-08-04 (Phase 1 D7.2)  
+**Branch:** feature/associative-reading-loop  
+**Commit:** `77a62d8`  
+**Status:** ✅ DEPLOYED
 
-**Planned tables:**
+**Actual tables added:**
 ```
-IdentityMappings              — guestOwnerId ↔ cloudUid ↔ canonicalOwnerId
-V2ProjectionCheckpoints       — shadow mode projection run tracking
-ParityTestResults             — shadow vs V1 match records (≥99% required)
+streak_states     — one row per owner; currentStreakDays, longestStreakDays,
+                    freezeCount, lastLearnedAtUtcMs, updatedAtUtcMs
+                    PK: owner_id (FK → local_owners)
+learning_day_log  — immutable record per (owner, learning-day string)
+                    PK: id ('day:{owner_id}:{YYYY-MM-DD}')
+                    Unique: (owner_id, learning_day)
+                    FK: owner_id → local_owners
 ```
+
+**ownerUpgradeInventory additions:** `streak_states`, `learning_day_log`
 
 **Migration safety:**
 - Non-destructive (new tables only)
-- Rollback: drop all 3 tables
+- Rollback: downgrade to v8 safe
 
 ---
 

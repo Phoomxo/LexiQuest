@@ -46,6 +46,8 @@
 | 23 | `QuestDefinitions` | `features/quest/data/drift_quest_repository.dart` | None (catalog data) | LOW | Phase 0 D6.1 — no owner FK; catalog only |
 | 24 | `QuestInstances` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — owner-scoped, state machine |
 | 25 | `QuestObjectiveProgress` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — cascades from QuestInstances |
+| 26 | `StreakStates` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — one row per owner; owned by StreakUseCases |
+| 27 | `LearningDayLog` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — immutable append-only; insertOrIgnore |
 
 ---
 
