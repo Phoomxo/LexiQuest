@@ -14,13 +14,16 @@ import 'dart:io';
 
 void main(List<String> args) async {
   final showIdempotency = args.contains('--show-idempotency-failures');
-  final logPath = args.where((a) => !a.startsWith('--')).firstOrNull
-      ?? 'shadow_rewards.jsonl';
+  final logPath =
+      args.where((a) => !a.startsWith('--')).firstOrNull ??
+      'shadow_rewards.jsonl';
 
   final logFile = File(logPath);
   if (!logFile.existsSync()) {
     stderr.writeln('Shadow log not found: $logPath');
-    stderr.writeln('Run the app with Feature.shadowRewardV2 enabled for >= 7 days first.');
+    stderr.writeln(
+      'Run the app with Feature.shadowRewardV2 enabled for >= 7 days first.',
+    );
     exit(2);
   }
 
@@ -35,8 +38,9 @@ void main(List<String> args) async {
     return d?['result'] == 'eligible';
   }).toList();
   final wouldSucceed = eligible.where((e) => e['wouldSucceed'] == true).length;
-  final alreadyGranted =
-      eligible.where((e) => e['wouldSucceed'] == false).length;
+  final alreadyGranted = eligible
+      .where((e) => e['wouldSucceed'] == false)
+      .length;
   final errors = entries.where((e) => e['error'] != null).length;
   final notEligible = total - eligible.length - errors;
 
@@ -55,7 +59,9 @@ void main(List<String> args) async {
 
   if (total == 0) {
     print('');
-    print('⚠️  No entries found. Enable shadow mode and re-run after >= 7 days.');
+    print(
+      '⚠️  No entries found. Enable shadow mode and re-run after >= 7 days.',
+    );
     exit(0);
   }
 
@@ -91,12 +97,13 @@ void main(List<String> args) async {
   final parity = eligibleTotal == 0
       ? 100.0
       : (parityNumerator / eligibleTotal) * 100;
-  final errorRate =
-      total == 0 ? 0.0 : (errors.toDouble() / total) * 100;
+  final errorRate = total == 0 ? 0.0 : (errors.toDouble() / total) * 100;
 
   print('');
-  print('Parity (eligible events that would succeed): '
-      '${parity.toStringAsFixed(1)}%');
+  print(
+    'Parity (eligible events that would succeed): '
+    '${parity.toStringAsFixed(1)}%',
+  );
   print('Error rate: ${errorRate.toStringAsFixed(2)}%');
   print('');
 
@@ -104,18 +111,26 @@ void main(List<String> args) async {
   const errorThreshold = 1.0;
 
   if (parity >= parityThreshold && errorRate < errorThreshold) {
-    print('✅  Parity ≥ ${parityThreshold.toInt()}% and error rate < '
-        '${errorThreshold.toInt()}% — shadow mode is ready for cutover review.');
+    print(
+      '✅  Parity ≥ ${parityThreshold.toInt()}% and error rate < '
+      '${errorThreshold.toInt()}% — shadow mode is ready for cutover review.',
+    );
     exit(0);
   } else {
     if (parity < parityThreshold) {
-      print('❌  Parity ${parity.toStringAsFixed(1)}% < required '
-          '${parityThreshold.toInt()}%');
-      print('   Investigate diverging events and fix eligibility policy or adapter.');
+      print(
+        '❌  Parity ${parity.toStringAsFixed(1)}% < required '
+        '${parityThreshold.toInt()}%',
+      );
+      print(
+        '   Investigate diverging events and fix eligibility policy or adapter.',
+      );
     }
     if (errorRate >= errorThreshold) {
-      print('❌  Error rate ${errorRate.toStringAsFixed(2)}% ≥ '
-          '${errorThreshold.toInt()}%');
+      print(
+        '❌  Error rate ${errorRate.toStringAsFixed(2)}% ≥ '
+        '${errorThreshold.toInt()}%',
+      );
       print('   Check shadow mode error logs above.');
     }
     print('');
