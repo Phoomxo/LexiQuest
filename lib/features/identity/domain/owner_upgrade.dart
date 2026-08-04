@@ -54,4 +54,9 @@ const Set<String> ownerUpgradeInventory = <String>{
   // quest_objective_progress is excluded: it has no owner_id column and
   // cascades automatically when quest_instances rows are re-owned.
   'quest_instances',
+  // Phase 1 D7.2 — streak state is owner-scoped.
+  // learning_day_log is excluded: composite PK includes owner string; the
+  // upgrade loop handles it via raw UPDATE ... SET owner_id = ? query.
+  'streak_states',
+  'learning_day_log',
 };

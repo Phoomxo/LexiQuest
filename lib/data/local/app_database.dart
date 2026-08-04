@@ -5,6 +5,7 @@ import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
+import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/runtime_tables.dart';
@@ -40,6 +41,8 @@ part 'app_database.g.dart';
     QuestDefinitions,
     QuestInstances,
     QuestObjectiveProgress,
+    StreakStates,
+    LearningDayLog,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -48,7 +51,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 8;
+  int get schemaVersion => 9;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -149,6 +152,9 @@ final class AppDatabase extends _$AppDatabase {
         await _createMissingTables(migrator);
       }
       if (from < 8) {
+        await _createMissingTables(migrator);
+      }
+      if (from < 9) {
         await _createMissingTables(migrator);
       }
     },
@@ -277,6 +283,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('quest_objective_progress')) {
       await migrator.createTable(questObjectiveProgress);
+    }
+    if (!await _tableExists('streak_states')) {
+      await migrator.createTable(streakStates);
+    }
+    if (!await _tableExists('learning_day_log')) {
+      await migrator.createTable(learningDayLog);
     }
   }
 

@@ -15336,6 +15336,806 @@ class QuestObjectiveProgressCompanion
   }
 }
 
+class $StreakStatesTable extends StreakStates
+    with TableInfo<$StreakStatesTable, StreakState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StreakStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _currentStreakDaysMeta = const VerificationMeta(
+    'currentStreakDays',
+  );
+  @override
+  late final GeneratedColumn<int> currentStreakDays = GeneratedColumn<int>(
+    'current_streak_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _longestStreakDaysMeta = const VerificationMeta(
+    'longestStreakDays',
+  );
+  @override
+  late final GeneratedColumn<int> longestStreakDays = GeneratedColumn<int>(
+    'longest_streak_days',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _freezeCountMeta = const VerificationMeta(
+    'freezeCount',
+  );
+  @override
+  late final GeneratedColumn<int> freezeCount = GeneratedColumn<int>(
+    'freeze_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastLearnedAtUtcMsMeta =
+      const VerificationMeta('lastLearnedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastLearnedAtUtcMs = GeneratedColumn<int>(
+    'last_learned_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    currentStreakDays,
+    longestStreakDays,
+    freezeCount,
+    lastLearnedAtUtcMs,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'streak_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StreakState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('current_streak_days')) {
+      context.handle(
+        _currentStreakDaysMeta,
+        currentStreakDays.isAcceptableOrUnknown(
+          data['current_streak_days']!,
+          _currentStreakDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('longest_streak_days')) {
+      context.handle(
+        _longestStreakDaysMeta,
+        longestStreakDays.isAcceptableOrUnknown(
+          data['longest_streak_days']!,
+          _longestStreakDaysMeta,
+        ),
+      );
+    }
+    if (data.containsKey('freeze_count')) {
+      context.handle(
+        _freezeCountMeta,
+        freezeCount.isAcceptableOrUnknown(
+          data['freeze_count']!,
+          _freezeCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_learned_at_utc_ms')) {
+      context.handle(
+        _lastLearnedAtUtcMsMeta,
+        lastLearnedAtUtcMs.isAcceptableOrUnknown(
+          data['last_learned_at_utc_ms']!,
+          _lastLearnedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId};
+  @override
+  StreakState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StreakState(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      currentStreakDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_streak_days'],
+      )!,
+      longestStreakDays: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}longest_streak_days'],
+      )!,
+      freezeCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}freeze_count'],
+      )!,
+      lastLearnedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_learned_at_utc_ms'],
+      ),
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $StreakStatesTable createAlias(String alias) {
+    return $StreakStatesTable(attachedDatabase, alias);
+  }
+}
+
+class StreakState extends DataClass implements Insertable<StreakState> {
+  final String ownerId;
+
+  /// Number of consecutive learning days including today (or the last
+  /// active day).  Reset to 0 if the learner missed a full day without
+  /// using a freeze token.
+  final int currentStreakDays;
+
+  /// All-time maximum streak — never decremented.
+  final int longestStreakDays;
+
+  /// Remaining freeze tokens.  Incremented by daily/milestone rewards;
+  /// decremented by [StreakUseCases.useFreezeToken].
+  final int freezeCount;
+
+  /// UTC timestamp of the most recent session that counted toward the
+  /// streak.  Null before the first session.
+  final int? lastLearnedAtUtcMs;
+  final int updatedAtUtcMs;
+  const StreakState({
+    required this.ownerId,
+    required this.currentStreakDays,
+    required this.longestStreakDays,
+    required this.freezeCount,
+    this.lastLearnedAtUtcMs,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['current_streak_days'] = Variable<int>(currentStreakDays);
+    map['longest_streak_days'] = Variable<int>(longestStreakDays);
+    map['freeze_count'] = Variable<int>(freezeCount);
+    if (!nullToAbsent || lastLearnedAtUtcMs != null) {
+      map['last_learned_at_utc_ms'] = Variable<int>(lastLearnedAtUtcMs);
+    }
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  StreakStatesCompanion toCompanion(bool nullToAbsent) {
+    return StreakStatesCompanion(
+      ownerId: Value(ownerId),
+      currentStreakDays: Value(currentStreakDays),
+      longestStreakDays: Value(longestStreakDays),
+      freezeCount: Value(freezeCount),
+      lastLearnedAtUtcMs: lastLearnedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastLearnedAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory StreakState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StreakState(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      currentStreakDays: serializer.fromJson<int>(json['currentStreakDays']),
+      longestStreakDays: serializer.fromJson<int>(json['longestStreakDays']),
+      freezeCount: serializer.fromJson<int>(json['freezeCount']),
+      lastLearnedAtUtcMs: serializer.fromJson<int?>(json['lastLearnedAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'currentStreakDays': serializer.toJson<int>(currentStreakDays),
+      'longestStreakDays': serializer.toJson<int>(longestStreakDays),
+      'freezeCount': serializer.toJson<int>(freezeCount),
+      'lastLearnedAtUtcMs': serializer.toJson<int?>(lastLearnedAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  StreakState copyWith({
+    String? ownerId,
+    int? currentStreakDays,
+    int? longestStreakDays,
+    int? freezeCount,
+    Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+    int? updatedAtUtcMs,
+  }) => StreakState(
+    ownerId: ownerId ?? this.ownerId,
+    currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+    longestStreakDays: longestStreakDays ?? this.longestStreakDays,
+    freezeCount: freezeCount ?? this.freezeCount,
+    lastLearnedAtUtcMs: lastLearnedAtUtcMs.present
+        ? lastLearnedAtUtcMs.value
+        : this.lastLearnedAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  StreakState copyWithCompanion(StreakStatesCompanion data) {
+    return StreakState(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      currentStreakDays: data.currentStreakDays.present
+          ? data.currentStreakDays.value
+          : this.currentStreakDays,
+      longestStreakDays: data.longestStreakDays.present
+          ? data.longestStreakDays.value
+          : this.longestStreakDays,
+      freezeCount: data.freezeCount.present
+          ? data.freezeCount.value
+          : this.freezeCount,
+      lastLearnedAtUtcMs: data.lastLearnedAtUtcMs.present
+          ? data.lastLearnedAtUtcMs.value
+          : this.lastLearnedAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakState(')
+          ..write('ownerId: $ownerId, ')
+          ..write('currentStreakDays: $currentStreakDays, ')
+          ..write('longestStreakDays: $longestStreakDays, ')
+          ..write('freezeCount: $freezeCount, ')
+          ..write('lastLearnedAtUtcMs: $lastLearnedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    currentStreakDays,
+    longestStreakDays,
+    freezeCount,
+    lastLearnedAtUtcMs,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StreakState &&
+          other.ownerId == this.ownerId &&
+          other.currentStreakDays == this.currentStreakDays &&
+          other.longestStreakDays == this.longestStreakDays &&
+          other.freezeCount == this.freezeCount &&
+          other.lastLearnedAtUtcMs == this.lastLearnedAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class StreakStatesCompanion extends UpdateCompanion<StreakState> {
+  final Value<String> ownerId;
+  final Value<int> currentStreakDays;
+  final Value<int> longestStreakDays;
+  final Value<int> freezeCount;
+  final Value<int?> lastLearnedAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const StreakStatesCompanion({
+    this.ownerId = const Value.absent(),
+    this.currentStreakDays = const Value.absent(),
+    this.longestStreakDays = const Value.absent(),
+    this.freezeCount = const Value.absent(),
+    this.lastLearnedAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StreakStatesCompanion.insert({
+    required String ownerId,
+    this.currentStreakDays = const Value.absent(),
+    this.longestStreakDays = const Value.absent(),
+    this.freezeCount = const Value.absent(),
+    this.lastLearnedAtUtcMs = const Value.absent(),
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<StreakState> custom({
+    Expression<String>? ownerId,
+    Expression<int>? currentStreakDays,
+    Expression<int>? longestStreakDays,
+    Expression<int>? freezeCount,
+    Expression<int>? lastLearnedAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (currentStreakDays != null) 'current_streak_days': currentStreakDays,
+      if (longestStreakDays != null) 'longest_streak_days': longestStreakDays,
+      if (freezeCount != null) 'freeze_count': freezeCount,
+      if (lastLearnedAtUtcMs != null)
+        'last_learned_at_utc_ms': lastLearnedAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StreakStatesCompanion copyWith({
+    Value<String>? ownerId,
+    Value<int>? currentStreakDays,
+    Value<int>? longestStreakDays,
+    Value<int>? freezeCount,
+    Value<int?>? lastLearnedAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return StreakStatesCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      currentStreakDays: currentStreakDays ?? this.currentStreakDays,
+      longestStreakDays: longestStreakDays ?? this.longestStreakDays,
+      freezeCount: freezeCount ?? this.freezeCount,
+      lastLearnedAtUtcMs: lastLearnedAtUtcMs ?? this.lastLearnedAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (currentStreakDays.present) {
+      map['current_streak_days'] = Variable<int>(currentStreakDays.value);
+    }
+    if (longestStreakDays.present) {
+      map['longest_streak_days'] = Variable<int>(longestStreakDays.value);
+    }
+    if (freezeCount.present) {
+      map['freeze_count'] = Variable<int>(freezeCount.value);
+    }
+    if (lastLearnedAtUtcMs.present) {
+      map['last_learned_at_utc_ms'] = Variable<int>(lastLearnedAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StreakStatesCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('currentStreakDays: $currentStreakDays, ')
+          ..write('longestStreakDays: $longestStreakDays, ')
+          ..write('freezeCount: $freezeCount, ')
+          ..write('lastLearnedAtUtcMs: $lastLearnedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningDayLogTable extends LearningDayLog
+    with TableInfo<$LearningDayLogTable, LearningDayLogData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningDayLogTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _learningDayMeta = const VerificationMeta(
+    'learningDay',
+  );
+  @override
+  late final GeneratedColumn<String> learningDay = GeneratedColumn<String>(
+    'learning_day',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _firstSessionAtUtcMsMeta =
+      const VerificationMeta('firstSessionAtUtcMs');
+  @override
+  late final GeneratedColumn<int> firstSessionAtUtcMs = GeneratedColumn<int>(
+    'first_session_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    learningDay,
+    firstSessionAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_day_log';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningDayLogData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('learning_day')) {
+      context.handle(
+        _learningDayMeta,
+        learningDay.isAcceptableOrUnknown(
+          data['learning_day']!,
+          _learningDayMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningDayMeta);
+    }
+    if (data.containsKey('first_session_at_utc_ms')) {
+      context.handle(
+        _firstSessionAtUtcMsMeta,
+        firstSessionAtUtcMs.isAcceptableOrUnknown(
+          data['first_session_at_utc_ms']!,
+          _firstSessionAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_firstSessionAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, learningDay},
+  ];
+  @override
+  LearningDayLogData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningDayLogData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      learningDay: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_day'],
+      )!,
+      firstSessionAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}first_session_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningDayLogTable createAlias(String alias) {
+    return $LearningDayLogTable(attachedDatabase, alias);
+  }
+}
+
+class LearningDayLogData extends DataClass
+    implements Insertable<LearningDayLogData> {
+  /// Deterministic ID: `day:{ownerId}:{learningDay}`.
+  final String id;
+  final String ownerId;
+
+  /// ISO-8601 date in the learner's local timezone: `'YYYY-MM-DD'`.
+  /// Computed by [TimezonePolicy.getLearningDay].
+  final String learningDay;
+
+  /// UTC timestamp of the first session on this day.
+  final int firstSessionAtUtcMs;
+  const LearningDayLogData({
+    required this.id,
+    required this.ownerId,
+    required this.learningDay,
+    required this.firstSessionAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['learning_day'] = Variable<String>(learningDay);
+    map['first_session_at_utc_ms'] = Variable<int>(firstSessionAtUtcMs);
+    return map;
+  }
+
+  LearningDayLogCompanion toCompanion(bool nullToAbsent) {
+    return LearningDayLogCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      learningDay: Value(learningDay),
+      firstSessionAtUtcMs: Value(firstSessionAtUtcMs),
+    );
+  }
+
+  factory LearningDayLogData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningDayLogData(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      learningDay: serializer.fromJson<String>(json['learningDay']),
+      firstSessionAtUtcMs: serializer.fromJson<int>(
+        json['firstSessionAtUtcMs'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'learningDay': serializer.toJson<String>(learningDay),
+      'firstSessionAtUtcMs': serializer.toJson<int>(firstSessionAtUtcMs),
+    };
+  }
+
+  LearningDayLogData copyWith({
+    String? id,
+    String? ownerId,
+    String? learningDay,
+    int? firstSessionAtUtcMs,
+  }) => LearningDayLogData(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    learningDay: learningDay ?? this.learningDay,
+    firstSessionAtUtcMs: firstSessionAtUtcMs ?? this.firstSessionAtUtcMs,
+  );
+  LearningDayLogData copyWithCompanion(LearningDayLogCompanion data) {
+    return LearningDayLogData(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      learningDay: data.learningDay.present
+          ? data.learningDay.value
+          : this.learningDay,
+      firstSessionAtUtcMs: data.firstSessionAtUtcMs.present
+          ? data.firstSessionAtUtcMs.value
+          : this.firstSessionAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningDayLogData(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('learningDay: $learningDay, ')
+          ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, ownerId, learningDay, firstSessionAtUtcMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningDayLogData &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.learningDay == this.learningDay &&
+          other.firstSessionAtUtcMs == this.firstSessionAtUtcMs);
+}
+
+class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> learningDay;
+  final Value<int> firstSessionAtUtcMs;
+  final Value<int> rowid;
+  const LearningDayLogCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.learningDay = const Value.absent(),
+    this.firstSessionAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningDayLogCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String learningDay,
+    required int firstSessionAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       learningDay = Value(learningDay),
+       firstSessionAtUtcMs = Value(firstSessionAtUtcMs);
+  static Insertable<LearningDayLogData> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? learningDay,
+    Expression<int>? firstSessionAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (learningDay != null) 'learning_day': learningDay,
+      if (firstSessionAtUtcMs != null)
+        'first_session_at_utc_ms': firstSessionAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningDayLogCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? learningDay,
+    Value<int>? firstSessionAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningDayLogCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      learningDay: learningDay ?? this.learningDay,
+      firstSessionAtUtcMs: firstSessionAtUtcMs ?? this.firstSessionAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (learningDay.present) {
+      map['learning_day'] = Variable<String>(learningDay.value);
+    }
+    if (firstSessionAtUtcMs.present) {
+      map['first_session_at_utc_ms'] = Variable<int>(firstSessionAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningDayLogCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('learningDay: $learningDay, ')
+          ..write('firstSessionAtUtcMs: $firstSessionAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -15387,6 +16187,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $QuestInstancesTable questInstances = $QuestInstancesTable(this);
   late final $QuestObjectiveProgressTable questObjectiveProgress =
       $QuestObjectiveProgressTable(this);
+  late final $StreakStatesTable streakStates = $StreakStatesTable(this);
+  late final $LearningDayLogTable learningDayLog = $LearningDayLogTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -15417,6 +16219,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     questDefinitions,
     questInstances,
     questObjectiveProgress,
+    streakStates,
+    learningDayLog,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -15852,6 +16656,42 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_questInstancesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StreakStatesTable, List<StreakState>>
+  _streakStatesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.streakStates,
+    aliasName: 'local_owners__id__streak_states__owner_id',
+  );
+
+  $$StreakStatesTableProcessedTableManager get streakStatesRefs {
+    final manager = $$StreakStatesTableTableManager(
+      $_db,
+      $_db.streakStates,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_streakStatesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LearningDayLogTable, List<LearningDayLogData>>
+  _learningDayLogRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.learningDayLog,
+    aliasName: 'local_owners__id__learning_day_log__owner_id',
+  );
+
+  $$LearningDayLogTableProcessedTableManager get learningDayLogRefs {
+    final manager = $$LearningDayLogTableTableManager(
+      $_db,
+      $_db.learningDayLog,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_learningDayLogRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -16364,6 +17204,56 @@ class $$LocalOwnersTableFilterComposer
           }) => $$QuestInstancesTableFilterComposer(
             $db: $db,
             $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> streakStatesRefs(
+    Expression<bool> Function($$StreakStatesTableFilterComposer f) f,
+  ) {
+    final $$StreakStatesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.streakStates,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StreakStatesTableFilterComposer(
+            $db: $db,
+            $table: $db.streakStates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningDayLogRefs(
+    Expression<bool> Function($$LearningDayLogTableFilterComposer f) f,
+  ) {
+    final $$LearningDayLogTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningDayLog,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningDayLogTableFilterComposer(
+            $db: $db,
+            $table: $db.learningDayLog,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -16930,6 +17820,56 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> streakStatesRefs<T extends Object>(
+    Expression<T> Function($$StreakStatesTableAnnotationComposer a) f,
+  ) {
+    final $$StreakStatesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.streakStates,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StreakStatesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.streakStates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> learningDayLogRefs<T extends Object>(
+    Expression<T> Function($$LearningDayLogTableAnnotationComposer a) f,
+  ) {
+    final $$LearningDayLogTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningDayLog,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningDayLogTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningDayLog,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -16965,6 +17905,8 @@ class $$LocalOwnersTableTableManager
             bool syncConflictsRefs,
             bool eventsV2Refs,
             bool questInstancesRefs,
+            bool streakStatesRefs,
+            bool learningDayLogRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -17043,6 +17985,8 @@ class $$LocalOwnersTableTableManager
                 syncConflictsRefs = false,
                 eventsV2Refs = false,
                 questInstancesRefs = false,
+                streakStatesRefs = false,
+                learningDayLogRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -17066,6 +18010,8 @@ class $$LocalOwnersTableTableManager
                     if (syncConflictsRefs) db.syncConflicts,
                     if (eventsV2Refs) db.eventsV2,
                     if (questInstancesRefs) db.questInstances,
+                    if (streakStatesRefs) db.streakStates,
+                    if (learningDayLogRefs) db.learningDayLog,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -17469,6 +18415,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (streakStatesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StreakState
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._streakStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).streakStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (learningDayLogRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningDayLogData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningDayLogRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningDayLogRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -17509,6 +18497,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool syncConflictsRefs,
         bool eventsV2Refs,
         bool questInstancesRefs,
+        bool streakStatesRefs,
+        bool learningDayLogRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -28891,6 +29881,666 @@ typedef $$QuestObjectiveProgressTableProcessedTableManager =
       QuestObjectiveProgressData,
       PrefetchHooks Function({bool instanceId})
     >;
+typedef $$StreakStatesTableCreateCompanionBuilder =
+    StreakStatesCompanion Function({
+      required String ownerId,
+      Value<int> currentStreakDays,
+      Value<int> longestStreakDays,
+      Value<int> freezeCount,
+      Value<int?> lastLearnedAtUtcMs,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$StreakStatesTableUpdateCompanionBuilder =
+    StreakStatesCompanion Function({
+      Value<String> ownerId,
+      Value<int> currentStreakDays,
+      Value<int> longestStreakDays,
+      Value<int> freezeCount,
+      Value<int?> lastLearnedAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$StreakStatesTableReferences
+    extends BaseReferences<_$AppDatabase, $StreakStatesTable, StreakState> {
+  $$StreakStatesTableReferences(super.$_db, super.$_table, super.$_typedResult);
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('streak_states__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StreakStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StreakStatesTable> {
+  $$StreakStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<int> get currentStreakDays => $composableBuilder(
+    column: $table.currentStreakDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get longestStreakDays => $composableBuilder(
+    column: $table.longestStreakDays,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get freezeCount => $composableBuilder(
+    column: $table.freezeCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastLearnedAtUtcMs => $composableBuilder(
+    column: $table.lastLearnedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StreakStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StreakStatesTable,
+          StreakState,
+          $$StreakStatesTableFilterComposer,
+          $$StreakStatesTableOrderingComposer,
+          $$StreakStatesTableAnnotationComposer,
+          $$StreakStatesTableCreateCompanionBuilder,
+          $$StreakStatesTableUpdateCompanionBuilder,
+          (StreakState, $$StreakStatesTableReferences),
+          StreakState,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$StreakStatesTableTableManager(_$AppDatabase db, $StreakStatesTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StreakStatesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StreakStatesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StreakStatesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<int> currentStreakDays = const Value.absent(),
+                Value<int> longestStreakDays = const Value.absent(),
+                Value<int> freezeCount = const Value.absent(),
+                Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StreakStatesCompanion(
+                ownerId: ownerId,
+                currentStreakDays: currentStreakDays,
+                longestStreakDays: longestStreakDays,
+                freezeCount: freezeCount,
+                lastLearnedAtUtcMs: lastLearnedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                Value<int> currentStreakDays = const Value.absent(),
+                Value<int> longestStreakDays = const Value.absent(),
+                Value<int> freezeCount = const Value.absent(),
+                Value<int?> lastLearnedAtUtcMs = const Value.absent(),
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => StreakStatesCompanion.insert(
+                ownerId: ownerId,
+                currentStreakDays: currentStreakDays,
+                longestStreakDays: longestStreakDays,
+                freezeCount: freezeCount,
+                lastLearnedAtUtcMs: lastLearnedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StreakStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$StreakStatesTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$StreakStatesTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StreakStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StreakStatesTable,
+      StreakState,
+      $$StreakStatesTableFilterComposer,
+      $$StreakStatesTableOrderingComposer,
+      $$StreakStatesTableAnnotationComposer,
+      $$StreakStatesTableCreateCompanionBuilder,
+      $$StreakStatesTableUpdateCompanionBuilder,
+      (StreakState, $$StreakStatesTableReferences),
+      StreakState,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$LearningDayLogTableCreateCompanionBuilder =
+    LearningDayLogCompanion Function({
+      required String id,
+      required String ownerId,
+      required String learningDay,
+      required int firstSessionAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningDayLogTableUpdateCompanionBuilder =
+    LearningDayLogCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> learningDay,
+      Value<int> firstSessionAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningDayLogTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningDayLogTable,
+          LearningDayLogData
+        > {
+  $$LearningDayLogTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_day_log__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningDayLogTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningDayLogTable> {
+  $$LearningDayLogTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get learningDay => $composableBuilder(
+    column: $table.learningDay,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get firstSessionAtUtcMs => $composableBuilder(
+    column: $table.firstSessionAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningDayLogTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningDayLogTable> {
+  $$LearningDayLogTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get learningDay => $composableBuilder(
+    column: $table.learningDay,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get firstSessionAtUtcMs => $composableBuilder(
+    column: $table.firstSessionAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningDayLogTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningDayLogTable> {
+  $$LearningDayLogTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get learningDay => $composableBuilder(
+    column: $table.learningDay,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get firstSessionAtUtcMs => $composableBuilder(
+    column: $table.firstSessionAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningDayLogTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningDayLogTable,
+          LearningDayLogData,
+          $$LearningDayLogTableFilterComposer,
+          $$LearningDayLogTableOrderingComposer,
+          $$LearningDayLogTableAnnotationComposer,
+          $$LearningDayLogTableCreateCompanionBuilder,
+          $$LearningDayLogTableUpdateCompanionBuilder,
+          (LearningDayLogData, $$LearningDayLogTableReferences),
+          LearningDayLogData,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$LearningDayLogTableTableManager(
+    _$AppDatabase db,
+    $LearningDayLogTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningDayLogTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningDayLogTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningDayLogTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> learningDay = const Value.absent(),
+                Value<int> firstSessionAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningDayLogCompanion(
+                id: id,
+                ownerId: ownerId,
+                learningDay: learningDay,
+                firstSessionAtUtcMs: firstSessionAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String learningDay,
+                required int firstSessionAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningDayLogCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                learningDay: learningDay,
+                firstSessionAtUtcMs: firstSessionAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningDayLogTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$LearningDayLogTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearningDayLogTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningDayLogTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningDayLogTable,
+      LearningDayLogData,
+      $$LearningDayLogTableFilterComposer,
+      $$LearningDayLogTableOrderingComposer,
+      $$LearningDayLogTableAnnotationComposer,
+      $$LearningDayLogTableCreateCompanionBuilder,
+      $$LearningDayLogTableUpdateCompanionBuilder,
+      (LearningDayLogData, $$LearningDayLogTableReferences),
+      LearningDayLogData,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -28951,4 +30601,8 @@ class $AppDatabaseManager {
         _db,
         _db.questObjectiveProgress,
       );
+  $$StreakStatesTableTableManager get streakStates =>
+      $$StreakStatesTableTableManager(_db, _db.streakStates);
+  $$LearningDayLogTableTableManager get learningDayLog =>
+      $$LearningDayLogTableTableManager(_db, _db.learningDayLog);
 }

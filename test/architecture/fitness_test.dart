@@ -400,18 +400,23 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test('T16 — lib/features/ must not import streak_and_daily_quest_service', () {
-    const quarantinedService = 'streak_and_daily_quest_service';
+    const quarantinedServices = [
+      'streak_and_daily_quest_service',
+      'adaptive_daily_quest_service',
+    ];
     final violations = <String>[];
     for (final f in _dartFiles('lib/features')) {
       final src = f.readAsStringSync();
-      if (src.contains(quarantinedService) &&
-          !src.contains('// quarantine-ok')) {
-        violations.add(f.path.replaceAll('\\', '/').split('lib/').last);
+      for (final service in quarantinedServices) {
+        if (src.contains(service) && !src.contains('// quarantine-ok')) {
+          violations.add(
+              '${f.path.replaceAll("\\", "/").split("lib/").last} → $service');
+        }
       }
     }
     expect(violations, isEmpty,
         reason: 'lib/features/ must not import the quarantined legacy quest '
-            'service. Use QuestUseCases instead:\n${violations.join('\n')}');
+            'services. Use QuestUseCases instead:\n${violations.join('\n')}');
   });
 
   // ---------------------------------------------------------------------------

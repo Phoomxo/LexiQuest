@@ -517,6 +517,18 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "assigned_at_utc_ms, state) VALUES "
     "('inst-seed-1', 'q-seed-1', 'guest-owner', 1, 20, 'active')",
   );
+  // Phase 1 D7.2 — streak state and learning day log (owner-scoped).
+  await database.customInsert(
+    "INSERT INTO streak_states "
+    "(owner_id, current_streak_days, longest_streak_days, freeze_count, "
+    "updated_at_utc_ms) VALUES "
+    "('guest-owner', 1, 1, 0, 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO learning_day_log "
+    "(id, owner_id, learning_day, first_session_at_utc_ms) VALUES "
+    "('day:guest-owner:2026-08-04', 'guest-owner', '2026-08-04', 20)",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {
