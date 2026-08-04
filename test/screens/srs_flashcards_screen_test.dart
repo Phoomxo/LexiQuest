@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
-import 'package:vocab_learning_app/services/srs_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
@@ -32,7 +30,7 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
-    SharedPreferences.setMockInitialValues({});
+    // SharedPreferences mock removed — SrsService dependency eliminated (Phase 0 W14-15).
   });
 
   testWidgets('SrsFlashcardsScreen renders front side and auto-plays audio', (
@@ -62,7 +60,6 @@ void main() {
     'Tapping card flips to back side displaying translation and buttons',
     (WidgetTester tester) async {
       final fakeVoice = FakeVoiceProvider();
-      final srsService = SrsService();
       final wordList = [
         {
           'word': 'banana',
@@ -76,7 +73,6 @@ void main() {
           home: SrsFlashcardsScreen(
             wordList: wordList,
             voice: VoiceUseCases(fakeVoice),
-            srsService: srsService,
           ),
         ),
       );
@@ -89,12 +85,10 @@ void main() {
       expect(find.text('จำได้แล้ว (Good)'), findsOneWidget);
       expect(find.text('จำไม่ได้ (Again)'), findsOneWidget);
 
+      // Tap Good — compatibility deck: no-op (SrsService removed Phase 0 W14-15)
       await tester.tap(find.text('จำได้แล้ว (Good)'));
       await tester.pumpAndSettle();
-
-      final map = await srsService.loadItemsMap();
-      expect(map.containsKey('banana'), true);
-      expect(map['banana']!.boxLevel, 2);
+      // UI advances to next card or shows empty state — no crash expected.
     },
   );
 }

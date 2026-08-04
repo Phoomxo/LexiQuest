@@ -413,4 +413,28 @@ void main() {
         reason: 'lib/features/ must not import the quarantined legacy quest '
             'service. Use QuestUseCases instead:\n${violations.join('\n')}');
   });
+
+  // ---------------------------------------------------------------------------
+  // Test 17 — SRS Quarantine: lib/features/ and lib/screens/ must not import
+  //           SrsService (SharedPreferences-backed, deprecated Phase 0 W14-15)
+  // ---------------------------------------------------------------------------
+
+  test('T17 — no code must import SrsService', () {
+    const quarantinedService = 'srs_service.dart';
+    final violations = <String>[];
+    for (final f in [
+      ..._dartFiles('lib/features'),
+      ..._dartFiles('lib/screens'),
+    ]) {
+      final src = f.readAsStringSync();
+      if (src.contains(quarantinedService) &&
+          !src.contains('// quarantine-ok')) {
+        violations.add(f.path.replaceAll('\\', '/').split('lib/').last);
+      }
+    }
+    expect(violations, isEmpty,
+        reason: 'SrsService is deprecated (SharedPreferences-backed). '
+            'Use LearningUseCases.startDueReview() instead:\n'
+            '${violations.join('\n')}');
+  });
 }

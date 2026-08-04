@@ -5,7 +5,6 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
-import '../services/srs_service.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
 
@@ -14,14 +13,12 @@ class SrsFlashcardsScreen extends StatefulWidget {
     super.key,
     this.wordList,
     this.voice,
-    this.srsService,
     this.learning,
   });
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
   final List<Map<String, String>>? wordList;
   final VoiceUseCases? voice;
-  final SrsService? srsService;
   final LearningUseCases? learning;
 
   @override
@@ -139,10 +136,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     setState(() => _saving = true);
     try {
       if (_isCompatibilityDeck) {
-        await widget.srsService?.recordReview(
-          _currentQuestion.word.spelling,
-          isCorrect,
-        );
+        // Legacy compatibility deck — SrsService removed (Phase 0 Week 14-15).
+        // SharedPreferences-backed SRS recording is deprecated; no-op here.
+        // SRS state for real words is tracked via LearningUseCases + Drift.
       } else {
         final elapsed = DateTime.now().difference(
           _questionStartedAt ?? DateTime.now(),
