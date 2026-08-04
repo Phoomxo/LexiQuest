@@ -105,7 +105,34 @@ learning_day_log  — immutable record per (owner, learning-day string)
 
 ---
 
-## Phase 0+ (v10+)
+### v10 — Associative Learning Persistence
+**Reserved:** 2026-08-04  
+**Deployed:** 2026-08-04 (Phase 2 D8.3)  
+**Branch:** feature/associative-reading-loop  
+**Commit:** `fbf2d91`  
+**Status:** ✅ DEPLOYED
+
+**Actual tables added:**
+```
+association_records       — keyword/story/image cues per (owner, wordKey, type)
+                            PK: id
+                            Unique: (owner_id, word_key, type) — upsert semantics
+                            FK: owner_id → local_owners
+associative_memory_states — AdaptiveAssociativeScheduler state per (owner, word)
+                            PK: id
+                            Unique: (owner_id, word_key)
+                            FK: owner_id → local_owners
+```
+
+**ownerUpgradeInventory additions:** `association_records`, `associative_memory_states`
+
+**Migration safety:**
+- Non-destructive (new tables only)
+- Rollback: downgrade to v9 safe
+
+---
+
+## Phase 0+ (v11+)
 
 | Version | Phase | Purpose | Status |
 |---------|-------|---------|--------|

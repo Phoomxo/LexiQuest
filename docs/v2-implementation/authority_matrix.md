@@ -48,6 +48,8 @@
 | 25 | `QuestObjectiveProgress` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — cascades from QuestInstances |
 | 26 | `StreakStates` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — one row per owner; owned by StreakUseCases |
 | 27 | `LearningDayLog` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — immutable append-only; insertOrIgnore |
+| 28 | `AssociationRecords` | `features/learning/data/drift_associative_learning_adapter.dart` | None | LOW | Phase 2 D8.3 — insertOrReplace; one cue per (owner, word, type) |
+| 29 | `AssociativeMemoryStates` | `features/learning/data/drift_associative_learning_adapter.dart` | None | LOW | Phase 2 D8.3 — insertOrReplace; one state per (owner, word) |
 
 ---
 
