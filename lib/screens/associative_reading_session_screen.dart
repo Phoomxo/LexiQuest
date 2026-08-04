@@ -2,9 +2,21 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 
+/// Six-stage Associative Reading Loop screen.
+///
+/// Stages:
+///   1 Supported Reading  — read passage with target-word hints
+///   2 Cue Fading         — re-read without translations
+///   3 Active Recall      — type each target word from memory; answer recorded
+///                          via [LearningUseCases.recordAnswer]
+///   4 Memory Association — enter a personal keyword/story for each word;
+///                          saved via [AssociativeLearningPort]
+///   5 Context Transfer   — write a new sentence using a target word
+///   6 Finish             — summarise and complete
 class AssociativeReadingSessionScreen extends StatefulWidget {
   const AssociativeReadingSessionScreen({
     super.key,
@@ -14,14 +26,32 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.documentId,
     this.documentRevision = 1,
     this.learning,
+    this.associativeLearning,
+    this.targetWordIds,
+    this.sessionId,
   });
 
   final String cefrLevel;
+
+  /// Display names of the target vocabulary words (e.g. 'banana').
   final List<String> targetWords;
   final String passageText;
   final String? documentId;
   final int documentRevision;
   final LearningUseCases? learning;
+
+  /// Port for saving memory associations (Stage 4).
+  /// Falls back to [InMemoryAssociativeLearningAdapter] when null.
+  final AssociativeLearningPort? associativeLearning;
+
+  /// Map from word display name → Drift vocabulary word ID.
+  /// Required for Stage 3 SRS recording; Stage 3 is skipped when null.
+  final Map<String, String>? targetWordIds;
+
+  /// Learning session ID for recording answers in Stage 3.
+  /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
+  /// navigating to this screen.
+  final String? sessionId;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -41,10 +71,19 @@ class _AssociativeReadingSessionScreenState
   ];
 
   LearningUseCases? _learning;
+  late AssociativeLearningPort _associativeLearning;
+
   int _currentStage = 1;
   bool _loading = true;
   bool _saving = false;
   bool _completed = false;
+
+  // Stage 3 — per-word recall controllers and results.
+  late List<TextEditingController> _recallControllers;
+  late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
+
+  // Stage 4 — per-word association cue controllers.
+  late List<TextEditingController> _cueControllers;
 
   String get _documentId {
     final supplied = widget.documentId?.trim();
@@ -60,6 +99,17 @@ class _AssociativeReadingSessionScreenState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _recallControllers = List.generate(
+      widget.targetWords.length,
+      (_) => TextEditingController(),
+    );
+    _recallResults = List.filled(widget.targetWords.length, null);
+    _cueControllers = List.generate(
+      widget.targetWords.length,
+      (_) => TextEditingController(),
+    );
+    _associativeLearning =
+        widget.associativeLearning ?? InMemoryAssociativeLearningAdapter();
   }
 
   @override
@@ -99,8 +149,30 @@ class _AssociativeReadingSessionScreenState
     }
   }
 
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    for (final c in _recallControllers) {
+      c.dispose();
+    }
+    for (final c in _cueControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────────────
+
   Future<void> _nextStage() async {
     if (_saving) return;
+
+    // Stage-specific side effects before advancing.
+    if (_currentStage == 3) {
+      await _submitRecallAnswers();
+    } else if (_currentStage == 4) {
+      await _saveAssociations();
+    }
+
     final finishing = _currentStage == 6;
     final nextStage = finishing ? 6 : _currentStage + 1;
     setState(() => _saving = true);
@@ -127,6 +199,72 @@ class _AssociativeReadingSessionScreenState
       _saving = false;
     });
   }
+
+  // ── Stage 3: Active Recall ─────────────────────────────────────────────────
+
+  Future<void> _submitRecallAnswers() async {
+    final learning = _learning;
+    final sessionId = widget.sessionId;
+    final wordIds = widget.targetWordIds;
+    if (learning == null || sessionId == null || wordIds == null) return;
+
+    final results = <bool?>[];
+    for (var i = 0; i < widget.targetWords.length; i++) {
+      final word = widget.targetWords[i];
+      final wordId = wordIds[word];
+      if (wordId == null) {
+        results.add(null);
+        continue;
+      }
+      final typed = _recallControllers[i].text.trim().toLowerCase();
+      final expected = word.trim().toLowerCase();
+      final isCorrect = typed == expected;
+      results.add(isCorrect);
+      try {
+        await learning.recordAnswer(
+          sessionId: sessionId,
+          wordId: wordId,
+          promptMode: 'associativeRecall',
+          isCorrect: isCorrect,
+          responseTimeMs: null,
+          attemptNumber: i + 1,
+        );
+      } catch (_) {
+        // Non-fatal — SRS update failure must not block the reading loop.
+      }
+    }
+    if (mounted) setState(() => _recallResults = results);
+  }
+
+  // ── Stage 4: Memory Association ────────────────────────────────────────────
+
+  Future<void> _saveAssociations() async {
+    // Resolve owner id: use learning use cases owner if available,
+    // otherwise fall back to 'local' for the in-memory adapter.
+    final ownerId = 'local';
+    final now = DateTime.now().toUtc();
+
+    for (var i = 0; i < widget.targetWords.length; i++) {
+      final cue = _cueControllers[i].text.trim();
+      if (cue.isEmpty) continue;
+      try {
+        await _associativeLearning.saveAssociation(
+          AssociationRecord(
+            associationId: 'assoc:${widget.targetWords[i]}:${now.millisecondsSinceEpoch}:$i',
+            ownerId: ownerId,
+            wordKey: widget.targetWords[i],
+            type: 'keyword',
+            content: cue,
+            createdAtUtc: now,
+          ),
+        );
+      } catch (_) {
+        // Non-fatal — association save failure must not block the loop.
+      }
+    }
+  }
+
+  // ── Checkpoint ─────────────────────────────────────────────────────────────
 
   Future<bool> _checkpoint({
     int? position,
@@ -155,11 +293,7 @@ class _AssociativeReadingSessionScreenState
     }
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
+  // ── Build ──────────────────────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -203,6 +337,7 @@ class _AssociativeReadingSessionScreenState
 
   Widget _buildStageContent() {
     switch (_currentStage) {
+      // ── Stage 1: Supported Reading ─────────────────────────────────────────
       case 1:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -219,39 +354,99 @@ class _AssociativeReadingSessionScreenState
             Text('Target Words: ${widget.targetWords.join(', ')}'),
           ],
         );
+
+      // ── Stage 2: Cue Fading ────────────────────────────────────────────────
       case 2:
         return const Text(
           'Cue Fading: re-read the passage without translations or highlights.',
         );
+
+      // ── Stage 3: Active Recall ─────────────────────────────────────────────
       case 3:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Recall Test: type the missing target word.'),
-            const SizedBox(height: 12),
-            TextField(
-              decoration: InputDecoration(
-                hintText: widget.targetWords.isEmpty
-                    ? 'Type your answer'
-                    : 'Recall: ${widget.targetWords.first}',
-                border: const OutlineInputBorder(),
-              ),
+            const Text(
+              'Recall Test: type each target word from memory.',
+              style: TextStyle(fontWeight: FontWeight.w500),
             ),
+            const SizedBox(height: 12),
+            ...List.generate(widget.targetWords.length, (i) {
+              final result = _recallResults[i];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextField(
+                  controller: _recallControllers[i],
+                  decoration: InputDecoration(
+                    labelText: 'Word ${i + 1}',
+                    hintText: 'Type from memory',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: result == null
+                        ? null
+                        : Icon(
+                            result ? Icons.check_circle : Icons.cancel,
+                            color: result ? Colors.green : Colors.red,
+                          ),
+                  ),
+                ),
+              );
+            }),
+            if (_recallResults.any((r) => r != null))
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  '${_recallResults.where((r) => r == true).length}/'
+                  '${widget.targetWords.length} correct',
+                  style: const TextStyle(fontWeight: FontWeight.w500),
+                ),
+              ),
           ],
         );
+
+      // ── Stage 4: Memory Association ────────────────────────────────────────
       case 4:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Review the memory cues you created for these words.'),
-            ...widget.targetWords.map(
-              (word) => ListTile(
-                leading: const Icon(Icons.lightbulb_outline),
-                title: Text(word),
-              ),
+            const Text(
+              'Create a memory keyword or story for each target word.',
+              style: TextStyle(fontWeight: FontWeight.w500),
             ),
+            const SizedBox(height: 12),
+            ...List.generate(widget.targetWords.length, (i) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(Icons.lightbulb_outline,
+                            size: 16, color: Colors.amber),
+                        const SizedBox(width: 6),
+                        Text(
+                          widget.targetWords[i],
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _cueControllers[i],
+                      decoration: const InputDecoration(
+                        hintText: 'Keyword, story, or image...',
+                        border: OutlineInputBorder(),
+                      ),
+                      maxLines: 2,
+                    ),
+                  ],
+                ),
+              );
+            }),
           ],
         );
+
+      // ── Stage 5: Context Transfer ──────────────────────────────────────────
       case 5:
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -266,18 +461,26 @@ class _AssociativeReadingSessionScreenState
             ),
           ],
         );
+
+      // ── Stage 6: Finish ────────────────────────────────────────────────────
       case 6:
       default:
-        return const Column(
+        final correct = _recallResults.where((r) => r == true).length;
+        final total = widget.targetWords.length;
+        return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.fact_check_outlined, size: 48),
-            SizedBox(height: 12),
-            Text('Ready to finish'),
-            SizedBox(height: 8),
-            Text(
-              'Tap Finish Session to save completion. SRS changes only when an answer is recorded.',
-            ),
+            const Icon(Icons.fact_check_outlined, size: 48),
+            const SizedBox(height: 12),
+            const Text('Ready to finish',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
+            if (total > 0)
+              Text('Recall score: $correct / $total')
+            else
+              const Text(
+                'Tap Finish Session to save completion.',
+              ),
           ],
         );
     }
