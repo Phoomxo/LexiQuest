@@ -381,7 +381,8 @@ final class DriftSyncStore {
       }
       if (cloudEntity.collection == SyncCollection.attempts ||
           cloudEntity.collection == SyncCollection.readingEvents ||
-          cloudEntity.collection == SyncCollection.rewardTransactions) {
+          cloudEntity.collection == SyncCollection.rewardTransactions ||
+          cloudEntity.collection == SyncCollection.achievementUnlocks) {
         await _resolveImmutableConflict(
           operation: operation,
           cloudEntity: cloudEntity,
@@ -438,7 +439,11 @@ final class DriftSyncStore {
         case SyncCollection.attempts:
         case SyncCollection.readingEvents:
         case SyncCollection.rewardTransactions:
+        case SyncCollection.achievementUnlocks:
           throw const InvalidSyncPayloadFailure();
+        case SyncCollection.srsStates:
+          // SRS states are last-write-wins; apply server state directly.
+          await _applySrsState(operation.ownerId, cloudEntity);
       }
       await (database.update(
         database.outboxOperations,
@@ -492,6 +497,10 @@ final class DriftSyncStore {
             await _applyReadingEvent(canonicalOwnerId, entity);
           case SyncCollection.rewardTransactions:
             await _applyRewardTransaction(canonicalOwnerId, entity);
+          case SyncCollection.srsStates:
+            await _applySrsState(canonicalOwnerId, entity);
+          case SyncCollection.achievementUnlocks:
+            await _applyAchievementUnlock(canonicalOwnerId, entity);
         }
       }
 
@@ -682,6 +691,56 @@ final class DriftSyncStore {
           clientUpdatedAtUtc: _utc(transaction.occurredAtUtcMs),
           payload: _rewardTransactionPayload(transaction),
         );
+      case 'srsState':
+        // Entity ID for srsState outbox is the wordId (unique per owner-word).
+        final srs = await (database.select(database.srsStates)..where(
+              (row) =>
+                  row.wordId.equals(operation.entityId) &
+                  row.ownerId.equals(operation.ownerId),
+            ))
+            .getSingleOrNull();
+        if (srs == null) throw StateError('outbox srsState was not found');
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.srsStates,
+          entityId: srs.wordId, // stable entity identifier
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: operation.payloadVersion,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc:
+              srs.lastReviewAtUtcMs != null
+                  ? _utc(srs.lastReviewAtUtcMs!)
+                  : DateTime.fromMillisecondsSinceEpoch(
+                      operation.createdAtUtcMs,
+                      isUtc: true,
+                    ),
+          payload: _srsStatePayload(srs),
+        );
+      case 'achievementUnlock':
+        final unlock = await (database.select(database.achievementUnlocks)
+              ..where(
+                (row) =>
+                    row.id.equals(operation.entityId) &
+                    row.ownerId.equals(operation.ownerId),
+              ))
+            .getSingleOrNull();
+        if (unlock == null) {
+          throw StateError('outbox achievementUnlock was not found');
+        }
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.achievementUnlocks,
+          entityId: unlock.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: operation.payloadVersion,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(unlock.unlockedAtUtcMs),
+          payload: _achievementUnlockPayload(unlock),
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -725,6 +784,12 @@ final class DriftSyncStore {
       case 'rewardTransaction':
         // Immutable evidence has no mutable cloud revision columns. The
         // acknowledged outbox row is the durable local receipt.
+        return;
+      case 'srsState':
+        // SRS states are last-write-wins; no cloud revision columns.
+        return;
+      case 'achievementUnlock':
+        // Immutable unlock; no revision tracking needed.
         return;
       default:
         throw const InvalidSyncPayloadFailure();
@@ -799,6 +864,23 @@ final class DriftSyncStore {
                 ))
                 .getSingle();
         return _rewardTransactionPayload(transaction);
+      case 'srsState':
+        final srs = await (database.select(database.srsStates)..where(
+              (row) =>
+                  row.wordId.equals(operation.entityId) &
+                  row.ownerId.equals(operation.ownerId),
+            ))
+            .getSingle();
+        return _srsStatePayload(srs);
+      case 'achievementUnlock':
+        final unlock = await (database.select(database.achievementUnlocks)
+              ..where(
+                (row) =>
+                    row.id.equals(operation.entityId) &
+                    row.ownerId.equals(operation.ownerId),
+              ))
+            .getSingle();
+        return _achievementUnlockPayload(unlock);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -1121,6 +1203,108 @@ final class DriftSyncStore {
     await rewardProjections.rebuild(ownerId);
   }
 
+  /// Apply a pulled [SyncCollection.srsStates] entity.
+  ///
+  /// Uses last-write-wins semantics: the server state unconditionally
+  /// replaces the local projection.  SRS states are derived projections so
+  /// the local rebuild will overwrite on the next review anyway.
+  Future<void> _applySrsState(String ownerId, SyncEntity entity) async {
+    _requireImmutableEntity(entity, SyncCollection.srsStates);
+    final payload = entity.payload;
+    final wordId = _requiredString(payload, 'wordId');
+    final stability = _requiredDouble(payload, 'stability');
+    final difficulty = _requiredDouble(payload, 'difficulty');
+    final intervalDays = _requiredInt(payload, 'intervalDays');
+    final repetitions = _requiredInt(payload, 'repetitions');
+    final lapses = _requiredInt(payload, 'lapses');
+    final lastReviewAtUtcMs = _optionalInt(payload, 'lastReviewAtUtcMs');
+    final dueAtUtcMs = _requiredInt(payload, 'dueAtUtcMs');
+    final algorithmVersion = _requiredInt(payload, 'algorithmVersion');
+
+    // Verify word belongs to owner.
+    final word = await (database.select(database.vocabularyWords)
+          ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
+        .getSingleOrNull();
+    if (word == null) throw const InvalidSyncPayloadFailure();
+
+    // Upsert: server state replaces local.
+    final existing = await (database.select(database.srsStates)
+          ..where((r) => r.wordId.equals(wordId) & r.ownerId.equals(ownerId)))
+        .getSingleOrNull();
+
+    if (existing != null) {
+      await (database.update(database.srsStates)
+            ..where((r) => r.id.equals(existing.id)))
+          .write(
+            db.SrsStatesCompanion(
+              stability: Value(stability),
+              difficulty: Value(difficulty),
+              intervalDays: Value(intervalDays),
+              repetitions: Value(repetitions),
+              lapses: Value(lapses),
+              lastReviewAtUtcMs: Value(lastReviewAtUtcMs),
+              dueAtUtcMs: Value(dueAtUtcMs),
+              algorithmVersion: Value(algorithmVersion),
+            ),
+          );
+    } else {
+      await database.into(database.srsStates).insert(
+            db.SrsStatesCompanion.insert(
+              id: entity.entityId,
+              ownerId: ownerId,
+              wordId: wordId,
+              stability: Value(stability),
+              difficulty: Value(difficulty),
+              intervalDays: Value(intervalDays),
+              repetitions: Value(repetitions),
+              lapses: Value(lapses),
+              lastReviewAtUtcMs: Value(lastReviewAtUtcMs),
+              dueAtUtcMs: dueAtUtcMs,
+              algorithmVersion: algorithmVersion,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
+  }
+
+  /// Apply a pulled [SyncCollection.achievementUnlocks] entity.
+  ///
+  /// Immutable append-only: insertOrIgnore.  Once an achievement is unlocked
+  /// it can never be revoked, so an existing row is authoritative.
+  Future<void> _applyAchievementUnlock(String ownerId, SyncEntity entity) async {
+    _requireImmutableEntity(entity, SyncCollection.achievementUnlocks);
+    final existing = await (database.select(database.achievementUnlocks)
+          ..where(
+            (r) => r.id.equals(entity.entityId) & r.ownerId.equals(ownerId),
+          ))
+        .getSingleOrNull();
+    if (existing != null) {
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _achievementUnlockPayload(existing),
+      );
+      return;
+    }
+    final payload = entity.payload;
+    final achievementId = _requiredString(payload, 'achievementId');
+    final definitionVersion = _requiredInt(payload, 'definitionVersion');
+    final sourceEventId = _requiredString(payload, 'sourceEventId');
+    final unlockedAtUtcMs = _requiredInt(payload, 'unlockedAtUtcMs');
+
+    await database.into(database.achievementUnlocks).insert(
+          db.AchievementUnlocksCompanion.insert(
+            id: entity.entityId,
+            ownerId: ownerId,
+            achievementId: achievementId,
+            definitionVersion: definitionVersion,
+            sourceEventId: sourceEventId,
+            unlockedAtUtcMs: unlockedAtUtcMs,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
   Future<void> _handleExistingImmutable({
     required String ownerId,
     required SyncEntity entity,
@@ -1291,6 +1475,8 @@ final class DriftSyncStore {
       case SyncCollection.attempts:
       case SyncCollection.readingEvents:
       case SyncCollection.rewardTransactions:
+      case SyncCollection.srsStates:
+      case SyncCollection.achievementUnlocks:
         throw const InvalidSyncPayloadFailure();
     }
 
@@ -1402,6 +1588,28 @@ Map<String, Object?> _rewardTransactionPayload(
   };
 }
 
+Map<String, Object?> _srsStatePayload(db.SrsState srs) => <String, Object?>{
+      'wordId': srs.wordId,
+      'stability': srs.stability,
+      'difficulty': srs.difficulty,
+      'intervalDays': srs.intervalDays,
+      'repetitions': srs.repetitions,
+      'lapses': srs.lapses,
+      'lastReviewAtUtcMs': srs.lastReviewAtUtcMs,
+      'dueAtUtcMs': srs.dueAtUtcMs,
+      'algorithmVersion': srs.algorithmVersion,
+    };
+
+Map<String, Object?> _achievementUnlockPayload(
+  db.AchievementUnlock unlock,
+) =>
+    <String, Object?>{
+      'achievementId': unlock.achievementId,
+      'definitionVersion': unlock.definitionVersion,
+      'sourceEventId': unlock.sourceEventId,
+      'unlockedAtUtcMs': unlock.unlockedAtUtcMs,
+    };
+
 void _requireImmutableEntity(
   SyncEntity entity,
   SyncCollection expectedCollection,
@@ -1490,6 +1698,13 @@ bool? _optionalBool(Map<String, Object?> payload, String key) {
   if (value == null) return null;
   if (value is! bool) throw const InvalidSyncPayloadFailure();
   return value;
+}
+
+double _requiredDouble(Map<String, Object?> payload, String key) {
+  final value = payload[key];
+  if (value is double) return value;
+  if (value is int) return value.toDouble();
+  throw const InvalidSyncPayloadFailure();
 }
 
 bool _requiredBool(Map<String, Object?> payload, String key) {

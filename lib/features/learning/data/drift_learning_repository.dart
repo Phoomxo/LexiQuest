@@ -154,6 +154,14 @@ final class DriftLearningRepository implements LearningRepository {
         entityId: command.id,
         occurredAtUtc: command.occurredAtUtc,
       );
+      // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
+      // Entity ID is wordId (unique per owner-word pair).
+      await _appendImmutableOutbox(
+        ownerId: command.ownerId,
+        entityType: 'srsState',
+        entityId: command.wordId,
+        occurredAtUtc: command.occurredAtUtc,
+      );
       return AnswerRecordResult(inserted: true, srs: next);
     });
   }
@@ -325,11 +333,12 @@ final class DriftLearningRepository implements LearningRepository {
     required DateTime unlockedAtUtc,
   }) async {
     const definitionVersion = 1;
+    final achievementId_ = 'achievement:$ownerId:$achievementId:$definitionVersion';
     await database
         .into(database.achievementUnlocks)
         .insert(
           db.AchievementUnlocksCompanion.insert(
-            id: 'achievement:$ownerId:$achievementId:$definitionVersion',
+            id: achievementId_,
             ownerId: ownerId,
             achievementId: achievementId,
             definitionVersion: definitionVersion,
@@ -338,6 +347,13 @@ final class DriftLearningRepository implements LearningRepository {
           ),
           mode: InsertMode.insertOrIgnore,
         );
+    // Outbox hook — sync achievement unlock to Firestore (Phase 0 Week 12-13).
+    await _appendImmutableOutbox(
+      ownerId: ownerId,
+      entityType: 'achievementUnlock',
+      entityId: achievementId_,
+      occurredAtUtc: unlockedAtUtc,
+    );
   }
 
   Future<void> _appendImmutableOutbox({

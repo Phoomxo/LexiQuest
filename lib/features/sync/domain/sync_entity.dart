@@ -10,6 +10,16 @@ enum SyncCollection {
   attempts,
   readingEvents,
   rewardTransactions,
+
+  /// Mutable FSRS algorithm state per (owner, word).
+  /// Pull semantics: last-write-wins (server state replaces local).
+  /// Phase 0 Week 12-13.
+  srsStates,
+
+  /// Immutable append-only achievement unlock records.
+  /// Pull semantics: insertOrIgnore (once unlocked, never revoked).
+  /// Phase 0 Week 12-13.
+  achievementUnlocks,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -19,6 +29,8 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.attempts => 'attempts',
     SyncCollection.readingEvents => 'reading_events',
     SyncCollection.rewardTransactions => 'reward_transactions',
+    SyncCollection.srsStates => 'srs_states',
+    SyncCollection.achievementUnlocks => 'achievement_unlocks',
   };
 
   String get entityType => switch (this) {
@@ -27,6 +39,8 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.attempts => 'attempt',
     SyncCollection.readingEvents => 'readingEvent',
     SyncCollection.rewardTransactions => 'rewardTransaction',
+    SyncCollection.srsStates => 'srsState',
+    SyncCollection.achievementUnlocks => 'achievementUnlock',
   };
 }
 
