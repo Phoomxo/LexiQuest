@@ -17,6 +17,13 @@ typedef LearningMutationNotifier = void Function();
 /// sink are swallowed — the sink must never break production.
 typedef QuestEventSink = Future<void> Function(EventEnvelopeV2 event);
 
+/// Called after every successful `recordAnswer` so that [StreakUseCases] can
+/// log the learning day and update streak counters.
+///
+/// No argument — the streak use case resolves the owner and the current UTC
+/// time from its own injected dependencies.  Errors are swallowed.
+typedef StreakEventSink = Future<void> Function();
+
 final class LearningUseCases {
   LearningUseCases({
     required this.owners,
@@ -28,6 +35,7 @@ final class LearningUseCases {
     this.shadowOrchestrator,
     this.eventAdapter,
     this.questEventSink,
+    this.streakEventSink,
   });
 
   final LocalOwnerRepository owners;
@@ -51,6 +59,12 @@ final class LearningUseCases {
   /// Wired at the [AppDependencies] composition root when
   /// `Feature.questV2` is enabled.  Errors are swallowed.
   final QuestEventSink? questEventSink;
+
+  /// Streak pipeline hook — when non-null, called after every successful
+  /// answer so that [StreakUseCases.recordLearningDay] can update counters.
+  ///
+  /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
+  final StreakEventSink? streakEventSink;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
     final owner = await owners.getOrCreateActiveOwner();
@@ -226,6 +240,12 @@ final class LearningUseCases {
         // Intentionally swallowed — quest hook must never break production.
       }
     }
+
+    // Streak hook — notify StreakUseCases that a learning event occurred.
+    // Errors are swallowed — streak tracking must never break production.
+    try {
+      await streakEventSink?.call();
+    } catch (_) {}
 
     return result;
   }

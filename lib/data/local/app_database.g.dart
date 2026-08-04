@@ -16136,6 +16136,1076 @@ class LearningDayLogCompanion extends UpdateCompanion<LearningDayLogData> {
   }
 }
 
+class $AssociationRecordsTable extends AssociationRecords
+    with TableInfo<$AssociationRecordsTable, AssociationRecord> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AssociationRecordsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _wordKeyMeta = const VerificationMeta(
+    'wordKey',
+  );
+  @override
+  late final GeneratedColumn<String> wordKey = GeneratedColumn<String>(
+    'word_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentMeta = const VerificationMeta(
+    'content',
+  );
+  @override
+  late final GeneratedColumn<String> content = GeneratedColumn<String>(
+    'content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    wordKey,
+    type,
+    content,
+    createdAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'association_records';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AssociationRecord> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('word_key')) {
+      context.handle(
+        _wordKeyMeta,
+        wordKey.isAcceptableOrUnknown(data['word_key']!, _wordKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordKeyMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('content')) {
+      context.handle(
+        _contentMeta,
+        content.isAcceptableOrUnknown(data['content']!, _contentMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, wordKey, type},
+  ];
+  @override
+  AssociationRecord map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AssociationRecord(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      wordKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_key'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      content: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $AssociationRecordsTable createAlias(String alias) {
+    return $AssociationRecordsTable(attachedDatabase, alias);
+  }
+}
+
+class AssociationRecord extends DataClass
+    implements Insertable<AssociationRecord> {
+  final String id;
+  final String ownerId;
+
+  /// The vocabulary word identifier (may be a Drift word ID or a plain
+  /// display string for the associative reading prototype).
+  final String wordKey;
+
+  /// Association type: `'keyword'`, `'story'`, `'image_url'`, etc.
+  final String type;
+
+  /// The association content (keyword phrase, story text, URL).
+  final String content;
+  final int createdAtUtcMs;
+  const AssociationRecord({
+    required this.id,
+    required this.ownerId,
+    required this.wordKey,
+    required this.type,
+    required this.content,
+    required this.createdAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['word_key'] = Variable<String>(wordKey);
+    map['type'] = Variable<String>(type);
+    map['content'] = Variable<String>(content);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    return map;
+  }
+
+  AssociationRecordsCompanion toCompanion(bool nullToAbsent) {
+    return AssociationRecordsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      wordKey: Value(wordKey),
+      type: Value(type),
+      content: Value(content),
+      createdAtUtcMs: Value(createdAtUtcMs),
+    );
+  }
+
+  factory AssociationRecord.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AssociationRecord(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      wordKey: serializer.fromJson<String>(json['wordKey']),
+      type: serializer.fromJson<String>(json['type']),
+      content: serializer.fromJson<String>(json['content']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'wordKey': serializer.toJson<String>(wordKey),
+      'type': serializer.toJson<String>(type),
+      'content': serializer.toJson<String>(content),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+    };
+  }
+
+  AssociationRecord copyWith({
+    String? id,
+    String? ownerId,
+    String? wordKey,
+    String? type,
+    String? content,
+    int? createdAtUtcMs,
+  }) => AssociationRecord(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    wordKey: wordKey ?? this.wordKey,
+    type: type ?? this.type,
+    content: content ?? this.content,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+  );
+  AssociationRecord copyWithCompanion(AssociationRecordsCompanion data) {
+    return AssociationRecord(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      wordKey: data.wordKey.present ? data.wordKey.value : this.wordKey,
+      type: data.type.present ? data.type.value : this.type,
+      content: data.content.present ? data.content.value : this.content,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssociationRecord(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordKey: $wordKey, ')
+          ..write('type: $type, ')
+          ..write('content: $content, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, ownerId, wordKey, type, content, createdAtUtcMs);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AssociationRecord &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.wordKey == this.wordKey &&
+          other.type == this.type &&
+          other.content == this.content &&
+          other.createdAtUtcMs == this.createdAtUtcMs);
+}
+
+class AssociationRecordsCompanion extends UpdateCompanion<AssociationRecord> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> wordKey;
+  final Value<String> type;
+  final Value<String> content;
+  final Value<int> createdAtUtcMs;
+  final Value<int> rowid;
+  const AssociationRecordsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.wordKey = const Value.absent(),
+    this.type = const Value.absent(),
+    this.content = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AssociationRecordsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String wordKey,
+    required String type,
+    required String content,
+    required int createdAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       wordKey = Value(wordKey),
+       type = Value(type),
+       content = Value(content),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<AssociationRecord> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? wordKey,
+    Expression<String>? type,
+    Expression<String>? content,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (wordKey != null) 'word_key': wordKey,
+      if (type != null) 'type': type,
+      if (content != null) 'content': content,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AssociationRecordsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? wordKey,
+    Value<String>? type,
+    Value<String>? content,
+    Value<int>? createdAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return AssociationRecordsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      wordKey: wordKey ?? this.wordKey,
+      type: type ?? this.type,
+      content: content ?? this.content,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (wordKey.present) {
+      map['word_key'] = Variable<String>(wordKey.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (content.present) {
+      map['content'] = Variable<String>(content.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssociationRecordsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordKey: $wordKey, ')
+          ..write('type: $type, ')
+          ..write('content: $content, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $AssociativeMemoryStatesTable extends AssociativeMemoryStates
+    with TableInfo<$AssociativeMemoryStatesTable, AssociativeMemoryState> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AssociativeMemoryStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _wordKeyMeta = const VerificationMeta(
+    'wordKey',
+  );
+  @override
+  late final GeneratedColumn<String> wordKey = GeneratedColumn<String>(
+    'word_key',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stabilityMeta = const VerificationMeta(
+    'stability',
+  );
+  @override
+  late final GeneratedColumn<double> stability = GeneratedColumn<double>(
+    'stability',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1.0),
+  );
+  static const VerificationMeta _difficultyMeta = const VerificationMeta(
+    'difficulty',
+  );
+  @override
+  late final GeneratedColumn<double> difficulty = GeneratedColumn<double>(
+    'difficulty',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(5.0),
+  );
+  static const VerificationMeta _cueDependencyMeta = const VerificationMeta(
+    'cueDependency',
+  );
+  @override
+  late final GeneratedColumn<double> cueDependency = GeneratedColumn<double>(
+    'cue_dependency',
+    aliasedName,
+    false,
+    type: DriftSqlType.double,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0.0),
+  );
+  static const VerificationMeta _lapseCountMeta = const VerificationMeta(
+    'lapseCount',
+  );
+  @override
+  late final GeneratedColumn<int> lapseCount = GeneratedColumn<int>(
+    'lapse_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastReviewedAtUtcMsMeta =
+      const VerificationMeta('lastReviewedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastReviewedAtUtcMs = GeneratedColumn<int>(
+    'last_reviewed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _nextDueAtUtcMsMeta = const VerificationMeta(
+    'nextDueAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> nextDueAtUtcMs = GeneratedColumn<int>(
+    'next_due_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _algorithmVersionMeta = const VerificationMeta(
+    'algorithmVersion',
+  );
+  @override
+  late final GeneratedColumn<String> algorithmVersion = GeneratedColumn<String>(
+    'algorithm_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    wordKey,
+    stability,
+    difficulty,
+    cueDependency,
+    lapseCount,
+    lastReviewedAtUtcMs,
+    nextDueAtUtcMs,
+    algorithmVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'associative_memory_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AssociativeMemoryState> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('word_key')) {
+      context.handle(
+        _wordKeyMeta,
+        wordKey.isAcceptableOrUnknown(data['word_key']!, _wordKeyMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordKeyMeta);
+    }
+    if (data.containsKey('stability')) {
+      context.handle(
+        _stabilityMeta,
+        stability.isAcceptableOrUnknown(data['stability']!, _stabilityMeta),
+      );
+    }
+    if (data.containsKey('difficulty')) {
+      context.handle(
+        _difficultyMeta,
+        difficulty.isAcceptableOrUnknown(data['difficulty']!, _difficultyMeta),
+      );
+    }
+    if (data.containsKey('cue_dependency')) {
+      context.handle(
+        _cueDependencyMeta,
+        cueDependency.isAcceptableOrUnknown(
+          data['cue_dependency']!,
+          _cueDependencyMeta,
+        ),
+      );
+    }
+    if (data.containsKey('lapse_count')) {
+      context.handle(
+        _lapseCountMeta,
+        lapseCount.isAcceptableOrUnknown(data['lapse_count']!, _lapseCountMeta),
+      );
+    }
+    if (data.containsKey('last_reviewed_at_utc_ms')) {
+      context.handle(
+        _lastReviewedAtUtcMsMeta,
+        lastReviewedAtUtcMs.isAcceptableOrUnknown(
+          data['last_reviewed_at_utc_ms']!,
+          _lastReviewedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('next_due_at_utc_ms')) {
+      context.handle(
+        _nextDueAtUtcMsMeta,
+        nextDueAtUtcMs.isAcceptableOrUnknown(
+          data['next_due_at_utc_ms']!,
+          _nextDueAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_nextDueAtUtcMsMeta);
+    }
+    if (data.containsKey('algorithm_version')) {
+      context.handle(
+        _algorithmVersionMeta,
+        algorithmVersion.isAcceptableOrUnknown(
+          data['algorithm_version']!,
+          _algorithmVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_algorithmVersionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, wordKey},
+  ];
+  @override
+  AssociativeMemoryState map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AssociativeMemoryState(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      wordKey: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_key'],
+      )!,
+      stability: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}stability'],
+      )!,
+      difficulty: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}difficulty'],
+      )!,
+      cueDependency: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}cue_dependency'],
+      )!,
+      lapseCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}lapse_count'],
+      )!,
+      lastReviewedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_reviewed_at_utc_ms'],
+      ),
+      nextDueAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}next_due_at_utc_ms'],
+      )!,
+      algorithmVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}algorithm_version'],
+      )!,
+    );
+  }
+
+  @override
+  $AssociativeMemoryStatesTable createAlias(String alias) {
+    return $AssociativeMemoryStatesTable(attachedDatabase, alias);
+  }
+}
+
+class AssociativeMemoryState extends DataClass
+    implements Insertable<AssociativeMemoryState> {
+  final String id;
+  final String ownerId;
+  final String wordKey;
+  final double stability;
+  final double difficulty;
+  final double cueDependency;
+  final int lapseCount;
+  final int? lastReviewedAtUtcMs;
+  final int nextDueAtUtcMs;
+
+  /// Algorithm version string, e.g. `'v1.0.0'`.
+  final String algorithmVersion;
+  const AssociativeMemoryState({
+    required this.id,
+    required this.ownerId,
+    required this.wordKey,
+    required this.stability,
+    required this.difficulty,
+    required this.cueDependency,
+    required this.lapseCount,
+    this.lastReviewedAtUtcMs,
+    required this.nextDueAtUtcMs,
+    required this.algorithmVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['word_key'] = Variable<String>(wordKey);
+    map['stability'] = Variable<double>(stability);
+    map['difficulty'] = Variable<double>(difficulty);
+    map['cue_dependency'] = Variable<double>(cueDependency);
+    map['lapse_count'] = Variable<int>(lapseCount);
+    if (!nullToAbsent || lastReviewedAtUtcMs != null) {
+      map['last_reviewed_at_utc_ms'] = Variable<int>(lastReviewedAtUtcMs);
+    }
+    map['next_due_at_utc_ms'] = Variable<int>(nextDueAtUtcMs);
+    map['algorithm_version'] = Variable<String>(algorithmVersion);
+    return map;
+  }
+
+  AssociativeMemoryStatesCompanion toCompanion(bool nullToAbsent) {
+    return AssociativeMemoryStatesCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      wordKey: Value(wordKey),
+      stability: Value(stability),
+      difficulty: Value(difficulty),
+      cueDependency: Value(cueDependency),
+      lapseCount: Value(lapseCount),
+      lastReviewedAtUtcMs: lastReviewedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastReviewedAtUtcMs),
+      nextDueAtUtcMs: Value(nextDueAtUtcMs),
+      algorithmVersion: Value(algorithmVersion),
+    );
+  }
+
+  factory AssociativeMemoryState.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AssociativeMemoryState(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      wordKey: serializer.fromJson<String>(json['wordKey']),
+      stability: serializer.fromJson<double>(json['stability']),
+      difficulty: serializer.fromJson<double>(json['difficulty']),
+      cueDependency: serializer.fromJson<double>(json['cueDependency']),
+      lapseCount: serializer.fromJson<int>(json['lapseCount']),
+      lastReviewedAtUtcMs: serializer.fromJson<int?>(
+        json['lastReviewedAtUtcMs'],
+      ),
+      nextDueAtUtcMs: serializer.fromJson<int>(json['nextDueAtUtcMs']),
+      algorithmVersion: serializer.fromJson<String>(json['algorithmVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'wordKey': serializer.toJson<String>(wordKey),
+      'stability': serializer.toJson<double>(stability),
+      'difficulty': serializer.toJson<double>(difficulty),
+      'cueDependency': serializer.toJson<double>(cueDependency),
+      'lapseCount': serializer.toJson<int>(lapseCount),
+      'lastReviewedAtUtcMs': serializer.toJson<int?>(lastReviewedAtUtcMs),
+      'nextDueAtUtcMs': serializer.toJson<int>(nextDueAtUtcMs),
+      'algorithmVersion': serializer.toJson<String>(algorithmVersion),
+    };
+  }
+
+  AssociativeMemoryState copyWith({
+    String? id,
+    String? ownerId,
+    String? wordKey,
+    double? stability,
+    double? difficulty,
+    double? cueDependency,
+    int? lapseCount,
+    Value<int?> lastReviewedAtUtcMs = const Value.absent(),
+    int? nextDueAtUtcMs,
+    String? algorithmVersion,
+  }) => AssociativeMemoryState(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    wordKey: wordKey ?? this.wordKey,
+    stability: stability ?? this.stability,
+    difficulty: difficulty ?? this.difficulty,
+    cueDependency: cueDependency ?? this.cueDependency,
+    lapseCount: lapseCount ?? this.lapseCount,
+    lastReviewedAtUtcMs: lastReviewedAtUtcMs.present
+        ? lastReviewedAtUtcMs.value
+        : this.lastReviewedAtUtcMs,
+    nextDueAtUtcMs: nextDueAtUtcMs ?? this.nextDueAtUtcMs,
+    algorithmVersion: algorithmVersion ?? this.algorithmVersion,
+  );
+  AssociativeMemoryState copyWithCompanion(
+    AssociativeMemoryStatesCompanion data,
+  ) {
+    return AssociativeMemoryState(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      wordKey: data.wordKey.present ? data.wordKey.value : this.wordKey,
+      stability: data.stability.present ? data.stability.value : this.stability,
+      difficulty: data.difficulty.present
+          ? data.difficulty.value
+          : this.difficulty,
+      cueDependency: data.cueDependency.present
+          ? data.cueDependency.value
+          : this.cueDependency,
+      lapseCount: data.lapseCount.present
+          ? data.lapseCount.value
+          : this.lapseCount,
+      lastReviewedAtUtcMs: data.lastReviewedAtUtcMs.present
+          ? data.lastReviewedAtUtcMs.value
+          : this.lastReviewedAtUtcMs,
+      nextDueAtUtcMs: data.nextDueAtUtcMs.present
+          ? data.nextDueAtUtcMs.value
+          : this.nextDueAtUtcMs,
+      algorithmVersion: data.algorithmVersion.present
+          ? data.algorithmVersion.value
+          : this.algorithmVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssociativeMemoryState(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordKey: $wordKey, ')
+          ..write('stability: $stability, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('cueDependency: $cueDependency, ')
+          ..write('lapseCount: $lapseCount, ')
+          ..write('lastReviewedAtUtcMs: $lastReviewedAtUtcMs, ')
+          ..write('nextDueAtUtcMs: $nextDueAtUtcMs, ')
+          ..write('algorithmVersion: $algorithmVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    wordKey,
+    stability,
+    difficulty,
+    cueDependency,
+    lapseCount,
+    lastReviewedAtUtcMs,
+    nextDueAtUtcMs,
+    algorithmVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AssociativeMemoryState &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.wordKey == this.wordKey &&
+          other.stability == this.stability &&
+          other.difficulty == this.difficulty &&
+          other.cueDependency == this.cueDependency &&
+          other.lapseCount == this.lapseCount &&
+          other.lastReviewedAtUtcMs == this.lastReviewedAtUtcMs &&
+          other.nextDueAtUtcMs == this.nextDueAtUtcMs &&
+          other.algorithmVersion == this.algorithmVersion);
+}
+
+class AssociativeMemoryStatesCompanion
+    extends UpdateCompanion<AssociativeMemoryState> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> wordKey;
+  final Value<double> stability;
+  final Value<double> difficulty;
+  final Value<double> cueDependency;
+  final Value<int> lapseCount;
+  final Value<int?> lastReviewedAtUtcMs;
+  final Value<int> nextDueAtUtcMs;
+  final Value<String> algorithmVersion;
+  final Value<int> rowid;
+  const AssociativeMemoryStatesCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.wordKey = const Value.absent(),
+    this.stability = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.cueDependency = const Value.absent(),
+    this.lapseCount = const Value.absent(),
+    this.lastReviewedAtUtcMs = const Value.absent(),
+    this.nextDueAtUtcMs = const Value.absent(),
+    this.algorithmVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AssociativeMemoryStatesCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String wordKey,
+    this.stability = const Value.absent(),
+    this.difficulty = const Value.absent(),
+    this.cueDependency = const Value.absent(),
+    this.lapseCount = const Value.absent(),
+    this.lastReviewedAtUtcMs = const Value.absent(),
+    required int nextDueAtUtcMs,
+    required String algorithmVersion,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       wordKey = Value(wordKey),
+       nextDueAtUtcMs = Value(nextDueAtUtcMs),
+       algorithmVersion = Value(algorithmVersion);
+  static Insertable<AssociativeMemoryState> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? wordKey,
+    Expression<double>? stability,
+    Expression<double>? difficulty,
+    Expression<double>? cueDependency,
+    Expression<int>? lapseCount,
+    Expression<int>? lastReviewedAtUtcMs,
+    Expression<int>? nextDueAtUtcMs,
+    Expression<String>? algorithmVersion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (wordKey != null) 'word_key': wordKey,
+      if (stability != null) 'stability': stability,
+      if (difficulty != null) 'difficulty': difficulty,
+      if (cueDependency != null) 'cue_dependency': cueDependency,
+      if (lapseCount != null) 'lapse_count': lapseCount,
+      if (lastReviewedAtUtcMs != null)
+        'last_reviewed_at_utc_ms': lastReviewedAtUtcMs,
+      if (nextDueAtUtcMs != null) 'next_due_at_utc_ms': nextDueAtUtcMs,
+      if (algorithmVersion != null) 'algorithm_version': algorithmVersion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AssociativeMemoryStatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? wordKey,
+    Value<double>? stability,
+    Value<double>? difficulty,
+    Value<double>? cueDependency,
+    Value<int>? lapseCount,
+    Value<int?>? lastReviewedAtUtcMs,
+    Value<int>? nextDueAtUtcMs,
+    Value<String>? algorithmVersion,
+    Value<int>? rowid,
+  }) {
+    return AssociativeMemoryStatesCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      wordKey: wordKey ?? this.wordKey,
+      stability: stability ?? this.stability,
+      difficulty: difficulty ?? this.difficulty,
+      cueDependency: cueDependency ?? this.cueDependency,
+      lapseCount: lapseCount ?? this.lapseCount,
+      lastReviewedAtUtcMs: lastReviewedAtUtcMs ?? this.lastReviewedAtUtcMs,
+      nextDueAtUtcMs: nextDueAtUtcMs ?? this.nextDueAtUtcMs,
+      algorithmVersion: algorithmVersion ?? this.algorithmVersion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (wordKey.present) {
+      map['word_key'] = Variable<String>(wordKey.value);
+    }
+    if (stability.present) {
+      map['stability'] = Variable<double>(stability.value);
+    }
+    if (difficulty.present) {
+      map['difficulty'] = Variable<double>(difficulty.value);
+    }
+    if (cueDependency.present) {
+      map['cue_dependency'] = Variable<double>(cueDependency.value);
+    }
+    if (lapseCount.present) {
+      map['lapse_count'] = Variable<int>(lapseCount.value);
+    }
+    if (lastReviewedAtUtcMs.present) {
+      map['last_reviewed_at_utc_ms'] = Variable<int>(lastReviewedAtUtcMs.value);
+    }
+    if (nextDueAtUtcMs.present) {
+      map['next_due_at_utc_ms'] = Variable<int>(nextDueAtUtcMs.value);
+    }
+    if (algorithmVersion.present) {
+      map['algorithm_version'] = Variable<String>(algorithmVersion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AssociativeMemoryStatesCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('wordKey: $wordKey, ')
+          ..write('stability: $stability, ')
+          ..write('difficulty: $difficulty, ')
+          ..write('cueDependency: $cueDependency, ')
+          ..write('lapseCount: $lapseCount, ')
+          ..write('lastReviewedAtUtcMs: $lastReviewedAtUtcMs, ')
+          ..write('nextDueAtUtcMs: $nextDueAtUtcMs, ')
+          ..write('algorithmVersion: $algorithmVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -16189,6 +17259,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $QuestObjectiveProgressTable(this);
   late final $StreakStatesTable streakStates = $StreakStatesTable(this);
   late final $LearningDayLogTable learningDayLog = $LearningDayLogTable(this);
+  late final $AssociationRecordsTable associationRecords =
+      $AssociationRecordsTable(this);
+  late final $AssociativeMemoryStatesTable associativeMemoryStates =
+      $AssociativeMemoryStatesTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -16221,6 +17295,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     questObjectiveProgress,
     streakStates,
     learningDayLog,
+    associationRecords,
+    associativeMemoryStates,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -16692,6 +17768,52 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_learningDayLogRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$AssociationRecordsTable, List<AssociationRecord>>
+  _associationRecordsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.associationRecords,
+        aliasName: 'local_owners__id__association_records__owner_id',
+      );
+
+  $$AssociationRecordsTableProcessedTableManager get associationRecordsRefs {
+    final manager = $$AssociationRecordsTableTableManager(
+      $_db,
+      $_db.associationRecords,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _associationRecordsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $AssociativeMemoryStatesTable,
+    List<AssociativeMemoryState>
+  >
+  _associativeMemoryStatesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.associativeMemoryStates,
+        aliasName: 'local_owners__id__associative_memory_states__owner_id',
+      );
+
+  $$AssociativeMemoryStatesTableProcessedTableManager
+  get associativeMemoryStatesRefs {
+    final manager = $$AssociativeMemoryStatesTableTableManager(
+      $_db,
+      $_db.associativeMemoryStates,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _associativeMemoryStatesRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -17260,6 +18382,57 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> associationRecordsRefs(
+    Expression<bool> Function($$AssociationRecordsTableFilterComposer f) f,
+  ) {
+    final $$AssociationRecordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.associationRecords,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AssociationRecordsTableFilterComposer(
+            $db: $db,
+            $table: $db.associationRecords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> associativeMemoryStatesRefs(
+    Expression<bool> Function($$AssociativeMemoryStatesTableFilterComposer f) f,
+  ) {
+    final $$AssociativeMemoryStatesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.associativeMemoryStates,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AssociativeMemoryStatesTableFilterComposer(
+                $db: $db,
+                $table: $db.associativeMemoryStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -17870,6 +19043,59 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> associationRecordsRefs<T extends Object>(
+    Expression<T> Function($$AssociationRecordsTableAnnotationComposer a) f,
+  ) {
+    final $$AssociationRecordsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.associationRecords,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AssociationRecordsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.associationRecords,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> associativeMemoryStatesRefs<T extends Object>(
+    Expression<T> Function($$AssociativeMemoryStatesTableAnnotationComposer a)
+    f,
+  ) {
+    final $$AssociativeMemoryStatesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.associativeMemoryStates,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$AssociativeMemoryStatesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.associativeMemoryStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -17907,6 +19133,8 @@ class $$LocalOwnersTableTableManager
             bool questInstancesRefs,
             bool streakStatesRefs,
             bool learningDayLogRefs,
+            bool associationRecordsRefs,
+            bool associativeMemoryStatesRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -17987,6 +19215,8 @@ class $$LocalOwnersTableTableManager
                 questInstancesRefs = false,
                 streakStatesRefs = false,
                 learningDayLogRefs = false,
+                associationRecordsRefs = false,
+                associativeMemoryStatesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -18012,6 +19242,8 @@ class $$LocalOwnersTableTableManager
                     if (questInstancesRefs) db.questInstances,
                     if (streakStatesRefs) db.streakStates,
                     if (learningDayLogRefs) db.learningDayLog,
+                    if (associationRecordsRefs) db.associationRecords,
+                    if (associativeMemoryStatesRefs) db.associativeMemoryStates,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -18457,6 +19689,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (associationRecordsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          AssociationRecord
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._associationRecordsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).associationRecordsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (associativeMemoryStatesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          AssociativeMemoryState
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._associativeMemoryStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).associativeMemoryStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -18499,6 +19773,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool questInstancesRefs,
         bool streakStatesRefs,
         bool learningDayLogRefs,
+        bool associationRecordsRefs,
+        bool associativeMemoryStatesRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -30541,6 +31817,806 @@ typedef $$LearningDayLogTableProcessedTableManager =
       LearningDayLogData,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$AssociationRecordsTableCreateCompanionBuilder =
+    AssociationRecordsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String wordKey,
+      required String type,
+      required String content,
+      required int createdAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$AssociationRecordsTableUpdateCompanionBuilder =
+    AssociationRecordsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> wordKey,
+      Value<String> type,
+      Value<String> content,
+      Value<int> createdAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$AssociationRecordsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $AssociationRecordsTable,
+          AssociationRecord
+        > {
+  $$AssociationRecordsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('association_records__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AssociationRecordsTableFilterComposer
+    extends Composer<_$AppDatabase, $AssociationRecordsTable> {
+  $$AssociationRecordsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get wordKey => $composableBuilder(
+    column: $table.wordKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociationRecordsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AssociationRecordsTable> {
+  $$AssociationRecordsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get wordKey => $composableBuilder(
+    column: $table.wordKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get content => $composableBuilder(
+    column: $table.content,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociationRecordsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AssociationRecordsTable> {
+  $$AssociationRecordsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get wordKey =>
+      $composableBuilder(column: $table.wordKey, builder: (column) => column);
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get content =>
+      $composableBuilder(column: $table.content, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociationRecordsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AssociationRecordsTable,
+          AssociationRecord,
+          $$AssociationRecordsTableFilterComposer,
+          $$AssociationRecordsTableOrderingComposer,
+          $$AssociationRecordsTableAnnotationComposer,
+          $$AssociationRecordsTableCreateCompanionBuilder,
+          $$AssociationRecordsTableUpdateCompanionBuilder,
+          (AssociationRecord, $$AssociationRecordsTableReferences),
+          AssociationRecord,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$AssociationRecordsTableTableManager(
+    _$AppDatabase db,
+    $AssociationRecordsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AssociationRecordsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AssociationRecordsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AssociationRecordsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> wordKey = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> content = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AssociationRecordsCompanion(
+                id: id,
+                ownerId: ownerId,
+                wordKey: wordKey,
+                type: type,
+                content: content,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String wordKey,
+                required String type,
+                required String content,
+                required int createdAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => AssociationRecordsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                wordKey: wordKey,
+                type: type,
+                content: content,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AssociationRecordsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$AssociationRecordsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$AssociationRecordsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AssociationRecordsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AssociationRecordsTable,
+      AssociationRecord,
+      $$AssociationRecordsTableFilterComposer,
+      $$AssociationRecordsTableOrderingComposer,
+      $$AssociationRecordsTableAnnotationComposer,
+      $$AssociationRecordsTableCreateCompanionBuilder,
+      $$AssociationRecordsTableUpdateCompanionBuilder,
+      (AssociationRecord, $$AssociationRecordsTableReferences),
+      AssociationRecord,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$AssociativeMemoryStatesTableCreateCompanionBuilder =
+    AssociativeMemoryStatesCompanion Function({
+      required String id,
+      required String ownerId,
+      required String wordKey,
+      Value<double> stability,
+      Value<double> difficulty,
+      Value<double> cueDependency,
+      Value<int> lapseCount,
+      Value<int?> lastReviewedAtUtcMs,
+      required int nextDueAtUtcMs,
+      required String algorithmVersion,
+      Value<int> rowid,
+    });
+typedef $$AssociativeMemoryStatesTableUpdateCompanionBuilder =
+    AssociativeMemoryStatesCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> wordKey,
+      Value<double> stability,
+      Value<double> difficulty,
+      Value<double> cueDependency,
+      Value<int> lapseCount,
+      Value<int?> lastReviewedAtUtcMs,
+      Value<int> nextDueAtUtcMs,
+      Value<String> algorithmVersion,
+      Value<int> rowid,
+    });
+
+final class $$AssociativeMemoryStatesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $AssociativeMemoryStatesTable,
+          AssociativeMemoryState
+        > {
+  $$AssociativeMemoryStatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('associative_memory_states__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$AssociativeMemoryStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $AssociativeMemoryStatesTable> {
+  $$AssociativeMemoryStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get wordKey => $composableBuilder(
+    column: $table.wordKey,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get cueDependency => $composableBuilder(
+    column: $table.cueDependency,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lapseCount => $composableBuilder(
+    column: $table.lapseCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastReviewedAtUtcMs => $composableBuilder(
+    column: $table.lastReviewedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get nextDueAtUtcMs => $composableBuilder(
+    column: $table.nextDueAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get algorithmVersion => $composableBuilder(
+    column: $table.algorithmVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociativeMemoryStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $AssociativeMemoryStatesTable> {
+  $$AssociativeMemoryStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get wordKey => $composableBuilder(
+    column: $table.wordKey,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get stability => $composableBuilder(
+    column: $table.stability,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get cueDependency => $composableBuilder(
+    column: $table.cueDependency,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lapseCount => $composableBuilder(
+    column: $table.lapseCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastReviewedAtUtcMs => $composableBuilder(
+    column: $table.lastReviewedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get nextDueAtUtcMs => $composableBuilder(
+    column: $table.nextDueAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get algorithmVersion => $composableBuilder(
+    column: $table.algorithmVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociativeMemoryStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AssociativeMemoryStatesTable> {
+  $$AssociativeMemoryStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get wordKey =>
+      $composableBuilder(column: $table.wordKey, builder: (column) => column);
+
+  GeneratedColumn<double> get stability =>
+      $composableBuilder(column: $table.stability, builder: (column) => column);
+
+  GeneratedColumn<double> get difficulty => $composableBuilder(
+    column: $table.difficulty,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get cueDependency => $composableBuilder(
+    column: $table.cueDependency,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lapseCount => $composableBuilder(
+    column: $table.lapseCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastReviewedAtUtcMs => $composableBuilder(
+    column: $table.lastReviewedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get nextDueAtUtcMs => $composableBuilder(
+    column: $table.nextDueAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get algorithmVersion => $composableBuilder(
+    column: $table.algorithmVersion,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$AssociativeMemoryStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AssociativeMemoryStatesTable,
+          AssociativeMemoryState,
+          $$AssociativeMemoryStatesTableFilterComposer,
+          $$AssociativeMemoryStatesTableOrderingComposer,
+          $$AssociativeMemoryStatesTableAnnotationComposer,
+          $$AssociativeMemoryStatesTableCreateCompanionBuilder,
+          $$AssociativeMemoryStatesTableUpdateCompanionBuilder,
+          (AssociativeMemoryState, $$AssociativeMemoryStatesTableReferences),
+          AssociativeMemoryState,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$AssociativeMemoryStatesTableTableManager(
+    _$AppDatabase db,
+    $AssociativeMemoryStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AssociativeMemoryStatesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$AssociativeMemoryStatesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$AssociativeMemoryStatesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> wordKey = const Value.absent(),
+                Value<double> stability = const Value.absent(),
+                Value<double> difficulty = const Value.absent(),
+                Value<double> cueDependency = const Value.absent(),
+                Value<int> lapseCount = const Value.absent(),
+                Value<int?> lastReviewedAtUtcMs = const Value.absent(),
+                Value<int> nextDueAtUtcMs = const Value.absent(),
+                Value<String> algorithmVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AssociativeMemoryStatesCompanion(
+                id: id,
+                ownerId: ownerId,
+                wordKey: wordKey,
+                stability: stability,
+                difficulty: difficulty,
+                cueDependency: cueDependency,
+                lapseCount: lapseCount,
+                lastReviewedAtUtcMs: lastReviewedAtUtcMs,
+                nextDueAtUtcMs: nextDueAtUtcMs,
+                algorithmVersion: algorithmVersion,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String wordKey,
+                Value<double> stability = const Value.absent(),
+                Value<double> difficulty = const Value.absent(),
+                Value<double> cueDependency = const Value.absent(),
+                Value<int> lapseCount = const Value.absent(),
+                Value<int?> lastReviewedAtUtcMs = const Value.absent(),
+                required int nextDueAtUtcMs,
+                required String algorithmVersion,
+                Value<int> rowid = const Value.absent(),
+              }) => AssociativeMemoryStatesCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                wordKey: wordKey,
+                stability: stability,
+                difficulty: difficulty,
+                cueDependency: cueDependency,
+                lapseCount: lapseCount,
+                lastReviewedAtUtcMs: lastReviewedAtUtcMs,
+                nextDueAtUtcMs: nextDueAtUtcMs,
+                algorithmVersion: algorithmVersion,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AssociativeMemoryStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$AssociativeMemoryStatesTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$AssociativeMemoryStatesTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$AssociativeMemoryStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AssociativeMemoryStatesTable,
+      AssociativeMemoryState,
+      $$AssociativeMemoryStatesTableFilterComposer,
+      $$AssociativeMemoryStatesTableOrderingComposer,
+      $$AssociativeMemoryStatesTableAnnotationComposer,
+      $$AssociativeMemoryStatesTableCreateCompanionBuilder,
+      $$AssociativeMemoryStatesTableUpdateCompanionBuilder,
+      (AssociativeMemoryState, $$AssociativeMemoryStatesTableReferences),
+      AssociativeMemoryState,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -30605,4 +32681,11 @@ class $AppDatabaseManager {
       $$StreakStatesTableTableManager(_db, _db.streakStates);
   $$LearningDayLogTableTableManager get learningDayLog =>
       $$LearningDayLogTableTableManager(_db, _db.learningDayLog);
+  $$AssociationRecordsTableTableManager get associationRecords =>
+      $$AssociationRecordsTableTableManager(_db, _db.associationRecords);
+  $$AssociativeMemoryStatesTableTableManager get associativeMemoryStates =>
+      $$AssociativeMemoryStatesTableTableManager(
+        _db,
+        _db.associativeMemoryStates,
+      );
 }

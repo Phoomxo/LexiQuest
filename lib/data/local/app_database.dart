@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
@@ -43,6 +44,8 @@ part 'app_database.g.dart';
     QuestObjectiveProgress,
     StreakStates,
     LearningDayLog,
+    AssociationRecords,
+    AssociativeMemoryStates,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -51,7 +54,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 9;
+  int get schemaVersion => 10;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -155,6 +158,9 @@ final class AppDatabase extends _$AppDatabase {
         await _createMissingTables(migrator);
       }
       if (from < 9) {
+        await _createMissingTables(migrator);
+      }
+      if (from < 10) {
         await _createMissingTables(migrator);
       }
     },
@@ -289,6 +295,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('learning_day_log')) {
       await migrator.createTable(learningDayLog);
+    }
+    if (!await _tableExists('association_records')) {
+      await migrator.createTable(associationRecords);
+    }
+    if (!await _tableExists('associative_memory_states')) {
+      await migrator.createTable(associativeMemoryStates);
     }
   }
 

@@ -529,6 +529,19 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "(id, owner_id, learning_day, first_session_at_utc_ms) VALUES "
     "('day:guest-owner:2026-08-04', 'guest-owner', '2026-08-04', 20)",
   );
+  // Phase 2 D8.3 — associative learning data (owner-scoped).
+  await database.customInsert(
+    "INSERT INTO association_records "
+    "(id, owner_id, word_key, type, content, created_at_utc_ms) VALUES "
+    "('assoc-seed-1', 'guest-owner', 'banana', 'keyword', 'yellow fruit', 20)",
+  );
+  await database.customInsert(
+    "INSERT INTO associative_memory_states "
+    "(id, owner_id, word_key, stability, difficulty, cue_dependency, "
+    "lapse_count, next_due_at_utc_ms, algorithm_version) VALUES "
+    "('ams-seed-1', 'guest-owner', 'banana', 1.0, 5.0, 0.0, "
+    "0, 1722844800000, 'v1.0.0')",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

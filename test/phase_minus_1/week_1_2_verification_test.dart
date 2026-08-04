@@ -227,13 +227,15 @@ void main() {
           reason: 'Schema v8 migration must exist after Phase 0 Week 10-11');
       expect(dbContent.contains('from < 9'), isTrue,
           reason: 'Schema v9 migration must exist after Phase 1 D7.2');
-      expect(dbContent.contains('from < 10'), isFalse);
+      expect(dbContent.contains('from < 10'), isTrue,
+          reason: 'Schema v10 migration must exist after Phase 2 D8.3');
+      expect(dbContent.contains('from < 11'), isFalse);
     });
 
-    test('current schemaVersion in code is 9', () {
+    test('current schemaVersion in code is 10', () {
       final dbContent = _read('lib/data/local/app_database.dart');
-      expect(dbContent.contains('schemaVersion => 9'), isTrue,
-          reason: 'app_database.dart schemaVersion must be 9 after Phase 1 D7.2');
+      expect(dbContent.contains('schemaVersion => 10'), isTrue,
+          reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3');
     });
   });
 

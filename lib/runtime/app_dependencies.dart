@@ -8,10 +8,13 @@ import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
+import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
+import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
@@ -57,6 +60,9 @@ final class AppDependencies {
     this.objectScanner,
     this.speechPractice,
     this.voice,
+    this.quest,
+    this.streak,
+    this.associativeLearning,
     this.disposeResources,
   });
 
@@ -88,6 +94,18 @@ final class AppDependencies {
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
+
+  /// V2 Quest pipeline — wired when [Feature.questV2] is enabled.
+  /// Null when the feature flag is off (hidden state).
+  final QuestUseCases? quest;
+
+  /// Streak tracking — wired at composition root.
+  final StreakUseCases? streak;
+
+  /// Associative learning persistence port.
+  /// Falls back to [InMemoryAssociativeLearningAdapter] when null.
+  final AssociativeLearningPort? associativeLearning;
+
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
 

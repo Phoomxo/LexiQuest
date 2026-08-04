@@ -51,13 +51,13 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports schema version 9', () async {
+    test('fresh database reports schema version 10', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 9, reason: 'schema v9 deployed (includes streak tables)');
+      expect(version, 10, reason: 'schema v10 deployed (includes associative tables)');
     });
 
     // ── Basic CRUD ───────────────────────────────────────────────────────────
