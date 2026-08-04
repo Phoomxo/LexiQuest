@@ -88,6 +88,21 @@ const _productionAppCheckDebug = bool.fromEnvironment(
   defaultValue: !kReleaseMode,
 );
 
+/// Selects the Android App Check provider based on the `debugMode` flag.
+///
+/// Kept as a pure top-level function (no Firebase state) so the provider
+/// selection can be unit-tested without initializing Firebase. In production
+/// the flag comes from the `LEXIQUEST_APP_CHECK_DEBUG` dart-define (default
+/// `!kReleaseMode`): debug builds use [AndroidDebugProvider], release builds
+/// use [AndroidPlayIntegrityProvider].
+AndroidAppCheckProvider resolveAndroidAppCheckProvider({
+  required bool debugMode,
+}) {
+  return debugMode
+      ? const AndroidDebugProvider()
+      : const AndroidPlayIntegrityProvider();
+}
+
 bool _productionSupabaseInitialized = false;
 
 Future<void> _initializeFirebaseProduction() async {
@@ -97,9 +112,9 @@ Future<void> _initializeFirebaseProduction() async {
     );
   }
   await FirebaseAppCheck.instance.activate(
-    providerAndroid: _productionAppCheckDebug
-        ? const AndroidDebugProvider()
-        : const AndroidPlayIntegrityProvider(),
+    providerAndroid: resolveAndroidAppCheckProvider(
+      debugMode: _productionAppCheckDebug,
+    ),
   );
 }
 

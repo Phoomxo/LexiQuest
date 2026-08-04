@@ -98,7 +98,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     required UpgradeGuestOwner upgradeGuestOwner,
     void Function()? onOwnerBound,
     GuestRetryDelay? retryDelay,
-    int maxCloudBindingAttempts = 8,
+    int maxCloudBindingAttempts = 5,
   }) => OwnerBindingGuestSessionService._(
     delegate,
     localOwners,

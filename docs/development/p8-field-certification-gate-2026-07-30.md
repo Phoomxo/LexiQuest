@@ -88,6 +88,16 @@ App Check is not accepted until Play Console/Firebase linkage produces valid
 production traffic. Enforcement must then be enabled and verified with a
 second bounded acceptance pass.
 
+Note (2026-08-05): the release fingerprint is still not registered with
+Firebase (`android/app/google-services.json` has no `sha*_cert_hashes`), so
+Play Integrity continues to reject tokens and Anonymous Auth + Firestore are
+blocked on release builds. The owner-bound cloud-binding retry budget was
+lowered from 8 to 5 attempts (× 15 s = 75 s) in
+`OwnerBindingGuestSessionService` so transient failures waste less resources
+while local learning remains available. The executable resolution path for
+both blockers is documented in
+[`docs/runbooks/release-blockers-resolution.md`](../runbooks/release-blockers-resolution.md).
+
 ## Evidence still required
 
 The following journeys remain pending on the mid-tier evidence record:

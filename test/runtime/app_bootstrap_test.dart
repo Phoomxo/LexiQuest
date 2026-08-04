@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -271,6 +272,33 @@ void main() {
       expect(dependencies.syncTrigger, isNotNull);
       expect(gateway.policyFetches, 1);
     });
+  });
+
+  group('resolveAndroidAppCheckProvider', () {
+    test('returns the debug provider when debugMode is true', () {
+      final provider = resolveAndroidAppCheckProvider(debugMode: true);
+      expect(provider, isA<AndroidDebugProvider>());
+      expect(provider.type, 'debug');
+    });
+
+    test('returns the Play Integrity provider when debugMode is false', () {
+      final provider = resolveAndroidAppCheckProvider(debugMode: false);
+      expect(provider, isA<AndroidPlayIntegrityProvider>());
+      expect(provider.type, 'playIntegrity');
+    });
+
+    test(
+      'selects debug only for the exact debug flag, not a truthy default',
+      () {
+        // Regression guard: the production default is `!kReleaseMode`, so a
+        // release build (kReleaseMode == true) must resolve to Play Integrity
+        // and never fall back to the debug provider.
+        expect(
+          resolveAndroidAppCheckProvider(debugMode: false).runtimeType,
+          AndroidPlayIntegrityProvider,
+        );
+      },
+    );
   });
 }
 
