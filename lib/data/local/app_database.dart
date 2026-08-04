@@ -6,6 +6,7 @@ import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/progress_tables.dart';
+import 'tables/quest_tables.dart';
 import 'tables/runtime_tables.dart';
 import 'tables/sync_tables.dart';
 import 'tables/vocabulary_tables.dart';
@@ -36,6 +37,9 @@ part 'app_database.g.dart';
     RuntimeFlags,
     ModelDownloads,
     EventsV2,
+    QuestDefinitions,
+    QuestInstances,
+    QuestObjectiveProgress,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -44,7 +48,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -142,6 +146,9 @@ final class AppDatabase extends _$AppDatabase {
         await _createMissingTables(migrator);
       }
       if (from < 7) {
+        await _createMissingTables(migrator);
+      }
+      if (from < 8) {
         await _createMissingTables(migrator);
       }
     },
@@ -261,6 +268,15 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('events_v2')) {
       await migrator.createTable(eventsV2);
+    }
+    if (!await _tableExists('quest_definitions')) {
+      await migrator.createTable(questDefinitions);
+    }
+    if (!await _tableExists('quest_instances')) {
+      await migrator.createTable(questInstances);
+    }
+    if (!await _tableExists('quest_objective_progress')) {
+      await migrator.createTable(questObjectiveProgress);
     }
   }
 

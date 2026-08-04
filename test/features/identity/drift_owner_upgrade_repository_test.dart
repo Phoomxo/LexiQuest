@@ -503,6 +503,20 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "'LearningSession', 'sess-1', 'idem-seed-1', '{}', "
     "'1.0.0', 'sha1', 'anonymized', '{}')",
   );
+  // Phase 0 Week 10-11 — quest catalog row (no owner_id) + instance row.
+  await database.customInsert(
+    "INSERT INTO quest_definitions "
+    "(quest_id, catalog_version, title, description, type, "
+    "objectives_json, reward_json) VALUES "
+    "('q-seed-1', 1, 'Seed Quest', 'Seed', 'daily', '[]', "
+    "'{\"xpAmount\":10,\"rewardItemId\":null}')",
+  );
+  await database.customInsert(
+    "INSERT INTO quest_instances "
+    "(instance_id, quest_id, owner_id, catalog_version, "
+    "assigned_at_utc_ms, state) VALUES "
+    "('inst-seed-1', 'q-seed-1', 'guest-owner', 1, 20, 'active')",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {

@@ -13731,6 +13731,1611 @@ class EventsV2Companion extends UpdateCompanion<EventsV2Data> {
   }
 }
 
+class $QuestDefinitionsTable extends QuestDefinitions
+    with TableInfo<$QuestDefinitionsTable, QuestDefinition> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuestDefinitionsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _questIdMeta = const VerificationMeta(
+    'questId',
+  );
+  @override
+  late final GeneratedColumn<String> questId = GeneratedColumn<String>(
+    'quest_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _catalogVersionMeta = const VerificationMeta(
+    'catalogVersion',
+  );
+  @override
+  late final GeneratedColumn<int> catalogVersion = GeneratedColumn<int>(
+    'catalog_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _descriptionMeta = const VerificationMeta(
+    'description',
+  );
+  @override
+  late final GeneratedColumn<String> description = GeneratedColumn<String>(
+    'description',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _typeMeta = const VerificationMeta('type');
+  @override
+  late final GeneratedColumn<String> type = GeneratedColumn<String>(
+    'type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _objectivesJsonMeta = const VerificationMeta(
+    'objectivesJson',
+  );
+  @override
+  late final GeneratedColumn<String> objectivesJson = GeneratedColumn<String>(
+    'objectives_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _rewardJsonMeta = const VerificationMeta(
+    'rewardJson',
+  );
+  @override
+  late final GeneratedColumn<String> rewardJson = GeneratedColumn<String>(
+    'reward_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _expiresInMsMeta = const VerificationMeta(
+    'expiresInMs',
+  );
+  @override
+  late final GeneratedColumn<int> expiresInMs = GeneratedColumn<int>(
+    'expires_in_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _tagsJsonMeta = const VerificationMeta(
+    'tagsJson',
+  );
+  @override
+  late final GeneratedColumn<String> tagsJson = GeneratedColumn<String>(
+    'tags_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('[]'),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    questId,
+    catalogVersion,
+    title,
+    description,
+    type,
+    objectivesJson,
+    rewardJson,
+    expiresInMs,
+    tagsJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quest_definitions';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuestDefinition> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('quest_id')) {
+      context.handle(
+        _questIdMeta,
+        questId.isAcceptableOrUnknown(data['quest_id']!, _questIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questIdMeta);
+    }
+    if (data.containsKey('catalog_version')) {
+      context.handle(
+        _catalogVersionMeta,
+        catalogVersion.isAcceptableOrUnknown(
+          data['catalog_version']!,
+          _catalogVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_catalogVersionMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('description')) {
+      context.handle(
+        _descriptionMeta,
+        description.isAcceptableOrUnknown(
+          data['description']!,
+          _descriptionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_descriptionMeta);
+    }
+    if (data.containsKey('type')) {
+      context.handle(
+        _typeMeta,
+        type.isAcceptableOrUnknown(data['type']!, _typeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_typeMeta);
+    }
+    if (data.containsKey('objectives_json')) {
+      context.handle(
+        _objectivesJsonMeta,
+        objectivesJson.isAcceptableOrUnknown(
+          data['objectives_json']!,
+          _objectivesJsonMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_objectivesJsonMeta);
+    }
+    if (data.containsKey('reward_json')) {
+      context.handle(
+        _rewardJsonMeta,
+        rewardJson.isAcceptableOrUnknown(data['reward_json']!, _rewardJsonMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_rewardJsonMeta);
+    }
+    if (data.containsKey('expires_in_ms')) {
+      context.handle(
+        _expiresInMsMeta,
+        expiresInMs.isAcceptableOrUnknown(
+          data['expires_in_ms']!,
+          _expiresInMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('tags_json')) {
+      context.handle(
+        _tagsJsonMeta,
+        tagsJson.isAcceptableOrUnknown(data['tags_json']!, _tagsJsonMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {questId};
+  @override
+  QuestDefinition map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuestDefinition(
+      questId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quest_id'],
+      )!,
+      catalogVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}catalog_version'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      description: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}description'],
+      )!,
+      type: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}type'],
+      )!,
+      objectivesJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}objectives_json'],
+      )!,
+      rewardJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reward_json'],
+      )!,
+      expiresInMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expires_in_ms'],
+      ),
+      tagsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}tags_json'],
+      )!,
+    );
+  }
+
+  @override
+  $QuestDefinitionsTable createAlias(String alias) {
+    return $QuestDefinitionsTable(attachedDatabase, alias);
+  }
+}
+
+class QuestDefinition extends DataClass implements Insertable<QuestDefinition> {
+  /// Primary key: matches [QuestDefinition.questId].
+  final String questId;
+
+  /// Monotonically increasing version for this definition's content.
+  final int catalogVersion;
+  final String title;
+  final String description;
+
+  /// Wire value of [QuestType] enum: 'daily' | 'weekly' | 'milestone' | 'story'.
+  final String type;
+
+  /// JSON-encoded [List<QuestObjective>].
+  final String objectivesJson;
+
+  /// JSON-encoded [RewardSpec].
+  final String rewardJson;
+
+  /// Duration in milliseconds; null means no expiry.
+  final int? expiresInMs;
+
+  /// JSON-encoded [List<String>] tags.
+  final String tagsJson;
+  const QuestDefinition({
+    required this.questId,
+    required this.catalogVersion,
+    required this.title,
+    required this.description,
+    required this.type,
+    required this.objectivesJson,
+    required this.rewardJson,
+    this.expiresInMs,
+    required this.tagsJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['quest_id'] = Variable<String>(questId);
+    map['catalog_version'] = Variable<int>(catalogVersion);
+    map['title'] = Variable<String>(title);
+    map['description'] = Variable<String>(description);
+    map['type'] = Variable<String>(type);
+    map['objectives_json'] = Variable<String>(objectivesJson);
+    map['reward_json'] = Variable<String>(rewardJson);
+    if (!nullToAbsent || expiresInMs != null) {
+      map['expires_in_ms'] = Variable<int>(expiresInMs);
+    }
+    map['tags_json'] = Variable<String>(tagsJson);
+    return map;
+  }
+
+  QuestDefinitionsCompanion toCompanion(bool nullToAbsent) {
+    return QuestDefinitionsCompanion(
+      questId: Value(questId),
+      catalogVersion: Value(catalogVersion),
+      title: Value(title),
+      description: Value(description),
+      type: Value(type),
+      objectivesJson: Value(objectivesJson),
+      rewardJson: Value(rewardJson),
+      expiresInMs: expiresInMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiresInMs),
+      tagsJson: Value(tagsJson),
+    );
+  }
+
+  factory QuestDefinition.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuestDefinition(
+      questId: serializer.fromJson<String>(json['questId']),
+      catalogVersion: serializer.fromJson<int>(json['catalogVersion']),
+      title: serializer.fromJson<String>(json['title']),
+      description: serializer.fromJson<String>(json['description']),
+      type: serializer.fromJson<String>(json['type']),
+      objectivesJson: serializer.fromJson<String>(json['objectivesJson']),
+      rewardJson: serializer.fromJson<String>(json['rewardJson']),
+      expiresInMs: serializer.fromJson<int?>(json['expiresInMs']),
+      tagsJson: serializer.fromJson<String>(json['tagsJson']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'questId': serializer.toJson<String>(questId),
+      'catalogVersion': serializer.toJson<int>(catalogVersion),
+      'title': serializer.toJson<String>(title),
+      'description': serializer.toJson<String>(description),
+      'type': serializer.toJson<String>(type),
+      'objectivesJson': serializer.toJson<String>(objectivesJson),
+      'rewardJson': serializer.toJson<String>(rewardJson),
+      'expiresInMs': serializer.toJson<int?>(expiresInMs),
+      'tagsJson': serializer.toJson<String>(tagsJson),
+    };
+  }
+
+  QuestDefinition copyWith({
+    String? questId,
+    int? catalogVersion,
+    String? title,
+    String? description,
+    String? type,
+    String? objectivesJson,
+    String? rewardJson,
+    Value<int?> expiresInMs = const Value.absent(),
+    String? tagsJson,
+  }) => QuestDefinition(
+    questId: questId ?? this.questId,
+    catalogVersion: catalogVersion ?? this.catalogVersion,
+    title: title ?? this.title,
+    description: description ?? this.description,
+    type: type ?? this.type,
+    objectivesJson: objectivesJson ?? this.objectivesJson,
+    rewardJson: rewardJson ?? this.rewardJson,
+    expiresInMs: expiresInMs.present ? expiresInMs.value : this.expiresInMs,
+    tagsJson: tagsJson ?? this.tagsJson,
+  );
+  QuestDefinition copyWithCompanion(QuestDefinitionsCompanion data) {
+    return QuestDefinition(
+      questId: data.questId.present ? data.questId.value : this.questId,
+      catalogVersion: data.catalogVersion.present
+          ? data.catalogVersion.value
+          : this.catalogVersion,
+      title: data.title.present ? data.title.value : this.title,
+      description: data.description.present
+          ? data.description.value
+          : this.description,
+      type: data.type.present ? data.type.value : this.type,
+      objectivesJson: data.objectivesJson.present
+          ? data.objectivesJson.value
+          : this.objectivesJson,
+      rewardJson: data.rewardJson.present
+          ? data.rewardJson.value
+          : this.rewardJson,
+      expiresInMs: data.expiresInMs.present
+          ? data.expiresInMs.value
+          : this.expiresInMs,
+      tagsJson: data.tagsJson.present ? data.tagsJson.value : this.tagsJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestDefinition(')
+          ..write('questId: $questId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('type: $type, ')
+          ..write('objectivesJson: $objectivesJson, ')
+          ..write('rewardJson: $rewardJson, ')
+          ..write('expiresInMs: $expiresInMs, ')
+          ..write('tagsJson: $tagsJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    questId,
+    catalogVersion,
+    title,
+    description,
+    type,
+    objectivesJson,
+    rewardJson,
+    expiresInMs,
+    tagsJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuestDefinition &&
+          other.questId == this.questId &&
+          other.catalogVersion == this.catalogVersion &&
+          other.title == this.title &&
+          other.description == this.description &&
+          other.type == this.type &&
+          other.objectivesJson == this.objectivesJson &&
+          other.rewardJson == this.rewardJson &&
+          other.expiresInMs == this.expiresInMs &&
+          other.tagsJson == this.tagsJson);
+}
+
+class QuestDefinitionsCompanion extends UpdateCompanion<QuestDefinition> {
+  final Value<String> questId;
+  final Value<int> catalogVersion;
+  final Value<String> title;
+  final Value<String> description;
+  final Value<String> type;
+  final Value<String> objectivesJson;
+  final Value<String> rewardJson;
+  final Value<int?> expiresInMs;
+  final Value<String> tagsJson;
+  final Value<int> rowid;
+  const QuestDefinitionsCompanion({
+    this.questId = const Value.absent(),
+    this.catalogVersion = const Value.absent(),
+    this.title = const Value.absent(),
+    this.description = const Value.absent(),
+    this.type = const Value.absent(),
+    this.objectivesJson = const Value.absent(),
+    this.rewardJson = const Value.absent(),
+    this.expiresInMs = const Value.absent(),
+    this.tagsJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuestDefinitionsCompanion.insert({
+    required String questId,
+    required int catalogVersion,
+    required String title,
+    required String description,
+    required String type,
+    required String objectivesJson,
+    required String rewardJson,
+    this.expiresInMs = const Value.absent(),
+    this.tagsJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : questId = Value(questId),
+       catalogVersion = Value(catalogVersion),
+       title = Value(title),
+       description = Value(description),
+       type = Value(type),
+       objectivesJson = Value(objectivesJson),
+       rewardJson = Value(rewardJson);
+  static Insertable<QuestDefinition> custom({
+    Expression<String>? questId,
+    Expression<int>? catalogVersion,
+    Expression<String>? title,
+    Expression<String>? description,
+    Expression<String>? type,
+    Expression<String>? objectivesJson,
+    Expression<String>? rewardJson,
+    Expression<int>? expiresInMs,
+    Expression<String>? tagsJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (questId != null) 'quest_id': questId,
+      if (catalogVersion != null) 'catalog_version': catalogVersion,
+      if (title != null) 'title': title,
+      if (description != null) 'description': description,
+      if (type != null) 'type': type,
+      if (objectivesJson != null) 'objectives_json': objectivesJson,
+      if (rewardJson != null) 'reward_json': rewardJson,
+      if (expiresInMs != null) 'expires_in_ms': expiresInMs,
+      if (tagsJson != null) 'tags_json': tagsJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuestDefinitionsCompanion copyWith({
+    Value<String>? questId,
+    Value<int>? catalogVersion,
+    Value<String>? title,
+    Value<String>? description,
+    Value<String>? type,
+    Value<String>? objectivesJson,
+    Value<String>? rewardJson,
+    Value<int?>? expiresInMs,
+    Value<String>? tagsJson,
+    Value<int>? rowid,
+  }) {
+    return QuestDefinitionsCompanion(
+      questId: questId ?? this.questId,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      type: type ?? this.type,
+      objectivesJson: objectivesJson ?? this.objectivesJson,
+      rewardJson: rewardJson ?? this.rewardJson,
+      expiresInMs: expiresInMs ?? this.expiresInMs,
+      tagsJson: tagsJson ?? this.tagsJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (questId.present) {
+      map['quest_id'] = Variable<String>(questId.value);
+    }
+    if (catalogVersion.present) {
+      map['catalog_version'] = Variable<int>(catalogVersion.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (description.present) {
+      map['description'] = Variable<String>(description.value);
+    }
+    if (type.present) {
+      map['type'] = Variable<String>(type.value);
+    }
+    if (objectivesJson.present) {
+      map['objectives_json'] = Variable<String>(objectivesJson.value);
+    }
+    if (rewardJson.present) {
+      map['reward_json'] = Variable<String>(rewardJson.value);
+    }
+    if (expiresInMs.present) {
+      map['expires_in_ms'] = Variable<int>(expiresInMs.value);
+    }
+    if (tagsJson.present) {
+      map['tags_json'] = Variable<String>(tagsJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestDefinitionsCompanion(')
+          ..write('questId: $questId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('title: $title, ')
+          ..write('description: $description, ')
+          ..write('type: $type, ')
+          ..write('objectivesJson: $objectivesJson, ')
+          ..write('rewardJson: $rewardJson, ')
+          ..write('expiresInMs: $expiresInMs, ')
+          ..write('tagsJson: $tagsJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuestInstancesTable extends QuestInstances
+    with TableInfo<$QuestInstancesTable, QuestInstance> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuestInstancesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _instanceIdMeta = const VerificationMeta(
+    'instanceId',
+  );
+  @override
+  late final GeneratedColumn<String> instanceId = GeneratedColumn<String>(
+    'instance_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _questIdMeta = const VerificationMeta(
+    'questId',
+  );
+  @override
+  late final GeneratedColumn<String> questId = GeneratedColumn<String>(
+    'quest_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES quest_definitions (quest_id)',
+    ),
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _catalogVersionMeta = const VerificationMeta(
+    'catalogVersion',
+  );
+  @override
+  late final GeneratedColumn<int> catalogVersion = GeneratedColumn<int>(
+    'catalog_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignedAtUtcMsMeta = const VerificationMeta(
+    'assignedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> assignedAtUtcMs = GeneratedColumn<int>(
+    'assigned_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _completedAtUtcMsMeta = const VerificationMeta(
+    'completedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> completedAtUtcMs = GeneratedColumn<int>(
+    'completed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _expiredAtUtcMsMeta = const VerificationMeta(
+    'expiredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> expiredAtUtcMs = GeneratedColumn<int>(
+    'expired_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    instanceId,
+    questId,
+    ownerId,
+    catalogVersion,
+    assignedAtUtcMs,
+    state,
+    completedAtUtcMs,
+    expiredAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quest_instances';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuestInstance> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('instance_id')) {
+      context.handle(
+        _instanceIdMeta,
+        instanceId.isAcceptableOrUnknown(data['instance_id']!, _instanceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_instanceIdMeta);
+    }
+    if (data.containsKey('quest_id')) {
+      context.handle(
+        _questIdMeta,
+        questId.isAcceptableOrUnknown(data['quest_id']!, _questIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_questIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('catalog_version')) {
+      context.handle(
+        _catalogVersionMeta,
+        catalogVersion.isAcceptableOrUnknown(
+          data['catalog_version']!,
+          _catalogVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_catalogVersionMeta);
+    }
+    if (data.containsKey('assigned_at_utc_ms')) {
+      context.handle(
+        _assignedAtUtcMsMeta,
+        assignedAtUtcMs.isAcceptableOrUnknown(
+          data['assigned_at_utc_ms']!,
+          _assignedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignedAtUtcMsMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_stateMeta);
+    }
+    if (data.containsKey('completed_at_utc_ms')) {
+      context.handle(
+        _completedAtUtcMsMeta,
+        completedAtUtcMs.isAcceptableOrUnknown(
+          data['completed_at_utc_ms']!,
+          _completedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('expired_at_utc_ms')) {
+      context.handle(
+        _expiredAtUtcMsMeta,
+        expiredAtUtcMs.isAcceptableOrUnknown(
+          data['expired_at_utc_ms']!,
+          _expiredAtUtcMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {instanceId};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, questId},
+  ];
+  @override
+  QuestInstance map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuestInstance(
+      instanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instance_id'],
+      )!,
+      questId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}quest_id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      catalogVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}catalog_version'],
+      )!,
+      assignedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}assigned_at_utc_ms'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      completedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}completed_at_utc_ms'],
+      ),
+      expiredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}expired_at_utc_ms'],
+      ),
+    );
+  }
+
+  @override
+  $QuestInstancesTable createAlias(String alias) {
+    return $QuestInstancesTable(attachedDatabase, alias);
+  }
+}
+
+class QuestInstance extends DataClass implements Insertable<QuestInstance> {
+  /// Primary key: matches [QuestInstance.instanceId].
+  final String instanceId;
+  final String questId;
+  final String ownerId;
+  final int catalogVersion;
+  final int assignedAtUtcMs;
+
+  /// Wire value of [QuestInstanceState]: 'active' | 'completed' | 'expired' | 'abandoned'.
+  final String state;
+  final int? completedAtUtcMs;
+  final int? expiredAtUtcMs;
+  const QuestInstance({
+    required this.instanceId,
+    required this.questId,
+    required this.ownerId,
+    required this.catalogVersion,
+    required this.assignedAtUtcMs,
+    required this.state,
+    this.completedAtUtcMs,
+    this.expiredAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['instance_id'] = Variable<String>(instanceId);
+    map['quest_id'] = Variable<String>(questId);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['catalog_version'] = Variable<int>(catalogVersion);
+    map['assigned_at_utc_ms'] = Variable<int>(assignedAtUtcMs);
+    map['state'] = Variable<String>(state);
+    if (!nullToAbsent || completedAtUtcMs != null) {
+      map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs);
+    }
+    if (!nullToAbsent || expiredAtUtcMs != null) {
+      map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs);
+    }
+    return map;
+  }
+
+  QuestInstancesCompanion toCompanion(bool nullToAbsent) {
+    return QuestInstancesCompanion(
+      instanceId: Value(instanceId),
+      questId: Value(questId),
+      ownerId: Value(ownerId),
+      catalogVersion: Value(catalogVersion),
+      assignedAtUtcMs: Value(assignedAtUtcMs),
+      state: Value(state),
+      completedAtUtcMs: completedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(completedAtUtcMs),
+      expiredAtUtcMs: expiredAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(expiredAtUtcMs),
+    );
+  }
+
+  factory QuestInstance.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuestInstance(
+      instanceId: serializer.fromJson<String>(json['instanceId']),
+      questId: serializer.fromJson<String>(json['questId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      catalogVersion: serializer.fromJson<int>(json['catalogVersion']),
+      assignedAtUtcMs: serializer.fromJson<int>(json['assignedAtUtcMs']),
+      state: serializer.fromJson<String>(json['state']),
+      completedAtUtcMs: serializer.fromJson<int?>(json['completedAtUtcMs']),
+      expiredAtUtcMs: serializer.fromJson<int?>(json['expiredAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'instanceId': serializer.toJson<String>(instanceId),
+      'questId': serializer.toJson<String>(questId),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'catalogVersion': serializer.toJson<int>(catalogVersion),
+      'assignedAtUtcMs': serializer.toJson<int>(assignedAtUtcMs),
+      'state': serializer.toJson<String>(state),
+      'completedAtUtcMs': serializer.toJson<int?>(completedAtUtcMs),
+      'expiredAtUtcMs': serializer.toJson<int?>(expiredAtUtcMs),
+    };
+  }
+
+  QuestInstance copyWith({
+    String? instanceId,
+    String? questId,
+    String? ownerId,
+    int? catalogVersion,
+    int? assignedAtUtcMs,
+    String? state,
+    Value<int?> completedAtUtcMs = const Value.absent(),
+    Value<int?> expiredAtUtcMs = const Value.absent(),
+  }) => QuestInstance(
+    instanceId: instanceId ?? this.instanceId,
+    questId: questId ?? this.questId,
+    ownerId: ownerId ?? this.ownerId,
+    catalogVersion: catalogVersion ?? this.catalogVersion,
+    assignedAtUtcMs: assignedAtUtcMs ?? this.assignedAtUtcMs,
+    state: state ?? this.state,
+    completedAtUtcMs: completedAtUtcMs.present
+        ? completedAtUtcMs.value
+        : this.completedAtUtcMs,
+    expiredAtUtcMs: expiredAtUtcMs.present
+        ? expiredAtUtcMs.value
+        : this.expiredAtUtcMs,
+  );
+  QuestInstance copyWithCompanion(QuestInstancesCompanion data) {
+    return QuestInstance(
+      instanceId: data.instanceId.present
+          ? data.instanceId.value
+          : this.instanceId,
+      questId: data.questId.present ? data.questId.value : this.questId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      catalogVersion: data.catalogVersion.present
+          ? data.catalogVersion.value
+          : this.catalogVersion,
+      assignedAtUtcMs: data.assignedAtUtcMs.present
+          ? data.assignedAtUtcMs.value
+          : this.assignedAtUtcMs,
+      state: data.state.present ? data.state.value : this.state,
+      completedAtUtcMs: data.completedAtUtcMs.present
+          ? data.completedAtUtcMs.value
+          : this.completedAtUtcMs,
+      expiredAtUtcMs: data.expiredAtUtcMs.present
+          ? data.expiredAtUtcMs.value
+          : this.expiredAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestInstance(')
+          ..write('instanceId: $instanceId, ')
+          ..write('questId: $questId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
+          ..write('state: $state, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('expiredAtUtcMs: $expiredAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    instanceId,
+    questId,
+    ownerId,
+    catalogVersion,
+    assignedAtUtcMs,
+    state,
+    completedAtUtcMs,
+    expiredAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuestInstance &&
+          other.instanceId == this.instanceId &&
+          other.questId == this.questId &&
+          other.ownerId == this.ownerId &&
+          other.catalogVersion == this.catalogVersion &&
+          other.assignedAtUtcMs == this.assignedAtUtcMs &&
+          other.state == this.state &&
+          other.completedAtUtcMs == this.completedAtUtcMs &&
+          other.expiredAtUtcMs == this.expiredAtUtcMs);
+}
+
+class QuestInstancesCompanion extends UpdateCompanion<QuestInstance> {
+  final Value<String> instanceId;
+  final Value<String> questId;
+  final Value<String> ownerId;
+  final Value<int> catalogVersion;
+  final Value<int> assignedAtUtcMs;
+  final Value<String> state;
+  final Value<int?> completedAtUtcMs;
+  final Value<int?> expiredAtUtcMs;
+  final Value<int> rowid;
+  const QuestInstancesCompanion({
+    this.instanceId = const Value.absent(),
+    this.questId = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.catalogVersion = const Value.absent(),
+    this.assignedAtUtcMs = const Value.absent(),
+    this.state = const Value.absent(),
+    this.completedAtUtcMs = const Value.absent(),
+    this.expiredAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuestInstancesCompanion.insert({
+    required String instanceId,
+    required String questId,
+    required String ownerId,
+    required int catalogVersion,
+    required int assignedAtUtcMs,
+    required String state,
+    this.completedAtUtcMs = const Value.absent(),
+    this.expiredAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : instanceId = Value(instanceId),
+       questId = Value(questId),
+       ownerId = Value(ownerId),
+       catalogVersion = Value(catalogVersion),
+       assignedAtUtcMs = Value(assignedAtUtcMs),
+       state = Value(state);
+  static Insertable<QuestInstance> custom({
+    Expression<String>? instanceId,
+    Expression<String>? questId,
+    Expression<String>? ownerId,
+    Expression<int>? catalogVersion,
+    Expression<int>? assignedAtUtcMs,
+    Expression<String>? state,
+    Expression<int>? completedAtUtcMs,
+    Expression<int>? expiredAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (instanceId != null) 'instance_id': instanceId,
+      if (questId != null) 'quest_id': questId,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (catalogVersion != null) 'catalog_version': catalogVersion,
+      if (assignedAtUtcMs != null) 'assigned_at_utc_ms': assignedAtUtcMs,
+      if (state != null) 'state': state,
+      if (completedAtUtcMs != null) 'completed_at_utc_ms': completedAtUtcMs,
+      if (expiredAtUtcMs != null) 'expired_at_utc_ms': expiredAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuestInstancesCompanion copyWith({
+    Value<String>? instanceId,
+    Value<String>? questId,
+    Value<String>? ownerId,
+    Value<int>? catalogVersion,
+    Value<int>? assignedAtUtcMs,
+    Value<String>? state,
+    Value<int?>? completedAtUtcMs,
+    Value<int?>? expiredAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return QuestInstancesCompanion(
+      instanceId: instanceId ?? this.instanceId,
+      questId: questId ?? this.questId,
+      ownerId: ownerId ?? this.ownerId,
+      catalogVersion: catalogVersion ?? this.catalogVersion,
+      assignedAtUtcMs: assignedAtUtcMs ?? this.assignedAtUtcMs,
+      state: state ?? this.state,
+      completedAtUtcMs: completedAtUtcMs ?? this.completedAtUtcMs,
+      expiredAtUtcMs: expiredAtUtcMs ?? this.expiredAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (instanceId.present) {
+      map['instance_id'] = Variable<String>(instanceId.value);
+    }
+    if (questId.present) {
+      map['quest_id'] = Variable<String>(questId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (catalogVersion.present) {
+      map['catalog_version'] = Variable<int>(catalogVersion.value);
+    }
+    if (assignedAtUtcMs.present) {
+      map['assigned_at_utc_ms'] = Variable<int>(assignedAtUtcMs.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (completedAtUtcMs.present) {
+      map['completed_at_utc_ms'] = Variable<int>(completedAtUtcMs.value);
+    }
+    if (expiredAtUtcMs.present) {
+      map['expired_at_utc_ms'] = Variable<int>(expiredAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestInstancesCompanion(')
+          ..write('instanceId: $instanceId, ')
+          ..write('questId: $questId, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('catalogVersion: $catalogVersion, ')
+          ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
+          ..write('state: $state, ')
+          ..write('completedAtUtcMs: $completedAtUtcMs, ')
+          ..write('expiredAtUtcMs: $expiredAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $QuestObjectiveProgressTable extends QuestObjectiveProgress
+    with TableInfo<$QuestObjectiveProgressTable, QuestObjectiveProgressData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $QuestObjectiveProgressTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _instanceIdMeta = const VerificationMeta(
+    'instanceId',
+  );
+  @override
+  late final GeneratedColumn<String> instanceId = GeneratedColumn<String>(
+    'instance_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES quest_instances (instance_id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _objectiveIdMeta = const VerificationMeta(
+    'objectiveId',
+  );
+  @override
+  late final GeneratedColumn<String> objectiveId = GeneratedColumn<String>(
+    'objective_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _currentCountMeta = const VerificationMeta(
+    'currentCount',
+  );
+  @override
+  late final GeneratedColumn<int> currentCount = GeneratedColumn<int>(
+    'current_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _targetCountMeta = const VerificationMeta(
+    'targetCount',
+  );
+  @override
+  late final GeneratedColumn<int> targetCount = GeneratedColumn<int>(
+    'target_count',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceEventIdsJsonMeta =
+      const VerificationMeta('sourceEventIdsJson');
+  @override
+  late final GeneratedColumn<String> sourceEventIdsJson =
+      GeneratedColumn<String>(
+        'source_event_ids_json',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('[]'),
+      );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    instanceId,
+    objectiveId,
+    currentCount,
+    targetCount,
+    sourceEventIdsJson,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'quest_objective_progress';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<QuestObjectiveProgressData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('instance_id')) {
+      context.handle(
+        _instanceIdMeta,
+        instanceId.isAcceptableOrUnknown(data['instance_id']!, _instanceIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_instanceIdMeta);
+    }
+    if (data.containsKey('objective_id')) {
+      context.handle(
+        _objectiveIdMeta,
+        objectiveId.isAcceptableOrUnknown(
+          data['objective_id']!,
+          _objectiveIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_objectiveIdMeta);
+    }
+    if (data.containsKey('current_count')) {
+      context.handle(
+        _currentCountMeta,
+        currentCount.isAcceptableOrUnknown(
+          data['current_count']!,
+          _currentCountMeta,
+        ),
+      );
+    }
+    if (data.containsKey('target_count')) {
+      context.handle(
+        _targetCountMeta,
+        targetCount.isAcceptableOrUnknown(
+          data['target_count']!,
+          _targetCountMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetCountMeta);
+    }
+    if (data.containsKey('source_event_ids_json')) {
+      context.handle(
+        _sourceEventIdsJsonMeta,
+        sourceEventIdsJson.isAcceptableOrUnknown(
+          data['source_event_ids_json']!,
+          _sourceEventIdsJsonMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {instanceId, objectiveId},
+  ];
+  @override
+  QuestObjectiveProgressData map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return QuestObjectiveProgressData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      instanceId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}instance_id'],
+      )!,
+      objectiveId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}objective_id'],
+      )!,
+      currentCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}current_count'],
+      )!,
+      targetCount: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}target_count'],
+      )!,
+      sourceEventIdsJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_event_ids_json'],
+      )!,
+    );
+  }
+
+  @override
+  $QuestObjectiveProgressTable createAlias(String alias) {
+    return $QuestObjectiveProgressTable(attachedDatabase, alias);
+  }
+}
+
+class QuestObjectiveProgressData extends DataClass
+    implements Insertable<QuestObjectiveProgressData> {
+  final String id;
+  final String instanceId;
+  final String objectiveId;
+  final int currentCount;
+  final int targetCount;
+
+  /// JSON-encoded [List<String>] of source [EventEnvelopeV2] event IDs.
+  /// Forms the evidence chain for audit and idempotency.
+  final String sourceEventIdsJson;
+  const QuestObjectiveProgressData({
+    required this.id,
+    required this.instanceId,
+    required this.objectiveId,
+    required this.currentCount,
+    required this.targetCount,
+    required this.sourceEventIdsJson,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['instance_id'] = Variable<String>(instanceId);
+    map['objective_id'] = Variable<String>(objectiveId);
+    map['current_count'] = Variable<int>(currentCount);
+    map['target_count'] = Variable<int>(targetCount);
+    map['source_event_ids_json'] = Variable<String>(sourceEventIdsJson);
+    return map;
+  }
+
+  QuestObjectiveProgressCompanion toCompanion(bool nullToAbsent) {
+    return QuestObjectiveProgressCompanion(
+      id: Value(id),
+      instanceId: Value(instanceId),
+      objectiveId: Value(objectiveId),
+      currentCount: Value(currentCount),
+      targetCount: Value(targetCount),
+      sourceEventIdsJson: Value(sourceEventIdsJson),
+    );
+  }
+
+  factory QuestObjectiveProgressData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return QuestObjectiveProgressData(
+      id: serializer.fromJson<String>(json['id']),
+      instanceId: serializer.fromJson<String>(json['instanceId']),
+      objectiveId: serializer.fromJson<String>(json['objectiveId']),
+      currentCount: serializer.fromJson<int>(json['currentCount']),
+      targetCount: serializer.fromJson<int>(json['targetCount']),
+      sourceEventIdsJson: serializer.fromJson<String>(
+        json['sourceEventIdsJson'],
+      ),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'instanceId': serializer.toJson<String>(instanceId),
+      'objectiveId': serializer.toJson<String>(objectiveId),
+      'currentCount': serializer.toJson<int>(currentCount),
+      'targetCount': serializer.toJson<int>(targetCount),
+      'sourceEventIdsJson': serializer.toJson<String>(sourceEventIdsJson),
+    };
+  }
+
+  QuestObjectiveProgressData copyWith({
+    String? id,
+    String? instanceId,
+    String? objectiveId,
+    int? currentCount,
+    int? targetCount,
+    String? sourceEventIdsJson,
+  }) => QuestObjectiveProgressData(
+    id: id ?? this.id,
+    instanceId: instanceId ?? this.instanceId,
+    objectiveId: objectiveId ?? this.objectiveId,
+    currentCount: currentCount ?? this.currentCount,
+    targetCount: targetCount ?? this.targetCount,
+    sourceEventIdsJson: sourceEventIdsJson ?? this.sourceEventIdsJson,
+  );
+  QuestObjectiveProgressData copyWithCompanion(
+    QuestObjectiveProgressCompanion data,
+  ) {
+    return QuestObjectiveProgressData(
+      id: data.id.present ? data.id.value : this.id,
+      instanceId: data.instanceId.present
+          ? data.instanceId.value
+          : this.instanceId,
+      objectiveId: data.objectiveId.present
+          ? data.objectiveId.value
+          : this.objectiveId,
+      currentCount: data.currentCount.present
+          ? data.currentCount.value
+          : this.currentCount,
+      targetCount: data.targetCount.present
+          ? data.targetCount.value
+          : this.targetCount,
+      sourceEventIdsJson: data.sourceEventIdsJson.present
+          ? data.sourceEventIdsJson.value
+          : this.sourceEventIdsJson,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestObjectiveProgressData(')
+          ..write('id: $id, ')
+          ..write('instanceId: $instanceId, ')
+          ..write('objectiveId: $objectiveId, ')
+          ..write('currentCount: $currentCount, ')
+          ..write('targetCount: $targetCount, ')
+          ..write('sourceEventIdsJson: $sourceEventIdsJson')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    instanceId,
+    objectiveId,
+    currentCount,
+    targetCount,
+    sourceEventIdsJson,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is QuestObjectiveProgressData &&
+          other.id == this.id &&
+          other.instanceId == this.instanceId &&
+          other.objectiveId == this.objectiveId &&
+          other.currentCount == this.currentCount &&
+          other.targetCount == this.targetCount &&
+          other.sourceEventIdsJson == this.sourceEventIdsJson);
+}
+
+class QuestObjectiveProgressCompanion
+    extends UpdateCompanion<QuestObjectiveProgressData> {
+  final Value<String> id;
+  final Value<String> instanceId;
+  final Value<String> objectiveId;
+  final Value<int> currentCount;
+  final Value<int> targetCount;
+  final Value<String> sourceEventIdsJson;
+  final Value<int> rowid;
+  const QuestObjectiveProgressCompanion({
+    this.id = const Value.absent(),
+    this.instanceId = const Value.absent(),
+    this.objectiveId = const Value.absent(),
+    this.currentCount = const Value.absent(),
+    this.targetCount = const Value.absent(),
+    this.sourceEventIdsJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  QuestObjectiveProgressCompanion.insert({
+    required String id,
+    required String instanceId,
+    required String objectiveId,
+    this.currentCount = const Value.absent(),
+    required int targetCount,
+    this.sourceEventIdsJson = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       instanceId = Value(instanceId),
+       objectiveId = Value(objectiveId),
+       targetCount = Value(targetCount);
+  static Insertable<QuestObjectiveProgressData> custom({
+    Expression<String>? id,
+    Expression<String>? instanceId,
+    Expression<String>? objectiveId,
+    Expression<int>? currentCount,
+    Expression<int>? targetCount,
+    Expression<String>? sourceEventIdsJson,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (instanceId != null) 'instance_id': instanceId,
+      if (objectiveId != null) 'objective_id': objectiveId,
+      if (currentCount != null) 'current_count': currentCount,
+      if (targetCount != null) 'target_count': targetCount,
+      if (sourceEventIdsJson != null)
+        'source_event_ids_json': sourceEventIdsJson,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  QuestObjectiveProgressCompanion copyWith({
+    Value<String>? id,
+    Value<String>? instanceId,
+    Value<String>? objectiveId,
+    Value<int>? currentCount,
+    Value<int>? targetCount,
+    Value<String>? sourceEventIdsJson,
+    Value<int>? rowid,
+  }) {
+    return QuestObjectiveProgressCompanion(
+      id: id ?? this.id,
+      instanceId: instanceId ?? this.instanceId,
+      objectiveId: objectiveId ?? this.objectiveId,
+      currentCount: currentCount ?? this.currentCount,
+      targetCount: targetCount ?? this.targetCount,
+      sourceEventIdsJson: sourceEventIdsJson ?? this.sourceEventIdsJson,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (instanceId.present) {
+      map['instance_id'] = Variable<String>(instanceId.value);
+    }
+    if (objectiveId.present) {
+      map['objective_id'] = Variable<String>(objectiveId.value);
+    }
+    if (currentCount.present) {
+      map['current_count'] = Variable<int>(currentCount.value);
+    }
+    if (targetCount.present) {
+      map['target_count'] = Variable<int>(targetCount.value);
+    }
+    if (sourceEventIdsJson.present) {
+      map['source_event_ids_json'] = Variable<String>(sourceEventIdsJson.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('QuestObjectiveProgressCompanion(')
+          ..write('id: $id, ')
+          ..write('instanceId: $instanceId, ')
+          ..write('objectiveId: $objectiveId, ')
+          ..write('currentCount: $currentCount, ')
+          ..write('targetCount: $targetCount, ')
+          ..write('sourceEventIdsJson: $sourceEventIdsJson, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -13776,6 +15381,12 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $RuntimeFlagsTable runtimeFlags = $RuntimeFlagsTable(this);
   late final $ModelDownloadsTable modelDownloads = $ModelDownloadsTable(this);
   late final $EventsV2Table eventsV2 = $EventsV2Table(this);
+  late final $QuestDefinitionsTable questDefinitions = $QuestDefinitionsTable(
+    this,
+  );
+  late final $QuestInstancesTable questInstances = $QuestInstancesTable(this);
+  late final $QuestObjectiveProgressTable questObjectiveProgress =
+      $QuestObjectiveProgressTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -13803,6 +15414,9 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     runtimeFlags,
     modelDownloads,
     eventsV2,
+    questDefinitions,
+    questInstances,
+    questObjectiveProgress,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -13819,6 +15433,15 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('answer_attempts', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'quest_instances',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [
+        TableUpdate('quest_objective_progress', kind: UpdateKind.delete),
+      ],
     ),
   ]);
 }
@@ -14211,6 +15834,24 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_eventsV2RefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$QuestInstancesTable, List<QuestInstance>>
+  _questInstancesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.questInstances,
+    aliasName: 'local_owners__id__quest_instances__owner_id',
+  );
+
+  $$QuestInstancesTableProcessedTableManager get questInstancesRefs {
+    final manager = $$QuestInstancesTableTableManager(
+      $_db,
+      $_db.questInstances,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_questInstancesRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -14698,6 +16339,31 @@ class $$LocalOwnersTableFilterComposer
           }) => $$EventsV2TableFilterComposer(
             $db: $db,
             $table: $db.eventsV2,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> questInstancesRefs(
+    Expression<bool> Function($$QuestInstancesTableFilterComposer f) f,
+  ) {
+    final $$QuestInstancesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableFilterComposer(
+            $db: $db,
+            $table: $db.questInstances,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -15239,6 +16905,31 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> questInstancesRefs<T extends Object>(
+    Expression<T> Function($$QuestInstancesTableAnnotationComposer a) f,
+  ) {
+    final $$QuestInstancesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -15273,6 +16964,7 @@ class $$LocalOwnersTableTableManager
             bool syncCheckpointsRefs,
             bool syncConflictsRefs,
             bool eventsV2Refs,
+            bool questInstancesRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -15350,6 +17042,7 @@ class $$LocalOwnersTableTableManager
                 syncCheckpointsRefs = false,
                 syncConflictsRefs = false,
                 eventsV2Refs = false,
+                questInstancesRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -15372,6 +17065,7 @@ class $$LocalOwnersTableTableManager
                     if (syncCheckpointsRefs) db.syncCheckpoints,
                     if (syncConflictsRefs) db.syncConflicts,
                     if (eventsV2Refs) db.eventsV2,
+                    if (questInstancesRefs) db.questInstances,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -15754,6 +17448,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (questInstancesRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          QuestInstance
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._questInstancesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).questInstancesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -15793,6 +17508,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool syncCheckpointsRefs,
         bool syncConflictsRefs,
         bool eventsV2Refs,
+        bool questInstancesRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -25807,6 +27523,1374 @@ typedef $$EventsV2TableProcessedTableManager =
       EventsV2Data,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$QuestDefinitionsTableCreateCompanionBuilder =
+    QuestDefinitionsCompanion Function({
+      required String questId,
+      required int catalogVersion,
+      required String title,
+      required String description,
+      required String type,
+      required String objectivesJson,
+      required String rewardJson,
+      Value<int?> expiresInMs,
+      Value<String> tagsJson,
+      Value<int> rowid,
+    });
+typedef $$QuestDefinitionsTableUpdateCompanionBuilder =
+    QuestDefinitionsCompanion Function({
+      Value<String> questId,
+      Value<int> catalogVersion,
+      Value<String> title,
+      Value<String> description,
+      Value<String> type,
+      Value<String> objectivesJson,
+      Value<String> rewardJson,
+      Value<int?> expiresInMs,
+      Value<String> tagsJson,
+      Value<int> rowid,
+    });
+
+final class $$QuestDefinitionsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $QuestDefinitionsTable, QuestDefinition> {
+  $$QuestDefinitionsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$QuestInstancesTable, List<QuestInstance>>
+  _questInstancesRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.questInstances,
+    aliasName: 'quest_definitions__quest_id__quest_instances__quest_id',
+  );
+
+  $$QuestInstancesTableProcessedTableManager get questInstancesRefs {
+    final manager = $$QuestInstancesTableTableManager($_db, $_db.questInstances)
+        .filter(
+          (f) => f.questId.questId.sqlEquals($_itemColumn<String>('quest_id')!),
+        );
+
+    final cache = $_typedResult.readTableOrNull(_questInstancesRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$QuestDefinitionsTableFilterComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionsTable> {
+  $$QuestDefinitionsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get questId => $composableBuilder(
+    column: $table.questId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get objectivesJson => $composableBuilder(
+    column: $table.objectivesJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get rewardJson => $composableBuilder(
+    column: $table.rewardJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expiresInMs => $composableBuilder(
+    column: $table.expiresInMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get tagsJson => $composableBuilder(
+    column: $table.tagsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> questInstancesRefs(
+    Expression<bool> Function($$QuestInstancesTableFilterComposer f) f,
+  ) {
+    final $$QuestInstancesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.questId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.questId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableFilterComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$QuestDefinitionsTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionsTable> {
+  $$QuestDefinitionsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get questId => $composableBuilder(
+    column: $table.questId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get type => $composableBuilder(
+    column: $table.type,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get objectivesJson => $composableBuilder(
+    column: $table.objectivesJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get rewardJson => $composableBuilder(
+    column: $table.rewardJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expiresInMs => $composableBuilder(
+    column: $table.expiresInMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get tagsJson => $composableBuilder(
+    column: $table.tagsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$QuestDefinitionsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuestDefinitionsTable> {
+  $$QuestDefinitionsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get questId =>
+      $composableBuilder(column: $table.questId, builder: (column) => column);
+
+  GeneratedColumn<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get description => $composableBuilder(
+    column: $table.description,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get type =>
+      $composableBuilder(column: $table.type, builder: (column) => column);
+
+  GeneratedColumn<String> get objectivesJson => $composableBuilder(
+    column: $table.objectivesJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get rewardJson => $composableBuilder(
+    column: $table.rewardJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expiresInMs => $composableBuilder(
+    column: $table.expiresInMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get tagsJson =>
+      $composableBuilder(column: $table.tagsJson, builder: (column) => column);
+
+  Expression<T> questInstancesRefs<T extends Object>(
+    Expression<T> Function($$QuestInstancesTableAnnotationComposer a) f,
+  ) {
+    final $$QuestInstancesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.questId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.questId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$QuestDefinitionsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuestDefinitionsTable,
+          QuestDefinition,
+          $$QuestDefinitionsTableFilterComposer,
+          $$QuestDefinitionsTableOrderingComposer,
+          $$QuestDefinitionsTableAnnotationComposer,
+          $$QuestDefinitionsTableCreateCompanionBuilder,
+          $$QuestDefinitionsTableUpdateCompanionBuilder,
+          (QuestDefinition, $$QuestDefinitionsTableReferences),
+          QuestDefinition,
+          PrefetchHooks Function({bool questInstancesRefs})
+        > {
+  $$QuestDefinitionsTableTableManager(
+    _$AppDatabase db,
+    $QuestDefinitionsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuestDefinitionsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuestDefinitionsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuestDefinitionsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> questId = const Value.absent(),
+                Value<int> catalogVersion = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> description = const Value.absent(),
+                Value<String> type = const Value.absent(),
+                Value<String> objectivesJson = const Value.absent(),
+                Value<String> rewardJson = const Value.absent(),
+                Value<int?> expiresInMs = const Value.absent(),
+                Value<String> tagsJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestDefinitionsCompanion(
+                questId: questId,
+                catalogVersion: catalogVersion,
+                title: title,
+                description: description,
+                type: type,
+                objectivesJson: objectivesJson,
+                rewardJson: rewardJson,
+                expiresInMs: expiresInMs,
+                tagsJson: tagsJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String questId,
+                required int catalogVersion,
+                required String title,
+                required String description,
+                required String type,
+                required String objectivesJson,
+                required String rewardJson,
+                Value<int?> expiresInMs = const Value.absent(),
+                Value<String> tagsJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestDefinitionsCompanion.insert(
+                questId: questId,
+                catalogVersion: catalogVersion,
+                title: title,
+                description: description,
+                type: type,
+                objectivesJson: objectivesJson,
+                rewardJson: rewardJson,
+                expiresInMs: expiresInMs,
+                tagsJson: tagsJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuestDefinitionsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({questInstancesRefs = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [
+                if (questInstancesRefs) db.questInstances,
+              ],
+              addJoins: null,
+              getPrefetchedDataCallback: (items) async {
+                return [
+                  if (questInstancesRefs)
+                    await $_getPrefetchedData<
+                      QuestDefinition,
+                      $QuestDefinitionsTable,
+                      QuestInstance
+                    >(
+                      currentTable: table,
+                      referencedTable: $$QuestDefinitionsTableReferences
+                          ._questInstancesRefsTable(db),
+                      managerFromTypedResult: (p0) =>
+                          $$QuestDefinitionsTableReferences(
+                            db,
+                            table,
+                            p0,
+                          ).questInstancesRefs,
+                      referencedItemsForCurrentItem: (item, referencedItems) =>
+                          referencedItems.where(
+                            (e) => e.questId == item.questId,
+                          ),
+                      typedResults: items,
+                    ),
+                ];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuestDefinitionsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuestDefinitionsTable,
+      QuestDefinition,
+      $$QuestDefinitionsTableFilterComposer,
+      $$QuestDefinitionsTableOrderingComposer,
+      $$QuestDefinitionsTableAnnotationComposer,
+      $$QuestDefinitionsTableCreateCompanionBuilder,
+      $$QuestDefinitionsTableUpdateCompanionBuilder,
+      (QuestDefinition, $$QuestDefinitionsTableReferences),
+      QuestDefinition,
+      PrefetchHooks Function({bool questInstancesRefs})
+    >;
+typedef $$QuestInstancesTableCreateCompanionBuilder =
+    QuestInstancesCompanion Function({
+      required String instanceId,
+      required String questId,
+      required String ownerId,
+      required int catalogVersion,
+      required int assignedAtUtcMs,
+      required String state,
+      Value<int?> completedAtUtcMs,
+      Value<int?> expiredAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$QuestInstancesTableUpdateCompanionBuilder =
+    QuestInstancesCompanion Function({
+      Value<String> instanceId,
+      Value<String> questId,
+      Value<String> ownerId,
+      Value<int> catalogVersion,
+      Value<int> assignedAtUtcMs,
+      Value<String> state,
+      Value<int?> completedAtUtcMs,
+      Value<int?> expiredAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$QuestInstancesTableReferences
+    extends BaseReferences<_$AppDatabase, $QuestInstancesTable, QuestInstance> {
+  $$QuestInstancesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $QuestDefinitionsTable _questIdTable(_$AppDatabase db) => db
+      .questDefinitions
+      .createAlias('quest_instances__quest_id__quest_definitions__quest_id');
+
+  $$QuestDefinitionsTableProcessedTableManager get questId {
+    final $_column = $_itemColumn<String>('quest_id')!;
+
+    final manager = $$QuestDefinitionsTableTableManager(
+      $_db,
+      $_db.questDefinitions,
+    ).filter((f) => f.questId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_questIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('quest_instances__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $QuestObjectiveProgressTable,
+    List<QuestObjectiveProgressData>
+  >
+  _questObjectiveProgressRefsTable(
+    _$AppDatabase db,
+  ) => MultiTypedResultKey.fromTable(
+    db.questObjectiveProgress,
+    aliasName:
+        'quest_instances__instance_id__quest_objective_progress__instance_id',
+  );
+
+  $$QuestObjectiveProgressTableProcessedTableManager
+  get questObjectiveProgressRefs {
+    final manager =
+        $$QuestObjectiveProgressTableTableManager(
+          $_db,
+          $_db.questObjectiveProgress,
+        ).filter(
+          (f) => f.instanceId.instanceId.sqlEquals(
+            $_itemColumn<String>('instance_id')!,
+          ),
+        );
+
+    final cache = $_typedResult.readTableOrNull(
+      _questObjectiveProgressRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$QuestInstancesTableFilterComposer
+    extends Composer<_$AppDatabase, $QuestInstancesTable> {
+  $$QuestInstancesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get instanceId => $composableBuilder(
+    column: $table.instanceId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get expiredAtUtcMs => $composableBuilder(
+    column: $table.expiredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$QuestDefinitionsTableFilterComposer get questId {
+    final $$QuestDefinitionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.questId,
+      referencedTable: $db.questDefinitions,
+      getReferencedColumn: (t) => t.questId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestDefinitionsTableFilterComposer(
+            $db: $db,
+            $table: $db.questDefinitions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> questObjectiveProgressRefs(
+    Expression<bool> Function($$QuestObjectiveProgressTableFilterComposer f) f,
+  ) {
+    final $$QuestObjectiveProgressTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.instanceId,
+          referencedTable: $db.questObjectiveProgress,
+          getReferencedColumn: (t) => t.instanceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$QuestObjectiveProgressTableFilterComposer(
+                $db: $db,
+                $table: $db.questObjectiveProgress,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$QuestInstancesTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuestInstancesTable> {
+  $$QuestInstancesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get instanceId => $composableBuilder(
+    column: $table.instanceId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get expiredAtUtcMs => $composableBuilder(
+    column: $table.expiredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$QuestDefinitionsTableOrderingComposer get questId {
+    final $$QuestDefinitionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.questId,
+      referencedTable: $db.questDefinitions,
+      getReferencedColumn: (t) => t.questId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestDefinitionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.questDefinitions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestInstancesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuestInstancesTable> {
+  $$QuestInstancesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get instanceId => $composableBuilder(
+    column: $table.instanceId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get catalogVersion => $composableBuilder(
+    column: $table.catalogVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<int> get completedAtUtcMs => $composableBuilder(
+    column: $table.completedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get expiredAtUtcMs => $composableBuilder(
+    column: $table.expiredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$QuestDefinitionsTableAnnotationComposer get questId {
+    final $$QuestDefinitionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.questId,
+      referencedTable: $db.questDefinitions,
+      getReferencedColumn: (t) => t.questId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestDefinitionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questDefinitions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> questObjectiveProgressRefs<T extends Object>(
+    Expression<T> Function($$QuestObjectiveProgressTableAnnotationComposer a) f,
+  ) {
+    final $$QuestObjectiveProgressTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.instanceId,
+          referencedTable: $db.questObjectiveProgress,
+          getReferencedColumn: (t) => t.instanceId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$QuestObjectiveProgressTableAnnotationComposer(
+                $db: $db,
+                $table: $db.questObjectiveProgress,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$QuestInstancesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuestInstancesTable,
+          QuestInstance,
+          $$QuestInstancesTableFilterComposer,
+          $$QuestInstancesTableOrderingComposer,
+          $$QuestInstancesTableAnnotationComposer,
+          $$QuestInstancesTableCreateCompanionBuilder,
+          $$QuestInstancesTableUpdateCompanionBuilder,
+          (QuestInstance, $$QuestInstancesTableReferences),
+          QuestInstance,
+          PrefetchHooks Function({
+            bool questId,
+            bool ownerId,
+            bool questObjectiveProgressRefs,
+          })
+        > {
+  $$QuestInstancesTableTableManager(
+    _$AppDatabase db,
+    $QuestInstancesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuestInstancesTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$QuestInstancesTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$QuestInstancesTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> instanceId = const Value.absent(),
+                Value<String> questId = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<int> catalogVersion = const Value.absent(),
+                Value<int> assignedAtUtcMs = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<int?> completedAtUtcMs = const Value.absent(),
+                Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestInstancesCompanion(
+                instanceId: instanceId,
+                questId: questId,
+                ownerId: ownerId,
+                catalogVersion: catalogVersion,
+                assignedAtUtcMs: assignedAtUtcMs,
+                state: state,
+                completedAtUtcMs: completedAtUtcMs,
+                expiredAtUtcMs: expiredAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String instanceId,
+                required String questId,
+                required String ownerId,
+                required int catalogVersion,
+                required int assignedAtUtcMs,
+                required String state,
+                Value<int?> completedAtUtcMs = const Value.absent(),
+                Value<int?> expiredAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestInstancesCompanion.insert(
+                instanceId: instanceId,
+                questId: questId,
+                ownerId: ownerId,
+                catalogVersion: catalogVersion,
+                assignedAtUtcMs: assignedAtUtcMs,
+                state: state,
+                completedAtUtcMs: completedAtUtcMs,
+                expiredAtUtcMs: expiredAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuestInstancesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({
+                questId = false,
+                ownerId = false,
+                questObjectiveProgressRefs = false,
+              }) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (questObjectiveProgressRefs) db.questObjectiveProgress,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (questId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.questId,
+                                    referencedTable:
+                                        $$QuestInstancesTableReferences
+                                            ._questIdTable(db),
+                                    referencedColumn:
+                                        $$QuestInstancesTableReferences
+                                            ._questIdTable(db)
+                                            .questId,
+                                  )
+                                  as T;
+                        }
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$QuestInstancesTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$QuestInstancesTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (questObjectiveProgressRefs)
+                        await $_getPrefetchedData<
+                          QuestInstance,
+                          $QuestInstancesTable,
+                          QuestObjectiveProgressData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$QuestInstancesTableReferences
+                              ._questObjectiveProgressRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$QuestInstancesTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).questObjectiveProgressRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.instanceId == item.instanceId,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$QuestInstancesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuestInstancesTable,
+      QuestInstance,
+      $$QuestInstancesTableFilterComposer,
+      $$QuestInstancesTableOrderingComposer,
+      $$QuestInstancesTableAnnotationComposer,
+      $$QuestInstancesTableCreateCompanionBuilder,
+      $$QuestInstancesTableUpdateCompanionBuilder,
+      (QuestInstance, $$QuestInstancesTableReferences),
+      QuestInstance,
+      PrefetchHooks Function({
+        bool questId,
+        bool ownerId,
+        bool questObjectiveProgressRefs,
+      })
+    >;
+typedef $$QuestObjectiveProgressTableCreateCompanionBuilder =
+    QuestObjectiveProgressCompanion Function({
+      required String id,
+      required String instanceId,
+      required String objectiveId,
+      Value<int> currentCount,
+      required int targetCount,
+      Value<String> sourceEventIdsJson,
+      Value<int> rowid,
+    });
+typedef $$QuestObjectiveProgressTableUpdateCompanionBuilder =
+    QuestObjectiveProgressCompanion Function({
+      Value<String> id,
+      Value<String> instanceId,
+      Value<String> objectiveId,
+      Value<int> currentCount,
+      Value<int> targetCount,
+      Value<String> sourceEventIdsJson,
+      Value<int> rowid,
+    });
+
+final class $$QuestObjectiveProgressTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $QuestObjectiveProgressTable,
+          QuestObjectiveProgressData
+        > {
+  $$QuestObjectiveProgressTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $QuestInstancesTable _instanceIdTable(_$AppDatabase db) =>
+      db.questInstances.createAlias(
+        'quest_objective_progress__instance_id__quest_instances__instance_id',
+      );
+
+  $$QuestInstancesTableProcessedTableManager get instanceId {
+    final $_column = $_itemColumn<String>('instance_id')!;
+
+    final manager = $$QuestInstancesTableTableManager(
+      $_db,
+      $_db.questInstances,
+    ).filter((f) => f.instanceId.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_instanceIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$QuestObjectiveProgressTableFilterComposer
+    extends Composer<_$AppDatabase, $QuestObjectiveProgressTable> {
+  $$QuestObjectiveProgressTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get currentCount => $composableBuilder(
+    column: $table.currentCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get targetCount => $composableBuilder(
+    column: $table.targetCount,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceEventIdsJson => $composableBuilder(
+    column: $table.sourceEventIdsJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$QuestInstancesTableFilterComposer get instanceId {
+    final $$QuestInstancesTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableFilterComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestObjectiveProgressTableOrderingComposer
+    extends Composer<_$AppDatabase, $QuestObjectiveProgressTable> {
+  $$QuestObjectiveProgressTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get currentCount => $composableBuilder(
+    column: $table.currentCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get targetCount => $composableBuilder(
+    column: $table.targetCount,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceEventIdsJson => $composableBuilder(
+    column: $table.sourceEventIdsJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$QuestInstancesTableOrderingComposer get instanceId {
+    final $$QuestInstancesTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableOrderingComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestObjectiveProgressTableAnnotationComposer
+    extends Composer<_$AppDatabase, $QuestObjectiveProgressTable> {
+  $$QuestObjectiveProgressTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get objectiveId => $composableBuilder(
+    column: $table.objectiveId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get currentCount => $composableBuilder(
+    column: $table.currentCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get targetCount => $composableBuilder(
+    column: $table.targetCount,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceEventIdsJson => $composableBuilder(
+    column: $table.sourceEventIdsJson,
+    builder: (column) => column,
+  );
+
+  $$QuestInstancesTableAnnotationComposer get instanceId {
+    final $$QuestInstancesTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.instanceId,
+      referencedTable: $db.questInstances,
+      getReferencedColumn: (t) => t.instanceId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$QuestInstancesTableAnnotationComposer(
+            $db: $db,
+            $table: $db.questInstances,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$QuestObjectiveProgressTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $QuestObjectiveProgressTable,
+          QuestObjectiveProgressData,
+          $$QuestObjectiveProgressTableFilterComposer,
+          $$QuestObjectiveProgressTableOrderingComposer,
+          $$QuestObjectiveProgressTableAnnotationComposer,
+          $$QuestObjectiveProgressTableCreateCompanionBuilder,
+          $$QuestObjectiveProgressTableUpdateCompanionBuilder,
+          (QuestObjectiveProgressData, $$QuestObjectiveProgressTableReferences),
+          QuestObjectiveProgressData,
+          PrefetchHooks Function({bool instanceId})
+        > {
+  $$QuestObjectiveProgressTableTableManager(
+    _$AppDatabase db,
+    $QuestObjectiveProgressTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$QuestObjectiveProgressTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$QuestObjectiveProgressTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$QuestObjectiveProgressTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> instanceId = const Value.absent(),
+                Value<String> objectiveId = const Value.absent(),
+                Value<int> currentCount = const Value.absent(),
+                Value<int> targetCount = const Value.absent(),
+                Value<String> sourceEventIdsJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestObjectiveProgressCompanion(
+                id: id,
+                instanceId: instanceId,
+                objectiveId: objectiveId,
+                currentCount: currentCount,
+                targetCount: targetCount,
+                sourceEventIdsJson: sourceEventIdsJson,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String instanceId,
+                required String objectiveId,
+                Value<int> currentCount = const Value.absent(),
+                required int targetCount,
+                Value<String> sourceEventIdsJson = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => QuestObjectiveProgressCompanion.insert(
+                id: id,
+                instanceId: instanceId,
+                objectiveId: objectiveId,
+                currentCount: currentCount,
+                targetCount: targetCount,
+                sourceEventIdsJson: sourceEventIdsJson,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$QuestObjectiveProgressTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({instanceId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (instanceId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.instanceId,
+                                referencedTable:
+                                    $$QuestObjectiveProgressTableReferences
+                                        ._instanceIdTable(db),
+                                referencedColumn:
+                                    $$QuestObjectiveProgressTableReferences
+                                        ._instanceIdTable(db)
+                                        .instanceId,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$QuestObjectiveProgressTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $QuestObjectiveProgressTable,
+      QuestObjectiveProgressData,
+      $$QuestObjectiveProgressTableFilterComposer,
+      $$QuestObjectiveProgressTableOrderingComposer,
+      $$QuestObjectiveProgressTableAnnotationComposer,
+      $$QuestObjectiveProgressTableCreateCompanionBuilder,
+      $$QuestObjectiveProgressTableUpdateCompanionBuilder,
+      (QuestObjectiveProgressData, $$QuestObjectiveProgressTableReferences),
+      QuestObjectiveProgressData,
+      PrefetchHooks Function({bool instanceId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -25858,4 +28942,13 @@ class $AppDatabaseManager {
       $$ModelDownloadsTableTableManager(_db, _db.modelDownloads);
   $$EventsV2TableTableManager get eventsV2 =>
       $$EventsV2TableTableManager(_db, _db.eventsV2);
+  $$QuestDefinitionsTableTableManager get questDefinitions =>
+      $$QuestDefinitionsTableTableManager(_db, _db.questDefinitions);
+  $$QuestInstancesTableTableManager get questInstances =>
+      $$QuestInstancesTableTableManager(_db, _db.questInstances);
+  $$QuestObjectiveProgressTableTableManager get questObjectiveProgress =>
+      $$QuestObjectiveProgressTableTableManager(
+        _db,
+        _db.questObjectiveProgress,
+      );
 }

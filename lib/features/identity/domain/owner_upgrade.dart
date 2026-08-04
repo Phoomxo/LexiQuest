@@ -50,4 +50,8 @@ const Set<String> ownerUpgradeInventory = <String>{
   'sync_checkpoints',
   'sync_conflicts',
   'events_v2',
+  // Phase 0 Week 10-11 — quest instances are owner-scoped.
+  // quest_objective_progress is excluded: it has no owner_id column and
+  // cascades automatically when quest_instances rows are re-owned.
+  'quest_instances',
 };

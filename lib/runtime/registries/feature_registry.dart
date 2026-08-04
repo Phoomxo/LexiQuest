@@ -28,6 +28,10 @@ enum Feature {
   /// V2 shadow mode — runs the V2 reward pipeline in dry-run mode alongside
   /// production.  Disabled by default; enable in debug builds only.
   shadowRewardV2,
+
+  /// V2 Quest persistence — persists [QuestInstance] to Drift (schema v8).
+  /// Default: hidden.  Enable internally to test before public rollout.
+  questV2,
 }
 
 /// Availability state of a [Feature].
@@ -79,6 +83,8 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.speechPractice: FeatureState.limited,
         Feature.aiTutor: FeatureState.limited,
         Feature.export: FeatureState.enabled,
+        // V2 features hidden by default in production builds.
+        // shadowRewardV2 and questV2 are opt-in for internal testing.
       };
 
   const BuildFeatureRegistry.allEnabled()
@@ -97,6 +103,7 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.aiTutor: FeatureState.enabled,
         Feature.export: FeatureState.enabled,
         Feature.shadowRewardV2: FeatureState.enabled,
+        Feature.questV2: FeatureState.enabled,
       };
 
   final Map<Feature, FeatureState> _states;

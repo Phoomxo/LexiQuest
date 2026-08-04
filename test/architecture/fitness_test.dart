@@ -393,4 +393,24 @@ void main() {
       reason: 'GeminiRestGateway must check research consent before AI calls',
     );
   });
+
+  // ---------------------------------------------------------------------------
+  // Test 16 — Quest Quarantine: lib/features/ must not import the legacy
+  //           streak_and_daily_quest_service (Phase 0 Week 10-11)
+  // ---------------------------------------------------------------------------
+
+  test('T16 — lib/features/ must not import streak_and_daily_quest_service', () {
+    const quarantinedService = 'streak_and_daily_quest_service';
+    final violations = <String>[];
+    for (final f in _dartFiles('lib/features')) {
+      final src = f.readAsStringSync();
+      if (src.contains(quarantinedService) &&
+          !src.contains('// quarantine-ok')) {
+        violations.add(f.path.replaceAll('\\', '/').split('lib/').last);
+      }
+    }
+    expect(violations, isEmpty,
+        reason: 'lib/features/ must not import the quarantined legacy quest '
+            'service. Use QuestUseCases instead:\n${violations.join('\n')}');
+  });
 }
