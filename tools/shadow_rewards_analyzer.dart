@@ -46,20 +46,20 @@ void main(List<String> args) async {
 
   // ── Report ──────────────────────────────────────────────────────────────────
 
-  print('');
-  print('Shadow Mode Parity Analysis');
-  print('=' * 50);
-  print('Log file       : $logPath');
-  print('Total events   : $total');
-  print('Not eligible   : $notEligible');
-  print('Eligible       : ${eligible.length}');
-  print('  ↳ would succeed : $wouldSucceed');
-  print('  ↳ already granted (idempotent): $alreadyGranted');
-  print('Errors         : $errors');
+  stdout.writeln('');
+  stdout.writeln('Shadow Mode Parity Analysis');
+  stdout.writeln('=' * 50);
+  stdout.writeln('Log file       : $logPath');
+  stdout.writeln('Total events   : $total');
+  stdout.writeln('Not eligible   : $notEligible');
+  stdout.writeln('Eligible       : ${eligible.length}');
+  stdout.writeln('  ↳ would succeed : $wouldSucceed');
+  stdout.writeln('  ↳ already granted (idempotent): $alreadyGranted');
+  stdout.writeln('Errors         : $errors');
 
   if (total == 0) {
-    print('');
-    print(
+    stdout.writeln('');
+    stdout.writeln(
       '⚠️  No entries found. Enable shadow mode and re-run after >= 7 days.',
     );
     exit(0);
@@ -68,20 +68,20 @@ void main(List<String> args) async {
   // ── Idempotency breakdown ────────────────────────────────────────────────
 
   if (showIdempotency && alreadyGranted > 0) {
-    print('');
-    print('Idempotency failures (already-granted events):');
+    stdout.writeln('');
+    stdout.writeln('Idempotency failures (already-granted events):');
     for (final e in eligible.where((e) => e['wouldSucceed'] == false)) {
-      print('  ${e['eventId']}  reason=${e['decision']?['reason']}');
+      stdout.writeln('  ${e['eventId']}  reason=${e['decision']?['reason']}');
     }
   }
 
   // ── Error details ────────────────────────────────────────────────────────
 
   if (errors > 0) {
-    print('');
-    print('Shadow mode errors:');
+    stdout.writeln('');
+    stdout.writeln('Shadow mode errors:');
     for (final e in entries.where((e) => e['error'] != null)) {
-      print('  ${e['eventId']}  error=${e['error']}');
+      stdout.writeln('  ${e['eventId']}  error=${e['error']}');
     }
   }
 
@@ -99,42 +99,44 @@ void main(List<String> args) async {
       : (parityNumerator / eligibleTotal) * 100;
   final errorRate = total == 0 ? 0.0 : (errors.toDouble() / total) * 100;
 
-  print('');
-  print(
+  stdout.writeln('');
+  stdout.writeln(
     'Parity (eligible events that would succeed): '
     '${parity.toStringAsFixed(1)}%',
   );
-  print('Error rate: ${errorRate.toStringAsFixed(2)}%');
-  print('');
+  stdout.writeln('Error rate: ${errorRate.toStringAsFixed(2)}%');
+  stdout.writeln('');
 
   const parityThreshold = 99.0;
   const errorThreshold = 1.0;
 
   if (parity >= parityThreshold && errorRate < errorThreshold) {
-    print(
+    stdout.writeln(
       '✅  Parity ≥ ${parityThreshold.toInt()}% and error rate < '
       '${errorThreshold.toInt()}% — shadow mode is ready for cutover review.',
     );
     exit(0);
   } else {
     if (parity < parityThreshold) {
-      print(
+      stdout.writeln(
         '❌  Parity ${parity.toStringAsFixed(1)}% < required '
         '${parityThreshold.toInt()}%',
       );
-      print(
+      stdout.writeln(
         '   Investigate diverging events and fix eligibility policy or adapter.',
       );
     }
     if (errorRate >= errorThreshold) {
-      print(
+      stdout.writeln(
         '❌  Error rate ${errorRate.toStringAsFixed(2)}% ≥ '
         '${errorThreshold.toInt()}%',
       );
-      print('   Check shadow mode error logs above.');
+      stdout.writeln('   Check shadow mode error logs above.');
     }
-    print('');
-    print('Do NOT cut over to V2 until parity >= ${parityThreshold.toInt()}%.');
+    stdout.writeln('');
+    stdout.writeln(
+      'Do NOT cut over to V2 until parity >= ${parityThreshold.toInt()}%.',
+    );
     exit(1);
   }
 }

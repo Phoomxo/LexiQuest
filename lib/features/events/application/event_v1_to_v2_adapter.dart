@@ -158,8 +158,10 @@ final class EventV1ToV2Adapter {
         'promptMode': promptMode,
         'correct': isCorrect,
         'score': isCorrect ? 100 : 0,
+        // ignore: use_null_aware_elements, map key is non-null literal
         if (responseTimeMs != null) 'responseTimeMs': responseTimeMs,
         'attemptNumber': attemptNumber,
+        // ignore: use_null_aware_elements, map key is non-null literal
         if (providerProvenance != null)
           'providerProvenance': providerProvenance,
       },

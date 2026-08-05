@@ -1,5 +1,4 @@
 import 'package:drift/native.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
@@ -29,12 +28,12 @@ void main() {
   late db.AppDatabase database;
   late StreakUseCases useCases;
   late LocalOwner owner;
-  late DateTime _clock;
+  late DateTime clock;
 
-  const _tz = 'Asia/Bangkok';
+  const timezoneId = 'Asia/Bangkok';
 
   setUp(() async {
-    _clock = DateTime.utc(
+    clock = DateTime.utc(
       2026,
       8,
       4,
@@ -55,8 +54,8 @@ void main() {
     useCases = StreakUseCases(
       repository: DriftStreakRepository(database),
       owners: _FakeOwners(owner),
-      nowUtc: () => _clock,
-      timezoneId: _tz,
+      nowUtc: () => clock,
+      timezoneId: timezoneId,
     );
   });
 
@@ -80,7 +79,7 @@ void main() {
 
     test('consecutive day extends streak', () async {
       await useCases.recordLearningDay(); // Day 1
-      _clock = DateTime.utc(2026, 8, 5, 10, 0); // Day 2
+      clock = DateTime.utc(2026, 8, 5, 10, 0); // Day 2
       final update = await useCases.recordLearningDay();
       expect(update.outcome, StreakOutcome.extended);
       expect(update.after.currentStreakDays, 2);
@@ -88,9 +87,9 @@ void main() {
 
     test('three consecutive days reaches streak of 3', () async {
       await useCases.recordLearningDay(); // Day 1
-      _clock = DateTime.utc(2026, 8, 5, 10, 0);
+      clock = DateTime.utc(2026, 8, 5, 10, 0);
       await useCases.recordLearningDay(); // Day 2
-      _clock = DateTime.utc(2026, 8, 6, 10, 0);
+      clock = DateTime.utc(2026, 8, 6, 10, 0);
       final update = await useCases.recordLearningDay(); // Day 3
       expect(update.after.currentStreakDays, 3);
       expect(update.after.longestStreakDays, 3);
@@ -100,7 +99,7 @@ void main() {
 
     test('calling twice on the same day is a no-op', () async {
       await useCases.recordLearningDay();
-      _clock = DateTime.utc(2026, 8, 4, 14, 0); // same day, later
+      clock = DateTime.utc(2026, 8, 4, 14, 0); // same day, later
       final update = await useCases.recordLearningDay();
       expect(update.outcome, StreakOutcome.sameDay);
       expect(update.after.currentStreakDays, 1);
@@ -116,7 +115,7 @@ void main() {
 
     test('missing two days resets streak', () async {
       await useCases.recordLearningDay(); // Day 1
-      _clock = DateTime.utc(2026, 8, 7, 10, 0); // Day 4 — missed 2+3
+      clock = DateTime.utc(2026, 8, 7, 10, 0); // Day 4 — missed 2+3
       final update = await useCases.recordLearningDay();
       expect(update.outcome, StreakOutcome.reset);
       expect(update.after.currentStreakDays, 1);
@@ -128,7 +127,7 @@ void main() {
       await useCases.recordLearningDay(); // Day 1
       await useCases.grantFreezeTokens(1);
 
-      _clock = DateTime.utc(2026, 8, 6, 10, 0); // Day 3 — skipped day 2
+      clock = DateTime.utc(2026, 8, 6, 10, 0); // Day 3 — skipped day 2
       final update = await useCases.recordLearningDay();
       expect(update.outcome, StreakOutcome.froze);
       expect(update.after.currentStreakDays, 1); // streak preserved
@@ -153,13 +152,13 @@ void main() {
     test('longestStreakDays tracks all-time high', () async {
       // Build streak of 3.
       await useCases.recordLearningDay();
-      _clock = DateTime.utc(2026, 8, 5, 10, 0);
+      clock = DateTime.utc(2026, 8, 5, 10, 0);
       await useCases.recordLearningDay();
-      _clock = DateTime.utc(2026, 8, 6, 10, 0);
+      clock = DateTime.utc(2026, 8, 6, 10, 0);
       await useCases.recordLearningDay();
 
       // Break streak.
-      _clock = DateTime.utc(2026, 8, 9, 10, 0);
+      clock = DateTime.utc(2026, 8, 9, 10, 0);
       await useCases.recordLearningDay();
 
       final state = await useCases.getCurrentStreak();

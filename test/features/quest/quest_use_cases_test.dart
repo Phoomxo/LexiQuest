@@ -39,7 +39,7 @@ EventEnvelopeV2 _makeEvent({
   ownerIdentity: ownerId,
   aggregateType: 'LearningSession',
   aggregateId: 'sess-uc',
-  idempotencyKey: 'idem-uc-${_seq}',
+  idempotencyKey: 'idem-uc-$_seq',
   consentContext: const ConsentContext.none(),
   appVersion: '1.0',
   buildId: 'sha',

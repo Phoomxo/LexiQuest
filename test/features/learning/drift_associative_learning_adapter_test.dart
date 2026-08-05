@@ -1,5 +1,4 @@
 import 'package:drift/native.dart';
-import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';

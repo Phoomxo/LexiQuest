@@ -11,7 +11,6 @@ import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
-import 'package:vocab_learning_app/features/learning/data/drift_learning_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -133,12 +132,11 @@ void main() {
       )..where((r) => r.ownerId.equals(owner))).go();
       expect(await _getXpBalance(db, owner), 0);
 
-      // 5. Rebuild from evidence
-      final rebuilder = DriftLearningProjectionRebuilder(db);
-      // Note: rebuilder rebuilds from answer_attempts, not events_v2 directly
-      // (Phase -1 scope: V2 events written to events_v2 for future use)
-      // This test verifies the events_v2 table structure is correct for later
-      // full V2 rebuilder wiring in Phase 0.
+      // 5. Rebuild from evidence.
+      // Note: DriftLearningProjectionRebuilder rebuilds from answer_attempts,
+      // not events_v2 directly (Phase -1 scope: V2 events written to events_v2
+      // for future use). This test verifies the events_v2 table structure is
+      // correct for later full V2 rebuilder wiring in Phase 0.
       // For now: confirm events_v2 rows were persisted with correct structure.
       final events = await (db.select(
         db.eventsV2,

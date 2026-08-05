@@ -8,7 +8,6 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
-import 'package:vocab_learning_app/features/motivation/domain/streak_policy.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 class _FakeOwners implements LocalOwnerRepository {

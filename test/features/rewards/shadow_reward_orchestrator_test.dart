@@ -35,7 +35,7 @@ ShadowRewardOrchestrator _makeOrchestrator({
   bool canGrantResult = true,
 }) => ShadowRewardOrchestrator(
   logger: logger,
-  canGrant: (_, __) async => canGrantResult,
+  canGrant: (_, _) async => canGrantResult,
   generateId: () => 'req-${DateTime.now().millisecondsSinceEpoch}',
   nowUtc: () => DateTime.utc(2026, 8, 4, 10, 1),
 );
@@ -104,7 +104,7 @@ void main() {
       final logger = InMemoryShadowLogger();
       final throwingOrch = ShadowRewardOrchestrator(
         logger: logger,
-        canGrant: (_, __) async => throw Exception('canGrant failed'),
+        canGrant: (_, _) async => throw Exception('canGrant failed'),
         generateId: () => 'req-id',
         nowUtc: () => DateTime.utc(2026, 8, 4),
       );
