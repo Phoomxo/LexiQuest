@@ -276,6 +276,59 @@ void main() {
       },
     );
 
+    test(
+      'stops retrying immediately on a permanent firebaseUnavailable failure',
+      () async {
+        // firebaseUnavailable is a configuration error (Firebase not
+        // initialized), not a transient outage — retrying would only burn
+        // ~75s of startup and mask the misconfiguration. The loop must stop
+        // after exactly one attempt with no backoff.
+        final delegate = _SequencedGuestSessionService(const [
+          GuestSessionFailed(GuestSessionFailure.firebaseUnavailable),
+        ]);
+        final delays = <Duration>[];
+        final service = OwnerBindingGuestSessionService(
+          delegate: delegate,
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          retryDelay: (delay) async {
+            delays.add(delay);
+          },
+          maxCloudBindingAttempts: 5,
+        );
+
+        await service.start();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(delegate.startCalls, 1);
+        expect(delays, isEmpty);
+      },
+    );
+
+    test('stops retrying immediately on an unknown failure', () async {
+      // `unknown` covers App Check rejections and other misconfigurations
+      // that are not transient; retrying masks the real problem.
+      final delegate = _SequencedGuestSessionService(const [
+        GuestSessionFailed(GuestSessionFailure.unknown),
+      ]);
+      final delays = <Duration>[];
+      final service = OwnerBindingGuestSessionService(
+        delegate: delegate,
+        localOwners: _FakeLocalOwnerRepository(),
+        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        retryDelay: (delay) async {
+          delays.add(delay);
+        },
+        maxCloudBindingAttempts: 5,
+      );
+
+      await service.start();
+      await Future<void>.delayed(Duration.zero);
+
+      expect(delegate.startCalls, 1);
+      expect(delays, isEmpty);
+    });
+
     test('fails closed when local ownership cannot be bound', () async {
       final service = OwnerBindingGuestSessionService(
         delegate: FirebaseGuestSessionService(

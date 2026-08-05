@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:firebase_auth/firebase_auth.dart';
 
@@ -40,6 +41,23 @@ abstract interface class AnonymousAuthGateway {
 }
 
 typedef GuestRetryDelay = Future<void> Function(Duration delay);
+
+/// Whether a [GuestSessionFailure] is worth retrying. Only [GuestSessionFailure.network]
+/// is a genuinely transient condition (connectivity blip, transient DNS). All
+/// other failures (`providerDisabled`, `firebaseUnavailable`, `unknown`) point
+/// at configuration or backend-state problems that retrying will not fix —
+/// retrying them just burns ~75s on startup and can mask a misconfiguration as
+/// "transient".
+bool _isTransient(GuestSessionFailure reason) =>
+    reason == GuestSessionFailure.network;
+
+/// Applies a small bounded jitter (±15%) to a base backoff so that many devices
+/// restarting in lockstep after a Firebase outage don't all retry on the exact
+/// same beat (thundering-herd). The result is always strictly positive.
+Duration _withJitter(Duration base, {Random? random}) {
+  final factor = 0.85 + (random ?? Random()).nextDouble() * 0.3; // [0.85, 1.15]
+  return Duration(microseconds: (base.inMicroseconds * factor).round());
+}
 
 final class FirebaseAnonymousAuthGateway implements AnonymousAuthGateway {
   const FirebaseAnonymousAuthGateway();
@@ -104,7 +122,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     localOwners,
     upgradeGuestOwner,
     onOwnerBound,
-    retryDelay ?? ((delay) => Future<void>.delayed(delay)),
+    retryDelay ?? ((delay) => Future<void>.delayed(_withJitter(delay))),
     maxCloudBindingAttempts,
   );
 
@@ -162,10 +180,14 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
           _onOwnerBound?.call();
           return;
         }
-        if (result case GuestSessionFailed(
-          reason: GuestSessionFailure.providerDisabled,
-        )) {
-          return;
+        if (result case GuestSessionFailed(:final reason)) {
+          // Stop immediately on permanent failures. Retrying a misconfigured
+          // backend (providerDisabled, firebaseUnavailable, unknown) only burns
+          // ~75s of startup time and masks the real problem as "transient".
+          // Only GuestSessionFailure.network is genuinely retryable.
+          if (!_isTransient(reason)) {
+            return;
+          }
         }
       } catch (_) {
         // Treat unexpected provider failures as transient within the bounded
