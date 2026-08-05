@@ -720,5 +720,142 @@ describe('field sync ownership and atomic revision contract', () => {
       }),
     );
   });
+
+  it('accepts immutable srs_states mirroring per-word review state', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-1',
+        operationId: 'srs-operation-1',
+        payload: {
+          wordId: 'word-1',
+          stability: 2.5,
+          difficulty: 0.3,
+          intervalDays: 7,
+          repetitions: 3,
+          lapses: 1,
+          lastReviewAtUtcMs: 4000,
+          dueAtUtcMs: 100000,
+          algorithmVersion: 1,
+        },
+      }),
+    );
+  });
+
+  it('keeps srs_states create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-2',
+        operationId: 'srs-operation-2',
+        payload: {
+          wordId: 'word-2',
+          stability: 1.0,
+          difficulty: 0.5,
+          intervalDays: 1,
+          repetitions: 1,
+          lapses: 0,
+          lastReviewAtUtcMs: null,
+          dueAtUtcMs: 5000,
+          algorithmVersion: 1,
+        },
+      }),
+    );
+    const ref = doc(db, 'field_users', alice, 'srs_states', 'word-2');
+    await assertFails(updateDoc(ref, { 'payload.intervalDays': 99 }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(
+      getDoc(doc(authDb(bob), 'field_users', alice, 'srs_states', 'word-2')),
+    );
+  });
+
+  it('rejects srs_states with extra payload keys', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        collection: 'srs_states',
+        entityType: 'srsState',
+        entityId: 'word-3',
+        operationId: 'srs-operation-3',
+        payload: {
+          wordId: 'word-3',
+          stability: 1.0,
+          difficulty: 0.5,
+          intervalDays: 1,
+          repetitions: 1,
+          lapses: 0,
+          lastReviewAtUtcMs: null,
+          dueAtUtcMs: 5000,
+          algorithmVersion: 1,
+          evilExtraField: 'must-be-rejected',
+        },
+      }),
+    );
+  });
+
+  it('accepts immutable achievement_unlocks ledger entries', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          sourceEventId: 'attempt-1',
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
+  });
+
+  it('keeps achievement_unlocks create-only and owner-isolated', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          sourceEventId: 'attempt-1',
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
+    const ref = doc(db, 'field_users', alice, 'achievement_unlocks', 'unlock-1');
+    await assertFails(updateDoc(ref, { 'payload.definitionVersion': 2 }));
+    await assertFails(deleteDoc(ref));
+    await assertFails(
+      getDoc(
+        doc(authDb(bob), 'field_users', alice, 'achievement_unlocks', 'unlock-1'),
+      ),
+    );
+  });
+
+  it('rejects achievement_unlocks with missing sourceEventId', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        collection: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+        entityId: 'unlock-1',
+        operationId: 'unlock-operation-1',
+        payload: {
+          achievementId: 'streak-7',
+          definitionVersion: 1,
+          unlockedAtUtcMs: 6000,
+        },
+      }),
+    );
+  });
 });
 

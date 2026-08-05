@@ -240,6 +240,64 @@ service cloud.firestore {
         && !request.resource.data.isDeleted;
     }
 
+    // srs_states/{wordId} — per-word spaced-repetition state mirror. Entity id
+    // equals payload.wordId; revision is pinned to 1 (single immutable revision
+    // per word; last-write-wins is enforced client-side before enqueueing).
+    function fieldSrsStatePayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'wordId', 'stability', 'difficulty', 'intervalDays', 'repetitions',
+          'lapses', 'lastReviewAtUtcMs', 'dueAtUtcMs', 'algorithmVersion'
+        ])
+        && payload.wordId is string
+        && payload.wordId.size() > 0
+        && payload.wordId.size() <= 256
+        && payload.stability is number
+        && payload.stability >= 0.0
+        && payload.difficulty is number
+        && payload.difficulty >= 0.0
+        && payload.difficulty <= 1.0
+        && payload.intervalDays is int
+        && payload.intervalDays >= 0
+        && payload.intervalDays <= 36500
+        && payload.repetitions is int
+        && payload.repetitions >= 0
+        && payload.lapses is int
+        && payload.lapses >= 0
+        && (payload.lastReviewAtUtcMs == null
+            || (payload.lastReviewAtUtcMs is int
+                && payload.lastReviewAtUtcMs >= 0))
+        && payload.dueAtUtcMs is int
+        && payload.dueAtUtcMs >= 0
+        && payload.algorithmVersion is int
+        && payload.algorithmVersion >= 0
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
+    // achievement_unlocks/{unlockId} — immutable append-only unlock ledger.
+    // Entity id is the unlock id (distinct from payload.achievementId);
+    // revision is pinned to 1.
+    function fieldAchievementUnlockPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'achievementId', 'definitionVersion', 'sourceEventId',
+          'unlockedAtUtcMs'
+        ])
+        && payload.achievementId is string
+        && payload.achievementId.size() > 0
+        && payload.achievementId.size() <= 256
+        && payload.definitionVersion is int
+        && payload.definitionVersion >= 0
+        && payload.sourceEventId is string
+        && payload.sourceEventId.size() > 0
+        && payload.sourceEventId.size() <= 256
+        && payload.unlockedAtUtcMs is int
+        && payload.unlockedAtUtcMs >= 0
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
     function fieldOperationAfter(uid, operationId) {
       return getAfter(
         /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId)
@@ -279,7 +337,7 @@ service cloud.firestore {
         && request.resource.data.operationId.size() <= 256
         && request.resource.data.entityType in [
              'category', 'word', 'attempt', 'readingEvent',
-             'rewardTransaction'
+             'rewardTransaction', 'srsState', 'achievementUnlock'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -355,6 +413,36 @@ service cloud.firestore {
       let entityId = request.resource.data.entityId;
       let entityPath =
         /databases/$(database)/documents/field_users/$(uid)/reward_transactions/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return !exists(entityPath)
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == 1;
+    }
+
+    function fieldOperationMatchesSrsState(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/srs_states/$(entityId);
+      let entity = getAfter(entityPath).data;
+      // srs_states uses the same single-immutable-revision contract as the
+      // other learning evidence (attempts, reading_events, reward_transactions).
+      return !exists(entityPath)
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == 1;
+    }
+
+    function fieldOperationMatchesAchievementUnlock(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/achievement_unlocks/$(entityId);
       let entity = getAfter(entityPath).data;
       return !exists(entityPath)
         && request.resource.data.operationKind == 'upsert'
@@ -540,7 +628,29 @@ service cloud.firestore {
               || (request.resource.data.entityType == 'readingEvent'
                   && fieldOperationMatchesReadingEvent(uid))
               || (request.resource.data.entityType == 'rewardTransaction'
-                  && fieldOperationMatchesRewardTransaction(uid)));
+                  && fieldOperationMatchesRewardTransaction(uid))
+              || (request.resource.data.entityType == 'srsState'
+                  && fieldOperationMatchesSrsState(uid))
+              || (request.resource.data.entityType == 'achievementUnlock'
+                  && fieldOperationMatchesAchievementUnlock(uid)));
+        allow update, delete: if false;
+      }
+
+      match /srs_states/{wordId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(wordId)
+          && fieldSrsStatePayloadOk()
+          && fieldOperationLinksEntity(uid, 'srsState', wordId);
+        allow update, delete: if false;
+      }
+
+      match /achievement_unlocks/{unlockId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(unlockId)
+          && fieldAchievementUnlockPayloadOk()
+          && fieldOperationLinksEntity(uid, 'achievementUnlock', unlockId);
         allow update, delete: if false;
       }
     }
