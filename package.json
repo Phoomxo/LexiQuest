@@ -14,5 +14,10 @@
   "devDependencies": {
     "@firebase/rules-unit-testing": "^5.0.1",
     "firebase": "^12.16.0"
+  },
+  "overrides": {
+    "firebase-admin": {
+      "brace-expansion": "^2.1.4"
+    }
   }
 }
