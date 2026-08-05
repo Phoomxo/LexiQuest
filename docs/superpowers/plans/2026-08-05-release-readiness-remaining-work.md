@@ -51,6 +51,38 @@ The remaining work is organized into five workstreams. W1–W2 are on the
 critical path (both blockers); W3–W4 are gated behind W1–W2; W5 is the only
 deferred engineering work.
 
+### Status as of 2026-08-05 (W1 execution)
+
+W1 was executed and uncovered the **true root cause** of Blocker 1. The SHA
+certificate was *already registered* with Firebase on both Android apps — the
+real defect was an **appId mismatch**:
+
+- The codebase (`lib/firebase_options.dart`) hardcoded the Android appId
+  `1:145034183638:android:719eb38067864496be5a77`, which belongs to the
+  placeholder Firebase app `vocab_learning_app` (package
+  `com.example.vocab_learning_app`).
+- The real app is **LexiQuest Production**, appId
+  `1:145034183638:android:2c492244dd68e77dbe5a77`, package `com.lexiquest.app`.
+- The release SHA-256 (`E1B0...`) is registered against **both** apps, so the
+  SHA itself was never the blocker — every release build was authenticating
+  against the wrong Firebase app whose package does not match
+  `applicationId = "com.lexiquest.app"`, which is why Play Integrity and
+  Anonymous Auth failed.
+
+**Fix applied (this session):** `lib/firebase_options.dart` Android appId
+corrected to `2c492244dd68e77dbe5a77`; `android/app/google-services.json`
+refreshed for the LexiQuest Production app. SHA registration (`created: false`)
+confirmed against the correct app. iOS/macOS/web configs left untouched per
+owner decision (app is Android-only; no iOS/Web apps exist in Firebase).
+
+**W2 status:** App Check Firestore enforcement is `UNENFORCED` (correct
+pre-release state per the runbook; enforce only after the new APK observes
+valid traffic).
+
+**What remains for W1:** rebuild a release APK with the corrected appId and
+confirm Anonymous Auth + Firestore succeed on a physical device (W1.6). This
+requires the owner to run `package-field-release.ps1` and a device smoke test.
+
 | WS | Name | Owner | Critical path? | Depends on |
 |----|------|-------|----------------|------------|
 | W1 | Release certificate + SHA registration | OWNER | Yes (Blocker 1) | — |
