@@ -42,14 +42,18 @@ abstract interface class AnonymousAuthGateway {
 
 typedef GuestRetryDelay = Future<void> Function(Duration delay);
 
-/// Whether a [GuestSessionFailure] is worth retrying. Only [GuestSessionFailure.network]
-/// is a genuinely transient condition (connectivity blip, transient DNS). All
-/// other failures (`providerDisabled`, `firebaseUnavailable`, `unknown`) point
-/// at configuration or backend-state problems that retrying will not fix —
-/// retrying them just burns ~75s on startup and can mask a misconfiguration as
-/// "transient".
+/// Whether a [GuestSessionFailure] is worth retrying.
+///
+/// `network` is a genuine transient condition. `unknown` is also retried
+/// because App Check / Play Integrity can need a few seconds to mint a token
+/// on cold start — the first anonymous-sign-in attempt may surface as an
+/// unmapped `FirebaseAuthException` (→ `unknown`) while the integrity service
+/// is still binding, then succeed on a later attempt. Only `providerDisabled`
+/// (Anonymous Auth turned off in the console) and `firebaseUnavailable`
+/// (Firebase not initialized — a configuration error) are hard stops.
 bool _isTransient(GuestSessionFailure reason) =>
-    reason == GuestSessionFailure.network;
+    reason == GuestSessionFailure.network ||
+    reason == GuestSessionFailure.unknown;
 
 /// Applies a small bounded jitter (±15%) to a base backoff so that many devices
 /// restarting in lockstep after a Firebase outage don't all retry on the exact

@@ -305,29 +305,41 @@ void main() {
       },
     );
 
-    test('stops retrying immediately on an unknown failure', () async {
-      // `unknown` covers App Check rejections and other misconfigurations
-      // that are not transient; retrying masks the real problem.
-      final delegate = _SequencedGuestSessionService(const [
-        GuestSessionFailed(GuestSessionFailure.unknown),
-      ]);
-      final delays = <Duration>[];
-      final service = OwnerBindingGuestSessionService(
-        delegate: delegate,
-        localOwners: _FakeLocalOwnerRepository(),
-        upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
-        retryDelay: (delay) async {
-          delays.add(delay);
-        },
-        maxCloudBindingAttempts: 5,
-      );
+    test(
+      'retries on an unknown failure (Play Integrity cold-start can be transient)',
+      () async {
+        // `unknown` can surface on the first attempt while App Check / Play
+        // Integrity is still minting a token on cold start; the prior field
+        // session succeeded only because `unknown` was retried. So the loop
+        // must keep retrying `unknown` up to the attempt cap, not hard-stop.
+        final delegate = _SequencedGuestSessionService(
+          List<GuestSessionResult>.filled(
+            5,
+            const GuestSessionFailed(GuestSessionFailure.unknown),
+          ),
+        );
+        final delays = <Duration>[];
+        final service = OwnerBindingGuestSessionService(
+          delegate: delegate,
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          retryDelay: (delay) async {
+            delays.add(delay);
+          },
+        );
 
-      await service.start();
-      await Future<void>.delayed(Duration.zero);
+        await service.start();
+        await Future<void>.delayed(Duration.zero);
 
-      expect(delegate.startCalls, 1);
-      expect(delays, isEmpty);
-    });
+        expect(delegate.startCalls, 5);
+        expect(delays, const <Duration>[
+          Duration(seconds: 15),
+          Duration(seconds: 15),
+          Duration(seconds: 15),
+          Duration(seconds: 15),
+        ]);
+      },
+    );
 
     test('fails closed when local ownership cannot be bound', () async {
       final service = OwnerBindingGuestSessionService(
