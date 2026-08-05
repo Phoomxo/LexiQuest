@@ -83,6 +83,28 @@ valid traffic).
 confirm Anonymous Auth + Firestore succeed on a physical device (W1.6). This
 requires the owner to run `package-field-release.ps1` and a device smoke test.
 
+### W4 journey results (2026-08-05, vivo V2041 mid-tier, APK 1.0.0+10)
+
+Executed after the W1 + Firestore-rules fixes. Anonymous Auth succeeded
+(uid `uxdB3O...`); no Firestore PERMISSION_DENIED. See
+`build/field-release/w4-journey/JOURNEY_EVIDENCE.md` (gitignored, local).
+
+- **W4.1 SRS Flashcards:** screen opens, empty state correct. Flip / mark
+  known-unknown **not testable in a single session** — the FSRS scheduler
+  (`srs_policy.dart`) sets `dueAtUtc = now + interval` so every freshly-answered
+  word is due in the future. Re-test after ≥ 1 day or with a lapse-inducing
+  quiz.
+- **W4.2 Shadowing/Speech:** ✅ mic permission granted, speech engine listens,
+  correctly reports "didn't hear clear speech" with no real audio. (The drawer
+  item opens `ShadowingChallengeScreen`; `SpeakToTextScreen` is unreachable in
+  production by design.)
+- **W4.5 Object Scanner:** ✅ camera permission granted; model downloaded +
+  checksum verified (~15 s); end-to-end inference worked — detected
+  `matchstick` at 15.6% confidence with model `mobilenet-v1-imagenet
+  1.0.224-quantized-metadata1`; "no verified translation" path rendered
+  correctly.
+- **W4.3 (AI Tutor):** still requires an owner Gemini API key — not exercised.
+
 | WS | Name | Owner | Critical path? | Depends on |
 |----|------|-------|----------------|------------|
 | W1 | Release certificate + SHA registration | OWNER | Yes (Blocker 1) | — |
