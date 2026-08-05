@@ -86,19 +86,30 @@ intentional design choices for the field trial, not regressions:
   CPU/XNNPACK only (no custom ops / GPU/NNAPI), input dimension-validated.
   Models are integrity-protected by APK signing + pinned hash constant.
 
-### 4. Low/hygiene observations (not fixed, tracked here)
+### 4. Hygiene items (status after hardening pass — 2026-08-05)
 
-- **Unencrypted Drift DB** (Medium, mitigated). Plain SQLite stores Firebase
-  UID, points, SRS state, consent state. `allowBackup=false` blocks the easy
-  `adb backup` path; residual exposure is rooted devices / forensics only.
-  Hardening option: SQLCipher with a per-install key in `flutter_secure_storage`.
-  Not in scope for this APK; recorded for a future hardening pass.
-- **Retry loop treats all non-`providerDisabled` failures as transient**
-  (Medium, reliability not security). `OwnerBindingGuestSessionService` retries
-  5×15s on any failure, which can mask a permanent misconfiguration as
-  "transient" and burn ~75s on startup. Backoff is flat (no jitter).
-- **`minSdk = 24`** (Info, hygiene). Android 7 reached security-patch EOL;
-  raising to 26 would drop legacy crypto surface. Not a current vulnerability.
+- **Unencrypted Drift DB** (Medium, mitigated; **deferred**). Plain SQLite
+  stores Firebase UID, points, SRS state, consent state. `allowBackup=false`
+  blocks the easy `adb backup` path; residual exposure is rooted devices /
+  forensics only. **Deferred for the field trial** — 0 real participants have
+  a DB yet, `allowBackup=false` already blocks the easy extraction path, and
+  an architectural change (SQLCipher via `LazyDatabase` + per-install key in
+  `flutter_secure_storage`) pre-distribution risks the whole trial if it
+  corrupts the DB. **Trigger to implement:** after the first trial cohort
+  ships with a tested DB export/restore path, or before any cohort running on
+  devices that may be rooted. Recommended approach then: `LazyDatabase`
+  + `NativeDatabase` on the main isolate (cleanest, no isolate-boundary issue),
+  accepting the UI-thread query cost (measured first).
+- **~~Retry loop treats all non-`providerDisabled` failures as transient~~**
+  (**resolved** in commit `826ce11`). The loop now hard-stops on
+  `firebaseUnavailable` and `unknown` (configuration errors, not transient)
+  after a single attempt; only `GuestSessionFailure.network` is retried. The
+  default backoff now applies ±15% jitter to avoid thundering-herd on mass
+  restart. Tests pin the new behavior.
+- **~~`minSdk = 24`~~** (**resolved**). Raised to **26** (Android 8.0). Every
+  plugin floor (highest is `flutter_tts` at 24) and every procured trial device
+  (vivo V2041 = API 33, HONOR DNP-NX9 = API 36) are well above 26; no
+  recruitment document promised Android 7+ support.
 
 ## Verification after changes
 
