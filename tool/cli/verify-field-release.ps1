@@ -51,8 +51,8 @@ $resolvedEvidence = Resolve-RepositoryPath $EvidencePath
 $resolvedPackage = Resolve-RepositoryPath $ParticipantPackagePath
 if (-not (Test-Path -LiteralPath $resolvedEvidence -PathType Leaf)) {
     throw (
-        'Field evidence is missing: {0}. Collect three real Android devices; ' +
-        'do not replace missing evidence with simulated results.' -f
+        'Field evidence is missing: {0}. Collect mid-tier and high-tier real ' +
+        'Android devices; do not replace missing evidence with simulated results.' -f
         $resolvedEvidence
     )
 }

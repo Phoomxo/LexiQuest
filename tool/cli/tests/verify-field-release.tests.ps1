@@ -142,9 +142,8 @@ try {
             researchProtocolRef = 'private:research-protocol'
         }
         devices = @(
-            (New-Device 'low' '1'),
-            (New-Device 'mid' '2'),
-            (New-Device 'high' '3')
+            (New-Device 'mid' '1'),
+            (New-Device 'high' '2')
         )
         ownerApproval = [pscustomobject]@{
             approved = $true
