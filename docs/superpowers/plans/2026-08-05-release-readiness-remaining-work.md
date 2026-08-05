@@ -277,6 +277,18 @@ so Play Integrity rejects every release-build token and cascades
 **Reference:** [`docs/development/p8-field-certification-gate-2026-07-30.md`](../development/p8-field-certification-gate-2026-07-30.md) § External requirements remain
 **Depends on:** W1, W2 (a stable signed APK with working cloud is required)
 
+### Status as of 2026-08-05
+
+| Tier | Device | Android | RAM | XNNPACK | GPU | Status |
+|------|--------|---------|-----|---------|-----|--------|
+| Mid | vivo V2041 | 13 | ~7.5 GB | — (P8 certified) | Not allowlisted | ✅ Certified (P8) |
+| High | HONOR DNP-NX9 | **16** (SDK 36) | **11 GB** | **18 ms** (12.8× CPU) | Adreno 750, not allowlisted | ✅ Evidence collected |
+| Low | — | 11–12 | ≤ 4 GB | — | — | ⏳ Device needed |
+
+High-tier evidence: `field/evidence/devices/high-20260805T040232Z.json`
+(gitignored; pseudonymous device id `6D16563A...`; APK sha256 `A90BB0...`)
+All journeys remain pending owner run.
+
 ### Files
 
 - Produce: `field/evidence/devices/<device-id>.json` per device (via `collect-android-field-evidence.ps1`)
@@ -287,26 +299,29 @@ so Play Integrity rejects every release-build token and cascades
 
   Target: ≤ 4 GB RAM, Android 11–12. This tier is currently unverified.
 
-- [ ] **W3.2 (OWNER): Procure the high-tier device**
+- [x] **W3.2 (ENGINEER): Install + collect evidence on high-tier device**
 
-  Target: ≥ 8 GB RAM, Android 14+. This tier is currently unverified.
+  HONOR DNP-NX9 (Android 16, SDK 36, 11 GB RAM, Snapdragon SM8650 / Adreno 750).
+  APK 1.0.0+10 installed. `verify-device-model.ps1` PASS (11/11).
+  XNNPACK median 18 ms vs CPU 232 ms (12.8× speedup). GPU not allowlisted
+  (same policy as mid-tier — requires certification pass).
 
 - [ ] **W3.3 (OWNER): Procure/confirm a GPU-allowlist-qualifying device**
 
   Needed to exercise the GPU inference path that is currently disabled
-  (not allowlisted) on the mid-tier vivo V2041.
+  (not allowlisted) on both the mid-tier vivo V2041 and high-tier HONOR.
 
-- [ ] **W3.4 (ENGINEER): Collect evidence on each new device**
+- [ ] **W3.4 (ENGINEER): Collect evidence on low-tier device (when procured)**
 
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass `
-    -File tool/cli/collect-android-field-evidence.ps1
+    -File tool/cli/collect-android-field-evidence.ps1 -Tier low -NetworkProfile wifi
   ```
 
   One physical device per run; no emulators. Hashed serial only; no
   participant identifiers committed.
 
-- [ ] **W3.5 (ENGINEER): Run the model runtime + GPU allowlist probes**
+- [ ] **W3.5 (ENGINEER): Run the model runtime + GPU allowlist probes on low-tier**
 
   ```powershell
   powershell -NoProfile -ExecutionPolicy Bypass `
@@ -314,9 +329,6 @@ so Play Integrity rejects every release-build token and cascades
   powershell -NoProfile -ExecutionPolicy Bypass `
     -File tool/cli/verify-device-model.ps1
   ```
-
-  Confirm LiteRT lifecycle, custom-op binaries, and CPU vs GPU preference on
-  each tier.
 
 ### W3 Exit Criteria
 
