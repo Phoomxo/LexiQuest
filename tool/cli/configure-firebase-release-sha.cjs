@@ -4,7 +4,7 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const projectId = "vocab-learning-app-219ef";
-const appId = "1:145034183638:android:719eb38067864496be5a77";
+const appId = "1:145034183638:android:2c492244dd68e77dbe5a77";
 const manifestPath = path.resolve(
   process.argv[2] || "build/field-release/release-manifest.json",
 );

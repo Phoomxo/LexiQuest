@@ -5,7 +5,7 @@ const path = require("node:path");
 
 const projectId = "vocab-learning-app-219ef";
 const projectNumber = "145034183638";
-const appId = "1:145034183638:android:719eb38067864496be5a77";
+const appId = "1:145034183638:android:2c492244dd68e77dbe5a77";
 const npmRoot = path.join(process.env.APPDATA || "", "npm", "node_modules");
 if (!fs.existsSync(npmRoot)) {
   throw new Error(`Global npm module directory is missing: ${npmRoot}`);
