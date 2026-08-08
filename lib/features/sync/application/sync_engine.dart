@@ -122,7 +122,9 @@ final class SyncEngine {
       );
       for (final claim in claimed) {
         try {
-          final result = await gateway.push(claim.mutation);
+          final result = await gateway
+              .push(claim.mutation)
+              .timeout(const Duration(seconds: 30));
           switch (result) {
             case PushAcknowledged():
               await store.acknowledge(
@@ -172,12 +174,14 @@ final class SyncEngine {
         for (final collection in SyncCollection.values) {
           try {
             final checkpoint = await store.readCheckpoint(owner.id, collection);
-            final page = await gateway.pull(
-              firebaseUid: firebaseUid,
-              collection: collection,
-              after: checkpoint,
-              limit: pullLimit,
-            );
+            final page = await gateway
+                .pull(
+                  firebaseUid: firebaseUid,
+                  collection: collection,
+                  after: checkpoint,
+                  limit: pullLimit,
+                )
+                .timeout(const Duration(seconds: 30));
             await store.applyPullPage(
               ownerId: owner.id,
               collection: collection,

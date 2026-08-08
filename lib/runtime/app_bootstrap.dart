@@ -72,6 +72,7 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'app_runtime_status.dart';
+import 'registries/feature_registry.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -431,6 +432,11 @@ final class AppBootstrap {
       // Best-effort; catalog is also seeded on first quest start.
     }
 
+    // ── Wrap feature registry with runtime kill-switch support ────────────
+    final runtimeFeatures = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.fieldDefaults(),
+    );
+
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
         localData: RuntimeAvailability.ready,
@@ -442,6 +448,7 @@ final class AppBootstrap {
       ),
       config: config,
       guestSessionService: exposedGuestSession,
+      features: runtimeFeatures,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       database: database,
       localOwners: localOwners,
