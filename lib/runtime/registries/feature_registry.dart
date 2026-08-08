@@ -6,6 +6,8 @@
 /// migrated.
 library;
 
+import 'package:flutter/foundation.dart';
+
 /// Feature capabilities exposed to learners in the field.
 ///
 /// Mirrors [FieldFeature] during the transition period; values are kept in
@@ -145,10 +147,11 @@ final class BuildFeatureRegistry implements FeatureRegistry {
 /// Runtime kill-switch registry that wraps a [FeatureRegistry] and allows
 /// features to be disabled or emergency-shut-off at runtime.
 ///
-/// In production, this reads overrides from the `runtime_flags` Drift table
-/// (or Firebase Remote Config) and folds them into the effective state.
+/// In production, persisted local overrides are loaded from the
+/// `runtime_flags` Drift table and folded into the effective state.
 /// `emergencyOff` always wins — it cannot be overridden by the base registry.
-final class RuntimeFeatureRegistry implements FeatureRegistry {
+final class RuntimeFeatureRegistry extends ChangeNotifier
+    implements FeatureRegistry {
   RuntimeFeatureRegistry(this._base, {Map<Feature, FeatureState>? overrides})
     : _overrides = overrides ?? {};
 
@@ -157,17 +160,19 @@ final class RuntimeFeatureRegistry implements FeatureRegistry {
 
   /// Set a runtime override for [feature].
   void setOverride(Feature feature, FeatureState state) {
+    if (_overrides[feature] == state) return;
     _overrides[feature] = state;
+    notifyListeners();
   }
 
   /// Clear a runtime override, reverting to the base registry.
   void clearOverride(Feature feature) {
-    _overrides.remove(feature);
+    if (_overrides.remove(feature) != null) notifyListeners();
   }
 
   /// Emergency-disable a feature immediately.
   void emergencyOff(Feature feature) {
-    _overrides[feature] = FeatureState.emergencyOff;
+    setOverride(feature, FeatureState.emergencyOff);
   }
 
   @override
@@ -191,6 +196,7 @@ final class RuntimeFeatureRegistry implements FeatureRegistry {
     return s == FeatureState.enabled || s == FeatureState.limited;
   }
 }
+
 ///
 /// Use [enable] / [disable] to override individual features:
 /// ```dart

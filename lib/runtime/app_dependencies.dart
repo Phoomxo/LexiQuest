@@ -31,6 +31,7 @@ import 'registries/consent_registry.dart';
 import 'registries/entitlement_registry.dart';
 import 'registries/experiment_registry.dart';
 import 'registries/feature_registry.dart';
+import 'runtime_feature_override_store.dart';
 
 final class AppDependencies {
   AppDependencies({
@@ -40,6 +41,7 @@ final class AppDependencies {
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
     this.features = const BuildFeatureRegistry.fieldDefaults(),
+    this.featureControls,
     this.experiments = const NoOpExperimentRegistry(),
     this.consents = const NoOpConsentRegistry(),
     this.entitlements = const NoOpEntitlementRegistry(),
@@ -76,6 +78,7 @@ final class AppDependencies {
   final FieldFeatureRegistry fieldFeatures;
   // V2 registries — use these for new code; FieldFeatureRegistry is legacy.
   final FeatureRegistry features;
+  final RuntimeFeatureControls? featureControls;
   final ExperimentRegistry experiments;
   final ConsentRegistry consents;
   final EntitlementRegistry entitlements;

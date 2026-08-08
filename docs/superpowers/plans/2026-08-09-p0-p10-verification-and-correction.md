@@ -28,7 +28,7 @@
 | P5 Production Backend | PARTIAL | Backend/hardening code exists in repository history | Integrated backend policy/gate evidence for the current branch has not been reconciled |
 | P6 Internal APK | BLOCKED | Historical/debug APK references exist | No signed APK manifest/hash/certificate tied to current source SHA |
 | P7 Device Checkpoint | BLOCKED | Historical mid/high device records are documented | No complete low/mid/high evidence tied to the current APK hash |
-| P8 Beta/Field Journeys | PARTIAL | Local reliability/cost defects in Slice 1 are corrected and locally verified | Runtime feature controls remain unreachable; real device/provider journeys and exact-hash evidence remain pending |
+| P8 Beta/Field Journeys | PARTIAL | Local reliability/cost defects are corrected; persisted runtime feature controls are production-reachable and update mounted navigation | Real device/provider journeys and exact-hash evidence remain pending |
 | P9 Release Readiness | BLOCKED | One local scenario test file was added in `93fc50c` | App Check, policy snapshots, asset links, budget controls, support/research references, owner approval, and release verifier are not evidenced for current SHA |
 | P10 Final Acceptance | BLOCKED | Version changed to `1.0.0+13` in `63ff15b` | The commit changed no manifest/evidence/gate files; final acceptance cannot be claimed |
 
@@ -71,6 +71,12 @@ returned `SPEC COMPLIANCE: APPROVED` and `CODE QUALITY: APPROVED`.
 
 This slice must not claim remote kill-switch support unless a real remote
 source, refresh policy, and test are integrated.
+
+Status: implemented as a local persisted emergency control. TTL writes are
+rejected until a live expiry scheduler exists, and externally written TTL rows
+are ignored. The bounded Slice 2 gate passed 27 tests; `flutter analyze`
+reported no issues. Read-only review returned `SPEC COMPLIANCE: APPROVED` and
+`CODE QUALITY: APPROVED` with no remaining Critical or Important findings.
 
 ### Slice 3: P1-P7 bounded reconciliation
 

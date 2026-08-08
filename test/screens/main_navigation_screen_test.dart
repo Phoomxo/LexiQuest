@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
@@ -78,5 +79,25 @@ void main() {
     expect(find.text('สแกนวัตถุ'), findsOneWidget);
     expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
     expect(find.text('AI Tutor'), findsOneWidget);
+  });
+
+  testWidgets('live emergency-off rebuilds mounted navigation', (
+    WidgetTester tester,
+  ) async {
+    final registry = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    final legacy = FeatureRegistryFieldAdapter(registry);
+    addTearDown(legacy.dispose);
+    await tester.pumpWidget(
+      MaterialApp(home: MainNavigationScreen(featureRegistry: legacy)),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(NavigationDestination), findsNWidgets(6));
+
+    registry.emergencyOff(Feature.weakness);
+    await tester.pump();
+
+    expect(find.byType(NavigationDestination), findsNWidgets(5));
   });
 }

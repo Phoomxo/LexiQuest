@@ -9,6 +9,9 @@ import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
@@ -60,6 +63,7 @@ void main() {
       expect(dependencies.geminiTutor, isNotNull);
       expect(dependencies.aiTutor, isNotNull);
       expect(dependencies.aiUsage, isNotNull);
+      expect(dependencies.featureControls, isNotNull);
     });
 
     test(
@@ -80,6 +84,35 @@ void main() {
         expect(dependencies.localOwners, isNotNull);
         expect(owners, hasLength(1));
         expect(owners.single.isActive, isTrue);
+      },
+    );
+
+    test(
+      'loads persisted emergency feature controls into navigation',
+      () async {
+        final database = _testDatabase();
+        await RuntimeFeatureOverrideStore(database).setEmergencyOff(
+          Feature.aiTutor,
+          updatedAtUtc: DateTime.utc(2026, 8, 9, 12),
+        );
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(
+          dependencies.features.stateOf(Feature.aiTutor),
+          FeatureState.emergencyOff,
+        );
+        expect(
+          dependencies.fieldFeatures.isVisible(FieldFeature.aiTutor),
+          isFalse,
+        );
       },
     );
 

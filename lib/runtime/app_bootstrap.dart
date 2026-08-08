@@ -75,8 +75,10 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'download_counter.dart';
+import 'field_feature_registry.dart';
 import 'app_runtime_status.dart';
 import 'registries/feature_registry.dart';
+import 'runtime_feature_override_store.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -450,9 +452,19 @@ final class AppBootstrap {
     }
 
     // ── Wrap feature registry with runtime kill-switch support ────────────
+    final featureOverrideStore = RuntimeFeatureOverrideStore(database);
     final runtimeFeatures = RuntimeFeatureRegistry(
       const BuildFeatureRegistry.fieldDefaults(),
+      overrides: await featureOverrideStore.load(
+        nowUtc: DateTime.now().toUtc(),
+      ),
     );
+    final featureControls = RuntimeFeatureControls(
+      store: featureOverrideStore,
+      registry: runtimeFeatures,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    final fieldFeatures = FeatureRegistryFieldAdapter(runtimeFeatures);
 
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
@@ -465,7 +477,9 @@ final class AppBootstrap {
       ),
       config: config,
       guestSessionService: exposedGuestSession,
+      fieldFeatures: fieldFeatures,
       features: runtimeFeatures,
+      featureControls: featureControls,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       database: database,
       localOwners: localOwners,
@@ -495,6 +509,8 @@ final class AppBootstrap {
         geminiHttpClient.close();
         await aiTutor.dispose();
         aiTutorHttpClient.close();
+        fieldFeatures.dispose();
+        runtimeFeatures.dispose();
         await objectScanner.dispose();
         await speechPractice.dispose();
         await deviceModels.dispose();

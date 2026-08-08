@@ -38,6 +38,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   late int _currentIndex;
   List<_NavigationEntry> _entries = const [];
+  Listenable? _featureChanges;
 
   @override
   void initState() {
@@ -48,8 +49,45 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _entries = _buildEntries(_fieldFeatures(context));
+    final features = _fieldFeatures(context);
+    _observeFeatureChanges(features);
+    _refreshEntries(features);
+  }
+
+  @override
+  void didUpdateWidget(MainNavigationScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.featureRegistry, widget.featureRegistry)) {
+      final features = _fieldFeatures(context);
+      _observeFeatureChanges(features);
+      _refreshEntries(features);
+    }
+  }
+
+  void _observeFeatureChanges(FieldFeatureRegistry features) {
+    final Listenable? next = features is Listenable
+        ? features as Listenable
+        : null;
+    if (identical(next, _featureChanges)) return;
+    _featureChanges?.removeListener(_onFeatureChanged);
+    _featureChanges = next;
+    next?.addListener(_onFeatureChanged);
+  }
+
+  void _onFeatureChanged() {
+    if (!mounted) return;
+    setState(() => _refreshEntries(_fieldFeatures(context)));
+  }
+
+  void _refreshEntries(FieldFeatureRegistry features) {
+    _entries = _buildEntries(features);
     _currentIndex = _currentIndex.clamp(0, _entries.length - 1);
+  }
+
+  @override
+  void dispose() {
+    _featureChanges?.removeListener(_onFeatureChanged);
+    super.dispose();
   }
 
   FieldFeatureRegistry _fieldFeatures(BuildContext context) {
