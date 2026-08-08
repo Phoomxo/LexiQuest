@@ -481,3 +481,5 @@ This remains failing by design until **every** required item above is genuine.
 Do not weaken any gate to force a pass. When it passes, record the final APK
 SHA-256, the owner approval evidence, and the device-tier evidence, then open
 the P9 (W5) plan.
+
+> **⚠️ UNVERIFIED (P1.3 Evidence Reconciliation 2026-08-08):** The '1015/1015 tests pass' claim at C1 lacks CI output. The W3 device-tier section's unchecked items (W3.1, W3.3, W3.4) contradict any 'field-certified' framing. Three-tier certification is INCOMPLETE (low-tier device not procured).

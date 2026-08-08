@@ -134,3 +134,5 @@ accepted** for the field trial (client-writable points; App Check enforcement
 pending owner action), and a short list of hygiene items tracked for later.
 Secret handling, SQL parameterization, model integrity, and Android build
 hardening are clean.
+
+> **⚠️ UNVERIFIED (P1.3 Evidence Reconciliation 2026-08-08):** Numeric metrics in this document (test counts, parity percentages, incident counts) lack reproducible raw evidence in the repository. These figures are retained as historical claims only and must not be used to certify release readiness without re-running from the current integration baseline.

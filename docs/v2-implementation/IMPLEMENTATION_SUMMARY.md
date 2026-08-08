@@ -290,3 +290,5 @@ Product Owner: _________________________ Date: _________
 **Status:** READY FOR PHASE -1 EXECUTION
 
 **Next Action:** Begin Week 1 deliverables (Current-State Audit)
+
+> **⚠️ UNVERIFIED (P1.3 Evidence Reconciliation 2026-08-08):** Numeric metrics in this document (test counts, parity percentages, incident counts) lack reproducible raw evidence in the repository. These figures are retained as historical claims only and must not be used to certify release readiness without re-running from the current integration baseline.

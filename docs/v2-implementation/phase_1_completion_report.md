@@ -143,3 +143,5 @@ PASSED: 3/3 (1 existing + 2 new)
 ## Stakeholder Sign-off
 
 - **Tech Lead (Petch1910):** ✅ Approved 2026-08-04
+
+> **⚠️ UNVERIFIED (P1.3 Evidence Reconciliation 2026-08-08):** Numeric metrics in this document (test counts, parity percentages, incident counts) lack reproducible raw evidence in the repository. These figures are retained as historical claims only and must not be used to certify release readiness without re-running from the current integration baseline.

@@ -118,6 +118,7 @@ Future<void> _initializeFirebaseProduction() async {
   );
 }
 
+// ignore: unused_element
 Future<void> _initializeSupabaseProduction() async {
   if (_productionSupabaseInitialized) return;
   final publishableKey = requireSupabasePublishableKey(
@@ -128,6 +129,15 @@ Future<void> _initializeSupabaseProduction() async {
     publishableKey: publishableKey,
   );
   _productionSupabaseInitialized = true;
+}
+
+/// P1.4: Supabase is off the critical path. This no-op initializer
+/// replaces [_initializeSupabaseProduction] so the app starts without
+/// requiring a Supabase project to be active.
+Future<void> _initializeSupabaseOptional() async {
+  // Intentionally empty — Supabase is plumbed but unused.
+  // If shop/wallpaper images need to return to Supabase Storage,
+  // swap this back to _initializeSupabaseProduction.
 }
 
 final class AppBootstrap {
@@ -146,7 +156,7 @@ final class AppBootstrap {
   factory AppBootstrap.production() {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
-      initializeSupabase: _initializeSupabaseProduction,
+      initializeSupabase: _initializeSupabaseOptional,
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,

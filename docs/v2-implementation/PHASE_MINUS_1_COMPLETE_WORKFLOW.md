@@ -3011,3 +3011,5 @@ QA Lead: _________________________ Date: _________
 **END OF PHASE -1 COMPLETE WORKFLOW**
 
 Next document: `phase_0_plan.md` (created after Phase -1 approval)
+
+> **⚠️ UNVERIFIED (P1.3 Evidence Reconciliation 2026-08-08):** Parity percentages (99.2%, 87.3%), event counts (1,247), and incident counts in this document lack reproducible raw evidence. Note: the 99.2% and 87.3% figures contradict each other within this document. These must not be used to certify release readiness.
