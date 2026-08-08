@@ -653,6 +653,44 @@ service cloud.firestore {
           && fieldOperationLinksEntity(uid, 'achievementUnlock', unlockId);
         allow update, delete: if false;
       }
+
+      // ── P2.6: Quest, streak, events, speech evidence sync rules ───────
+
+      match /quest_instances/{instanceId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(instanceId)
+          && request.resource.data.ownerId is string
+          && request.resource.data.ownerId == uid;
+        allow update, delete: if false;
+      }
+
+      match /streak_states/{streakOwnerId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(streakOwnerId)
+          && request.resource.data.ownerId is string
+          && request.resource.data.ownerId == uid;
+        allow update, delete: if false;
+      }
+
+      match /events_v2/{eventId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(eventId)
+          && request.resource.data.ownerId is string
+          && request.resource.data.ownerId == uid;
+        allow update, delete: if false;
+      }
+
+      match /speech_evidence/{evidenceId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(evidenceId)
+          && request.resource.data.ownerId is string
+          && request.resource.data.ownerId == uid;
+        allow update, delete: if false;
+      }
     }
 
     match /app_control/field {

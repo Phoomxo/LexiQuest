@@ -36,12 +36,20 @@ import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
+import '../features/motivation/application/streak_use_cases.dart';
+import '../features/motivation/data/drift_streak_repository.dart';
+import '../features/quest/application/quest_catalog_provider.dart';
+import '../features/quest/application/quest_use_cases.dart';
+import '../features/quest/data/drift_quest_repository.dart';
+import '../features/rewards/application/shadow_reward_orchestrator.dart';
+import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
@@ -58,6 +66,7 @@ import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
+import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -273,14 +282,6 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
-    final learning = LearningUseCases(
-      owners: localOwners,
-      repository: DriftLearningRepository(database),
-      generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
-      buildInfo: const AppBuildInfo.fromEnvironment(),
-      onLocalMutation: notifyLocalMutation,
-    );
     final progress = ProgressUseCases(
       owners: localOwners,
       queries: DriftProgressQueries(database),
@@ -297,6 +298,54 @@ final class AppBootstrap {
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
+    );
+
+    // ── V2 Quest pipeline (must precede learning wiring) ─────────────────
+    final questRepository = DriftQuestRepository(database);
+    final buildInfo = const AppBuildInfo.fromEnvironment();
+    final shadowOrchestrator = ShadowRewardOrchestrator(
+      logger: _NoopShadowLogger(),
+      canGrant: (_, _) async => true,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    );
+    final quest = QuestUseCases(
+      repository: questRepository,
+      owners: localOwners,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+      timezoneId: DateTime.now().timeZoneName,
+      shadowOrchestrator: shadowOrchestrator,
+    );
+
+    // ── Streak tracking (must precede learning wiring) ───────────────────
+    final streak = StreakUseCases(
+      repository: DriftStreakRepository(database),
+      owners: localOwners,
+      nowUtc: () => DateTime.now().toUtc(),
+      timezoneId: DateTime.now().timeZoneName,
+    );
+
+    // ── Event adapter for V1→V2 event conversion ──────────────────────────
+    final eventAdapter = EventV1ToV2Adapter(
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
+
+    final learning = LearningUseCases(
+      owners: localOwners,
+      repository: DriftLearningRepository(database),
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+      buildInfo: const AppBuildInfo.fromEnvironment(),
+      onLocalMutation: notifyLocalMutation,
+      shadowOrchestrator: shadowOrchestrator,
+      eventAdapter: eventAdapter,
+      questEventSink: (event) => quest.processEvent(
+        event,
+        QuestCatalogProvider.allQuests,
+      ),
+      streakEventSink: () => streak.recordLearningDay(),
     );
     final exports = ExportUseCases(
       owners: localOwners,
@@ -347,6 +396,25 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
     );
 
+    // ── Associative learning (in-memory fallback adapter) ──────────────────
+    final associativeLearning = InMemoryAssociativeLearningAdapter();
+
+    // ── Voice (default provider fallback, best-effort) ─────────────────────
+    VoiceUseCases? voice;
+    try {
+      voice = VoiceUseCases.createDefault();
+    } catch (_) {
+      // Platform TTS unavailable in this environment (e.g. headless tests).
+      // Screens fall back to VoiceUseCases.createDefault() per-screen.
+    }
+
+    // ── Seed quest catalog on startup (idempotent) ────────────────────────
+    try {
+      await quest.startQuest(QuestCatalogProvider.dailyCorrectAnswers);
+    } catch (_) {
+      // Best-effort; catalog is also seeded on first quest start.
+    }
+
     return AppDependencies(
       runtimeStatus: AppRuntimeStatus(
         localData: RuntimeAvailability.ready,
@@ -376,6 +444,10 @@ final class AppBootstrap {
       geminiTutor: geminiTutor,
       objectScanner: objectScanner,
       speechPractice: speechPractice,
+      quest: quest,
+      streak: streak,
+      voice: voice,
+      associativeLearning: associativeLearning,
       disposeResources: () async {
         await geminiTutor.dispose();
         geminiHttpClient.close();
@@ -406,4 +478,16 @@ final class AppBootstrap {
       return null;
     }
   }
+}
+
+/// No-op [ShadowLogger] for production — shadow entries are discarded.
+final class _NoopShadowLogger implements ShadowLogger {
+  @override
+  void logEntry(ShadowLogEntry entry) {}
+
+  @override
+  void logError(String eventId, Object error, StackTrace stack) {}
+
+  @override
+  List<ShadowLogEntry> get entries => const [];
 }

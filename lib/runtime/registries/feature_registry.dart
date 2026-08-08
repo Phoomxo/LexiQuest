@@ -44,6 +44,14 @@ enum FeatureState {
 
   /// Not available and not shown in the UI.
   hidden,
+
+  /// Explicitly disabled by a kill switch. UI shows a "feature unavailable"
+  /// message rather than hiding the feature entirely.
+  disabled,
+
+  /// Emergency shut-off — feature and all its data paths are blocked.
+  /// Takes precedence over every other state.
+  emergencyOff,
 }
 
 /// Read-only contract for querying [Feature] availability.
@@ -52,8 +60,13 @@ abstract interface class FeatureRegistry {
   FeatureState stateOf(Feature feature);
 
   /// Convenience: returns `true` when the feature should be shown in the UI
-  /// (i.e. its state is not [FeatureState.hidden]).
+  /// (i.e. its state is not [FeatureState.hidden] or [FeatureState.disabled]
+  /// or [FeatureState.emergencyOff]).
   bool isVisible(Feature feature);
+
+  /// Returns `true` when the feature is safe to invoke. Features in
+  /// [FeatureState.disabled] or [FeatureState.emergencyOff] are NOT usable.
+  bool isEnabled(Feature feature);
 }
 
 /// Immutable, build-time [FeatureRegistry] driven by an explicit state map.
@@ -115,10 +128,69 @@ final class BuildFeatureRegistry implements FeatureRegistry {
       _states[feature] ?? FeatureState.hidden;
 
   @override
-  bool isVisible(Feature feature) => stateOf(feature) != FeatureState.hidden;
+  bool isVisible(Feature feature) {
+    final s = stateOf(feature);
+    return s != FeatureState.hidden &&
+        s != FeatureState.disabled &&
+        s != FeatureState.emergencyOff;
+  }
+
+  @override
+  bool isEnabled(Feature feature) {
+    final s = stateOf(feature);
+    return s == FeatureState.enabled || s == FeatureState.limited;
+  }
 }
 
-/// Mutable [FeatureRegistry] for tests only.
+/// Runtime kill-switch registry that wraps a [FeatureRegistry] and allows
+/// features to be disabled or emergency-shut-off at runtime.
+///
+/// In production, this reads overrides from the `runtime_flags` Drift table
+/// (or Firebase Remote Config) and folds them into the effective state.
+/// `emergencyOff` always wins — it cannot be overridden by the base registry.
+final class RuntimeFeatureRegistry implements FeatureRegistry {
+  RuntimeFeatureRegistry(this._base, {Map<Feature, FeatureState>? overrides})
+    : _overrides = overrides ?? {};
+
+  final FeatureRegistry _base;
+  final Map<Feature, FeatureState> _overrides;
+
+  /// Set a runtime override for [feature].
+  void setOverride(Feature feature, FeatureState state) {
+    _overrides[feature] = state;
+  }
+
+  /// Clear a runtime override, reverting to the base registry.
+  void clearOverride(Feature feature) {
+    _overrides.remove(feature);
+  }
+
+  /// Emergency-disable a feature immediately.
+  void emergencyOff(Feature feature) {
+    _overrides[feature] = FeatureState.emergencyOff;
+  }
+
+  @override
+  FeatureState stateOf(Feature feature) {
+    final override = _overrides[feature];
+    if (override == FeatureState.emergencyOff) return FeatureState.emergencyOff;
+    return override ?? _base.stateOf(feature);
+  }
+
+  @override
+  bool isVisible(Feature feature) {
+    final s = stateOf(feature);
+    return s != FeatureState.hidden &&
+        s != FeatureState.disabled &&
+        s != FeatureState.emergencyOff;
+  }
+
+  @override
+  bool isEnabled(Feature feature) {
+    final s = stateOf(feature);
+    return s == FeatureState.enabled || s == FeatureState.limited;
+  }
+}
 ///
 /// Use [enable] / [disable] to override individual features:
 /// ```dart
@@ -143,4 +215,10 @@ final class MutableFeatureRegistry implements FeatureRegistry {
 
   @override
   bool isVisible(Feature feature) => stateOf(feature) != FeatureState.hidden;
+
+  @override
+  bool isEnabled(Feature feature) {
+    final s = stateOf(feature);
+    return s == FeatureState.enabled || s == FeatureState.limited;
+  }
 }
