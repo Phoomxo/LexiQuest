@@ -139,11 +139,48 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   @override
   Widget build(BuildContext context) {
     final features = _fieldFeatures(context);
+    final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
+    final showBanner = status != null && !status.isFullyReady;
     return Scaffold(
       key: _scaffoldKey,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: [for (final entry in _entries) entry.screen],
+      body: Column(
+        children: [
+          if (showBanner)
+            Material(
+              color: Theme.of(context).colorScheme.errorContainer,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.cloud_off,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.onErrorContainer,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _runtimeStatusSummary(context),
+                        key: const ValueKey<String>('runtime-status-banner'),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onErrorContainer,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [for (final entry in _entries) entry.screen],
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton.small(
         key: const ValueKey<String>('legacy-drawer-button'),
@@ -158,11 +195,16 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           child: ListView(
             padding: EdgeInsets.zero,
             children: [
-              const DrawerHeader(
-                decoration: BoxDecoration(color: Colors.deepPurple),
+              DrawerHeader(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                ),
                 child: Text(
                   'LexiQuest',
-                  style: TextStyle(color: Colors.white, fontSize: 22),
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    fontSize: 22,
+                  ),
                 ),
               ),
               if (features.isVisible(FieldFeature.vocabulary))

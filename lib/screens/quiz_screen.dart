@@ -48,30 +48,37 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Quiz คำศัพท์')),
-      body: FutureBuilder<QuizSession>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const _QuizMessage(
-              icon: Icons.error_outline,
-              message:
-                  'เปิด Quiz ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
-            );
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final session = snapshot.data!;
-          if (session.isEmpty) {
-            return const _QuizMessage(
-              icon: Icons.library_add_outlined,
-              message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
-            );
-          }
-          return _buildQuestion(session);
-        },
+    return PopScope(
+      canPop: _session == null || _index == 0,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _confirmExit(context);
+      },
+      child: Scaffold(
+        appBar: AppBar(title: const Text('Quiz คำศัพท์')),
+        body: FutureBuilder<QuizSession>(
+          future: _load,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const _QuizMessage(
+                icon: Icons.error_outline,
+                message:
+                    'เปิด Quiz ไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกเปลี่ยนแปลง',
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final session = snapshot.data!;
+            if (session.isEmpty) {
+              return const _QuizMessage(
+                icon: Icons.library_add_outlined,
+                message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
+              );
+            }
+            return _buildQuestion(session);
+          },
+        ),
       ),
     );
   }
@@ -133,6 +140,29 @@ class _QuizScreenState extends State<QuizScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _confirmExit(BuildContext context) async {
+    final shouldExit = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('ออกจาก Quiz?'),
+        content: const Text('ความคืบหน้าในเซสชันนี้จะไม่ถูกบันทึก'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('เล่นต่อ'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: const Text('ออก'),
+          ),
+        ],
+      ),
+    );
+    if (shouldExit == true && context.mounted) {
+      Navigator.pop(context);
+    }
   }
 
   Color? _answerColor(QuizQuestion question, String option) {

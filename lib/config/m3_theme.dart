@@ -9,6 +9,9 @@ class M3Theme {
   static const Color backgroundLight = Color(0xFFF8FAFC);
   static const Color cardSurface = Colors.white;
 
+  /// Font family for proper Thai rendering across all screens.
+  static const String thaiFontFamily = 'NotoSansThai';
+
   /// Light Theme Data for Material 3
   static ThemeData get lightTheme {
     final base = ThemeData(
@@ -19,6 +22,7 @@ class M3Theme {
       ),
       scaffoldBackgroundColor: backgroundLight,
       visualDensity: VisualDensity.standard,
+      fontFamily: thaiFontFamily,
     );
 
     return base.copyWith(
@@ -55,6 +59,7 @@ class M3Theme {
         seedColor: primaryBlue,
         brightness: Brightness.dark,
       ),
+      fontFamily: thaiFontFamily,
     );
 
     return base.copyWith(
