@@ -276,16 +276,20 @@ void main() {
           isTrue,
           reason: 'Schema v10 migration must exist after Phase 2 D8.3',
         );
-        expect(dbContent.contains('from < 11'), isFalse);
+        expect(
+          dbContent.contains('from < 11'),
+          isTrue,
+          reason: 'Schema v11 migration must exist after P0 voice/AI integration',
+        );
       },
     );
 
-    test('current schemaVersion in code is 10', () {
+    test('current schemaVersion in code is 11', () {
       final dbContent = _read('lib/data/local/app_database.dart');
       expect(
-        dbContent.contains('schemaVersion => 10'),
+        dbContent.contains('schemaVersion => 11'),
         isTrue,
-        reason: 'app_database.dart schemaVersion must be 10 after Phase 2 D8.3',
+        reason: 'app_database.dart schemaVersion must be 11 after P0 integration',
       );
     });
   });

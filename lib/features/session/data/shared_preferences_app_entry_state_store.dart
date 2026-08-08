@@ -1,3 +1,5 @@
+// sharedprefs-ok: stores only the app entry mode flag (guest vs signed-in),
+// not business or research data.
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../domain/app_entry_state.dart';

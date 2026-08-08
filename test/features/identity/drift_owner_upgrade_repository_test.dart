@@ -542,6 +542,17 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('ams-seed-1', 'guest-owner', 'banana', 1.0, 5.0, 0.0, "
     "0, 1722844800000, 'v1.0.0')",
   );
+  // Schema v11 — speech evidence (owner-scoped).
+  await database.customInsert(
+    "INSERT INTO speech_evidence "
+    "(id, owner_id, session_id, word_id, prompt_mode, target_content, "
+    "recognized_transcript, locale, stt_engine, similarity_algorithm, "
+    "similarity_score, is_exact_match, recognition_confidence, sample_size, "
+    "occurred_at_utc_ms, duration_ms) VALUES "
+    "('evidence-seed-1', 'guest-owner', 'session-1', 'word-1', 'meaning', "
+    "'station', 'station', 'en-US', 'speech_to_text', 'levenshtein', "
+    "100, 1, 0.95, 1, 20, 500)",
+  );
 }
 
 Future<void> _seedCollisionGraph(AppDatabase database) async {
