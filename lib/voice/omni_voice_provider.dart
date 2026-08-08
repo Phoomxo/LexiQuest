@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 
 import 'voice_auth_token_provider.dart';
+import 'voice_capability.dart';
 import 'voice_models.dart';
+import 'voice_provider_descriptor.dart';
+import 'voice_synthesis_provider.dart';
 
 const _validationFailure = VoiceFailure(
   category: VoiceFailureCategory.validation,
@@ -37,6 +39,11 @@ const _modelUnavailableFailure = VoiceFailure(
   message: 'The voice model is currently unavailable.',
 );
 
+const _unsupportedCapabilityFailure = VoiceFailure(
+  category: VoiceFailureCategory.unsupportedCapability,
+  message: 'OmniVoice does not support this request.',
+);
+
 const _synthesisFailure = VoiceFailure(
   category: VoiceFailureCategory.synthesis,
   message: 'Voice synthesis could not be completed.',
@@ -47,32 +54,8 @@ const _unknownFailure = VoiceFailure(
   message: 'Voice synthesis is unavailable.',
 );
 
-/// Immutable WAV payload plus the OmniVoice provenance headers.
-final class OmniVoiceAudio {
-  OmniVoiceAudio({
-    required Uint8List bytes,
-    required this.requestId,
-    required this.engine,
-    required this.modelVersion,
-    required this.sampleRate,
-  }) : _bytes = Uint8List.fromList(bytes);
-
-  final Uint8List _bytes;
-  final String requestId;
-  final String engine;
-  final String modelVersion;
-  final int sampleRate;
-
-  Uint8List get bytes => Uint8List.fromList(_bytes);
-}
-
-/// Provider-neutral boundary for synthesizing WAV audio through OmniVoice.
-abstract interface class OmniVoiceSynthesizer {
-  Future<OmniVoiceAudio> synthesize(VoiceRequest request);
-}
-
 /// Sends authenticated speech requests to the OmniVoice WAV API.
-final class OmniVoiceProvider implements OmniVoiceSynthesizer {
+final class OmniVoiceProvider implements VoiceSynthesisProvider {
   factory OmniVoiceProvider({
     required http.Client client,
     required VoiceAuthTokenProvider authTokenProvider,
@@ -99,8 +82,26 @@ final class OmniVoiceProvider implements OmniVoiceSynthesizer {
   final Uri _speechUri;
   final Duration _timeout;
 
+  static final VoiceProviderDescriptor _descriptor = VoiceProviderDescriptor(
+    engine: VoiceEngine.omniVoice,
+    capabilities: const <VoiceCapability>{
+      VoiceCapability.standardTargetSpeech,
+      VoiceCapability.dynamicTargetSpeech,
+    },
+    privacyScope: VoicePrivacyScope.standardContent,
+    allowsStandardCache: true,
+  );
+
   @override
-  Future<OmniVoiceAudio> synthesize(VoiceRequest request) async {
+  VoiceProviderDescriptor get descriptor => _descriptor;
+
+  @override
+  Future<VoiceAudio> synthesize(VoiceRequest request) async {
+    if (!descriptor.supports(request.capability) ||
+        request.privacyScope != descriptor.privacyScope) {
+      throw _unsupportedCapabilityFailure;
+    }
+
     final body = <String, Object>{
       'text': request.text,
       'language': request.language,
@@ -189,7 +190,7 @@ final class OmniVoiceProvider implements OmniVoiceSynthesizer {
     return null;
   }
 
-  OmniVoiceAudio _audioFrom(http.Response response) {
+  VoiceAudio _audioFrom(http.Response response) {
     final contentType = _header(response.headers, 'content-type');
     final requestId = _header(response.headers, 'x-request-id') ?? '';
     final engine = _header(response.headers, 'x-voice-engine') ?? '';
@@ -209,10 +210,10 @@ final class OmniVoiceProvider implements OmniVoiceSynthesizer {
       throw _synthesisFailure;
     }
 
-    return OmniVoiceAudio(
+    return VoiceAudio(
       bytes: response.bodyBytes,
       requestId: requestId.trim(),
-      engine: engine.trim(),
+      engine: VoiceEngine.omniVoice,
       modelVersion: modelVersion.trim(),
       sampleRate: sampleRate,
     );

@@ -1,3 +1,4 @@
+import 'voice_capability.dart';
 import 'voice_models.dart';
 
 /// Privacy-by-construction outcome reported for one voice playback attempt.
@@ -6,7 +7,7 @@ import 'voice_models.dart';
 enum VoiceTelemetryOutcome { succeeded, failed, cancelled }
 
 /// Schema version stamped onto every emitted voice telemetry event.
-const String _kVoiceTelemetrySchemaVersion = 'voice_telemetry_v1';
+const String _kVoiceTelemetrySchemaVersion = 'voice_telemetry_v2';
 
 /// Immutable, privacy-safe telemetry record for a single voice playback
 /// lifecycle.
@@ -21,6 +22,8 @@ final class VoiceTelemetryEvent {
     required this.schemaVersion,
     required this.outcome,
     required this.mode,
+    required this.capability,
+    required this.privacyScope,
     required this.requestedEngine,
     required this.actualEngine,
     required this.usedFallback,
@@ -60,6 +63,8 @@ final class VoiceTelemetryEvent {
       schemaVersion: _kVoiceTelemetrySchemaVersion,
       outcome: VoiceTelemetryOutcome.succeeded,
       mode: request.mode,
+      capability: request.capability,
+      privacyScope: request.privacyScope,
       requestedEngine: result.requestedEngine,
       actualEngine: result.actualEngine,
       usedFallback: result.usedFallback,
@@ -96,6 +101,8 @@ final class VoiceTelemetryEvent {
       schemaVersion: _kVoiceTelemetrySchemaVersion,
       outcome: outcome,
       mode: request.mode,
+      capability: request.capability,
+      privacyScope: request.privacyScope,
       requestedEngine: requestedEngine,
       actualEngine: null,
       usedFallback: false,
@@ -114,6 +121,8 @@ final class VoiceTelemetryEvent {
   final String schemaVersion;
   final VoiceTelemetryOutcome outcome;
   final VoiceMode mode;
+  final VoiceCapability capability;
+  final VoicePrivacyScope privacyScope;
   final VoiceEngine requestedEngine;
   final VoiceEngine? actualEngine;
   final bool usedFallback;
@@ -136,6 +145,8 @@ final class VoiceTelemetryEvent {
       'schemaVersion': schemaVersion,
       'outcome': outcome.name,
       'mode': mode.name,
+      'capability': capability.name,
+      'privacyScope': privacyScope.name,
       'requestedEngine': requestedEngine.name,
       'actualEngine': actualEngine?.name,
       'usedFallback': usedFallback,

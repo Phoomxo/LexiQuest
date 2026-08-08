@@ -1,6 +1,14 @@
+import 'voice_capability.dart';
+
 /// Provider-neutral value types and failure taxonomy for the hybrid voice
 /// pipeline.
-enum VoiceEngine { nativeTts, omniVoice }
+enum VoiceEngine {
+  nativeTts,
+  offlinePack,
+  omniVoice,
+  voxCpmStandard,
+  voxCpmMirror,
+}
 
 enum VoiceMode { practice, researchEvaluation }
 
@@ -8,12 +16,19 @@ enum VoiceMode { practice, researchEvaluation }
 enum VoiceFailureCategory {
   validation,
   authentication,
+  consentMissing,
   network,
   timeout,
   rateLimited,
+  providerDisabled,
   modelUnavailable,
+  unsupportedCapability,
+  insufficientStorage,
+  checksumMismatch,
+  sessionExpired,
   synthesis,
   playback,
+  cleanupIncomplete,
   cancelled,
   configuration,
   unknown,
@@ -41,6 +56,8 @@ class VoiceRequest {
     required this.contentType,
     required this.mode,
     required this.assignedEngine,
+    required this.capability,
+    required this.privacyScope,
   });
 
   final String text;
@@ -51,6 +68,8 @@ class VoiceRequest {
   final String contentType;
   final VoiceMode mode;
   final VoiceEngine? assignedEngine;
+  final VoiceCapability capability;
+  final VoicePrivacyScope privacyScope;
 
   factory VoiceRequest.create({
     required String text,
@@ -61,6 +80,8 @@ class VoiceRequest {
     required String contentType,
     required VoiceMode mode,
     VoiceEngine? assignedEngine,
+    VoiceCapability capability = VoiceCapability.standardTargetSpeech,
+    VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
   }) {
     final normalizedText = _normalizeText(text);
     if (normalizedText.isEmpty || normalizedText.length > 500) {
@@ -104,6 +125,21 @@ class VoiceRequest {
       );
     }
 
+    if (!capability.isSpeechSynthesis) {
+      throw const VoiceFailure(
+        category: VoiceFailureCategory.validation,
+        message: 'Voice request capability does not synthesize speech.',
+      );
+    }
+    final isMirror = capability == VoiceCapability.sessionVoiceMirror;
+    final isTransient = privacyScope == VoicePrivacyScope.participantTransient;
+    if (isMirror != isTransient) {
+      throw const VoiceFailure(
+        category: VoiceFailureCategory.validation,
+        message: 'Voice request capability and privacy scope do not match.',
+      );
+    }
+
     return VoiceRequest._(
       text: normalizedText,
       language: normalizedLanguage,
@@ -113,6 +149,8 @@ class VoiceRequest {
       contentType: normalizedContentType,
       mode: mode,
       assignedEngine: assignedEngine,
+      capability: capability,
+      privacyScope: privacyScope,
     );
   }
 

@@ -5,6 +5,7 @@ enum GeminiFailureCode {
   consentRequired,
   invalidKey,
   quota,
+  rateLimited,
   offline,
   timeout,
   providerUnavailable,
@@ -84,6 +85,8 @@ abstract interface class GeminiGateway {
     String? learningSummary,
     GeminiCancellation? cancellation,
   });
+
+  Future<List<String>> listModels(String key, {GeminiCancellation? cancellation});
 }
 
 abstract interface class GeminiTutorController {

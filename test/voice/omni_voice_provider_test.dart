@@ -7,7 +7,9 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vocab_learning_app/voice/omni_voice_provider.dart';
 import 'package:vocab_learning_app/voice/voice_auth_token_provider.dart';
+import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_synthesis_provider.dart';
 
 final Uri _baseUri = Uri.parse('https://voice.example.com');
 final Uri _speechUri = _baseUri.resolve('/v1/speech');
@@ -361,7 +363,10 @@ void main() {
 
     expect(audio.bytes, Uint8List.fromList(_wavBytes));
     expect(audio.requestId, 'req-123');
-    expect(audio.engine, 'omnivoice-prod');
+    // The response x-voice-engine header ('omnivoice-prod') must still be
+    // present and nonblank, but the provider-neutral VoiceAudio.engine exposes
+    // the normalized VoiceEngine enum rather than the raw backend string.
+    expect(audio.engine, VoiceEngine.omniVoice);
     expect(audio.modelVersion, 'omnivoice-2026-07');
     expect(audio.sampleRate, 24000);
   });
@@ -442,14 +447,33 @@ void main() {
     });
   });
 
-  test('synthesize returns OmniVoiceAudio', () async {
+  test('synthesize returns provider-neutral VoiceAudio', () async {
     final server = _SpeechServer(<http.Response>[_wavResponse()]);
     final audio = await _provider(
       server: server,
       tokenProvider: _RecordingTokenProvider(token: 'id-token'),
     ).synthesize(_validRequest());
 
-    expect(audio, isA<OmniVoiceAudio>());
+    expect(audio, isA<VoiceAudio>());
+    expect(audio.engine, VoiceEngine.omniVoice);
+  });
+
+  test('descriptor declares standard remote synthesis capabilities', () {
+    final provider = _provider(
+      server: _SpeechServer(<http.Response>[_wavResponse()]),
+      tokenProvider: _RecordingTokenProvider(token: 'id-token'),
+    );
+
+    expect(provider.descriptor.engine, VoiceEngine.omniVoice);
+    expect(
+      provider.descriptor.capabilities,
+      containsAll(<VoiceCapability>{
+        VoiceCapability.standardTargetSpeech,
+        VoiceCapability.dynamicTargetSpeech,
+      }),
+    );
+    expect(provider.descriptor.privacyScope, VoicePrivacyScope.standardContent);
+    expect(provider.descriptor.allowsStandardCache, isTrue);
   });
 
   test('maps backend status/code to VoiceFailure categories', () async {

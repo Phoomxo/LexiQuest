@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
@@ -20,6 +21,8 @@ VoiceRequest _validRequest({
   String contentType = 'word',
   VoiceMode mode = VoiceMode.practice,
   VoiceEngine? assignedEngine,
+  VoiceCapability capability = VoiceCapability.standardTargetSpeech,
+  VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
 }) {
   return VoiceRequest.create(
     text: text,
@@ -30,6 +33,8 @@ VoiceRequest _validRequest({
     contentType: contentType,
     mode: mode,
     assignedEngine: assignedEngine,
+    capability: capability,
+    privacyScope: privacyScope,
   );
 }
 
@@ -38,7 +43,10 @@ void main() {
     test('declares the supported engines and modes', () {
       expect(VoiceEngine.values, [
         VoiceEngine.nativeTts,
+        VoiceEngine.offlinePack,
         VoiceEngine.omniVoice,
+        VoiceEngine.voxCpmStandard,
+        VoiceEngine.voxCpmMirror,
       ]);
       expect(VoiceMode.values, [
         VoiceMode.practice,
@@ -52,18 +60,95 @@ void main() {
         containsAll(const <VoiceFailureCategory>[
           VoiceFailureCategory.validation,
           VoiceFailureCategory.authentication,
+          VoiceFailureCategory.consentMissing,
           VoiceFailureCategory.network,
           VoiceFailureCategory.timeout,
           VoiceFailureCategory.rateLimited,
+          VoiceFailureCategory.providerDisabled,
           VoiceFailureCategory.modelUnavailable,
+          VoiceFailureCategory.unsupportedCapability,
+          VoiceFailureCategory.insufficientStorage,
+          VoiceFailureCategory.checksumMismatch,
+          VoiceFailureCategory.sessionExpired,
           VoiceFailureCategory.synthesis,
           VoiceFailureCategory.playback,
+          VoiceFailureCategory.cleanupIncomplete,
           VoiceFailureCategory.cancelled,
           VoiceFailureCategory.configuration,
           VoiceFailureCategory.unknown,
         ]),
       );
     });
+
+    test('declares the approved P8 capabilities and privacy scopes', () {
+      expect(VoiceCapability.values, const <VoiceCapability>[
+        VoiceCapability.standardTargetSpeech,
+        VoiceCapability.dynamicTargetSpeech,
+        VoiceCapability.sessionVoiceMirror,
+        VoiceCapability.speechToText,
+        VoiceCapability.pronunciationEvidence,
+      ]);
+      expect(VoicePrivacyScope.values, const <VoicePrivacyScope>[
+        VoicePrivacyScope.standardContent,
+        VoicePrivacyScope.participantTransient,
+      ]);
+    });
+
+    test('distinguishes synthesis from evidence capabilities', () {
+      expect(VoiceCapability.standardTargetSpeech.isSpeechSynthesis, isTrue);
+      expect(VoiceCapability.dynamicTargetSpeech.isSpeechSynthesis, isTrue);
+      expect(VoiceCapability.sessionVoiceMirror.isSpeechSynthesis, isTrue);
+      expect(VoiceCapability.speechToText.isSpeechSynthesis, isFalse);
+      expect(VoiceCapability.pronunciationEvidence.isSpeechSynthesis, isFalse);
+    });
+  });
+
+  group('VoiceRequest capability privacy', () {
+    test('defaults existing requests to standard target content', () {
+      final request = _validRequest();
+
+      expect(request.capability, VoiceCapability.standardTargetSpeech);
+      expect(request.privacyScope, VoicePrivacyScope.standardContent);
+    });
+
+    test('accepts mirror synthesis only as participant-transient data', () {
+      final request = _validRequest(
+        capability: VoiceCapability.sessionVoiceMirror,
+        privacyScope: VoicePrivacyScope.participantTransient,
+      );
+
+      expect(request.capability, VoiceCapability.sessionVoiceMirror);
+      expect(request.privacyScope, VoicePrivacyScope.participantTransient);
+    });
+
+    test('rejects mirror synthesis as standard content', () {
+      expect(
+        () => _validRequest(capability: VoiceCapability.sessionVoiceMirror),
+        throwsA(_validationFailure),
+      );
+    });
+
+    test('rejects non-mirror synthesis as participant-transient data', () {
+      expect(
+        () => _validRequest(
+          capability: VoiceCapability.standardTargetSpeech,
+          privacyScope: VoicePrivacyScope.participantTransient,
+        ),
+        throwsA(_validationFailure),
+      );
+    });
+
+    for (final capability in const <VoiceCapability>[
+      VoiceCapability.speechToText,
+      VoiceCapability.pronunciationEvidence,
+    ]) {
+      test('rejects non-synthesis capability ${capability.name}', () {
+        expect(
+          () => _validRequest(capability: capability),
+          throwsA(_validationFailure),
+        );
+      });
+    }
   });
 
   group('VoiceRequest text normalization', () {

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:collection';
 import 'dart:typed_data';
 
+import 'voice_capability.dart';
 import 'voice_models.dart';
 
 /// Provider-neutral boundary for a bounded WAV payload cache used by the hybrid
@@ -24,14 +25,20 @@ const _missingPayloadFailure = VoiceFailure(
   message: 'Voice audio cache payload is missing.',
 );
 
+const _transientCacheFailure = VoiceFailure(
+  category: VoiceFailureCategory.validation,
+  message: 'Participant-transient audio cannot use the standard cache.',
+);
+
 /// Immutable identity for a cached WAV built from the synthesis-relevant slice
-/// of a [VoiceRequest] plus the OmniVoice model version that produced it.
+/// of a [VoiceRequest], provider engine, and model version that produced it.
 final class VoiceAudioCacheKey {
   const VoiceAudioCacheKey._({
     required this.text,
     required this.language,
     required this.voiceId,
     required this.speed,
+    required this.engine,
     required this.modelVersion,
   });
 
@@ -39,12 +46,17 @@ final class VoiceAudioCacheKey {
   final String language;
   final String voiceId;
   final double speed;
+  final VoiceEngine engine;
   final String modelVersion;
 
   factory VoiceAudioCacheKey.create({
     required VoiceRequest request,
+    required VoiceEngine engine,
     required String modelVersion,
   }) {
+    if (request.privacyScope != VoicePrivacyScope.standardContent) {
+      throw _transientCacheFailure;
+    }
     final trimmedModelVersion = modelVersion.trim();
     if (trimmedModelVersion.isEmpty) {
       throw _missingModelVersionFailure;
@@ -54,6 +66,7 @@ final class VoiceAudioCacheKey {
       language: request.language,
       voiceId: request.voiceId,
       speed: request.speed,
+      engine: engine,
       modelVersion: trimmedModelVersion,
     );
   }
@@ -65,11 +78,13 @@ final class VoiceAudioCacheKey {
         other.language == language &&
         other.voiceId == voiceId &&
         other.speed == speed &&
+        other.engine == engine &&
         other.modelVersion == modelVersion;
   }
 
   @override
-  int get hashCode => Object.hash(text, language, voiceId, speed, modelVersion);
+  int get hashCode =>
+      Object.hash(text, language, voiceId, speed, engine, modelVersion);
 }
 
 /// Bounded, insertion-ordered (LRU) in-memory [VoiceAudioCache].

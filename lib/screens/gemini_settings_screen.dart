@@ -300,6 +300,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
     GeminiFailureCode.invalidKey =>
       'Key ไม่ถูกต้อง ถูกบล็อก หรือใช้กับ Gemini ไม่ได้',
     GeminiFailureCode.quota => 'โควตาหรือเพดานใช้งานของโครงการเต็มแล้ว',
+    GeminiFailureCode.rateLimited => 'Gemini จำกัดอัตราการเรียก กรุณารอสักครู่',
     GeminiFailureCode.offline => 'อุปกรณ์ออฟไลน์หรือเชื่อมต่อเครือข่ายไม่ได้',
     GeminiFailureCode.timeout => 'การตรวจสอบใช้เวลานานเกินกำหนด',
     GeminiFailureCode.providerUnavailable =>

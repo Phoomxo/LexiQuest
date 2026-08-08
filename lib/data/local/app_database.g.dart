@@ -17206,6 +17206,1906 @@ class AssociativeMemoryStatesCompanion
   }
 }
 
+class $AiUsageEventsTable extends AiUsageEvents
+    with TableInfo<$AiUsageEventsTable, AiUsageEventRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $AiUsageEventsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _eventIdMeta = const VerificationMeta(
+    'eventId',
+  );
+  @override
+  late final GeneratedColumn<String> eventId = GeneratedColumn<String>(
+    'event_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _occurredAtUtcMsMeta = const VerificationMeta(
+    'occurredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> occurredAtUtcMs = GeneratedColumn<int>(
+    'occurred_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _providerIdMeta = const VerificationMeta(
+    'providerId',
+  );
+  @override
+  late final GeneratedColumn<String> providerId = GeneratedColumn<String>(
+    'provider_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _modelMeta = const VerificationMeta('model');
+  @override
+  late final GeneratedColumn<String> model = GeneratedColumn<String>(
+    'model',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _requestTypeMeta = const VerificationMeta(
+    'requestType',
+  );
+  @override
+  late final GeneratedColumn<String> requestType = GeneratedColumn<String>(
+    'request_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _outcomeMeta = const VerificationMeta(
+    'outcome',
+  );
+  @override
+  late final GeneratedColumn<String> outcome = GeneratedColumn<String>(
+    'outcome',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _errorCategoryMeta = const VerificationMeta(
+    'errorCategory',
+  );
+  @override
+  late final GeneratedColumn<String> errorCategory = GeneratedColumn<String>(
+    'error_category',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _latencyMsMeta = const VerificationMeta(
+    'latencyMs',
+  );
+  @override
+  late final GeneratedColumn<int> latencyMs = GeneratedColumn<int>(
+    'latency_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _inputTokensMeta = const VerificationMeta(
+    'inputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> inputTokens = GeneratedColumn<int>(
+    'input_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _outputTokensMeta = const VerificationMeta(
+    'outputTokens',
+  );
+  @override
+  late final GeneratedColumn<int> outputTokens = GeneratedColumn<int>(
+    'output_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _totalTokensMeta = const VerificationMeta(
+    'totalTokens',
+  );
+  @override
+  late final GeneratedColumn<int> totalTokens = GeneratedColumn<int>(
+    'total_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _cachedTokensMeta = const VerificationMeta(
+    'cachedTokens',
+  );
+  @override
+  late final GeneratedColumn<int> cachedTokens = GeneratedColumn<int>(
+    'cached_tokens',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _providerReportedCostMicrosUsdMeta =
+      const VerificationMeta('providerReportedCostMicrosUsd');
+  @override
+  late final GeneratedColumn<int> providerReportedCostMicrosUsd =
+      GeneratedColumn<int>(
+        'provider_reported_cost_micros_usd',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _schemaVersionMeta = const VerificationMeta(
+    'schemaVersion',
+  );
+  @override
+  late final GeneratedColumn<int> schemaVersion = GeneratedColumn<int>(
+    'schema_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    eventId,
+    occurredAtUtcMs,
+    providerId,
+    model,
+    requestType,
+    outcome,
+    errorCategory,
+    latencyMs,
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    cachedTokens,
+    providerReportedCostMicrosUsd,
+    schemaVersion,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'ai_usage_events';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<AiUsageEventRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('event_id')) {
+      context.handle(
+        _eventIdMeta,
+        eventId.isAcceptableOrUnknown(data['event_id']!, _eventIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('occurred_at_utc_ms')) {
+      context.handle(
+        _occurredAtUtcMsMeta,
+        occurredAtUtcMs.isAcceptableOrUnknown(
+          data['occurred_at_utc_ms']!,
+          _occurredAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtUtcMsMeta);
+    }
+    if (data.containsKey('provider_id')) {
+      context.handle(
+        _providerIdMeta,
+        providerId.isAcceptableOrUnknown(data['provider_id']!, _providerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_providerIdMeta);
+    }
+    if (data.containsKey('model')) {
+      context.handle(
+        _modelMeta,
+        model.isAcceptableOrUnknown(data['model']!, _modelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modelMeta);
+    }
+    if (data.containsKey('request_type')) {
+      context.handle(
+        _requestTypeMeta,
+        requestType.isAcceptableOrUnknown(
+          data['request_type']!,
+          _requestTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_requestTypeMeta);
+    }
+    if (data.containsKey('outcome')) {
+      context.handle(
+        _outcomeMeta,
+        outcome.isAcceptableOrUnknown(data['outcome']!, _outcomeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_outcomeMeta);
+    }
+    if (data.containsKey('error_category')) {
+      context.handle(
+        _errorCategoryMeta,
+        errorCategory.isAcceptableOrUnknown(
+          data['error_category']!,
+          _errorCategoryMeta,
+        ),
+      );
+    }
+    if (data.containsKey('latency_ms')) {
+      context.handle(
+        _latencyMsMeta,
+        latencyMs.isAcceptableOrUnknown(data['latency_ms']!, _latencyMsMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_latencyMsMeta);
+    }
+    if (data.containsKey('input_tokens')) {
+      context.handle(
+        _inputTokensMeta,
+        inputTokens.isAcceptableOrUnknown(
+          data['input_tokens']!,
+          _inputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('output_tokens')) {
+      context.handle(
+        _outputTokensMeta,
+        outputTokens.isAcceptableOrUnknown(
+          data['output_tokens']!,
+          _outputTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('total_tokens')) {
+      context.handle(
+        _totalTokensMeta,
+        totalTokens.isAcceptableOrUnknown(
+          data['total_tokens']!,
+          _totalTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cached_tokens')) {
+      context.handle(
+        _cachedTokensMeta,
+        cachedTokens.isAcceptableOrUnknown(
+          data['cached_tokens']!,
+          _cachedTokensMeta,
+        ),
+      );
+    }
+    if (data.containsKey('provider_reported_cost_micros_usd')) {
+      context.handle(
+        _providerReportedCostMicrosUsdMeta,
+        providerReportedCostMicrosUsd.isAcceptableOrUnknown(
+          data['provider_reported_cost_micros_usd']!,
+          _providerReportedCostMicrosUsdMeta,
+        ),
+      );
+    }
+    if (data.containsKey('schema_version')) {
+      context.handle(
+        _schemaVersionMeta,
+        schemaVersion.isAcceptableOrUnknown(
+          data['schema_version']!,
+          _schemaVersionMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {eventId};
+  @override
+  AiUsageEventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return AiUsageEventRow(
+      eventId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}event_id'],
+      )!,
+      occurredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}occurred_at_utc_ms'],
+      )!,
+      providerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provider_id'],
+      )!,
+      model: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}model'],
+      )!,
+      requestType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}request_type'],
+      )!,
+      outcome: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}outcome'],
+      )!,
+      errorCategory: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}error_category'],
+      ),
+      latencyMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}latency_ms'],
+      )!,
+      inputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}input_tokens'],
+      ),
+      outputTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}output_tokens'],
+      ),
+      totalTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}total_tokens'],
+      ),
+      cachedTokens: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cached_tokens'],
+      ),
+      providerReportedCostMicrosUsd: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}provider_reported_cost_micros_usd'],
+      ),
+      schemaVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}schema_version'],
+      )!,
+    );
+  }
+
+  @override
+  $AiUsageEventsTable createAlias(String alias) {
+    return $AiUsageEventsTable(attachedDatabase, alias);
+  }
+}
+
+class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
+  final String eventId;
+  final int occurredAtUtcMs;
+  final String providerId;
+  final String model;
+  final String requestType;
+  final String outcome;
+  final String? errorCategory;
+  final int latencyMs;
+  final int? inputTokens;
+  final int? outputTokens;
+  final int? totalTokens;
+  final int? cachedTokens;
+  final int? providerReportedCostMicrosUsd;
+  final int schemaVersion;
+  const AiUsageEventRow({
+    required this.eventId,
+    required this.occurredAtUtcMs,
+    required this.providerId,
+    required this.model,
+    required this.requestType,
+    required this.outcome,
+    this.errorCategory,
+    required this.latencyMs,
+    this.inputTokens,
+    this.outputTokens,
+    this.totalTokens,
+    this.cachedTokens,
+    this.providerReportedCostMicrosUsd,
+    required this.schemaVersion,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['event_id'] = Variable<String>(eventId);
+    map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
+    map['provider_id'] = Variable<String>(providerId);
+    map['model'] = Variable<String>(model);
+    map['request_type'] = Variable<String>(requestType);
+    map['outcome'] = Variable<String>(outcome);
+    if (!nullToAbsent || errorCategory != null) {
+      map['error_category'] = Variable<String>(errorCategory);
+    }
+    map['latency_ms'] = Variable<int>(latencyMs);
+    if (!nullToAbsent || inputTokens != null) {
+      map['input_tokens'] = Variable<int>(inputTokens);
+    }
+    if (!nullToAbsent || outputTokens != null) {
+      map['output_tokens'] = Variable<int>(outputTokens);
+    }
+    if (!nullToAbsent || totalTokens != null) {
+      map['total_tokens'] = Variable<int>(totalTokens);
+    }
+    if (!nullToAbsent || cachedTokens != null) {
+      map['cached_tokens'] = Variable<int>(cachedTokens);
+    }
+    if (!nullToAbsent || providerReportedCostMicrosUsd != null) {
+      map['provider_reported_cost_micros_usd'] = Variable<int>(
+        providerReportedCostMicrosUsd,
+      );
+    }
+    map['schema_version'] = Variable<int>(schemaVersion);
+    return map;
+  }
+
+  AiUsageEventsCompanion toCompanion(bool nullToAbsent) {
+    return AiUsageEventsCompanion(
+      eventId: Value(eventId),
+      occurredAtUtcMs: Value(occurredAtUtcMs),
+      providerId: Value(providerId),
+      model: Value(model),
+      requestType: Value(requestType),
+      outcome: Value(outcome),
+      errorCategory: errorCategory == null && nullToAbsent
+          ? const Value.absent()
+          : Value(errorCategory),
+      latencyMs: Value(latencyMs),
+      inputTokens: inputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(inputTokens),
+      outputTokens: outputTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(outputTokens),
+      totalTokens: totalTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(totalTokens),
+      cachedTokens: cachedTokens == null && nullToAbsent
+          ? const Value.absent()
+          : Value(cachedTokens),
+      providerReportedCostMicrosUsd:
+          providerReportedCostMicrosUsd == null && nullToAbsent
+          ? const Value.absent()
+          : Value(providerReportedCostMicrosUsd),
+      schemaVersion: Value(schemaVersion),
+    );
+  }
+
+  factory AiUsageEventRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return AiUsageEventRow(
+      eventId: serializer.fromJson<String>(json['eventId']),
+      occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
+      providerId: serializer.fromJson<String>(json['providerId']),
+      model: serializer.fromJson<String>(json['model']),
+      requestType: serializer.fromJson<String>(json['requestType']),
+      outcome: serializer.fromJson<String>(json['outcome']),
+      errorCategory: serializer.fromJson<String?>(json['errorCategory']),
+      latencyMs: serializer.fromJson<int>(json['latencyMs']),
+      inputTokens: serializer.fromJson<int?>(json['inputTokens']),
+      outputTokens: serializer.fromJson<int?>(json['outputTokens']),
+      totalTokens: serializer.fromJson<int?>(json['totalTokens']),
+      cachedTokens: serializer.fromJson<int?>(json['cachedTokens']),
+      providerReportedCostMicrosUsd: serializer.fromJson<int?>(
+        json['providerReportedCostMicrosUsd'],
+      ),
+      schemaVersion: serializer.fromJson<int>(json['schemaVersion']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'eventId': serializer.toJson<String>(eventId),
+      'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
+      'providerId': serializer.toJson<String>(providerId),
+      'model': serializer.toJson<String>(model),
+      'requestType': serializer.toJson<String>(requestType),
+      'outcome': serializer.toJson<String>(outcome),
+      'errorCategory': serializer.toJson<String?>(errorCategory),
+      'latencyMs': serializer.toJson<int>(latencyMs),
+      'inputTokens': serializer.toJson<int?>(inputTokens),
+      'outputTokens': serializer.toJson<int?>(outputTokens),
+      'totalTokens': serializer.toJson<int?>(totalTokens),
+      'cachedTokens': serializer.toJson<int?>(cachedTokens),
+      'providerReportedCostMicrosUsd': serializer.toJson<int?>(
+        providerReportedCostMicrosUsd,
+      ),
+      'schemaVersion': serializer.toJson<int>(schemaVersion),
+    };
+  }
+
+  AiUsageEventRow copyWith({
+    String? eventId,
+    int? occurredAtUtcMs,
+    String? providerId,
+    String? model,
+    String? requestType,
+    String? outcome,
+    Value<String?> errorCategory = const Value.absent(),
+    int? latencyMs,
+    Value<int?> inputTokens = const Value.absent(),
+    Value<int?> outputTokens = const Value.absent(),
+    Value<int?> totalTokens = const Value.absent(),
+    Value<int?> cachedTokens = const Value.absent(),
+    Value<int?> providerReportedCostMicrosUsd = const Value.absent(),
+    int? schemaVersion,
+  }) => AiUsageEventRow(
+    eventId: eventId ?? this.eventId,
+    occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+    providerId: providerId ?? this.providerId,
+    model: model ?? this.model,
+    requestType: requestType ?? this.requestType,
+    outcome: outcome ?? this.outcome,
+    errorCategory: errorCategory.present
+        ? errorCategory.value
+        : this.errorCategory,
+    latencyMs: latencyMs ?? this.latencyMs,
+    inputTokens: inputTokens.present ? inputTokens.value : this.inputTokens,
+    outputTokens: outputTokens.present ? outputTokens.value : this.outputTokens,
+    totalTokens: totalTokens.present ? totalTokens.value : this.totalTokens,
+    cachedTokens: cachedTokens.present ? cachedTokens.value : this.cachedTokens,
+    providerReportedCostMicrosUsd: providerReportedCostMicrosUsd.present
+        ? providerReportedCostMicrosUsd.value
+        : this.providerReportedCostMicrosUsd,
+    schemaVersion: schemaVersion ?? this.schemaVersion,
+  );
+  AiUsageEventRow copyWithCompanion(AiUsageEventsCompanion data) {
+    return AiUsageEventRow(
+      eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      occurredAtUtcMs: data.occurredAtUtcMs.present
+          ? data.occurredAtUtcMs.value
+          : this.occurredAtUtcMs,
+      providerId: data.providerId.present
+          ? data.providerId.value
+          : this.providerId,
+      model: data.model.present ? data.model.value : this.model,
+      requestType: data.requestType.present
+          ? data.requestType.value
+          : this.requestType,
+      outcome: data.outcome.present ? data.outcome.value : this.outcome,
+      errorCategory: data.errorCategory.present
+          ? data.errorCategory.value
+          : this.errorCategory,
+      latencyMs: data.latencyMs.present ? data.latencyMs.value : this.latencyMs,
+      inputTokens: data.inputTokens.present
+          ? data.inputTokens.value
+          : this.inputTokens,
+      outputTokens: data.outputTokens.present
+          ? data.outputTokens.value
+          : this.outputTokens,
+      totalTokens: data.totalTokens.present
+          ? data.totalTokens.value
+          : this.totalTokens,
+      cachedTokens: data.cachedTokens.present
+          ? data.cachedTokens.value
+          : this.cachedTokens,
+      providerReportedCostMicrosUsd: data.providerReportedCostMicrosUsd.present
+          ? data.providerReportedCostMicrosUsd.value
+          : this.providerReportedCostMicrosUsd,
+      schemaVersion: data.schemaVersion.present
+          ? data.schemaVersion.value
+          : this.schemaVersion,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiUsageEventRow(')
+          ..write('eventId: $eventId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('providerId: $providerId, ')
+          ..write('model: $model, ')
+          ..write('requestType: $requestType, ')
+          ..write('outcome: $outcome, ')
+          ..write('errorCategory: $errorCategory, ')
+          ..write('latencyMs: $latencyMs, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('cachedTokens: $cachedTokens, ')
+          ..write(
+            'providerReportedCostMicrosUsd: $providerReportedCostMicrosUsd, ',
+          )
+          ..write('schemaVersion: $schemaVersion')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    eventId,
+    occurredAtUtcMs,
+    providerId,
+    model,
+    requestType,
+    outcome,
+    errorCategory,
+    latencyMs,
+    inputTokens,
+    outputTokens,
+    totalTokens,
+    cachedTokens,
+    providerReportedCostMicrosUsd,
+    schemaVersion,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is AiUsageEventRow &&
+          other.eventId == this.eventId &&
+          other.occurredAtUtcMs == this.occurredAtUtcMs &&
+          other.providerId == this.providerId &&
+          other.model == this.model &&
+          other.requestType == this.requestType &&
+          other.outcome == this.outcome &&
+          other.errorCategory == this.errorCategory &&
+          other.latencyMs == this.latencyMs &&
+          other.inputTokens == this.inputTokens &&
+          other.outputTokens == this.outputTokens &&
+          other.totalTokens == this.totalTokens &&
+          other.cachedTokens == this.cachedTokens &&
+          other.providerReportedCostMicrosUsd ==
+              this.providerReportedCostMicrosUsd &&
+          other.schemaVersion == this.schemaVersion);
+}
+
+class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
+  final Value<String> eventId;
+  final Value<int> occurredAtUtcMs;
+  final Value<String> providerId;
+  final Value<String> model;
+  final Value<String> requestType;
+  final Value<String> outcome;
+  final Value<String?> errorCategory;
+  final Value<int> latencyMs;
+  final Value<int?> inputTokens;
+  final Value<int?> outputTokens;
+  final Value<int?> totalTokens;
+  final Value<int?> cachedTokens;
+  final Value<int?> providerReportedCostMicrosUsd;
+  final Value<int> schemaVersion;
+  final Value<int> rowid;
+  const AiUsageEventsCompanion({
+    this.eventId = const Value.absent(),
+    this.occurredAtUtcMs = const Value.absent(),
+    this.providerId = const Value.absent(),
+    this.model = const Value.absent(),
+    this.requestType = const Value.absent(),
+    this.outcome = const Value.absent(),
+    this.errorCategory = const Value.absent(),
+    this.latencyMs = const Value.absent(),
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.cachedTokens = const Value.absent(),
+    this.providerReportedCostMicrosUsd = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  AiUsageEventsCompanion.insert({
+    required String eventId,
+    required int occurredAtUtcMs,
+    required String providerId,
+    required String model,
+    required String requestType,
+    required String outcome,
+    this.errorCategory = const Value.absent(),
+    required int latencyMs,
+    this.inputTokens = const Value.absent(),
+    this.outputTokens = const Value.absent(),
+    this.totalTokens = const Value.absent(),
+    this.cachedTokens = const Value.absent(),
+    this.providerReportedCostMicrosUsd = const Value.absent(),
+    this.schemaVersion = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : eventId = Value(eventId),
+       occurredAtUtcMs = Value(occurredAtUtcMs),
+       providerId = Value(providerId),
+       model = Value(model),
+       requestType = Value(requestType),
+       outcome = Value(outcome),
+       latencyMs = Value(latencyMs);
+  static Insertable<AiUsageEventRow> custom({
+    Expression<String>? eventId,
+    Expression<int>? occurredAtUtcMs,
+    Expression<String>? providerId,
+    Expression<String>? model,
+    Expression<String>? requestType,
+    Expression<String>? outcome,
+    Expression<String>? errorCategory,
+    Expression<int>? latencyMs,
+    Expression<int>? inputTokens,
+    Expression<int>? outputTokens,
+    Expression<int>? totalTokens,
+    Expression<int>? cachedTokens,
+    Expression<int>? providerReportedCostMicrosUsd,
+    Expression<int>? schemaVersion,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (eventId != null) 'event_id': eventId,
+      if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
+      if (providerId != null) 'provider_id': providerId,
+      if (model != null) 'model': model,
+      if (requestType != null) 'request_type': requestType,
+      if (outcome != null) 'outcome': outcome,
+      if (errorCategory != null) 'error_category': errorCategory,
+      if (latencyMs != null) 'latency_ms': latencyMs,
+      if (inputTokens != null) 'input_tokens': inputTokens,
+      if (outputTokens != null) 'output_tokens': outputTokens,
+      if (totalTokens != null) 'total_tokens': totalTokens,
+      if (cachedTokens != null) 'cached_tokens': cachedTokens,
+      if (providerReportedCostMicrosUsd != null)
+        'provider_reported_cost_micros_usd': providerReportedCostMicrosUsd,
+      if (schemaVersion != null) 'schema_version': schemaVersion,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  AiUsageEventsCompanion copyWith({
+    Value<String>? eventId,
+    Value<int>? occurredAtUtcMs,
+    Value<String>? providerId,
+    Value<String>? model,
+    Value<String>? requestType,
+    Value<String>? outcome,
+    Value<String?>? errorCategory,
+    Value<int>? latencyMs,
+    Value<int?>? inputTokens,
+    Value<int?>? outputTokens,
+    Value<int?>? totalTokens,
+    Value<int?>? cachedTokens,
+    Value<int?>? providerReportedCostMicrosUsd,
+    Value<int>? schemaVersion,
+    Value<int>? rowid,
+  }) {
+    return AiUsageEventsCompanion(
+      eventId: eventId ?? this.eventId,
+      occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+      providerId: providerId ?? this.providerId,
+      model: model ?? this.model,
+      requestType: requestType ?? this.requestType,
+      outcome: outcome ?? this.outcome,
+      errorCategory: errorCategory ?? this.errorCategory,
+      latencyMs: latencyMs ?? this.latencyMs,
+      inputTokens: inputTokens ?? this.inputTokens,
+      outputTokens: outputTokens ?? this.outputTokens,
+      totalTokens: totalTokens ?? this.totalTokens,
+      cachedTokens: cachedTokens ?? this.cachedTokens,
+      providerReportedCostMicrosUsd:
+          providerReportedCostMicrosUsd ?? this.providerReportedCostMicrosUsd,
+      schemaVersion: schemaVersion ?? this.schemaVersion,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (eventId.present) {
+      map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (occurredAtUtcMs.present) {
+      map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs.value);
+    }
+    if (providerId.present) {
+      map['provider_id'] = Variable<String>(providerId.value);
+    }
+    if (model.present) {
+      map['model'] = Variable<String>(model.value);
+    }
+    if (requestType.present) {
+      map['request_type'] = Variable<String>(requestType.value);
+    }
+    if (outcome.present) {
+      map['outcome'] = Variable<String>(outcome.value);
+    }
+    if (errorCategory.present) {
+      map['error_category'] = Variable<String>(errorCategory.value);
+    }
+    if (latencyMs.present) {
+      map['latency_ms'] = Variable<int>(latencyMs.value);
+    }
+    if (inputTokens.present) {
+      map['input_tokens'] = Variable<int>(inputTokens.value);
+    }
+    if (outputTokens.present) {
+      map['output_tokens'] = Variable<int>(outputTokens.value);
+    }
+    if (totalTokens.present) {
+      map['total_tokens'] = Variable<int>(totalTokens.value);
+    }
+    if (cachedTokens.present) {
+      map['cached_tokens'] = Variable<int>(cachedTokens.value);
+    }
+    if (providerReportedCostMicrosUsd.present) {
+      map['provider_reported_cost_micros_usd'] = Variable<int>(
+        providerReportedCostMicrosUsd.value,
+      );
+    }
+    if (schemaVersion.present) {
+      map['schema_version'] = Variable<int>(schemaVersion.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('AiUsageEventsCompanion(')
+          ..write('eventId: $eventId, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('providerId: $providerId, ')
+          ..write('model: $model, ')
+          ..write('requestType: $requestType, ')
+          ..write('outcome: $outcome, ')
+          ..write('errorCategory: $errorCategory, ')
+          ..write('latencyMs: $latencyMs, ')
+          ..write('inputTokens: $inputTokens, ')
+          ..write('outputTokens: $outputTokens, ')
+          ..write('totalTokens: $totalTokens, ')
+          ..write('cachedTokens: $cachedTokens, ')
+          ..write(
+            'providerReportedCostMicrosUsd: $providerReportedCostMicrosUsd, ',
+          )
+          ..write('schemaVersion: $schemaVersion, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SpeechEvidenceTable extends SpeechEvidence
+    with TableInfo<$SpeechEvidenceTable, SpeechEvidenceData> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SpeechEvidenceTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_sessions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _wordIdMeta = const VerificationMeta('wordId');
+  @override
+  late final GeneratedColumn<String> wordId = GeneratedColumn<String>(
+    'word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES vocabulary_words (id)',
+    ),
+  );
+  static const VerificationMeta _promptModeMeta = const VerificationMeta(
+    'promptMode',
+  );
+  @override
+  late final GeneratedColumn<String> promptMode = GeneratedColumn<String>(
+    'prompt_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _targetContentMeta = const VerificationMeta(
+    'targetContent',
+  );
+  @override
+  late final GeneratedColumn<String> targetContent = GeneratedColumn<String>(
+    'target_content',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _recognizedTranscriptMeta =
+      const VerificationMeta('recognizedTranscript');
+  @override
+  late final GeneratedColumn<String> recognizedTranscript =
+      GeneratedColumn<String>(
+        'recognized_transcript',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _localeMeta = const VerificationMeta('locale');
+  @override
+  late final GeneratedColumn<String> locale = GeneratedColumn<String>(
+    'locale',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sttEngineMeta = const VerificationMeta(
+    'sttEngine',
+  );
+  @override
+  late final GeneratedColumn<String> sttEngine = GeneratedColumn<String>(
+    'stt_engine',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _similarityAlgorithmMeta =
+      const VerificationMeta('similarityAlgorithm');
+  @override
+  late final GeneratedColumn<String> similarityAlgorithm =
+      GeneratedColumn<String>(
+        'similarity_algorithm',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _similarityScoreMeta = const VerificationMeta(
+    'similarityScore',
+  );
+  @override
+  late final GeneratedColumn<int> similarityScore = GeneratedColumn<int>(
+    'similarity_score',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isExactMatchMeta = const VerificationMeta(
+    'isExactMatch',
+  );
+  @override
+  late final GeneratedColumn<bool> isExactMatch = GeneratedColumn<bool>(
+    'is_exact_match',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_exact_match" IN (0, 1))',
+    ),
+  );
+  static const VerificationMeta _recognitionConfidenceMeta =
+      const VerificationMeta('recognitionConfidence');
+  @override
+  late final GeneratedColumn<double> recognitionConfidence =
+      GeneratedColumn<double>(
+        'recognition_confidence',
+        aliasedName,
+        true,
+        type: DriftSqlType.double,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sampleSizeMeta = const VerificationMeta(
+    'sampleSize',
+  );
+  @override
+  late final GeneratedColumn<int> sampleSize = GeneratedColumn<int>(
+    'sample_size',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _unavailableReasonMeta = const VerificationMeta(
+    'unavailableReason',
+  );
+  @override
+  late final GeneratedColumn<String> unavailableReason =
+      GeneratedColumn<String>(
+        'unavailable_reason',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _occurredAtUtcMsMeta = const VerificationMeta(
+    'occurredAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> occurredAtUtcMs = GeneratedColumn<int>(
+    'occurred_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _durationMsMeta = const VerificationMeta(
+    'durationMs',
+  );
+  @override
+  late final GeneratedColumn<int> durationMs = GeneratedColumn<int>(
+    'duration_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    sessionId,
+    wordId,
+    promptMode,
+    targetContent,
+    recognizedTranscript,
+    locale,
+    sttEngine,
+    similarityAlgorithm,
+    similarityScore,
+    isExactMatch,
+    recognitionConfidence,
+    sampleSize,
+    unavailableReason,
+    occurredAtUtcMs,
+    durationMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'speech_evidence';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SpeechEvidenceData> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('word_id')) {
+      context.handle(
+        _wordIdMeta,
+        wordId.isAcceptableOrUnknown(data['word_id']!, _wordIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_wordIdMeta);
+    }
+    if (data.containsKey('prompt_mode')) {
+      context.handle(
+        _promptModeMeta,
+        promptMode.isAcceptableOrUnknown(data['prompt_mode']!, _promptModeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_promptModeMeta);
+    }
+    if (data.containsKey('target_content')) {
+      context.handle(
+        _targetContentMeta,
+        targetContent.isAcceptableOrUnknown(
+          data['target_content']!,
+          _targetContentMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_targetContentMeta);
+    }
+    if (data.containsKey('recognized_transcript')) {
+      context.handle(
+        _recognizedTranscriptMeta,
+        recognizedTranscript.isAcceptableOrUnknown(
+          data['recognized_transcript']!,
+          _recognizedTranscriptMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_recognizedTranscriptMeta);
+    }
+    if (data.containsKey('locale')) {
+      context.handle(
+        _localeMeta,
+        locale.isAcceptableOrUnknown(data['locale']!, _localeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_localeMeta);
+    }
+    if (data.containsKey('stt_engine')) {
+      context.handle(
+        _sttEngineMeta,
+        sttEngine.isAcceptableOrUnknown(data['stt_engine']!, _sttEngineMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sttEngineMeta);
+    }
+    if (data.containsKey('similarity_algorithm')) {
+      context.handle(
+        _similarityAlgorithmMeta,
+        similarityAlgorithm.isAcceptableOrUnknown(
+          data['similarity_algorithm']!,
+          _similarityAlgorithmMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_similarityAlgorithmMeta);
+    }
+    if (data.containsKey('similarity_score')) {
+      context.handle(
+        _similarityScoreMeta,
+        similarityScore.isAcceptableOrUnknown(
+          data['similarity_score']!,
+          _similarityScoreMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_exact_match')) {
+      context.handle(
+        _isExactMatchMeta,
+        isExactMatch.isAcceptableOrUnknown(
+          data['is_exact_match']!,
+          _isExactMatchMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_isExactMatchMeta);
+    }
+    if (data.containsKey('recognition_confidence')) {
+      context.handle(
+        _recognitionConfidenceMeta,
+        recognitionConfidence.isAcceptableOrUnknown(
+          data['recognition_confidence']!,
+          _recognitionConfidenceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('sample_size')) {
+      context.handle(
+        _sampleSizeMeta,
+        sampleSize.isAcceptableOrUnknown(data['sample_size']!, _sampleSizeMeta),
+      );
+    }
+    if (data.containsKey('unavailable_reason')) {
+      context.handle(
+        _unavailableReasonMeta,
+        unavailableReason.isAcceptableOrUnknown(
+          data['unavailable_reason']!,
+          _unavailableReasonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('occurred_at_utc_ms')) {
+      context.handle(
+        _occurredAtUtcMsMeta,
+        occurredAtUtcMs.isAcceptableOrUnknown(
+          data['occurred_at_utc_ms']!,
+          _occurredAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_occurredAtUtcMsMeta);
+    }
+    if (data.containsKey('duration_ms')) {
+      context.handle(
+        _durationMsMeta,
+        durationMs.isAcceptableOrUnknown(data['duration_ms']!, _durationMsMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  SpeechEvidenceData map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SpeechEvidenceData(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      wordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}word_id'],
+      )!,
+      promptMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}prompt_mode'],
+      )!,
+      targetContent: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}target_content'],
+      )!,
+      recognizedTranscript: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}recognized_transcript'],
+      )!,
+      locale: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}locale'],
+      )!,
+      sttEngine: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stt_engine'],
+      )!,
+      similarityAlgorithm: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}similarity_algorithm'],
+      )!,
+      similarityScore: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}similarity_score'],
+      ),
+      isExactMatch: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_exact_match'],
+      )!,
+      recognitionConfidence: attachedDatabase.typeMapping.read(
+        DriftSqlType.double,
+        data['${effectivePrefix}recognition_confidence'],
+      ),
+      sampleSize: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}sample_size'],
+      )!,
+      unavailableReason: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}unavailable_reason'],
+      ),
+      occurredAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}occurred_at_utc_ms'],
+      )!,
+      durationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}duration_ms'],
+      ),
+    );
+  }
+
+  @override
+  $SpeechEvidenceTable createAlias(String alias) {
+    return $SpeechEvidenceTable(attachedDatabase, alias);
+  }
+}
+
+class SpeechEvidenceData extends DataClass
+    implements Insertable<SpeechEvidenceData> {
+  final String id;
+  final String ownerId;
+  final String sessionId;
+  final String wordId;
+  final String promptMode;
+  final String targetContent;
+  final String recognizedTranscript;
+  final String locale;
+  final String sttEngine;
+  final String similarityAlgorithm;
+  final int? similarityScore;
+  final bool isExactMatch;
+  final double? recognitionConfidence;
+  final int sampleSize;
+  final String? unavailableReason;
+  final int occurredAtUtcMs;
+  final int? durationMs;
+  const SpeechEvidenceData({
+    required this.id,
+    required this.ownerId,
+    required this.sessionId,
+    required this.wordId,
+    required this.promptMode,
+    required this.targetContent,
+    required this.recognizedTranscript,
+    required this.locale,
+    required this.sttEngine,
+    required this.similarityAlgorithm,
+    this.similarityScore,
+    required this.isExactMatch,
+    this.recognitionConfidence,
+    required this.sampleSize,
+    this.unavailableReason,
+    required this.occurredAtUtcMs,
+    this.durationMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['session_id'] = Variable<String>(sessionId);
+    map['word_id'] = Variable<String>(wordId);
+    map['prompt_mode'] = Variable<String>(promptMode);
+    map['target_content'] = Variable<String>(targetContent);
+    map['recognized_transcript'] = Variable<String>(recognizedTranscript);
+    map['locale'] = Variable<String>(locale);
+    map['stt_engine'] = Variable<String>(sttEngine);
+    map['similarity_algorithm'] = Variable<String>(similarityAlgorithm);
+    if (!nullToAbsent || similarityScore != null) {
+      map['similarity_score'] = Variable<int>(similarityScore);
+    }
+    map['is_exact_match'] = Variable<bool>(isExactMatch);
+    if (!nullToAbsent || recognitionConfidence != null) {
+      map['recognition_confidence'] = Variable<double>(recognitionConfidence);
+    }
+    map['sample_size'] = Variable<int>(sampleSize);
+    if (!nullToAbsent || unavailableReason != null) {
+      map['unavailable_reason'] = Variable<String>(unavailableReason);
+    }
+    map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
+    if (!nullToAbsent || durationMs != null) {
+      map['duration_ms'] = Variable<int>(durationMs);
+    }
+    return map;
+  }
+
+  SpeechEvidenceCompanion toCompanion(bool nullToAbsent) {
+    return SpeechEvidenceCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sessionId: Value(sessionId),
+      wordId: Value(wordId),
+      promptMode: Value(promptMode),
+      targetContent: Value(targetContent),
+      recognizedTranscript: Value(recognizedTranscript),
+      locale: Value(locale),
+      sttEngine: Value(sttEngine),
+      similarityAlgorithm: Value(similarityAlgorithm),
+      similarityScore: similarityScore == null && nullToAbsent
+          ? const Value.absent()
+          : Value(similarityScore),
+      isExactMatch: Value(isExactMatch),
+      recognitionConfidence: recognitionConfidence == null && nullToAbsent
+          ? const Value.absent()
+          : Value(recognitionConfidence),
+      sampleSize: Value(sampleSize),
+      unavailableReason: unavailableReason == null && nullToAbsent
+          ? const Value.absent()
+          : Value(unavailableReason),
+      occurredAtUtcMs: Value(occurredAtUtcMs),
+      durationMs: durationMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(durationMs),
+    );
+  }
+
+  factory SpeechEvidenceData.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SpeechEvidenceData(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      wordId: serializer.fromJson<String>(json['wordId']),
+      promptMode: serializer.fromJson<String>(json['promptMode']),
+      targetContent: serializer.fromJson<String>(json['targetContent']),
+      recognizedTranscript: serializer.fromJson<String>(
+        json['recognizedTranscript'],
+      ),
+      locale: serializer.fromJson<String>(json['locale']),
+      sttEngine: serializer.fromJson<String>(json['sttEngine']),
+      similarityAlgorithm: serializer.fromJson<String>(
+        json['similarityAlgorithm'],
+      ),
+      similarityScore: serializer.fromJson<int?>(json['similarityScore']),
+      isExactMatch: serializer.fromJson<bool>(json['isExactMatch']),
+      recognitionConfidence: serializer.fromJson<double?>(
+        json['recognitionConfidence'],
+      ),
+      sampleSize: serializer.fromJson<int>(json['sampleSize']),
+      unavailableReason: serializer.fromJson<String?>(
+        json['unavailableReason'],
+      ),
+      occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
+      durationMs: serializer.fromJson<int?>(json['durationMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'wordId': serializer.toJson<String>(wordId),
+      'promptMode': serializer.toJson<String>(promptMode),
+      'targetContent': serializer.toJson<String>(targetContent),
+      'recognizedTranscript': serializer.toJson<String>(recognizedTranscript),
+      'locale': serializer.toJson<String>(locale),
+      'sttEngine': serializer.toJson<String>(sttEngine),
+      'similarityAlgorithm': serializer.toJson<String>(similarityAlgorithm),
+      'similarityScore': serializer.toJson<int?>(similarityScore),
+      'isExactMatch': serializer.toJson<bool>(isExactMatch),
+      'recognitionConfidence': serializer.toJson<double?>(
+        recognitionConfidence,
+      ),
+      'sampleSize': serializer.toJson<int>(sampleSize),
+      'unavailableReason': serializer.toJson<String?>(unavailableReason),
+      'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
+      'durationMs': serializer.toJson<int?>(durationMs),
+    };
+  }
+
+  SpeechEvidenceData copyWith({
+    String? id,
+    String? ownerId,
+    String? sessionId,
+    String? wordId,
+    String? promptMode,
+    String? targetContent,
+    String? recognizedTranscript,
+    String? locale,
+    String? sttEngine,
+    String? similarityAlgorithm,
+    Value<int?> similarityScore = const Value.absent(),
+    bool? isExactMatch,
+    Value<double?> recognitionConfidence = const Value.absent(),
+    int? sampleSize,
+    Value<String?> unavailableReason = const Value.absent(),
+    int? occurredAtUtcMs,
+    Value<int?> durationMs = const Value.absent(),
+  }) => SpeechEvidenceData(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sessionId: sessionId ?? this.sessionId,
+    wordId: wordId ?? this.wordId,
+    promptMode: promptMode ?? this.promptMode,
+    targetContent: targetContent ?? this.targetContent,
+    recognizedTranscript: recognizedTranscript ?? this.recognizedTranscript,
+    locale: locale ?? this.locale,
+    sttEngine: sttEngine ?? this.sttEngine,
+    similarityAlgorithm: similarityAlgorithm ?? this.similarityAlgorithm,
+    similarityScore: similarityScore.present
+        ? similarityScore.value
+        : this.similarityScore,
+    isExactMatch: isExactMatch ?? this.isExactMatch,
+    recognitionConfidence: recognitionConfidence.present
+        ? recognitionConfidence.value
+        : this.recognitionConfidence,
+    sampleSize: sampleSize ?? this.sampleSize,
+    unavailableReason: unavailableReason.present
+        ? unavailableReason.value
+        : this.unavailableReason,
+    occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+    durationMs: durationMs.present ? durationMs.value : this.durationMs,
+  );
+  SpeechEvidenceData copyWithCompanion(SpeechEvidenceCompanion data) {
+    return SpeechEvidenceData(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      wordId: data.wordId.present ? data.wordId.value : this.wordId,
+      promptMode: data.promptMode.present
+          ? data.promptMode.value
+          : this.promptMode,
+      targetContent: data.targetContent.present
+          ? data.targetContent.value
+          : this.targetContent,
+      recognizedTranscript: data.recognizedTranscript.present
+          ? data.recognizedTranscript.value
+          : this.recognizedTranscript,
+      locale: data.locale.present ? data.locale.value : this.locale,
+      sttEngine: data.sttEngine.present ? data.sttEngine.value : this.sttEngine,
+      similarityAlgorithm: data.similarityAlgorithm.present
+          ? data.similarityAlgorithm.value
+          : this.similarityAlgorithm,
+      similarityScore: data.similarityScore.present
+          ? data.similarityScore.value
+          : this.similarityScore,
+      isExactMatch: data.isExactMatch.present
+          ? data.isExactMatch.value
+          : this.isExactMatch,
+      recognitionConfidence: data.recognitionConfidence.present
+          ? data.recognitionConfidence.value
+          : this.recognitionConfidence,
+      sampleSize: data.sampleSize.present
+          ? data.sampleSize.value
+          : this.sampleSize,
+      unavailableReason: data.unavailableReason.present
+          ? data.unavailableReason.value
+          : this.unavailableReason,
+      occurredAtUtcMs: data.occurredAtUtcMs.present
+          ? data.occurredAtUtcMs.value
+          : this.occurredAtUtcMs,
+      durationMs: data.durationMs.present
+          ? data.durationMs.value
+          : this.durationMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpeechEvidenceData(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('wordId: $wordId, ')
+          ..write('promptMode: $promptMode, ')
+          ..write('targetContent: $targetContent, ')
+          ..write('recognizedTranscript: $recognizedTranscript, ')
+          ..write('locale: $locale, ')
+          ..write('sttEngine: $sttEngine, ')
+          ..write('similarityAlgorithm: $similarityAlgorithm, ')
+          ..write('similarityScore: $similarityScore, ')
+          ..write('isExactMatch: $isExactMatch, ')
+          ..write('recognitionConfidence: $recognitionConfidence, ')
+          ..write('sampleSize: $sampleSize, ')
+          ..write('unavailableReason: $unavailableReason, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('durationMs: $durationMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    sessionId,
+    wordId,
+    promptMode,
+    targetContent,
+    recognizedTranscript,
+    locale,
+    sttEngine,
+    similarityAlgorithm,
+    similarityScore,
+    isExactMatch,
+    recognitionConfidence,
+    sampleSize,
+    unavailableReason,
+    occurredAtUtcMs,
+    durationMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SpeechEvidenceData &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sessionId == this.sessionId &&
+          other.wordId == this.wordId &&
+          other.promptMode == this.promptMode &&
+          other.targetContent == this.targetContent &&
+          other.recognizedTranscript == this.recognizedTranscript &&
+          other.locale == this.locale &&
+          other.sttEngine == this.sttEngine &&
+          other.similarityAlgorithm == this.similarityAlgorithm &&
+          other.similarityScore == this.similarityScore &&
+          other.isExactMatch == this.isExactMatch &&
+          other.recognitionConfidence == this.recognitionConfidence &&
+          other.sampleSize == this.sampleSize &&
+          other.unavailableReason == this.unavailableReason &&
+          other.occurredAtUtcMs == this.occurredAtUtcMs &&
+          other.durationMs == this.durationMs);
+}
+
+class SpeechEvidenceCompanion extends UpdateCompanion<SpeechEvidenceData> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sessionId;
+  final Value<String> wordId;
+  final Value<String> promptMode;
+  final Value<String> targetContent;
+  final Value<String> recognizedTranscript;
+  final Value<String> locale;
+  final Value<String> sttEngine;
+  final Value<String> similarityAlgorithm;
+  final Value<int?> similarityScore;
+  final Value<bool> isExactMatch;
+  final Value<double?> recognitionConfidence;
+  final Value<int> sampleSize;
+  final Value<String?> unavailableReason;
+  final Value<int> occurredAtUtcMs;
+  final Value<int?> durationMs;
+  final Value<int> rowid;
+  const SpeechEvidenceCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.wordId = const Value.absent(),
+    this.promptMode = const Value.absent(),
+    this.targetContent = const Value.absent(),
+    this.recognizedTranscript = const Value.absent(),
+    this.locale = const Value.absent(),
+    this.sttEngine = const Value.absent(),
+    this.similarityAlgorithm = const Value.absent(),
+    this.similarityScore = const Value.absent(),
+    this.isExactMatch = const Value.absent(),
+    this.recognitionConfidence = const Value.absent(),
+    this.sampleSize = const Value.absent(),
+    this.unavailableReason = const Value.absent(),
+    this.occurredAtUtcMs = const Value.absent(),
+    this.durationMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SpeechEvidenceCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required String targetContent,
+    required String recognizedTranscript,
+    required String locale,
+    required String sttEngine,
+    required String similarityAlgorithm,
+    this.similarityScore = const Value.absent(),
+    required bool isExactMatch,
+    this.recognitionConfidence = const Value.absent(),
+    this.sampleSize = const Value.absent(),
+    this.unavailableReason = const Value.absent(),
+    required int occurredAtUtcMs,
+    this.durationMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sessionId = Value(sessionId),
+       wordId = Value(wordId),
+       promptMode = Value(promptMode),
+       targetContent = Value(targetContent),
+       recognizedTranscript = Value(recognizedTranscript),
+       locale = Value(locale),
+       sttEngine = Value(sttEngine),
+       similarityAlgorithm = Value(similarityAlgorithm),
+       isExactMatch = Value(isExactMatch),
+       occurredAtUtcMs = Value(occurredAtUtcMs);
+  static Insertable<SpeechEvidenceData> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sessionId,
+    Expression<String>? wordId,
+    Expression<String>? promptMode,
+    Expression<String>? targetContent,
+    Expression<String>? recognizedTranscript,
+    Expression<String>? locale,
+    Expression<String>? sttEngine,
+    Expression<String>? similarityAlgorithm,
+    Expression<int>? similarityScore,
+    Expression<bool>? isExactMatch,
+    Expression<double>? recognitionConfidence,
+    Expression<int>? sampleSize,
+    Expression<String>? unavailableReason,
+    Expression<int>? occurredAtUtcMs,
+    Expression<int>? durationMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sessionId != null) 'session_id': sessionId,
+      if (wordId != null) 'word_id': wordId,
+      if (promptMode != null) 'prompt_mode': promptMode,
+      if (targetContent != null) 'target_content': targetContent,
+      if (recognizedTranscript != null)
+        'recognized_transcript': recognizedTranscript,
+      if (locale != null) 'locale': locale,
+      if (sttEngine != null) 'stt_engine': sttEngine,
+      if (similarityAlgorithm != null)
+        'similarity_algorithm': similarityAlgorithm,
+      if (similarityScore != null) 'similarity_score': similarityScore,
+      if (isExactMatch != null) 'is_exact_match': isExactMatch,
+      if (recognitionConfidence != null)
+        'recognition_confidence': recognitionConfidence,
+      if (sampleSize != null) 'sample_size': sampleSize,
+      if (unavailableReason != null) 'unavailable_reason': unavailableReason,
+      if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
+      if (durationMs != null) 'duration_ms': durationMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SpeechEvidenceCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sessionId,
+    Value<String>? wordId,
+    Value<String>? promptMode,
+    Value<String>? targetContent,
+    Value<String>? recognizedTranscript,
+    Value<String>? locale,
+    Value<String>? sttEngine,
+    Value<String>? similarityAlgorithm,
+    Value<int?>? similarityScore,
+    Value<bool>? isExactMatch,
+    Value<double?>? recognitionConfidence,
+    Value<int>? sampleSize,
+    Value<String?>? unavailableReason,
+    Value<int>? occurredAtUtcMs,
+    Value<int?>? durationMs,
+    Value<int>? rowid,
+  }) {
+    return SpeechEvidenceCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sessionId: sessionId ?? this.sessionId,
+      wordId: wordId ?? this.wordId,
+      promptMode: promptMode ?? this.promptMode,
+      targetContent: targetContent ?? this.targetContent,
+      recognizedTranscript: recognizedTranscript ?? this.recognizedTranscript,
+      locale: locale ?? this.locale,
+      sttEngine: sttEngine ?? this.sttEngine,
+      similarityAlgorithm: similarityAlgorithm ?? this.similarityAlgorithm,
+      similarityScore: similarityScore ?? this.similarityScore,
+      isExactMatch: isExactMatch ?? this.isExactMatch,
+      recognitionConfidence:
+          recognitionConfidence ?? this.recognitionConfidence,
+      sampleSize: sampleSize ?? this.sampleSize,
+      unavailableReason: unavailableReason ?? this.unavailableReason,
+      occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
+      durationMs: durationMs ?? this.durationMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (wordId.present) {
+      map['word_id'] = Variable<String>(wordId.value);
+    }
+    if (promptMode.present) {
+      map['prompt_mode'] = Variable<String>(promptMode.value);
+    }
+    if (targetContent.present) {
+      map['target_content'] = Variable<String>(targetContent.value);
+    }
+    if (recognizedTranscript.present) {
+      map['recognized_transcript'] = Variable<String>(
+        recognizedTranscript.value,
+      );
+    }
+    if (locale.present) {
+      map['locale'] = Variable<String>(locale.value);
+    }
+    if (sttEngine.present) {
+      map['stt_engine'] = Variable<String>(sttEngine.value);
+    }
+    if (similarityAlgorithm.present) {
+      map['similarity_algorithm'] = Variable<String>(similarityAlgorithm.value);
+    }
+    if (similarityScore.present) {
+      map['similarity_score'] = Variable<int>(similarityScore.value);
+    }
+    if (isExactMatch.present) {
+      map['is_exact_match'] = Variable<bool>(isExactMatch.value);
+    }
+    if (recognitionConfidence.present) {
+      map['recognition_confidence'] = Variable<double>(
+        recognitionConfidence.value,
+      );
+    }
+    if (sampleSize.present) {
+      map['sample_size'] = Variable<int>(sampleSize.value);
+    }
+    if (unavailableReason.present) {
+      map['unavailable_reason'] = Variable<String>(unavailableReason.value);
+    }
+    if (occurredAtUtcMs.present) {
+      map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs.value);
+    }
+    if (durationMs.present) {
+      map['duration_ms'] = Variable<int>(durationMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SpeechEvidenceCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('wordId: $wordId, ')
+          ..write('promptMode: $promptMode, ')
+          ..write('targetContent: $targetContent, ')
+          ..write('recognizedTranscript: $recognizedTranscript, ')
+          ..write('locale: $locale, ')
+          ..write('sttEngine: $sttEngine, ')
+          ..write('similarityAlgorithm: $similarityAlgorithm, ')
+          ..write('similarityScore: $similarityScore, ')
+          ..write('isExactMatch: $isExactMatch, ')
+          ..write('recognitionConfidence: $recognitionConfidence, ')
+          ..write('sampleSize: $sampleSize, ')
+          ..write('unavailableReason: $unavailableReason, ')
+          ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
+          ..write('durationMs: $durationMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -17263,6 +19163,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AssociationRecordsTable(this);
   late final $AssociativeMemoryStatesTable associativeMemoryStates =
       $AssociativeMemoryStatesTable(this);
+  late final $AiUsageEventsTable aiUsageEvents = $AiUsageEventsTable(this);
+  late final $SpeechEvidenceTable speechEvidence = $SpeechEvidenceTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -17297,6 +19199,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningDayLog,
     associationRecords,
     associativeMemoryStates,
+    aiUsageEvents,
+    speechEvidence,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -17322,6 +19226,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       result: [
         TableUpdate('quest_objective_progress', kind: UpdateKind.delete),
       ],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('speech_evidence', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -17814,6 +19725,24 @@ final class $$LocalOwnersTableReferences
     final cache = $_typedResult.readTableOrNull(
       _associativeMemoryStatesRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$SpeechEvidenceTable, List<SpeechEvidenceData>>
+  _speechEvidenceRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.speechEvidence,
+    aliasName: 'local_owners__id__speech_evidence__owner_id',
+  );
+
+  $$SpeechEvidenceTableProcessedTableManager get speechEvidenceRefs {
+    final manager = $$SpeechEvidenceTableTableManager(
+      $_db,
+      $_db.speechEvidence,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_speechEvidenceRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -18433,6 +20362,31 @@ class $$LocalOwnersTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> speechEvidenceRefs(
+    Expression<bool> Function($$SpeechEvidenceTableFilterComposer f) f,
+  ) {
+    final $$SpeechEvidenceTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableFilterComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -19096,6 +21050,31 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> speechEvidenceRefs<T extends Object>(
+    Expression<T> Function($$SpeechEvidenceTableAnnotationComposer a) f,
+  ) {
+    final $$SpeechEvidenceTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableAnnotationComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -19135,6 +21114,7 @@ class $$LocalOwnersTableTableManager
             bool learningDayLogRefs,
             bool associationRecordsRefs,
             bool associativeMemoryStatesRefs,
+            bool speechEvidenceRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -19217,6 +21197,7 @@ class $$LocalOwnersTableTableManager
                 learningDayLogRefs = false,
                 associationRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
+                speechEvidenceRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -19244,6 +21225,7 @@ class $$LocalOwnersTableTableManager
                     if (learningDayLogRefs) db.learningDayLog,
                     if (associationRecordsRefs) db.associationRecords,
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
+                    if (speechEvidenceRefs) db.speechEvidence,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -19731,6 +21713,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (speechEvidenceRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          SpeechEvidenceData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._speechEvidenceRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).speechEvidenceRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -19775,6 +21778,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool learningDayLogRefs,
         bool associationRecordsRefs,
         bool associativeMemoryStatesRefs,
+        bool speechEvidenceRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -20938,6 +22942,24 @@ final class $$VocabularyWordsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$SpeechEvidenceTable, List<SpeechEvidenceData>>
+  _speechEvidenceRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.speechEvidence,
+    aliasName: 'vocabulary_words__id__speech_evidence__word_id',
+  );
+
+  $$SpeechEvidenceTableProcessedTableManager get speechEvidenceRefs {
+    final manager = $$SpeechEvidenceTableTableManager(
+      $_db,
+      $_db.speechEvidence,
+    ).filter((f) => f.wordId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_speechEvidenceRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$VocabularyWordsTableFilterComposer
@@ -21116,6 +23138,31 @@ class $$VocabularyWordsTableFilterComposer
           }) => $$SrsStatesTableFilterComposer(
             $db: $db,
             $table: $db.srsStates,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> speechEvidenceRefs(
+    Expression<bool> Function($$SpeechEvidenceTableFilterComposer f) f,
+  ) {
+    final $$SpeechEvidenceTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.wordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableFilterComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -21434,6 +23481,31 @@ class $$VocabularyWordsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> speechEvidenceRefs<T extends Object>(
+    Expression<T> Function($$SpeechEvidenceTableAnnotationComposer a) f,
+  ) {
+    final $$SpeechEvidenceTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.wordId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableAnnotationComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$VocabularyWordsTableTableManager
@@ -21454,6 +23526,7 @@ class $$VocabularyWordsTableTableManager
             bool categoryId,
             bool answerAttemptsRefs,
             bool srsStatesRefs,
+            bool speechEvidenceRefs,
           })
         > {
   $$VocabularyWordsTableTableManager(
@@ -21567,12 +23640,14 @@ class $$VocabularyWordsTableTableManager
                 categoryId = false,
                 answerAttemptsRefs = false,
                 srsStatesRefs = false,
+                speechEvidenceRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (srsStatesRefs) db.srsStates,
+                    if (speechEvidenceRefs) db.speechEvidence,
                   ],
                   addJoins:
                       <
@@ -21667,6 +23742,27 @@ class $$VocabularyWordsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (speechEvidenceRefs)
+                        await $_getPrefetchedData<
+                          VocabularyWord,
+                          $VocabularyWordsTable,
+                          SpeechEvidenceData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$VocabularyWordsTableReferences
+                              ._speechEvidenceRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$VocabularyWordsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).speechEvidenceRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.wordId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -21692,6 +23788,7 @@ typedef $$VocabularyWordsTableProcessedTableManager =
         bool categoryId,
         bool answerAttemptsRefs,
         bool srsStatesRefs,
+        bool speechEvidenceRefs,
       })
     >;
 typedef $$VocabularyImportsTableCreateCompanionBuilder =
@@ -22835,6 +24932,24 @@ final class $$LearningSessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<$SpeechEvidenceTable, List<SpeechEvidenceData>>
+  _speechEvidenceRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.speechEvidence,
+    aliasName: 'learning_sessions__id__speech_evidence__session_id',
+  );
+
+  $$SpeechEvidenceTableProcessedTableManager get speechEvidenceRefs {
+    final manager = $$SpeechEvidenceTableTableManager(
+      $_db,
+      $_db.speechEvidence,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_speechEvidenceRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LearningSessionsTableFilterComposer
@@ -22935,6 +25050,31 @@ class $$LearningSessionsTableFilterComposer
           }) => $$AnswerAttemptsTableFilterComposer(
             $db: $db,
             $table: $db.answerAttempts,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> speechEvidenceRefs(
+    Expression<bool> Function($$SpeechEvidenceTableFilterComposer f) f,
+  ) {
+    final $$SpeechEvidenceTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableFilterComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -23126,6 +25266,31 @@ class $$LearningSessionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> speechEvidenceRefs<T extends Object>(
+    Expression<T> Function($$SpeechEvidenceTableAnnotationComposer a) f,
+  ) {
+    final $$SpeechEvidenceTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.speechEvidence,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SpeechEvidenceTableAnnotationComposer(
+            $db: $db,
+            $table: $db.speechEvidence,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LearningSessionsTableTableManager
@@ -23141,7 +25306,11 @@ class $$LearningSessionsTableTableManager
           $$LearningSessionsTableUpdateCompanionBuilder,
           (LearningSession, $$LearningSessionsTableReferences),
           LearningSession,
-          PrefetchHooks Function({bool ownerId, bool answerAttemptsRefs})
+          PrefetchHooks Function({
+            bool ownerId,
+            bool answerAttemptsRefs,
+            bool speechEvidenceRefs,
+          })
         > {
   $$LearningSessionsTableTableManager(
     _$AppDatabase db,
@@ -23221,11 +25390,16 @@ class $$LearningSessionsTableTableManager
               )
               .toList(),
           prefetchHooksCallback:
-              ({ownerId = false, answerAttemptsRefs = false}) {
+              ({
+                ownerId = false,
+                answerAttemptsRefs = false,
+                speechEvidenceRefs = false,
+              }) {
                 return PrefetchHooks(
                   db: db,
                   explicitlyWatchedTables: [
                     if (answerAttemptsRefs) db.answerAttempts,
+                    if (speechEvidenceRefs) db.speechEvidence,
                   ],
                   addJoins:
                       <
@@ -23284,6 +25458,27 @@ class $$LearningSessionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (speechEvidenceRefs)
+                        await $_getPrefetchedData<
+                          LearningSession,
+                          $LearningSessionsTable,
+                          SpeechEvidenceData
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningSessionsTableReferences
+                              ._speechEvidenceRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).speechEvidenceRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -23304,7 +25499,11 @@ typedef $$LearningSessionsTableProcessedTableManager =
       $$LearningSessionsTableUpdateCompanionBuilder,
       (LearningSession, $$LearningSessionsTableReferences),
       LearningSession,
-      PrefetchHooks Function({bool ownerId, bool answerAttemptsRefs})
+      PrefetchHooks Function({
+        bool ownerId,
+        bool answerAttemptsRefs,
+        bool speechEvidenceRefs,
+      })
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
     AnswerAttemptsCompanion Function({
@@ -32617,6 +34816,1158 @@ typedef $$AssociativeMemoryStatesTableProcessedTableManager =
       AssociativeMemoryState,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$AiUsageEventsTableCreateCompanionBuilder =
+    AiUsageEventsCompanion Function({
+      required String eventId,
+      required int occurredAtUtcMs,
+      required String providerId,
+      required String model,
+      required String requestType,
+      required String outcome,
+      Value<String?> errorCategory,
+      required int latencyMs,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int?> totalTokens,
+      Value<int?> cachedTokens,
+      Value<int?> providerReportedCostMicrosUsd,
+      Value<int> schemaVersion,
+      Value<int> rowid,
+    });
+typedef $$AiUsageEventsTableUpdateCompanionBuilder =
+    AiUsageEventsCompanion Function({
+      Value<String> eventId,
+      Value<int> occurredAtUtcMs,
+      Value<String> providerId,
+      Value<String> model,
+      Value<String> requestType,
+      Value<String> outcome,
+      Value<String?> errorCategory,
+      Value<int> latencyMs,
+      Value<int?> inputTokens,
+      Value<int?> outputTokens,
+      Value<int?> totalTokens,
+      Value<int?> cachedTokens,
+      Value<int?> providerReportedCostMicrosUsd,
+      Value<int> schemaVersion,
+      Value<int> rowid,
+    });
+
+class $$AiUsageEventsTableFilterComposer
+    extends Composer<_$AppDatabase, $AiUsageEventsTable> {
+  $$AiUsageEventsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get requestType => $composableBuilder(
+    column: $table.requestType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get errorCategory => $composableBuilder(
+    column: $table.errorCategory,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get latencyMs => $composableBuilder(
+    column: $table.latencyMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cachedTokens => $composableBuilder(
+    column: $table.cachedTokens,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get providerReportedCostMicrosUsd => $composableBuilder(
+    column: $table.providerReportedCostMicrosUsd,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+}
+
+class $$AiUsageEventsTableOrderingComposer
+    extends Composer<_$AppDatabase, $AiUsageEventsTable> {
+  $$AiUsageEventsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get eventId => $composableBuilder(
+    column: $table.eventId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get model => $composableBuilder(
+    column: $table.model,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get requestType => $composableBuilder(
+    column: $table.requestType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get outcome => $composableBuilder(
+    column: $table.outcome,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get errorCategory => $composableBuilder(
+    column: $table.errorCategory,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get latencyMs => $composableBuilder(
+    column: $table.latencyMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cachedTokens => $composableBuilder(
+    column: $table.cachedTokens,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get providerReportedCostMicrosUsd => $composableBuilder(
+    column: $table.providerReportedCostMicrosUsd,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$AiUsageEventsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $AiUsageEventsTable> {
+  $$AiUsageEventsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get eventId =>
+      $composableBuilder(column: $table.eventId, builder: (column) => column);
+
+  GeneratedColumn<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get providerId => $composableBuilder(
+    column: $table.providerId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get model =>
+      $composableBuilder(column: $table.model, builder: (column) => column);
+
+  GeneratedColumn<String> get requestType => $composableBuilder(
+    column: $table.requestType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get outcome =>
+      $composableBuilder(column: $table.outcome, builder: (column) => column);
+
+  GeneratedColumn<String> get errorCategory => $composableBuilder(
+    column: $table.errorCategory,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get latencyMs =>
+      $composableBuilder(column: $table.latencyMs, builder: (column) => column);
+
+  GeneratedColumn<int> get inputTokens => $composableBuilder(
+    column: $table.inputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get outputTokens => $composableBuilder(
+    column: $table.outputTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get totalTokens => $composableBuilder(
+    column: $table.totalTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cachedTokens => $composableBuilder(
+    column: $table.cachedTokens,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get providerReportedCostMicrosUsd => $composableBuilder(
+    column: $table.providerReportedCostMicrosUsd,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get schemaVersion => $composableBuilder(
+    column: $table.schemaVersion,
+    builder: (column) => column,
+  );
+}
+
+class $$AiUsageEventsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $AiUsageEventsTable,
+          AiUsageEventRow,
+          $$AiUsageEventsTableFilterComposer,
+          $$AiUsageEventsTableOrderingComposer,
+          $$AiUsageEventsTableAnnotationComposer,
+          $$AiUsageEventsTableCreateCompanionBuilder,
+          $$AiUsageEventsTableUpdateCompanionBuilder,
+          (
+            AiUsageEventRow,
+            BaseReferences<_$AppDatabase, $AiUsageEventsTable, AiUsageEventRow>,
+          ),
+          AiUsageEventRow,
+          PrefetchHooks Function()
+        > {
+  $$AiUsageEventsTableTableManager(_$AppDatabase db, $AiUsageEventsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$AiUsageEventsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$AiUsageEventsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$AiUsageEventsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> eventId = const Value.absent(),
+                Value<int> occurredAtUtcMs = const Value.absent(),
+                Value<String> providerId = const Value.absent(),
+                Value<String> model = const Value.absent(),
+                Value<String> requestType = const Value.absent(),
+                Value<String> outcome = const Value.absent(),
+                Value<String?> errorCategory = const Value.absent(),
+                Value<int> latencyMs = const Value.absent(),
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int?> totalTokens = const Value.absent(),
+                Value<int?> cachedTokens = const Value.absent(),
+                Value<int?> providerReportedCostMicrosUsd =
+                    const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiUsageEventsCompanion(
+                eventId: eventId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                providerId: providerId,
+                model: model,
+                requestType: requestType,
+                outcome: outcome,
+                errorCategory: errorCategory,
+                latencyMs: latencyMs,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                totalTokens: totalTokens,
+                cachedTokens: cachedTokens,
+                providerReportedCostMicrosUsd: providerReportedCostMicrosUsd,
+                schemaVersion: schemaVersion,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String eventId,
+                required int occurredAtUtcMs,
+                required String providerId,
+                required String model,
+                required String requestType,
+                required String outcome,
+                Value<String?> errorCategory = const Value.absent(),
+                required int latencyMs,
+                Value<int?> inputTokens = const Value.absent(),
+                Value<int?> outputTokens = const Value.absent(),
+                Value<int?> totalTokens = const Value.absent(),
+                Value<int?> cachedTokens = const Value.absent(),
+                Value<int?> providerReportedCostMicrosUsd =
+                    const Value.absent(),
+                Value<int> schemaVersion = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => AiUsageEventsCompanion.insert(
+                eventId: eventId,
+                occurredAtUtcMs: occurredAtUtcMs,
+                providerId: providerId,
+                model: model,
+                requestType: requestType,
+                outcome: outcome,
+                errorCategory: errorCategory,
+                latencyMs: latencyMs,
+                inputTokens: inputTokens,
+                outputTokens: outputTokens,
+                totalTokens: totalTokens,
+                cachedTokens: cachedTokens,
+                providerReportedCostMicrosUsd: providerReportedCostMicrosUsd,
+                schemaVersion: schemaVersion,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .toList(),
+          prefetchHooksCallback: null,
+        ),
+      );
+}
+
+typedef $$AiUsageEventsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $AiUsageEventsTable,
+      AiUsageEventRow,
+      $$AiUsageEventsTableFilterComposer,
+      $$AiUsageEventsTableOrderingComposer,
+      $$AiUsageEventsTableAnnotationComposer,
+      $$AiUsageEventsTableCreateCompanionBuilder,
+      $$AiUsageEventsTableUpdateCompanionBuilder,
+      (
+        AiUsageEventRow,
+        BaseReferences<_$AppDatabase, $AiUsageEventsTable, AiUsageEventRow>,
+      ),
+      AiUsageEventRow,
+      PrefetchHooks Function()
+    >;
+typedef $$SpeechEvidenceTableCreateCompanionBuilder =
+    SpeechEvidenceCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sessionId,
+      required String wordId,
+      required String promptMode,
+      required String targetContent,
+      required String recognizedTranscript,
+      required String locale,
+      required String sttEngine,
+      required String similarityAlgorithm,
+      Value<int?> similarityScore,
+      required bool isExactMatch,
+      Value<double?> recognitionConfidence,
+      Value<int> sampleSize,
+      Value<String?> unavailableReason,
+      required int occurredAtUtcMs,
+      Value<int?> durationMs,
+      Value<int> rowid,
+    });
+typedef $$SpeechEvidenceTableUpdateCompanionBuilder =
+    SpeechEvidenceCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sessionId,
+      Value<String> wordId,
+      Value<String> promptMode,
+      Value<String> targetContent,
+      Value<String> recognizedTranscript,
+      Value<String> locale,
+      Value<String> sttEngine,
+      Value<String> similarityAlgorithm,
+      Value<int?> similarityScore,
+      Value<bool> isExactMatch,
+      Value<double?> recognitionConfidence,
+      Value<int> sampleSize,
+      Value<String?> unavailableReason,
+      Value<int> occurredAtUtcMs,
+      Value<int?> durationMs,
+      Value<int> rowid,
+    });
+
+final class $$SpeechEvidenceTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SpeechEvidenceTable,
+          SpeechEvidenceData
+        > {
+  $$SpeechEvidenceTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('speech_evidence__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningSessionsTable _sessionIdTable(_$AppDatabase db) => db
+      .learningSessions
+      .createAlias('speech_evidence__session_id__learning_sessions__id');
+
+  $$LearningSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<String>('session_id')!;
+
+    final manager = $$LearningSessionsTableTableManager(
+      $_db,
+      $_db.learningSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $VocabularyWordsTable _wordIdTable(_$AppDatabase db) => db
+      .vocabularyWords
+      .createAlias('speech_evidence__word_id__vocabulary_words__id');
+
+  $$VocabularyWordsTableProcessedTableManager get wordId {
+    final $_column = $_itemColumn<String>('word_id')!;
+
+    final manager = $$VocabularyWordsTableTableManager(
+      $_db,
+      $_db.vocabularyWords,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_wordIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SpeechEvidenceTableFilterComposer
+    extends Composer<_$AppDatabase, $SpeechEvidenceTable> {
+  $$SpeechEvidenceTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get promptMode => $composableBuilder(
+    column: $table.promptMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get targetContent => $composableBuilder(
+    column: $table.targetContent,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get recognizedTranscript => $composableBuilder(
+    column: $table.recognizedTranscript,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get locale => $composableBuilder(
+    column: $table.locale,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sttEngine => $composableBuilder(
+    column: $table.sttEngine,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get similarityAlgorithm => $composableBuilder(
+    column: $table.similarityAlgorithm,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get similarityScore => $composableBuilder(
+    column: $table.similarityScore,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isExactMatch => $composableBuilder(
+    column: $table.isExactMatch,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<double> get recognitionConfidence => $composableBuilder(
+    column: $table.recognitionConfidence,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get unavailableReason => $composableBuilder(
+    column: $table.unavailableReason,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableFilterComposer get sessionId {
+    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableFilterComposer get wordId {
+    final $$VocabularyWordsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableFilterComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpeechEvidenceTableOrderingComposer
+    extends Composer<_$AppDatabase, $SpeechEvidenceTable> {
+  $$SpeechEvidenceTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get promptMode => $composableBuilder(
+    column: $table.promptMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get targetContent => $composableBuilder(
+    column: $table.targetContent,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get recognizedTranscript => $composableBuilder(
+    column: $table.recognizedTranscript,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get locale => $composableBuilder(
+    column: $table.locale,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sttEngine => $composableBuilder(
+    column: $table.sttEngine,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get similarityAlgorithm => $composableBuilder(
+    column: $table.similarityAlgorithm,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get similarityScore => $composableBuilder(
+    column: $table.similarityScore,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isExactMatch => $composableBuilder(
+    column: $table.isExactMatch,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<double> get recognitionConfidence => $composableBuilder(
+    column: $table.recognitionConfidence,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get unavailableReason => $composableBuilder(
+    column: $table.unavailableReason,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableOrderingComposer get sessionId {
+    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableOrderingComposer get wordId {
+    final $$VocabularyWordsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableOrderingComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpeechEvidenceTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SpeechEvidenceTable> {
+  $$SpeechEvidenceTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get promptMode => $composableBuilder(
+    column: $table.promptMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get targetContent => $composableBuilder(
+    column: $table.targetContent,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get recognizedTranscript => $composableBuilder(
+    column: $table.recognizedTranscript,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get locale =>
+      $composableBuilder(column: $table.locale, builder: (column) => column);
+
+  GeneratedColumn<String> get sttEngine =>
+      $composableBuilder(column: $table.sttEngine, builder: (column) => column);
+
+  GeneratedColumn<String> get similarityAlgorithm => $composableBuilder(
+    column: $table.similarityAlgorithm,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get similarityScore => $composableBuilder(
+    column: $table.similarityScore,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isExactMatch => $composableBuilder(
+    column: $table.isExactMatch,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<double> get recognitionConfidence => $composableBuilder(
+    column: $table.recognitionConfidence,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get sampleSize => $composableBuilder(
+    column: $table.sampleSize,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get unavailableReason => $composableBuilder(
+    column: $table.unavailableReason,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get occurredAtUtcMs => $composableBuilder(
+    column: $table.occurredAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get durationMs => $composableBuilder(
+    column: $table.durationMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableAnnotationComposer get sessionId {
+    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$VocabularyWordsTableAnnotationComposer get wordId {
+    final $$VocabularyWordsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.wordId,
+      referencedTable: $db.vocabularyWords,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$VocabularyWordsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.vocabularyWords,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SpeechEvidenceTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SpeechEvidenceTable,
+          SpeechEvidenceData,
+          $$SpeechEvidenceTableFilterComposer,
+          $$SpeechEvidenceTableOrderingComposer,
+          $$SpeechEvidenceTableAnnotationComposer,
+          $$SpeechEvidenceTableCreateCompanionBuilder,
+          $$SpeechEvidenceTableUpdateCompanionBuilder,
+          (SpeechEvidenceData, $$SpeechEvidenceTableReferences),
+          SpeechEvidenceData,
+          PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+        > {
+  $$SpeechEvidenceTableTableManager(
+    _$AppDatabase db,
+    $SpeechEvidenceTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SpeechEvidenceTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SpeechEvidenceTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SpeechEvidenceTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<String> wordId = const Value.absent(),
+                Value<String> promptMode = const Value.absent(),
+                Value<String> targetContent = const Value.absent(),
+                Value<String> recognizedTranscript = const Value.absent(),
+                Value<String> locale = const Value.absent(),
+                Value<String> sttEngine = const Value.absent(),
+                Value<String> similarityAlgorithm = const Value.absent(),
+                Value<int?> similarityScore = const Value.absent(),
+                Value<bool> isExactMatch = const Value.absent(),
+                Value<double?> recognitionConfidence = const Value.absent(),
+                Value<int> sampleSize = const Value.absent(),
+                Value<String?> unavailableReason = const Value.absent(),
+                Value<int> occurredAtUtcMs = const Value.absent(),
+                Value<int?> durationMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SpeechEvidenceCompanion(
+                id: id,
+                ownerId: ownerId,
+                sessionId: sessionId,
+                wordId: wordId,
+                promptMode: promptMode,
+                targetContent: targetContent,
+                recognizedTranscript: recognizedTranscript,
+                locale: locale,
+                sttEngine: sttEngine,
+                similarityAlgorithm: similarityAlgorithm,
+                similarityScore: similarityScore,
+                isExactMatch: isExactMatch,
+                recognitionConfidence: recognitionConfidence,
+                sampleSize: sampleSize,
+                unavailableReason: unavailableReason,
+                occurredAtUtcMs: occurredAtUtcMs,
+                durationMs: durationMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sessionId,
+                required String wordId,
+                required String promptMode,
+                required String targetContent,
+                required String recognizedTranscript,
+                required String locale,
+                required String sttEngine,
+                required String similarityAlgorithm,
+                Value<int?> similarityScore = const Value.absent(),
+                required bool isExactMatch,
+                Value<double?> recognitionConfidence = const Value.absent(),
+                Value<int> sampleSize = const Value.absent(),
+                Value<String?> unavailableReason = const Value.absent(),
+                required int occurredAtUtcMs,
+                Value<int?> durationMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SpeechEvidenceCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sessionId: sessionId,
+                wordId: wordId,
+                promptMode: promptMode,
+                targetContent: targetContent,
+                recognizedTranscript: recognizedTranscript,
+                locale: locale,
+                sttEngine: sttEngine,
+                similarityAlgorithm: similarityAlgorithm,
+                similarityScore: similarityScore,
+                isExactMatch: isExactMatch,
+                recognitionConfidence: recognitionConfidence,
+                sampleSize: sampleSize,
+                unavailableReason: unavailableReason,
+                occurredAtUtcMs: occurredAtUtcMs,
+                durationMs: durationMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SpeechEvidenceTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, sessionId = false, wordId = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$SpeechEvidenceTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$SpeechEvidenceTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (sessionId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.sessionId,
+                                    referencedTable:
+                                        $$SpeechEvidenceTableReferences
+                                            ._sessionIdTable(db),
+                                    referencedColumn:
+                                        $$SpeechEvidenceTableReferences
+                                            ._sessionIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+                        if (wordId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.wordId,
+                                    referencedTable:
+                                        $$SpeechEvidenceTableReferences
+                                            ._wordIdTable(db),
+                                    referencedColumn:
+                                        $$SpeechEvidenceTableReferences
+                                            ._wordIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$SpeechEvidenceTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SpeechEvidenceTable,
+      SpeechEvidenceData,
+      $$SpeechEvidenceTableFilterComposer,
+      $$SpeechEvidenceTableOrderingComposer,
+      $$SpeechEvidenceTableAnnotationComposer,
+      $$SpeechEvidenceTableCreateCompanionBuilder,
+      $$SpeechEvidenceTableUpdateCompanionBuilder,
+      (SpeechEvidenceData, $$SpeechEvidenceTableReferences),
+      SpeechEvidenceData,
+      PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -32688,4 +36039,8 @@ class $AppDatabaseManager {
         _db,
         _db.associativeMemoryStates,
       );
+  $$AiUsageEventsTableTableManager get aiUsageEvents =>
+      $$AiUsageEventsTableTableManager(_db, _db.aiUsageEvents);
+  $$SpeechEvidenceTableTableManager get speechEvidence =>
+      $$SpeechEvidenceTableTableManager(_db, _db.speechEvidence);
 }

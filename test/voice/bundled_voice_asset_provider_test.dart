@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/voice/omni_voice_asset_provider.dart';
+import 'package:vocab_learning_app/voice/bundled_voice_asset_provider.dart';
+import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 
 class TestAssetBundle extends CachingAssetBundle {
@@ -20,11 +21,11 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   late TestAssetBundle bundle;
-  late OmniVoiceAssetProvider provider;
+  late BundledVoiceAssetProvider provider;
 
   setUp(() {
     bundle = TestAssetBundle();
-    provider = OmniVoiceAssetProvider(bundle: bundle);
+    provider = BundledVoiceAssetProvider(bundle: bundle);
   });
 
   test('getAssetPath formats canonical asset key correctly', () {
@@ -60,6 +61,16 @@ void main() {
     expect(audio.bytes, Uint8List.fromList([1, 2, 3, 4]));
     expect(audio.modelVersion, 'offline_v1');
     expect(audio.requestId, 'asset_apple');
+    expect(audio.engine, VoiceEngine.offlinePack);
+  });
+
+  test('descriptor only allows cached standard target speech', () {
+    expect(provider.descriptor.engine, VoiceEngine.offlinePack);
+    expect(provider.descriptor.capabilities, <VoiceCapability>{
+      VoiceCapability.standardTargetSpeech,
+    });
+    expect(provider.descriptor.privacyScope, VoicePrivacyScope.standardContent);
+    expect(provider.descriptor.allowsStandardCache, isTrue);
   });
 
   test('synthesize throws VoiceFailure when asset is missing', () async {
@@ -79,7 +90,7 @@ void main() {
         isA<VoiceFailure>().having(
           (f) => f.category,
           'category',
-          VoiceFailureCategory.network,
+          VoiceFailureCategory.modelUnavailable,
         ),
       ),
     );

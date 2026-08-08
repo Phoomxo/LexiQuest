@@ -273,6 +273,12 @@ final class _FakeGateway implements GeminiGateway {
     final failure = validationFailure;
     if (failure != null) throw failure;
   }
+
+  @override
+  Future<List<String>> listModels(
+    String key, {
+    GeminiCancellation? cancellation,
+  }) async => ['gemini-test'];
 }
 
 final class _PendingGateway implements GeminiGateway {
@@ -303,4 +309,10 @@ final class _PendingGateway implements GeminiGateway {
     String key, {
     GeminiCancellation? cancellation,
   }) async {}
+
+  @override
+  Future<List<String>> listModels(
+    String key, {
+    GeminiCancellation? cancellation,
+  }) async => ['gemini-test'];
 }

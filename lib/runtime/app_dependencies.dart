@@ -22,6 +22,7 @@ import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -57,6 +58,8 @@ final class AppDependencies {
     this.researchConsent,
     this.exports,
     this.geminiTutor,
+    this.aiTutor,
+    this.aiUsage,
     this.objectScanner,
     this.speechPractice,
     this.voice,
@@ -91,6 +94,8 @@ final class AppDependencies {
   final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
   final GeminiTutorController? geminiTutor;
+  final AiTutorController? aiTutor;
+  final AiUsageRepository? aiUsage;
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;

@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/voice/voice_audio_cache.dart';
+import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 
 final Matcher _validationFailure = isA<VoiceFailure>().having(
@@ -33,6 +34,7 @@ VoiceAudioCacheKey _key({
   String voiceId = 'teacher_female',
   double speed = 1.0,
   String modelVersion = 'v1',
+  VoiceEngine engine = VoiceEngine.omniVoice,
 }) {
   return VoiceAudioCacheKey.create(
     request: _request(
@@ -41,6 +43,7 @@ VoiceAudioCacheKey _key({
       voiceId: voiceId,
       speed: speed,
     ),
+    engine: engine,
     modelVersion: modelVersion,
   );
 }
@@ -64,7 +67,11 @@ Future<VoiceFailure> _captureFailure(Future<void> Function() action) async {
 
 VoiceFailure _captureKeyFailure(String modelVersion) {
   try {
-    VoiceAudioCacheKey.create(request: _request(), modelVersion: modelVersion);
+    VoiceAudioCacheKey.create(
+      request: _request(),
+      engine: VoiceEngine.omniVoice,
+      modelVersion: modelVersion,
+    );
     fail('Expected a VoiceFailure for a blank model version.');
   } on VoiceFailure catch (failure) {
     return failure;
@@ -86,6 +93,7 @@ void main() {
             contentType: 'word',
             mode: VoiceMode.practice,
           ),
+          engine: VoiceEngine.omniVoice,
           modelVersion: '  v1  ',
         );
         final equivalent = VoiceAudioCacheKey.create(
@@ -99,6 +107,7 @@ void main() {
             mode: VoiceMode.researchEvaluation,
             assignedEngine: VoiceEngine.omniVoice,
           ),
+          engine: VoiceEngine.omniVoice,
           modelVersion: 'v1',
         );
 
@@ -114,6 +123,7 @@ void main() {
         ('language', _key(language: 'th')),
         ('voiceId', _key(voiceId: 'teacher_male')),
         ('speed', _key(speed: 0.75)),
+        ('engine', _key(engine: VoiceEngine.voxCpmStandard)),
         ('modelVersion', _key(modelVersion: 'v2')),
       ];
 
@@ -121,6 +131,39 @@ void main() {
         expect(base == other, isFalse, reason: label);
       }
     });
+  });
+
+  test('cache key separates engines that synthesize identical text', () {
+    final omni = _key(engine: VoiceEngine.omniVoice, modelVersion: 'shared-1');
+    final vox = _key(
+      engine: VoiceEngine.voxCpmStandard,
+      modelVersion: 'shared-1',
+    );
+
+    expect(omni, isNot(vox));
+  });
+
+  test('participant transient audio cannot enter standard cache', () {
+    final mirrorRequest = VoiceRequest.create(
+      text: 'Hello world.',
+      language: 'en',
+      voiceId: 'session-mirror',
+      speed: 1,
+      contentId: 'word-001',
+      contentType: 'word',
+      mode: VoiceMode.practice,
+      capability: VoiceCapability.sessionVoiceMirror,
+      privacyScope: VoicePrivacyScope.participantTransient,
+    );
+
+    expect(
+      () => VoiceAudioCacheKey.create(
+        request: mirrorRequest,
+        engine: VoiceEngine.voxCpmMirror,
+        modelVersion: 'vox-1',
+      ),
+      throwsA(_validationFailure),
+    );
   });
 
   group('VoiceAudioCacheKey modelVersion validation', () {

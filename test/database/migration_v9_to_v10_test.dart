@@ -44,7 +44,7 @@ void main() {
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 10);
+      expect(version, 11);
     });
 
     test('can insert and retrieve an association_records row', () async {

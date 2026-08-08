@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version ten with product tables', () async {
+  test('new databases use schema version eleven with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 10);
+    expect(database.schemaVersion, 11);
 
     final categoryColumns = await _columnNames(
       database,
@@ -124,7 +124,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 10); // schema v10 added associative tables (Phase 2 D8.3)
+      expect(version, 11); // schema v10 added associative tables, v11 AI/voice
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -202,7 +202,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        10, // schema v10 added associative tables (Phase 2 D8.3)
+        11, // schema v11 added AI usage + speech evidence
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +229,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        10, // schema v10 added associative tables (Phase 2 D8.3)
+        11, // schema v11 added AI usage + speech evidence
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

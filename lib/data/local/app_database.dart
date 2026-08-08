@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:drift_flutter/drift_flutter.dart';
 
+import 'tables/ai_usage_tables.dart';
 import 'tables/associative_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
@@ -10,6 +11,7 @@ import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/runtime_tables.dart';
+import 'tables/speech_evidence_tables.dart';
 import 'tables/sync_tables.dart';
 import 'tables/vocabulary_tables.dart';
 
@@ -46,6 +48,8 @@ part 'app_database.g.dart';
     LearningDayLog,
     AssociationRecords,
     AssociativeMemoryStates,
+    AiUsageEvents,
+    SpeechEvidence,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
@@ -54,7 +58,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 10;
+  int get schemaVersion => 11;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -161,6 +165,9 @@ final class AppDatabase extends _$AppDatabase {
         await _createMissingTables(migrator);
       }
       if (from < 10) {
+        await _createMissingTables(migrator);
+      }
+      if (from < 11) {
         await _createMissingTables(migrator);
       }
     },
@@ -301,6 +308,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('associative_memory_states')) {
       await migrator.createTable(associativeMemoryStates);
+    }
+    if (!await _tableExists('ai_usage_events')) {
+      await migrator.createTable(aiUsageEvents);
+    }
+    if (!await _tableExists('speech_evidence')) {
+      await migrator.createTable(speechEvidence);
     }
   }
 

@@ -1,13 +1,16 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_telemetry.dart';
 
-const _schemaVersion = 'voice_telemetry_v1';
+const _schemaVersion = 'voice_telemetry_v2';
 
 const _allowedKeys = <String>{
   'schemaVersion',
   'outcome',
   'mode',
+  'capability',
+  'privacyScope',
   'requestedEngine',
   'actualEngine',
   'usedFallback',
@@ -40,7 +43,21 @@ VoiceRequest _request({
   String contentType = 'word',
   VoiceMode mode = VoiceMode.practice,
   VoiceEngine? assignedEngine,
+  VoiceCapability capability = VoiceCapability.standardTargetSpeech,
+  VoicePrivacyScope privacyScope = VoicePrivacyScope.standardContent,
 }) {
+  // Respect the VoiceRequest mirror/transient invariant:
+  // sessionVoiceMirror must pair with participantTransient, and any other
+  // capability must pair with standardContent. Mismatches are rejected by
+  // VoiceRequest.create, so surface them as the production validation error.
+  final isMirror = capability == VoiceCapability.sessionVoiceMirror;
+  final isTransient = privacyScope == VoicePrivacyScope.participantTransient;
+  if (isMirror != isTransient) {
+    throw ArgumentError(
+      'capability and privacyScope must agree on the mirror/transient pairing',
+    );
+  }
+
   return VoiceRequest.create(
     text: text,
     language: language,
@@ -50,6 +67,8 @@ VoiceRequest _request({
     contentType: contentType,
     mode: mode,
     assignedEngine: assignedEngine,
+    capability: capability,
+    privacyScope: privacyScope,
   );
 }
 
@@ -83,6 +102,8 @@ void main() {
       expect(event.schemaVersion, _schemaVersion);
       expect(event.outcome, VoiceTelemetryOutcome.succeeded);
       expect(event.mode, VoiceMode.practice);
+      expect(event.capability, VoiceCapability.standardTargetSpeech);
+      expect(event.privacyScope, VoicePrivacyScope.standardContent);
       expect(event.requestedEngine, VoiceEngine.omniVoice);
       expect(event.actualEngine, VoiceEngine.omniVoice);
       expect(event.usedFallback, isFalse);
@@ -101,6 +122,8 @@ void main() {
       expect(map['schemaVersion'], _schemaVersion);
       expect(map['outcome'], 'succeeded');
       expect(map['mode'], 'practice');
+      expect(map['capability'], 'standardTargetSpeech');
+      expect(map['privacyScope'], 'standardContent');
       expect(map['requestedEngine'], 'omniVoice');
       expect(map['actualEngine'], 'omniVoice');
       expect(map['usedFallback'], isFalse);
@@ -117,6 +140,57 @@ void main() {
       expect(map.containsKey('language'), isFalse);
       expect(map.containsKey('voiceId'), isFalse);
       expect(map.containsKey('speed'), isFalse);
+    });
+
+    test('derives capability and privacyScope from the request for every '
+        'terminal outcome (succeeded, failed, cancelled)', () {
+      final request = _request(
+        capability: VoiceCapability.sessionVoiceMirror,
+        privacyScope: VoicePrivacyScope.participantTransient,
+      );
+      final succeeded = VoicePlaybackResult(
+        requestedEngine: VoiceEngine.omniVoice,
+        actualEngine: VoiceEngine.omniVoice,
+        usedFallback: false,
+        cacheHit: false,
+      );
+      final failed = VoiceFailure(
+        category: VoiceFailureCategory.network,
+        message: 'Unable to reach the voice service.',
+      );
+      final cancelled = VoiceFailure(
+        category: VoiceFailureCategory.cancelled,
+        message: 'Playback was cancelled.',
+      );
+      final occurred = DateTime.utc(2026, 7, 24, 10, 30);
+
+      final succeededEvent = VoiceTelemetryEvent.succeeded(
+        request: request,
+        result: succeeded,
+        latency: const Duration(milliseconds: 100),
+        occurredAtUtc: occurred,
+      );
+      final failedEvent = VoiceTelemetryEvent.failed(
+        request: request,
+        requestedEngine: VoiceEngine.omniVoice,
+        failure: failed,
+        latency: const Duration(milliseconds: 100),
+        occurredAtUtc: occurred,
+      );
+      final cancelledEvent = VoiceTelemetryEvent.failed(
+        request: request,
+        requestedEngine: VoiceEngine.omniVoice,
+        failure: cancelled,
+        latency: const Duration(milliseconds: 100),
+        occurredAtUtc: occurred,
+      );
+
+      for (final event in [succeededEvent, failedEvent, cancelledEvent]) {
+        expect(event.capability, VoiceCapability.sessionVoiceMirror);
+        expect(event.privacyScope, VoicePrivacyScope.participantTransient);
+        expect(event.toMap()['capability'], 'sessionVoiceMirror');
+        expect(event.toMap()['privacyScope'], 'participantTransient');
+      }
     });
 
     test('native fallback requires and preserves its fallbackReason', () {
@@ -377,6 +451,65 @@ void main() {
             );
           }
         }
+      }
+    });
+
+    test('serializes sessionVoiceMirror + participantTransient as enum names '
+        'only, with no raw participant identity, voice clone id, or token', () {
+      final request = _request(
+        capability: VoiceCapability.sessionVoiceMirror,
+        privacyScope: VoicePrivacyScope.participantTransient,
+        // Private fields that must never surface in telemetry.
+        text: 'mirror-secret-spoken-phrase-7c2a',
+        voiceId: 'clone-id-secret-7c2a',
+      );
+      final result = VoicePlaybackResult(
+        requestedEngine: VoiceEngine.omniVoice,
+        actualEngine: VoiceEngine.omniVoice,
+        usedFallback: false,
+        cacheHit: false,
+        requestId: 'req-mirror',
+        modelVersion: 'omnivoice-2026-07',
+      );
+      final occurred = DateTime.utc(2026, 7, 24, 10, 30);
+
+      final event = VoiceTelemetryEvent.succeeded(
+        request: request,
+        result: result,
+        latency: const Duration(milliseconds: 200),
+        occurredAtUtc: occurred,
+      );
+
+      final map = event.toMap();
+
+      // The mirror/transient pairing is reported only as enum names — never as
+      // raw participant ids, voice clone ids, tokens, or audio.
+      expect(map['capability'], 'sessionVoiceMirror');
+      expect(map['privacyScope'], 'participantTransient');
+      expect(map.containsKey('text'), isFalse);
+      expect(map.containsKey('language'), isFalse);
+      expect(map.containsKey('voiceId'), isFalse);
+      expect(map.containsKey('speed'), isFalse);
+      expect(map.containsKey('audio'), isFalse);
+      expect(map.containsKey('participantId'), isFalse);
+      expect(map.containsKey('voiceCloneId'), isFalse);
+      expect(map.containsKey('token'), isFalse);
+
+      // No mirror/transient value carries the private sentinels either.
+      for (final sentinel in [
+        'mirror-secret-spoken-phrase-7c2a',
+        'clone-id-secret-7c2a',
+      ]) {
+        expect(
+          map['capability'].toString(),
+          isNot(contains(sentinel)),
+          reason: 'capability leaks sentinel "$sentinel"',
+        );
+        expect(
+          map['privacyScope'].toString(),
+          isNot(contains(sentinel)),
+          reason: 'privacyScope leaks sentinel "$sentinel"',
+        );
       }
     });
   });

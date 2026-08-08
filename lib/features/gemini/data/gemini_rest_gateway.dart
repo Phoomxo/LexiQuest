@@ -141,6 +141,47 @@ final class GeminiRestGateway implements GeminiGateway {
     return _parseText(response.body);
   }
 
+  @override
+  Future<List<String>> listModels(
+    String key, {
+    GeminiCancellation? cancellation,
+  }) async {
+    final normalized = _normalizedKey(key);
+    final abort = _abortFor(cancellation);
+    final request = http.AbortableRequest(
+      'GET',
+      _baseUri.resolve('/v1beta/models'),
+      abortTrigger: abort.future,
+    )..headers['x-goog-api-key'] = normalized;
+    final response = await _send(
+      request,
+      abort: abort,
+      cancellation: cancellation,
+    );
+    if (response.statusCode != 200) {
+      throw _failureFor(response.statusCode);
+    }
+    try {
+      final decoded = jsonDecode(response.body);
+      if (decoded is! Map<String, dynamic>) {
+        throw const GeminiException(GeminiFailureCode.malformedResponse);
+      }
+      final models = decoded['models'];
+      if (models is! List) {
+        throw const GeminiException(GeminiFailureCode.malformedResponse);
+      }
+      return models
+          .whereType<Map<String, dynamic>>()
+          .map((m) => m['name'])
+          .whereType<String>()
+          .map((name) => name.startsWith('models/') ? name.substring(7) : name)
+          .where((name) => name.contains('gemini'))
+          .toList(growable: false);
+    } on FormatException {
+      throw const GeminiException(GeminiFailureCode.malformedResponse);
+    }
+  }
+
   Future<http.Response> _send(
     http.AbortableRequest request, {
     required Completer<void> abort,

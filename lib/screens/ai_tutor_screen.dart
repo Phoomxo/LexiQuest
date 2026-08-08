@@ -430,6 +430,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       'ยังไม่ได้ยินยอมส่งข้อความไป Gemini กรุณาเปิดหน้าตั้งค่า',
     GeminiFailureCode.invalidKey => 'Gemini API key ไม่ถูกต้องหรือถูกบล็อก',
     GeminiFailureCode.quota => 'โควตาหรือเพดานใช้งาน Gemini เต็มแล้ว',
+    GeminiFailureCode.rateLimited => 'Gemini จำกัดอัตราการเรียก กรุณารอสักครู่',
     GeminiFailureCode.offline =>
       'อุปกรณ์ออฟไลน์ ข้อมูลการเรียนในเครื่องยังใช้ได้',
     GeminiFailureCode.timeout => 'Gemini ตอบกลับช้าเกินกำหนด กรุณาลองใหม่',

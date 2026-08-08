@@ -52,8 +52,10 @@ void main() {
 
       expect(writer.writtenEvents.length, 1);
       final data = writer.writtenEvents.first;
-      expect(data['schemaVersion'], 'voice_telemetry_v1');
+      expect(data['schemaVersion'], 'voice_telemetry_v2');
       expect(data['outcome'], 'succeeded');
+      expect(data['capability'], 'standardTargetSpeech');
+      expect(data['privacyScope'], 'standardContent');
       expect(data['contentId'], 'word-1');
       expect(data['contentType'], 'vocabulary');
       expect(data['cacheHit'], true);
