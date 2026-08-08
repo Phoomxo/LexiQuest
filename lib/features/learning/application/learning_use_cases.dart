@@ -261,6 +261,27 @@ final class LearningUseCases {
     return result;
   }
 
+  /// Returns the most recent active session for the current owner, or null.
+  Future<LearningSessionSummary?> getActiveSession() async {
+    final owner = await owners.getOrCreateActiveOwner();
+    return repository.getActiveSession(ownerId: owner.id);
+  }
+
+  /// Abandons all active sessions for the current owner. Call on app start
+  /// when the user chooses not to resume.
+  Future<void> abandonActiveSessions() async {
+    final owner = await owners.getOrCreateActiveOwner();
+    await repository.abandonActiveSessions(ownerId: owner.id);
+  }
+
+  /// Returns the [limit] most recent completed sessions for the current owner.
+  Future<List<LearningSessionSummary>> listSessionHistory({
+    int limit = 20,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    return repository.listSessionHistory(ownerId: owner.id, limit: limit);
+  }
+
   Future<ReadingProgressSnapshot?> loadReadingProgress({
     required String documentId,
     required int documentRevision,

@@ -91,8 +91,10 @@ class _AchievementsScreenState extends State<AchievementsScreen> {
 
   String _title(String id) => switch (id) {
     'first_answer' => 'บันทึกคำตอบครั้งแรก',
+    'first_correct' => 'ตอบถูกครั้งแรก',
     'first_session' => 'เรียนจบเซสชันแรก',
     'perfect_session' => 'ตอบถูกครบทั้งเซสชัน',
+    'ten_correct' => 'ตอบถูกครบ 10 ครั้ง',
     _ => id,
   };
 

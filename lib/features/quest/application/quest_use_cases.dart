@@ -7,6 +7,16 @@ import '../domain/quest_repository.dart';
 typedef QuestUtcNow = DateTime Function();
 typedef QuestIdGenerator = String Function();
 
+/// Called when a quest completes. The callback grants the XP reward to the
+/// learner's points ledger. Errors are swallowed in production — reward
+/// failure must never break the learning flow.
+typedef QuestRewardSink = Future<void> Function({
+  required String ownerId,
+  required String idempotencyKey,
+  required int xpAmount,
+  String? rewardItemId,
+});
+
 /// Application façade for the V2 Quest domain.
 ///
 /// All mutations go through this class; callers never touch [QuestRepository]
@@ -24,6 +34,7 @@ final class QuestUseCases {
     required this.nowUtc,
     required this.timezoneId,
     this.shadowOrchestrator,
+    this.rewardSink,
   });
 
   final QuestRepository repository;
@@ -38,6 +49,10 @@ final class QuestUseCases {
   /// shadow pipeline.  Errors are swallowed — shadow mode must never break
   /// production.
   final ShadowRewardOrchestrator? shadowOrchestrator;
+
+  /// When non-null, quest-completion XP is granted to the learner's points
+  /// ledger via this callback. Idempotent by `idempotencyKey`.
+  final QuestRewardSink? rewardSink;
 
   // ── Public API ─────────────────────────────────────────────────────────────
 
@@ -112,6 +127,7 @@ final class QuestUseCases {
         final completedEvent = updated.complete(now: now);
         completed.add(completedEvent);
         _forwardToShadow(completedEvent, event);
+        await _grantReward(def, completedEvent);
       }
     }
     return completed;
@@ -199,4 +215,25 @@ final class QuestUseCases {
   /// Extracts quest type hint from the deterministic idempotency key.
   /// Falls back to 'daily' which maps to the lowest reward tier.
   String _questTypeFromIdempotencyKey(String key) => 'daily';
+
+  /// Grants quest-completion XP via [rewardSink] when wired.
+  /// Idempotent by `completedEvent.idempotencyKey`. Errors are swallowed.
+  Future<void> _grantReward(
+    QuestDefinition def,
+    QuestCompletedEvent completedEvent,
+  ) async {
+    final sink = rewardSink;
+    if (sink == null) return;
+    if (def.reward.xpAmount <= 0) return;
+    try {
+      await sink(
+        ownerId: completedEvent.ownerId,
+        idempotencyKey: completedEvent.idempotencyKey,
+        xpAmount: def.reward.xpAmount,
+        rewardItemId: def.reward.rewardItemId,
+      );
+    } catch (_) {
+      // Reward grant failure must never break the learning flow.
+    }
+  }
 }

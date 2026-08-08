@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'mastery_dashboard_screen.dart';
 import 'quiz_screen.dart';
 import 'select_category_for_quiz.dart';
+import 'shadowing_challenge_screen.dart';
 import '../navigation/app_routes.dart';
 import 'srs_flashcards_screen.dart';
 import 'weakness_clinic_screen.dart';
@@ -47,10 +48,17 @@ class ChooseModeScreen extends StatelessWidget {
             subtitle: 'คัดคำจากคำตอบผิดและสถานะ SRS จริง',
             onTap: () => _push(context, const WeaknessClinicScreen()),
           ),
+          _LearningTile(
+            icon: Icons.record_voice_over_outlined,
+            title: 'Shadowing Challenge',
+            subtitle: 'ฝึกพูดตามแบบอย่าง',
+            onTap: () => _push(context, const ShadowingChallengeScreen()),
+          ),
           const Padding(
             padding: EdgeInsets.only(top: 20),
             child: Text(
-              'กิจกรรมกล้อง เสียง AI และเกมที่ยังไม่เชื่อมข้อมูลจริงจะไม่แสดงในรุ่นทดสอบนี้',
+              'เกม Word Scramble, Sentence Scramble, Fill in the Blank, '
+              'Dictation และ Boss Battle จะเปิดใน P4 (Games)',
               textAlign: TextAlign.center,
             ),
           ),

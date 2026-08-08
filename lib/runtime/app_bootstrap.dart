@@ -292,9 +292,10 @@ final class AppBootstrap {
       repository: DriftResearchConsentRepository(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final rewardRepository = DriftRewardRepository(database);
     final rewards = RewardUseCases(
       owners: localOwners,
-      repository: DriftRewardRepository(database),
+      repository: rewardRepository,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
@@ -316,6 +317,17 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: DateTime.now().timeZoneName,
       shadowOrchestrator: shadowOrchestrator,
+      rewardSink: ({
+        required ownerId,
+        required idempotencyKey,
+        required xpAmount,
+        rewardItemId,
+      }) =>
+          rewardRepository.grantQuestXp(
+        ownerId: ownerId,
+        idempotencyKey: idempotencyKey,
+        xpAmount: xpAmount,
+      ),
     );
 
     // ── Streak tracking (must precede learning wiring) ───────────────────

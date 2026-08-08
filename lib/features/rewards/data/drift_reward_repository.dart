@@ -192,4 +192,28 @@ final class DriftRewardRepository {
       completer.complete();
     }
   }
+
+  /// Grants XP for quest completion. Idempotent by [idempotencyKey] —
+  /// uses insertOrIgnore so duplicate grants are silently skipped.
+  Future<void> grantQuestXp({
+    required String ownerId,
+    required String idempotencyKey,
+    required int xpAmount,
+  }) async {
+    if (xpAmount == 0) return;
+    return _serialized(() async {
+      await database.into(database.pointsLedgerEntries).insert(
+            PointsLedgerEntriesCompanion.insert(
+              id: idempotencyKey,
+              ownerId: ownerId,
+              idempotencyKey: idempotencyKey,
+              entryType: 'questCompletion',
+              amount: xpAmount,
+              sourceEventId: Value(idempotencyKey),
+              occurredAtUtcMs: DateTime.now().toUtc().millisecondsSinceEpoch,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    });
+  }
 }

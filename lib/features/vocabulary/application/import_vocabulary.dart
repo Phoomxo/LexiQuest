@@ -72,6 +72,7 @@ final class ImportVocabulary {
                   meaning: _canonical(row['meaning']!),
                   normalizedMeaning: normalizeVocabularyText(row['meaning']!),
                   partOfSpeech: _canonical(row['partOfSpeech']!),
+                  cefrLevel: _validCefrLevel(row['cefrLevel']),
                   source: 'import',
                   isGlobal: false,
                   localRevision: 1,
@@ -137,6 +138,17 @@ String? _validateRow(Map<String, String> row) {
 }
 
 String _canonical(String value) => value.trim().replaceAll(RegExp(r'\s+'), ' ');
+
+/// Valid CEFR levels accepted from import rows. Case-insensitive.
+const _validCefrLevels = {'a1', 'a2', 'b1', 'b2', 'c1', 'c2'};
+
+/// Returns the uppercased CEFR level if [raw] is valid, otherwise null.
+String? _validCefrLevel(String? raw) {
+  if (raw == null) return null;
+  final trimmed = raw.trim().toUpperCase();
+  if (_validCefrLevels.contains(trimmed.toLowerCase())) return trimmed;
+  return null;
+}
 
 String _sha256(String value) => sha256.convert(utf8.encode(value)).toString();
 

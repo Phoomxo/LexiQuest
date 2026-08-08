@@ -17,6 +17,22 @@ abstract interface class LearningRepository {
     required DateTime endedAtUtc,
   });
 
+  /// Returns the most recent active (unfinished) session for [ownerId], or
+  /// null when none exists. Used to resume an interrupted session.
+  Future<LearningSessionSummary?> getActiveSession({
+    required String ownerId,
+  });
+
+  /// Marks all active sessions for [ownerId] as abandoned. Called on app
+  /// start when the user chooses not to resume.
+  Future<void> abandonActiveSessions({required String ownerId});
+
+  /// Returns recent completed sessions for [ownerId], newest first.
+  Future<List<LearningSessionSummary>> listSessionHistory({
+    required String ownerId,
+    required int limit,
+  });
+
   Future<List<QuizWord>> listDueWords({
     required String ownerId,
     required DateTime nowUtc,

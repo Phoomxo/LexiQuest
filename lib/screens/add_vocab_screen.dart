@@ -25,7 +25,10 @@ class _AddWordScreenState extends State<AddWordScreen> {
   late final TextEditingController _wordController;
   late final TextEditingController _meaningController;
   late final TextEditingController _partOfSpeechController;
+  String? _cefrLevel;
   bool _saving = false;
+
+  static const _cefrOptions = <String>['A1', 'A2', 'B1', 'B2', 'C1', 'C2'];
 
   @override
   void initState() {
@@ -35,6 +38,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
     _partOfSpeechController = TextEditingController(
       text: widget.word?.partOfSpeech,
     );
+    _cefrLevel = widget.word?.cefrLevel;
   }
 
   @override
@@ -87,6 +91,24 @@ class _AddWordScreenState extends State<AddWordScreen> {
               border: OutlineInputBorder(),
             ),
           ),
+          const SizedBox(height: 12),
+          DropdownButtonFormField<String>(
+            key: const ValueKey('cefr-field'),
+            initialValue: _cefrLevel,
+            decoration: const InputDecoration(
+              labelText: 'ระดับ CEFR (ไม่บังคับ)',
+              border: OutlineInputBorder(),
+            ),
+            items: _cefrOptions
+                .map(
+                  (level) => DropdownMenuItem(
+                    value: level,
+                    child: Text(level),
+                  ),
+                )
+                .toList(),
+            onChanged: (value) => setState(() => _cefrLevel = value),
+          ),
           const SizedBox(height: 20),
           FilledButton.icon(
             key: const ValueKey('save-word'),
@@ -116,6 +138,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
+            cefrLevel: _cefrLevel,
           ),
         );
       } else {
@@ -126,7 +149,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             spelling: _wordController.text,
             meaning: _meaningController.text,
             partOfSpeech: _partOfSpeechController.text,
-            cefrLevel: widget.word!.cefrLevel,
+            cefrLevel: _cefrLevel,
             source: widget.word!.source,
           ),
         );

@@ -211,7 +211,11 @@ final class DriftLearningRepository implements LearningRepository {
       }
       return LearningSessionSummary(
         id: row.id,
+        ownerId: row.ownerId,
+        activityType: row.activityType,
         state: 'completed',
+        startedAtUtc: _fromEpoch(row.startedAtUtcMs)!,
+        endedAtUtc: endedAtUtc,
         correctCount: row.correctCount,
         wrongCount: row.wrongCount,
         score: score,
@@ -458,4 +462,53 @@ final class DriftLearningRepository implements LearningRepository {
   DateTime? _fromEpoch(int? value) => value == null
       ? null
       : DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+
+  @override
+  Future<LearningSessionSummary?> getActiveSession({
+    required String ownerId,
+  }) async {
+    final row = await (database.select(database.learningSessions)
+          ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active'))
+          ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
+          ..limit(1))
+        .getSingleOrNull();
+    if (row == null) return null;
+    return _rowToSummary(row);
+  }
+
+  @override
+  Future<void> abandonActiveSessions({required String ownerId}) async {
+    await (database.update(database.learningSessions)
+          ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active')))
+        .write(const db.LearningSessionsCompanion(state: Value('abandoned')));
+  }
+
+  @override
+  Future<List<LearningSessionSummary>> listSessionHistory({
+    required String ownerId,
+    required int limit,
+  }) async {
+    final rows = await (database.select(database.learningSessions)
+          ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('completed'))
+          ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
+          ..limit(limit))
+        .get();
+    return rows.map(_rowToSummary).toList(growable: false);
+  }
+
+  LearningSessionSummary _rowToSummary(db.LearningSession row) {
+    return LearningSessionSummary(
+      id: row.id,
+      ownerId: row.ownerId,
+      activityType: row.activityType,
+      state: row.state,
+      startedAtUtc: _fromEpoch(row.startedAtUtcMs)!,
+      endedAtUtc: _fromEpoch(row.endedAtUtcMs),
+      correctCount: row.correctCount,
+      wrongCount: row.wrongCount,
+      score: row.score ?? 0,
+      appVersion: row.appVersion,
+      buildId: row.buildId,
+    );
+  }
 }

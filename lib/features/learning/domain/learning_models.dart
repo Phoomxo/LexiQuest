@@ -124,17 +124,29 @@ final class AnswerRecordResult {
 final class LearningSessionSummary {
   const LearningSessionSummary({
     required this.id,
+    required this.ownerId,
+    required this.activityType,
     required this.state,
+    required this.startedAtUtc,
+    this.endedAtUtc,
     required this.correctCount,
     required this.wrongCount,
     required this.score,
+    this.appVersion,
+    this.buildId,
   });
 
   final String id;
+  final String ownerId;
+  final String activityType;
   final String state;
+  final DateTime startedAtUtc;
+  final DateTime? endedAtUtc;
   final int correctCount;
   final int wrongCount;
   final int score;
+  final String? appVersion;
+  final String? buildId;
 }
 
 final class ReadingProgressCommand {
