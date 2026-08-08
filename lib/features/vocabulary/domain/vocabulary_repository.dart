@@ -6,6 +6,9 @@ abstract interface class VocabularyRepository {
 
   Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId);
 
+  /// Returns all non-deleted words for [ownerId] across all categories.
+  Future<List<VocabularyWord>> listAllWords(String ownerId);
+
   Future<VocabularyCategory> createCategory(VocabularyCategory category);
 
   Future<VocabularyCategory> renameCategory({

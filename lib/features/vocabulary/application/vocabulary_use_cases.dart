@@ -84,6 +84,17 @@ final class VocabularyUseCases {
     );
   }
 
+  /// Returns up to [limit] random words from the active owner's vocabulary.
+  /// Used by game screens (Word Scramble, Dictation, Boss Battle, etc.)
+  /// that need content injection. Returns empty list if no words exist.
+  Future<List<VocabularyWord>> getGameWords({int limit = 10}) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final all = await vocabulary.listAllWords(owner.id);
+    if (all.length <= limit) return all;
+    all.shuffle();
+    return all.take(limit).toList(growable: false);
+  }
+
   Future<VocabularyCategory> createCategory(String name) async {
     final canonicalName = _required(
       name,

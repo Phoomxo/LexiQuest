@@ -44,6 +44,19 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   }
 
   @override
+  Future<List<VocabularyWord>> listAllWords(String ownerId) async {
+    final query = database.select(database.vocabularyWords)
+      ..where(
+        (row) =>
+            row.ownerId.equals(ownerId) &
+            row.isDeleted.equals(false),
+      )
+      ..orderBy([(row) => OrderingTerm.asc(row.normalizedSpelling)]);
+    final rows = await query.get();
+    return rows.map(_wordToDomain).toList(growable: false);
+  }
+
+  @override
   Future<VocabularyCategory> createCategory(VocabularyCategory category) async {
     _requireUtc(category.createdAtUtc);
     _requireUtc(category.updatedAtUtc);
