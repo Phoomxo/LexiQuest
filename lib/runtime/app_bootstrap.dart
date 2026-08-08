@@ -18,6 +18,9 @@ import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
+import '../features/ai_tutor/application/ai_tutor_use_cases.dart';
+import '../features/ai_tutor/data/ai_tutor_settings_store.dart';
+import '../features/ai_tutor/data/drift_ai_usage_repository.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
@@ -71,6 +74,7 @@ import '../features/voice/application/voice_use_cases.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
+import 'download_counter.dart';
 import 'app_runtime_status.dart';
 import 'registries/feature_registry.dart';
 import 'supabase_client_config.dart';
@@ -319,17 +323,17 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: DateTime.now().timeZoneName,
       shadowOrchestrator: shadowOrchestrator,
-      rewardSink: ({
-        required ownerId,
-        required idempotencyKey,
-        required xpAmount,
-        rewardItemId,
-      }) =>
-          rewardRepository.grantQuestXp(
-        ownerId: ownerId,
-        idempotencyKey: idempotencyKey,
-        xpAmount: xpAmount,
-      ),
+      rewardSink:
+          ({
+            required ownerId,
+            required idempotencyKey,
+            required xpAmount,
+            rewardItemId,
+          }) => rewardRepository.grantQuestXp(
+            ownerId: ownerId,
+            idempotencyKey: idempotencyKey,
+            xpAmount: xpAmount,
+          ),
     );
 
     // ── Streak tracking (must precede learning wiring) ───────────────────
@@ -355,10 +359,8 @@ final class AppBootstrap {
       onLocalMutation: notifyLocalMutation,
       shadowOrchestrator: shadowOrchestrator,
       eventAdapter: eventAdapter,
-      questEventSink: (event) => quest.processEvent(
-        event,
-        QuestCatalogProvider.allQuests,
-      ),
+      questEventSink: (event) =>
+          quest.processEvent(event, QuestCatalogProvider.allQuests),
       streakEventSink: () => streak.recordLearningDay(),
     );
     final exports = ExportUseCases(
@@ -372,6 +374,10 @@ final class AppBootstrap {
     );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());
+    final downloadCounter = DownloadCounter(
+      database,
+      generateEventId: idGenerator.v4,
+    );
     final modelDownloadManager = ModelDownloadManager(
       repository: modelRepository,
       source: modelByteSource,
@@ -381,6 +387,7 @@ final class AppBootstrap {
         return Directory('${support.path}${Platform.pathSeparator}models');
       },
       nowUtc: () => DateTime.now().toUtc(),
+      onDownloadCompleted: downloadCounter.increment,
     );
     final deviceModels = DeviceModelUseCases(
       manifest: ModelManifest.fieldImageClassifier,
@@ -411,6 +418,16 @@ final class AppBootstrap {
       ),
       loadProgress: progress.load,
       nowUtc: () => DateTime.now().toUtc(),
+    );
+    final aiTutorHttpClient = http.Client();
+    final aiUsage = DriftAiUsageRepository(database);
+    final aiTutor = AiTutorUseCases(
+      store: SecureAiTutorSettingsStore.production(),
+      nowUtc: () => DateTime.now().toUtc(),
+      httpClient: aiTutorHttpClient,
+      loadProgress: progress.load,
+      usageRepository: aiUsage,
+      usageEventId: idGenerator.v4,
     );
 
     // ── Associative learning (in-memory fallback adapter) ──────────────────
@@ -465,6 +482,8 @@ final class AppBootstrap {
       account: account,
       researchConsent: researchConsent,
       geminiTutor: geminiTutor,
+      aiTutor: aiTutor,
+      aiUsage: aiUsage,
       objectScanner: objectScanner,
       speechPractice: speechPractice,
       quest: quest,
@@ -474,6 +493,8 @@ final class AppBootstrap {
       disposeResources: () async {
         await geminiTutor.dispose();
         geminiHttpClient.close();
+        await aiTutor.dispose();
+        aiTutorHttpClient.close();
         await objectScanner.dispose();
         await speechPractice.dispose();
         await deviceModels.dispose();

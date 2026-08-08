@@ -47,6 +47,7 @@ final class ModelDownloadManager {
     required this.nowUtc,
     this.lockTimeout = const Duration(seconds: 30),
     this.lockRetryDelay = const Duration(milliseconds: 50),
+    this.onDownloadCompleted,
   });
 
   final ModelDownloadRepository repository;
@@ -56,6 +57,7 @@ final class ModelDownloadManager {
   final DateTime Function() nowUtc;
   final Duration lockTimeout;
   final Duration lockRetryDelay;
+  final Future<void> Function(String modelVersion)? onDownloadCompleted;
   Future<ModelDownloadRecord>? _inFlight;
   ModelCancellation? _activeCancellation;
   bool _disposed = false;
@@ -296,6 +298,12 @@ final class ModelDownloadManager {
         clearFailure: true,
       );
       await repository.activate(record);
+      try {
+        await onDownloadCompleted?.call(manifest.version);
+      } catch (_) {
+        // Cost observability must not turn an already activated, verified
+        // local model into a user-visible download failure.
+      }
       return record.copyWith(state: ModelDownloadState.active);
     } on ModelLifecycleException catch (error) {
       final state = error.code == ModelFailureCode.cancelled

@@ -33,12 +33,16 @@ void main() {
       await partial.writeAsBytes(bytes.take(8).toList(), flush: true);
       final source = _MemoryRangeSource(bytes);
       final verifier = _RecordingVerifier();
+      final completedVersions = <String>[];
       final manager = ModelDownloadManager(
         repository: repository,
         source: source,
         verifier: verifier,
         modelDirectory: () async => directory,
         nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+        onDownloadCompleted: (version) async {
+          completedVersions.add(version);
+        },
       );
 
       final result = await manager.downloadAndActivate(manifest);
@@ -50,6 +54,7 @@ void main() {
       expect(await partial.exists(), isFalse);
       expect(verifier.paths.single, endsWith('.tflite.partial'));
       expect(repository.activations, 1);
+      expect(completedVersions, [manifest.version]);
     },
   );
 
@@ -119,12 +124,16 @@ void main() {
     final bytes = utf8.encode('single-download');
     final manifest = _manifestFor(bytes);
     final source = _MemoryRangeSource(bytes, chunkSize: 2);
+    final completedVersions = <String>[];
     final manager = ModelDownloadManager(
       repository: repository,
       source: source,
       verifier: _RecordingVerifier(),
       modelDirectory: () async => directory,
       nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+      onDownloadCompleted: (version) async {
+        completedVersions.add(version);
+      },
     );
 
     final results = await Future.wait([
@@ -134,6 +143,7 @@ void main() {
 
     expect(source.requestedStarts, [0]);
     expect(repository.activations, 1);
+    expect(completedVersions, [manifest.version]);
     expect(results.map((result) => result.localPath).toSet(), hasLength(1));
   });
 
@@ -141,6 +151,7 @@ void main() {
     final bytes = utf8.encode('cross-manager-download');
     final manifest = _manifestFor(bytes);
     final source = _MemoryRangeSource(bytes, chunkSize: 2);
+    final completedVersions = <String>[];
     ModelDownloadManager createManager() => ModelDownloadManager(
       repository: repository,
       source: source,
@@ -148,6 +159,9 @@ void main() {
       modelDirectory: () async => directory,
       nowUtc: () => DateTime.utc(2026, 7, 30, 8),
       lockRetryDelay: const Duration(milliseconds: 1),
+      onDownloadCompleted: (version) async {
+        completedVersions.add(version);
+      },
     );
     final first = createManager();
     final second = createManager();
@@ -159,6 +173,7 @@ void main() {
 
     expect(source.requestedStarts, [0]);
     expect(repository.activations, 1);
+    expect(completedVersions, [manifest.version]);
     expect(
       results.every((result) => result.state == ModelDownloadState.active),
       isTrue,
@@ -200,6 +215,25 @@ void main() {
     expect(repository.activations, 1);
     expect(result.state, ModelDownloadState.active);
     expect(result.localPath, finalFile.path);
+  });
+
+  test('observability failure never changes a successful activation', () async {
+    final bytes = utf8.encode('verified-despite-counter');
+    final manifest = _manifestFor(bytes);
+    final manager = ModelDownloadManager(
+      repository: repository,
+      source: _MemoryRangeSource(bytes),
+      verifier: _RecordingVerifier(),
+      modelDirectory: () async => directory,
+      nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+      onDownloadCompleted: (_) async => throw StateError('counter unavailable'),
+    );
+
+    final result = await manager.downloadAndActivate(manifest);
+
+    expect(result.state, ModelDownloadState.active);
+    expect(repository.record?.state, ModelDownloadState.active);
+    expect(repository.activations, 1);
   });
 
   test('rejects a mismatched Content-Range before appending', () async {

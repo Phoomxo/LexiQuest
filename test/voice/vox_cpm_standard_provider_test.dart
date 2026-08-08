@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vocab_learning_app/runtime/circuit_breaker.dart';
 import 'package:vocab_learning_app/voice/voice_auth_token_provider.dart';
 import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -208,5 +209,42 @@ void main() {
     );
 
     expect(sends, 1);
+  });
+
+  test('short-circuits after a transient provider outage', () async {
+    var sends = 0;
+    final breaker = CircuitBreaker(threshold: 1);
+    final provider = VoxCpmStandardProvider(
+      client: MockClient((_) async {
+        sends++;
+        throw http.ClientException('offline');
+      }),
+      authTokenProvider: _Tokens(),
+      baseUri: _baseUri,
+      circuitBreaker: breaker,
+    );
+
+    await expectLater(
+      provider.synthesize(_request()),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.network,
+        ),
+      ),
+    );
+    await expectLater(
+      provider.synthesize(_request()),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.rateLimited,
+        ),
+      ),
+    );
+    expect(sends, 1);
+    expect(provider.circuitState, CircuitState.open);
   });
 }

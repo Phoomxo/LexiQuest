@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../runtime/circuit_breaker.dart';
 import 'voice_auth_token_provider.dart';
 import 'voice_capability.dart';
 import 'voice_models.dart';
@@ -59,6 +60,7 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     required Uri baseUri,
     Duration timeout = const Duration(seconds: 30),
     VoiceRequestQuota? quota,
+    CircuitBreaker? circuitBreaker,
   }) {
     return VoxCpmStandardProvider._(
       client,
@@ -66,6 +68,7 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
       baseUri.resolve('/v1/speech'),
       timeout,
       quota,
+      circuitBreaker ?? CircuitBreaker(shouldCountFailure: _shouldTrip),
     );
   }
 
@@ -75,6 +78,7 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     this._speechUri,
     this._timeout,
     this._quota,
+    this._circuitBreaker,
   );
 
   final http.Client _client;
@@ -82,6 +86,9 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
   final Uri _speechUri;
   final Duration _timeout;
   final VoiceRequestQuota? _quota;
+  final CircuitBreaker _circuitBreaker;
+
+  CircuitState get circuitState => _circuitBreaker.state;
 
   static final VoiceProviderDescriptor _descriptor = VoiceProviderDescriptor(
     engine: VoiceEngine.voxCpmStandard,
@@ -105,9 +112,17 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
     final quota = _quota;
     if (request.capability == VoiceCapability.dynamicTargetSpeech &&
         quota != null) {
-      return quota.run(request, () => _synthesizeRemote(request));
+      return quota.run(request, () => _synthesizeProtected(request));
     }
-    return _synthesizeRemote(request);
+    return _synthesizeProtected(request);
+  }
+
+  Future<VoiceAudio> _synthesizeProtected(VoiceRequest request) async {
+    try {
+      return await _circuitBreaker.call(() => _synthesizeRemote(request));
+    } on CircuitBreakerOpenException {
+      throw _rateLimitedFailure;
+    }
   }
 
   Future<VoiceAudio> _synthesizeRemote(VoiceRequest request) async {
@@ -214,5 +229,16 @@ final class VoxCpmStandardProvider implements VoiceSynthesisProvider {
       if (entry.key.toLowerCase() == target) return entry.value;
     }
     return null;
+  }
+
+  static bool _shouldTrip(Object error) {
+    if (error is! VoiceFailure) return false;
+    return <VoiceFailureCategory>{
+      VoiceFailureCategory.network,
+      VoiceFailureCategory.timeout,
+      VoiceFailureCategory.modelUnavailable,
+      VoiceFailureCategory.synthesis,
+      VoiceFailureCategory.unknown,
+    }.contains(error.category);
   }
 }

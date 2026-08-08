@@ -58,6 +58,8 @@ void main() {
       expect(dependencies.objectScanner, isNotNull);
       expect(dependencies.speechPractice, isNotNull);
       expect(dependencies.geminiTutor, isNotNull);
+      expect(dependencies.aiTutor, isNotNull);
+      expect(dependencies.aiUsage, isNotNull);
     });
 
     test(

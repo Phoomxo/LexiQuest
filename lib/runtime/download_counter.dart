@@ -1,48 +1,56 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../data/local/app_database.dart' as db;
 
-/// Tracks total downloads per model/asset version.
+/// Durable event counter for completed model downloads.
 ///
-/// Uses the `runtime_flags` table with a `download_count:<version>` key
-/// convention. Incremented on each successful download completion.
-/// Used for cost monitoring (detecting runaway re-downloads).
-class DownloadCounter {
-  DownloadCounter(this._database);
+/// Each completion is a separate row so repeated downloads are observable
+/// without adding a release-blocking schema migration.
+final class DownloadCounter {
+  DownloadCounter(
+    this._database, {
+    required this.generateEventId,
+    DateTime Function()? nowUtc,
+  }) : _nowUtc = nowUtc ?? _systemNowUtc;
 
   final db.AppDatabase _database;
+  final String Function() generateEventId;
+  final DateTime Function() _nowUtc;
 
-  /// Increments the download counter for [version].
   Future<void> increment(String version) async {
-    final key = 'download_count:$version';
-    final existing = await (_database.select(_database.runtimeFlags)
-          ..where((t) => t.key.equals(key)))
-        .getSingleOrNull();
-
-    if (existing != null) {
-      await (_database.update(_database.runtimeFlags)
-            ..where((t) => t.key.equals(key)))
-          .write(db.RuntimeFlagsCompanion(
-        updatedAtUtcMs: Value(DateTime.now().toUtc().millisecondsSinceEpoch),
-      ));
-    } else {
-      await _database.into(_database.runtimeFlags).insert(
-            db.RuntimeFlagsCompanion.insert(
-              key: key,
-              boolValue: false,
-              updatedAtUtcMs:
-                  DateTime.now().toUtc().millisecondsSinceEpoch,
-            ),
-          );
+    final normalizedVersion = version.trim();
+    if (normalizedVersion.isEmpty) {
+      throw ArgumentError.value(version, 'version', 'must not be empty');
     }
+    final eventId = generateEventId().trim();
+    if (eventId.isEmpty) {
+      throw StateError('Download event id must not be empty.');
+    }
+    final prefix = _keyPrefix(normalizedVersion);
+    await _database
+        .into(_database.runtimeFlags)
+        .insert(
+          db.RuntimeFlagsCompanion.insert(
+            key: '$prefix$eventId',
+            boolValue: false,
+            source: const Value('download_counter'),
+            updatedAtUtcMs: _nowUtc().toUtc().millisecondsSinceEpoch,
+          ),
+        );
   }
 
-  /// Returns the count of downloads recorded for [version].
   Future<int> count(String version) async {
-    final key = 'download_count:$version';
-    final row = await (_database.select(_database.runtimeFlags)
-          ..where((t) => t.key.equals(key)))
-        .getSingleOrNull();
-    return row != null ? 1 : 0;
+    final prefix = _keyPrefix(version.trim());
+    final rows = await _database.select(_database.runtimeFlags).get();
+    return rows.where((row) => row.key.startsWith(prefix)).length;
   }
+
+  static String _keyPrefix(String version) {
+    final encoded = base64Url.encode(utf8.encode(version)).replaceAll('=', '');
+    return 'download_count:$encoded:';
+  }
+
+  static DateTime _systemNowUtc() => DateTime.now().toUtc();
 }

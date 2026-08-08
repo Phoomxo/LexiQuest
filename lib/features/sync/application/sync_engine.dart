@@ -50,6 +50,7 @@ final class SyncEngine {
     required this.nowUtc,
     required this.generateLeaseToken,
     this.jitter = _zeroJitter,
+    this.requestTimeout = const Duration(seconds: 30),
   });
 
   static const int pushLimit = 50;
@@ -66,6 +67,7 @@ final class SyncEngine {
   final SyncUtcNow nowUtc;
   final SyncLeaseTokenGenerator generateLeaseToken;
   final SyncJitterSource jitter;
+  final Duration requestTimeout;
   final Set<String> _permissionRecoveryAttemptedOwners = <String>{};
 
   Future<SyncRunResult> run() async {
@@ -122,9 +124,9 @@ final class SyncEngine {
       );
       for (final claim in claimed) {
         try {
-          final result = await gateway
-              .push(claim.mutation)
-              .timeout(const Duration(seconds: 30));
+          final result = await _withRequestTimeout(
+            gateway.push(claim.mutation),
+          );
           switch (result) {
             case PushAcknowledged():
               await store.acknowledge(
@@ -174,14 +176,14 @@ final class SyncEngine {
         for (final collection in SyncCollection.values) {
           try {
             final checkpoint = await store.readCheckpoint(owner.id, collection);
-            final page = await gateway
-                .pull(
-                  firebaseUid: firebaseUid,
-                  collection: collection,
-                  after: checkpoint,
-                  limit: pullLimit,
-                )
-                .timeout(const Duration(seconds: 30));
+            final page = await _withRequestTimeout(
+              gateway.pull(
+                firebaseUid: firebaseUid,
+                collection: collection,
+                after: checkpoint,
+                limit: pullLimit,
+              ),
+            );
             await store.applyPullPage(
               ownerId: owner.id,
               collection: collection,
@@ -217,6 +219,13 @@ final class SyncEngine {
       throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
     }
     return value;
+  }
+
+  Future<T> _withRequestTimeout<T>(Future<T> operation) {
+    return operation.timeout(
+      requestTimeout,
+      onTimeout: () => throw const ProviderUnavailableSyncFailure(),
+    );
   }
 }
 

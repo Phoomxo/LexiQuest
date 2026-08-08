@@ -54,7 +54,11 @@ void main() {
     await database.close();
   });
 
-  SyncEngine engine({bool cloudEnabled = true, SyncMutex? mutex}) {
+  SyncEngine engine({
+    bool cloudEnabled = true,
+    SyncMutex? mutex,
+    Duration requestTimeout = const Duration(seconds: 30),
+  }) {
     return SyncEngine(
       owners: owners,
       store: store,
@@ -69,6 +73,7 @@ void main() {
       backoff: const SyncBackoff(jitterFraction: 0),
       nowUtc: () => nowUtc,
       generateLeaseToken: () => 'lease-${++leaseCounter}',
+      requestTimeout: requestTimeout,
     );
   }
 
@@ -181,6 +186,25 @@ void main() {
     expect(result.conflicts, 1);
     expect(category.name, 'Cloud Travel');
     expect(conflicts, hasLength(1));
+  });
+
+  test('push timeout becomes a retryable partial failure', () async {
+    await _seedCategoryOperation(database);
+    final neverCompletes = Completer<PushResult>();
+    gateway.onPush = (_) => neverCompletes.future;
+
+    final result = await engine(
+      requestTimeout: const Duration(milliseconds: 10),
+    ).run();
+    final operation = await database
+        .select(database.outboxOperations)
+        .getSingle();
+
+    expect(result.status, SyncRunStatus.partialFailure);
+    expect(result.failures, 1);
+    expect(result.retryRecommended, isTrue);
+    expect(operation.state, 'retryWaiting');
+    expect(operation.failureCode, SyncFailureCode.providerUnavailable.name);
   });
 
   test('separate foreground and background isolates cannot overlap', () async {

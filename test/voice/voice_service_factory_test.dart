@@ -40,14 +40,19 @@ AppConfig _config() => AppConfig.fromValues(
   isDebug: true,
 );
 
-VoiceRequest _request() => VoiceRequest.create(
-  text: 'Hello world.',
+VoiceRequest _request({
+  String text = 'Hello world.',
+  VoiceCapability capability = VoiceCapability.standardTargetSpeech,
+  String contentId = 'word-001',
+}) => VoiceRequest.create(
+  text: text,
   language: 'en',
   voiceId: 'teacher_female',
   speed: 1.0,
-  contentId: 'word-001',
+  contentId: contentId,
   contentType: 'word',
   mode: VoiceMode.practice,
+  capability: capability,
 );
 
 http.Response _wavResponse() => http.Response.bytes(
@@ -164,20 +169,38 @@ void main() {
   });
 
   test('factory preserves OmniVoice as an explicit rollback engine', () async {
+    final client = _RecordingHttpClient((_) async => _wavResponse());
+    final native = _RecordingNativeTtsAdapter();
     final service = VoiceServiceFactory.create(
       config: _config(),
-      client: _RecordingHttpClient((_) async => _wavResponse()),
+      client: client,
       firebaseTokenReader: _RecordingTokenReader(_idToken),
-      nativeTtsAdapter: _RecordingNativeTtsAdapter(),
+      nativeTtsAdapter: native,
       audioPlayerAdapter: _RecordingAudioPlayerAdapter(),
       useOmniVoiceRollback: true,
+      dynamicMaxRequests: 1,
     );
 
-    final result = await service.speak(_request());
+    final result = await service.speak(
+      _request(capability: VoiceCapability.dynamicTargetSpeech),
+    );
 
     expect(result.requestedEngine, VoiceEngine.omniVoice);
     expect(result.actualEngine, VoiceEngine.omniVoice);
     expect(result.usedFallback, isFalse);
+
+    final quotaResult = await service.speak(
+      _request(
+        text: 'Different world.',
+        capability: VoiceCapability.dynamicTargetSpeech,
+        contentId: 'word-002',
+      ),
+    );
+    expect(client.sendCount, 1);
+    expect(quotaResult.requestedEngine, VoiceEngine.omniVoice);
+    expect(quotaResult.actualEngine, VoiceEngine.nativeTts);
+    expect(quotaResult.usedFallback, isTrue);
+    expect(native.speakCalls, <String>['Different world.']);
   });
 
   test('factory prefers an installed verified pack without HTTP', () async {

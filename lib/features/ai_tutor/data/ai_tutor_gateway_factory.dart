@@ -1,6 +1,8 @@
 import 'package:http/http.dart' as http;
 
+import '../../../runtime/circuit_breaker.dart';
 import '../../gemini/data/gemini_rest_gateway.dart';
+import '../../gemini/data/retry_gemini_gateway.dart';
 import '../../gemini/domain/gemini_contracts.dart';
 import '../domain/ai_tutor_contracts.dart';
 import 'anthropic_gateway.dart';
@@ -14,10 +16,16 @@ final class AiTutorGatewayFactory {
   AiTutorGatewayFactory({
     required this._client,
     this._requestTimeout = const Duration(seconds: 20),
-  });
+    CircuitBreaker? geminiBreaker,
+  }) : _geminiBreaker =
+           geminiBreaker ??
+           CircuitBreaker(
+             shouldCountFailure: RetryGeminiGateway.isTransientFailure,
+           );
 
   final http.Client _client;
   final Duration _requestTimeout;
+  final CircuitBreaker _geminiBreaker;
 
   /// Creates a gateway for [providerId]. When [model] is null the provider's
   /// default model is used. [customBaseUrl] is required for
@@ -37,11 +45,14 @@ final class AiTutorGatewayFactory {
     switch (providerId) {
       case AiProvider.gemini:
         return GeminiRestGatewayAdapter(
-          GeminiRestGateway(
-            client: _client,
-            baseUri: config.baseUri,
-            model: effectiveModel,
-            requestTimeout: _requestTimeout,
+          RetryGeminiGateway(
+            GeminiRestGateway(
+              client: _client,
+              baseUri: config.baseUri,
+              model: effectiveModel,
+              requestTimeout: _requestTimeout,
+            ),
+            breaker: _geminiBreaker,
           ),
         );
       case AiProvider.openai:
@@ -101,12 +112,11 @@ final class AiTutorGatewayFactory {
   }
 }
 
-/// Thin adapter that exposes the existing [GeminiRestGateway] as an
-/// [AiTutorGateway] (adds the Gemini provider id).
+/// Adapts a [GeminiGateway] to the provider-neutral tutor boundary.
 final class GeminiRestGatewayAdapter implements AiTutorGateway {
   GeminiRestGatewayAdapter(this._inner);
 
-  final GeminiRestGateway _inner;
+  final GeminiGateway _inner;
 
   @override
   AiProvider get providerId => AiProvider.gemini;
@@ -131,9 +141,10 @@ final class GeminiRestGatewayAdapter implements AiTutorGateway {
   Future<List<AiModel>> listModels(
     String key, {
     AiCancellation? cancellation,
-  }) async => (await _inner.listModels(key, cancellation: _bridge(cancellation)))
-      .map((id) => AiModel(id: id))
-      .toList(growable: false);
+  }) async => (await _inner.listModels(
+    key,
+    cancellation: _bridge(cancellation),
+  )).map((id) => AiModel(id: id)).toList(growable: false);
 
   @override
   Future<AiGatewayReply> generateTutorReply({

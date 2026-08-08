@@ -97,23 +97,25 @@ final class VoiceServiceFactory {
       final remoteEngine = useOmniVoiceRollback
           ? VoiceEngine.omniVoice
           : VoiceEngine.voxCpmStandard;
+      final dynamicQuota = VoiceRequestQuota(
+        maxRequests: dynamicMaxRequests,
+        maxCharacters: dynamicMaxCharacters,
+        maxConcurrent: dynamicMaxConcurrent,
+      );
       final remoteProvider = useOmniVoiceRollback
           ? OmniVoiceProvider(
               client: resolvedClient!,
               authTokenProvider: authTokenProvider,
               baseUri: resolvedConfig.voiceApiBaseUri,
               timeout: timeout,
+              quota: dynamicQuota,
             )
           : VoxCpmStandardProvider(
               client: resolvedClient!,
               authTokenProvider: authTokenProvider,
               baseUri: resolvedConfig.voiceApiBaseUri,
               timeout: timeout,
-              quota: VoiceRequestQuota(
-                maxRequests: dynamicMaxRequests,
-                maxCharacters: dynamicMaxCharacters,
-                maxConcurrent: dynamicMaxConcurrent,
-              ),
+              quota: dynamicQuota,
             );
       handlers.add(
         MapEntry<VoiceEngine, VoiceRouteHandler>(

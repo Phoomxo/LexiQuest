@@ -1,76 +1,106 @@
-import 'dart:async';
+/// Bounded protection for downstream providers.
+///
+/// Exactly one probe is admitted after the open-state cooldown. Concurrent
+/// callers remain fail-closed until that probe succeeds or fails.
+enum CircuitState { closed, open, halfOpen }
 
-/// Simple circuit breaker for protecting downstream providers.
-///
-/// Tracks consecutive failures. After [threshold] consecutive failures the
-/// circuit opens and short-circuits all calls for [resetDelay]. After the
-/// delay it enters half-open: one call is allowed through; if it succeeds
-/// the circuit closes, if it fails it re-opens.
-///
-/// Usage:
-/// ```dart
-/// final breaker = CircuitBreaker(threshold: 5, resetDelay: Duration(minutes: 1));
-/// final result = await breaker.call(() => provider.fetch());
-/// ```
-class CircuitBreaker {
+final class CircuitBreaker {
   CircuitBreaker({
     this.threshold = 5,
     this.resetDelay = const Duration(seconds: 30),
     DateTime Function()? now,
-  }) : _now = now ?? DateTime.now;
+    bool Function(Object error)? shouldCountFailure,
+  }) : _now = now ?? DateTime.now,
+       _shouldCountFailure = shouldCountFailure ?? _alwaysCountFailure {
+    if (threshold <= 0) {
+      throw ArgumentError.value(threshold, 'threshold', 'must be positive');
+    }
+    if (resetDelay.isNegative) {
+      throw ArgumentError.value(
+        resetDelay,
+        'resetDelay',
+        'must not be negative',
+      );
+    }
+  }
 
   final int threshold;
   final Duration resetDelay;
   final DateTime Function() _now;
+  final bool Function(Object error) _shouldCountFailure;
 
+  CircuitState _state = CircuitState.closed;
   int _consecutiveFailures = 0;
   DateTime? _openedAt;
+  bool _halfOpenProbeInFlight = false;
 
-  /// Returns true when the circuit is open (calls should be short-circuited).
-  bool get isOpen {
-    final openedAt = _openedAt;
-    if (openedAt == null) return false;
-    if (_now().difference(openedAt) >= resetDelay) {
-      // Half-open: allow the next call through.
-      return false;
-    }
-    return true;
+  CircuitState get state {
+    _refreshState();
+    return _state;
   }
 
-  bool get isClosed => !isOpen;
+  bool get isOpen => state == CircuitState.open;
+  bool get isClosed => state == CircuitState.closed;
+  bool get isHalfOpen => state == CircuitState.halfOpen;
+  int get consecutiveFailures => _consecutiveFailures;
+  DateTime? get openedAt => _openedAt;
 
-  /// Executes [operation]. Throws [CircuitBreakerOpenException] when the
-  /// circuit is open. On success, resets the failure counter. On failure,
-  /// increments the counter and opens the circuit if the threshold is reached.
   Future<T> call<T>(Future<T> Function() operation) async {
-    if (isOpen) {
+    _refreshState();
+    if (_state == CircuitState.open ||
+        (_state == CircuitState.halfOpen && _halfOpenProbeInFlight)) {
       throw const CircuitBreakerOpenException();
     }
+
+    final isProbe = _state == CircuitState.halfOpen;
+    if (isProbe) _halfOpenProbeInFlight = true;
+
     try {
       final result = await operation();
       _onSuccess();
       return result;
-    } catch (e) {
-      _onFailure();
+    } catch (error) {
+      if (_shouldCountFailure(error)) {
+        _onFailure();
+      } else if (isProbe) {
+        // A validation/auth failure does not prove that the provider outage
+        // continues, so it closes the outage breaker without hiding the error.
+        _onSuccess();
+      }
       rethrow;
+    } finally {
+      if (isProbe) _halfOpenProbeInFlight = false;
+    }
+  }
+
+  void reset() => _onSuccess();
+
+  void _refreshState() {
+    if (_state != CircuitState.open || _openedAt == null) return;
+    if (_now().difference(_openedAt!) >= resetDelay) {
+      _state = CircuitState.halfOpen;
     }
   }
 
   void _onSuccess() {
+    _state = CircuitState.closed;
     _consecutiveFailures = 0;
     _openedAt = null;
+    _halfOpenProbeInFlight = false;
   }
 
   void _onFailure() {
-    _consecutiveFailures++;
-    if (_consecutiveFailures >= threshold) {
+    if (_state == CircuitState.halfOpen ||
+        ++_consecutiveFailures >= threshold) {
+      _state = CircuitState.open;
       _openedAt = _now();
     }
   }
+
+  static bool _alwaysCountFailure(Object error) => true;
 }
 
-/// Thrown when the circuit breaker is open and the call is short-circuited.
-class CircuitBreakerOpenException implements Exception {
+final class CircuitBreakerOpenException implements Exception {
   const CircuitBreakerOpenException();
 
   @override

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math';
 
+import '../../../runtime/circuit_breaker.dart';
 import '../domain/gemini_contracts.dart';
 
 /// Wraps a [GeminiGateway] with bounded retry + exponential backoff for
@@ -17,12 +18,15 @@ class RetryGeminiGateway implements GeminiGateway {
     this.maxAttempts = 3,
     this.baseDelay = const Duration(seconds: 1),
     this.random,
-  });
+    CircuitBreaker? breaker,
+  }) : _breaker =
+           breaker ?? CircuitBreaker(shouldCountFailure: isTransientFailure);
 
   final GeminiGateway _inner;
   final int maxAttempts;
   final Duration baseDelay;
   final Random? random;
+  final CircuitBreaker _breaker;
 
   static const _retryableCodes = {
     GeminiFailureCode.timeout,
@@ -34,6 +38,8 @@ class RetryGeminiGateway implements GeminiGateway {
 
   @override
   String get model => _inner.model;
+
+  CircuitState get circuitState => _breaker.state;
 
   @override
   Future<void> validateKey(String key, {GeminiCancellation? cancellation}) {
@@ -62,14 +68,31 @@ class RetryGeminiGateway implements GeminiGateway {
   }
 
   @override
-  Future<List<String>> listModels(String key, {GeminiCancellation? cancellation}) {
+  Future<List<String>> listModels(
+    String key, {
+    GeminiCancellation? cancellation,
+  }) {
     return _withRetry(
       () => _inner.listModels(key, cancellation: cancellation),
       cancellation,
     );
   }
 
-  Future<T> _withRetry<T>(Future<T> Function() op, GeminiCancellation? cancellation) async {
+  Future<T> _withRetry<T>(
+    Future<T> Function() op,
+    GeminiCancellation? cancellation,
+  ) async {
+    try {
+      return await _breaker.call(() => _retry(op, cancellation));
+    } on CircuitBreakerOpenException {
+      throw const GeminiException(GeminiFailureCode.providerUnavailable);
+    }
+  }
+
+  Future<T> _retry<T>(
+    Future<T> Function() op,
+    GeminiCancellation? cancellation,
+  ) async {
     var attempt = 0;
     for (;;) {
       attempt++;
@@ -89,6 +112,10 @@ class RetryGeminiGateway implements GeminiGateway {
         await Future<void>.delayed(delay);
       }
     }
+  }
+
+  static bool isTransientFailure(Object error) {
+    return error is GeminiException && _retryableCodes.contains(error.code);
   }
 
   Duration _backoffDelay(int attempt) {

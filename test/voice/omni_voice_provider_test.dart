@@ -5,10 +5,12 @@ import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:vocab_learning_app/runtime/circuit_breaker.dart';
 import 'package:vocab_learning_app/voice/omni_voice_provider.dart';
 import 'package:vocab_learning_app/voice/voice_auth_token_provider.dart';
 import 'package:vocab_learning_app/voice/voice_capability.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_request_quota.dart';
 import 'package:vocab_learning_app/voice/voice_synthesis_provider.dart';
 
 final Uri _baseUri = Uri.parse('https://voice.example.com');
@@ -47,6 +49,7 @@ VoiceRequest _validRequest({
   String language = 'en',
   String voiceId = 'teacher_female',
   double speed = 1.0,
+  VoiceCapability capability = VoiceCapability.standardTargetSpeech,
 }) {
   return VoiceRequest.create(
     text: text,
@@ -56,6 +59,7 @@ VoiceRequest _validRequest({
     contentId: 'word-001',
     contentType: 'word',
     mode: VoiceMode.practice,
+    capability: capability,
   );
 }
 
@@ -234,12 +238,16 @@ OmniVoiceProvider _providerWith({
   required http.Client client,
   Duration timeout = const Duration(seconds: 30),
   _RecordingTokenProvider? tokenProvider,
+  CircuitBreaker? circuitBreaker,
+  VoiceRequestQuota? quota,
 }) {
   return OmniVoiceProvider(
     client: client,
     authTokenProvider: tokenProvider ?? _RecordingTokenProvider(),
     baseUri: _baseUri,
     timeout: timeout,
+    circuitBreaker: circuitBreaker,
+    quota: quota,
   );
 }
 
@@ -627,5 +635,65 @@ void main() {
     firstRead[0] = 0xFF;
 
     expect(audio.bytes, Uint8List.fromList(_wavBytes));
+  });
+
+  test('short-circuits after a transient provider outage', () async {
+    var sends = 0;
+    final breaker = CircuitBreaker(threshold: 1);
+    final provider = _providerWith(
+      client: MockClient((_) async {
+        sends++;
+        throw http.ClientException('offline');
+      }),
+      circuitBreaker: breaker,
+    );
+
+    await expectLater(
+      provider.synthesize(_validRequest()),
+      throwsA(isA<VoiceFailure>()),
+    );
+    await expectLater(
+      provider.synthesize(_validRequest()),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.rateLimited,
+        ),
+      ),
+    );
+    expect(sends, 1);
+    expect(provider.circuitState, CircuitState.open);
+  });
+
+  test('bounds dynamic rollback speech before another HTTP request', () async {
+    var sends = 0;
+    final provider = _providerWith(
+      client: MockClient((_) async {
+        sends++;
+        return _wavResponse();
+      }),
+      quota: VoiceRequestQuota(
+        maxRequests: 1,
+        maxCharacters: 100,
+        maxConcurrent: 1,
+      ),
+    );
+    final request = _validRequest(
+      capability: VoiceCapability.dynamicTargetSpeech,
+    );
+
+    await provider.synthesize(request);
+    await expectLater(
+      provider.synthesize(request),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.rateLimited,
+        ),
+      ),
+    );
+    expect(sends, 1);
   });
 }

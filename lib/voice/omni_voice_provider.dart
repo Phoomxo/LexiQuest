@@ -3,10 +3,12 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+import '../runtime/circuit_breaker.dart';
 import 'voice_auth_token_provider.dart';
 import 'voice_capability.dart';
 import 'voice_models.dart';
 import 'voice_provider_descriptor.dart';
+import 'voice_request_quota.dart';
 import 'voice_synthesis_provider.dart';
 
 const _validationFailure = VoiceFailure(
@@ -61,12 +63,16 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
     required VoiceAuthTokenProvider authTokenProvider,
     required Uri baseUri,
     Duration timeout = const Duration(seconds: 30),
+    CircuitBreaker? circuitBreaker,
+    VoiceRequestQuota? quota,
   }) {
     return OmniVoiceProvider._(
       client,
       authTokenProvider,
       baseUri.resolve('/v1/speech'),
       timeout,
+      quota,
+      circuitBreaker ?? CircuitBreaker(shouldCountFailure: _shouldTrip),
     );
   }
 
@@ -75,12 +81,18 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
     this._authTokenProvider,
     this._speechUri,
     this._timeout,
+    this._quota,
+    this._circuitBreaker,
   );
 
   final http.Client _client;
   final VoiceAuthTokenProvider _authTokenProvider;
   final Uri _speechUri;
   final Duration _timeout;
+  final VoiceRequestQuota? _quota;
+  final CircuitBreaker _circuitBreaker;
+
+  CircuitState get circuitState => _circuitBreaker.state;
 
   static final VoiceProviderDescriptor _descriptor = VoiceProviderDescriptor(
     engine: VoiceEngine.omniVoice,
@@ -102,6 +114,23 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
       throw _unsupportedCapabilityFailure;
     }
 
+    final quota = _quota;
+    if (request.capability == VoiceCapability.dynamicTargetSpeech &&
+        quota != null) {
+      return quota.run(request, () => _synthesizeProtected(request));
+    }
+    return _synthesizeProtected(request);
+  }
+
+  Future<VoiceAudio> _synthesizeProtected(VoiceRequest request) async {
+    try {
+      return await _circuitBreaker.call(() => _synthesizeRemote(request));
+    } on CircuitBreakerOpenException {
+      throw _rateLimitedFailure;
+    }
+  }
+
+  Future<VoiceAudio> _synthesizeRemote(VoiceRequest request) async {
     final body = <String, Object>{
       'text': request.text,
       'language': request.language,
@@ -233,5 +262,16 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
       }
     }
     return null;
+  }
+
+  static bool _shouldTrip(Object error) {
+    if (error is! VoiceFailure) return false;
+    return <VoiceFailureCategory>{
+      VoiceFailureCategory.network,
+      VoiceFailureCategory.timeout,
+      VoiceFailureCategory.modelUnavailable,
+      VoiceFailureCategory.synthesis,
+      VoiceFailureCategory.unknown,
+    }.contains(error.category);
   }
 }
