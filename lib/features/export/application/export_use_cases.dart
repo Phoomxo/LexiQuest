@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
@@ -61,6 +62,8 @@ final class ExportUseCases {
       ExportFormat.pdf => await _pdf(data, generatedAt, cancellation),
     };
     cancellation.throwIfCancelled();
+    final sha256 = crypto.sha256.convert(bytes).toString();
+    final integrityReport = _buildIntegrityReport(data);
     return ExportArtifact(
       format: format,
       suggestedFileName: _fileName(format, generatedAt),
@@ -76,6 +79,8 @@ final class ExportUseCases {
       algorithmVersion: 1,
       generatedAtUtc: generatedAt,
       timeZone: 'UTC',
+      sha256: sha256,
+      integrityReport: integrityReport,
       exclusions: const [
         'Gemini API key',
         'Firebase authentication token',
@@ -317,5 +322,31 @@ final class ExportUseCases {
       throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
     }
     return value;
+  }
+
+  /// Builds an integrity report detecting duplicate attempt IDs and
+  /// flagging insufficient sample sizes.
+  ExportIntegrityReport _buildIntegrityReport(ExportDataSet data) {
+    final allIds = <String>[];
+    allIds.addAll(data.attempts.map((a) => a.id));
+
+    final seen = <String>{};
+    final duplicates = <String>[];
+    for (final id in allIds) {
+      if (seen.contains(id)) {
+        duplicates.add(id);
+      } else {
+        seen.add(id);
+      }
+    }
+
+    final total = data.recordCount;
+    final isInsufficient = total < 10;
+
+    return ExportIntegrityReport(
+      duplicateEventIds: duplicates,
+      totalRecords: total,
+      isInsufficient: isInsufficient,
+    );
   }
 }

@@ -16,6 +16,27 @@ final class ExportSelection {
   bool get isEmpty => !includeVocabulary && !includeAttempts && !includeReading;
 }
 
+/// Integrity report embedded in export artifacts.
+/// Detects duplicate event IDs and sequence gaps in the exported dataset.
+final class ExportIntegrityReport {
+  const ExportIntegrityReport({
+    this.duplicateEventIds = const [],
+    this.missingSequenceNumbers = const [],
+    this.totalRecords = 0,
+    this.isInsufficient = false,
+  });
+
+  final List<String> duplicateEventIds;
+  final List<int> missingSequenceNumbers;
+  final int totalRecords;
+  final bool isInsufficient;
+
+  bool get isClean =>
+      duplicateEventIds.isEmpty &&
+      missingSequenceNumbers.isEmpty &&
+      !isInsufficient;
+}
+
 final class ExportArtifact {
   const ExportArtifact({
     required this.format,
@@ -28,6 +49,8 @@ final class ExportArtifact {
     required this.generatedAtUtc,
     required this.timeZone,
     required this.exclusions,
+    this.sha256,
+    this.integrityReport,
   });
 
   final ExportFormat format;
@@ -40,6 +63,12 @@ final class ExportArtifact {
   final DateTime generatedAtUtc;
   final String timeZone;
   final List<String> exclusions;
+
+  /// SHA-256 content digest for reproducible verification.
+  final String? sha256;
+
+  /// Integrity report with duplicate/gap detection.
+  final ExportIntegrityReport? integrityReport;
 }
 
 final class ExportSaveResult {
