@@ -31,6 +31,7 @@ import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
 import '../features/gemini/application/gemini_tutor_use_cases.dart';
 import '../features/gemini/data/gemini_rest_gateway.dart';
+import '../features/gemini/data/retry_gemini_gateway.dart';
 import '../features/gemini/data/secure_gemini_settings_store.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -403,7 +404,10 @@ final class AppBootstrap {
     final geminiHttpClient = http.Client();
     final geminiTutor = GeminiTutorUseCases(
       store: SecureGeminiSettingsStore.production(),
-      gateway: GeminiRestGateway(client: geminiHttpClient),
+      gateway: RetryGeminiGateway(
+        GeminiRestGateway(client: geminiHttpClient),
+        maxAttempts: 3,
+      ),
       loadProgress: progress.load,
       nowUtc: () => DateTime.now().toUtc(),
     );
