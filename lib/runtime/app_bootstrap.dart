@@ -398,16 +398,32 @@ final class AppBootstrap {
 
     final learningReconciler = LearningSideEffectReconciler(
       database,
-      questSink: (event) => quest
-          .processEvent(event, QuestCatalogProvider.allQuests)
-          .then((_) {}),
-      streakSink: (event) => streak
-          .recordLearningDay(occurredAtUtc: event.occurredAtUtc)
-          .then((_) {}),
-      rewardSink: (event) =>
-          quest.reconcileReward(event, QuestCatalogProvider.allQuests),
+      questSink: (event) async {
+        await quest.processEvent(event, QuestCatalogProvider.allQuests);
+        return LearningProjectionOutcome.applied;
+      },
+      streakSink: (event) async {
+        await streak.recordLearningDayForOwner(
+          ownerId: event.ownerIdentity,
+          occurredAtUtc: event.occurredAtUtc,
+        );
+        return LearningProjectionOutcome.applied;
+      },
+      rewardSink: (event) async {
+        final applied = await quest.reconcileReward(
+          event,
+          QuestCatalogProvider.allQuests,
+        );
+        return applied
+            ? LearningProjectionOutcome.applied
+            : LearningProjectionOutcome.notApplicable;
+      },
     );
-    await learningReconciler.reconcileOwner(
+    final learningReconciliation = LearningReconciliationScheduler(
+      learningReconciler,
+    );
+    resources.own(learningReconciliation.dispose);
+    learningReconciliation.request(
       (await localOwners.getOrCreateActiveOwner()).id,
     );
 
@@ -420,7 +436,7 @@ final class AppBootstrap {
       onLocalMutation: notifyLocalMutation,
       shadowOrchestrator: shadowOrchestrator,
       eventAdapter: eventAdapter,
-      sideEffectReconciler: learningReconciler,
+      onSideEffectsPending: learningReconciliation.request,
     );
     final exports = ExportUseCases(
       owners: localOwners,

@@ -46,10 +46,21 @@ final class StreakUseCases {
   /// is returned for subsequent calls with no DB writes beyond the first.
   Future<StreakUpdate> recordLearningDay({DateTime? occurredAtUtc}) async {
     final owner = await owners.getOrCreateActiveOwner();
+    return recordLearningDayForOwner(
+      ownerId: owner.id,
+      occurredAtUtc: occurredAtUtc,
+    );
+  }
+
+  /// Applies a durable event to the owner captured by that event.
+  Future<StreakUpdate> recordLearningDayForOwner({
+    required String ownerId,
+    DateTime? occurredAtUtc,
+  }) async {
     final now = _now(occurredAtUtc);
     final nowMs = now.millisecondsSinceEpoch;
 
-    final current = await repository.getOrCreate(owner.id, nowMs);
+    final current = await repository.getOrCreate(ownerId, nowMs);
     final update = StreakPolicy.evaluate(
       current: current,
       nowUtc: now,
@@ -64,7 +75,7 @@ final class StreakUseCases {
     // Always record learning day (insertOrIgnore — idempotent).
     final dayLabel = _formatDay(update.learningDay);
     await repository.recordLearningDay(
-      ownerId: owner.id,
+      ownerId: ownerId,
       learningDay: dayLabel,
       firstSessionAtUtcMs: nowMs,
     );

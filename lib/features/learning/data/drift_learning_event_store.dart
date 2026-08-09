@@ -33,14 +33,60 @@ final class DriftLearningEventStore {
         .insert(_companion(event), mode: InsertMode.insertOrIgnore);
   }
 
-  Future<List<EventEnvelopeV2>> listLearningEvents(String ownerId) async {
+  Future<List<EventEnvelopeV2>> listPendingProjectionEvents({
+    required String ownerId,
+    required String projection,
+    required int appliedVersion,
+    required int limit,
+    bool requireQuestApplied = false,
+  }) async {
+    if (limit <= 0) return const [];
+    final versionSuffix = ':v$appliedVersion';
+    final prerequisite = requireQuestApplied
+        ? '''AND EXISTS (
+              SELECT 1 FROM events_v2 quest_receipt
+              WHERE quest_receipt.owner_id = source.owner_id
+                AND quest_receipt.aggregate_id = source.event_id
+                AND quest_receipt.event_type = 'LearningProjectionApplied'
+                AND quest_receipt.idempotency_key =
+                  'learning-projection:quest:' || source.event_id || ?
+            )'''
+        : '';
+    final variables = <Variable<Object>>[
+      Variable<String>(ownerId),
+      Variable<String>(projection),
+      Variable<String>(versionSuffix),
+      if (requireQuestApplied) Variable<String>(versionSuffix),
+      Variable<int>(limit),
+    ];
+    final idRows = await database
+        .customSelect(
+          '''SELECT source.event_id
+         FROM events_v2 source
+         WHERE source.owner_id = ?
+           AND source.idempotency_key LIKE 'learning-attempt:%'
+           AND NOT EXISTS (
+             SELECT 1 FROM events_v2 receipt
+             WHERE receipt.owner_id = source.owner_id
+               AND receipt.aggregate_id = source.event_id
+               AND receipt.event_type IN (
+                 'LearningProjectionApplied', 'LearningProjectionSkipped'
+               )
+               AND receipt.idempotency_key =
+                 'learning-projection:' || ? || ':' || source.event_id || ?
+           )
+           $prerequisite
+         ORDER BY source.occurred_at_utc ASC, source.event_id ASC
+         LIMIT ?''',
+          variables: variables,
+          readsFrom: {database.eventsV2},
+        )
+        .get();
+    final ids = idRows.map((row) => row.read<String>('event_id')).toList();
+    if (ids.isEmpty) return const [];
     final rows =
         await (database.select(database.eventsV2)
-              ..where(
-                (row) =>
-                    row.ownerId.equals(ownerId) &
-                    row.idempotencyKey.like('learning-attempt:%'),
-              )
+              ..where((row) => row.eventId.isIn(ids))
               ..orderBy([
                 (row) => OrderingTerm.asc(row.occurredAtUtc),
                 (row) => OrderingTerm.asc(row.eventId),
@@ -49,31 +95,11 @@ final class DriftLearningEventStore {
     return rows.map(_toEvent).toList(growable: false);
   }
 
-  Future<bool> isProjectionApplied({
-    required String ownerId,
-    required String sourceEventId,
-    required String projection,
-    required int appliedVersion,
-  }) async {
-    final key = _projectionKey(
-      sourceEventId: sourceEventId,
-      projection: projection,
-      appliedVersion: appliedVersion,
-    );
-    final row =
-        await (database.select(database.eventsV2)..where(
-              (event) =>
-                  event.ownerId.equals(ownerId) &
-                  event.idempotencyKey.equals(key),
-            ))
-            .getSingleOrNull();
-    return row != null;
-  }
-
-  Future<void> markProjectionApplied({
+  Future<void> markProjectionOutcome({
     required EventEnvelopeV2 source,
     required String projection,
     required int appliedVersion,
+    required bool applied,
   }) {
     final key = _projectionKey(
       sourceEventId: source.eventId,
@@ -83,7 +109,9 @@ final class DriftLearningEventStore {
     return append(
       EventEnvelopeV2(
         eventId: key,
-        eventType: 'LearningProjectionApplied',
+        eventType: applied
+            ? 'LearningProjectionApplied'
+            : 'LearningProjectionSkipped',
         eventVersion: 1,
         occurredAtUtc: source.occurredAtUtc,
         recordedAtUtc: source.recordedAtUtc,
@@ -101,6 +129,7 @@ final class DriftLearningEventStore {
           'sourceEventId': source.eventId,
           'projection': projection,
           'appliedVersion': appliedVersion,
+          'outcome': applied ? 'applied' : 'notApplicable',
         },
       ),
     );

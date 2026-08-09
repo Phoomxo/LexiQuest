@@ -5,7 +5,6 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
-import 'learning_side_effect_reconciler.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -37,7 +36,7 @@ final class LearningUseCases {
     this.eventAdapter,
     this.questEventSink,
     this.streakEventSink,
-    this.sideEffectReconciler,
+    this.onSideEffectsPending,
   });
 
   final LocalOwnerRepository owners;
@@ -68,8 +67,8 @@ final class LearningUseCases {
   /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
   final StreakEventSink? streakEventSink;
 
-  /// Durable replay coordinator used by the production composition root.
-  final LearningSideEffectReconciler? sideEffectReconciler;
+  /// Schedules a bounded durable replay batch without delaying this answer.
+  final void Function(String ownerId)? onSideEffectsPending;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
     final owner = await owners.getOrCreateActiveOwner();
@@ -228,13 +227,9 @@ final class LearningUseCases {
     // Quest pipeline hook — forward answer event to quest use cases.
     // Uses the same V2 event produced for shadow mode when available;
     // builds a fresh event otherwise.  Errors are swallowed.
-    final reconciler = sideEffectReconciler;
-    if (reconciler != null) {
-      try {
-        await reconciler.reconcileOwner(owner.id);
-      } catch (_) {
-        // Durable core is committed; reconciliation will retry after restart.
-      }
+    final scheduleReconciliation = onSideEffectsPending;
+    if (scheduleReconciliation != null) {
+      scheduleReconciliation(owner.id);
     } else {
       final questSink = questEventSink;
       if (questSink != null && durableEvent != null) {

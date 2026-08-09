@@ -119,16 +119,17 @@ final class QuestUseCases {
       );
 
       final updated = instance.advanceIfMatches(event, def.objectives);
-      if (identical(updated, instance)) continue; // no change
+      if (identical(updated, instance)) {
+        if (instance.isAllObjectivesComplete) {
+          completed.add(await _finalize(instance, def, event, now));
+        }
+        continue;
+      }
 
       await repository.saveProgress(instance.instanceId, updated.progress);
 
       if (updated.isAllObjectivesComplete) {
-        await repository.markCompleted(instance.instanceId, now);
-        final completedEvent = updated.complete(now: now);
-        completed.add(completedEvent);
-        _forwardToShadow(completedEvent, event);
-        await _grantReward(def, completedEvent);
+        completed.add(await _finalize(updated, def, event, now));
       }
     }
     return completed;
@@ -144,12 +145,13 @@ final class QuestUseCases {
   ///
   /// Unlike the interactive completion hook, sink failures propagate so the
   /// durable learning reconciler can leave the reward receipt pending.
-  Future<void> reconcileReward(
+  Future<bool> reconcileReward(
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
   ) async {
     final sink = rewardSink;
-    if (sink == null) return;
+    if (sink == null) return false;
+    var reconciled = false;
     final instances = await repository.getAllInstances(event.ownerIdentity);
     for (final instance in instances) {
       if (instance.state != QuestInstanceState.completed ||
@@ -171,7 +173,9 @@ final class QuestUseCases {
         xpAmount: def.reward.xpAmount,
         rewardItemId: def.reward.rewardItemId,
       );
+      reconciled = true;
     }
+    return reconciled;
   }
 
   /// Expire any active instances whose deadline has passed.
@@ -201,6 +205,19 @@ final class QuestUseCases {
   // ── Private helpers ────────────────────────────────────────────────────────
 
   String _nextId() => generateId().trim();
+
+  Future<QuestCompletedEvent> _finalize(
+    QuestInstance instance,
+    QuestDefinition definition,
+    EventEnvelopeV2 source,
+    DateTime completedAt,
+  ) async {
+    await repository.markCompleted(instance.instanceId, completedAt);
+    final event = instance.complete(now: completedAt);
+    _forwardToShadow(event, source);
+    await _grantReward(definition, event);
+    return event;
+  }
 
   DateTime _now() {
     final value = nowUtc();

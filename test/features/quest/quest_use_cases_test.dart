@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_repository.dart';
 
 // ── Fake owner repository ─────────────────────────────────────────────────────
 
@@ -19,6 +20,50 @@ class _FakeOwners implements LocalOwnerRepository {
 
   @override
   Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async => owner;
+}
+
+final class _ThrowAfterProgressRepository implements QuestRepository {
+  _ThrowAfterProgressRepository(this.delegate);
+
+  final QuestRepository delegate;
+  bool throwAfterNextProgress = true;
+
+  @override
+  Future<void> saveProgress(
+    String instanceId,
+    List<ObjectiveProgress> progress,
+  ) async {
+    await delegate.saveProgress(instanceId, progress);
+    if (throwAfterNextProgress) {
+      throwAfterNextProgress = false;
+      throw StateError('crash after progress before completion');
+    }
+  }
+
+  @override
+  Future<QuestDefinition?> getDefinition(String questId) =>
+      delegate.getDefinition(questId);
+  @override
+  Future<List<QuestInstance>> getActiveInstances(String ownerId) =>
+      delegate.getActiveInstances(ownerId);
+  @override
+  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
+      delegate.getAllInstances(ownerId);
+  @override
+  Future<void> markAbandoned(String instanceId) =>
+      delegate.markAbandoned(instanceId);
+  @override
+  Future<void> markCompleted(String instanceId, DateTime completedAtUtc) =>
+      delegate.markCompleted(instanceId, completedAtUtc);
+  @override
+  Future<void> markExpired(String instanceId, DateTime expiredAtUtc) =>
+      delegate.markExpired(instanceId, expiredAtUtc);
+  @override
+  Future<void> startInstance(QuestInstance instance) =>
+      delegate.startInstance(instance);
+  @override
+  Future<void> upsertDefinition(QuestDefinition def) =>
+      delegate.upsertDefinition(def);
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -197,6 +242,31 @@ void main() {
         );
       },
     );
+
+    test('replay finalizes progress saved before markCompleted', () async {
+      final def = _singleObjectiveDef(targetCount: 1);
+      await useCases.startQuest(def);
+      final event = _makeEvent();
+      final crashing = QuestUseCases(
+        repository: _ThrowAfterProgressRepository(repo),
+        owners: _FakeOwners(testOwner),
+        generateId: () => 'unused',
+        nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+        timezoneId: 'Asia/Bangkok',
+      );
+
+      await expectLater(crashing.processEvent(event, [def]), throwsStateError);
+      expect(
+        (await repo.getActiveInstances(
+          testOwner.id,
+        )).single.progress.single.currentCount,
+        1,
+      );
+
+      final completed = await useCases.processEvent(event, [def]);
+      expect(completed, hasLength(1));
+      expect(await repo.getActiveInstances(testOwner.id), isEmpty);
+    });
 
     test('reconcileReward retries a failed completed-quest grant', () async {
       final def = _singleObjectiveDef(targetCount: 1);

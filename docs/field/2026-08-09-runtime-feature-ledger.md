@@ -139,17 +139,25 @@ the same local Drift transaction as the attempt, SRS, core XP, and attempt/SRS
 outbox rows. Event ID and idempotency key derive from the durable attempt ID,
 not a process-local counter. Quest, streak, and quest-reward projections run
 after that transaction through a reconciler. Each successful projection writes
-an independent `LearningProjectionApplied` receipt with applied version 1 to
-the existing `events_v2` table; a failed projection remains receipt-free and is
-retried at bootstrap or after the next answer without rerunning successful
-projections. Quest objective evidence now rejects a repeated source event ID,
-and completed-quest reward retry reuses the quest completion idempotency key.
+an independent version-1 result to the existing `events_v2` table. Applied
+work uses `LearningProjectionApplied`; a confirmed no-op uses
+`LearningProjectionSkipped`, so a reward receipt never claims a grant for an
+ineligible source event. Failed work remains result-free. Reward processing is
+gated on the quest receipt, and each projection stops at its oldest failure so
+newer events cannot overtake it. Quest objective evidence rejects a repeated
+source event ID, replay finalizes an already-fully-progressed active quest, and
+completed-quest reward retry reuses the quest completion idempotency key.
 
 No schema bump was needed. Schema 12 already includes `events_v2`, its unique
 owner/idempotency constraint, owner-upgrade inventory entry, and owner deletion
-coverage. The reconciler adds no network call to the local learning transaction.
-Evidence is a same-file SQLite close/reopen journey, injected post-commit quest
-and streak failures, independent receipt retry tests, and focused host gates.
+coverage. Reconciliation reads fixed pending batches and is scheduled without
+blocking bootstrap or answer completion; its lifecycle disposer drains active
+local work before the database closes. Streak replay applies the owner and UTC
+time captured by the durable event. The reconciler adds no network call to the
+local learning transaction. Evidence is a same-file SQLite close/reopen
+journey, injected progress-to-completion and reward-to-receipt crashes,
+out-of-order streak and owner-switch tests, bounded/non-blocking scheduler
+tests, independent result retry tests, and focused host gates.
 This is not physical process, APK, or device evidence, so the promoted learning
 rows are `verified`, not `field-certified`; quest remains `orphan` because it
 still lacks a user-visible production entry.

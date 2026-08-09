@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -5,10 +6,11 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart'
-    hide QuestDefinition, VocabularyWord;
+    hide QuestDefinition, QuestInstance, VocabularyWord;
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
@@ -17,6 +19,7 @@ import 'package:vocab_learning_app/features/progress/data/drift_progress_queries
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_repository.dart';
 import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
@@ -30,6 +33,88 @@ const _buildInfo = AppBuildInfo(version: '1.0.0', buildId: 'restart-test');
 
 AppDatabase _openDatabase(String path) =>
     AppDatabase(NativeDatabase(File(path)));
+
+final class _CrashAfterProgressRepository implements QuestRepository {
+  _CrashAfterProgressRepository(this.delegate);
+  final QuestRepository delegate;
+  bool armed = true;
+
+  @override
+  Future<void> saveProgress(String id, List<ObjectiveProgress> progress) async {
+    await delegate.saveProgress(id, progress);
+    if (armed) {
+      armed = false;
+      throw StateError('injected crash after progress before completion');
+    }
+  }
+
+  @override
+  Future<QuestDefinition?> getDefinition(String id) =>
+      delegate.getDefinition(id);
+  @override
+  Future<List<QuestInstance>> getActiveInstances(String owner) =>
+      delegate.getActiveInstances(owner);
+  @override
+  Future<List<QuestInstance>> getAllInstances(String owner) =>
+      delegate.getAllInstances(owner);
+  @override
+  Future<void> markAbandoned(String id) => delegate.markAbandoned(id);
+  @override
+  Future<void> markCompleted(String id, DateTime at) =>
+      delegate.markCompleted(id, at);
+  @override
+  Future<void> markExpired(String id, DateTime at) =>
+      delegate.markExpired(id, at);
+  @override
+  Future<void> startInstance(QuestInstance instance) =>
+      delegate.startInstance(instance);
+  @override
+  Future<void> upsertDefinition(QuestDefinition definition) =>
+      delegate.upsertDefinition(definition);
+}
+
+Future<void> _insertLearningEvent(
+  AppDatabase database, {
+  required String ownerId,
+  required int number,
+  required DateTime occurredAt,
+}) => database
+    .into(database.eventsV2)
+    .insert(
+      EventsV2Companion.insert(
+        eventId: 'learning-event:real-$number',
+        eventType: 'QuizCompleted',
+        eventVersion: 1,
+        occurredAtUtc: occurredAt,
+        recordedAtUtc: occurredAt,
+        actorIdentity: ownerId,
+        ownerId: ownerId,
+        aggregateType: 'LearningSession',
+        aggregateId: 'session-real',
+        idempotencyKey: 'learning-attempt:real-$number:v1',
+        consentContextJson: '{}',
+        appVersion: '1.0.0',
+        buildId: 'restart-test',
+        privacyClassification: 'anonymized',
+        payloadJson: '{"correct":true}',
+      ),
+    );
+
+Future<int> _appliedReceiptCount(
+  AppDatabase database,
+  String projection,
+) async {
+  final row = await database
+      .customSelect(
+        "SELECT COUNT(*) AS total FROM events_v2 WHERE event_type = "
+        "'LearningProjectionApplied' AND json_extract(payload_json, "
+        "'\$.projection') = ?",
+        variables: [Variable<String>(projection)],
+        readsFrom: {database.eventsV2},
+      )
+      .getSingle();
+  return row.read<int>('total');
+}
 
 DriftLocalOwnerRepository _owners(
   AppDatabase database,
@@ -515,5 +600,315 @@ void main() {
       }
     },
     timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  test(
+    'real reconciler recovers quest boundary and reward receipt crashes',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-real-reconcile-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
+      AppDatabase? database;
+      final at = DateTime.utc(2026, 8, 9, 8);
+      final definition = _correctAnswerQuest(
+        id: 'real-crash-quest',
+        targetCount: 1,
+        xp: 40,
+      );
+      try {
+        database = _openDatabase(path);
+        var owners = _owners(database, () => at);
+        final owner = await owners.getOrCreateActiveOwner();
+        final realQuestRepository = DriftQuestRepository(database);
+        var quest = QuestUseCases(
+          repository: realQuestRepository,
+          owners: owners,
+          generateId: () => 'real-crash-instance',
+          nowUtc: () => at,
+          timezoneId: 'Asia/Bangkok',
+        );
+        await quest.startQuest(definition);
+        await _insertLearningEvent(
+          database,
+          ownerId: owner.id,
+          number: 1,
+          occurredAt: at,
+        );
+        quest = QuestUseCases(
+          repository: _CrashAfterProgressRepository(realQuestRepository),
+          owners: owners,
+          generateId: () => 'unused',
+          nowUtc: () => at,
+          timezoneId: 'Asia/Bangkok',
+        );
+        final firstReconciler = LearningSideEffectReconciler(
+          database,
+          questSink: (event) async {
+            await quest.processEvent(event, [definition]);
+            return LearningProjectionOutcome.applied;
+          },
+          streakSink: (_) async => LearningProjectionOutcome.applied,
+          rewardSink: (_) async => LearningProjectionOutcome.applied,
+        );
+        await firstReconciler.reconcileOwner(owner.id);
+
+        final active = await realQuestRepository.getActiveInstances(owner.id);
+        expect(active.single.progress.single.currentCount, 1);
+        expect(await _appliedReceiptCount(database, 'quest'), 0);
+        expect(await _appliedReceiptCount(database, 'reward'), 0);
+        await database.close();
+        database = null;
+
+        database = _openDatabase(path);
+        owners = _owners(database, () => at);
+        final rewardRepository = DriftRewardRepository(database);
+        quest = QuestUseCases(
+          repository: DriftQuestRepository(database),
+          owners: owners,
+          generateId: () => 'unused-after-restart',
+          nowUtc: () => at,
+          timezoneId: 'Asia/Bangkok',
+          rewardSink:
+              ({
+                required ownerId,
+                required idempotencyKey,
+                required xpAmount,
+                rewardItemId,
+              }) => rewardRepository.grantQuestXp(
+                ownerId: ownerId,
+                idempotencyKey: idempotencyKey,
+                xpAmount: xpAmount,
+              ),
+        );
+        await database.customStatement('''
+          CREATE TRIGGER fail_reward_receipt
+          BEFORE INSERT ON events_v2
+          WHEN NEW.event_type = 'LearningProjectionApplied'
+            AND json_extract(NEW.payload_json, '\$.projection') = 'reward'
+          BEGIN SELECT RAISE(ABORT, 'injected reward receipt crash'); END
+        ''');
+        LearningSideEffectReconciler realReconciler() =>
+            LearningSideEffectReconciler(
+              database!,
+              questSink: (event) async {
+                await quest.processEvent(event, [definition]);
+                return LearningProjectionOutcome.applied;
+              },
+              streakSink: (_) async => LearningProjectionOutcome.applied,
+              rewardSink: (event) async =>
+                  await quest.reconcileReward(event, [definition])
+                  ? LearningProjectionOutcome.applied
+                  : LearningProjectionOutcome.notApplicable,
+            );
+        await realReconciler().reconcileOwner(owner.id);
+        expect(await _appliedReceiptCount(database, 'quest'), 1);
+        expect(await _appliedReceiptCount(database, 'reward'), 0);
+        expect(
+          await (database.select(
+            database.pointsLedgerEntries,
+          )..where((row) => row.entryType.equals('questCompletion'))).get(),
+          hasLength(1),
+        );
+        await database.close();
+        database = null;
+
+        database = _openDatabase(path);
+        await database.customStatement('DROP TRIGGER fail_reward_receipt');
+        owners = _owners(database, () => at);
+        final restartedRewards = DriftRewardRepository(database);
+        quest = QuestUseCases(
+          repository: DriftQuestRepository(database),
+          owners: owners,
+          generateId: () => 'unused-final',
+          nowUtc: () => at,
+          timezoneId: 'Asia/Bangkok',
+          rewardSink:
+              ({
+                required ownerId,
+                required idempotencyKey,
+                required xpAmount,
+                rewardItemId,
+              }) => restartedRewards.grantQuestXp(
+                ownerId: ownerId,
+                idempotencyKey: idempotencyKey,
+                xpAmount: xpAmount,
+              ),
+        );
+        await realReconciler().reconcileOwner(owner.id);
+        expect(await _appliedReceiptCount(database, 'reward'), 1);
+        expect(
+          await (database.select(
+            database.pointsLedgerEntries,
+          )..where((row) => row.entryType.equals('questCompletion'))).get(),
+          hasLength(1),
+        );
+      } finally {
+        await database?.close();
+        if (await directory.exists()) await directory.delete(recursive: true);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  test(
+    'real streak replay is ordered and applies the durable event owner',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-real-streak-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
+      AppDatabase? database;
+      final firstDay = DateTime.utc(2026, 8, 8, 5);
+      try {
+        database = _openDatabase(path);
+        final owners = _owners(database, () => firstDay);
+        final ownerA = await owners.getOrCreateActiveOwner();
+        await (database.update(database.localOwners)
+              ..where((row) => row.id.equals(ownerA.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'owner-b',
+                createdAtUtcMs: firstDay.millisecondsSinceEpoch,
+                isActive: const Value(true),
+              ),
+            );
+        await _insertLearningEvent(
+          database,
+          ownerId: ownerA.id,
+          number: 1,
+          occurredAt: firstDay,
+        );
+        await _insertLearningEvent(
+          database,
+          ownerId: ownerA.id,
+          number: 2,
+          occurredAt: firstDay.add(const Duration(days: 1)),
+        );
+        var oldestFailed = false;
+        final streak = StreakUseCases(
+          repository: DriftStreakRepository(database),
+          owners: owners,
+          nowUtc: () => firstDay,
+          timezoneId: 'UTC',
+        );
+        final failing = LearningSideEffectReconciler(
+          database,
+          streakSink: (event) async {
+            if (!oldestFailed) {
+              oldestFailed = true;
+              throw StateError('oldest unavailable');
+            }
+            await streak.recordLearningDayForOwner(
+              ownerId: event.ownerIdentity,
+              occurredAtUtc: event.occurredAtUtc,
+            );
+            return LearningProjectionOutcome.applied;
+          },
+        );
+        await failing.reconcileOwner(ownerA.id);
+        expect(await _appliedReceiptCount(database, 'streak'), 0);
+        expect(
+          await DriftStreakRepository(database).getLearningDays('owner-b'),
+          isEmpty,
+        );
+        await database.close();
+        database = null;
+
+        database = _openDatabase(path);
+        final restartedOwners = _owners(database, () => firstDay);
+        final restartedStreak = StreakUseCases(
+          repository: DriftStreakRepository(database),
+          owners: restartedOwners,
+          nowUtc: () => firstDay,
+          timezoneId: 'UTC',
+        );
+        final real = LearningSideEffectReconciler(
+          database,
+          streakSink: (event) async {
+            await restartedStreak.recordLearningDayForOwner(
+              ownerId: event.ownerIdentity,
+              occurredAtUtc: event.occurredAtUtc,
+            );
+            return LearningProjectionOutcome.applied;
+          },
+        );
+        await real.reconcileOwner(ownerA.id);
+        expect(
+          await DriftStreakRepository(database).getLearningDays(ownerA.id),
+          ['2026-08-09', '2026-08-08'],
+        );
+        expect(
+          await DriftStreakRepository(database).getLearningDays('owner-b'),
+          isEmpty,
+        );
+        expect(await _appliedReceiptCount(database, 'streak'), 2);
+      } finally {
+        await database?.close();
+        if (await directory.exists()) await directory.delete(recursive: true);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  test(
+    'answer completion does not await an offline projection batch',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final now = DateTime.utc(2026, 8, 9, 9);
+      final owners = _owners(database, () => now);
+      final word = await _createVocabulary(
+        database: database,
+        owners: owners,
+        now: () => now,
+        suffix: 'latency',
+      );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final scheduler = LearningReconciliationScheduler(
+        LearningSideEffectReconciler(
+          database,
+          streakSink: (_) async {
+            entered.complete();
+            await release.future;
+            return LearningProjectionOutcome.applied;
+          },
+        ),
+      );
+      try {
+        final learning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: _ids(['latency-session', 'latency-answer']),
+          nowUtc: () => now,
+          buildInfo: _buildInfo,
+          eventAdapter: const EventV1ToV2Adapter(
+            appVersion: '1.0.0',
+            buildId: 'restart-test',
+          ),
+          onSideEffectsPending: scheduler.request,
+        );
+        final quiz = await learning.startQuiz();
+        final result = await learning.recordAnswer(
+          sessionId: quiz.id,
+          wordId: word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 100,
+          attemptNumber: 1,
+        );
+        expect(result.inserted, isTrue);
+        await entered.future;
+        release.complete();
+        await scheduler.drain();
+      } finally {
+        if (!release.isCompleted) release.complete();
+        await scheduler.dispose();
+        await database.close();
+      }
+    },
   );
 }
