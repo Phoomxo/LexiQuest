@@ -5,22 +5,35 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart';
 import '../domain/ai_tutor_contracts.dart';
 
+typedef ActiveOwnerIdProvider = Future<String> Function();
+
 final class DriftAiUsageRepository implements AiUsageRepository {
-  DriftAiUsageRepository(this._database, {DateTime Function()? nowUtc})
-    : _nowUtc = nowUtc ?? (() => DateTime.now().toUtc());
+  DriftAiUsageRepository(
+    this._database, {
+    required this.activeOwnerId,
+    DateTime Function()? nowUtc,
+  }) : _nowUtc = nowUtc ?? (() => DateTime.now().toUtc());
 
   static const retention = Duration(days: 90);
 
   final AppDatabase _database;
+  final ActiveOwnerIdProvider activeOwnerId;
   final DateTime Function() _nowUtc;
 
   @override
   Future<void> record(AiUsageEvent event) async {
+    await recordForOwner(await _requireActiveOwnerId(), event);
+  }
+
+  @override
+  Future<void> recordForOwner(String ownerId, AiUsageEvent event) async {
+    final normalizedOwnerId = _requireOwnerId(ownerId);
     await _database
         .into(_database.aiUsageEvents)
         .insert(
           AiUsageEventsCompanion.insert(
             eventId: event.eventId,
+            ownerId: normalizedOwnerId,
             occurredAtUtcMs: event.occurredAtUtc.millisecondsSinceEpoch,
             providerId: event.providerId.name,
             model: event.model,
@@ -37,9 +50,9 @@ final class DriftAiUsageRepository implements AiUsageRepository {
             ),
             schemaVersion: Value(event.schemaVersion),
           ),
-          mode: InsertMode.insertOrAbort,
+          mode: InsertMode.insertOrIgnore,
         );
-    await purgeExpired(_nowUtc());
+    await _purgeExpiredForOwner(normalizedOwnerId, _nowUtc());
   }
 
   @override
@@ -47,15 +60,32 @@ final class DriftAiUsageRepository implements AiUsageRepository {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
+    return _purgeExpiredForActiveOwner(nowUtc);
+  }
+
+  Future<int> _purgeExpiredForActiveOwner(DateTime nowUtc) async {
+    return _purgeExpiredForOwner(await _requireActiveOwnerId(), nowUtc);
+  }
+
+  Future<int> _purgeExpiredForOwner(String ownerId, DateTime nowUtc) async {
+    if (!nowUtc.isUtc) {
+      throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
+    }
     final cutoff = nowUtc.subtract(retention).millisecondsSinceEpoch;
-    return (_database.delete(
-      _database.aiUsageEvents,
-    )..where((table) => table.occurredAtUtcMs.isSmallerThanValue(cutoff))).go();
+    return (_database.delete(_database.aiUsageEvents)..where(
+          (table) =>
+              table.ownerId.equals(ownerId) &
+              table.occurredAtUtcMs.isSmallerThanValue(cutoff),
+        ))
+        .go();
   }
 
   @override
   Future<List<AiUsageSummary>> summarize() async {
-    final rows = await _database.select(_database.aiUsageEvents).get();
+    final ownerId = await _requireActiveOwnerId();
+    final rows = await (_database.select(
+      _database.aiUsageEvents,
+    )..where((table) => table.ownerId.equals(ownerId))).get();
     final buckets = <(AiProviderId, String), _UsageAccumulator>{};
     for (final row in rows) {
       final provider = AiProviderId.values
@@ -109,7 +139,12 @@ final class DriftAiUsageRepository implements AiUsageRepository {
   }
 
   @override
-  Future<void> clear() => _database.delete(_database.aiUsageEvents).go();
+  Future<void> clear() async {
+    final ownerId = await _requireActiveOwnerId();
+    await (_database.delete(
+      _database.aiUsageEvents,
+    )..where((table) => table.ownerId.equals(ownerId))).go();
+  }
 
   @override
   Future<String> exportAggregateJson({required bool researchConsent}) async {
@@ -134,6 +169,18 @@ final class DriftAiUsageRepository implements AiUsageRepository {
           },
       ],
     });
+  }
+
+  Future<String> _requireActiveOwnerId() async {
+    return _requireOwnerId(await activeOwnerId());
+  }
+
+  String _requireOwnerId(String value) {
+    final ownerId = value.trim();
+    if (ownerId.isEmpty) {
+      throw StateError('Active owner id must not be empty.');
+    }
+    return ownerId;
   }
 }
 

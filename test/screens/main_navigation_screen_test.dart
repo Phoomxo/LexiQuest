@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/screens/profile_settings_screen.dart';
 
 void main() {
@@ -99,5 +100,27 @@ void main() {
     await tester.pump();
 
     expect(find.byType(NavigationDestination), findsNWidgets(5));
+  });
+
+  testWidgets('AI settings drawer route uses provider-neutral screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MainNavigationScreen(
+          featureRegistry: BuildFieldFeatureRegistry.fieldDefaults(),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('legacy-drawer-button')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byIcon(Icons.key_outlined));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 350));
+
+    expect(find.byType(AiTutorSettingsScreen), findsOneWidget);
   });
 }

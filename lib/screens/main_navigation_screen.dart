@@ -7,10 +7,10 @@ import '../runtime/field_feature_registry.dart';
 import '../navigation/app_routes.dart';
 import 'achievements_screen.dart';
 import 'ai_tutor_screen.dart';
+import 'ai_tutor_settings_screen.dart';
 import 'categories_page.dart';
 import 'choose_mode_screen.dart';
 import 'mastery_dashboard_screen.dart';
-import 'gemini_settings_screen.dart';
 import 'ghost_shadow_duel_screen.dart';
 import 'export_center_screen.dart';
 import 'object_scanner_screen.dart';
@@ -295,14 +295,14 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   leading: const Icon(Icons.chat_bubble_outline),
                   title: const Text('AI Tutor'),
                   onTap: () =>
-                      _pushDestination('gemini/tutor', const AiTutorScreen()),
+                      _pushDestination('ai-tutor/chat', const AiTutorScreen()),
                 ),
                 ListTile(
                   leading: const Icon(Icons.key_outlined),
-                  title: const Text('ตั้งค่า Gemini BYOK'),
+                  title: const Text('AI Provider BYOK'),
                   onTap: () => _pushDestination(
-                    'gemini/settings',
-                    const GeminiSettingsScreen(),
+                    'ai-tutor/settings',
+                    const AiTutorSettingsScreen(),
                   ),
                 ),
               ],

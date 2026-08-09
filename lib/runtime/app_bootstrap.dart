@@ -16,6 +16,7 @@ import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
+import '../features/account/application/local_data_deletion.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/ai_tutor/application/ai_tutor_use_cases.dart';
@@ -32,10 +33,6 @@ import '../features/device_model/domain/model_manifest.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
-import '../features/gemini/application/gemini_tutor_use_cases.dart';
-import '../features/gemini/data/gemini_rest_gateway.dart';
-import '../features/gemini/data/retry_gemini_gateway.dart';
-import '../features/gemini/data/secure_gemini_settings_store.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -208,11 +205,21 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
     );
     await localOwners.getOrCreateActiveOwner();
+    Future<String> activeOwnerId() async =>
+        (await localOwners.getOrCreateActiveOwner()).id;
+    final aiTutorSettings = SecureAiTutorSettingsStore.production(
+      activeOwnerId: activeOwnerId,
+    );
+    final localDataEraser = LocalDataDeletion(
+      database,
+      deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
+    );
     final ownerUpgrades = DriftOwnerUpgradeRepository(
       database,
       nowUtc: () => DateTime.now().toUtc(),
       generateConflictId: idGenerator.v4,
       generateOwnerId: idGenerator.v4,
+      deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
     );
     final upgradeGuestOwner = UpgradeGuestOwner(ownerUpgrades);
     var firebase = await _availability(initializeFirebase);
@@ -411,20 +418,13 @@ final class AppBootstrap {
     final speechPractice = SpeechPracticeUseCases(
       PluginSpeechRecognitionGateway(),
     );
-    final geminiHttpClient = http.Client();
-    final geminiTutor = GeminiTutorUseCases(
-      store: SecureGeminiSettingsStore.production(),
-      gateway: RetryGeminiGateway(
-        GeminiRestGateway(client: geminiHttpClient),
-        maxAttempts: 3,
-      ),
-      loadProgress: progress.load,
-      nowUtc: () => DateTime.now().toUtc(),
-    );
     final aiTutorHttpClient = http.Client();
-    final aiUsage = DriftAiUsageRepository(database);
+    final aiUsage = DriftAiUsageRepository(
+      database,
+      activeOwnerId: activeOwnerId,
+    );
     final aiTutor = AiTutorUseCases(
-      store: SecureAiTutorSettingsStore.production(),
+      store: aiTutorSettings,
       nowUtc: () => DateTime.now().toUtc(),
       httpClient: aiTutorHttpClient,
       loadProgress: progress.load,
@@ -494,8 +494,8 @@ final class AppBootstrap {
       vocabularyImporter: vocabularyImporter,
       deviceModels: deviceModels,
       account: account,
+      localDataEraser: localDataEraser,
       researchConsent: researchConsent,
-      geminiTutor: geminiTutor,
       aiTutor: aiTutor,
       aiUsage: aiUsage,
       objectScanner: objectScanner,
@@ -505,8 +505,6 @@ final class AppBootstrap {
       voice: voice,
       associativeLearning: associativeLearning,
       disposeResources: () async {
-        await geminiTutor.dispose();
-        geminiHttpClient.close();
         await aiTutor.dispose();
         aiTutorHttpClient.close();
         fieldFeatures.dispose();

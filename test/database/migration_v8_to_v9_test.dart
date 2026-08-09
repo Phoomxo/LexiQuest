@@ -41,7 +41,7 @@ void main() {
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 11); // schema v11 is current
+      expect(version, 12); // schema v12 is current
     });
 
     test('can insert and retrieve streak_states row', () async {

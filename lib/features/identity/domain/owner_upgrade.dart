@@ -62,4 +62,6 @@ const Set<String> ownerUpgradeInventory = <String>{
   'associative_memory_states',
   // Schema v11 — speech evidence is owner-scoped.
   'speech_evidence',
+  // Schema v12 — provider-neutral AI usage is owner-scoped.
+  'ai_usage_events',
 };

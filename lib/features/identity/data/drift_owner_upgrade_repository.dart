@@ -10,6 +10,7 @@ import '../domain/owner_upgrade.dart';
 
 typedef OwnerUpgradeUtcNow = DateTime Function();
 typedef OwnerUpgradeIdGenerator = String Function();
+typedef DeleteOwnerSecretsForUpgrade = Future<void> Function(String ownerId);
 
 final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   DriftOwnerUpgradeRepository(
@@ -17,12 +18,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required this.nowUtc,
     required this.generateConflictId,
     required this.generateOwnerId,
+    required this.deleteOwnerSecrets,
   });
 
   final db.AppDatabase _database;
   final OwnerUpgradeUtcNow nowUtc;
   final OwnerUpgradeIdGenerator generateConflictId;
   final OwnerUpgradeIdGenerator generateOwnerId;
+  final DeleteOwnerSecretsForUpgrade deleteOwnerSecrets;
   Future<void> _writeGate = Future<void>.value();
 
   @override
@@ -66,6 +69,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           );
         }
 
+        // Never transfer a BYOK secret across owner identities implicitly.
+        // This is an explicit privacy-first boundary: failure aborts before
+        // owner rows move; a later DB rollback cannot restore the deleted key.
+        await deleteOwnerSecrets(source.id);
+
         var conflicts = 0;
         conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
         conflicts += await _mergeWords(source.id, target.id, upgradedAt);
@@ -80,6 +88,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           target.id,
           upgradedAt,
         );
+        await _discardAiUsageDuplicates(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
         await _moveOwnerRows(source.id, target.id);
         await _rebuildLearningProjections(target.id);
@@ -472,6 +481,20 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       "WHERE owner_id = ? AND state = 'blockedAuth'",
       variables: [Variable<String>(targetId)],
       updates: {_database.outboxOperations},
+    );
+  }
+
+  Future<void> _discardAiUsageDuplicates(
+    String sourceId,
+    String targetId,
+  ) async {
+    await _database.customUpdate(
+      'DELETE FROM ai_usage_events '
+      'WHERE owner_id = ? AND event_id IN ('
+      'SELECT event_id FROM ai_usage_events WHERE owner_id = ?'
+      ')',
+      variables: [Variable<String>(sourceId), Variable<String>(targetId)],
+      updates: {_database.aiUsageEvents},
     );
   }
 

@@ -132,14 +132,25 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 
 ---
 
-## Phase 0+ (v11+)
+### v11 — AI Usage and Speech Evidence
+**Implemented:** 2026-08-08
+**Status:** IMPLEMENTED; release evidence pending
 
-| Version | Phase | Purpose | Status |
-|---------|-------|---------|--------|
-| v10 | Phase 0 | First production V2 migration. Exact tables TBD after Phase -1 gate. | 🔮 Future |
-| v11+ | Phase 0+ | TBD | 🔮 Future |
+Added `ai_usage_events` and owner-scoped `speech_evidence`. The original AI
+usage table was device-global and is superseded by v12.
 
-> **Rule:** v10 cannot be planned until Phase -1 completion report is signed (D5.1).
+### v12 — Owner-scoped AI Usage
+**Reserved:** 2026-08-09
+**Implemented:** 2026-08-09
+**Branch:** `integration/p0-baseline`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added `owner_id` to `ai_usage_events`, changed its primary key to
+`(owner_id, event_id)`, and added `idx_ai_usage_owner_occurred`.
+
+**Migration safety:** legacy v11 AI usage is dropped because no owner can be
+proven. All other tables and owner data are preserved. This migration is
+forward-only; reopening the database with a v11 APK is unsupported.
 
 ---
 
@@ -156,6 +167,7 @@ associative_memory_states — AdaptiveAssociativeScheduler state per (owner, wor
 | Date | Change | Author |
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
+| 2026-08-09 | Recorded implemented v11 and owner-scoped AI usage migration v12; deployment evidence remains pending. | LexiQuest integration |
 
 ---
 

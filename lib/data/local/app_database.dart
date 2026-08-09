@@ -58,7 +58,7 @@ final class AppDatabase extends _$AppDatabase {
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 11;
+  int get schemaVersion => 12;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -170,11 +170,15 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 11) {
         await _createMissingTables(migrator);
       }
+      if (from < 12) {
+        await _migrateAiUsageToOwnerScope(migrator);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
       await _createEventIndexes();
+      await _createAiUsageIndexes();
     },
   );
 
@@ -188,6 +192,30 @@ final class AppDatabase extends _$AppDatabase {
         'ON events_v2(owner_id, occurred_at_utc)',
       );
     }
+  }
+
+  Future<void> _createAiUsageIndexes() async {
+    if (await _tableExists('ai_usage_events') &&
+        await _columnExists('ai_usage_events', 'owner_id')) {
+      await customStatement(
+        'CREATE INDEX IF NOT EXISTS idx_ai_usage_owner_occurred '
+        'ON ai_usage_events(owner_id, occurred_at_utc_ms)',
+      );
+    }
+  }
+
+  Future<void> _migrateAiUsageToOwnerScope(Migrator migrator) async {
+    if (!await _tableExists('ai_usage_events')) {
+      await migrator.createTable(aiUsageEvents);
+      return;
+    }
+    if (await _columnExists('ai_usage_events', 'owner_id')) return;
+
+    // Schema v11 usage rows have no owner attribution. Assigning them to the
+    // owner active at migration time would leak metadata across accounts, so
+    // discard only this bounded 90-day telemetry table and recreate it.
+    await customStatement('DROP TABLE ai_usage_events');
+    await migrator.createTable(aiUsageEvents);
   }
 
   Future<void> _createLearningIndexes() async {

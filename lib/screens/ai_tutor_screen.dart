@@ -2,14 +2,14 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../features/gemini/domain/gemini_contracts.dart';
+import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../voice/voice_models.dart';
-import 'gemini_settings_screen.dart';
+import 'ai_tutor_settings_screen.dart';
 
 final class ChatMessage {
   const ChatMessage({
@@ -29,12 +29,12 @@ class AiTutorScreen extends StatefulWidget {
   const AiTutorScreen({
     super.key,
     this.voice,
-    this.geminiTutor,
+    this.aiTutor,
     this.speechPractice,
   });
 
   final VoiceUseCases? voice;
-  final GeminiTutorController? geminiTutor;
+  final AiTutorController? aiTutor;
   final SpeechPracticeUseCases? speechPractice;
 
   @override
@@ -53,11 +53,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   late final VoiceUseCases _voiceProvider;
   bool _ownsVoiceProvider = false;
-  GeminiTutorController? _tutor;
+  AiTutorController? _tutor;
   SpeechPracticeUseCases? _speech;
   final TextEditingController _inputController = TextEditingController();
   final List<ChatMessage> _messages = [];
-  GeminiCancellation? _generationCancellation;
+  AiCancellation? _generationCancellation;
   String _selectedScenario = _scenarios.first;
   bool _isGenerating = false;
   bool _isListening = false;
@@ -77,7 +77,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final resolvedTutor = widget.geminiTutor ?? dependencies?.geminiTutor;
+    final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
     _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
     if (!identical(resolvedTutor, _tutor)) {
       _tutor = resolvedTutor;
@@ -91,7 +91,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     try {
       final status = await tutor.loadSettings();
       if (mounted) setState(() => _hasKey = status.hasKey);
-    } on GeminiException {
+    } on AiTutorException {
       if (mounted) setState(() => _hasKey = false);
     }
   }
@@ -101,10 +101,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     final text = (spokenText ?? _inputController.text).trim();
     if (text.isEmpty || _isGenerating) return;
     if (tutor == null) {
-      setState(() => _error = 'ระบบ Gemini ยังไม่พร้อมใช้งาน');
+      setState(() => _error = 'AI Tutor is unavailable in this build.');
       return;
     }
-    final cancellation = GeminiCancellation();
+    final cancellation = AiCancellation();
     final epoch = ++_interactionEpoch;
     _generationCancellation = cancellation;
     setState(() {
@@ -132,9 +132,9 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         );
       });
       unawaited(_speakAiResponse(reply.text));
-    } on GeminiException catch (error) {
+    } on AiTutorException catch (error) {
       if (mounted && epoch == _interactionEpoch) {
-        setState(() => _error = _geminiFailureText(error.code));
+        setState(() => _error = _aiFailureText(error.code));
       }
     } finally {
       if (mounted && epoch == _interactionEpoch) {
@@ -197,7 +197,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
           voiceId: 'device-default',
           speed: 1,
           mode: VoiceMode.practice,
-          contentId: 'gemini-tutor-response',
+          contentId: 'ai-tutor-response',
           contentType: 'ai_tutor',
         ),
       );
@@ -222,7 +222,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     if (mounted && _isListening) setState(() => _isListening = false);
   }
 
-  Future<void> _openGeminiSettings() async {
+  Future<void> _openAiSettings() async {
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _generationCancellation = null;
@@ -236,8 +236,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     await AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
-        name: 'gemini/settings',
-        builder: (_) => GeminiSettingsScreen(geminiTutor: _tutor),
+        name: 'ai-tutor/settings',
+        builder: (_) => AiTutorSettingsScreen(aiTutor: _tutor),
       ),
     );
     await _loadKeyStatus();
@@ -262,8 +262,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
         title: const Text('AI Tutor'),
         actions: [
           IconButton(
-            tooltip: 'ตั้งค่า Gemini',
-            onPressed: _openGeminiSettings,
+            tooltip: 'AI provider settings',
+            onPressed: _openAiSettings,
             icon: const Icon(Icons.key_outlined),
           ),
         ],
@@ -296,8 +296,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Text(
                 _hasKey
-                    ? 'ข้อความจะส่งไป Gemini ตามการยินยอมที่บันทึกไว้'
-                    : 'เพิ่ม Gemini API key ก่อนเริ่มใช้งาน',
+                    ? 'Messages use the selected provider under saved consent.'
+                    : 'Add a provider API key before starting.',
                 key: const ValueKey<String>('ai-tutor-key-status'),
                 style: Theme.of(context).textTheme.bodySmall,
               ),
@@ -309,7 +309,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
                         padding: EdgeInsets.all(24),
                         child: Text(
                           'ยังไม่มีบทสนทนา เลือกสถานการณ์แล้วพิมพ์หรือพูด'
-                          'ภาษาอังกฤษเพื่อเรียก Gemini จริง',
+                          'ภาษาอังกฤษเพื่อเรียก AI provider ที่เลือกไว้',
                           textAlign: TextAlign.center,
                         ),
                       ),
@@ -423,25 +423,27 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     );
   }
 
-  String _geminiFailureText(GeminiFailureCode code) => switch (code) {
-    GeminiFailureCode.missingKey =>
-      'ยังไม่มี Gemini API key กรุณาเปิดหน้าตั้งค่า',
-    GeminiFailureCode.consentRequired =>
-      'ยังไม่ได้ยินยอมส่งข้อความไป Gemini กรุณาเปิดหน้าตั้งค่า',
-    GeminiFailureCode.invalidKey => 'Gemini API key ไม่ถูกต้องหรือถูกบล็อก',
-    GeminiFailureCode.quota => 'โควตาหรือเพดานใช้งาน Gemini เต็มแล้ว',
-    GeminiFailureCode.rateLimited => 'Gemini จำกัดอัตราการเรียก กรุณารอสักครู่',
-    GeminiFailureCode.offline =>
-      'อุปกรณ์ออฟไลน์ ข้อมูลการเรียนในเครื่องยังใช้ได้',
-    GeminiFailureCode.timeout => 'Gemini ตอบกลับช้าเกินกำหนด กรุณาลองใหม่',
-    GeminiFailureCode.providerUnavailable =>
-      'Gemini ไม่พร้อมใช้งานชั่วคราว ข้อมูลในเครื่องไม่ได้รับผลกระทบ',
-    GeminiFailureCode.malformedResponse => 'Gemini ส่งคำตอบที่อ่านไม่ได้',
-    GeminiFailureCode.blocked => 'คำขอถูกระบบความปลอดภัยของ Gemini ปฏิเสธ',
-    GeminiFailureCode.cancelled => 'ยกเลิกคำขอ Gemini แล้ว',
-    GeminiFailureCode.validation => 'ข้อความไม่ถูกต้องหรือยาวเกินกำหนด',
-    GeminiFailureCode.secureStorage =>
-      'ที่จัดเก็บ key แบบปลอดภัยไม่พร้อมใช้งาน',
+  String _aiFailureText(AiFailureCode code) => switch (code) {
+    AiFailureCode.missingKey => 'Add an API key in AI provider settings.',
+    AiFailureCode.missingModel => 'Select an AI model before starting.',
+    AiFailureCode.consentRequired =>
+      'Provider consent is required before sending a message.',
+    AiFailureCode.invalidKey => 'The provider rejected this API key.',
+    AiFailureCode.requestRejected => 'The provider rejected this request.',
+    AiFailureCode.quota => 'The provider quota is exhausted.',
+    AiFailureCode.rateLimited => 'The provider rate limit was reached.',
+    AiFailureCode.offline =>
+      'The device is offline. Local learning still works.',
+    AiFailureCode.timeout => 'The provider timed out. Try again.',
+    AiFailureCode.providerUnavailable =>
+      'The provider is temporarily unavailable. Local data is unaffected.',
+    AiFailureCode.malformedResponse =>
+      'The provider returned an invalid reply.',
+    AiFailureCode.blocked => 'The provider blocked this request.',
+    AiFailureCode.cancelled => 'The AI request was cancelled.',
+    AiFailureCode.validation => 'The message is invalid or too long.',
+    AiFailureCode.secureStorage => 'Secure API-key storage is unavailable.',
+    AiFailureCode.unsafeEndpoint => 'The custom provider endpoint is unsafe.',
   };
 
   String _speechFailureText(SpeechFailureCode code) => switch (code) {

@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
+import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_screen.dart';
@@ -14,13 +14,10 @@ void main() {
   testWidgets('shows only live provider reply and model provenance', (
     tester,
   ) async {
-    final tutor = _FakeGeminiTutor();
+    final tutor = _FakeAiTutor();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(
-          voice: VoiceUseCases(_FakeVoice()),
-          geminiTutor: tutor,
-        ),
+        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), aiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();
@@ -42,16 +39,13 @@ void main() {
   testWidgets('provider failure is explicit and never becomes canned success', (
     tester,
   ) async {
-    final tutor = _FakeGeminiTutor()
-      ..replyFailure = const GeminiException(
-        GeminiFailureCode.providerUnavailable,
+    final tutor = _FakeAiTutor()
+      ..replyFailure = const AiTutorException(
+        AiFailureCode.providerUnavailable,
       );
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(
-          voice: VoiceUseCases(_FakeVoice()),
-          geminiTutor: tutor,
-        ),
+        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), aiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();
@@ -75,12 +69,12 @@ void main() {
     tester,
   ) async {
     final speechGateway = _FakeSpeechGateway();
-    final tutor = _FakeGeminiTutor();
+    final tutor = _FakeAiTutor();
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
           voice: VoiceUseCases(_FakeVoice()),
-          geminiTutor: tutor,
+          aiTutor: tutor,
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
       ),
@@ -100,7 +94,7 @@ void main() {
       MaterialApp(
         home: AiTutorScreen(
           voice: VoiceUseCases(_FakeVoice()),
-          geminiTutor: _FakeGeminiTutor(),
+          aiTutor: _FakeAiTutor(),
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
       ),
@@ -115,7 +109,7 @@ void main() {
     expect(speechGateway.cancelCalls, 1);
   });
 
-  testWidgets('opening Gemini settings cancels active microphone', (
+  testWidgets('opening AI provider settings cancels active microphone', (
     tester,
   ) async {
     final speechGateway = _FakeSpeechGateway()..emitResult = false;
@@ -123,7 +117,7 @@ void main() {
       MaterialApp(
         home: AiTutorScreen(
           voice: VoiceUseCases(_FakeVoice()),
-          geminiTutor: _FakeGeminiTutor(),
+          aiTutor: _FakeAiTutor(),
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
       ),
@@ -132,22 +126,22 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
     await tester.pump();
 
-    await tester.tap(find.byTooltip('ตั้งค่า Gemini'));
+    await tester.tap(find.byTooltip('AI provider settings'));
     await tester.pumpAndSettle();
 
     expect(speechGateway.cancelCalls, 1);
-    expect(find.text('Gemini BYOK'), findsOneWidget);
+    expect(find.text('AI Provider BYOK'), findsOneWidget);
   });
 
   testWidgets('opening settings invalidates delayed reply and prevents TTS', (
     tester,
   ) async {
     final gate = Completer<void>();
-    final tutor = _FakeGeminiTutor()..replyGate = gate;
+    final tutor = _FakeAiTutor()..replyGate = gate;
     final voice = _FakeVoice();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(voice), geminiTutor: tutor),
+        home: AiTutorScreen(voice: VoiceUseCases(voice), aiTutor: tutor),
       ),
     );
     await tester.pumpAndSettle();
@@ -158,7 +152,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
     await tester.pump();
 
-    await tester.tap(find.byTooltip('ตั้งค่า Gemini'));
+    await tester.tap(find.byTooltip('AI provider settings'));
     await tester.pumpAndSettle();
     gate.complete();
     await tester.pumpAndSettle();
@@ -168,9 +162,9 @@ void main() {
   });
 }
 
-final class _FakeGeminiTutor implements GeminiTutorController {
+final class _FakeAiTutor implements AiTutorController {
   final List<String> messages = [];
-  GeminiException? replyFailure;
+  AiTutorException? replyFailure;
   Completer<void>? replyGate;
   bool hasKey = true;
 
@@ -179,34 +173,60 @@ final class _FakeGeminiTutor implements GeminiTutorController {
     required String key,
     required bool providerConsent,
     required bool shareLearningSummary,
-    GeminiCancellation? cancellation,
+    required AiProviderId providerId,
+    required String model,
+    String? customBaseUrl,
+    AiCancellation? cancellation,
+  }) async {}
+
+  @override
+  Future<void> configureActiveModel({
+    required String model,
+    required bool shareLearningSummary,
+    AiCancellation? cancellation,
   }) async {}
 
   @override
   Future<void> dispose() async {}
 
   @override
-  Future<GeminiSettingsStatus> loadSettings() async => GeminiSettingsStatus(
+  Future<AiTutorSettingsStatus> loadSettings() async => AiTutorSettingsStatus(
     hasKey: hasKey,
     providerConsent: true,
     shareLearningSummary: false,
+    providerId: AiProviderId.gemini,
+    model: 'gemini-test',
   );
+
+  @override
+  Future<List<AiModel>> listModels({
+    required AiProviderId providerId,
+    required String key,
+    String? customBaseUrl,
+    AiCancellation? cancellation,
+  }) async => const [AiModel(id: 'gemini-test')];
+
+  @override
+  Future<List<AiModel>> listModelsForActiveCredential({
+    AiCancellation? cancellation,
+  }) async => const [AiModel(id: 'gemini-test')];
 
   @override
   Future<void> removeKey() async {}
 
   @override
-  Future<GeminiTutorReply> reply({
+  Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
-    GeminiCancellation? cancellation,
+    AiCancellation? cancellation,
   }) async {
     messages.add(learnerMessage);
     await replyGate?.future;
     final failure = replyFailure;
     if (failure != null) throw failure;
-    return GeminiTutorReply(
+    return AiTutorReply(
       text: 'Live Gemini reply',
+      providerId: AiProviderId.gemini,
       model: 'gemini-test',
       generatedAtUtc: DateTime.utc(2026, 7, 30),
     );

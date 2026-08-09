@@ -223,6 +223,7 @@ final class AiUsageSummary {
 
 abstract interface class AiUsageRepository {
   Future<void> record(AiUsageEvent event);
+  Future<void> recordForOwner(String ownerId, AiUsageEvent event);
   Future<int> purgeExpired(DateTime nowUtc);
   Future<List<AiUsageSummary>> summarize();
   Future<void> clear();
@@ -308,9 +309,16 @@ final class AiTutorCredential {
 }
 
 abstract interface class AiTutorSettingsStore {
+  Future<String> resolveActiveOwnerId();
   Future<AiTutorCredential?> readCredential();
+  Future<AiTutorCredential?> readCredentialForOwner(String ownerId);
   Future<void> writeCredential(AiTutorCredential credential);
+  Future<void> writeCredentialForOwner(
+    String ownerId,
+    AiTutorCredential credential,
+  );
   Future<void> deleteCredential();
+  Future<void> deleteCredentialForOwner(String ownerId);
   Future<String?> readKey();
   Future<void> writeKey(String key);
   Future<void> deleteKey();

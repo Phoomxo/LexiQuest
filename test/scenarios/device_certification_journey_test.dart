@@ -59,6 +59,7 @@ void main() {
         nowUtc: now,
         generateConflictId: idGen,
         generateOwnerId: idGen,
+        deleteOwnerSecrets: (_) async {},
       ),
     );
   });
@@ -66,45 +67,48 @@ void main() {
   tearDown(() => database.close());
 
   group('Device Certification Scenarios', () {
-    test('S1: Guest can create vocabulary and record answers offline', () async {
-      // ── Guest starts locally (no Firebase) ────────────────────────────
-      final owner = await owners.getOrCreateActiveOwner();
-      expect(owner.id, startsWith('local:'));
+    test(
+      'S1: Guest can create vocabulary and record answers offline',
+      () async {
+        // ── Guest starts locally (no Firebase) ────────────────────────────
+        final owner = await owners.getOrCreateActiveOwner();
+        expect(owner.id, startsWith('local:'));
 
-      // ── Create category + words ───────────────────────────────────────
-      final category = await vocabulary.createCategory('Travel');
-      await vocabulary.createWord(
-        CreateWordCommand(
-          categoryId: category.id,
-          spelling: 'station',
-          meaning: 'สถานี',
-          partOfSpeech: 'noun',
-          cefrLevel: 'A2',
-        ),
-      );
+        // ── Create category + words ───────────────────────────────────────
+        final category = await vocabulary.createCategory('Travel');
+        await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: 'station',
+            meaning: 'สถานี',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A2',
+          ),
+        );
 
-      final words = await vocabulary.getGameWords(limit: 5);
-      expect(words.length, 1);
-      expect(words.first.spelling, 'station');
-      expect(words.first.cefrLevel, 'A2');
+        final words = await vocabulary.getGameWords(limit: 5);
+        expect(words.length, 1);
+        expect(words.first.spelling, 'station');
+        expect(words.first.cefrLevel, 'A2');
 
-      // ── Start quiz and record answer ──────────────────────────────────
-      final session = await learning.startQuiz();
-      expect(session.questions, isNotEmpty);
+        // ── Start quiz and record answer ──────────────────────────────────
+        final session = await learning.startQuiz();
+        expect(session.questions, isNotEmpty);
 
-      await learning.recordAnswer(
-        sessionId: session.id,
-        wordId: session.questions.first.word.id,
-        promptMode: 'quiz',
-        isCorrect: true,
-        responseTimeMs: 2000,
-        attemptNumber: 1,
-      );
+        await learning.recordAnswer(
+          sessionId: session.id,
+          wordId: session.questions.first.word.id,
+          promptMode: 'quiz',
+          isCorrect: true,
+          responseTimeMs: 2000,
+          attemptNumber: 1,
+        );
 
-      // ── Finish session ────────────────────────────────────────────────
-      final result = await learning.finishSession(session.id);
-      expect(result.correctCount, greaterThan(0));
-    });
+        // ── Finish session ────────────────────────────────────────────────
+        final result = await learning.finishSession(session.id);
+        expect(result.correctCount, greaterThan(0));
+      },
+    );
 
     test('S2: Session resume — abandoned session is detectable', () async {
       // Seed vocabulary first
@@ -191,39 +195,42 @@ void main() {
       expect(words.length, greaterThanOrEqualTo(1));
     });
 
-    test('S5: Reward balance is zero initially and increases with quiz', () async {
-      await owners.getOrCreateActiveOwner();
-      final account = await rewards.load();
-      expect(account.balance, 0);
+    test(
+      'S5: Reward balance is zero initially and increases with quiz',
+      () async {
+        await owners.getOrCreateActiveOwner();
+        final account = await rewards.load();
+        expect(account.balance, 0);
 
-      // Seed vocabulary for quiz
-      final category = await vocabulary.createCategory('Animals');
-      await vocabulary.createWord(
-        CreateWordCommand(
-          categoryId: category.id,
-          spelling: 'cat',
-          meaning: 'แมว',
-          partOfSpeech: 'noun',
-        ),
-      );
+        // Seed vocabulary for quiz
+        final category = await vocabulary.createCategory('Animals');
+        await vocabulary.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: 'cat',
+            meaning: 'แมว',
+            partOfSpeech: 'noun',
+          ),
+        );
 
-      // Record a correct answer which grants XP
-      final session = await learning.startQuiz();
-      expect(session.questions, isNotEmpty);
-      await learning.recordAnswer(
-        sessionId: session.id,
-        wordId: session.questions.first.word.id,
-        promptMode: 'quiz',
-        isCorrect: true,
-        responseTimeMs: 1000,
-        attemptNumber: 1,
-      );
-      await learning.finishSession(session.id);
+        // Record a correct answer which grants XP
+        final session = await learning.startQuiz();
+        expect(session.questions, isNotEmpty);
+        await learning.recordAnswer(
+          sessionId: session.id,
+          wordId: session.questions.first.word.id,
+          promptMode: 'quiz',
+          isCorrect: true,
+          responseTimeMs: 1000,
+          attemptNumber: 1,
+        );
+        await learning.finishSession(session.id);
 
-      // After answering, balance should be > 0 (XP granted per correct answer)
-      final updatedAccount = await rewards.load();
-      expect(updatedAccount.balance, greaterThan(0));
-    });
+        // After answering, balance should be > 0 (XP granted per correct answer)
+        final updatedAccount = await rewards.load();
+        expect(updatedAccount.balance, greaterThan(0));
+      },
+    );
 
     test('S6: Data deletion erases all owner-scoped records', () async {
       final owner = await owners.getOrCreateActiveOwner();
@@ -247,11 +254,11 @@ void main() {
       );
 
       // Delete all data
-      final deletion = LocalDataDeletion(database);
-      final deleted = await deletion.eraseAll(
-        ownerId: owner.id,
-        deleteVocabulary: true,
+      final deletion = LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
       );
+      final deleted = await deletion.eraseAll(ownerId: owner.id);
       expect(deleted, greaterThan(0));
 
       // Verify learning history is empty

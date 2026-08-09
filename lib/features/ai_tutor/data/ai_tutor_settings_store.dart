@@ -3,31 +3,66 @@ import 'dart:convert';
 import '../../gemini/data/secure_gemini_settings_store.dart';
 import '../domain/ai_tutor_contracts.dart';
 
+typedef ActiveAiTutorOwnerIdProvider = Future<String> Function();
+
 /// Stores the single active BYOK profile as one secure value so provider,
 /// model, consent, endpoint and key cannot be partially switched.
 final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
-  SecureAiTutorSettingsStore(this._storage);
+  SecureAiTutorSettingsStore(this._storage, {required this.activeOwnerId});
 
-  factory SecureAiTutorSettingsStore.production() =>
-      SecureAiTutorSettingsStore(FlutterSecureValueStore());
+  factory SecureAiTutorSettingsStore.production({
+    required ActiveAiTutorOwnerIdProvider activeOwnerId,
+  }) => SecureAiTutorSettingsStore(
+    FlutterSecureValueStore(),
+    activeOwnerId: activeOwnerId,
+  );
 
   final SecureValueStore _storage;
+  final ActiveAiTutorOwnerIdProvider activeOwnerId;
 
-  static const _profile = 'ai_active_profile_v1';
-  static const _apiKey = 'ai_api_key';
-  static const _legacyApiKey = 'gemini_api_key';
-  static const _providerConsent = 'ai_provider_consent';
-  static const _summaryConsent = 'ai_learning_summary_consent';
-  static const _providerId = 'ai_provider_id';
-  static const _model = 'ai_model';
-  static const _customBaseUrl = 'ai_custom_base_url';
+  static const _profile = 'ai_active_profile_v2';
+  static const _apiKey = 'ai_api_key_v2';
+  static const _providerConsent = 'ai_provider_consent_v2';
+  static const _summaryConsent = 'ai_learning_summary_consent_v2';
+  static const _providerId = 'ai_provider_id_v2';
+  static const _model = 'ai_model_v2';
+  static const _customBaseUrl = 'ai_custom_base_url_v2';
+  static const _scopedKeys = <String>[
+    _profile,
+    _apiKey,
+    _providerConsent,
+    _summaryConsent,
+    _providerId,
+    _model,
+    _customBaseUrl,
+  ];
+  static const _legacyKeys = <String>[
+    'ai_active_profile_v1',
+    'ai_api_key',
+    'gemini_api_key',
+    'ai_provider_consent',
+    'ai_learning_summary_consent',
+    'ai_provider_id',
+    'ai_model',
+    'ai_custom_base_url',
+  ];
 
-  bool _migrated = false;
+  bool _legacyDiscarded = false;
 
   @override
   Future<AiTutorCredential?> readCredential() async {
-    await _migrateLegacyValues();
-    final raw = await _read(_profile);
+    return readCredentialForOwner(await resolveActiveOwnerId());
+  }
+
+  @override
+  Future<String> resolveActiveOwnerId() async {
+    return _requireOwnerId(await activeOwnerId());
+  }
+
+  @override
+  Future<AiTutorCredential?> readCredentialForOwner(String ownerId) async {
+    await _discardUnscopedLegacyValues();
+    final raw = await _readForOwner(_profile, _requireOwnerId(ownerId));
     if (raw == null) return null;
     try {
       final json = jsonDecode(raw);
@@ -64,6 +99,15 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
 
   @override
   Future<void> writeCredential(AiTutorCredential credential) async {
+    await writeCredentialForOwner(await resolveActiveOwnerId(), credential);
+  }
+
+  @override
+  Future<void> writeCredentialForOwner(
+    String ownerId,
+    AiTutorCredential credential,
+  ) async {
+    await _discardUnscopedLegacyValues();
     final key = credential.key.trim();
     final model = credential.model.trim();
     if (key.isEmpty || key.length > 512) {
@@ -80,8 +124,9 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
       }
       customBaseUrl = validateCustomAiBaseUri(Uri.parse(raw.trim())).toString();
     }
-    await _write(
+    await _writeForOwner(
       _profile,
+      _requireOwnerId(ownerId),
       jsonEncode({
         'version': 1,
         'key': key,
@@ -97,9 +142,16 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
 
   @override
   Future<void> deleteCredential() async {
-    await _delete(_profile);
-    await _delete(_apiKey);
-    await _delete(_legacyApiKey);
+    await deleteCredentialForOwner(await resolveActiveOwnerId());
+  }
+
+  @override
+  Future<void> deleteCredentialForOwner(String ownerId) async {
+    await _discardUnscopedLegacyValues();
+    final ownerToken = _ownerToken(_requireOwnerId(ownerId));
+    for (final baseKey in _scopedKeys) {
+      await _delete('$baseKey:$ownerToken');
+    }
   }
 
   @override
@@ -107,28 +159,32 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
 
   @override
   Future<void> writeKey(String key) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null && current.model.isNotEmpty) {
-      await writeCredential(current.copyWith(key: key));
+      await writeCredentialForOwner(ownerId, current.copyWith(key: key));
       return;
     }
-    await _write(_apiKey, key);
-    _migrated = false;
+    await _writeForOwner(_apiKey, ownerId, key);
   }
 
   @override
   Future<void> deleteKey() => deleteCredential();
 
   @override
-  Future<bool> readProviderConsent() async =>
-      (await readCredential())?.providerConsent ??
-      await _read(_providerConsent) == 'true';
+  Future<bool> readProviderConsent() async {
+    final ownerId = await resolveActiveOwnerId();
+    return (await readCredentialForOwner(ownerId))?.providerConsent ??
+        await _readForOwner(_providerConsent, ownerId) == 'true';
+  }
 
   @override
   Future<void> writeProviderConsent(bool value) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null && current.model.isNotEmpty) {
-      await writeCredential(
+      await writeCredentialForOwner(
+        ownerId,
         current.copyWith(
           providerConsent: value,
           shareLearningSummary: value && current.shareLearningSummary,
@@ -136,29 +192,36 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
       );
       return;
     }
-    await _write(_providerConsent, value.toString());
+    await _writeForOwner(_providerConsent, ownerId, value.toString());
   }
 
   @override
-  Future<bool> readLearningSummaryConsent() async =>
-      (await readCredential())?.shareLearningSummary ??
-      await _read(_summaryConsent) == 'true';
+  Future<bool> readLearningSummaryConsent() async {
+    final ownerId = await resolveActiveOwnerId();
+    return (await readCredentialForOwner(ownerId))?.shareLearningSummary ??
+        await _readForOwner(_summaryConsent, ownerId) == 'true';
+  }
 
   @override
   Future<void> writeLearningSummaryConsent(bool value) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null && current.model.isNotEmpty) {
-      await writeCredential(current.copyWith(shareLearningSummary: value));
+      await writeCredentialForOwner(
+        ownerId,
+        current.copyWith(shareLearningSummary: value),
+      );
       return;
     }
-    await _write(_summaryConsent, value.toString());
+    await _writeForOwner(_summaryConsent, ownerId, value.toString());
   }
 
   @override
   Future<AiProviderId> readProviderId() async {
-    final credential = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final credential = await readCredentialForOwner(ownerId);
     if (credential != null) return credential.providerId;
-    final raw = await _read(_providerId);
+    final raw = await _readForOwner(_providerId, ownerId);
     return AiProviderId.values
             .where((provider) => provider.name == raw)
             .firstOrNull ??
@@ -167,71 +230,91 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
 
   @override
   Future<void> writeProviderId(AiProviderId provider) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null && current.model.isNotEmpty) {
-      await writeCredential(current.copyWith(providerId: provider));
+      await writeCredentialForOwner(
+        ownerId,
+        current.copyWith(providerId: provider),
+      );
       return;
     }
-    await _write(_providerId, provider.name);
+    await _writeForOwner(_providerId, ownerId, provider.name);
   }
 
   @override
-  Future<String?> readModel() async =>
-      (await readCredential())?.model.nullIfEmpty ?? await _read(_model);
+  Future<String?> readModel() async {
+    final ownerId = await resolveActiveOwnerId();
+    return (await readCredentialForOwner(ownerId))?.model.nullIfEmpty ??
+        await _readForOwner(_model, ownerId);
+  }
 
   @override
   Future<void> writeModel(String model) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null) {
-      await writeCredential(current.copyWith(model: model));
+      await writeCredentialForOwner(ownerId, current.copyWith(model: model));
       return;
     }
-    await _write(_model, model);
+    await _writeForOwner(_model, ownerId, model);
   }
 
   @override
-  Future<String?> readCustomBaseUrl() async =>
-      (await readCredential())?.customBaseUrl ?? await _read(_customBaseUrl);
+  Future<String?> readCustomBaseUrl() async {
+    final ownerId = await resolveActiveOwnerId();
+    return (await readCredentialForOwner(ownerId))?.customBaseUrl ??
+        await _readForOwner(_customBaseUrl, ownerId);
+  }
 
   @override
   Future<void> writeCustomBaseUrl(String url) async {
-    final current = await readCredential();
+    final ownerId = await resolveActiveOwnerId();
+    final current = await readCredentialForOwner(ownerId);
     if (current != null && current.providerId == AiProviderId.customOpenAi) {
-      await writeCredential(current.copyWith(customBaseUrl: url));
+      await writeCredentialForOwner(
+        ownerId,
+        current.copyWith(customBaseUrl: url),
+      );
       return;
     }
-    await _write(_customBaseUrl, url);
+    await _writeForOwner(_customBaseUrl, ownerId, url);
   }
 
-  Future<void> _migrateLegacyValues() async {
-    if (_migrated) return;
-    _migrated = true;
-    if (await _read(_profile) != null) return;
-    final key = await _read(_apiKey) ?? await _read(_legacyApiKey);
-    if (key == null || key.trim().isEmpty) return;
-    final providerRaw = await _read(_providerId);
-    final provider =
-        AiProviderId.values
-            .where((value) => value.name == providerRaw)
-            .firstOrNull ??
-        AiProviderId.gemini;
-    final model = await _read(_model) ?? '';
-    await _write(
-      _profile,
-      jsonEncode({
-        'version': 1,
-        'key': key.trim(),
-        'providerId': provider.name,
-        'model': model,
-        'providerConsent': await _read(_providerConsent) == 'true',
-        'shareLearningSummary': await _read(_summaryConsent) == 'true',
-        if (await _read(_customBaseUrl) case final String value)
-          'customBaseUrl': value,
-      }),
-    );
-    await _delete(_apiKey);
-    await _delete(_legacyApiKey);
+  Future<void> _discardUnscopedLegacyValues() async {
+    if (_legacyDiscarded) return;
+    for (final key in _legacyKeys) {
+      await _delete(key);
+    }
+    _legacyDiscarded = true;
   }
+
+  Future<String?> _readForOwner(String baseKey, String ownerId) async {
+    return _read(_scopedKey(baseKey, ownerId));
+  }
+
+  Future<void> _writeForOwner(
+    String baseKey,
+    String ownerId,
+    String value,
+  ) async {
+    await _write(_scopedKey(baseKey, ownerId), value);
+  }
+
+  String _requireOwnerId(String value) {
+    final ownerId = value.trim();
+    if (ownerId.isEmpty) {
+      throw StateError('Active owner id must not be empty.');
+    }
+    return ownerId;
+  }
+
+  String _scopedKey(String baseKey, String ownerId) {
+    return '$baseKey:${_ownerToken(_requireOwnerId(ownerId))}';
+  }
+
+  String _ownerToken(String ownerId) =>
+      base64Url.encode(utf8.encode(ownerId)).replaceAll('=', '');
 
   Future<String?> _read(String key) async {
     try {

@@ -1,17 +1,27 @@
 import 'package:flutter/material.dart';
 
 import '../features/account/application/account_use_cases.dart';
+import '../features/account/application/local_data_deletion.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
+import '../features/identity/domain/local_owner_repository.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 
 class SettingScreen extends StatefulWidget {
-  const SettingScreen({super.key, this.account, this.researchConsent});
+  const SettingScreen({
+    super.key,
+    this.account,
+    this.researchConsent,
+    this.localDataEraser,
+    this.localOwners,
+  });
 
   final AccountUseCases? account;
   final ResearchConsentUseCases? researchConsent;
+  final LocalDataEraser? localDataEraser;
+  final LocalOwnerRepository? localOwners;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
@@ -20,6 +30,8 @@ class SettingScreen extends StatefulWidget {
 class _SettingScreenState extends State<SettingScreen> {
   AccountUseCases? _account;
   ResearchConsentUseCases? _researchConsent;
+  LocalDataEraser? _localDataEraser;
+  LocalOwnerRepository? _localOwners;
   bool _busy = false;
 
   @override
@@ -29,6 +41,9 @@ class _SettingScreenState extends State<SettingScreen> {
     _account ??= widget.account ?? dependencies?.account;
     _researchConsent ??=
         widget.researchConsent ?? dependencies?.researchConsent;
+    _localDataEraser ??=
+        widget.localDataEraser ?? dependencies?.localDataEraser;
+    _localOwners ??= widget.localOwners ?? dependencies?.localOwners;
   }
 
   Future<void> _changePassword() async {
@@ -109,6 +124,44 @@ class _SettingScreenState extends State<SettingScreen> {
       await AppNavigator.resetTo<void>(context, AppRoute.login);
     } on AccountException {
       if (mounted) _show('ออกจากระบบไม่สำเร็จ ข้อมูลในเครื่องยังไม่ถูกลบ');
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _eraseLocalData() async {
+    final eraser = _localDataEraser;
+    final owners = _localOwners;
+    if (eraser == null || owners == null || _busy) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Erase all local data?'),
+        content: const Text(
+          'This permanently removes local learning data, vocabulary, consent, '
+          'AI usage, and the active owner\'s saved provider API key.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            key: const ValueKey<String>('confirm-local-erasure'),
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Erase local data'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _busy = true);
+    try {
+      final owner = await owners.getOrCreateActiveOwner();
+      await eraser.eraseAll(ownerId: owner.id);
+      if (mounted) _show('Local data erased.');
+    } on Object {
+      if (mounted) _show('Local data could not be fully erased.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }
@@ -221,6 +274,17 @@ class _SettingScreenState extends State<SettingScreen> {
               onTap: _busy ? null : _logout,
             ),
           ],
+          if (_localDataEraser != null && _localOwners != null)
+            ListTile(
+              key: const ValueKey<String>('erase-local-data'),
+              minTileHeight: 48,
+              leading: const Icon(Icons.delete_forever_outlined),
+              title: const Text('Erase all local data'),
+              subtitle: const Text(
+                'Includes vocabulary, learning history, consent, and saved AI key.',
+              ),
+              onTap: _busy ? null : _eraseLocalData,
+            ),
           if (_busy)
             const Padding(
               padding: EdgeInsets.all(16),

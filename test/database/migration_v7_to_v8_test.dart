@@ -60,7 +60,7 @@ void main() {
 
     // ── Schema version ───────────────────────────────────────────────────────
 
-    test('fresh database reports schema version 11', () async {
+    test('fresh database reports schema version 12', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
@@ -68,8 +68,8 @@ void main() {
           .getSingle();
       expect(
         version,
-        11,
-        reason: 'schema v11 deployed (includes AI usage + speech evidence)',
+        12,
+        reason: 'schema v12 deployed (owner-scoped AI usage)',
       );
     });
 

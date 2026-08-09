@@ -8,15 +8,20 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 void main() {
   late AppDatabase database;
   late DriftOwnerUpgradeRepository repository;
+  late List<String> deletedSecretOwnerIds;
   var conflictSequence = 0;
 
   setUp(() async {
+    deletedSecretOwnerIds = <String>[];
     database = AppDatabase(NativeDatabase.memory());
     repository = DriftOwnerUpgradeRepository(
       database,
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
       generateConflictId: () => 'upgrade-conflict-${conflictSequence++}',
       generateOwnerId: () => 'new-guest-owner',
+      deleteOwnerSecrets: (ownerId) async {
+        deletedSecretOwnerIds.add(ownerId);
+      },
     );
     await _seedOwners(database);
   });
@@ -52,6 +57,7 @@ void main() {
 
     expect(result.mode, OwnerUpgradeMode.mergedExisting);
     expect(result.targetOwnerId, 'account-owner');
+    expect(deletedSecretOwnerIds, ['guest-owner']);
     expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
     for (final table in ownerUpgradeInventory) {
       expect(
@@ -142,6 +148,27 @@ void main() {
     },
   );
 
+  test('deduplicates AI usage event ids while merging owners', () async {
+    for (final owner in ['guest-owner', 'account-owner']) {
+      await database.customInsert(
+        "INSERT INTO ai_usage_events "
+        "(event_id, owner_id, occurred_at_utc_ms, provider_id, model, "
+        "request_type, outcome, latency_ms) VALUES "
+        "('shared-event', ?, 20, 'gemini', 'model', "
+        "'tutorReply', 'success', 10)",
+        variables: [Variable<String>(owner)],
+      );
+    }
+
+    final result = await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+
+    expect(result.mode, OwnerUpgradeMode.mergedExisting);
+    expect(await _ownerCount(database, 'ai_usage_events', 'account-owner'), 1);
+  });
+
   test('rolls back the whole upgrade when any table update fails', () async {
     await _seedEveryOwnerScopedTable(database);
     await database.customStatement('''
@@ -170,6 +197,7 @@ void main() {
       database.localOwners,
     )..where((row) => row.id.equals('guest-owner'))).getSingle();
     expect(guest.isActive, isTrue);
+    expect(deletedSecretOwnerIds, ['guest-owner']);
   });
 
   test(
@@ -552,6 +580,15 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('evidence-seed-1', 'guest-owner', 'session-1', 'word-1', 'meaning', "
     "'station', 'station', 'en-US', 'speech_to_text', 'levenshtein', "
     "100, 1, 0.95, 1, 20, 500)",
+  );
+
+  // Schema v12 — provider-neutral AI usage is owner-scoped.
+  await database.customInsert(
+    "INSERT INTO ai_usage_events "
+    "(event_id, owner_id, occurred_at_utc_ms, provider_id, model, "
+    "request_type, outcome, latency_ms) VALUES "
+    "('ai-usage-seed-1', 'guest-owner', 20, 'gemini', 'model', "
+    "'tutorReply', 'success', 10)",
   );
 }
 

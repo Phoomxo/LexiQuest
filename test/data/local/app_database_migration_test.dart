@@ -4,11 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version eleven with product tables', () async {
+  test('new databases use schema version twelve with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 11);
+    expect(database.schemaVersion, 12);
 
     final categoryColumns = await _columnNames(
       database,
@@ -124,7 +124,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 11); // schema v10 added associative tables, v11 AI/voice
+      expect(version, 12); // schema v12 owner-scoped AI usage
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -202,7 +202,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        11, // schema v11 added AI usage + speech evidence
+        12, // schema v12 owner-scoped AI usage
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +229,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        11, // schema v11 added AI usage + speech evidence
+        12, // schema v12 owner-scoped AI usage
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

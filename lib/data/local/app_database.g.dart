@@ -17223,6 +17223,20 @@ class $AiUsageEventsTable extends AiUsageEvents
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
   static const VerificationMeta _occurredAtUtcMsMeta = const VerificationMeta(
     'occurredAtUtcMs',
   );
@@ -17368,6 +17382,7 @@ class $AiUsageEventsTable extends AiUsageEvents
   @override
   List<GeneratedColumn> get $columns => [
     eventId,
+    ownerId,
     occurredAtUtcMs,
     providerId,
     model,
@@ -17401,6 +17416,14 @@ class $AiUsageEventsTable extends AiUsageEvents
       );
     } else if (isInserting) {
       context.missing(_eventIdMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
     }
     if (data.containsKey('occurred_at_utc_ms')) {
       context.handle(
@@ -17523,7 +17546,7 @@ class $AiUsageEventsTable extends AiUsageEvents
   }
 
   @override
-  Set<GeneratedColumn> get $primaryKey => {eventId};
+  Set<GeneratedColumn> get $primaryKey => {ownerId, eventId};
   @override
   AiUsageEventRow map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
@@ -17531,6 +17554,10 @@ class $AiUsageEventsTable extends AiUsageEvents
       eventId: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
         data['${effectivePrefix}event_id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
       )!,
       occurredAtUtcMs: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
@@ -17595,6 +17622,7 @@ class $AiUsageEventsTable extends AiUsageEvents
 
 class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   final String eventId;
+  final String ownerId;
   final int occurredAtUtcMs;
   final String providerId;
   final String model;
@@ -17610,6 +17638,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   final int schemaVersion;
   const AiUsageEventRow({
     required this.eventId,
+    required this.ownerId,
     required this.occurredAtUtcMs,
     required this.providerId,
     required this.model,
@@ -17628,6 +17657,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   Map<String, Expression> toColumns(bool nullToAbsent) {
     final map = <String, Expression>{};
     map['event_id'] = Variable<String>(eventId);
+    map['owner_id'] = Variable<String>(ownerId);
     map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs);
     map['provider_id'] = Variable<String>(providerId);
     map['model'] = Variable<String>(model);
@@ -17661,6 +17691,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   AiUsageEventsCompanion toCompanion(bool nullToAbsent) {
     return AiUsageEventsCompanion(
       eventId: Value(eventId),
+      ownerId: Value(ownerId),
       occurredAtUtcMs: Value(occurredAtUtcMs),
       providerId: Value(providerId),
       model: Value(model),
@@ -17697,6 +17728,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return AiUsageEventRow(
       eventId: serializer.fromJson<String>(json['eventId']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
       occurredAtUtcMs: serializer.fromJson<int>(json['occurredAtUtcMs']),
       providerId: serializer.fromJson<String>(json['providerId']),
       model: serializer.fromJson<String>(json['model']),
@@ -17719,6 +17751,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
     serializer ??= driftRuntimeOptions.defaultSerializer;
     return <String, dynamic>{
       'eventId': serializer.toJson<String>(eventId),
+      'ownerId': serializer.toJson<String>(ownerId),
       'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
       'providerId': serializer.toJson<String>(providerId),
       'model': serializer.toJson<String>(model),
@@ -17739,6 +17772,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
 
   AiUsageEventRow copyWith({
     String? eventId,
+    String? ownerId,
     int? occurredAtUtcMs,
     String? providerId,
     String? model,
@@ -17754,6 +17788,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
     int? schemaVersion,
   }) => AiUsageEventRow(
     eventId: eventId ?? this.eventId,
+    ownerId: ownerId ?? this.ownerId,
     occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
     providerId: providerId ?? this.providerId,
     model: model ?? this.model,
@@ -17775,6 +17810,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   AiUsageEventRow copyWithCompanion(AiUsageEventsCompanion data) {
     return AiUsageEventRow(
       eventId: data.eventId.present ? data.eventId.value : this.eventId,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
       occurredAtUtcMs: data.occurredAtUtcMs.present
           ? data.occurredAtUtcMs.value
           : this.occurredAtUtcMs,
@@ -17815,6 +17851,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   String toString() {
     return (StringBuffer('AiUsageEventRow(')
           ..write('eventId: $eventId, ')
+          ..write('ownerId: $ownerId, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
           ..write('providerId: $providerId, ')
           ..write('model: $model, ')
@@ -17837,6 +17874,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
   @override
   int get hashCode => Object.hash(
     eventId,
+    ownerId,
     occurredAtUtcMs,
     providerId,
     model,
@@ -17856,6 +17894,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
       identical(this, other) ||
       (other is AiUsageEventRow &&
           other.eventId == this.eventId &&
+          other.ownerId == this.ownerId &&
           other.occurredAtUtcMs == this.occurredAtUtcMs &&
           other.providerId == this.providerId &&
           other.model == this.model &&
@@ -17874,6 +17913,7 @@ class AiUsageEventRow extends DataClass implements Insertable<AiUsageEventRow> {
 
 class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   final Value<String> eventId;
+  final Value<String> ownerId;
   final Value<int> occurredAtUtcMs;
   final Value<String> providerId;
   final Value<String> model;
@@ -17890,6 +17930,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   final Value<int> rowid;
   const AiUsageEventsCompanion({
     this.eventId = const Value.absent(),
+    this.ownerId = const Value.absent(),
     this.occurredAtUtcMs = const Value.absent(),
     this.providerId = const Value.absent(),
     this.model = const Value.absent(),
@@ -17907,6 +17948,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   });
   AiUsageEventsCompanion.insert({
     required String eventId,
+    required String ownerId,
     required int occurredAtUtcMs,
     required String providerId,
     required String model,
@@ -17922,6 +17964,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
     this.schemaVersion = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : eventId = Value(eventId),
+       ownerId = Value(ownerId),
        occurredAtUtcMs = Value(occurredAtUtcMs),
        providerId = Value(providerId),
        model = Value(model),
@@ -17930,6 +17973,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
        latencyMs = Value(latencyMs);
   static Insertable<AiUsageEventRow> custom({
     Expression<String>? eventId,
+    Expression<String>? ownerId,
     Expression<int>? occurredAtUtcMs,
     Expression<String>? providerId,
     Expression<String>? model,
@@ -17947,6 +17991,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   }) {
     return RawValuesInsertable({
       if (eventId != null) 'event_id': eventId,
+      if (ownerId != null) 'owner_id': ownerId,
       if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
       if (providerId != null) 'provider_id': providerId,
       if (model != null) 'model': model,
@@ -17967,6 +18012,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
 
   AiUsageEventsCompanion copyWith({
     Value<String>? eventId,
+    Value<String>? ownerId,
     Value<int>? occurredAtUtcMs,
     Value<String>? providerId,
     Value<String>? model,
@@ -17984,6 +18030,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   }) {
     return AiUsageEventsCompanion(
       eventId: eventId ?? this.eventId,
+      ownerId: ownerId ?? this.ownerId,
       occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
       providerId: providerId ?? this.providerId,
       model: model ?? this.model,
@@ -18007,6 +18054,9 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
     final map = <String, Expression>{};
     if (eventId.present) {
       map['event_id'] = Variable<String>(eventId.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
     }
     if (occurredAtUtcMs.present) {
       map['occurred_at_utc_ms'] = Variable<int>(occurredAtUtcMs.value);
@@ -18059,6 +18109,7 @@ class AiUsageEventsCompanion extends UpdateCompanion<AiUsageEventRow> {
   String toString() {
     return (StringBuffer('AiUsageEventsCompanion(')
           ..write('eventId: $eventId, ')
+          ..write('ownerId: $ownerId, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
           ..write('providerId: $providerId, ')
           ..write('model: $model, ')
@@ -19730,6 +19781,24 @@ final class $$LocalOwnersTableReferences
     );
   }
 
+  static MultiTypedResultKey<$AiUsageEventsTable, List<AiUsageEventRow>>
+  _aiUsageEventsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.aiUsageEvents,
+    aliasName: 'local_owners__id__ai_usage_events__owner_id',
+  );
+
+  $$AiUsageEventsTableProcessedTableManager get aiUsageEventsRefs {
+    final manager = $$AiUsageEventsTableTableManager(
+      $_db,
+      $_db.aiUsageEvents,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_aiUsageEventsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
   static MultiTypedResultKey<$SpeechEvidenceTable, List<SpeechEvidenceData>>
   _speechEvidenceRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
     db.speechEvidence,
@@ -20362,6 +20431,31 @@ class $$LocalOwnersTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> aiUsageEventsRefs(
+    Expression<bool> Function($$AiUsageEventsTableFilterComposer f) f,
+  ) {
+    final $$AiUsageEventsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.aiUsageEvents,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AiUsageEventsTableFilterComposer(
+            $db: $db,
+            $table: $db.aiUsageEvents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 
@@ -21051,6 +21145,31 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> aiUsageEventsRefs<T extends Object>(
+    Expression<T> Function($$AiUsageEventsTableAnnotationComposer a) f,
+  ) {
+    final $$AiUsageEventsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.aiUsageEvents,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$AiUsageEventsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.aiUsageEvents,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
   Expression<T> speechEvidenceRefs<T extends Object>(
     Expression<T> Function($$SpeechEvidenceTableAnnotationComposer a) f,
   ) {
@@ -21114,6 +21233,7 @@ class $$LocalOwnersTableTableManager
             bool learningDayLogRefs,
             bool associationRecordsRefs,
             bool associativeMemoryStatesRefs,
+            bool aiUsageEventsRefs,
             bool speechEvidenceRefs,
           })
         > {
@@ -21197,6 +21317,7 @@ class $$LocalOwnersTableTableManager
                 learningDayLogRefs = false,
                 associationRecordsRefs = false,
                 associativeMemoryStatesRefs = false,
+                aiUsageEventsRefs = false,
                 speechEvidenceRefs = false,
               }) {
                 return PrefetchHooks(
@@ -21225,6 +21346,7 @@ class $$LocalOwnersTableTableManager
                     if (learningDayLogRefs) db.learningDayLog,
                     if (associationRecordsRefs) db.associationRecords,
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
+                    if (aiUsageEventsRefs) db.aiUsageEvents,
                     if (speechEvidenceRefs) db.speechEvidence,
                   ],
                   addJoins: null,
@@ -21713,6 +21835,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (aiUsageEventsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          AiUsageEventRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._aiUsageEventsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).aiUsageEventsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                       if (speechEvidenceRefs)
                         await $_getPrefetchedData<
                           LocalOwner,
@@ -21778,6 +21921,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool learningDayLogRefs,
         bool associationRecordsRefs,
         bool associativeMemoryStatesRefs,
+        bool aiUsageEventsRefs,
         bool speechEvidenceRefs,
       })
     >;
@@ -34819,6 +34963,7 @@ typedef $$AssociativeMemoryStatesTableProcessedTableManager =
 typedef $$AiUsageEventsTableCreateCompanionBuilder =
     AiUsageEventsCompanion Function({
       required String eventId,
+      required String ownerId,
       required int occurredAtUtcMs,
       required String providerId,
       required String model,
@@ -34837,6 +34982,7 @@ typedef $$AiUsageEventsTableCreateCompanionBuilder =
 typedef $$AiUsageEventsTableUpdateCompanionBuilder =
     AiUsageEventsCompanion Function({
       Value<String> eventId,
+      Value<String> ownerId,
       Value<int> occurredAtUtcMs,
       Value<String> providerId,
       Value<String> model,
@@ -34852,6 +34998,33 @@ typedef $$AiUsageEventsTableUpdateCompanionBuilder =
       Value<int> schemaVersion,
       Value<int> rowid,
     });
+
+final class $$AiUsageEventsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $AiUsageEventsTable, AiUsageEventRow> {
+  $$AiUsageEventsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('ai_usage_events__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
 
 class $$AiUsageEventsTableFilterComposer
     extends Composer<_$AppDatabase, $AiUsageEventsTable> {
@@ -34931,6 +35104,29 @@ class $$AiUsageEventsTableFilterComposer
     column: $table.schemaVersion,
     builder: (column) => ColumnFilters(column),
   );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$AiUsageEventsTableOrderingComposer
@@ -35011,6 +35207,29 @@ class $$AiUsageEventsTableOrderingComposer
     column: $table.schemaVersion,
     builder: (column) => ColumnOrderings(column),
   );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$AiUsageEventsTableAnnotationComposer
@@ -35083,6 +35302,29 @@ class $$AiUsageEventsTableAnnotationComposer
     column: $table.schemaVersion,
     builder: (column) => column,
   );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
 }
 
 class $$AiUsageEventsTableTableManager
@@ -35096,12 +35338,9 @@ class $$AiUsageEventsTableTableManager
           $$AiUsageEventsTableAnnotationComposer,
           $$AiUsageEventsTableCreateCompanionBuilder,
           $$AiUsageEventsTableUpdateCompanionBuilder,
-          (
-            AiUsageEventRow,
-            BaseReferences<_$AppDatabase, $AiUsageEventsTable, AiUsageEventRow>,
-          ),
+          (AiUsageEventRow, $$AiUsageEventsTableReferences),
           AiUsageEventRow,
-          PrefetchHooks Function()
+          PrefetchHooks Function({bool ownerId})
         > {
   $$AiUsageEventsTableTableManager(_$AppDatabase db, $AiUsageEventsTable table)
     : super(
@@ -35117,6 +35356,7 @@ class $$AiUsageEventsTableTableManager
           updateCompanionCallback:
               ({
                 Value<String> eventId = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
                 Value<int> occurredAtUtcMs = const Value.absent(),
                 Value<String> providerId = const Value.absent(),
                 Value<String> model = const Value.absent(),
@@ -35134,6 +35374,7 @@ class $$AiUsageEventsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AiUsageEventsCompanion(
                 eventId: eventId,
+                ownerId: ownerId,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerId: providerId,
                 model: model,
@@ -35152,6 +35393,7 @@ class $$AiUsageEventsTableTableManager
           createCompanionCallback:
               ({
                 required String eventId,
+                required String ownerId,
                 required int occurredAtUtcMs,
                 required String providerId,
                 required String model,
@@ -35169,6 +35411,7 @@ class $$AiUsageEventsTableTableManager
                 Value<int> rowid = const Value.absent(),
               }) => AiUsageEventsCompanion.insert(
                 eventId: eventId,
+                ownerId: ownerId,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerId: providerId,
                 model: model,
@@ -35185,9 +35428,54 @@ class $$AiUsageEventsTableTableManager
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
-              .map((e) => (e.readTable(table), BaseReferences(db, table, e)))
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$AiUsageEventsTableReferences(db, table, e),
+                ),
+              )
               .toList(),
-          prefetchHooksCallback: null,
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$AiUsageEventsTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn: $$AiUsageEventsTableReferences
+                                    ._ownerIdTable(db)
+                                    .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
         ),
       );
 }
@@ -35202,12 +35490,9 @@ typedef $$AiUsageEventsTableProcessedTableManager =
       $$AiUsageEventsTableAnnotationComposer,
       $$AiUsageEventsTableCreateCompanionBuilder,
       $$AiUsageEventsTableUpdateCompanionBuilder,
-      (
-        AiUsageEventRow,
-        BaseReferences<_$AppDatabase, $AiUsageEventsTable, AiUsageEventRow>,
-      ),
+      (AiUsageEventRow, $$AiUsageEventsTableReferences),
       AiUsageEventRow,
-      PrefetchHooks Function()
+      PrefetchHooks Function({bool ownerId})
     >;
 typedef $$SpeechEvidenceTableCreateCompanionBuilder =
     SpeechEvidenceCompanion Function({

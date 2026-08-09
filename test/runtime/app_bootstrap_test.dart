@@ -3,6 +3,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
@@ -60,9 +61,12 @@ void main() {
       expect(dependencies.deviceModels, isNotNull);
       expect(dependencies.objectScanner, isNotNull);
       expect(dependencies.speechPractice, isNotNull);
-      expect(dependencies.geminiTutor, isNotNull);
+      expect(dependencies.geminiTutor, isNull);
       expect(dependencies.aiTutor, isNotNull);
       expect(dependencies.aiUsage, isNotNull);
+      expect(dependencies.localDataEraser, isNotNull);
+      final aiTutor = dependencies.aiTutor as AiTutorUseCases;
+      expect(identical(aiTutor.usageRepository, dependencies.aiUsage), isTrue);
       expect(dependencies.featureControls, isNotNull);
     });
 

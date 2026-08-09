@@ -1,8 +1,11 @@
 import 'package:drift/drift.dart';
 
+import 'identity_tables.dart';
+
 @DataClassName('AiUsageEventRow')
 class AiUsageEvents extends Table {
   TextColumn get eventId => text()();
+  TextColumn get ownerId => text().references(LocalOwners, #id)();
   IntColumn get occurredAtUtcMs => integer()();
   TextColumn get providerId => text()();
   TextColumn get model => text()();
@@ -18,5 +21,5 @@ class AiUsageEvents extends Table {
   IntColumn get schemaVersion => integer().withDefault(const Constant(1))();
 
   @override
-  Set<Column<Object>> get primaryKey => {eventId};
+  Set<Column<Object>> get primaryKey => {ownerId, eventId};
 }

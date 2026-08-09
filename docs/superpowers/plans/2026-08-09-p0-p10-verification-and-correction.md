@@ -21,11 +21,11 @@
 | Phase | Status | Verified evidence | Gap to exit gate |
 |---|---|---|---|
 | P0 Baseline/Convergence | PARTIAL | Isolated worktree; branch history inspected; approved convergence design and execution plan committed; root user changes preserved | Required baseline `7b8ac6c` is not an ancestor of this integration branch; reconcile provenance without a wholesale merge before accepting P0 |
-| P1 Platform/Data | PARTIAL | Local-first/Drift/identity code is present; current `flutter analyze` passes | Fresh migration/runtime/vocabulary gate and explicit subsystem ledger still required |
-| P2 Sync/Learning | PARTIAL | Sync and learning implementations are present; sync timeout is now typed/retryable and focused sync tests pass | Broader focused sync/learning gate still required |
-| P3 Device/Media | PARTIAL | Model lifecycle is wired to durable completion-event counting with focused tests | Current checkpoint must not be treated as physical-device evidence |
-| P4 AI/Voice | PARTIAL | Provider-neutral AI Tutor is production-wired; Gemini/VoxCPM/OmniVoice use bounded breakers and focused tests pass | Full Voice/AI phase reconciliation and provider/device evidence remain required |
-| P5 Production Backend | PARTIAL | Backend/hardening code exists in repository history | Integrated backend policy/gate evidence for the current branch has not been reconciled |
+| P1 Platform/Data | PARTIAL | Bounded local-first/data gate passed 81 tests; schema v12 owner isolation and erasure corrections passed their focused gate; `flutter analyze` passes | P0 ancestry/provenance remains unresolved and no release artifact is frozen |
+| P2 Sync/Learning | PARTIAL | Bounded sync/learning gate passed 110 tests; Firestore emulator policy gate passed 31 tests | Release-artifact and device journey evidence remain pending |
+| P3 Device/Media | PARTIAL | Device/media gate passed 57 tests; the pinned model fixture SHA was verified and the 3 affected LiteRT tests then passed | Current checkpoint must not be treated as physical-device evidence |
+| P4 AI/Voice | PARTIAL | AI/BYOK gate passed 27 tests and the remaining Voice gate passed 260 tests; provider-neutral owner-scoped accounting is production-wired | Real provider and physical-device evidence remain required |
+| P5 Production Backend | PARTIAL | Frozen CPU-only dev environments passed Voice API 55, AI API 76, and Local LM 75 tests | Supabase policy gate and deployed-provider evidence remain unavailable in the current environment |
 | P6 Internal APK | BLOCKED | Historical/debug APK references exist | No signed APK manifest/hash/certificate tied to current source SHA |
 | P7 Device Checkpoint | BLOCKED | Historical mid/high device records are documented | No complete low/mid/high evidence tied to the current APK hash |
 | P8 Beta/Field Journeys | PARTIAL | Local reliability/cost defects are corrected; persisted runtime feature controls are production-reachable and update mounted navigation | Real device/provider journeys and exact-hash evidence remain pending |
@@ -83,6 +83,37 @@ reported no issues. Read-only review returned `SPEC COMPLIANCE: APPROVED` and
 Run each existing targeted phase gate once, record the command and source SHA,
 and correct only reproducible failures. Historical device evidence remains
 historical. Do not rerun passing suites without a code change in their scope.
+
+The bounded reconciliation exposed an owner-isolation gap in the selected
+provider-neutral AI usage slice. Correct it as a forward-only schema v12:
+
+1. Add `owner_id` to `ai_usage_events`; bind repository reads, writes, exports,
+   retention, and clearing to the current active owner.
+2. Drop unattributable legacy v11 AI usage rows during migration rather than
+   assigning them to whichever owner happens to be active at upgrade time.
+3. Include AI usage in owner upgrade and make full local erasure transactional.
+4. Namespace the secure AI profile by active owner and discard unattributable
+   device-global legacy profiles.
+5. Keep Gemini/provider billing explicitly BYOK and non-authoritative. The
+   approved 0-100 THB target applies to shared infrastructure, so this slice
+   does not invent a client-side monetary or call quota.
+
+Migration trade-off: only legacy AI usage metadata and the unattributable
+device-global AI profile are discarded. Learning, vocabulary, progress,
+rewards, consent, and other owner data are preserved. Downgrade to a v11 APK is
+unsupported after the v12 database has opened. When two owners merge, the
+source owner's BYOK profile is erased rather than implicitly transferred to a
+different identity; the user can explicitly configure a provider again.
+
+Status: implemented and approved by read-only Principal Engineer review
+(`SPEC COMPLIANCE: APPROVED`, `CODE QUALITY: APPROVED`). The schema/identity/
+AI/bootstrap corrective gate passed 73 tests. Follow-up gates proved pinned
+owner identity across provider calls, complete secure-key deletion, reachable
+provider-neutral UI and right-to-erasure composition, full vocabulary/reward
+FK graphs, and privacy-first cross-store rollback behavior. The final changed
+scope passed 4 deletion, 35 UI/deletion/identity/bootstrap, 4 navigation, and
+23 architecture/shell tests. Fresh `flutter analyze` and `git diff --check`
+pass.
 
 ### Slice 4: P9/P10 honest release state
 

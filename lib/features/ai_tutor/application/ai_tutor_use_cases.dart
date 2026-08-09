@@ -69,7 +69,8 @@ final class AiTutorUseCases implements AiTutorController {
   }
 
   Future<AiTutorSettingsStatus> _loadSettingsUnlocked() async {
-    final credential = await store.readCredential();
+    final ownerId = await store.resolveActiveOwnerId();
+    final credential = await store.readCredentialForOwner(ownerId);
     if (credential == null) {
       return const AiTutorSettingsStatus(
         hasKey: false,
@@ -138,6 +139,7 @@ final class AiTutorUseCases implements AiTutorController {
     await _track(
       effectiveCancellation,
       _transitionGate.run(() async {
+        final ownerId = await store.resolveActiveOwnerId();
         final customUri = _customUri(providerId, customBaseUrl);
         final gateway = _gatewayResolver(
           providerId: providerId,
@@ -156,11 +158,13 @@ final class AiTutorUseCases implements AiTutorController {
           throw const AiTutorException(AiFailureCode.missingModel);
         }
         await _runConfigurationProbe(
+          ownerId: ownerId,
           gateway: gateway,
           key: key.trim(),
           cancellation: effectiveCancellation,
         );
-        await store.writeCredential(
+        await store.writeCredentialForOwner(
+          ownerId,
           AiTutorCredential(
             key: key.trim(),
             providerId: providerId,
@@ -183,7 +187,8 @@ final class AiTutorUseCases implements AiTutorController {
     return _track(
       effectiveCancellation,
       _transitionGate.run(() async {
-        final credential = await store.readCredential();
+        final ownerId = await store.resolveActiveOwnerId();
+        final credential = await store.readCredentialForOwner(ownerId);
         if (credential == null || credential.key.trim().isEmpty) {
           throw const AiTutorException(AiFailureCode.missingKey);
         }
@@ -222,7 +227,8 @@ final class AiTutorUseCases implements AiTutorController {
     await _track(
       effectiveCancellation,
       _transitionGate.run(() async {
-        final previous = await store.readCredential();
+        final ownerId = await store.resolveActiveOwnerId();
+        final previous = await store.readCredentialForOwner(ownerId);
         if (previous == null || previous.key.trim().isEmpty) {
           throw const AiTutorException(AiFailureCode.missingKey);
         }
@@ -249,11 +255,13 @@ final class AiTutorUseCases implements AiTutorController {
           throw const AiTutorException(AiFailureCode.missingModel);
         }
         await _runConfigurationProbe(
+          ownerId: ownerId,
           gateway: gateway,
           key: previous.key.trim(),
           cancellation: effectiveCancellation,
         );
-        await store.writeCredential(
+        await store.writeCredentialForOwner(
+          ownerId,
           previous.copyWith(
             model: normalizedModel,
             shareLearningSummary: shareLearningSummary,
@@ -264,6 +272,7 @@ final class AiTutorUseCases implements AiTutorController {
   }
 
   Future<void> _runConfigurationProbe({
+    required String ownerId,
     required AiTutorGateway gateway,
     required String key,
     required AiCancellation cancellation,
@@ -283,6 +292,7 @@ final class AiTutorUseCases implements AiTutorController {
         throw ArgumentError.value(completedAt, 'nowUtc', 'must return UTC');
       }
       await _recordUsage(
+        ownerId: ownerId,
         occurredAtUtc: completedAt,
         providerId: gateway.providerId,
         model: gateway.model,
@@ -296,6 +306,7 @@ final class AiTutorUseCases implements AiTutorController {
       final failedAt = nowUtc();
       if (failedAt.isUtc) {
         await _recordUsage(
+          ownerId: ownerId,
           occurredAtUtc: failedAt,
           providerId: gateway.providerId,
           model: gateway.model,
@@ -316,11 +327,13 @@ final class AiTutorUseCases implements AiTutorController {
   }) async {
     _checkNotDisposed();
     final transition = _transitionGate.run(() async {
-      final current = await store.readCredential();
+      final ownerId = await store.resolveActiveOwnerId();
+      final current = await store.readCredentialForOwner(ownerId);
       if (current == null) {
         throw const AiTutorException(AiFailureCode.missingKey);
       }
-      await store.writeCredential(
+      await store.writeCredentialForOwner(
+        ownerId,
         current.copyWith(
           providerConsent: providerConsent,
           shareLearningSummary: providerConsent && shareLearningSummary,
@@ -334,7 +347,10 @@ final class AiTutorUseCases implements AiTutorController {
   @override
   Future<void> removeKey() async {
     _checkNotDisposed();
-    final transition = _transitionGate.run(store.deleteCredential);
+    final transition = _transitionGate.run(() async {
+      final ownerId = await store.resolveActiveOwnerId();
+      await store.deleteCredentialForOwner(ownerId);
+    });
     await _cancelActiveOperations();
     await transition;
   }
@@ -364,7 +380,8 @@ final class AiTutorUseCases implements AiTutorController {
     required String learnerMessage,
     required AiCancellation cancellation,
   }) async {
-    final credential = await store.readCredential();
+    final ownerId = await store.resolveActiveOwnerId();
+    final credential = await store.readCredentialForOwner(ownerId);
     if (credential == null || credential.key.trim().isEmpty) {
       throw const AiTutorException(AiFailureCode.missingKey);
     }
@@ -401,6 +418,7 @@ final class AiTutorUseCases implements AiTutorController {
         throw ArgumentError.value(generatedAtUtc, 'nowUtc', 'must return UTC');
       }
       await _recordUsage(
+        ownerId: ownerId,
         occurredAtUtc: generatedAtUtc,
         providerId: gateway.providerId,
         model: gateway.model,
@@ -421,6 +439,7 @@ final class AiTutorUseCases implements AiTutorController {
       final failedAt = nowUtc();
       if (failedAt.isUtc) {
         await _recordUsage(
+          ownerId: ownerId,
           occurredAtUtc: failedAt,
           providerId: gateway.providerId,
           model: gateway.model,
@@ -435,6 +454,7 @@ final class AiTutorUseCases implements AiTutorController {
   }
 
   Future<void> _recordUsage({
+    required String ownerId,
     required DateTime occurredAtUtc,
     required AiProviderId providerId,
     required String model,
@@ -447,7 +467,8 @@ final class AiTutorUseCases implements AiTutorController {
     final repository = usageRepository;
     if (repository == null) return;
     try {
-      await repository.record(
+      await repository.recordForOwner(
+        ownerId,
         AiUsageEvent(
           eventId: _usageEventId(),
           occurredAtUtc: occurredAtUtc,

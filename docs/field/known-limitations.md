@@ -26,3 +26,8 @@
 APK จะส่งให้ผู้เข้าร่วมได้ต่อเมื่อผ่านมือถือจริงระดับ low/mid/high
 การใช้งานต่อเนื่อง 30 นาทีทุกเครื่อง และ owner smoke test ของไฟล์เดียวกัน
 เท่านั้น
+
+- Privacy-first cross-store failure policy: local erasure and owner merge remove
+  the source owner's BYOK API key before the SQLite transaction. If the later
+  database operation fails, database rows roll back but the key is not restored;
+  the participant must configure the provider key again.
