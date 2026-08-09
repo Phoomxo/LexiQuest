@@ -58,6 +58,18 @@ final class _CrashAfterProgressRepository implements QuestRepository {
   Future<List<QuestInstance>> getAllInstances(String owner) =>
       delegate.getAllInstances(owner);
   @override
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  }) => delegate.getCompletedInstancesForSourceEvent(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    questIds: questIds,
+    limit: limit,
+  );
+  @override
   Future<void> markAbandoned(String id) => delegate.markAbandoned(id);
   @override
   Future<void> markCompleted(String id, DateTime at) =>

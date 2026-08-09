@@ -253,7 +253,20 @@ final class AppBootstrap {
       generateOwnerId: idGenerator.v4,
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
     );
-    final upgradeGuestOwner = UpgradeGuestOwner(ownerUpgrades);
+    LearningReconciliationScheduler? ownerLearningReconciliation;
+    final upgradeGuestOwner = UpgradeGuestOwner(
+      ownerUpgrades,
+      coordinate: (sourceOwnerId, operation) {
+        final scheduler = ownerLearningReconciliation;
+        return scheduler == null
+            ? operation()
+            : scheduler.coordinateOwnerChange(
+                sourceOwnerId,
+                operation,
+                (result) => result.targetOwnerId,
+              );
+      },
+    );
     var firebase = await _availability(initializeFirebase);
     final createAccountGateway = accountGatewayFactory;
     AccountUseCases? account;
@@ -436,6 +449,7 @@ final class AppBootstrap {
     final learningReconciliation = LearningReconciliationScheduler(
       learningReconciler,
     );
+    ownerLearningReconciliation = learningReconciliation;
     resources.own(learningReconciliation.dispose);
     learningReconciliation.request(
       (await localOwners.getOrCreateActiveOwner()).id,

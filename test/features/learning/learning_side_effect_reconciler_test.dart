@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 
 void main() {
   late AppDatabase database;
@@ -26,27 +28,25 @@ void main() {
     DateTime? occurredAt,
   }) async {
     final at = occurredAt ?? DateTime.utc(2026, 8, number, 6);
-    await database
-        .into(database.eventsV2)
-        .insert(
-          EventsV2Companion.insert(
-            eventId: 'learning-event:attempt-$number',
-            eventType: 'QuizCompleted',
-            eventVersion: 1,
-            occurredAtUtc: at,
-            recordedAtUtc: at,
-            actorIdentity: owner,
-            ownerId: owner,
-            aggregateType: 'LearningSession',
-            aggregateId: 'session-1',
-            idempotencyKey: 'learning-attempt:attempt-$number:v1',
-            consentContextJson: '{}',
-            appVersion: '1.0.0',
-            buildId: 'test-build',
-            privacyClassification: 'anonymized',
-            payloadJson: jsonEncode({'correct': true}),
-          ),
-        );
+    await DriftLearningEventStore(database).append(
+      EventEnvelopeV2(
+        eventId: 'learning-event:attempt-$number',
+        eventType: 'QuizCompleted',
+        eventVersion: 1,
+        occurredAtUtc: at,
+        recordedAtUtc: at,
+        actorIdentity: owner,
+        ownerIdentity: owner,
+        aggregateType: 'LearningSession',
+        aggregateId: 'session-1',
+        idempotencyKey: 'learning-attempt:attempt-$number:v1',
+        consentContext: const ConsentContext.none(),
+        appVersion: '1.0.0',
+        buildId: 'test-build',
+        privacyClassification: PrivacyClassification.anonymized,
+        payload: const {'correct': true},
+      ),
+    );
   }
 
   Future<Set<String>> applied(String projection) async {
@@ -91,6 +91,52 @@ void main() {
     expect((questCalls, rewardCalls), (2, 1));
     expect(await applied('reward'), {'learning-event:attempt-1'});
   });
+
+  test(
+    'missing quest prerequisite blocks reward cursor before later receipt',
+    () async {
+      await addEvent(1);
+      await addEvent(2);
+      await database
+          .into(database.eventsV2)
+          .insert(
+            EventsV2Companion.insert(
+              eventId: 'learning-projection:quest:learning-event:attempt-2:v1',
+              eventType: 'LearningProjectionApplied',
+              eventVersion: 1,
+              occurredAtUtc: DateTime.utc(2026, 8, 2, 6),
+              recordedAtUtc: DateTime.utc(2026, 8, 2, 6),
+              actorIdentity: 'owner-reconcile',
+              ownerId: 'owner-reconcile',
+              aggregateType: 'LearningProjection',
+              aggregateId: 'learning-event:attempt-2',
+              idempotencyKey:
+                  'learning-projection:quest:learning-event:attempt-2:v1',
+              consentContextJson: '{}',
+              appVersion: '1.0.0',
+              buildId: 'test-build',
+              privacyClassification: 'anonymized',
+              payloadJson: jsonEncode({
+                'projection': 'quest',
+                'result': {'eligible': true},
+              }),
+            ),
+          );
+      final rewarded = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        rewardSink: (event, _) async {
+          rewarded.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(rewarded, isEmpty);
+      expect(await applied('reward'), isEmpty);
+    },
+  );
 
   test(
     'reward failure leaves no applied receipt and successful retry records it',
@@ -184,6 +230,52 @@ void main() {
       expect(calls, ['learning-event:attempt-1', 'learning-event:attempt-2']);
       await reconciler.reconcileOwner('owner-reconcile');
       expect(calls, hasLength(2));
+    },
+  );
+
+  test(
+    'backward wall clock insertion remains after the durable cursor',
+    () async {
+      await addEvent(1, occurredAt: DateTime.utc(2026, 8, 9, 12));
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      await addEvent(2, occurredAt: DateTime.utc(2026, 8, 9, 11));
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, contains('learning-event:attempt-2'));
+      expect(await applied('streak'), hasLength(2));
+    },
+  );
+
+  test(
+    'backdated insertion rewinds only the affected projection tail',
+    () async {
+      await addEvent(1, occurredAt: DateTime.utc(2026, 8, 9, 10));
+      await addEvent(2, occurredAt: DateTime.utc(2026, 8, 9, 11));
+      await addEvent(3, occurredAt: DateTime.utc(2026, 8, 9, 12));
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+      calls.clear();
+
+      await addEvent(4, occurredAt: DateTime.utc(2026, 8, 9, 11, 30));
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, ['learning-event:attempt-4', 'learning-event:attempt-3']);
     },
   );
 

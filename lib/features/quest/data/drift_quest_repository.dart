@@ -93,6 +93,57 @@ final class DriftQuestRepository implements QuestRepository {
   Future<List<QuestInstance>> getAllInstances(String ownerId) =>
       _queryInstances(ownerId);
 
+  @override
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  }) async {
+    if (limit < 1 || limit > 64) {
+      throw RangeError.range(limit, 1, 64, 'limit');
+    }
+    final boundedQuestIds = questIds.toSet().toList(growable: false);
+    if (boundedQuestIds.isEmpty) return const [];
+    if (boundedQuestIds.length > 64) {
+      throw StateError('quest completion recovery catalog exceeds 64');
+    }
+    final query = _database.select(_database.questInstances)
+      ..where(
+        (row) =>
+            row.ownerId.equals(ownerId) &
+            row.state.equals('completed') &
+            row.questId.isIn(boundedQuestIds),
+      )
+      ..orderBy([
+        (row) => OrderingTerm.asc(row.completedAtUtcMs),
+        (row) => OrderingTerm.asc(row.instanceId),
+      ])
+      ..limit(limit);
+    final instanceRows = await query.get();
+    if (instanceRows.isEmpty) return const [];
+    final progressRows =
+        await (_database.select(_database.questObjectiveProgress)..where(
+              (row) => row.instanceId.isIn(
+                instanceRows.map((instance) => instance.instanceId).toList(),
+              ),
+            ))
+            .get();
+    final matchingIds = progressRows
+        .where(
+          (progress) => (jsonDecode(progress.sourceEventIdsJson) as List)
+              .cast<String>()
+              .contains(sourceEventId),
+        )
+        .map((progress) => progress.instanceId)
+        .toSet();
+    return _instancesFromRows(
+      instanceRows
+          .where((instance) => matchingIds.contains(instance.instanceId))
+          .toList(growable: false),
+    );
+  }
+
   // ── Progress ───────────────────────────────────────────────────────────────
 
   @override
@@ -177,6 +228,12 @@ final class DriftQuestRepository implements QuestRepository {
       ..orderBy([(t) => OrderingTerm.asc(t.assignedAtUtcMs)]);
 
     final instanceRows = await instanceQuery.get();
+    return _instancesFromRows(instanceRows);
+  }
+
+  Future<List<QuestInstance>> _instancesFromRows(
+    List<db.QuestInstance> instanceRows,
+  ) async {
     if (instanceRows.isEmpty) return const [];
 
     final instanceIds = instanceRows.map((r) => r.instanceId).toList();

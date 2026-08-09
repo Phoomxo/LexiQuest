@@ -121,7 +121,13 @@ final class QuestUseCases {
     List<QuestDefinition> catalog,
   ) async {
     final active = await repository.getActiveInstances(event.ownerIdentity);
-    if (active.isEmpty) {
+    final completedByEvent = await repository
+        .getCompletedInstancesForSourceEvent(
+          ownerId: event.ownerIdentity,
+          sourceEventId: event.eventId,
+          questIds: catalog.map((definition) => definition.questId),
+        );
+    if (active.isEmpty && completedByEvent.isEmpty) {
       return const QuestProjectionEvaluation(eligible: false, completed: []);
     }
 
@@ -153,6 +159,23 @@ final class QuestUseCases {
       if (updated.isAllObjectivesComplete) {
         completed.add(await _finalize(updated, def, event, now));
       }
+    }
+    for (final instance in completedByEvent) {
+      if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
+      eligible = true;
+      final def = catalog.firstWhere(
+        (candidate) => candidate.questId == instance.questId,
+        orElse: () => throw StateError(
+          'QuestUseCases.processEvent: no catalog entry for '
+          'questId=${instance.questId}',
+        ),
+      );
+      final completion = instance.complete(
+        now: instance.completedAtUtc ?? event.recordedAtUtc,
+      );
+      _forwardToShadow(completion, event);
+      await _grantReward(def, completion);
+      completed.add(completion);
     }
     return QuestProjectionEvaluation(eligible: eligible, completed: completed);
   }

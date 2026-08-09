@@ -40,9 +40,112 @@ final class DriftLearningEventStore {
       return;
     }
 
-    await database
-        .into(database.eventsV2)
-        .insert(_companion(event), mode: InsertMode.insertOrIgnore);
+    await database.transaction(() async {
+      await database
+          .into(database.eventsV2)
+          .insert(_companion(event), mode: InsertMode.insertOrIgnore);
+      await _rewindCursorsPastLateSource(event);
+    });
+  }
+
+  Future<void> _rewindCursorsPastLateSource(EventEnvelopeV2 event) async {
+    // Projection order remains the durable (occurredAtUtc, eventId) tuple.
+    // When the device clock moves backwards, a newly committed source can
+    // sort behind an existing cursor. Rewind only affected fixed-key cursors;
+    // immutable receipts and idempotent sinks make the bounded tail replay
+    // safe, while keeping semantic occurrence time intact for quest/streak.
+    final lateCursorIds = await database
+        .customSelect(
+          '''
+          SELECT event_id
+          FROM events_v2 INDEXED BY idx_events_v2_owner_occurred
+          WHERE owner_id = ?
+            AND event_type = 'LearningProjectionCursor'
+            AND (
+              occurred_at_utc > ? OR
+              (occurred_at_utc = ? AND aggregate_id >= ?)
+            )
+          ''',
+          variables: [
+            Variable<String>(event.ownerIdentity),
+            Variable<DateTime>(event.occurredAtUtc),
+            Variable<DateTime>(event.occurredAtUtc),
+            Variable<String>(event.eventId),
+          ],
+          readsFrom: {database.eventsV2},
+        )
+        .get();
+    final ids = lateCursorIds
+        .map((row) => row.read<String>('event_id'))
+        .toList(growable: false);
+    if (ids.isEmpty) return;
+    final predecessorId = await database
+        .customSelect(
+          '''
+          SELECT event_id
+          FROM events_v2 INDEXED BY idx_events_v2_owner_occurred
+          WHERE owner_id = ?
+            AND idempotency_key LIKE 'learning-attempt:%'
+            AND (
+              occurred_at_utc < ? OR
+              (occurred_at_utc = ? AND event_id < ?)
+            )
+          ORDER BY occurred_at_utc DESC, event_id DESC
+          LIMIT 1
+          ''',
+          variables: [
+            Variable<String>(event.ownerIdentity),
+            Variable<DateTime>(event.occurredAtUtc),
+            Variable<DateTime>(event.occurredAtUtc),
+            Variable<String>(event.eventId),
+          ],
+          readsFrom: {database.eventsV2},
+        )
+        .getSingleOrNull();
+    if (predecessorId == null) {
+      await (database.delete(
+        database.eventsV2,
+      )..where((row) => row.eventId.isIn(ids))).go();
+      return;
+    }
+    final predecessor =
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.eventId.equals(predecessorId.read<String>('event_id')),
+            ))
+            .getSingle();
+    final source = _toEvent(predecessor);
+    final cursors = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.isIn(ids))).get();
+    for (final cursor in cursors) {
+      final payload = jsonDecode(cursor.payloadJson) as Map<String, dynamic>;
+      final rewound = EventEnvelopeV2(
+        eventId: cursor.eventId,
+        eventType: 'LearningProjectionCursor',
+        eventVersion: cursor.eventVersion,
+        occurredAtUtc: source.occurredAtUtc,
+        recordedAtUtc: source.recordedAtUtc,
+        actorIdentity: source.actorIdentity,
+        ownerIdentity: source.ownerIdentity,
+        aggregateType: 'LearningProjectionCursor',
+        aggregateId: source.eventId,
+        causationId: source.eventId,
+        idempotencyKey: cursor.idempotencyKey,
+        consentContext: source.consentContext,
+        appVersion: source.appVersion,
+        buildId: source.buildId,
+        privacyClassification: source.privacyClassification,
+        payload: {
+          'sourceEventId': source.eventId,
+          'projection': payload['projection'],
+          'appliedVersion': payload['appliedVersion'],
+        },
+      );
+      await database
+          .into(database.eventsV2)
+          .insertOnConflictUpdate(_companion(rewound));
+    }
   }
 
   Future<List<PendingLearningProjectionEvent>> listPendingProjectionEvents({
@@ -95,7 +198,7 @@ final class DriftLearningEventStore {
                     prerequisite.event_type AS prerequisite_type,
                     prerequisite.payload_json AS prerequisite_payload
              FROM ($candidateSql) candidate
-             JOIN events_v2 prerequisite
+             LEFT JOIN events_v2 prerequisite
                ON prerequisite.event_id =
                  'learning-projection:$prerequisite:' ||
                  candidate.event_id || ':v$appliedVersion'
@@ -122,14 +225,20 @@ final class DriftLearningEventStore {
           if (prerequisite == null) {
             return PendingLearningProjectionEvent(event: eventsById[eventId]!);
           }
-          final receiptPayload =
-              jsonDecode(row.read<String>('prerequisite_payload'))
-                  as Map<String, dynamic>;
+          final prerequisiteType = row.readNullable<String>(
+            'prerequisite_type',
+          );
+          final prerequisiteJson = row.readNullable<String>(
+            'prerequisite_payload',
+          );
+          final receiptPayload = prerequisiteJson == null
+              ? const <String, dynamic>{}
+              : jsonDecode(prerequisiteJson) as Map<String, dynamic>;
           return PendingLearningProjectionEvent(
             event: eventsById[eventId]!,
-            prerequisiteApplied:
-                row.read<String>('prerequisite_type') ==
-                'LearningProjectionApplied',
+            prerequisiteApplied: prerequisiteType == null
+                ? null
+                : prerequisiteType == 'LearningProjectionApplied',
             prerequisitePayload:
                 (receiptPayload['result'] as Map?)?.cast<String, dynamic>() ??
                 const <String, dynamic>{},

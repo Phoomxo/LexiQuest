@@ -1,9 +1,16 @@
 import '../domain/owner_upgrade.dart';
 
+typedef OwnerUpgradeCoordinator =
+    Future<OwnerUpgradeResult> Function(
+      String sourceOwnerId,
+      Future<OwnerUpgradeResult> Function() operation,
+    );
+
 final class UpgradeGuestOwner {
-  const UpgradeGuestOwner(this._repository);
+  const UpgradeGuestOwner(this._repository, {this.coordinate});
 
   final OwnerUpgradeRepository _repository;
+  final OwnerUpgradeCoordinator? coordinate;
 
   Future<OwnerUpgradeResult> call({
     required String activeOwnerId,
@@ -25,10 +32,11 @@ final class UpgradeGuestOwner {
         'must not be blank',
       );
     }
-    return _repository.upgrade(
+    Future<OwnerUpgradeResult> operation() => _repository.upgrade(
       activeOwnerId: canonicalOwnerId,
       firebaseUid: canonicalUid,
     );
+    return coordinate?.call(canonicalOwnerId, operation) ?? operation();
   }
 
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {

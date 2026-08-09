@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
@@ -273,23 +275,125 @@ void main() {
       expect(grants.single['ownerId'], 'account-owner');
 
       final replayed = <String>[];
+      final rewarded = <String>[];
       String? rewardOwner;
+      var questUnavailable = true;
       final reconciler = LearningSideEffectReconciler(
         database,
         questSink: (event) async {
           replayed.add(event.eventId);
+          if (questUnavailable &&
+              event.eventId == 'learning-event:guest-pending') {
+            throw StateError('quest projection unavailable');
+          }
           return const LearningProjectionResult.applied();
         },
-        rewardSink: (_, questResult) async {
-          rewardOwner =
-              ((questResult['rewardGrants'] as List).single as Map)['ownerId']
-                  as String;
+        rewardSink: (event, questResult) async {
+          rewarded.add(event.eventId);
+          final grants = (questResult['rewardGrants'] as List? ?? const []);
+          if (grants.isNotEmpty) {
+            rewardOwner = (grants.single as Map)['ownerId'] as String;
+          }
           return const LearningProjectionResult.applied();
         },
       );
       await reconciler.reconcileOwner('account-owner');
       expect(replayed, contains('learning-event:guest-pending'));
+      expect(
+        rewarded,
+        ['learning-event:guest-first'],
+        reason: 'missing earlier quest result must block the reward prefix',
+      );
       expect(rewardOwner, 'account-owner');
+
+      questUnavailable = false;
+      await reconciler.reconcileOwner('account-owner');
+      expect(rewarded, [
+        'learning-event:guest-first',
+        'learning-event:guest-pending',
+        'learning-event:account-later',
+      ]);
+    },
+  );
+
+  test(
+    'owner upgrade drains guest replay and schedules buffered work on account',
+    () async {
+      final firstAt = DateTime.utc(2026, 8, 9, 10);
+      final secondAt = DateTime.utc(2026, 8, 9, 11);
+      await _insertLearningEvent(
+        database,
+        ownerId: 'guest-owner',
+        eventId: 'learning-event:guest-in-flight',
+        occurredAt: firstAt,
+      );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final projected = <String>[];
+      final scheduler = LearningReconciliationScheduler(
+        LearningSideEffectReconciler(
+          database,
+          streakSink: (event) async {
+            projected.add(event.eventId);
+            if (event.eventId == 'learning-event:guest-in-flight') {
+              entered.complete();
+              await release.future;
+            }
+            return const LearningProjectionResult.applied();
+          },
+        ),
+      );
+      final upgrade = UpgradeGuestOwner(
+        repository,
+        coordinate: (sourceOwnerId, operation) =>
+            scheduler.coordinateOwnerChange(
+              sourceOwnerId,
+              operation,
+              (result) => result.targetOwnerId,
+            ),
+      );
+
+      scheduler.request('guest-owner');
+      await entered.future;
+      final upgrading = upgrade.call(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      await _insertLearningEvent(
+        database,
+        ownerId: 'guest-owner',
+        eventId: 'learning-event:guest-buffered',
+        occurredAt: secondAt,
+      );
+      scheduler.request('guest-owner');
+      release.complete();
+
+      final result = await upgrading;
+      expect(result.targetOwnerId, 'account-owner');
+      await scheduler.drain();
+      expect(projected, [
+        'learning-event:guest-in-flight',
+        'learning-event:guest-buffered',
+      ]);
+      final guestProjectionRows =
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.ownerId.equals('guest-owner') &
+                    (row.eventType.equals('LearningProjectionApplied') |
+                        row.eventType.equals('LearningProjectionCursor')),
+              ))
+              .get();
+      expect(guestProjectionRows, isEmpty);
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.equals('account-owner') &
+                  row.eventType.equals('LearningProjectionApplied'),
+            ))
+            .get(),
+        hasLength(2),
+      );
+      await scheduler.dispose();
     },
   );
 

@@ -88,6 +88,11 @@ final class LearningSideEffectReconciler {
       prerequisiteProjection: 'quest',
     );
     for (final pending in events) {
+      if (pending.prerequisiteApplied == null) {
+        // The prerequisite projection owns the same contiguous source prefix.
+        // Do not let a later joined receipt advance reward beyond a gap.
+        break;
+      }
       try {
         final outcome = pending.prerequisiteApplied == true
             ? await sink(pending.event, pending.prerequisitePayload)
@@ -112,13 +117,52 @@ final class LearningReconciliationScheduler {
 
   final LearningSideEffectReconciler _reconciler;
   final Set<String> _pendingOwners = <String>{};
+  final Set<String> _pausedOwners = <String>{};
+  final Set<String> _bufferedPausedOwners = <String>{};
+  final Map<String, String> _ownerRedirects = <String, String>{};
   Future<void>? _worker;
   bool _disposed = false;
 
   void request(String ownerId) {
     if (_disposed) return;
-    _pendingOwners.add(ownerId);
+    final canonicalOwner = _redirectedOwner(ownerId);
+    if (_pausedOwners.contains(ownerId)) {
+      _bufferedPausedOwners.add(ownerId);
+      return;
+    }
+    _pendingOwners.add(canonicalOwner);
     _worker ??= _run();
+  }
+
+  /// Serializes an owner identity transition with reconciliation. Existing
+  /// source work drains first, requests arriving during the database move are
+  /// buffered, and one target replay is always scheduled after a successful
+  /// bind/merge.
+  Future<T> coordinateOwnerChange<T>(
+    String sourceOwnerId,
+    Future<T> Function() operation,
+    String Function(T result) targetOwnerId,
+  ) async {
+    if (_disposed) return operation();
+    _pausedOwners.add(sourceOwnerId);
+    await drain();
+    try {
+      final result = await operation();
+      final target = targetOwnerId(result);
+      if (target != sourceOwnerId) {
+        _ownerRedirects[sourceOwnerId] = target;
+      }
+      _pausedOwners.remove(sourceOwnerId);
+      _bufferedPausedOwners.remove(sourceOwnerId);
+      _pendingOwners.remove(sourceOwnerId);
+      request(target);
+      return result;
+    } catch (_) {
+      _pausedOwners.remove(sourceOwnerId);
+      final retrySource = _bufferedPausedOwners.remove(sourceOwnerId);
+      if (retrySource) request(sourceOwnerId);
+      rethrow;
+    }
   }
 
   Future<void> drain() async {
@@ -130,7 +174,19 @@ final class LearningReconciliationScheduler {
   Future<void> dispose() async {
     _disposed = true;
     _pendingOwners.clear();
+    _bufferedPausedOwners.clear();
     await drain();
+  }
+
+  String _redirectedOwner(String ownerId) {
+    var current = ownerId;
+    final visited = <String>{};
+    while (visited.add(current)) {
+      final next = _ownerRedirects[current];
+      if (next == null || next == current) return current;
+      current = next;
+    }
+    return current;
   }
 
   Future<void> _run() async {

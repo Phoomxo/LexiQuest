@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/quest/application/quest_use_cases.da
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_repository.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 
 // ── Fake owner repository ─────────────────────────────────────────────────────
 
@@ -51,6 +52,18 @@ final class _ThrowAfterProgressRepository implements QuestRepository {
   Future<List<QuestInstance>> getAllInstances(String ownerId) =>
       delegate.getAllInstances(ownerId);
   @override
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  }) => delegate.getCompletedInstancesForSourceEvent(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    questIds: questIds,
+    limit: limit,
+  );
+  @override
   Future<void> markAbandoned(String instanceId) =>
       delegate.markAbandoned(instanceId);
   @override
@@ -67,6 +80,61 @@ final class _ThrowAfterProgressRepository implements QuestRepository {
       delegate.upsertDefinition(def);
 }
 
+final class _ThrowAfterCompletionRepository implements QuestRepository {
+  _ThrowAfterCompletionRepository(this.delegate);
+
+  final QuestRepository delegate;
+  bool throwAfterNextCompletion = true;
+
+  @override
+  Future<void> markCompleted(String instanceId, DateTime completedAtUtc) async {
+    await delegate.markCompleted(instanceId, completedAtUtc);
+    if (throwAfterNextCompletion) {
+      throwAfterNextCompletion = false;
+      throw StateError('crash after completion before projection result');
+    }
+  }
+
+  @override
+  Future<QuestDefinition?> getDefinition(String questId) =>
+      delegate.getDefinition(questId);
+  @override
+  Future<List<QuestInstance>> getActiveInstances(String ownerId) =>
+      delegate.getActiveInstances(ownerId);
+  @override
+  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
+      delegate.getAllInstances(ownerId);
+  @override
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  }) => delegate.getCompletedInstancesForSourceEvent(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    questIds: questIds,
+    limit: limit,
+  );
+  @override
+  Future<void> markAbandoned(String instanceId) =>
+      delegate.markAbandoned(instanceId);
+  @override
+  Future<void> markExpired(String instanceId, DateTime expiredAtUtc) =>
+      delegate.markExpired(instanceId, expiredAtUtc);
+  @override
+  Future<void> saveProgress(
+    String instanceId,
+    List<ObjectiveProgress> progress,
+  ) => delegate.saveProgress(instanceId, progress);
+  @override
+  Future<void> startInstance(QuestInstance instance) =>
+      delegate.startInstance(instance);
+  @override
+  Future<void> upsertDefinition(QuestDefinition def) =>
+      delegate.upsertDefinition(def);
+}
+
 final class _RejectHistoryScanRepository implements QuestRepository {
   _RejectHistoryScanRepository(this.delegate);
   final QuestRepository delegate;
@@ -74,6 +142,18 @@ final class _RejectHistoryScanRepository implements QuestRepository {
   @override
   Future<List<QuestInstance>> getAllInstances(String ownerId) =>
       throw StateError('unbounded quest history scan');
+  @override
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  }) => delegate.getCompletedInstancesForSourceEvent(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    questIds: questIds,
+    limit: limit,
+  );
   @override
   Future<QuestDefinition?> getDefinition(String id) =>
       delegate.getDefinition(id);
@@ -344,6 +424,69 @@ void main() {
       expect(completed, hasLength(1));
       expect(await repo.getActiveInstances(testOwner.id), isEmpty);
     });
+
+    test(
+      'replay reconstructs completion marked before projection result',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 1);
+        await useCases.startQuest(def);
+        final event = _makeEvent();
+        final rewards = DriftRewardRepository(database);
+        Future<void> grant({
+          required String ownerId,
+          required String idempotencyKey,
+          required int xpAmount,
+          String? rewardItemId,
+        }) => rewards.grantQuestXp(
+          ownerId: ownerId,
+          idempotencyKey: idempotencyKey,
+          xpAmount: xpAmount,
+        );
+        final crashing = QuestUseCases(
+          repository: _ThrowAfterCompletionRepository(repo),
+          owners: _FakeOwners(testOwner),
+          generateId: () => 'unused',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+          timezoneId: 'Asia/Bangkok',
+          rewardSink: grant,
+        );
+
+        await expectLater(
+          crashing.projectEvent(event, [def]),
+          throwsStateError,
+        );
+        expect(await repo.getActiveInstances(testOwner.id), isEmpty);
+
+        final recovery = QuestUseCases(
+          repository: repo,
+          owners: _FakeOwners(testOwner),
+          generateId: () => 'unused',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+          timezoneId: 'Asia/Bangkok',
+          rewardSink: grant,
+        );
+        final replay = await recovery.projectEvent(event, [def]);
+        expect(replay.eligible, isTrue);
+        expect(replay.completed, hasLength(1));
+        expect(replay.completed.single.ownerId, testOwner.id);
+        expect(
+          replay.completed.single.objectiveEventIds,
+          contains(event.eventId),
+        );
+        expect(
+          recovery.projectionPayload(replay, [def])['rewardGrants'],
+          hasLength(1),
+        );
+        await recovery.projectEvent(event, [def]);
+        expect(
+          await (database.select(
+            database.pointsLedgerEntries,
+          )..where((row) => row.entryType.equals('questCompletion'))).get(),
+          hasLength(1),
+          reason: 'the deterministic completion key prevents a double grant',
+        );
+      },
+    );
 
     test('reconcileReward retries a failed completed-quest grant', () async {
       final def = _singleObjectiveDef(targetCount: 1);

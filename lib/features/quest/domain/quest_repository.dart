@@ -30,6 +30,16 @@ abstract interface class QuestRepository {
   /// Return all instances regardless of state for [ownerId].
   Future<List<QuestInstance>> getAllInstances(String ownerId);
 
+  /// Return a bounded set of completed instances whose durable objective
+  /// evidence contains [sourceEventId]. Used to reconstruct a projection
+  /// result after a crash between the state transition and receipt commit.
+  Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
+    required String ownerId,
+    required String sourceEventId,
+    required Iterable<String> questIds,
+    int limit = 64,
+  });
+
   // ── Progress ───────────────────────────────────────────────────────────────
 
   /// Persist updated [progress] list for the given [instanceId].
