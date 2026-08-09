@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -29,6 +31,20 @@ final class _SuccessfulGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
       const GuestSessionStarted(uid: 'anonymous-bootstrap-user');
+}
+
+final class _ControllableBootstrapGuestSessionService
+    implements GuestSessionService {
+  final Completer<GuestSessionResult> _result = Completer<GuestSessionResult>();
+  int startCalls = 0;
+
+  @override
+  Future<GuestSessionResult> start() {
+    startCalls += 1;
+    return _result.future;
+  }
+
+  void complete(GuestSessionResult result) => _result.complete(result);
 }
 
 AppConfig _validConfig() => AppConfig.fromValues(
@@ -464,6 +480,37 @@ void main() {
       expect(entryState.clearCalls, 1);
       expect(entryState.mode, AppEntryMode.signedOut);
     });
+
+    test(
+      'disposal cancels owner binding before closing the database',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final delegate = _ControllableBootstrapGuestSessionService();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: delegate,
+          createEntryStateStore: _createSignedOutEntryState,
+          bindGuestOwnership: true,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        await dependencies.guestSessionService.start();
+        await dependencies.dispose().timeout(const Duration(milliseconds: 250));
+        delegate.complete(
+          const GuestSessionStarted(uid: 'late-bootstrap-provider'),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(delegate.startCalls, 1);
+        await expectLater(
+          database.customSelect('SELECT 1').getSingle(),
+          throwsA(anything),
+        );
+      },
+    );
   });
 
   group('resolveAndroidAppCheckProvider', () {

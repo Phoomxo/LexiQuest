@@ -6,7 +6,9 @@ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/email_action_screen.dart';
+import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+import 'package:vocab_learning_app/screens/otp_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -83,6 +85,37 @@ void main() {
     await tester.pump();
 
     expect(find.byType(MainNavigationScreen), findsOneWidget);
+  });
+
+  testWidgets('signed-out bootstrap rejects cold-start /home', (tester) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue = '/home';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+
+    await tester.pumpWidget(
+      MyApp(dependencies: _dependencies(initialRoute: AppRoute.login)),
+    );
+    await tester.pump();
+
+    expect(find.byType(LoginScreen), findsOneWidget);
+    expect(find.byType(MainNavigationScreen), findsNothing);
+  });
+
+  testWidgets('cold-start email verification without args uses bootstrap', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/email-verification';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: _dependencies()));
+    await tester.pump();
+
+    expect(find.byType(MainNavigationScreen), findsOneWidget);
+    expect(find.byType(OTPScreen), findsNothing);
   });
 
   testWidgets('/home resolves to the field-safe shell', (tester) async {

@@ -91,13 +91,21 @@ authenticated session. That same store is passed to guest and account
 transitions. Guest selection is persisted before local guest success;
 successful account binding and sign-out clear it. Local account binding still
 uses the existing `localOwnerId` and does not replace the owner identifier.
-Supported cold-start account action links remain routable; unsupported platform
-route strings fall back to the composed bootstrap route.
+Self-contained cold-start authentication routes (`/login`, `/register`, and
+parsed email-action links) remain routable. Internal `/home`, argument-dependent
+`/email-verification`, and unsupported platform route strings fall back to the
+composed bootstrap route, so platform input cannot bypass persisted identity.
 
 If SharedPreferences initialization fails, bootstrap uses a signed-out,
 process-local volatile entry flag so offline business data remains available.
 That fallback stores no owner, learning, consent, or research data and makes no
 restart-durability claim.
+
+The owner-binding guest adapter is owned by bootstrap. Disposal cancels pending
+provider waits and bounded retry delays, drains an already-running owner
+upgrade, suppresses post-disposal callbacks, and completes before the database
+is closed. Resource cleanup remains reverse-order and continues after an
+individual disposer fails.
 
 Evidence is bounded to the resolver matrix, SharedPreferences mock-backed store
 tests, bootstrap/session/account tests, and the production-shell widget gate.

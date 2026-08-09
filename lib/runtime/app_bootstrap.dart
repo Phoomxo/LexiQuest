@@ -80,6 +80,7 @@ import 'app_runtime_status.dart';
 import 'app_start_route_resolver.dart';
 import 'registries/feature_registry.dart';
 import 'runtime_feature_override_store.dart';
+import 'resource_disposer_stack.dart';
 import 'supabase_client_config.dart';
 
 typedef RuntimeInitializer = Future<void> Function();
@@ -214,7 +215,7 @@ final class AppBootstrap {
   }
 
   Future<AppDependencies> _initializeOnce() async {
-    final resources = _BootstrapResourceScope();
+    final resources = ResourceDisposerStack();
     try {
       return await _compose(resources);
     } catch (error, stackTrace) {
@@ -223,7 +224,7 @@ final class AppBootstrap {
     }
   }
 
-  Future<AppDependencies> _compose(_BootstrapResourceScope resources) async {
+  Future<AppDependencies> _compose(ResourceDisposerStack resources) async {
     final entryState = await _createEntryState();
     final database = createDatabase();
     resources.own(database.close);
@@ -301,20 +302,23 @@ final class AppBootstrap {
       }
     }
 
-    final exposedGuestSession = bindGuestOwnership
-        ? OwnerBindingGuestSessionService(
-            delegate: guestSessionService,
-            localOwners: localOwners,
-            upgradeGuestOwner: upgradeGuestOwner,
-            entryState: entryState,
-            onOwnerBound: () {
-              final trigger = syncTrigger;
-              if (trigger != null) {
-                unawaited(trigger.request(SyncTriggerReason.accountBinding));
-              }
-            },
-          )
-        : guestSessionService;
+    GuestSessionService exposedGuestSession = guestSessionService;
+    if (bindGuestOwnership) {
+      final ownerBindingGuestSession = OwnerBindingGuestSessionService(
+        delegate: guestSessionService,
+        localOwners: localOwners,
+        upgradeGuestOwner: upgradeGuestOwner,
+        entryState: entryState,
+        onOwnerBound: () {
+          final trigger = syncTrigger;
+          if (trigger != null) {
+            unawaited(trigger.request(SyncTriggerReason.accountBinding));
+          }
+        },
+      );
+      resources.own(ownerBindingGuestSession.dispose);
+      exposedGuestSession = ownerBindingGuestSession;
+    }
     final vocabulary = VocabularyUseCases(
       owners: localOwners,
       vocabulary: DriftVocabularyRepository(database),
@@ -579,45 +583,6 @@ final class AppBootstrap {
       return loadConfig();
     } catch (_) {
       return null;
-    }
-  }
-}
-
-typedef _ResourceDisposer = FutureOr<void> Function();
-
-final class _BootstrapResourceScope {
-  final List<_ResourceDisposer> _disposers = <_ResourceDisposer>[];
-  Future<void>? _disposeFuture;
-
-  void own(_ResourceDisposer disposer) {
-    _disposers.add(disposer);
-  }
-
-  Future<void> dispose() {
-    return _disposeFuture ??= _disposeAll();
-  }
-
-  Future<void> disposeAfterFailure() async {
-    try {
-      await dispose();
-    } catch (_) {
-      // Preserve the initialization failure after exhausting cleanup.
-    }
-  }
-
-  Future<void> _disposeAll() async {
-    Object? firstError;
-    StackTrace? firstStackTrace;
-    for (final disposer in _disposers.reversed) {
-      try {
-        await Future<void>.sync(disposer);
-      } catch (error, stackTrace) {
-        firstError ??= error;
-        firstStackTrace ??= stackTrace;
-      }
-    }
-    if (firstError != null) {
-      Error.throwWithStackTrace(firstError, firstStackTrace!);
     }
   }
 }

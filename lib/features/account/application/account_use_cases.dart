@@ -122,8 +122,8 @@ final class AccountUseCases {
     AppEntryMode? previousEntry;
     try {
       previousEntry = await entryState.read();
-      await entryState.clear();
       await _bind(uid);
+      await entryState.clear();
     } catch (error, stackTrace) {
       try {
         await gateway.signOut();

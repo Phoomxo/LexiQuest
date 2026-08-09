@@ -13,7 +13,7 @@ abstract final class AppRouteFactory {
     final uri = Uri.tryParse(routeName);
     if (uri != null && EmailAction.parse(uri) != null) return true;
     return switch (routeName) {
-      '/login' || '/register' || '/home' || '/email-verification' => true,
+      '/login' || '/register' => true,
       _ => false,
     };
   }

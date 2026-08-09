@@ -158,13 +158,25 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
   final void Function()? _onOwnerBound;
   final GuestRetryDelay _retryDelay;
   final int _maxCloudBindingAttempts;
+  final Completer<void> _disposeSignal = Completer<void>();
   Future<void>? _cloudBinding;
+  Future<void>? _disposeFuture;
+  bool _disposed = false;
 
   @override
   Future<GuestSessionResult> start() async {
+    if (_disposed) {
+      return const GuestSessionFailed(GuestSessionFailure.unknown);
+    }
     try {
       final owner = await _localOwners.getOrCreateActiveOwner();
+      if (_disposed) {
+        return const GuestSessionFailed(GuestSessionFailure.unknown);
+      }
       await _entryState.markGuest();
+      if (_disposed) {
+        return const GuestSessionFailed(GuestSessionFailure.unknown);
+      }
       if (owner.firebaseUid == null) {
         final binding = _cloudBinding ??= _bindAnonymousOwner(owner.id);
         unawaited(
@@ -181,31 +193,90 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     }
   }
 
+  /// Cancels pending provider waits/retries and drains any in-flight upgrade.
+  Future<void> dispose() {
+    return _disposeFuture ??= _disposeOnce();
+  }
+
+  Future<void> _disposeOnce() async {
+    _disposed = true;
+    if (!_disposeSignal.isCompleted) {
+      _disposeSignal.complete();
+    }
+    final binding = _cloudBinding;
+    if (binding != null) {
+      await binding;
+    }
+  }
+
   Future<void> _bindAnonymousOwner(String ownerId) async {
     for (var attempt = 0; attempt < _maxCloudBindingAttempts; attempt++) {
+      if (_disposed) return;
       try {
-        final result = await _delegate.start();
-        if (result case GuestSessionStarted(:final uid)) {
-          await _upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
-          _onOwnerBound?.call();
-          return;
-        }
-        if (result case GuestSessionFailed(:final reason)) {
-          // Stop immediately on permanent failures. Retrying a misconfigured
-          // backend (providerDisabled, firebaseUnavailable, unknown) only burns
-          // ~75s of startup time and masks the real problem as "transient".
-          // Only GuestSessionFailure.network is genuinely retryable.
-          if (!_isTransient(reason)) {
+        final provider = await _unlessDisposed(_delegate.start());
+        if (provider case _DisposedResult<GuestSessionResult>()) return;
+        if (provider case _CompletedResult<GuestSessionResult>(:final value)) {
+          final result = value;
+          if (_disposed) return;
+          if (result case GuestSessionStarted(:final uid)) {
+            await _upgradeGuestOwner(activeOwnerId: ownerId, firebaseUid: uid);
+            if (!_disposed) {
+              _onOwnerBound?.call();
+            }
             return;
           }
+          if (result case GuestSessionFailed(:final reason)) {
+            // Provider/configuration failures are permanent. Network and
+            // integrity cold-start failures remain bounded transient cases.
+            if (!_isTransient(reason)) {
+              return;
+            }
+          }
+        }
+        if (provider case _FailedResult<GuestSessionResult>()) {
+          // Treat unexpected provider failures as transient within the
+          // bounded retry window. Local learning remains available.
         }
       } catch (_) {
         // Treat unexpected provider failures as transient within the bounded
         // retry window. Local learning remains available throughout.
       }
       if (attempt + 1 < _maxCloudBindingAttempts) {
-        await _retryDelay(const Duration(seconds: 15));
+        try {
+          final delay = await _unlessDisposed(
+            _retryDelay(const Duration(seconds: 15)),
+          );
+          if (delay case _DisposedResult<void>()) return;
+        } catch (_) {
+          // Keep the retry count bounded even when an injected delay fails.
+        }
       }
     }
   }
+
+  Future<_CancelableResult<T>> _unlessDisposed<T>(Future<T> operation) {
+    return Future.any<_CancelableResult<T>>(<Future<_CancelableResult<T>>>[
+      operation.then<_CancelableResult<T>>(
+        _CompletedResult<T>.new,
+        onError: (Object _, StackTrace _) => _FailedResult<T>(),
+      ),
+      _disposeSignal.future.then<_CancelableResult<T>>(
+        (_) => _DisposedResult<T>(),
+      ),
+    ]);
+  }
 }
+
+sealed class _CancelableResult<T> {}
+
+final class _CompletedResult<T> extends _CancelableResult<T> {
+  _CompletedResult(this.value);
+
+  final T value;
+}
+
+final class _FailedResult<T> extends _CancelableResult<T> {
+  _FailedResult();
+}
+
+final class _DisposedResult<T> extends _CancelableResult<T> {}

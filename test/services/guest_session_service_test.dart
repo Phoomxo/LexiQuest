@@ -390,6 +390,101 @@ void main() {
         expect(result, isA<GuestSessionFailed>());
       },
     );
+
+    test(
+      'dispose cancels a pending provider bind and suppresses callbacks',
+      () async {
+        final delegate = _ControllableGuestSessionService();
+        final upgrades = _FakeOwnerUpgradeRepository();
+        var callbacks = 0;
+        final service = OwnerBindingGuestSessionService(
+          delegate: delegate,
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          entryState: _MemoryAppEntryStateStore(),
+          onOwnerBound: () => callbacks += 1,
+        );
+
+        await service.start();
+        await service.dispose().timeout(const Duration(milliseconds: 100));
+        delegate.complete(
+          const GuestSessionStarted(uid: 'late-anonymous-provider'),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(delegate.startCalls, 1);
+        expect(upgrades.upgradeCalls, 0);
+        expect(callbacks, 0);
+      },
+    );
+
+    test(
+      'dispose cancels a pending retry and prevents remaining attempts',
+      () async {
+        final delayStarted = Completer<void>();
+        final releaseDelay = Completer<void>();
+        final delegate = _SequencedGuestSessionService(const [
+          GuestSessionFailed(GuestSessionFailure.network),
+          GuestSessionStarted(uid: 'must-not-bind'),
+        ]);
+        final upgrades = _FakeOwnerUpgradeRepository();
+        var callbacks = 0;
+        final service = OwnerBindingGuestSessionService(
+          delegate: delegate,
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          entryState: _MemoryAppEntryStateStore(),
+          retryDelay: (_) {
+            delayStarted.complete();
+            return releaseDelay.future;
+          },
+          maxCloudBindingAttempts: 2,
+          onOwnerBound: () => callbacks += 1,
+        );
+
+        await service.start();
+        await delayStarted.future;
+        await service.dispose().timeout(const Duration(milliseconds: 100));
+        releaseDelay.complete();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(delegate.startCalls, 1);
+        expect(upgrades.upgradeCalls, 0);
+        expect(callbacks, 0);
+      },
+    );
+
+    test(
+      'dispose drains an in-flight upgrade and suppresses its callback',
+      () async {
+        final upgrades = _ControllableOwnerUpgradeRepository();
+        var callbacks = 0;
+        final service = OwnerBindingGuestSessionService(
+          delegate: _SequencedGuestSessionService(const [
+            GuestSessionStarted(uid: 'anonymous-in-flight'),
+          ]),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          entryState: _MemoryAppEntryStateStore(),
+          onOwnerBound: () => callbacks += 1,
+        );
+
+        await service.start();
+        await upgrades.started.future;
+        var disposed = false;
+        final disposing = service.dispose().then((_) => disposed = true);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(disposed, isFalse);
+        expect(callbacks, 0);
+
+        upgrades.release.complete();
+        await disposing;
+
+        expect(disposed, isTrue);
+        expect(callbacks, 0);
+      },
+    );
   });
 }
 
@@ -417,6 +512,19 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
 final class _PendingGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() => Completer<GuestSessionResult>().future;
+}
+
+final class _ControllableGuestSessionService implements GuestSessionService {
+  final Completer<GuestSessionResult> _result = Completer<GuestSessionResult>();
+  int startCalls = 0;
+
+  @override
+  Future<GuestSessionResult> start() {
+    startCalls += 1;
+    return _result.future;
+  }
+
+  void complete(GuestSessionResult result) => _result.complete(result);
 }
 
 final class _SequencedGuestSessionService implements GuestSessionService {
@@ -456,6 +564,7 @@ final class _FakeLocalOwnerRepository implements LocalOwnerRepository {
 final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
   String? ownerId;
   String? firebaseUid;
+  int upgradeCalls = 0;
   final Completer<void> upgraded = Completer<void>();
 
   @override
@@ -476,6 +585,7 @@ final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required String activeOwnerId,
     required String firebaseUid,
   }) async {
+    upgradeCalls += 1;
     ownerId = activeOwnerId;
     this.firebaseUid = firebaseUid;
     if (!upgraded.isCompleted) {
@@ -486,5 +596,38 @@ final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
       mode: OwnerUpgradeMode.anonymousBound,
       conflictCount: 0,
     );
+  }
+}
+
+final class _ControllableOwnerUpgradeRepository
+    implements OwnerUpgradeRepository {
+  final Completer<void> started = Completer<void>();
+  final Completer<void> release = Completer<void>();
+
+  @override
+  Future<OwnerUpgradeResult> upgrade({
+    required String activeOwnerId,
+    required String firebaseUid,
+  }) async {
+    started.complete();
+    await release.future;
+    return OwnerUpgradeResult(
+      targetOwnerId: activeOwnerId,
+      mode: OwnerUpgradeMode.anonymousBound,
+      conflictCount: 0,
+    );
+  }
+
+  @override
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) {
+    throw UnimplementedError();
   }
 }

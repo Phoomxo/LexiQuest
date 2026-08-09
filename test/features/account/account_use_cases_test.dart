@@ -40,6 +40,7 @@ void main() {
       expect(upgrades.upgradeOwnerId, 'local-owner');
       expect(upgrades.upgradeUid, 'firebase-user');
       expect(entryState.mode, AppEntryMode.signedOut);
+      expect(upgrades.transitionLog, ['upgrade', 'clearEntry']);
     },
   );
 
@@ -54,6 +55,7 @@ void main() {
       expect(upgrades.upgradeCalls, 1);
       expect(upgrades.upgradeUid, 'firebase-user');
       expect(entryState.mode, AppEntryMode.signedOut);
+      expect(upgrades.transitionLog, ['upgrade', 'clearEntry']);
     },
   );
 
@@ -62,7 +64,7 @@ void main() {
 
     expect(gateway.signOutCalls, 1);
     expect(upgrades.logoutCalls, 1);
-    expect(upgrades.transitionLog, ['createGuest', 'signOut']);
+    expect(upgrades.transitionLog, ['clearEntry', 'createGuest', 'signOut']);
     expect(result.mode, OwnerUpgradeMode.localGuestCreated);
     expect(entryState.mode, AppEntryMode.signedOut);
   });
@@ -76,9 +78,10 @@ void main() {
     );
 
     expect(gateway.signOutCalls, 1);
-    expect(entryState.clearCalls, 1);
+    expect(entryState.clearCalls, 0);
     expect(entryState.markGuestCalls, 1);
     expect(entryState.mode, AppEntryMode.guest);
+    expect(upgrades.transitionLog, ['upgrade', 'signOut', 'markGuest']);
   });
 
   test('registration signs out provider when entry clear fails', () async {
@@ -89,9 +92,15 @@ void main() {
       throwsStateError,
     );
 
-    expect(upgrades.upgradeCalls, 0);
+    expect(upgrades.upgradeCalls, 1);
     expect(gateway.signOutCalls, 1);
     expect(entryState.mode, AppEntryMode.guest);
+    expect(upgrades.transitionLog, [
+      'upgrade',
+      'clearEntry',
+      'signOut',
+      'markGuest',
+    ]);
   });
 
   test('sign in signs out provider when entry clear fails', () async {
@@ -102,9 +111,15 @@ void main() {
       throwsStateError,
     );
 
-    expect(upgrades.upgradeCalls, 0);
+    expect(upgrades.upgradeCalls, 1);
     expect(gateway.signOutCalls, 1);
     expect(entryState.mode, AppEntryMode.guest);
+    expect(upgrades.transitionLog, [
+      'upgrade',
+      'clearEntry',
+      'signOut',
+      'markGuest',
+    ]);
   });
 
   test(
@@ -148,6 +163,13 @@ void main() {
     expect(entryState.clearCalls, 1);
     expect(entryState.markGuestCalls, 1);
     expect(entryState.mode, AppEntryMode.guest);
+    expect(upgrades.transitionLog, [
+      'clearEntry',
+      'createGuest',
+      'signOut',
+      'rollbackGuest',
+      'markGuest',
+    ]);
   });
 
   test(
@@ -212,6 +234,7 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
   @override
   Future<void> clear() async {
     clearCalls += 1;
+    _activeUpgradeRepository?.transitionLog.add('clearEntry');
     if (clearFailure case final failure?) throw failure;
     mode = AppEntryMode.signedOut;
   }
@@ -219,6 +242,7 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
   @override
   Future<void> markGuest() async {
     markGuestCalls += 1;
+    _activeUpgradeRepository?.transitionLog.add('markGuest');
     mode = AppEntryMode.guest;
   }
 
@@ -327,6 +351,7 @@ final class _FakeUpgradeRepository implements OwnerUpgradeRepository {
     required String firebaseUid,
   }) async {
     upgradeCalls += 1;
+    transitionLog.add('upgrade');
     if (upgradeFailure case final failure?) throw failure;
     upgradeOwnerId = activeOwnerId;
     upgradeUid = firebaseUid;
