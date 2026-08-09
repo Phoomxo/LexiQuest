@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 
 void main() {
   late AppDatabase database;
@@ -168,6 +171,127 @@ void main() {
     expect(result.mode, OwnerUpgradeMode.mergedExisting);
     expect(await _ownerCount(database, 'ai_usage_events', 'account-owner'), 1);
   });
+
+  test(
+    'mergedExisting normalizes cursor prefix and quest reward owner',
+    () async {
+      final guestFirst = DateTime.utc(2026, 8, 9, 10);
+      final guestPending = DateTime.utc(2026, 8, 9, 11);
+      final accountLater = DateTime.utc(2026, 8, 9, 12);
+      await _insertLearningEvent(
+        database,
+        ownerId: 'guest-owner',
+        eventId: 'learning-event:guest-first',
+        occurredAt: guestFirst,
+      );
+      await _insertLearningEvent(
+        database,
+        ownerId: 'guest-owner',
+        eventId: 'learning-event:guest-pending',
+        occurredAt: guestPending,
+      );
+      await _insertLearningEvent(
+        database,
+        ownerId: 'account-owner',
+        eventId: 'learning-event:account-later',
+        occurredAt: accountLater,
+      );
+      await _insertProjectionResult(
+        database,
+        ownerId: 'guest-owner',
+        sourceEventId: 'learning-event:guest-first',
+        projection: 'quest',
+        occurredAt: guestFirst,
+        result: {
+          'eligible': true,
+          'rewardGrants': [
+            {
+              'ownerId': 'guest-owner',
+              'idempotencyKey': 'quest-complete:guest-first',
+              'xpAmount': 25,
+            },
+          ],
+        },
+      );
+      await _insertProjectionCursor(
+        database,
+        ownerId: 'guest-owner',
+        sourceEventId: 'learning-event:guest-first',
+        projection: 'quest',
+        occurredAt: guestFirst,
+      );
+      await _insertProjectionResult(
+        database,
+        ownerId: 'account-owner',
+        sourceEventId: 'learning-event:account-later',
+        projection: 'quest',
+        occurredAt: accountLater,
+        result: const {'eligible': true, 'rewardGrants': []},
+      );
+      await _insertProjectionCursor(
+        database,
+        ownerId: 'account-owner',
+        sourceEventId: 'learning-event:account-later',
+        projection: 'quest',
+        occurredAt: accountLater,
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final cursors =
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.ownerId.equals('account-owner') &
+                    row.eventType.equals('LearningProjectionCursor'),
+              ))
+              .get();
+      expect(cursors, hasLength(1));
+      expect(
+        (cursors.single.eventId, cursors.single.aggregateId),
+        (
+          'learning-projection-cursor:account-owner:quest:v1',
+          'learning-event:guest-first',
+        ),
+        reason: 'the safe merged prefix is the earlier guest cursor',
+      );
+
+      final guestReceipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:quest:'
+                  'learning-event:guest-first:v1',
+                ),
+              ))
+              .getSingle();
+      final payload =
+          jsonDecode(guestReceipt.payloadJson) as Map<String, dynamic>;
+      final result = (payload['result'] as Map).cast<String, dynamic>();
+      final grants = (result['rewardGrants'] as List).cast<Map>();
+      expect(grants.single['ownerId'], 'account-owner');
+
+      final replayed = <String>[];
+      String? rewardOwner;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (event) async {
+          replayed.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+        rewardSink: (_, questResult) async {
+          rewardOwner =
+              ((questResult['rewardGrants'] as List).single as Map)['ownerId']
+                  as String;
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('account-owner');
+      expect(replayed, contains('learning-event:guest-pending'));
+      expect(rewardOwner, 'account-owner');
+    },
+  );
 
   test('rolls back the whole upgrade when any table update fails', () async {
     await _seedEveryOwnerScopedTable(database);
@@ -686,4 +810,106 @@ Future<int> _ownerCount(
       )
       .getSingle();
   return row.read<int>('count');
+}
+
+Future<void> _insertLearningEvent(
+  AppDatabase database, {
+  required String ownerId,
+  required String eventId,
+  required DateTime occurredAt,
+}) => database
+    .into(database.eventsV2)
+    .insert(
+      EventsV2Companion.insert(
+        eventId: eventId,
+        eventType: 'QuizCompleted',
+        eventVersion: 1,
+        occurredAtUtc: occurredAt,
+        recordedAtUtc: occurredAt,
+        actorIdentity: ownerId,
+        ownerId: ownerId,
+        aggregateType: 'LearningSession',
+        aggregateId: 'session:$ownerId',
+        idempotencyKey: 'learning-attempt:$eventId:v1',
+        consentContextJson: '{}',
+        appVersion: '1.0.0',
+        buildId: 'owner-upgrade-test',
+        privacyClassification: 'anonymized',
+        payloadJson: '{"correct":true}',
+      ),
+    );
+
+Future<void> _insertProjectionResult(
+  AppDatabase database, {
+  required String ownerId,
+  required String sourceEventId,
+  required String projection,
+  required DateTime occurredAt,
+  required Map<String, dynamic> result,
+}) {
+  final key = 'learning-projection:$projection:$sourceEventId:v1';
+  return database
+      .into(database.eventsV2)
+      .insert(
+        EventsV2Companion.insert(
+          eventId: key,
+          eventType: 'LearningProjectionApplied',
+          eventVersion: 1,
+          occurredAtUtc: occurredAt,
+          recordedAtUtc: occurredAt,
+          actorIdentity: ownerId,
+          ownerId: ownerId,
+          aggregateType: 'LearningProjection',
+          aggregateId: sourceEventId,
+          causationId: Value(sourceEventId),
+          idempotencyKey: key,
+          consentContextJson: '{}',
+          appVersion: '1.0.0',
+          buildId: 'owner-upgrade-test',
+          privacyClassification: 'anonymized',
+          payloadJson: jsonEncode({
+            'sourceEventId': sourceEventId,
+            'projection': projection,
+            'appliedVersion': 1,
+            'outcome': 'applied',
+            'result': result,
+          }),
+        ),
+      );
+}
+
+Future<void> _insertProjectionCursor(
+  AppDatabase database, {
+  required String ownerId,
+  required String sourceEventId,
+  required String projection,
+  required DateTime occurredAt,
+}) {
+  final key = 'learning-projection-cursor:$ownerId:$projection:v1';
+  return database
+      .into(database.eventsV2)
+      .insert(
+        EventsV2Companion.insert(
+          eventId: key,
+          eventType: 'LearningProjectionCursor',
+          eventVersion: 1,
+          occurredAtUtc: occurredAt,
+          recordedAtUtc: occurredAt,
+          actorIdentity: ownerId,
+          ownerId: ownerId,
+          aggregateType: 'LearningProjectionCursor',
+          aggregateId: sourceEventId,
+          causationId: Value(sourceEventId),
+          idempotencyKey: key,
+          consentContextJson: '{}',
+          appVersion: '1.0.0',
+          buildId: 'owner-upgrade-test',
+          privacyClassification: 'anonymized',
+          payloadJson: jsonEncode({
+            'sourceEventId': sourceEventId,
+            'projection': projection,
+            'appliedVersion': 1,
+          }),
+        ),
+      );
 }

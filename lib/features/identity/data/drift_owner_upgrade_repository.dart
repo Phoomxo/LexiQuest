@@ -90,6 +90,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         );
         await _discardAiUsageDuplicates(source.id, target.id);
         await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+        await _normalizeLearningProjectionState(source.id, target.id);
         await _moveOwnerRows(source.id, target.id);
         await _rebuildLearningProjections(target.id);
         await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
@@ -482,6 +483,121 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       variables: [Variable<String>(targetId)],
       updates: {_database.outboxOperations},
     );
+  }
+
+  Future<void> _normalizeLearningProjectionState(
+    String sourceId,
+    String targetId,
+  ) async {
+    final sourceHasLearning = await _hasLearningEvents(sourceId);
+    final targetHasLearning = await _hasLearningEvents(targetId);
+    final cursors =
+        await (_database.select(_database.eventsV2)..where(
+              (row) =>
+                  row.eventType.equals('LearningProjectionCursor') &
+                  row.ownerId.isIn([sourceId, targetId]),
+            ))
+            .get();
+    final grouped = <String, List<db.EventsV2Data>>{};
+    for (final cursor in cursors) {
+      final payload = jsonDecode(cursor.payloadJson) as Map<String, dynamic>;
+      final projection = payload['projection'] as String;
+      final version = payload['appliedVersion'] as int;
+      grouped.putIfAbsent('$projection:v$version', () => []).add(cursor);
+    }
+    for (final entry in grouped.entries) {
+      final parts = entry.key.split(':v');
+      final projection = parts.first;
+      final version = int.parse(parts.last);
+      final sourceCursors = entry.value
+          .where((cursor) => cursor.ownerId == sourceId)
+          .toList();
+      final targetCursors = entry.value
+          .where((cursor) => cursor.ownerId == targetId)
+          .toList();
+      db.EventsV2Data? safe;
+      if ((!sourceHasLearning || sourceCursors.isNotEmpty) &&
+          (!targetHasLearning || targetCursors.isNotEmpty)) {
+        final candidates = <db.EventsV2Data>[
+          if (sourceHasLearning) ...sourceCursors,
+          if (targetHasLearning) ...targetCursors,
+        ];
+        if (candidates.isNotEmpty) {
+          candidates.sort(_compareProjectionCursor);
+          safe = candidates.first;
+        }
+      }
+      for (final cursor in entry.value) {
+        if (safe == null || cursor.eventId != safe.eventId) {
+          await (_database.delete(
+            _database.eventsV2,
+          )..where((row) => row.eventId.equals(cursor.eventId))).go();
+        }
+      }
+      if (safe != null) {
+        final normalizedKey =
+            'learning-projection-cursor:$targetId:$projection:v$version';
+        await _database.customUpdate(
+          'UPDATE events_v2 SET event_id = ?, idempotency_key = ?, '
+          'actor_identity = ? WHERE event_id = ?',
+          variables: [
+            Variable<String>(normalizedKey),
+            Variable<String>(normalizedKey),
+            Variable<String>(targetId),
+            Variable<String>(safe.eventId),
+          ],
+          updates: {_database.eventsV2},
+        );
+      }
+    }
+
+    final questResults =
+        await (_database.select(_database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.isIn([sourceId, targetId]) &
+                  row.aggregateType.equals('LearningProjection') &
+                  (row.eventType.equals('LearningProjectionApplied') |
+                      row.eventType.equals('LearningProjectionSkipped')),
+            ))
+            .get();
+    for (final receipt in questResults) {
+      final payload = jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+      if (payload['projection'] != 'quest') continue;
+      final result = payload['result'];
+      if (result is! Map) continue;
+      final grants = result['rewardGrants'];
+      if (grants is! List) continue;
+      var changed = false;
+      for (final value in grants) {
+        if (value is Map && value['ownerId'] == sourceId) {
+          value['ownerId'] = targetId;
+          changed = true;
+        }
+      }
+      if (!changed) continue;
+      await (_database.update(_database.eventsV2)
+            ..where((row) => row.eventId.equals(receipt.eventId)))
+          .write(db.EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
+    }
+  }
+
+  Future<bool> _hasLearningEvents(String ownerId) async {
+    final row = await _database
+        .customSelect(
+          'SELECT 1 AS present FROM events_v2 '
+          "WHERE owner_id = ? AND idempotency_key LIKE 'learning-attempt:%' "
+          'LIMIT 1',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {_database.eventsV2},
+        )
+        .getSingleOrNull();
+    return row != null;
+  }
+
+  int _compareProjectionCursor(db.EventsV2Data left, db.EventsV2Data right) {
+    final time = left.occurredAtUtc.compareTo(right.occurredAtUtc);
+    if (time != 0) return time;
+    return left.aggregateId.compareTo(right.aggregateId);
   }
 
   Future<void> _discardAiUsageDuplicates(

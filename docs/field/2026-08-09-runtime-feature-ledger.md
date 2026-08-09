@@ -166,6 +166,9 @@ lookups. Quest receipts carry the bounded completion grants consumed by reward
 replay, eliminating per-event quest-history scans. Bootstrap seeds the daily
 quest before replay, and events before its assignment time are deterministically
 skipped; equality is explicitly eligible.
+On merged-owner upgrade, projection cursors are re-keyed to the account and
+merged at the earlier safe contiguous prefix; quest receipt reward owners are
+normalized in the same transaction so pending guest evidence remains replayable.
 This is not physical process, APK, or device evidence, so the promoted learning
 rows are `verified`, not `field-certified`; quest remains `orphan` because it
 still lacks a user-visible production entry.
