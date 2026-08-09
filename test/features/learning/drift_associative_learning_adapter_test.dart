@@ -172,5 +172,74 @@ void main() {
       expect(dog, hasLength(1));
       expect(dog.first.stability, closeTo(3.0, 0.001));
     });
+
+    test(
+      'compound save preserves an existing memory state while saving the association',
+      () async {
+        final existing = AssociativeMemoryState(
+          ownerId: 'owner-da',
+          wordKey: 'anchor',
+          stability: 8.5,
+          difficulty: 2.25,
+          cueDependency: 0.15,
+          lapseCount: 3,
+          lastReviewedAtUtc: DateTime.utc(2026, 8, 8, 9),
+          nextDueAtUtc: DateTime.utc(2026, 8, 20, 9),
+          algorithmVersion: 'preserved-v2',
+        );
+        await adapter.updateMemoryState(existing);
+
+        await adapter.saveAssociationAndMemoryState(
+          AssociationRecord(
+            associationId: 'assoc-anchor',
+            ownerId: 'owner-da',
+            wordKey: 'anchor',
+            type: 'keyword',
+            content: 'keeps me steady',
+            createdAtUtc: DateTime.utc(2026, 8, 9, 9),
+          ),
+          AssociativeMemoryState(
+            ownerId: 'owner-da',
+            wordKey: 'anchor',
+            stability: 1,
+            difficulty: 5,
+            cueDependency: 1,
+            lapseCount: 0,
+            lastReviewedAtUtc: DateTime.utc(2026, 8, 9, 9),
+            nextDueAtUtc: DateTime.utc(2026, 8, 10, 9),
+            algorithmVersion: 'associative-v1',
+          ),
+        );
+
+        final associations = await adapter.getAssociationsForWord(
+          'owner-da',
+          'anchor',
+        );
+        final preserved = await adapter.getMemoryState('owner-da', 'anchor');
+
+        expect(associations, hasLength(1));
+        expect(associations.single.content, 'keeps me steady');
+        expect(
+          (
+            stability: preserved!.stability,
+            difficulty: preserved.difficulty,
+            cueDependency: preserved.cueDependency,
+            lapseCount: preserved.lapseCount,
+            lastReviewedAtUtc: preserved.lastReviewedAtUtc,
+            nextDueAtUtc: preserved.nextDueAtUtc,
+            algorithmVersion: preserved.algorithmVersion,
+          ),
+          equals((
+            stability: 8.5,
+            difficulty: 2.25,
+            cueDependency: 0.15,
+            lapseCount: 3,
+            lastReviewedAtUtc: DateTime.utc(2026, 8, 8, 9),
+            nextDueAtUtc: DateTime.utc(2026, 8, 20, 9),
+            algorithmVersion: 'preserved-v2',
+          )),
+        );
+      },
+    );
   });
 }

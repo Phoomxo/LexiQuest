@@ -19,13 +19,17 @@ abstract interface class AssociativeLearningPort {
   /// for a word owned by [ownerId].
   Future<void> saveAssociation(AssociationRecord record);
 
-  /// Persist [record] and [state] as one all-or-nothing pair.
+  /// Persist [record] and initialize its memory state with [initialState] as
+  /// one all-or-nothing operation.
   ///
-  /// Implementations must reject mismatched owner/word keys and must not leave
-  /// either record durable when the other write fails.
+  /// A current memory state must be preserved when one already exists. The
+  /// existence check and initialization must share the same atomic boundary as
+  /// the association write. Implementations must reject mismatched owner/word
+  /// keys and must not leave either new record durable when initialization
+  /// fails.
   Future<void> saveAssociationAndMemoryState(
     AssociationRecord record,
-    AssociativeMemoryState state,
+    AssociativeMemoryState initialState,
   );
 
   /// Return all associations the [ownerId] has created for [wordKey].
@@ -121,13 +125,17 @@ final class InMemoryAssociativeLearningAdapter
   @override
   Future<void> saveAssociationAndMemoryState(
     AssociationRecord record,
-    AssociativeMemoryState state,
+    AssociativeMemoryState initialState,
   ) async {
-    if (record.ownerId != state.ownerId || record.wordKey != state.wordKey) {
+    if (record.ownerId != initialState.ownerId ||
+        record.wordKey != initialState.wordKey) {
       throw ArgumentError('Association and memory-state keys must match.');
     }
     _associations[record.associationId] = record;
-    _states['${state.ownerId}:${state.wordKey}'] = state;
+    _states.putIfAbsent(
+      '${initialState.ownerId}:${initialState.wordKey}',
+      () => initialState,
+    );
   }
 
   @override

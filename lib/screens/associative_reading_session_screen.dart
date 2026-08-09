@@ -290,11 +290,11 @@ class _AssociativeReadingSessionScreenState
         final displayWord = widget.targetWords[i];
         final wordKey = widget.targetWordIds?[displayWord] ?? displayWord;
         final cue = _cueControllers[i].text.trim();
-        final existing = await associativeLearning.getMemoryState(
-          ownerId,
-          wordKey,
-        );
         if (cue.isEmpty) {
+          final existing = await associativeLearning.getMemoryState(
+            ownerId,
+            wordKey,
+          );
           final associations = await associativeLearning.getAssociationsForWord(
             ownerId,
             wordKey,
@@ -321,22 +321,20 @@ class _AssociativeReadingSessionScreenState
           content: cue,
           createdAtUtc: now,
         );
-        final memoryState =
-            existing ??
-            AssociativeMemoryState(
-              ownerId: ownerId,
-              wordKey: wordKey,
-              stability: 1,
-              difficulty: 5,
-              cueDependency: 1,
-              lapseCount: 0,
-              lastReviewedAtUtc: now,
-              nextDueAtUtc: now.add(const Duration(days: 1)),
-              algorithmVersion: 'associative-v1',
-            );
+        final initialState = AssociativeMemoryState(
+          ownerId: ownerId,
+          wordKey: wordKey,
+          stability: 1,
+          difficulty: 5,
+          cueDependency: 1,
+          lapseCount: 0,
+          lastReviewedAtUtc: now,
+          nextDueAtUtc: now.add(const Duration(days: 1)),
+          algorithmVersion: 'associative-v1',
+        );
         await associativeLearning.saveAssociationAndMemoryState(
           association,
-          memoryState,
+          initialState,
         );
       }
       return true;

@@ -97,6 +97,26 @@ SELECT
   );
 }
 
+Future<({int associations, int memory})> _pairCountsForWord(
+  AppDatabase database,
+  String wordKey,
+) async {
+  final row = await database
+      .customSelect(
+        '''
+SELECT
+  (SELECT COUNT(*) FROM association_records WHERE word_key = ?) AS association_count,
+  (SELECT COUNT(*) FROM associative_memory_states WHERE word_key = ?) AS memory_count
+''',
+        variables: [Variable.withString(wordKey), Variable.withString(wordKey)],
+      )
+      .getSingle();
+  return (
+    associations: row.read<int>('association_count'),
+    memory: row.read<int>('memory_count'),
+  );
+}
+
 void main() {
   testWidgets(
     'production associative reading survives file reopen for active owner only',
@@ -424,6 +444,162 @@ END
         await tester.runAsync(() async {
           await reopened?.dispose();
           await first?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        });
+        await tester.pump(const Duration(milliseconds: 1));
+        binaryMessenger.setMockMethodCallHandler(_flutterTtsChannel, null);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  testWidgets(
+    'multi-target retry keeps exactly one durable pair per target',
+    (tester) async {
+      final binaryMessenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binaryMessenger.setMockMethodCallHandler(
+        _flutterTtsChannel,
+        (_) async => 1,
+      );
+      final directory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp(
+          'lexiquest-associative-multi-target-',
+        ),
+      ))!;
+      final databasePath =
+          '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
+      AppDependencies? dependencies;
+
+      try {
+        final initialized = (await tester.runAsync(
+          () => _bootstrap(databasePath).initialize(),
+        ))!;
+        dependencies = initialized;
+        final category = (await tester.runAsync(
+          () => initialized.vocabulary!.createCategory('Retry pairs'),
+        ))!;
+        final words = (await tester.runAsync(() async {
+          final anchor = await initialized.vocabulary!.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'anchor',
+              meaning: 'a stable point',
+              partOfSpeech: 'noun',
+            ),
+          );
+          final beacon = await initialized.vocabulary!.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'beacon',
+              meaning: 'a guiding light',
+              partOfSpeech: 'noun',
+            ),
+          );
+          return (anchor: anchor, beacon: beacon);
+        }))!;
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: 'B1',
+              targetWords: const ['anchor', 'beacon'],
+              targetWordIds: {
+                'anchor': words.anchor.id,
+                'beacon': words.beacon.id,
+              },
+              passageText: 'An anchor steadies us while a beacon guides us.',
+              documentId: 'associative-reading:multi-target-review',
+              documentRevision: 1,
+              learning: initialized.learning,
+              associativeLearning: initialized.associativeLearning,
+            ),
+          ),
+        );
+        await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (final title in const [
+          'Stage 2: Cue Fading',
+          'Stage 3: Active Recall',
+          'Stage 4: Memory Association',
+        ]) {
+          await tester.tap(find.text('Complete & Continue'));
+          await _pumpUntilFound(tester, find.text(title));
+        }
+        await tester.runAsync(
+          () => initialized.database!.customStatement('''
+CREATE TRIGGER fail_second_associative_memory_insert
+BEFORE INSERT ON associative_memory_states
+WHEN (SELECT COUNT(*) FROM associative_memory_states) = 1
+BEGIN
+  SELECT RAISE(ABORT, 'injected second-target memory failure');
+END
+'''),
+        );
+        await tester.enterText(find.byType(TextField).at(0), 'keeps me steady');
+        await tester.enterText(find.byType(TextField).at(1), 'shows the way');
+        await tester.tap(find.text('Complete & Continue'));
+        await _pumpUntilFound(
+          tester,
+          find.text('Could not save the memory association. Try again.'),
+        );
+        await _pumpUntilContinueEnabled(tester);
+
+        final afterFailure = (await tester.runAsync(() async {
+          return (
+            anchor: await _pairCountsForWord(
+              initialized.database!,
+              words.anchor.id,
+            ),
+            beacon: await _pairCountsForWord(
+              initialized.database!,
+              words.beacon.id,
+            ),
+          );
+        }))!;
+        expect(
+          afterFailure,
+          equals((
+            anchor: (associations: 1, memory: 1),
+            beacon: (associations: 0, memory: 0),
+          )),
+        );
+
+        await tester.runAsync(
+          () => initialized.database!.customStatement(
+            'DROP TRIGGER fail_second_associative_memory_insert',
+          ),
+        );
+        await tester.tap(find.text('Complete & Continue'));
+        await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+
+        final afterRetry = (await tester.runAsync(() async {
+          return (
+            anchor: await _pairCountsForWord(
+              initialized.database!,
+              words.anchor.id,
+            ),
+            beacon: await _pairCountsForWord(
+              initialized.database!,
+              words.beacon.id,
+            ),
+            total: await _pairCounts(initialized.database!),
+          );
+        }))!;
+        expect(
+          afterRetry,
+          equals((
+            anchor: (associations: 1, memory: 1),
+            beacon: (associations: 1, memory: 1),
+            total: (associations: 2, memory: 2),
+          )),
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.runAsync(() async {
+          await dependencies?.dispose();
           if (await directory.exists()) {
             await directory.delete(recursive: true);
           }
