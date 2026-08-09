@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
@@ -64,12 +65,21 @@ void main() {
       transactionId: 'reward-local-1',
       occurredAtUtc: now,
     );
+    expect(
+      await DriftOwnerOperationGate(database).tryAcquire(
+        token: 'reward-claim-gate',
+        nowUtc: now,
+        leaseDuration: const Duration(minutes: 10),
+      ),
+      isTrue,
+    );
 
     final claim = (await syncStore.claimPending(
       ownerId: 'owner-1',
       firebaseUid: 'firebase-1',
       limit: 10,
       leaseToken: 'lease-1',
+      ownerGateToken: 'reward-claim-gate',
       leaseDuration: const Duration(minutes: 5),
       nowUtc: now,
     )).single;

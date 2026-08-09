@@ -11,86 +11,44 @@ import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_result.dart';
+import '../domain/sync_store.dart';
+import 'drift_owner_operation_gate.dart';
 
-final class ClaimedSyncOperation {
-  const ClaimedSyncOperation({
-    required this.leaseToken,
-    required this.attemptCount,
-    required this.mutation,
-  });
-
-  final String leaseToken;
-  final int attemptCount;
-  final PushMutation mutation;
-}
-
-final class DriftSyncStore {
+final class DriftSyncStore implements SyncStore {
   DriftSyncStore(this.database)
     : projections = DriftLearningProjectionRebuilder(database),
       rewardProjections = DriftRewardProjectionRebuilder(database);
 
   static const int maxClaimLimit = 50;
+  static const int maxSendReservations = maxSyncSendReservations;
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
+  var _standalonePullSequence = 0;
 
   Future<bool> tryAcquireRunLease({
     required String ownerId,
     required String leaseToken,
     required DateTime nowUtc,
     required Duration leaseDuration,
-  }) async {
-    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
-    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
-    _requireUtc(nowUtc, 'nowUtc');
-    if (leaseDuration <= Duration.zero) {
-      throw ArgumentError.value(
-        leaseDuration,
-        'leaseDuration',
-        'must be positive',
-      );
-    }
-    final key = 'syncRunLease:$canonicalOwnerId';
-    final nowMs = nowUtc.millisecondsSinceEpoch;
-    final changed = await database.customUpdate(
-      '''
-      INSERT INTO runtime_flags
-        ("key", bool_value, source, updated_at_utc_ms, expires_at_utc_ms)
-      VALUES (?, 1, ?, ?, ?)
-      ON CONFLICT("key") DO UPDATE SET
-        bool_value = 1,
-        source = excluded.source,
-        updated_at_utc_ms = excluded.updated_at_utc_ms,
-        expires_at_utc_ms = excluded.expires_at_utc_ms
-      WHERE runtime_flags.bool_value = 0
-         OR runtime_flags.expires_at_utc_ms IS NULL
-         OR runtime_flags.expires_at_utc_ms <= ?
-      ''',
-      variables: [
-        Variable<String>(key),
-        Variable<String>(canonicalLeaseToken),
-        Variable<int>(nowMs),
-        Variable<int>(nowUtc.add(leaseDuration).millisecondsSinceEpoch),
-        Variable<int>(nowMs),
-      ],
-      updates: {database.runtimeFlags},
+  }) {
+    _requiredId(ownerId, 'ownerId');
+    return DriftOwnerOperationGate(database).tryAcquire(
+      token: leaseToken,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
     );
-    return changed == 1;
   }
 
   Future<void> releaseRunLease({
     required String ownerId,
     required String leaseToken,
-  }) async {
-    final key = 'syncRunLease:${_requiredId(ownerId, 'ownerId')}';
-    final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
-    await (database.delete(database.runtimeFlags)..where(
-          (row) => row.key.equals(key) & row.source.equals(canonicalLeaseToken),
-        ))
-        .go();
+  }) {
+    _requiredId(ownerId, 'ownerId');
+    return DriftOwnerOperationGate(database).release(token: leaseToken);
   }
 
   Future<int> requeuePermissionDeniedFailures({
@@ -120,17 +78,23 @@ final class DriftSyncStore {
     );
   }
 
+  @override
   Future<List<ClaimedSyncOperation>> claimPending({
     required String ownerId,
     required String firebaseUid,
     required int limit,
     required String leaseToken,
+    required String ownerGateToken,
     required Duration leaseDuration,
     required DateTime nowUtc,
   }) {
     final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
     final canonicalUid = _requiredId(firebaseUid, 'firebaseUid');
     final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
     if (limit < 1 || limit > maxClaimLimit) {
       throw RangeError.range(limit, 1, maxClaimLimit, 'limit');
     }
@@ -146,11 +110,30 @@ final class DriftSyncStore {
     return _serializeClaim(() {
       return database.transaction(() async {
         final nowMs = nowUtc.millisecondsSinceEpoch;
+        final fenced = await database.customUpdate(
+          '''
+          UPDATE runtime_flags
+          SET updated_at_utc_ms = updated_at_utc_ms
+          WHERE "key" = ?
+            AND bool_value = 1
+            AND source = ?
+            AND expires_at_utc_ms IS NOT NULL
+            AND expires_at_utc_ms > ?
+          ''',
+          variables: [
+            const Variable<String>(DriftOwnerOperationGate.gateKey),
+            Variable<String>(canonicalOwnerGateToken),
+            Variable<int>(nowMs),
+          ],
+          updates: {database.runtimeFlags},
+        );
+        if (fenced != 1) return const <ClaimedSyncOperation>[];
         final candidateLimit = limit * _maxCandidateMultiplier;
         final query = database.select(database.outboxOperations)
           ..where(
             (row) =>
                 row.ownerId.equals(canonicalOwnerId) &
+                row.attemptCount.isSmallerThanValue(maxSendReservations) &
                 (row.state.equals('pending') |
                     (row.state.equals('retryWaiting') &
                         (row.nextAttemptAtUtcMs.isNull() |
@@ -208,21 +191,19 @@ final class DriftSyncStore {
               .write(
                 db.OutboxOperationsCompanion(
                   state: const Value('inFlight'),
-                  attemptCount: Value(selected.attemptCount + 1),
-                  nextAttemptAtUtcMs: const Value(null),
+                  baseRevision: Value(baseRevision),
                   leaseToken: Value(canonicalLeaseToken),
                   leaseExpiresAtUtcMs: Value(
                     nowUtc.add(leaseDuration).millisecondsSinceEpoch,
                   ),
-                  lastAttemptAtUtcMs: Value(nowMs),
-                  failureCode: const Value(null),
                 ),
               );
 
           claimed.add(
             ClaimedSyncOperation(
               leaseToken: canonicalLeaseToken,
-              attemptCount: selected.attemptCount + 1,
+              attemptCount: selected.attemptCount,
+              releaseState: _releaseStateFor(selected),
               mutation: await _reconstructMutation(
                 selected,
                 firebaseUid: canonicalUid,
@@ -236,13 +217,124 @@ final class DriftSyncStore {
     });
   }
 
-  Future<void> acknowledge({
+  @override
+  Future<ClaimedSyncOperation?> beginAttempt({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) {
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
+    return database.transaction(() async {
+      final operation =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals(claim.mutation.operationId),
+              ))
+              .getSingleOrNull();
+      if (operation == null ||
+          operation.state != 'inFlight' ||
+          operation.leaseToken != claim.leaseToken ||
+          operation.attemptCount >= maxSendReservations) {
+        return null;
+      }
+      final reservedCount = operation.attemptCount + 1;
+      final changed = await database.customUpdate(
+        '''
+        UPDATE outbox_operations
+        SET attempt_count = ?, last_attempt_at_utc_ms = ?
+        WHERE operation_id = ?
+          AND state = 'inFlight'
+          AND lease_token = ?
+          AND attempt_count = ?
+          AND EXISTS (
+            SELECT 1 FROM runtime_flags
+            WHERE "key" = ?
+              AND bool_value = 1
+              AND source = ?
+              AND expires_at_utc_ms IS NOT NULL
+              AND expires_at_utc_ms > ?
+          )
+        ''',
+        variables: [
+          Variable<int>(reservedCount),
+          Variable<int>(nowUtc.millisecondsSinceEpoch),
+          Variable<String>(operation.operationId),
+          Variable<String>(claim.leaseToken),
+          Variable<int>(operation.attemptCount),
+          const Variable<String>(DriftOwnerOperationGate.gateKey),
+          Variable<String>(canonicalOwnerGateToken),
+          Variable<int>(nowUtc.millisecondsSinceEpoch),
+        ],
+        updates: {database.outboxOperations},
+      );
+      if (changed != 1) return null;
+      return ClaimedSyncOperation(
+        leaseToken: claim.leaseToken,
+        attemptCount: reservedCount,
+        releaseState: claim.releaseState,
+        mutation: claim.mutation,
+      );
+    });
+  }
+
+  @override
+  Future<bool> releaseClaim({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) async {
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
+    final changed = await database.customUpdate(
+      '''
+      UPDATE outbox_operations
+      SET state = ?, lease_token = NULL, lease_expires_at_utc_ms = NULL
+      WHERE operation_id = ?
+        AND state = 'inFlight'
+        AND lease_token = ?
+        AND EXISTS (
+          SELECT 1 FROM runtime_flags
+          WHERE "key" = ?
+            AND bool_value = 1
+            AND source = ?
+            AND expires_at_utc_ms IS NOT NULL
+            AND expires_at_utc_ms > ?
+        )
+      ''',
+      variables: [
+        Variable<String>(claim.releaseState),
+        Variable<String>(claim.mutation.operationId),
+        Variable<String>(claim.leaseToken),
+        const Variable<String>(DriftOwnerOperationGate.gateKey),
+        Variable<String>(canonicalOwnerGateToken),
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+      ],
+      updates: {database.outboxOperations},
+    );
+    return changed == 1;
+  }
+
+  @override
+  Future<bool> acknowledge({
     required String operationId,
     required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
     required PushAcknowledged acknowledgement,
   }) async {
     final canonicalOperationId = _requiredId(operationId, 'operationId');
     final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
     if (acknowledgement.operationId != canonicalOperationId) {
       throw ArgumentError.value(
         acknowledgement.operationId,
@@ -251,46 +343,102 @@ final class DriftSyncStore {
       );
     }
 
-    await database.transaction(() async {
+    return database.transaction(() async {
       final operation =
           await (database.select(database.outboxOperations)
                 ..where((row) => row.operationId.equals(canonicalOperationId)))
               .getSingleOrNull();
       if (operation == null) {
-        throw StateError('outbox operation was not found');
+        return false;
       }
-      if (operation.state == 'acknowledged') return;
+      if (!await _isOwnerGateOwned(canonicalOwnerGateToken, nowUtc)) {
+        return false;
+      }
+      if (operation.state == 'acknowledged') return true;
       if (operation.state != 'inFlight' ||
           operation.leaseToken != canonicalLeaseToken) {
-        throw StateError('outbox operation lease does not match');
+        return false;
       }
 
-      await (database.update(
-        database.outboxOperations,
-      )..where((row) => row.operationId.equals(canonicalOperationId))).write(
-        db.OutboxOperationsCompanion(
-          state: const Value('acknowledged'),
-          acknowledgedAtUtcMs: Value(
+      final changed = await database.customUpdate(
+        '''
+        UPDATE outbox_operations
+        SET state = 'acknowledged',
+            acknowledged_at_utc_ms = ?,
+            next_attempt_at_utc_ms = NULL,
+            lease_token = NULL,
+            lease_expires_at_utc_ms = NULL,
+            failure_code = NULL
+        WHERE operation_id = ?
+          AND state = 'inFlight'
+          AND lease_token = ?
+          AND EXISTS (
+            SELECT 1 FROM runtime_flags
+            WHERE "key" = ?
+              AND bool_value = 1
+              AND source = ?
+              AND expires_at_utc_ms IS NOT NULL
+              AND expires_at_utc_ms > ?
+          )
+        ''',
+        variables: [
+          Variable<int>(
             acknowledgement.acknowledgedAtUtc.millisecondsSinceEpoch,
           ),
-          nextAttemptAtUtcMs: const Value(null),
-          leaseToken: const Value(null),
-          leaseExpiresAtUtcMs: const Value(null),
-          failureCode: const Value(null),
-        ),
+          Variable<String>(canonicalOperationId),
+          Variable<String>(canonicalLeaseToken),
+          const Variable<String>(DriftOwnerOperationGate.gateKey),
+          Variable<String>(canonicalOwnerGateToken),
+          Variable<int>(nowUtc.millisecondsSinceEpoch),
+        ],
+        updates: {database.outboxOperations},
       );
+      if (changed != 1) return false;
       await _acknowledgeEntity(operation, acknowledgement);
+      return true;
     });
   }
 
-  Future<void> markRetry({
+  Future<bool> _isOwnerGateOwned(String token, DateTime nowUtc) async {
+    final row = await database
+        .customSelect(
+          '''
+      SELECT 1 AS owned
+      FROM runtime_flags
+      WHERE "key" = ?
+        AND bool_value = 1
+        AND source = ?
+        AND expires_at_utc_ms IS NOT NULL
+        AND expires_at_utc_ms > ?
+      LIMIT 1
+      ''',
+          variables: [
+            const Variable<String>(DriftOwnerOperationGate.gateKey),
+            Variable<String>(token),
+            Variable<int>(nowUtc.millisecondsSinceEpoch),
+          ],
+          readsFrom: {database.runtimeFlags},
+        )
+        .getSingleOrNull();
+    return row != null;
+  }
+
+  @override
+  Future<bool> markRetry({
     required String operationId,
     required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
     required DateTime nextAttemptAtUtc,
     required SyncFailure failure,
   }) async {
     final canonicalOperationId = _requiredId(operationId, 'operationId');
     final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
     _requireUtc(nextAttemptAtUtc, 'nextAttemptAtUtc');
     if (!failure.retryable) {
       throw ArgumentError.value(failure, 'failure', 'must be retryable');
@@ -303,28 +451,61 @@ final class DriftSyncStore {
     if (operation == null ||
         operation.state != 'inFlight' ||
         operation.leaseToken != canonicalLeaseToken) {
-      throw StateError('outbox operation lease does not match');
+      return false;
     }
-    await (database.update(
-      database.outboxOperations,
-    )..where((row) => row.operationId.equals(canonicalOperationId))).write(
-      db.OutboxOperationsCompanion(
-        state: const Value('retryWaiting'),
-        nextAttemptAtUtcMs: Value(nextAttemptAtUtc.millisecondsSinceEpoch),
-        leaseToken: const Value(null),
-        leaseExpiresAtUtcMs: const Value(null),
-        failureCode: Value(failure.code.name),
-      ),
+    final exhausted = operation.attemptCount >= maxSendReservations;
+    final changed = await database.customUpdate(
+      '''
+      UPDATE outbox_operations
+      SET state = ?,
+          next_attempt_at_utc_ms = ?,
+          lease_token = NULL,
+          lease_expires_at_utc_ms = NULL,
+          failure_code = ?
+      WHERE operation_id = ?
+        AND state = 'inFlight'
+        AND lease_token = ?
+        AND EXISTS (
+          SELECT 1 FROM runtime_flags
+          WHERE "key" = ?
+            AND bool_value = 1
+            AND source = ?
+            AND expires_at_utc_ms IS NOT NULL
+            AND expires_at_utc_ms > ?
+        )
+      ''',
+      variables: [
+        Variable<String>(exhausted ? 'permanentFailure' : 'retryWaiting'),
+        Variable<int>(
+          exhausted ? null : nextAttemptAtUtc.millisecondsSinceEpoch,
+        ),
+        Variable<String>(failure.code.name),
+        Variable<String>(canonicalOperationId),
+        Variable<String>(canonicalLeaseToken),
+        const Variable<String>(DriftOwnerOperationGate.gateKey),
+        Variable<String>(canonicalOwnerGateToken),
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+      ],
+      updates: {database.outboxOperations},
     );
+    return changed == 1;
   }
 
-  Future<void> markTerminalFailure({
+  @override
+  Future<bool> markTerminalFailure({
     required String operationId,
     required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
     required SyncFailure failure,
   }) async {
     final canonicalOperationId = _requiredId(operationId, 'operationId');
     final canonicalLeaseToken = _requiredId(leaseToken, 'leaseToken');
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
     if (failure.retryable) {
       throw ArgumentError.value(failure, 'failure', 'must not be retryable');
     }
@@ -335,29 +516,56 @@ final class DriftSyncStore {
     if (operation == null ||
         operation.state != 'inFlight' ||
         operation.leaseToken != canonicalLeaseToken) {
-      throw StateError('outbox operation lease does not match');
+      return false;
     }
     final state = failure is UnauthenticatedSyncFailure
         ? 'blockedAuth'
         : 'permanentFailure';
-    await (database.update(
-      database.outboxOperations,
-    )..where((row) => row.operationId.equals(canonicalOperationId))).write(
-      db.OutboxOperationsCompanion(
-        state: Value(state),
-        nextAttemptAtUtcMs: const Value(null),
-        leaseToken: const Value(null),
-        leaseExpiresAtUtcMs: const Value(null),
-        failureCode: Value(failure.code.name),
-      ),
+    final changed = await database.customUpdate(
+      '''
+      UPDATE outbox_operations
+      SET state = ?,
+          next_attempt_at_utc_ms = NULL,
+          lease_token = NULL,
+          lease_expires_at_utc_ms = NULL,
+          failure_code = ?
+      WHERE operation_id = ?
+        AND state = 'inFlight'
+        AND lease_token = ?
+        AND EXISTS (
+          SELECT 1 FROM runtime_flags
+          WHERE "key" = ?
+            AND bool_value = 1
+            AND source = ?
+            AND expires_at_utc_ms IS NOT NULL
+            AND expires_at_utc_ms > ?
+        )
+      ''',
+      variables: [
+        Variable<String>(state),
+        Variable<String>(failure.code.name),
+        Variable<String>(canonicalOperationId),
+        Variable<String>(canonicalLeaseToken),
+        const Variable<String>(DriftOwnerOperationGate.gateKey),
+        Variable<String>(canonicalOwnerGateToken),
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+      ],
+      updates: {database.outboxOperations},
     );
+    return changed == 1;
   }
 
-  Future<void> resolvePushConflict({
+  @override
+  Future<bool> resolvePushConflict({
     required ClaimedSyncOperation claim,
+    required String ownerGateToken,
     required SyncEntity cloudEntity,
     required DateTime resolvedAtUtc,
   }) async {
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
     _requireUtc(resolvedAtUtc, 'resolvedAtUtc');
     final mutation = claim.mutation;
     if (mutation.collection != cloudEntity.collection ||
@@ -369,7 +577,25 @@ final class DriftSyncStore {
       );
     }
 
-    await database.transaction(() async {
+    return database.transaction(() async {
+      final fenced = await database.customUpdate(
+        '''
+        UPDATE runtime_flags
+        SET updated_at_utc_ms = updated_at_utc_ms
+        WHERE "key" = ?
+          AND bool_value = 1
+          AND source = ?
+          AND expires_at_utc_ms IS NOT NULL
+          AND expires_at_utc_ms > ?
+        ''',
+        variables: [
+          const Variable<String>(DriftOwnerOperationGate.gateKey),
+          Variable<String>(canonicalOwnerGateToken),
+          Variable<int>(resolvedAtUtc.millisecondsSinceEpoch),
+        ],
+        updates: {database.runtimeFlags},
+      );
+      if (fenced != 1) return false;
       final operation =
           await (database.select(database.outboxOperations)
                 ..where((row) => row.operationId.equals(mutation.operationId)))
@@ -377,7 +603,7 @@ final class DriftSyncStore {
       if (operation == null ||
           operation.state != 'inFlight' ||
           operation.leaseToken != claim.leaseToken) {
-        throw StateError('outbox operation lease does not match');
+        return false;
       }
       if (cloudEntity.collection == SyncCollection.attempts ||
           cloudEntity.collection == SyncCollection.readingEvents ||
@@ -388,7 +614,7 @@ final class DriftSyncStore {
           cloudEntity: cloudEntity,
           resolvedAtUtc: resolvedAtUtc,
         );
-        return;
+        return true;
       }
 
       final localSnapshot = await _localSnapshot(operation);
@@ -456,9 +682,11 @@ final class DriftSyncStore {
           failureCode: Value('cloudWins'),
         ),
       );
+      return true;
     });
   }
 
+  @override
   Future<SyncCursor?> readCheckpoint(
     String ownerId,
     SyncCollection collection,
@@ -475,52 +703,123 @@ final class DriftSyncStore {
     return cursor == null ? null : SyncCursor.parse(cursor);
   }
 
-  Future<void> applyPullPage({
+  @override
+  Future<bool> applyPullPage({
     required String ownerId,
     required SyncCollection collection,
     required PullPage page,
+    String? ownerGateToken,
+    DateTime? nowUtc,
   }) async {
     final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
-    await database.transaction(() async {
-      for (final entity in page.changes) {
-        if (entity.collection != collection) {
-          throw const InvalidSyncPayloadFailure();
+    final effectiveNowUtc = nowUtc ?? DateTime.now().toUtc();
+    final standaloneToken = ownerGateToken == null
+        ? 'standalone-pull:${identityHashCode(this)}:${_standalonePullSequence++}'
+        : null;
+    final effectiveOwnerGateToken = ownerGateToken ?? standaloneToken!;
+    final canonicalOwnerGateToken = _requiredId(
+      effectiveOwnerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(effectiveNowUtc, 'nowUtc');
+    if (standaloneToken != null &&
+        !await DriftOwnerOperationGate(database).tryAcquire(
+          token: standaloneToken,
+          nowUtc: effectiveNowUtc,
+          leaseDuration: const Duration(minutes: 1),
+        )) {
+      return false;
+    }
+    try {
+      return await database.transaction(() async {
+        final fenced = await database.customUpdate(
+          '''
+        UPDATE runtime_flags
+        SET updated_at_utc_ms = updated_at_utc_ms
+        WHERE "key" = ?
+          AND bool_value = 1
+          AND source = ?
+          AND expires_at_utc_ms IS NOT NULL
+          AND expires_at_utc_ms > ?
+        ''',
+          variables: [
+            const Variable<String>(DriftOwnerOperationGate.gateKey),
+            Variable<String>(canonicalOwnerGateToken),
+            Variable<int>(effectiveNowUtc.millisecondsSinceEpoch),
+          ],
+          updates: {database.runtimeFlags},
+        );
+        if (fenced != 1) return false;
+        final cursor = page.nextCursor;
+        if (page.hasMore && cursor == null) {
+          throw const InvalidSyncCursorFailure();
         }
-        switch (collection) {
-          case SyncCollection.categories:
-            await _applyCategory(canonicalOwnerId, entity);
-          case SyncCollection.words:
-            await _applyWord(canonicalOwnerId, entity);
-          case SyncCollection.attempts:
-            await _applyAttempt(canonicalOwnerId, entity);
-          case SyncCollection.readingEvents:
-            await _applyReadingEvent(canonicalOwnerId, entity);
-          case SyncCollection.rewardTransactions:
-            await _applyRewardTransaction(canonicalOwnerId, entity);
-          case SyncCollection.srsStates:
-            await _applySrsState(canonicalOwnerId, entity);
-          case SyncCollection.achievementUnlocks:
-            await _applyAchievementUnlock(canonicalOwnerId, entity);
+        final checkpoint =
+            await (database.select(database.syncCheckpoints)..where(
+                  (candidate) =>
+                      candidate.ownerId.equals(canonicalOwnerId) &
+                      candidate.collectionName.equals(collection.wireName),
+                ))
+                .getSingleOrNull();
+        final storedCursor = checkpoint?.serverCursor;
+        if (cursor != null && storedCursor != null) {
+          final cursorComparison = _compareCursors(
+            cursor,
+            SyncCursor.parse(storedCursor),
+          );
+          if (cursorComparison < 0) {
+            throw const InvalidSyncCursorFailure();
+          }
+          if (cursorComparison == 0) {
+            if (page.hasMore) throw const InvalidSyncCursorFailure();
+            return true;
+          }
         }
-      }
 
-      final cursor = page.nextCursor;
-      if (cursor != null) {
-        await database
-            .into(database.syncCheckpoints)
-            .insertOnConflictUpdate(
-              db.SyncCheckpointsCompanion.insert(
-                id: '$canonicalOwnerId:${collection.wireName}',
-                ownerId: canonicalOwnerId,
-                collectionName: collection.wireName,
-                serverCursor: Value(cursor.toJsonString()),
-                lastSuccessAtUtcMs: Value(
-                  cursor.serverUpdatedAtUtc.millisecondsSinceEpoch,
+        for (final entity in page.changes) {
+          if (entity.collection != collection) {
+            throw const InvalidSyncPayloadFailure();
+          }
+          switch (collection) {
+            case SyncCollection.categories:
+              await _applyCategory(canonicalOwnerId, entity);
+            case SyncCollection.words:
+              await _applyWord(canonicalOwnerId, entity);
+            case SyncCollection.attempts:
+              await _applyAttempt(canonicalOwnerId, entity);
+            case SyncCollection.readingEvents:
+              await _applyReadingEvent(canonicalOwnerId, entity);
+            case SyncCollection.rewardTransactions:
+              await _applyRewardTransaction(canonicalOwnerId, entity);
+            case SyncCollection.srsStates:
+              await _applySrsState(canonicalOwnerId, entity);
+            case SyncCollection.achievementUnlocks:
+              await _applyAchievementUnlock(canonicalOwnerId, entity);
+          }
+        }
+
+        if (cursor != null) {
+          await database
+              .into(database.syncCheckpoints)
+              .insertOnConflictUpdate(
+                db.SyncCheckpointsCompanion.insert(
+                  id: '$canonicalOwnerId:${collection.wireName}',
+                  ownerId: canonicalOwnerId,
+                  collectionName: collection.wireName,
+                  serverCursor: Value(cursor.toJsonString()),
+                  lastSuccessAtUtcMs: Value(
+                    cursor.serverUpdatedAtUtc.millisecondsSinceEpoch,
+                  ),
                 ),
-              ),
-            );
+              );
+        }
+        return true;
+      });
+    } finally {
+      if (standaloneToken != null) {
+        await DriftOwnerOperationGate(database).release(token: standaloneToken);
       }
-    });
+    }
   }
 
   Future<T> _serializeClaim<T>(Future<T> Function() operation) async {
@@ -1649,6 +1948,26 @@ bool _jsonEquivalent(Object? left, Object? right) {
     return true;
   }
   return false;
+}
+
+int _compareCursors(SyncCursor left, SyncCursor right) {
+  final timestampComparison = left.serverUpdatedAtUtc.compareTo(
+    right.serverUpdatedAtUtc,
+  );
+  if (timestampComparison != 0) return timestampComparison;
+  return left.documentId.compareTo(right.documentId);
+}
+
+String _releaseStateFor(db.OutboxOperation operation) {
+  if (operation.state == 'pending' || operation.state == 'retryWaiting') {
+    return operation.state;
+  }
+  if (operation.state == 'inFlight') {
+    return operation.nextAttemptAtUtcMs != null || operation.failureCode != null
+        ? 'retryWaiting'
+        : 'pending';
+  }
+  throw StateError('outbox operation is not claimable');
 }
 
 SyncOperationKind _operationKind(String value) => switch (value) {

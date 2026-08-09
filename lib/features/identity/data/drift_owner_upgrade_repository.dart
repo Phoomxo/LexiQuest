@@ -6,11 +6,14 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../sync/data/drift_owner_operation_gate.dart';
+import '../../sync/domain/owner_operation_gate.dart';
 import '../domain/owner_upgrade.dart';
 
 typedef OwnerUpgradeUtcNow = DateTime Function();
 typedef OwnerUpgradeIdGenerator = String Function();
 typedef DeleteOwnerSecretsForUpgrade = Future<void> Function(String ownerId);
+typedef OwnerUpgradeGateDelay = Future<void> Function(Duration delay);
 
 final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   DriftOwnerUpgradeRepository(
@@ -18,14 +21,29 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required this.nowUtc,
     required this.generateConflictId,
     required this.generateOwnerId,
+    required this.generateOwnerOperationToken,
     required this.deleteOwnerSecrets,
-  });
+    OwnerOperationGate? ownerOperationGate,
+    this.ownerGateDelay = _defaultOwnerGateDelay,
+    this.ownerGateLeaseDuration = const Duration(minutes: 10),
+    this.ownerGateHeartbeatInterval = const Duration(minutes: 3),
+    this.ownerGateRetryInterval = const Duration(milliseconds: 50),
+    this.ownerGateWaitTimeout = const Duration(seconds: 30),
+  }) : ownerOperationGate =
+           ownerOperationGate ?? DriftOwnerOperationGate(_database);
 
   final db.AppDatabase _database;
   final OwnerUpgradeUtcNow nowUtc;
   final OwnerUpgradeIdGenerator generateConflictId;
   final OwnerUpgradeIdGenerator generateOwnerId;
+  final OwnerUpgradeIdGenerator generateOwnerOperationToken;
   final DeleteOwnerSecretsForUpgrade deleteOwnerSecrets;
+  final OwnerOperationGate ownerOperationGate;
+  final OwnerUpgradeGateDelay ownerGateDelay;
+  final Duration ownerGateLeaseDuration;
+  final Duration ownerGateHeartbeatInterval;
+  final Duration ownerGateRetryInterval;
+  final Duration ownerGateWaitTimeout;
   Future<void> _writeGate = Future<void>.value();
 
   @override
@@ -36,94 +54,107 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final sourceId = _requiredId(activeOwnerId, 'activeOwnerId');
     final uid = _requiredId(firebaseUid, 'firebaseUid');
     return _serialized(
-      () => _database.transaction(() async {
-        final source = await _ownerById(sourceId);
-        if (source == null || !source.isActive) {
+      () => _withOwnerOperationGate((operationToken) async {
+        final sourceBeforeTransaction = await _ownerById(sourceId);
+        if (sourceBeforeTransaction == null ||
+            !sourceBeforeTransaction.isActive) {
           throw StateError('active local owner was not found');
         }
-        if (source.firebaseUid == uid) {
-          return OwnerUpgradeResult(
-            targetOwnerId: source.id,
-            mode: OwnerUpgradeMode.alreadyBound,
-            conflictCount: 0,
-          );
+        final targetBeforeTransaction = await _ownerByFirebaseUid(uid);
+        if (sourceBeforeTransaction.firebaseUid != uid &&
+            targetBeforeTransaction != null) {
+          // External secret deletion is intentionally outside SQLite. A later
+          // inventory rollback cannot restore the deleted credential.
+          await deleteOwnerSecrets(sourceBeforeTransaction.id);
         }
 
-        final target = await _ownerByFirebaseUid(uid);
-        final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
-        if (target == null) {
+        return _database.transaction(() async {
+          if (!await _fenceOwnerTransition(operationToken)) {
+            throw StateError('owner-operation gate was lost');
+          }
+          final source = await _ownerById(sourceId);
+          if (source == null || !source.isActive) {
+            throw StateError('active local owner was not found');
+          }
+          if (source.firebaseUid == uid) {
+            return OwnerUpgradeResult(
+              targetOwnerId: source.id,
+              mode: OwnerUpgradeMode.alreadyBound,
+              conflictCount: 0,
+            );
+          }
+
+          final target = await _ownerByFirebaseUid(uid);
+          final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+          if (target == null) {
+            await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+            await (_database.update(
+              _database.localOwners,
+            )..where((row) => row.id.equals(source.id))).write(
+              db.LocalOwnersCompanion(
+                firebaseUid: Value(uid),
+                accountState: const Value('firebaseBound'),
+                upgradedAtUtcMs: Value(upgradedAt),
+              ),
+            );
+            return OwnerUpgradeResult(
+              targetOwnerId: source.id,
+              mode: OwnerUpgradeMode.anonymousBound,
+              conflictCount: 0,
+            );
+          }
+
+          var conflicts = 0;
+          conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
+          conflicts += await _mergeWords(source.id, target.id, upgradedAt);
+          await _makeImportKeysUnique(source.id, target.id);
+          conflicts += await _makeRewardKeysUnique(
+            source.id,
+            target.id,
+            upgradedAt,
+          );
+          conflicts += await _discardNaturalKeyDuplicates(
+            source.id,
+            target.id,
+            upgradedAt,
+          );
+          await _discardAiUsageDuplicates(source.id, target.id);
           await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
-          await (_database.update(
-            _database.localOwners,
-          )..where((row) => row.id.equals(source.id))).write(
-            db.LocalOwnersCompanion(
-              firebaseUid: Value(uid),
-              accountState: const Value('firebaseBound'),
-              upgradedAtUtcMs: Value(upgradedAt),
-            ),
+          await _normalizeLearningProjectionState(source.id, target.id);
+          await _moveOwnerRows(source.id, target.id);
+          await _rebuildLearningProjections(target.id);
+          await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
+
+          await _database.customUpdate(
+            'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+          );
+          await _database.customUpdate(
+            'UPDATE local_owners '
+            'SET is_active = 1, account_state = ?, upgraded_at_utc_ms = ? '
+            'WHERE id = ?',
+            variables: [
+              const Variable<String>('firebaseBound'),
+              Variable<int>(upgradedAt),
+              Variable<String>(target.id),
+            ],
+            updates: {_database.localOwners},
+          );
+          await _database.customUpdate(
+            'UPDATE local_owners '
+            'SET account_state = ?, upgraded_at_utc_ms = ? WHERE id = ?',
+            variables: [
+              Variable<String>('mergedInto:${target.id}'),
+              Variable<int>(upgradedAt),
+              Variable<String>(source.id),
+            ],
+            updates: {_database.localOwners},
           );
           return OwnerUpgradeResult(
-            targetOwnerId: source.id,
-            mode: OwnerUpgradeMode.anonymousBound,
-            conflictCount: 0,
+            targetOwnerId: target.id,
+            mode: OwnerUpgradeMode.mergedExisting,
+            conflictCount: conflicts,
           );
-        }
-
-        // Never transfer a BYOK secret across owner identities implicitly.
-        // This is an explicit privacy-first boundary: failure aborts before
-        // owner rows move; a later DB rollback cannot restore the deleted key.
-        await deleteOwnerSecrets(source.id);
-
-        var conflicts = 0;
-        conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
-        conflicts += await _mergeWords(source.id, target.id, upgradedAt);
-        await _makeImportKeysUnique(source.id, target.id);
-        conflicts += await _makeRewardKeysUnique(
-          source.id,
-          target.id,
-          upgradedAt,
-        );
-        conflicts += await _discardNaturalKeyDuplicates(
-          source.id,
-          target.id,
-          upgradedAt,
-        );
-        await _discardAiUsageDuplicates(source.id, target.id);
-        await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
-        await _normalizeLearningProjectionState(source.id, target.id);
-        await _moveOwnerRows(source.id, target.id);
-        await _rebuildLearningProjections(target.id);
-        await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
-
-        await _database.customUpdate(
-          'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
-        );
-        await _database.customUpdate(
-          'UPDATE local_owners '
-          'SET is_active = 1, account_state = ?, upgraded_at_utc_ms = ? '
-          'WHERE id = ?',
-          variables: [
-            const Variable<String>('firebaseBound'),
-            Variable<int>(upgradedAt),
-            Variable<String>(target.id),
-          ],
-          updates: {_database.localOwners},
-        );
-        await _database.customUpdate(
-          'UPDATE local_owners '
-          'SET account_state = ?, upgraded_at_utc_ms = ? WHERE id = ?',
-          variables: [
-            Variable<String>('mergedInto:${target.id}'),
-            Variable<int>(upgradedAt),
-            Variable<String>(source.id),
-          ],
-          updates: {_database.localOwners},
-        );
-        return OwnerUpgradeResult(
-          targetOwnerId: target.id,
-          mode: OwnerUpgradeMode.mergedExisting,
-          conflictCount: conflicts,
-        );
+        });
       }),
     );
   }
@@ -131,26 +162,31 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   @override
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
     return _serialized(
-      () => _database.transaction(() async {
-        final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
-        final createdAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
-        await _database.customUpdate(
-          'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
-          updates: {_database.localOwners},
-        );
-        await _database
-            .into(_database.localOwners)
-            .insert(
-              db.LocalOwnersCompanion.insert(
-                id: ownerId,
-                createdAtUtcMs: createdAt,
-              ),
-            );
-        return OwnerUpgradeResult(
-          targetOwnerId: ownerId,
-          mode: OwnerUpgradeMode.localGuestCreated,
-          conflictCount: 0,
-        );
+      () => _withOwnerOperationGate((operationToken) {
+        return _database.transaction(() async {
+          if (!await _fenceOwnerTransition(operationToken)) {
+            throw StateError('owner-operation gate was lost');
+          }
+          final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
+          final createdAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+          await _database.customUpdate(
+            'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
+            updates: {_database.localOwners},
+          );
+          await _database
+              .into(_database.localOwners)
+              .insert(
+                db.LocalOwnersCompanion.insert(
+                  id: ownerId,
+                  createdAtUtcMs: createdAt,
+                ),
+              );
+          return OwnerUpgradeResult(
+            targetOwnerId: ownerId,
+            mode: OwnerUpgradeMode.localGuestCreated,
+            conflictCount: 0,
+          );
+        });
       }),
     );
   }
@@ -163,21 +199,26 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     final previous = _requiredId(previousOwnerId, 'previousOwnerId');
     final guest = _requiredId(guestOwnerId, 'guestOwnerId');
     return _serialized(
-      () => _database.transaction(() async {
-        final guestRow = await _ownerById(guest);
-        final previousRow = await _ownerById(previous);
-        if (guestRow == null ||
-            previousRow == null ||
-            !guestRow.isActive ||
-            guestRow.firebaseUid != null) {
-          throw StateError('logout rollback state is no longer safe');
-        }
-        await (_database.delete(
-          _database.localOwners,
-        )..where((row) => row.id.equals(guest))).go();
-        await (_database.update(_database.localOwners)
-              ..where((row) => row.id.equals(previous)))
-            .write(const db.LocalOwnersCompanion(isActive: Value(true)));
+      () => _withOwnerOperationGate((operationToken) {
+        return _database.transaction(() async {
+          if (!await _fenceOwnerTransition(operationToken)) {
+            throw StateError('owner-operation gate was lost');
+          }
+          final guestRow = await _ownerById(guest);
+          final previousRow = await _ownerById(previous);
+          if (guestRow == null ||
+              previousRow == null ||
+              !guestRow.isActive ||
+              guestRow.firebaseUid != null) {
+            throw StateError('logout rollback state is no longer safe');
+          }
+          await (_database.delete(
+            _database.localOwners,
+          )..where((row) => row.id.equals(guest))).go();
+          await (_database.update(_database.localOwners)
+                ..where((row) => row.id.equals(previous)))
+              .write(const db.LocalOwnersCompanion(isActive: Value(true)));
+        });
       }),
     );
   }
@@ -477,6 +518,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       await _updateOwner(table, sourceId, targetId);
     }
     await _database.customUpdate(
+      "UPDATE sync_checkpoints SET id = owner_id || ':' || collection_name "
+      'WHERE owner_id = ?',
+      variables: [Variable<String>(targetId)],
+      updates: {_database.syncCheckpoints},
+    );
+    await _database.customUpdate(
       "UPDATE outbox_operations "
       "SET state = 'pending', lease_token = NULL, lease_expires_at_utc_ms = NULL "
       "WHERE owner_id = ? AND state = 'blockedAuth'",
@@ -662,16 +709,26 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         table: 'reward_transactions',
         entityType: 'rewardTransaction',
       ),
+      _RehomeSpecification(
+        table: 'srs_states',
+        entityType: 'srsState',
+        entityIdColumn: 'word_id',
+      ),
+      _RehomeSpecification(
+        table: 'achievement_unlocks',
+        entityType: 'achievementUnlock',
+      ),
     ]) {
       final rows = await _database
           .customSelect(
-            'SELECT id${specification.hasSoftDelete ? ', is_deleted' : ''} '
+            'SELECT id, ${specification.entityIdColumn} AS entity_id'
+            "${specification.hasSoftDelete ? ', is_deleted' : ''} "
             'FROM ${specification.table} WHERE owner_id = ? ORDER BY id',
             variables: [Variable<String>(ownerId)],
           )
           .get();
       for (final row in rows) {
-        final entityId = row.read<String>('id');
+        final entityId = row.read<String>('entity_id');
         final changed = await _database.customUpdate(
           "UPDATE outbox_operations SET base_revision = 0, state = 'pending', "
           'attempt_count = 0, next_attempt_at_utc_ms = NULL, '
@@ -854,6 +911,77 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     )..where((row) => row.firebaseUid.equals(uid))).getSingleOrNull();
   }
 
+  Future<T> _withOwnerOperationGate<T>(
+    Future<T> Function(String operationToken) operation,
+  ) async {
+    final operationToken = _requiredId(
+      generateOwnerOperationToken(),
+      'ownerOperationToken',
+    );
+    final deadline = _requireUtc(nowUtc()).add(ownerGateWaitTimeout);
+    while (!await ownerOperationGate.tryAcquire(
+      token: operationToken,
+      nowUtc: _requireUtc(nowUtc()),
+      leaseDuration: ownerGateLeaseDuration,
+    )) {
+      if (!_requireUtc(nowUtc()).isBefore(deadline)) {
+        throw TimeoutException('owner-operation gate wait timed out');
+      }
+      await ownerGateDelay(ownerGateRetryInterval);
+    }
+
+    final stopHeartbeat = Completer<void>();
+    final heartbeat = _runOwnerGateHeartbeat(operationToken, stopHeartbeat);
+    try {
+      return await operation(operationToken);
+    } finally {
+      if (!stopHeartbeat.isCompleted) stopHeartbeat.complete();
+      await heartbeat;
+      await ownerOperationGate.release(token: operationToken);
+    }
+  }
+
+  Future<void> _runOwnerGateHeartbeat(
+    String operationToken,
+    Completer<void> stop,
+  ) async {
+    while (true) {
+      await Future.any<void>(<Future<void>>[
+        ownerGateDelay(ownerGateHeartbeatInterval),
+        stop.future,
+      ]);
+      if (stop.isCompleted) return;
+      final renewed = await ownerOperationGate.renew(
+        token: operationToken,
+        nowUtc: _requireUtc(nowUtc()),
+        leaseDuration: ownerGateLeaseDuration,
+      );
+      if (!renewed) return;
+    }
+  }
+
+  Future<bool> _fenceOwnerTransition(String operationToken) async {
+    final nowMs = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+    final changed = await _database.customUpdate(
+      '''
+      UPDATE runtime_flags
+      SET updated_at_utc_ms = updated_at_utc_ms
+      WHERE "key" = ?
+        AND bool_value = 1
+        AND source = ?
+        AND expires_at_utc_ms IS NOT NULL
+        AND expires_at_utc_ms > ?
+      ''',
+      variables: [
+        const Variable<String>(DriftOwnerOperationGate.gateKey),
+        Variable<String>(operationToken),
+        Variable<int>(nowMs),
+      ],
+      updates: {_database.runtimeFlags},
+    );
+    return changed == 1;
+  }
+
   Future<T> _serialized<T>(Future<T> Function() operation) async {
     final previous = _writeGate;
     final completer = Completer<void>();
@@ -884,11 +1012,13 @@ final class _RehomeSpecification {
     required this.table,
     required this.entityType,
     this.hasSoftDelete = false,
+    this.entityIdColumn = 'id',
   });
 
   final String table;
   final String entityType;
   final bool hasSoftDelete;
+  final String entityIdColumn;
 }
 
 String _requiredId(String value, String field) {
@@ -905,3 +1035,6 @@ DateTime _requireUtc(DateTime value) {
   }
   return value;
 }
+
+Future<void> _defaultOwnerGateDelay(Duration delay) =>
+    Future<void>.delayed(delay);

@@ -10,8 +10,10 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
+import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
@@ -57,6 +59,8 @@ void main() {
   SyncEngine engine({
     bool cloudEnabled = true,
     SyncMutex? mutex,
+    OwnerOperationGate? ownerGate,
+    SyncHeartbeatDelay? heartbeatDelay,
     Duration requestTimeout = const Duration(seconds: 30),
   }) {
     return SyncEngine(
@@ -69,10 +73,12 @@ void main() {
         fetchedAtUtc: nowUtc,
         expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
       ),
+      ownerGate: ownerGate ?? DriftOwnerOperationGate(database),
       mutex: mutex ?? SyncMutex(),
       backoff: const SyncBackoff(jitterFraction: 0),
       nowUtc: () => nowUtc,
       generateLeaseToken: () => 'lease-${++leaseCounter}',
+      heartbeatDelay: heartbeatDelay ?? Future<void>.delayed,
       requestTimeout: requestTimeout,
     );
   }
@@ -101,6 +107,31 @@ void main() {
 
     expect(result.status, SyncRunStatus.skippedUnauthenticated);
     expect(operation.state, 'pending');
+  });
+
+  test('rereads authoritative owner identity after gate acquisition', () async {
+    await _seedCategoryOperation(database);
+    owners.owner = identity.LocalOwner(
+      id: 'owner-a',
+      firebaseUid: 'firebase-before-gate',
+      createdAtUtc: nowUtc,
+    );
+    final ownerGate = _CallbackOwnerOperationGate(
+      DriftOwnerOperationGate(database),
+      onTryAcquire: () {
+        owners.owner = identity.LocalOwner(
+          id: 'owner-a',
+          firebaseUid: 'firebase-after-gate',
+          createdAtUtc: nowUtc,
+        );
+      },
+    );
+
+    final result = await engine(ownerGate: ownerGate).run();
+
+    expect(result.status, SyncRunStatus.completed);
+    expect(owners.reads, 1, reason: 'the authoritative read is post-gate');
+    expect(gateway.pushedMutations.single.firebaseUid, 'firebase-after-gate');
   });
 
   test(
@@ -136,7 +167,7 @@ void main() {
   );
 
   test(
-    'a new process retries permission failures once after cloud recovery',
+    'a fresh engine never automatically requeues permission denial',
     () async {
       await _seedCategoryOperation(database);
       gateway.pushFailure = const PermissionDeniedSyncFailure();
@@ -150,15 +181,14 @@ void main() {
       expect(operation.failureCode, SyncFailureCode.permissionDenied.name);
 
       gateway.pushFailure = null;
-      final recoveredResult = await engine().run();
+      final freshResult = await engine().run();
       operation = await database.select(database.outboxOperations).getSingle();
-      final replayResult = await engine().run();
 
-      expect(recoveredResult.status, SyncRunStatus.completed);
-      expect(operation.state, 'acknowledged');
-      expect(gateway.appliedOperationIds, {'category:travel:1:upsert'});
-      expect(replayResult.pushed, 0);
-      expect(gateway.appliedOperationIds, hasLength(1));
+      expect(freshResult.pushed, 0);
+      expect(operation.state, 'permanentFailure');
+      expect(operation.failureCode, SyncFailureCode.permissionDenied.name);
+      expect(gateway.pushCalls, 1);
+      expect(gateway.appliedOperationIds, isEmpty);
     },
   );
 
@@ -233,15 +263,454 @@ void main() {
     expect(firstResult.status, SyncRunStatus.completed);
     expect(gateway.appliedOperationIds, hasLength(1));
   });
+
+  test('heartbeat keeps a blocked run fenced beyond nominal expiry', () async {
+    await _seedCategoryOperation(database);
+    final pushEntered = Completer<void>();
+    final releasePush = Completer<void>();
+    gateway.onPush = (mutation) async {
+      if (!pushEntered.isCompleted) {
+        pushEntered.complete();
+        await releasePush.future;
+      }
+      return PushAcknowledged(
+        operationId: mutation.operationId,
+        resultingRevision: mutation.localRevision,
+        acknowledgedAtUtc: nowUtc,
+      );
+    };
+    final initialNow = nowUtc;
+    final heartbeatScheduler = _ManualHeartbeatScheduler();
+    final trackingGate = _TrackingOwnerOperationGate(
+      DriftOwnerOperationGate(database),
+    );
+    final firstEngine = engine(
+      mutex: SyncMutex(),
+      ownerGate: trackingGate,
+      heartbeatDelay: heartbeatScheduler.wait,
+    );
+    final secondEngine = engine(mutex: SyncMutex());
+    final firstRun = firstEngine.run();
+    await pushEntered.future;
+    expect(heartbeatScheduler.delays.single, SyncEngine.heartbeatInterval);
+    expect(
+      heartbeatScheduler.delays.single,
+      lessThanOrEqualTo(
+        Duration(microseconds: SyncEngine.runLeaseDuration.inMicroseconds ~/ 3),
+      ),
+    );
+    nowUtc = nowUtc.add(heartbeatScheduler.delays.single);
+    heartbeatScheduler.elapseNext();
+    await trackingGate.firstRenewed.future;
+    nowUtc = initialNow.add(SyncEngine.runLeaseDuration);
+
+    try {
+      final secondResult = await secondEngine.run();
+      expect(secondResult.status, SyncRunStatus.alreadyRunning);
+      expect(gateway.pushCalls, 1);
+    } finally {
+      releasePush.complete();
+      await firstRun.catchError(
+        (Object _) => const SyncRunResult(status: SyncRunStatus.partialFailure),
+      );
+    }
+  });
+
+  test(
+    'lease loss fences late push completion and all later gateway work',
+    () async {
+      await _seedCategoryOperation(database);
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category:work',
+              ownerId: 'owner-a',
+              name: 'Work',
+              normalizedName: 'work',
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'category:work:1:upsert',
+              ownerId: 'owner-a',
+              entityType: 'category',
+              entityId: 'category:work',
+              operationKind: 'upsert',
+              createdAtUtcMs: 1,
+            ),
+          );
+      final pushEntered = Completer<void>();
+      final releasePush = Completer<void>();
+      gateway.onPush = (mutation) async {
+        if (!pushEntered.isCompleted) {
+          pushEntered.complete();
+          await releasePush.future;
+        }
+        return PushAcknowledged(
+          operationId: mutation.operationId,
+          resultingRevision: mutation.localRevision,
+          acknowledgedAtUtc: nowUtc,
+        );
+      };
+      final heartbeatScheduler = _ManualHeartbeatScheduler();
+      final losingGate = _LosingOwnerOperationGate(
+        DriftOwnerOperationGate(database),
+      );
+      final run = engine(
+        ownerGate: losingGate,
+        heartbeatDelay: heartbeatScheduler.wait,
+      ).run();
+      await pushEntered.future;
+      nowUtc = nowUtc.add(SyncEngine.heartbeatInterval);
+      heartbeatScheduler.elapseNext();
+      await losingGate.lost.future;
+      releasePush.complete();
+
+      await run;
+
+      final firstOperation =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals('category:travel:1:upsert'),
+              ))
+              .getSingle();
+      expect(gateway.pushCalls, 1);
+      expect(gateway.pullCalls, 0);
+      expect(firstOperation.state, isNot('acknowledged'));
+      expect(firstOperation.acknowledgedAtUtcMs, isNull);
+    },
+  );
+
+  test(
+    'acknowledgement predicate loss stops before pull or local completion',
+    () async {
+      await _seedCategoryOperation(database);
+      gateway.onPush = (mutation) async {
+        await DriftOwnerOperationGate(database).release(token: 'lease-1');
+        return PushAcknowledged(
+          operationId: mutation.operationId,
+          resultingRevision: mutation.localRevision,
+          acknowledgedAtUtc: nowUtc,
+        );
+      };
+
+      final result = await engine().run();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+
+      expect(result.status, SyncRunStatus.partialFailure);
+      expect(result.pushed, 0);
+      expect(result.failures, 1);
+      expect(gateway.pushCalls, 1);
+      expect(gateway.pullCalls, 0);
+      expect(operation.state, 'inFlight');
+      expect(operation.acknowledgedAtUtcMs, isNull);
+    },
+  );
+
+  test(
+    'five durable send reservations exhaust retryable work before a sixth call',
+    () async {
+      await _seedCategoryOperation(database);
+      gateway.pushFailure = const OfflineSyncFailure();
+      final syncEngine = engine();
+
+      for (var reservation = 1; reservation <= 5; reservation++) {
+        await syncEngine.run();
+        final row = await database
+            .select(database.outboxOperations)
+            .getSingle();
+        expect(row.attemptCount, reservation);
+        if (reservation < 5) {
+          expect(row.state, 'retryWaiting');
+          nowUtc = DateTime.fromMillisecondsSinceEpoch(
+            row.nextAttemptAtUtcMs!,
+            isUtc: true,
+          );
+        }
+      }
+      final exhausted = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      final callsAtExhaustion = gateway.pushCalls;
+
+      await engine().run();
+
+      expect(callsAtExhaustion, 5);
+      expect(gateway.pushCalls, callsAtExhaustion);
+      expect(exhausted.state, 'permanentFailure');
+      expect(exhausted.failureCode, SyncFailureCode.offline.name);
+    },
+  );
+
+  test(
+    'first permanent failure stops pushes and pulls and releases unstarted rows',
+    () async {
+      await _seedCategoryOperation(database);
+      await _seedAdditionalCategoryOperation(
+        database,
+        id: 'category:retry',
+        operationId: 'category:retry:3:upsert',
+        createdAtUtcMs: 1,
+      );
+      await _seedAdditionalCategoryOperation(
+        database,
+        id: 'category:pending',
+        operationId: 'category:pending:1:upsert',
+        createdAtUtcMs: 2,
+      );
+      await (database.update(database.outboxOperations)
+            ..where((row) => row.operationId.equals('category:retry:3:upsert')))
+          .write(
+            OutboxOperationsCompanion(
+              state: const Value('retryWaiting'),
+              attemptCount: const Value(2),
+              nextAttemptAtUtcMs: Value(nowUtc.millisecondsSinceEpoch),
+              failureCode: Value(SyncFailureCode.quota.name),
+            ),
+          );
+      gateway.pushFailure = const PermissionDeniedSyncFailure();
+
+      final result = await engine().run();
+
+      final rows = await database.select(database.outboxOperations).get();
+      final attempted = rows.singleWhere(
+        (row) => row.operationId == 'category:travel:1:upsert',
+      );
+      final retry = rows.singleWhere(
+        (row) => row.operationId == 'category:retry:3:upsert',
+      );
+      final pending = rows.singleWhere(
+        (row) => row.operationId == 'category:pending:1:upsert',
+      );
+      expect(result.failures, 1);
+      expect(gateway.pushCalls, 1);
+      expect(gateway.pullCalls, 0);
+      expect(attempted.state, 'permanentFailure');
+      expect(attempted.attemptCount, 1);
+      expect(attempted.failureCode, SyncFailureCode.permissionDenied.name);
+      expect(retry.state, 'retryWaiting');
+      expect(retry.attemptCount, 2);
+      expect(retry.nextAttemptAtUtcMs, nowUtc.millisecondsSinceEpoch);
+      expect(retry.failureCode, SyncFailureCode.quota.name);
+      expect(retry.leaseToken, isNull);
+      expect(pending.state, 'pending');
+      expect(pending.attemptCount, 0);
+      expect(pending.leaseToken, isNull);
+      expect(rows.where((row) => row.state == 'inFlight'), isEmpty);
+    },
+  );
+
+  test('advancing hasMore pull commits and recommends another run', () async {
+    final cursor = SyncCursor(
+      serverUpdatedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+      documentId: 'category:remote',
+    );
+    gateway.onPull = (collection, after) {
+      if (collection != SyncCollection.categories) {
+        return PullPage(
+          changes: const <SyncEntity>[],
+          nextCursor: after,
+          hasMore: false,
+        );
+      }
+      return PullPage(
+        changes: <SyncEntity>[
+          SyncEntity(
+            collection: SyncCollection.categories,
+            entityId: 'category:remote',
+            revision: 1,
+            isDeleted: false,
+            payloadVersion: 1,
+            clientUpdatedAtUtc: nowUtc,
+            serverUpdatedAtUtc: cursor.serverUpdatedAtUtc,
+            payload: const <String, Object?>{'name': 'Remote'},
+          ),
+        ],
+        nextCursor: cursor,
+        hasMore: true,
+      );
+    };
+
+    final result = await engine().run();
+
+    final category = await (database.select(
+      database.vocabularyCategories,
+    )..where((row) => row.id.equals('category:remote'))).getSingle();
+    expect(result.status, SyncRunStatus.completed);
+    expect(result.pulled, 1);
+    expect(result.retryRecommended, isTrue);
+    expect(category.name, 'Remote');
+    expect(
+      await store.readCheckpoint('owner-a', SyncCollection.categories),
+      cursor,
+    );
+  });
+
+  test('each sync collection is pulled exactly once per run', () async {
+    final result = await engine().run();
+
+    expect(result.status, SyncRunStatus.completed);
+    expect(gateway.pulledCollections, hasLength(SyncCollection.values.length));
+    for (final collection in SyncCollection.values) {
+      expect(
+        gateway.pulledCollections.where((value) => value == collection),
+        hasLength(1),
+      );
+    }
+  });
+}
+
+final class _ManualHeartbeatScheduler {
+  final List<Duration> delays = <Duration>[];
+  final List<Completer<void>> _scheduled = <Completer<void>>[];
+
+  Future<void> wait(Duration delay) {
+    delays.add(delay);
+    final scheduled = Completer<void>();
+    _scheduled.add(scheduled);
+    return scheduled.future;
+  }
+
+  void elapseNext() {
+    _scheduled.firstWhere((item) => !item.isCompleted).complete();
+  }
+}
+
+final class _TrackingOwnerOperationGate implements OwnerOperationGate {
+  _TrackingOwnerOperationGate(this.delegate);
+
+  final OwnerOperationGate delegate;
+  final Completer<void> firstRenewed = Completer<void>();
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.tryAcquire(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final result = await delegate.renew(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+    if (!firstRenewed.isCompleted) firstRenewed.complete();
+    return result;
+  }
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<void> release({required String token}) =>
+      delegate.release(token: token);
+}
+
+final class _LosingOwnerOperationGate implements OwnerOperationGate {
+  _LosingOwnerOperationGate(this.delegate);
+
+  final OwnerOperationGate delegate;
+  final Completer<void> lost = Completer<void>();
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.tryAcquire(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    await delegate.release(token: token);
+    if (!lost.isCompleted) lost.complete();
+    return false;
+  }
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<void> release({required String token}) =>
+      delegate.release(token: token);
+}
+
+final class _CallbackOwnerOperationGate implements OwnerOperationGate {
+  _CallbackOwnerOperationGate(this.delegate, {required this.onTryAcquire});
+
+  final OwnerOperationGate delegate;
+  final void Function() onTryAcquire;
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) {
+    onTryAcquire();
+    return delegate.tryAcquire(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+  }
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.renew(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+
+  @override
+  Future<void> release({required String token}) =>
+      delegate.release(token: token);
 }
 
 final class _OwnerRepository implements LocalOwnerRepository {
   _OwnerRepository(this.owner);
 
   identity.LocalOwner owner;
+  int reads = 0;
 
   @override
-  Future<identity.LocalOwner> getOrCreateActiveOwner() async => owner;
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async {
+    reads += 1;
+    return owner;
+  }
 
   @override
   Future<identity.LocalOwner> bindFirebaseUid(
@@ -263,10 +732,14 @@ final class _FakeGateway implements SyncGateway {
 
   DateTime nowUtc;
   int pushCalls = 0;
+  int pullCalls = 0;
   SyncFailure? pushFailure;
   PushResult? pushResult;
   Future<PushResult> Function(PushMutation mutation)? onPush;
+  PullPage Function(SyncCollection collection, SyncCursor? after)? onPull;
   final Set<String> appliedOperationIds = <String>{};
+  final List<PushMutation> pushedMutations = <PushMutation>[];
+  final List<SyncCollection> pulledCollections = <SyncCollection>[];
 
   @override
   Future<CloudSyncPolicy> fetchPolicy() async => CloudSyncPolicy(
@@ -283,12 +756,17 @@ final class _FakeGateway implements SyncGateway {
     required SyncCursor? after,
     required int limit,
   }) async {
+    pullCalls++;
+    pulledCollections.add(collection);
+    final handler = onPull;
+    if (handler != null) return handler(collection, after);
     return PullPage(changes: const [], nextCursor: after, hasMore: false);
   }
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
     pushCalls++;
+    pushedMutations.add(mutation);
     final handler = onPush;
     if (handler != null) {
       final result = await handler(mutation);
@@ -334,6 +812,39 @@ Future<void> _seedCategoryOperation(AppDatabase database) async {
           entityId: 'category:travel',
           operationKind: 'upsert',
           createdAtUtcMs: 0,
+        ),
+      );
+}
+
+Future<void> _seedAdditionalCategoryOperation(
+  AppDatabase database, {
+  required String id,
+  required String operationId,
+  required int createdAtUtcMs,
+}) async {
+  final name = id.split(':').last;
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: id,
+          ownerId: 'owner-a',
+          name: name,
+          normalizedName: name,
+          createdAtUtcMs: createdAtUtcMs,
+          updatedAtUtcMs: createdAtUtcMs,
+        ),
+      );
+  await database
+      .into(database.outboxOperations)
+      .insert(
+        OutboxOperationsCompanion.insert(
+          operationId: operationId,
+          ownerId: 'owner-a',
+          entityType: 'category',
+          entityId: id,
+          operationKind: 'upsert',
+          createdAtUtcMs: createdAtUtcMs,
         ),
       );
 }

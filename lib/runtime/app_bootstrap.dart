@@ -64,6 +64,7 @@ import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_mutex.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/sync/data/drift_cloud_policy_cache.dart';
+import '../features/sync/data/drift_owner_operation_gate.dart';
 import '../features/sync/data/drift_sync_store.dart';
 import '../features/sync/data/firestore_sync_gateway.dart';
 import '../features/sync/domain/sync_gateway.dart';
@@ -231,10 +232,13 @@ final class AppBootstrap {
     resources.own(database.close);
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
+    final ownerOperationGate = DriftOwnerOperationGate(database);
     final localOwners = DriftLocalOwnerRepository(
       database,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
+      ownerOperationGate: ownerOperationGate,
+      generateOwnerOperationToken: idGenerator.v4,
     );
     await localOwners.getOrCreateActiveOwner();
     Future<String> activeOwnerId() async =>
@@ -251,7 +255,9 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       generateConflictId: idGenerator.v4,
       generateOwnerId: idGenerator.v4,
+      generateOwnerOperationToken: idGenerator.v4,
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
+      ownerOperationGate: ownerOperationGate,
     );
     LearningReconciliationScheduler? ownerLearningReconciliation;
     final upgradeGuestOwner = UpgradeGuestOwner(
@@ -302,6 +308,7 @@ final class AppBootstrap {
         store: DriftSyncStore(database),
         gateway: gateway,
         policyProvider: policy.call,
+        ownerGate: ownerOperationGate,
         mutex: SyncMutex(),
         backoff: const SyncBackoff(),
         nowUtc: () => DateTime.now().toUtc(),

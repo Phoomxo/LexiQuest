@@ -1,10 +1,13 @@
+import 'dart:async';
+
 import '../../identity/domain/local_owner_repository.dart';
-import '../data/drift_sync_store.dart';
 import '../domain/cloud_sync_policy.dart';
+import '../domain/owner_operation_gate.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
 import '../domain/sync_gateway.dart';
 import '../domain/sync_result.dart';
+import '../domain/sync_store.dart';
 import 'sync_backoff.dart';
 import 'sync_mutex.dart';
 
@@ -12,6 +15,7 @@ typedef SyncPolicyProvider = Future<CloudSyncPolicy> Function();
 typedef SyncUtcNow = DateTime Function();
 typedef SyncLeaseTokenGenerator = String Function();
 typedef SyncJitterSource = double Function();
+typedef SyncHeartbeatDelay = Future<void> Function(Duration delay);
 
 enum SyncRunStatus {
   completed,
@@ -45,11 +49,13 @@ final class SyncEngine {
     required this.store,
     required this.gateway,
     required this.policyProvider,
+    required this.ownerGate,
     required this.mutex,
     required this.backoff,
     required this.nowUtc,
     required this.generateLeaseToken,
     this.jitter = _zeroJitter,
+    this.heartbeatDelay = _defaultHeartbeatDelay,
     this.requestTimeout = const Duration(seconds: 30),
   });
 
@@ -57,49 +63,53 @@ final class SyncEngine {
   static const int pullLimit = 100;
   static const Duration leaseDuration = Duration(minutes: 5);
   static const Duration runLeaseDuration = Duration(minutes: 10);
+  static const Duration heartbeatInterval = Duration(minutes: 3);
 
   final LocalOwnerRepository owners;
-  final DriftSyncStore store;
+  final SyncStore store;
   final SyncGateway gateway;
   final SyncPolicyProvider policyProvider;
+  final OwnerOperationGate ownerGate;
   final SyncMutex mutex;
   final SyncBackoff backoff;
   final SyncUtcNow nowUtc;
   final SyncLeaseTokenGenerator generateLeaseToken;
   final SyncJitterSource jitter;
+  final SyncHeartbeatDelay heartbeatDelay;
   final Duration requestTimeout;
-  final Set<String> _permissionRecoveryAttemptedOwners = <String>{};
 
   Future<SyncRunResult> run() async {
     final policy = await policyProvider();
     if (!policy.enabled) {
       return const SyncRunResult(status: SyncRunStatus.skippedCloudDisabled);
     }
-    final owner = await owners.getOrCreateActiveOwner();
-    final firebaseUid = owner.firebaseUid?.trim();
-    if (firebaseUid == null || firebaseUid.isEmpty) {
-      return const SyncRunResult(status: SyncRunStatus.skippedUnauthenticated);
-    }
-    if (!mutex.tryAcquire(owner.id)) {
+    const mutexKey = 'ownerOperationGate';
+    if (!mutex.tryAcquire(mutexKey)) {
       return const SyncRunResult(status: SyncRunStatus.alreadyRunning);
     }
     final runLeaseToken = generateLeaseToken();
     final bool acquiredRunLease;
     try {
-      acquiredRunLease = await store.tryAcquireRunLease(
-        ownerId: owner.id,
-        leaseToken: runLeaseToken,
+      acquiredRunLease = await ownerGate.tryAcquire(
+        token: runLeaseToken,
         nowUtc: _currentUtc(),
         leaseDuration: runLeaseDuration,
       );
     } catch (_) {
-      mutex.release(owner.id);
+      mutex.release(mutexKey);
       rethrow;
     }
     if (!acquiredRunLease) {
-      mutex.release(owner.id);
+      mutex.release(mutexKey);
       return const SyncRunResult(status: SyncRunStatus.alreadyRunning);
     }
+    var gateOwned = true;
+    final stopHeartbeat = Completer<void>();
+    final heartbeat = _runHeartbeat(
+      runLeaseToken,
+      stopHeartbeat,
+      () => gateOwned = false,
+    );
 
     var pushed = 0;
     var pulled = 0;
@@ -107,11 +117,13 @@ final class SyncEngine {
     var failures = 0;
     var providerUnavailable = false;
     var retryRecommended = false;
+    var permanentFailure = false;
     try {
-      if (_permissionRecoveryAttemptedOwners.add(owner.id)) {
-        await store.requeuePermissionDeniedFailures(
-          ownerId: owner.id,
-          nowUtc: _currentUtc(),
+      final owner = await owners.getOrCreateActiveOwner();
+      final firebaseUid = owner.firebaseUid?.trim();
+      if (firebaseUid == null || firebaseUid.isEmpty) {
+        return const SyncRunResult(
+          status: SyncRunStatus.skippedUnauthenticated,
         );
       }
       final claimed = await store.claimPending(
@@ -119,37 +131,77 @@ final class SyncEngine {
         firebaseUid: firebaseUid,
         limit: pushLimit,
         leaseToken: generateLeaseToken(),
+        ownerGateToken: runLeaseToken,
         leaseDuration: leaseDuration,
         nowUtc: _currentUtc(),
       );
-      for (final claim in claimed) {
+      var releaseFrom = claimed.length;
+      for (var index = 0; index < claimed.length; index++) {
+        final leasedClaim = claimed[index];
+        if (!gateOwned) {
+          failures++;
+          releaseFrom = index;
+          break;
+        }
+        final claim = await store.beginAttempt(
+          claim: leasedClaim,
+          ownerGateToken: runLeaseToken,
+          nowUtc: _currentUtc(),
+        );
+        if (claim == null) {
+          failures++;
+          releaseFrom = index;
+          break;
+        }
         try {
           final result = await _withRequestTimeout(
             gateway.push(claim.mutation),
           );
+          if (!gateOwned) {
+            failures++;
+            releaseFrom = index + 1;
+            break;
+          }
           switch (result) {
             case PushAcknowledged():
-              await store.acknowledge(
+              final acknowledged = await store.acknowledge(
                 operationId: claim.mutation.operationId,
                 leaseToken: claim.leaseToken,
+                ownerGateToken: runLeaseToken,
+                nowUtc: _currentUtc(),
                 acknowledgement: result,
               );
-              pushed++;
+              if (acknowledged) {
+                pushed++;
+              } else {
+                gateOwned = false;
+                failures++;
+                releaseFrom = index + 1;
+              }
             case PushConflict():
-              await store.resolvePushConflict(
+              final resolved = await store.resolvePushConflict(
                 claim: claim,
+                ownerGateToken: runLeaseToken,
                 cloudEntity: result.cloudEntity,
                 resolvedAtUtc: _currentUtc(),
               );
-              conflicts++;
+              if (resolved) {
+                conflicts++;
+              } else {
+                gateOwned = false;
+                failures++;
+                releaseFrom = index + 1;
+              }
           }
+          if (!gateOwned) break;
         } on SyncFailure catch (failure) {
           failures++;
-          retryRecommended = retryRecommended || failure.retryable;
           if (failure.retryable) {
-            await store.markRetry(
+            final marked = await store.markRetry(
               operationId: claim.mutation.operationId,
               leaseToken: claim.leaseToken,
+              ownerGateToken: runLeaseToken,
+              nowUtc: _currentUtc(),
               nextAttemptAtUtc: backoff.nextAttemptAt(
                 nowUtc: _currentUtc(),
                 attemptCount: claim.attemptCount,
@@ -158,22 +210,45 @@ final class SyncEngine {
               ),
               failure: failure,
             );
+            if (marked) {
+              retryRecommended =
+                  retryRecommended ||
+                  claim.attemptCount < maxSyncSendReservations;
+            } else {
+              gateOwned = false;
+              releaseFrom = index + 1;
+            }
           } else {
-            await store.markTerminalFailure(
+            final marked = await store.markTerminalFailure(
               operationId: claim.mutation.operationId,
               leaseToken: claim.leaseToken,
+              ownerGateToken: runLeaseToken,
+              nowUtc: _currentUtc(),
               failure: failure,
             );
+            permanentFailure = marked;
+            if (!marked) gateOwned = false;
+            releaseFrom = index + 1;
           }
           providerUnavailable =
               providerUnavailable ||
               failure is OfflineSyncFailure ||
               failure is ProviderUnavailableSyncFailure;
+          if (permanentFailure || !gateOwned) break;
         }
       }
 
-      if (!providerUnavailable) {
+      for (final unstarted in claimed.skip(releaseFrom)) {
+        await store.releaseClaim(
+          claim: unstarted,
+          ownerGateToken: runLeaseToken,
+          nowUtc: _currentUtc(),
+        );
+      }
+
+      if (!providerUnavailable && !permanentFailure && gateOwned) {
         for (final collection in SyncCollection.values) {
+          if (!gateOwned) break;
           try {
             final checkpoint = await store.readCheckpoint(owner.id, collection);
             final page = await _withRequestTimeout(
@@ -184,12 +259,24 @@ final class SyncEngine {
                 limit: pullLimit,
               ),
             );
-            await store.applyPullPage(
+            if (!gateOwned) {
+              failures++;
+              break;
+            }
+            final applied = await store.applyPullPage(
               ownerId: owner.id,
               collection: collection,
               page: page,
+              ownerGateToken: runLeaseToken,
+              nowUtc: _currentUtc(),
             );
+            if (!applied) {
+              gateOwned = false;
+              failures++;
+              break;
+            }
             pulled += page.changes.length;
+            retryRecommended = retryRecommended || page.hasMore;
           } on SyncFailure catch (failure) {
             failures++;
             retryRecommended = retryRecommended || failure.retryable;
@@ -208,8 +295,43 @@ final class SyncEngine {
         retryRecommended: retryRecommended,
       );
     } finally {
-      await store.releaseRunLease(ownerId: owner.id, leaseToken: runLeaseToken);
-      mutex.release(owner.id);
+      if (!stopHeartbeat.isCompleted) stopHeartbeat.complete();
+      await heartbeat;
+      await ownerGate.release(token: runLeaseToken);
+      mutex.release(mutexKey);
+    }
+  }
+
+  Future<void> _runHeartbeat(
+    String token,
+    Completer<void> stop,
+    void Function() onLost,
+  ) async {
+    while (true) {
+      try {
+        await Future.any<void>(<Future<void>>[
+          heartbeatDelay(heartbeatInterval),
+          stop.future,
+        ]);
+      } catch (_) {
+        onLost();
+        return;
+      }
+      if (stop.isCompleted) return;
+      try {
+        final renewed = await ownerGate.renew(
+          token: token,
+          nowUtc: _currentUtc(),
+          leaseDuration: runLeaseDuration,
+        );
+        if (!renewed) {
+          onLost();
+          return;
+        }
+      } catch (_) {
+        onLost();
+        return;
+      }
     }
   }
 
@@ -230,3 +352,6 @@ final class SyncEngine {
 }
 
 double _zeroJitter() => 0;
+
+Future<void> _defaultHeartbeatDelay(Duration delay) =>
+    Future<void>.delayed(delay);

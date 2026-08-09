@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
@@ -46,12 +47,21 @@ void main() {
         occurredAtUtc: now,
       ),
     );
+    expect(
+      await DriftOwnerOperationGate(database).tryAcquire(
+        token: 'attempt-claim-gate',
+        nowUtc: now,
+        leaseDuration: const Duration(minutes: 10),
+      ),
+      isTrue,
+    );
 
     final claim = (await store.claimPending(
       ownerId: 'owner-1',
       firebaseUid: 'firebase-1',
       limit: 10,
       leaseToken: 'lease-1',
+      ownerGateToken: 'attempt-claim-gate',
       leaseDuration: const Duration(minutes: 5),
       nowUtc: now,
       // Phase 0 W12-13: recordAnswer also enqueues srsState outbox.
@@ -199,7 +209,16 @@ void main() {
     await store.applyPullPage(
       ownerId: 'owner-1',
       collection: SyncCollection.attempts,
-      page: page,
+      page: PullPage(
+        changes: <SyncEntity>[entity],
+        nextCursor: SyncCursor(
+          serverUpdatedAtUtc: entity.serverUpdatedAtUtc.add(
+            const Duration(microseconds: 1),
+          ),
+          documentId: entity.entityId,
+        ),
+        hasMore: false,
+      ),
     );
 
     expect(await database.select(database.srsStates).get(), hasLength(1));
@@ -221,12 +240,12 @@ void main() {
       await store.applyPullPage(
         ownerId: 'owner-1',
         collection: SyncCollection.readingEvents,
-        page: _page(later),
+        page: _page(earlier),
       );
       await store.applyPullPage(
         ownerId: 'owner-1',
         collection: SyncCollection.readingEvents,
-        page: _page(earlier),
+        page: _page(later),
       );
 
       final progress = await database
@@ -257,7 +276,16 @@ void main() {
     await store.applyPullPage(
       ownerId: 'owner-1',
       collection: SyncCollection.readingEvents,
-      page: page,
+      page: PullPage(
+        changes: <SyncEntity>[entity],
+        nextCursor: SyncCursor(
+          serverUpdatedAtUtc: entity.serverUpdatedAtUtc.add(
+            const Duration(microseconds: 1),
+          ),
+          documentId: entity.entityId,
+        ),
+        hasMore: false,
+      ),
     );
 
     expect(
@@ -365,36 +393,55 @@ void main() {
         occurredAtUtc: now,
       ),
     );
+    expect(
+      await DriftOwnerOperationGate(database).tryAcquire(
+        token: 'attempt-ack-gate',
+        nowUtc: now,
+        leaseDuration: const Duration(minutes: 10),
+      ),
+      isTrue,
+    );
     final claim = (await store.claimPending(
       ownerId: 'owner-1',
       firebaseUid: 'firebase-1',
       limit: 10,
       leaseToken: 'lease-ack',
+      ownerGateToken: 'attempt-ack-gate',
       leaseDuration: const Duration(minutes: 5),
       nowUtc: now,
       // Phase 0 W12-13: recordAnswer now also enqueues a srsState outbox op.
       // Filter to the attempt operation specifically.
     )).firstWhere((c) => c.mutation.collection == SyncCollection.attempts);
+    final attempted = (await store.beginAttempt(
+      claim: claim,
+      ownerGateToken: 'attempt-ack-gate',
+      nowUtc: now,
+    ))!;
     final acknowledgement = PushAcknowledged(
-      operationId: claim.mutation.operationId,
+      operationId: attempted.mutation.operationId,
       resultingRevision: 1,
       acknowledgedAtUtc: now.add(const Duration(seconds: 1)),
     );
 
     await store.acknowledge(
-      operationId: claim.mutation.operationId,
-      leaseToken: claim.leaseToken,
+      operationId: attempted.mutation.operationId,
+      leaseToken: attempted.leaseToken,
+      ownerGateToken: 'attempt-ack-gate',
+      nowUtc: now,
       acknowledgement: acknowledgement,
     );
     await store.acknowledge(
-      operationId: claim.mutation.operationId,
-      leaseToken: claim.leaseToken,
+      operationId: attempted.mutation.operationId,
+      leaseToken: attempted.leaseToken,
+      ownerGateToken: 'attempt-ack-gate',
+      nowUtc: now,
       acknowledgement: acknowledgement,
     );
 
     final outbox =
-        await (database.select(database.outboxOperations)
-              ..where((r) => r.operationId.equals(claim.mutation.operationId)))
+        await (database.select(database.outboxOperations)..where(
+              (r) => r.operationId.equals(attempted.mutation.operationId),
+            ))
             .getSingle();
     expect(outbox.state, 'acknowledged');
     expect(

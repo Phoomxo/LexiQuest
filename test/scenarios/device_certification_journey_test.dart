@@ -59,6 +59,7 @@ void main() {
         nowUtc: now,
         generateConflictId: idGen,
         generateOwnerId: idGen,
+        generateOwnerOperationToken: idGen,
         deleteOwnerSecrets: (_) async {},
       ),
     );

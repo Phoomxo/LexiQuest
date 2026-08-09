@@ -9,21 +9,29 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
+import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 
 void main() {
   late AppDatabase database;
   late DriftOwnerUpgradeRepository repository;
   late List<String> deletedSecretOwnerIds;
   var conflictSequence = 0;
+  var ownerOperationSequence = 0;
 
   setUp(() async {
     deletedSecretOwnerIds = <String>[];
+    ownerOperationSequence = 0;
     database = AppDatabase(NativeDatabase.memory());
     repository = DriftOwnerUpgradeRepository(
       database,
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
       generateConflictId: () => 'upgrade-conflict-${conflictSequence++}',
       generateOwnerId: () => 'new-guest-owner',
+      generateOwnerOperationToken: () =>
+          'owner-operation-${ownerOperationSequence++}',
       deleteOwnerSecrets: (ownerId) async {
         deletedSecretOwnerIds.add(ownerId);
       },
@@ -47,6 +55,28 @@ void main() {
 
     expect(ownerUpgradeInventory, actual);
   });
+
+  test(
+    'anonymous bind without a prior UID owner retains one local owner',
+    () async {
+      await (database.delete(
+        database.localOwners,
+      )..where((row) => row.id.equals('account-owner'))).go();
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'new-firebase-user',
+      );
+
+      final owners = await database.select(database.localOwners).get();
+      expect(result.mode, OwnerUpgradeMode.anonymousBound);
+      expect(result.targetOwnerId, 'guest-owner');
+      expect(owners, hasLength(1));
+      expect(owners.single.id, 'guest-owner');
+      expect(owners.single.firebaseUid, 'new-firebase-user');
+      expect(owners.single.isActive, isTrue);
+    },
+  );
 
   test('moves every owner-scoped row and replays as a no-op', () async {
     await _seedEveryOwnerScopedTable(database);
@@ -428,6 +458,133 @@ void main() {
     expect(deletedSecretOwnerIds, ['guest-owner']);
   });
 
+  test('owner upgrade waits for the persisted owner-operation gate', () async {
+    final gate = DriftOwnerOperationGate(database);
+    final gateReleased = Completer<void>();
+    final waitingRepository = DriftOwnerUpgradeRepository(
+      database,
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      generateConflictId: () => 'waiting-conflict',
+      generateOwnerId: () => 'waiting-owner',
+      generateOwnerOperationToken: () => 'waiting-upgrade-token',
+      deleteOwnerSecrets: (ownerId) async {
+        deletedSecretOwnerIds.add(ownerId);
+      },
+      ownerOperationGate: gate,
+      ownerGateDelay: (_) => gateReleased.future,
+    );
+    expect(
+      await gate.tryAcquire(
+        token: 'active-sync-token',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+        leaseDuration: const Duration(minutes: 10),
+      ),
+      isTrue,
+    );
+    var completed = false;
+
+    final upgrading = waitingRepository
+        .upgrade(activeOwnerId: 'guest-owner', firebaseUid: 'firebase-user')
+        .whenComplete(() => completed = true);
+    await Future<void>.delayed(Duration.zero);
+
+    expect(completed, isFalse);
+    await gate.release(token: 'active-sync-token');
+    gateReleased.complete();
+    final result = await upgrading;
+    expect(result.targetOwnerId, 'account-owner');
+  });
+
+  test(
+    'owner transition heartbeat renews while external work is held',
+    () async {
+      final initialNow = DateTime.utc(2026, 7, 30, 12);
+      var heartbeatNow = initialNow;
+      final scheduler = _ManualOwnerGateDelay();
+      final secretsEntered = Completer<void>();
+      final releaseSecrets = Completer<void>();
+      final trackingGate = _TrackingOwnerGate(
+        DriftOwnerOperationGate(database),
+      );
+      final heartbeatRepository = DriftOwnerUpgradeRepository(
+        database,
+        nowUtc: () => heartbeatNow,
+        generateConflictId: () => 'heartbeat-conflict',
+        generateOwnerId: () => 'heartbeat-owner',
+        generateOwnerOperationToken: () => 'heartbeat-owner-operation',
+        deleteOwnerSecrets: (_) async {
+          secretsEntered.complete();
+          await releaseSecrets.future;
+        },
+        ownerOperationGate: trackingGate,
+        ownerGateDelay: scheduler.wait,
+      );
+
+      final upgrading = heartbeatRepository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      await secretsEntered.future;
+      expect(
+        scheduler.delays.single,
+        heartbeatRepository.ownerGateHeartbeatInterval,
+      );
+      heartbeatNow = heartbeatNow.add(scheduler.delays.single);
+      scheduler.elapseNext();
+      await trackingGate.renewed.future;
+      heartbeatNow = initialNow.add(heartbeatRepository.ownerGateLeaseDuration);
+
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'competing-transition',
+          nowUtc: heartbeatNow,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isFalse,
+      );
+      releaseSecrets.complete();
+      final result = await upgrading;
+      expect(result.targetOwnerId, 'account-owner');
+    },
+  );
+
+  test('owner transition transaction rejects a stale acquired token', () async {
+    final gate = _StealingOwnerGate(
+      DriftOwnerOperationGate(database),
+      replacementToken: 'replacement-owner-operation',
+    );
+    final fencedRepository = DriftOwnerUpgradeRepository(
+      database,
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      generateConflictId: () => 'fenced-conflict',
+      generateOwnerId: () => 'fenced-owner',
+      generateOwnerOperationToken: () => 'stale-owner-operation',
+      deleteOwnerSecrets: (ownerId) async {
+        deletedSecretOwnerIds.add(ownerId);
+      },
+      ownerOperationGate: gate,
+    );
+
+    await expectLater(
+      fencedRepository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      ),
+      throwsA(isA<StateError>()),
+    );
+
+    final guest = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals('guest-owner'))).getSingle();
+    final account = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals('account-owner'))).getSingle();
+    expect(guest.isActive, isTrue);
+    expect(guest.firebaseUid, isNull);
+    expect(account.isActive, isFalse);
+    expect(deletedSecretOwnerIds, ['guest-owner']);
+  });
+
   test(
     'logout activates a fresh local guest without deleting account rows',
     () async {
@@ -552,6 +709,20 @@ void main() {
     'merge rehomes acknowledged anonymous cloud data to account sync',
     () async {
       await _seedEveryOwnerScopedTable(database);
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'attempt_count, state, failure_code, created_at_utc_ms) VALUES '
+        "('srs:word-1:stable', 'guest-owner', 'srsState', 'word-1', "
+        "'upsert', 5, 'permanentFailure', 'offline', 20)",
+      );
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'attempt_count, state, failure_code, created_at_utc_ms) VALUES '
+        "('achievement:stable', 'guest-owner', 'achievementUnlock', "
+        "'achievement-1', 'upsert', 5, 'permanentFailure', 'offline', 20)",
+      );
       await database.customUpdate(
         "UPDATE local_owners SET firebase_uid = 'anonymous-user' "
         "WHERE id = 'guest-owner'",
@@ -600,6 +771,8 @@ void main() {
         'attempt',
         'readingEvent',
         'rewardTransaction',
+        'srsState',
+        'achievementUnlock',
       ]) {
         expect(
           rehomedOutbox.where((row) => row.entityType == entityType),
@@ -616,18 +789,201 @@ void main() {
                 'attempt',
                 'readingEvent',
                 'rewardTransaction',
+                'srsState',
+                'achievementUnlock',
               }.contains(row.entityType),
             )
-            .every((row) => row.state == 'pending' && row.baseRevision == 0),
+            .every(
+              (row) =>
+                  row.state == 'pending' &&
+                  row.baseRevision == 0 &&
+                  row.attemptCount == 0 &&
+                  row.nextAttemptAtUtcMs == null &&
+                  row.failureCode == null,
+            ),
         isTrue,
+      );
+      expect(
+        rehomedOutbox
+            .singleWhere((row) => row.operationId == 'srs:word-1:stable')
+            .entityId,
+        'word-1',
+      );
+      expect(
+        rehomedOutbox
+            .singleWhere((row) => row.operationId == 'achievement:stable')
+            .entityId,
+        'achievement-1',
       );
       final checkpoint = await (database.select(
         database.syncCheckpoints,
       )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
       expect(checkpoint.serverCursor, isNull);
       expect(checkpoint.lastSuccessAtUtcMs, isNull);
+
+      await database.customUpdate(
+        "UPDATE outbox_operations SET state = 'permanentFailure' "
+        "WHERE operation_id <> 'srs:word-1:stable'",
+        updates: {database.outboxOperations},
+      );
+      final reservationNow = DateTime.utc(2026, 7, 30, 13);
+      final gate = DriftOwnerOperationGate(database);
+      expect(
+        await gate.tryAcquire(
+          token: 'new-namespace-gate',
+          nowUtc: reservationNow,
+          leaseDuration: const Duration(days: 1),
+        ),
+        isTrue,
+      );
+      final syncStore = DriftSyncStore(database);
+      for (var reservation = 1; reservation <= 5; reservation++) {
+        final claim = (await syncStore.claimPending(
+          ownerId: 'account-owner',
+          firebaseUid: 'firebase-user',
+          limit: 1,
+          leaseToken: 'new-namespace-attempt-$reservation',
+          ownerGateToken: 'new-namespace-gate',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: reservationNow,
+        )).single;
+        final attempted = (await syncStore.beginAttempt(
+          claim: claim,
+          ownerGateToken: 'new-namespace-gate',
+          nowUtc: reservationNow,
+        ))!;
+        expect(attempted.mutation.operationId, 'srs:word-1:stable');
+        expect(attempted.attemptCount, reservation);
+        await syncStore.markRetry(
+          operationId: attempted.mutation.operationId,
+          leaseToken: attempted.leaseToken,
+          ownerGateToken: 'new-namespace-gate',
+          nowUtc: reservationNow,
+          nextAttemptAtUtc: reservationNow,
+          failure: const OfflineSyncFailure(),
+        );
+      }
+      expect(
+        await syncStore.claimPending(
+          ownerId: 'account-owner',
+          firebaseUid: 'firebase-user',
+          limit: 1,
+          leaseToken: 'new-namespace-attempt-6',
+          ownerGateToken: 'new-namespace-gate',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: reservationNow,
+        ),
+        isEmpty,
+      );
     },
   );
+}
+
+final class _ManualOwnerGateDelay {
+  final List<Duration> delays = <Duration>[];
+  final List<Completer<void>> _scheduled = <Completer<void>>[];
+
+  Future<void> wait(Duration delay) {
+    delays.add(delay);
+    final completer = Completer<void>();
+    _scheduled.add(completer);
+    return completer.future;
+  }
+
+  void elapseNext() {
+    _scheduled.firstWhere((item) => !item.isCompleted).complete();
+  }
+}
+
+final class _TrackingOwnerGate implements OwnerOperationGate {
+  _TrackingOwnerGate(this.delegate);
+
+  final OwnerOperationGate delegate;
+  final Completer<void> renewed = Completer<void>();
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.tryAcquire(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final result = await delegate.renew(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+    if (!renewed.isCompleted) renewed.complete();
+    return result;
+  }
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<void> release({required String token}) =>
+      delegate.release(token: token);
+}
+
+final class _StealingOwnerGate implements OwnerOperationGate {
+  _StealingOwnerGate(this.delegate, {required this.replacementToken});
+
+  final OwnerOperationGate delegate;
+  final String replacementToken;
+  bool _stolen = false;
+
+  @override
+  Future<bool> tryAcquire({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) async {
+    final acquired = await delegate.tryAcquire(
+      token: token,
+      nowUtc: nowUtc,
+      leaseDuration: leaseDuration,
+    );
+    if (acquired && !_stolen) {
+      _stolen = true;
+      await delegate.release(token: token);
+      await delegate.tryAcquire(
+        token: replacementToken,
+        nowUtc: nowUtc,
+        leaseDuration: leaseDuration,
+      );
+    }
+    return acquired;
+  }
+
+  @override
+  Future<bool> renew({
+    required String token,
+    required DateTime nowUtc,
+    required Duration leaseDuration,
+  }) => delegate.renew(
+    token: token,
+    nowUtc: nowUtc,
+    leaseDuration: leaseDuration,
+  );
+
+  @override
+  Future<bool> isOwned({required String token, required DateTime nowUtc}) =>
+      delegate.isOwned(token: token, nowUtc: nowUtc);
+
+  @override
+  Future<void> release({required String token}) =>
+      delegate.release(token: token);
 }
 
 Future<void> _seedOwners(AppDatabase database) async {

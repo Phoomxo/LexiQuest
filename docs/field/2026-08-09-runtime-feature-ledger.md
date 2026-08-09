@@ -194,6 +194,30 @@ bootstrap-owned resources. This is bounded host evidence, not a physical
 process, APK, or device result, so the slice is `verified`, not
 `field-certified`.
 
+## P2 sync and owner-upgrade update
+
+Task 5 replaces owner-scoped fixed run leases with one renewable persisted
+owner-operation gate shared by sync and every concrete UID/active-owner
+transition. Sync rereads owner and Firebase UID after acquisition, reserves at
+most five sends per Firebase UID namespace immediately before provider push,
+and token-fences every acknowledgement, retry, terminal, conflict, release, and
+pull-page transaction. Pulls remain one page per collection per run and advance
+the full timestamp/document cursor before mutation. Permanent failure stops the
+batch and does not automatically reopen permission denial.
+
+Two file-backed host scenarios provide the Task 5 evidence. Offline work
+survives close/reopen, applies once using stable operation IDs, persists its
+acknowledgement/checkpoint, and makes zero pushes after a second reopen. A
+complete anonymous inventory upgrades and reopens with stable owner, row, and
+operation IDs across all seven sync types; a sync request during upgrade waits
+and then uses only the committed UID. SQLite identity, inventory, projection,
+conflict, rehome, and checkpoint changes are atomic. External owner-secret
+deletion is deliberately non-transactional and cannot be restored by rollback.
+Schema remains 12. This is file-backed host/fake-cloud evidence, not physical
+restart, APK, device, or provider receipt evidence, so it is `verified`, not
+`field-certified`. MaxPlus advisory evidence is unavailable after two identical
+`invalidKey` failures and was not retried without changed external configuration.
+
 ## Baseline gaps carried forward
 
 - `Feature.questV2` is visible under `BuildFeatureRegistry.fieldDefaults()` but
