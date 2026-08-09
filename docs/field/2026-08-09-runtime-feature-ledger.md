@@ -24,7 +24,7 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 | Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | None from production shell | None | wired |
 | Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
 | Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
-| Feature: reading | `Feature.reading` (`enabled`) | Missing: no launcher reaches `AssociativeReadingSessionScreen` | Production bootstrap currently provides `InMemoryAssociativeLearningAdapter` | Drift association tables exist, but production reading uses no durable adapter/path | None | None | orphan |
+| Feature: associative reading delivery target | `Feature.reading` (`enabled`) | Missing: no launcher reaches `AssociativeReadingSessionScreen`; the reachable `LearningWorldMapScreen` is a separate legacy surface under this flag | Production bootstrap currently provides `InMemoryAssociativeLearningAdapter` | Drift association tables exist, but production associative reading uses no durable adapter/path | None | None | orphan |
 | Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | None from production shell | None | wired |
 | Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | None from production shell | None | wired |
 | Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | None from production shell | None | wired |
@@ -85,9 +85,13 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 
 ## Baseline gaps carried forward
 
-- `Feature.reading` and `Feature.questV2` are visible under
-  `BuildFeatureRegistry.fieldDefaults()` but have no declared production path;
-  the executable contract is intentionally red at this checkpoint.
+- Both the associative-reading delivery target represented by `Feature.reading`
+  and `Feature.questV2` are visible under
+  `BuildFeatureRegistry.fieldDefaults()` but have no declared production path.
+  `LearningWorldMapScreen` remains reachable as a legacy surface under the
+  reading flag; that does not deliver `AssociativeReadingSessionScreen`. The
+  executable baseline asserts both gaps while expecting the strict enforcement
+  routine to fail at this checkpoint.
 - `ChooseModeScreen` is shown when any of quiz, SRS, or reading is visible, but
   its individual tiles do not enforce the corresponding feature state. The
   shadowing tile is also reachable independently of the drawer guard.

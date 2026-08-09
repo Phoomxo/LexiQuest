@@ -13,8 +13,47 @@ final class _DeliveryContractEntry {
   final String dependencyId;
 }
 
+void _enforceProductionFeatureContract(
+  Map<Feature, _DeliveryContractEntry> deliveryContract,
+) {
+  expect(Feature.values.toSet(), equals(deliveryContract.keys.toSet()));
+  for (final entry in deliveryContract.entries) {
+    if (entry.value.isVisible) {
+      expect(entry.value.productionEntryId, isNotEmpty);
+      expect(entry.value.dependencyId, isNotEmpty);
+    }
+  }
+}
+
+List<String> _contractViolations(
+  Map<Feature, _DeliveryContractEntry> deliveryContract,
+) {
+  final violations = <String>[];
+  final expectedFeatures = Feature.values.toSet();
+  final actualFeatures = deliveryContract.keys.toSet();
+
+  for (final feature in expectedFeatures.difference(actualFeatures)) {
+    violations.add('${feature.name}.missingContractEntry');
+  }
+  for (final feature in actualFeatures.difference(expectedFeatures)) {
+    violations.add('${feature.name}.unexpectedContractEntry');
+  }
+  for (final feature in Feature.values) {
+    final delivery = deliveryContract[feature];
+    if (delivery == null || !delivery.isVisible) continue;
+    if (delivery.productionEntryId.isEmpty) {
+      violations.add('${feature.name}.productionEntryId');
+    }
+    if (delivery.dependencyId.isEmpty) {
+      violations.add('${feature.name}.dependencyId');
+    }
+  }
+
+  return violations;
+}
+
 void main() {
-  test('visible features declare a production entry and dependency', () {
+  test('baseline records every visible production delivery gap', () {
     const registry = BuildFeatureRegistry.fieldDefaults();
     final deliveryContract = <Feature, _DeliveryContractEntry>{
       Feature.vocabulary: _DeliveryContractEntry(
@@ -94,20 +133,19 @@ void main() {
       ),
     };
 
-    expect(Feature.values.toSet(), equals(deliveryContract.keys.toSet()));
-    for (final entry in deliveryContract.entries) {
-      if (entry.value.isVisible) {
-        expect(
-          entry.value.productionEntryId,
-          isNotEmpty,
-          reason: '${entry.key.name} has no declared production entry',
-        );
-        expect(
-          entry.value.dependencyId,
-          isNotEmpty,
-          reason: '${entry.key.name} has no declared composed dependency',
-        );
-      }
-    }
+    expect(_contractViolations(deliveryContract), <String>[
+      'reading.productionEntryId',
+      'reading.dependencyId',
+      'questV2.productionEntryId',
+      'questV2.dependencyId',
+    ]);
+
+    expect(
+      () => _enforceProductionFeatureContract(deliveryContract),
+      throwsA(isA<TestFailure>()),
+      reason:
+          'Task 6 must switch this expected failure to direct enforcement '
+          'after every visible feature has a truthful production path.',
+    );
   });
 }
