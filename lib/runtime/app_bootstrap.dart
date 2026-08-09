@@ -38,8 +38,8 @@ import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
-import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
+import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -532,8 +532,7 @@ final class AppBootstrap {
     );
     resources.own(aiTutor.dispose);
 
-    // ── Associative learning (in-memory fallback adapter) ──────────────────
-    final associativeLearning = InMemoryAssociativeLearningAdapter();
+    final associativeLearning = DriftAssociativeLearningAdapter(database);
 
     // ── Voice (default provider fallback, best-effort) ─────────────────────
     VoiceUseCases? voice;

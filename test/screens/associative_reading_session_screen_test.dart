@@ -1,74 +1,109 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 
 void main() {
   group('B3 Associative Reading Session Screen Tests', () {
+    late AppDatabase database;
+    late DriftLocalOwnerRepository owners;
+    late LearningUseCases learning;
+    late InMemoryAssociativeLearningAdapter associativeLearning;
+    var id = 0;
+
+    setUp(() async {
+      database = AppDatabase(NativeDatabase.memory());
+      owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'reading-owner',
+        nowUtc: () => DateTime.utc(2026, 8, 9, 10),
+      );
+      await owners.getOrCreateActiveOwner();
+      learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'reading-${++id}',
+        nowUtc: () => DateTime.utc(2026, 8, 9, 10),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'associative-reading-screen-test',
+        ),
+      );
+      associativeLearning = InMemoryAssociativeLearningAdapter();
+    });
+
+    tearDown(() => database.close());
+
+    Widget session({
+      List<String> targetWords = const ['ephemeral', 'resilient'],
+      Map<String, String>? targetWordIds,
+      AssociativeLearningPort? port,
+      LearningUseCases? learningUseCases,
+    }) {
+      return MaterialApp(
+        home: AssociativeReadingSessionScreen(
+          cefrLevel: 'B2',
+          targetWords: targetWords,
+          targetWordIds: targetWordIds,
+          passageText:
+              'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
+          learning: learningUseCases ?? learning,
+          associativeLearning: port ?? associativeLearning,
+        ),
+      );
+    }
+
+    Future<void> pumpUntilFound(
+      WidgetTester tester,
+      Finder finder, {
+      int maxPumps = 100,
+    }) async {
+      for (var index = 0; index < maxPumps; index++) {
+        await tester.pump(const Duration(milliseconds: 20));
+        if (finder.evaluate().isNotEmpty) return;
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 20)),
+        );
+      }
+      fail('Widget did not appear after $maxPumps bounded pumps: $finder');
+    }
+
     testWidgets('Renders stages and progresses through 6 stages', (
       WidgetTester tester,
     ) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: AssociativeReadingSessionScreen(
-            cefrLevel: 'B2',
-            targetWords: ['ephemeral', 'resilient'],
-            passageText:
-                'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
-          ),
-        ),
-      );
+      await tester.pumpWidget(session());
+      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
 
       expect(find.text('Associative Reading (B2)'), findsOneWidget);
       expect(find.text('Stage 1: Supported Reading'), findsOneWidget);
       expect(find.textContaining('ephemeral moments'), findsOneWidget);
 
-      // Stage 1 -> Stage 2
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 2: Cue Fading'), findsOneWidget);
-
-      // Stage 2 -> Stage 3
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
-
-      // Stage 3 -> Stage 4
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 4: Memory Association'), findsOneWidget);
-
-      // Stage 4 -> Stage 5
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 5: Context Transfer'), findsOneWidget);
-
-      // Stage 5 -> Stage 6
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 6: Finish'), findsOneWidget);
+      for (var stage = 2; stage <= 6; stage++) {
+        await tester.tap(find.text('Complete & Continue'));
+        final title = 'Stage $stage: ${_stageName(stage)}';
+        await pumpUntilFound(tester, find.text(title));
+        expect(find.text(title), findsOneWidget);
+      }
       expect(find.text('Ready to finish'), findsOneWidget);
     });
 
-    // ── Stage 3 — Active Recall ────────────────────────────────────────────
-
     testWidgets('Stage 3 shows one TextField per target word', (tester) async {
-      await tester.pumpWidget(
-        const MaterialApp(
-          home: AssociativeReadingSessionScreen(
-            cefrLevel: 'B1',
-            targetWords: ['ephemeral', 'resilient'],
-            passageText: 'Test passage.',
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
+      await tester.pumpWidget(session());
+      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
 
-      // Advance to Stage 3 (skip stages 1 and 2).
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
+      for (var i = 0; i < 2; i++) {
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(
+          tester,
+          find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
+        );
+      }
 
       expect(find.text('Stage 3: Active Recall'), findsOneWidget);
       expect(find.byType(TextField), findsNWidgets(2));
@@ -76,49 +111,102 @@ void main() {
       expect(find.text('Word 2'), findsOneWidget);
     });
 
-    // ── Stage 4 — Memory Association ──────────────────────────────────────
+    testWidgets(
+      'Stage 4 saves owner-scoped association and initial memory state',
+      (tester) async {
+        await tester.pumpWidget(
+          session(
+            targetWords: const ['banana'],
+            targetWordIds: const {'banana': 'word-banana'},
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
 
-    testWidgets('Stage 4 saves associations via AssociativeLearningPort', (
+        for (var i = 0; i < 3; i++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
+          );
+        }
+        expect(find.text('Stage 4: Memory Association'), findsOneWidget);
+
+        await tester.enterText(find.byType(TextField).first, 'yellow fruit');
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        expect(find.text('Stage 5: Context Transfer'), findsOneWidget);
+
+        final owner = await owners.getOrCreateActiveOwner();
+        final associations = await associativeLearning.getAssociationsForWord(
+          owner.id,
+          'word-banana',
+        );
+        final memory = await associativeLearning.getMemoryState(
+          owner.id,
+          'word-banana',
+        );
+        expect(associations, hasLength(1));
+        expect(associations.single.content, 'yellow fruit');
+        expect(associations.single.type, 'keyword');
+        expect(memory, isNotNull);
+        expect(memory!.ownerId, owner.id);
+        expect(memory.wordKey, 'word-banana');
+      },
+    );
+
+    testWidgets('renders typed unavailable state when learning is absent', (
       tester,
     ) async {
-      final adapter = InMemoryAssociativeLearningAdapter();
-
       await tester.pumpWidget(
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'A2',
             targetWords: const ['banana'],
             passageText: 'The banana is yellow.',
-            associativeLearning: adapter,
+            associativeLearning: associativeLearning,
           ),
         ),
       );
-      await tester.pumpAndSettle();
+      await tester.pump();
 
-      // Advance to Stage 4.
-      for (var i = 0; i < 3; i++) {
-        await tester.tap(find.text('Complete & Continue'));
-        await tester.pumpAndSettle();
-      }
-      expect(find.text('Stage 4: Memory Association'), findsOneWidget);
-
-      // Enter a cue for 'banana'.
-      await tester.enterText(find.byType(TextField).first, 'yellow fruit');
-      await tester.pumpAndSettle();
-
-      // Advance to Stage 5 — triggers _saveAssociations.
-      await tester.tap(find.text('Complete & Continue'));
-      await tester.pumpAndSettle();
-      expect(find.text('Stage 5: Context Transfer'), findsOneWidget);
-
-      // Association must be persisted in the in-memory adapter.
-      final associations = await adapter.getAssociationsForWord(
-        'local',
-        'banana',
+      final state = tester.widget<AssociativeReadingUnavailable>(
+        find.byType(AssociativeReadingUnavailable),
       );
-      expect(associations, hasLength(1));
-      expect(associations.first.content, 'yellow fruit');
-      expect(associations.first.type, 'keyword');
+      expect(state.reason, AssociativeReadingUnavailableReason.learning);
     });
+
+    testWidgets(
+      'renders typed unavailable state when associative persistence is absent',
+      (tester) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: 'A2',
+              targetWords: const ['banana'],
+              passageText: 'The banana is yellow.',
+              learning: learning,
+            ),
+          ),
+        );
+        await tester.pump();
+
+        final state = tester.widget<AssociativeReadingUnavailable>(
+          find.byType(AssociativeReadingUnavailable),
+        );
+        expect(
+          state.reason,
+          AssociativeReadingUnavailableReason.associativeLearning,
+        );
+      },
+    );
   });
 }
+
+String _stageName(int stage) => switch (stage) {
+  2 => 'Cue Fading',
+  3 => 'Active Recall',
+  4 => 'Memory Association',
+  5 => 'Context Transfer',
+  6 => 'Finish',
+  _ => throw ArgumentError.value(stage),
+};

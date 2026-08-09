@@ -41,7 +41,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   final LearningUseCases? learning;
 
   /// Port for saving memory associations (Stage 4).
-  /// Falls back to [InMemoryAssociativeLearningAdapter] when null.
+  /// Null is rendered as a typed unavailable state.
   final AssociativeLearningPort? associativeLearning;
 
   /// Map from word display name → Drift vocabulary word ID.
@@ -58,6 +58,30 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
       _AssociativeReadingSessionScreenState();
 }
 
+enum AssociativeReadingUnavailableReason { learning, associativeLearning }
+
+class AssociativeReadingUnavailable extends StatelessWidget {
+  const AssociativeReadingUnavailable({super.key, required this.reason});
+
+  final AssociativeReadingUnavailableReason reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Associative Reading')),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'Associative reading is unavailable on this installation.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _AssociativeReadingSessionScreenState
     extends State<AssociativeReadingSessionScreen>
     with WidgetsBindingObserver {
@@ -71,7 +95,9 @@ class _AssociativeReadingSessionScreenState
   ];
 
   LearningUseCases? _learning;
-  late AssociativeLearningPort _associativeLearning;
+  AssociativeLearningPort? _associativeLearning;
+  AssociativeReadingUnavailableReason? _unavailableReason;
+  bool _initialized = false;
 
   int _currentStage = 1;
   bool _loading = true;
@@ -108,19 +134,27 @@ class _AssociativeReadingSessionScreenState
       widget.targetWords.length,
       (_) => TextEditingController(),
     );
-    _associativeLearning =
-        widget.associativeLearning ?? InMemoryAssociativeLearningAdapter();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_loading || _learning != null) return;
-    _learning =
-        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    if (_initialized) return;
+    _initialized = true;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _learning = widget.learning ?? dependencies?.learning;
+    _associativeLearning =
+        widget.associativeLearning ?? dependencies?.associativeLearning;
     final learning = _learning;
     if (learning == null) {
-      setState(() => _loading = false);
+      _unavailableReason = AssociativeReadingUnavailableReason.learning;
+      _loading = false;
+      return;
+    }
+    if (_associativeLearning == null) {
+      _unavailableReason =
+          AssociativeReadingUnavailableReason.associativeLearning;
+      _loading = false;
       return;
     }
     learning
@@ -143,6 +177,7 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (_unavailableReason != null) return;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       unawaited(_checkpoint(isCompleted: false, showFailure: false));
@@ -165,17 +200,22 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _nextStage() async {
     if (_saving) return;
+    setState(() => _saving = true);
 
     // Stage-specific side effects before advancing.
     if (_currentStage == 3) {
       await _submitRecallAnswers();
     } else if (_currentStage == 4) {
-      await _saveAssociations();
+      final associationsSaved = await _saveAssociations();
+      if (!mounted) return;
+      if (!associationsSaved) {
+        setState(() => _saving = false);
+        return;
+      }
     }
 
     final finishing = _currentStage == 6;
     final nextStage = finishing ? 6 : _currentStage + 1;
-    setState(() => _saving = true);
     final saved = await _checkpoint(
       position: nextStage,
       isCompleted: finishing,
@@ -238,30 +278,58 @@ class _AssociativeReadingSessionScreenState
 
   // ── Stage 4: Memory Association ────────────────────────────────────────────
 
-  Future<void> _saveAssociations() async {
-    // Resolve owner id: use learning use cases owner if available,
-    // otherwise fall back to 'local' for the in-memory adapter.
-    final ownerId = 'local';
-    final now = DateTime.now().toUtc();
+  Future<bool> _saveAssociations() async {
+    final learning = _learning;
+    final associativeLearning = _associativeLearning;
+    if (learning == null || associativeLearning == null) return false;
 
-    for (var i = 0; i < widget.targetWords.length; i++) {
-      final cue = _cueControllers[i].text.trim();
-      if (cue.isEmpty) continue;
-      try {
-        await _associativeLearning.saveAssociation(
+    try {
+      final ownerId = (await learning.owners.getOrCreateActiveOwner()).id;
+      final now = DateTime.now().toUtc();
+      for (var i = 0; i < widget.targetWords.length; i++) {
+        final cue = _cueControllers[i].text.trim();
+        if (cue.isEmpty) continue;
+        final displayWord = widget.targetWords[i];
+        final wordKey = widget.targetWordIds?[displayWord] ?? displayWord;
+        await associativeLearning.saveAssociation(
           AssociationRecord(
-            associationId:
-                'assoc:${widget.targetWords[i]}:${now.millisecondsSinceEpoch}:$i',
+            associationId: 'assoc:$wordKey:${now.millisecondsSinceEpoch}:$i',
             ownerId: ownerId,
-            wordKey: widget.targetWords[i],
+            wordKey: wordKey,
             type: 'keyword',
             content: cue,
             createdAtUtc: now,
           ),
         );
-      } catch (_) {
-        // Non-fatal — association save failure must not block the loop.
+        final existing = await associativeLearning.getMemoryState(
+          ownerId,
+          wordKey,
+        );
+        await associativeLearning.updateMemoryState(
+          existing ??
+              AssociativeMemoryState(
+                ownerId: ownerId,
+                wordKey: wordKey,
+                stability: 1,
+                difficulty: 5,
+                cueDependency: 1,
+                lapseCount: 0,
+                lastReviewedAtUtc: now,
+                nextDueAtUtc: now.add(const Duration(days: 1)),
+                algorithmVersion: 'associative-v1',
+              ),
+        );
       }
+      return true;
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save the memory association. Try again.'),
+          ),
+        );
+      }
+      return false;
     }
   }
 
@@ -298,6 +366,10 @@ class _AssociativeReadingSessionScreenState
 
   @override
   Widget build(BuildContext context) {
+    final unavailableReason = _unavailableReason;
+    if (unavailableReason != null) {
+      return AssociativeReadingUnavailable(reason: unavailableReason);
+    }
     return Scaffold(
       appBar: AppBar(title: Text('Associative Reading (${widget.cefrLevel})')),
       body: _loading

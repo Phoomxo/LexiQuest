@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../runtime/app_dependencies.dart';
+import '../runtime/registries/feature_registry.dart';
+import 'associative_reading_launcher_screen.dart';
 import 'cefr_diagnostic_test_screen.dart';
 import 'game_launcher_screen.dart';
 import 'learning_world_map_screen.dart';
@@ -17,11 +20,23 @@ class ChooseModeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final features =
+        AppDependenciesScope.maybeOf(context)?.features ??
+        const BuildFeatureRegistry.fieldDefaults();
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (features.isVisible(Feature.reading))
+            _LearningTile(
+              icon: Icons.auto_stories_outlined,
+              title: 'Associative Reading',
+              subtitle:
+                  'Build durable memory cues from words in your vocabulary.',
+              onTap: () =>
+                  _push(context, const AssociativeReadingLauncherScreen()),
+            ),
           _LearningTile(
             icon: Icons.quiz_outlined,
             title: 'Quiz จากคลังคำศัพท์',

@@ -119,8 +119,7 @@ final class AppDependencies {
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;
 
-  /// Associative learning persistence port.
-  /// Falls back to [InMemoryAssociativeLearningAdapter] when null.
+  /// Associative learning persistence port. Null means unavailable.
   final AssociativeLearningPort? associativeLearning;
 
   final Future<void> Function()? disposeResources;

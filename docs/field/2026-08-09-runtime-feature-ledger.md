@@ -3,7 +3,7 @@
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
 
 This ledger is an inventory, not a release claim. It contains all 15 members of
-`Feature.values` and all 46 files returned by `rg --files lib/screens` (61 rows
+`Feature.values` and all 47 files returned by `rg --files lib/screens` (62 rows
 total). Production reachability was traced from `lib/main.dart` through Dart
 imports and then checked against the actual navigation callbacks. Dependency
 claims require either `AppDependenciesScope` lookup or an explicit value passed
@@ -24,7 +24,7 @@ is reachable from `lib/main.dart`.
 | Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | Production Home shell create journey plus same-file SQLite close/reopen and foreign-owner exclusion | None; host test only | verified |
 | Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state, stable V2 learning events, and versioned projection receipts; `localOwnerId` | File-backed production-use-case journey plus post-commit failure/replay injection | None; host test only | verified |
 | Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state, and stable V2 learning events; `localOwnerId` | Correct/incorrect SRS state and due time survive same-file close/reopen | None; host test only | verified |
-| Feature: associative reading delivery target | `Feature.reading` (`enabled`) | Missing: no launcher reaches `AssociativeReadingSessionScreen`; the reachable `LearningWorldMapScreen` is a separate legacy surface under this flag | Production bootstrap currently provides `InMemoryAssociativeLearningAdapter` | Drift association tables exist, but production associative reading uses no durable adapter/path | None | None | orphan |
+| Feature: associative reading delivery target | `Feature.reading` (`enabled`) | `ChooseModeScreen` reading tile → `AssociativeReadingLauncherScreen` → `AssociativeReadingSessionScreen` | `VocabularyUseCases`, `LearningUseCases`, `DriftAssociativeLearningAdapter` from the production scope; the launcher explicitly passes learning and associative persistence | Drift `association_records`, `associative_memory_states`, and reading progress; active `localOwnerId` | Production shell journey plus same-file SQLite close/reopen verifies both association tables and excludes an inactive foreign owner | None; host test only | verified |
 | Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | File-backed progress reload verifies mastery count from durable evidence | None; host test only | verified |
 | Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | File-backed progress reload verifies incorrect-count weakness evidence | None; host test only | verified |
 | Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | None from production shell | None | wired |
@@ -41,14 +41,15 @@ is reachable from `lib/main.dart`.
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
 | Screen: `ai_tutor_screen.dart` | `Feature.aiTutor` | `MainNavigationScreen` drawer `ai-tutor/chat` | Composed `AiTutorController`/speech when present; constructs voice fallback in screen | Drift AI usage/settings; chat list is widget memory | None from production shell | None | wired |
 | Screen: `ai_tutor_settings_screen.dart` | `Feature.aiTutor` | Drawer `ai-tutor/settings`; also opened by `AiTutorScreen` | `AiTutorController`, `AiUsageRepository` through scope | Provider settings/secret store and Drift usage | None from production shell | None | wired |
-| Screen: `associative_reading_session_screen.dart` | `Feature.reading` | No production caller | Optional `LearningUseCases`; silently falls back to `InMemoryAssociativeLearningAdapter` | Drift association tables exist but are not used by this production screen path | None | None | orphan |
+| Screen: `associative_reading_launcher_screen.dart` | `Feature.reading` | `ChooseModeScreen` reading tile | Resolves scoped `VocabularyUseCases`, `LearningUseCases`, and `AssociativeLearningPort`; loads at most 10 active-owner words and explicitly injects the latter two into the session | Reads owner-scoped Drift vocabulary; session writes reading and association evidence | Production shell file-backed close/reopen journey | None; host test only | verified |
+| Screen: `associative_reading_session_screen.dart` | `Feature.reading` | `AssociativeReadingLauncherScreen` | Explicit `LearningUseCases` and production `DriftAssociativeLearningAdapter`; missing dependencies render a typed unavailable state | Drift reading progress, `association_records`, and `associative_memory_states`; active `localOwnerId` | Same-file SQLite close/reopen with foreign-owner exclusion | None; host test only | verified |
 | Screen: `avatar_equipment_screen.dart` | `Feature.shop` | No production caller | Optional `RewardUseCases`; delegates to `ShopPage` | Drift reward ownership if injected | None | None | orphan |
 | Screen: `boss_battle_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → boss battle | Screen constructs `RankService`; questions are passed from vocabulary | No result persistence in screen | None | None | legacy |
 | Screen: `categories_page.dart` | `Feature.vocabulary` | `MainNavigationScreen` bottom destination | `VocabularyUseCases` through scope | Drift vocabulary categories/words | Production Home shell creates and opens a category | None; host test only | verified |
 | Screen: `cefr_article_reader_screen.dart` | `Feature.reading` | No production caller | Optional voice; constructs default voice in screen | None | None | None | orphan |
 | Screen: `cefr_diagnostic_test_screen.dart` | `Feature.reading` | `ChooseModeScreen` diagnostic tile | Static screen-owned question list | None; answers/results are widget memory | None | None | legacy |
 | Screen: `cefr_selection_screen.dart` | `Feature.srs` | `ChooseModeScreen` → `LearningWorldMapScreen` | Screen constructs legacy `CefrService`; passes map data to SRS | No CEFR selection persistence | None | None | legacy |
-| Screen: `choose_mode_screen.dart` | quiz/SRS/reading/mastery/weakness/speech flags are only checked by its parent aggregate | `MainNavigationScreen` learn destination | Navigation only; does not independently enforce individual feature flags | None | None | None | wired |
+| Screen: `choose_mode_screen.dart` | Parent aggregate plus an independently guarded `Feature.reading` tile; other legacy tiles retain parent-only checks | `MainNavigationScreen` learn destination | Reads `FeatureRegistry` from `AppDependenciesScope` for the associative-reading entry | None | Reading-tile visible/hidden widget coverage and production-shell reachability | None; host test only | wired |
 | Screen: `dictation_quiz_screen.dart` | `Feature.quiz`, `Feature.speechPractice` | `ChooseModeScreen` → `GameLauncherScreen` → dictation | Optional voice; constructs default voice in screen | No result persistence in screen | None | None | legacy |
 | Screen: `email_action_screen.dart` | No `Feature` member (account shell) | `AppRouteFactory` email action route | `AccountUseCases` through scope | External account state plus local owner binding | None from production shell | None | wired |
 | Screen: `export_center_screen.dart` | `Feature.export` | `MainNavigationScreen` drawer `export/center` | `ExportUseCases` through scope | Reads Drift and writes selected export file | None from production shell | None | wired |
@@ -173,22 +174,40 @@ This is not physical process, APK, or device evidence, so the promoted learning
 rows are `verified`, not `field-certified`; quest remains `orphan` because it
 still lacks a user-visible production entry.
 
+## P2 associative reading update
+
+Task 4 adds a `Feature.reading`-guarded tile to the production Choose Mode
+surface. Its launcher reads at most 10 words through the active-owner
+`VocabularyUseCases`, derives the stable vocabulary IDs, passage, CEFR level,
+document ID, and revision, and explicitly passes the bootstrap-composed
+`LearningUseCases` and `DriftAssociativeLearningAdapter` into the session.
+Empty vocabulary has one deterministic route to vocabulary creation. Missing
+learning or associative persistence renders a typed unavailable state; no
+production screen or composition path creates the in-memory adapter.
+
+Completing a memory cue writes an owner-scoped association record and initial
+associative memory state keyed by the durable vocabulary word ID. A production
+shell journey closes the dependency graph, reopens the same SQLite file, and
+verifies both records for the unchanged active owner while excluding an
+inactive foreign owner's rows. Disposal unmounts the route before closing the
+bootstrap-owned resources. This is bounded host evidence, not a physical
+process, APK, or device result, so the slice is `verified`, not
+`field-certified`.
+
 ## Baseline gaps carried forward
 
-- Both the associative-reading delivery target represented by `Feature.reading`
-  and `Feature.questV2` are visible under
-  `BuildFeatureRegistry.fieldDefaults()` but have no declared production path.
-  `LearningWorldMapScreen` remains reachable as a legacy surface under the
-  reading flag; that does not deliver `AssociativeReadingSessionScreen`. The
-  executable baseline asserts both gaps while expecting the strict enforcement
-  routine to fail at this checkpoint.
+- `Feature.questV2` is visible under `BuildFeatureRegistry.fieldDefaults()` but
+  still has no declared user-visible production path. The associative-reading
+  gap is closed by Task 4. `LearningWorldMapScreen` remains a separate legacy
+  surface under the reading flag.
 - `ChooseModeScreen` is shown when any of quiz, SRS, or reading is visible, but
-  its individual tiles do not enforce the corresponding feature state. The
-  shadowing tile is also reachable independently of the drawer guard.
-- Eleven screen files are unreachable from `lib/main.dart`: associative
-  reading, avatar equipment, CEFR article reader, Gemini settings, result,
-  wallpaper selection, sentence scramble, smart audio playlist, speak-to-text,
-  thesis chart, and wordbook import.
+  only its new associative-reading tile independently enforces its feature
+  state. Other legacy tiles retain parent-only checks. The shadowing tile is
+  also reachable independently of the drawer guard.
+- Ten screen files are unreachable from `lib/main.dart`: avatar equipment,
+  CEFR article reader, Gemini settings, result, wallpaper selection, sentence
+  scramble, smart audio playlist, speak-to-text, thesis chart, and wordbook
+  import.
 - Several reachable media/voice screens create their own default voice provider;
   this is not single-composition evidence.
 - The existing device-certification scenario uses in-memory Drift and explicitly
