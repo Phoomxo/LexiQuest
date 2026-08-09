@@ -1,7 +1,14 @@
+import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
@@ -10,6 +17,7 @@ import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/otp_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
+import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _FakeGuestSessionService implements GuestSessionService {
@@ -19,7 +27,30 @@ class _FakeGuestSessionService implements GuestSessionService {
   }
 }
 
+final class _GuestEntryStateStore implements AppEntryStateStore {
+  @override
+  Future<void> clear() async {}
+
+  @override
+  Future<void> markGuest() async {}
+
+  @override
+  Future<AppEntryMode> read() async => AppEntryMode.guest;
+}
+
+AppBootstrap _fileBackedBootstrap(String databasePath) {
+  return AppBootstrap(
+    initializeFirebase: () async => throw StateError('firebase unavailable'),
+    initializeSupabase: () async => throw StateError('supabase unavailable'),
+    loadConfig: () => throw StateError('backend config unavailable'),
+    guestSessionService: _FakeGuestSessionService(),
+    createDatabase: () => AppDatabase(NativeDatabase(File(databasePath))),
+    createEntryStateStore: () async => _GuestEntryStateStore(),
+  );
+}
+
 const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
+const _flutterTtsChannel = MethodChannel('flutter_tts');
 
 AppDependencies _dependencies({
   bool ready = true,
@@ -52,6 +83,36 @@ Future<void> _openDrawer(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 300));
   expect(find.byType(Drawer), findsOneWidget);
+}
+
+Future<void> _pumpUntilFound(
+  WidgetTester tester,
+  Finder finder, {
+  int maxPumps = 100,
+}) async {
+  for (var index = 0; index < maxPumps; index++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    if (finder.evaluate().isNotEmpty) return;
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+  }
+  fail('Widget did not appear after $maxPumps bounded pumps: $finder');
+}
+
+Future<void> _pumpUntilGone(
+  WidgetTester tester,
+  Finder finder, {
+  int maxPumps = 100,
+}) async {
+  for (var index = 0; index < maxPumps; index++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    if (finder.evaluate().isEmpty) return;
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+  }
+  fail('Widget remained after $maxPumps bounded pumps: $finder');
 }
 
 void main() {
@@ -223,4 +284,102 @@ void main() {
 
     expect(find.byType(SettingScreen), findsOneWidget);
   });
+
+  testWidgets(
+    'resolved production Home creates vocabulary through the scoped dependency',
+    (tester) async {
+      final binaryMessenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binaryMessenger.setMockMethodCallHandler(
+        _flutterTtsChannel,
+        (_) async => 1,
+      );
+      final temporaryDirectory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp(
+          'lexiquest-production-shell-vocabulary-',
+        ),
+      ))!;
+      final databasePath =
+          '${temporaryDirectory.path}${Platform.pathSeparator}'
+          'lexiquest.sqlite';
+      AppDependencies? dependencies;
+
+      try {
+        final bootstrap = _fileBackedBootstrap(databasePath);
+        dependencies = await bootstrap.initialize();
+        expect(dependencies.initialRoute, AppRoute.home);
+
+        await tester.pumpWidget(MyApp(dependencies: dependencies));
+        await _pumpUntilFound(tester, find.byType(CategoriesPage));
+
+        final vocabularyDestination = find
+            .descendant(
+              of: find.byType(MainNavigationScreen),
+              matching: find.byType(NavigationDestination),
+            )
+            .first;
+        await tester.tap(vocabularyDestination);
+        await tester.pump(const Duration(milliseconds: 50));
+
+        await tester.tap(find.byKey(const ValueKey('add-category')));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('category-name-field')),
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('category-name-field')),
+          'Travel',
+        );
+        await tester.tap(find.byKey(const ValueKey('save-category')));
+        await _pumpUntilFound(tester, find.text('Travel'));
+
+        await tester.tap(find.text('Travel'));
+        await _pumpUntilFound(tester, find.byKey(const ValueKey('add-word')));
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(
+          tester
+              .widget<VocabListScreen>(find.byType(VocabListScreen))
+              .vocabulary,
+          isNull,
+          reason:
+              'Production vocabulary screens must resolve use cases from '
+              'AppDependenciesScope instead of route-owned injection.',
+        );
+
+        await tester.tap(find.byKey(const ValueKey('add-word')));
+        await _pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
+        await tester.enterText(
+          find.byKey(const ValueKey('word-field')),
+          'station',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('meaning-field')),
+          'สถานี',
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('part-of-speech-field')),
+          'noun',
+        );
+        await tester.tap(find.byKey(const ValueKey('save-word')));
+        await _pumpUntilGone(tester, find.byKey(const ValueKey('word-field')));
+        await _pumpUntilFound(tester, find.text('station'));
+
+        expect(find.text('station'), findsOneWidget);
+        expect(find.textContaining('สถานี'), findsOneWidget);
+      } finally {
+        await tester.runAsync(() async {
+          await dependencies?.dispose();
+        });
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.runAsync(() async {
+          if (await temporaryDirectory.exists()) {
+            await temporaryDirectory.delete(recursive: true);
+          }
+        });
+        binaryMessenger.setMockMethodCallHandler(_flutterTtsChannel, null);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
 }

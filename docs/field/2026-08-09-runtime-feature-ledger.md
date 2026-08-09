@@ -11,17 +11,17 @@ from a production caller. A filename, isolated widget test, or historical phase
 label is not delivery evidence.
 
 State uses the execution plan vocabulary. In particular, `wired` does not mean
-restart-safe or field-certified. No current row is promoted to `durable`,
-`verified`, or `field-certified`: the bounded baseline has no production
-bootstrap-to-feature restart journey, and there is no exact APK/device/provider
-evidence for this source. `legacy` identifies reachable, user-visible surfaces
-that the current production path still uses but that retain static/demo or
-screen-owned service behavior. `orphan` means no caller is reachable from
-`lib/main.dart`.
+restart-safe or field-certified. Vocabulary is promoted to `verified` by a
+bounded production-bootstrap shell journey plus a same-file SQLite restart and
+owner-isolation test. This remains host evidence, not exact APK/device/provider
+evidence, so no row is `field-certified`. `legacy` identifies reachable,
+user-visible surfaces that the current production path still uses but that
+retain static/demo or screen-owned service behavior. `orphan` means no caller
+is reachable from `lib/main.dart`.
 
 | Capability | Feature flag | Production entry | Composed dependency | Durable store | Restart test | Field evidence | State |
 |---|---|---|---|---|---|---|---|
-| Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | None from production shell | None | wired |
+| Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | Production Home shell create journey plus same-file SQLite close/reopen and foreign-owner exclusion | None; host test only | verified |
 | Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
 | Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
 | Feature: associative reading delivery target | `Feature.reading` (`enabled`) | Missing: no launcher reaches `AssociativeReadingSessionScreen`; the reachable `LearningWorldMapScreen` is a separate legacy surface under this flag | Production bootstrap currently provides `InMemoryAssociativeLearningAdapter` | Drift association tables exist, but production associative reading uses no durable adapter/path | None | None | orphan |
@@ -38,13 +38,13 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 | Feature: quest V2 | `Feature.questV2` (`limited`) | Missing: no `FieldFeature` mapping or user-visible quest entry | `QuestUseCases` is composed | Drift quest definitions, instances, objective progress; `localOwnerId` | None from production shell | None | orphan |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
 | Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope` | Drift vocabulary import and word tables | None from production shell | None | wired |
-| Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | None from production shell | None | wired |
+| Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
 | Screen: `ai_tutor_screen.dart` | `Feature.aiTutor` | `MainNavigationScreen` drawer `ai-tutor/chat` | Composed `AiTutorController`/speech when present; constructs voice fallback in screen | Drift AI usage/settings; chat list is widget memory | None from production shell | None | wired |
 | Screen: `ai_tutor_settings_screen.dart` | `Feature.aiTutor` | Drawer `ai-tutor/settings`; also opened by `AiTutorScreen` | `AiTutorController`, `AiUsageRepository` through scope | Provider settings/secret store and Drift usage | None from production shell | None | wired |
 | Screen: `associative_reading_session_screen.dart` | `Feature.reading` | No production caller | Optional `LearningUseCases`; silently falls back to `InMemoryAssociativeLearningAdapter` | Drift association tables exist but are not used by this production screen path | None | None | orphan |
 | Screen: `avatar_equipment_screen.dart` | `Feature.shop` | No production caller | Optional `RewardUseCases`; delegates to `ShopPage` | Drift reward ownership if injected | None | None | orphan |
 | Screen: `boss_battle_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → boss battle | Screen constructs `RankService`; questions are passed from vocabulary | No result persistence in screen | None | None | legacy |
-| Screen: `categories_page.dart` | `Feature.vocabulary` | `MainNavigationScreen` bottom destination | `VocabularyUseCases` through scope | Drift vocabulary categories/words | None from production shell | None | wired |
+| Screen: `categories_page.dart` | `Feature.vocabulary` | `MainNavigationScreen` bottom destination | `VocabularyUseCases` through scope | Drift vocabulary categories/words | Production Home shell creates and opens a category | None; host test only | verified |
 | Screen: `cefr_article_reader_screen.dart` | `Feature.reading` | No production caller | Optional voice; constructs default voice in screen | None | None | None | orphan |
 | Screen: `cefr_diagnostic_test_screen.dart` | `Feature.reading` | `ChooseModeScreen` diagnostic tile | Static screen-owned question list | None; answers/results are widget memory | None | None | legacy |
 | Screen: `cefr_selection_screen.dart` | `Feature.srs` | `ChooseModeScreen` → `LearningWorldMapScreen` | Screen constructs legacy `CefrService`; passes map data to SRS | No CEFR selection persistence | None | None | legacy |
@@ -78,7 +78,7 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 | Screen: `speak_to_text_screen.dart` | `Feature.speechPractice` | No production caller | Optional learning/speech/voice with screen voice fallback | Can record learning when injected, but no production path | None | None | orphan |
 | Screen: `srs_flashcards_screen.dart` | `Feature.srs` | `ChooseModeScreen`, weakness clinic, and CEFR selection | `LearningUseCases` through scope; constructs default voice in screen | Drift sessions, answer attempts, SRS state | None from production shell | None | wired |
 | Screen: `thesis_chart_screen.dart` | No current flag | No production caller | Presentation-only score arguments | None | None | None | orphan |
-| Screen: `vocab_list_screen.dart` | `Feature.vocabulary` | `CategoriesPage` category selection | Vocabulary/import use cases through scope | Drift vocabulary/import tables | None from production shell | None | wired |
+| Screen: `vocab_list_screen.dart` | `Feature.vocabulary` | `CategoriesPage` category selection | Vocabulary/import use cases through scope | Drift vocabulary/import tables | Production Home shell resolves scoped use cases and renders the created word | None; host test only | verified |
 | Screen: `weakness_clinic_screen.dart` | `Feature.weakness` | `MainNavigationScreen` bottom destination and learn tile | `ProgressUseCases.load` through scope | Drift-derived answer/SRS evidence | None from production shell | None | wired |
 | Screen: `word_scramble_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → word scramble | Word passed from composed vocabulary launcher | No result persistence in screen | None | None | legacy |
 | Screen: `wordbook_import_screen.dart` | `Feature.vocabulary` | No production caller | Screen-owned legacy `CustomWordbookImporter` | Parsed rows are widget memory | None | None | orphan |
@@ -111,6 +111,24 @@ Evidence is bounded to the resolver matrix, SharedPreferences mock-backed store
 tests, bootstrap/session/account tests, and the production-shell widget gate.
 This is not a physical process-restart or device/provider result, so the account
 shell rows remain `wired` rather than `durable`, `verified`, or
+`field-certified`.
+
+## P1 vocabulary update
+
+Task 2 drives the resolved production Home shell through the visible vocabulary
+destination, creates a category and word with the bootstrap-composed
+`VocabularyUseCases`, and verifies the routed vocabulary list resolves that
+dependency from `AppDependenciesScope`. A separate journey uses
+`AppDatabase(NativeDatabase(File(databasePath)))`, creates the active owner's
+category and word through the same composed use cases, closes the dependency
+graph, reopens the exact SQLite file, and verifies spelling, meaning, category,
+and `localOwnerId`. An inactive foreign owner's category and word are present in
+the same file and excluded from the reopened active-owner reads.
+
+This evidence promotes the bounded vocabulary vertical slice and its exercised
+screens to `verified`. Bulk import remains `wired` because the production-shell
+journey does not exercise `ImportVocabulary`. There is still no physical
+process-restart, APK, or device evidence, so vocabulary is not
 `field-certified`.
 
 ## Baseline gaps carried forward

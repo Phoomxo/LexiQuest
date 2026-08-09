@@ -65,7 +65,6 @@ class CategoriesPage extends StatelessWidget {
                               builder: (_) => VocabListScreen(
                                 categoryId: category.id,
                                 categoryName: category.name,
-                                vocabulary: useCases,
                               ),
                             ),
                           );
