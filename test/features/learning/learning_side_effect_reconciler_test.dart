@@ -20,8 +20,12 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<void> addEvent(int number, {String owner = 'owner-reconcile'}) async {
-    final at = DateTime.utc(2026, 8, number, 6);
+  Future<void> addEvent(
+    int number, {
+    String owner = 'owner-reconcile',
+    DateTime? occurredAt,
+  }) async {
+    final at = occurredAt ?? DateTime.utc(2026, 8, number, 6);
     await database
         .into(database.eventsV2)
         .insert(
@@ -68,11 +72,14 @@ void main() {
       database,
       questSink: (_) async {
         if (++questCalls == 1) throw StateError('quest unavailable');
-        return LearningProjectionOutcome.applied;
+        return const LearningProjectionResult.applied(
+          payload: {'eligible': true},
+        );
       },
-      rewardSink: (_) async {
+      rewardSink: (_, questResult) async {
+        expect(questResult['eligible'], isTrue);
         rewardCalls++;
-        return LearningProjectionOutcome.applied;
+        return const LearningProjectionResult.applied();
       },
     );
 
@@ -92,10 +99,11 @@ void main() {
       var rewardCalls = 0;
       final reconciler = LearningSideEffectReconciler(
         database,
-        questSink: (_) async => LearningProjectionOutcome.applied,
-        rewardSink: (_) async {
+        questSink: (_) async =>
+            const LearningProjectionResult.applied(payload: {'eligible': true}),
+        rewardSink: (_, _) async {
           if (++rewardCalls == 1) throw StateError('grant failed');
-          return LearningProjectionOutcome.applied;
+          return const LearningProjectionResult.applied();
         },
       );
 
@@ -114,10 +122,10 @@ void main() {
       var rewardCalls = 0;
       final reconciler = LearningSideEffectReconciler(
         database,
-        questSink: (_) async => LearningProjectionOutcome.applied,
-        rewardSink: (_) async {
+        questSink: (_) async => const LearningProjectionResult.applied(),
+        rewardSink: (_, _) async {
           rewardCalls++;
-          return LearningProjectionOutcome.notApplicable;
+          return const LearningProjectionResult.notApplicable();
         },
       );
       await reconciler.reconcileOwner('owner-reconcile');
@@ -141,7 +149,7 @@ void main() {
           if (failOldest && event.eventId.endsWith('1')) {
             throw StateError('oldest failed');
           }
-          return LearningProjectionOutcome.applied;
+          return const LearningProjectionResult.applied();
         },
       );
 
@@ -159,6 +167,27 @@ void main() {
   );
 
   test(
+    'equal timestamps use source event ID as deterministic cursor tie-break',
+    () async {
+      final sameTime = DateTime.utc(2026, 8, 9, 12);
+      await addEvent(2, occurredAt: sameTime);
+      await addEvent(1, occurredAt: sameTime);
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, ['learning-event:attempt-1', 'learning-event:attempt-2']);
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, hasLength(2));
+    },
+  );
+
+  test(
     'each projection processes at most its configured pending batch',
     () async {
       for (var i = 1; i <= 5; i++) {
@@ -170,7 +199,7 @@ void main() {
         pendingBatchSize: 2,
         streakSink: (_) async {
           calls++;
-          return LearningProjectionOutcome.applied;
+          return const LearningProjectionResult.applied();
         },
       );
       await reconciler.reconcileOwner('owner-reconcile');
@@ -190,7 +219,7 @@ void main() {
         streakSink: (_) async {
           entered.complete();
           await release.future;
-          return LearningProjectionOutcome.applied;
+          return const LearningProjectionResult.applied();
         },
       );
       final scheduler = LearningReconciliationScheduler(reconciler);
@@ -204,6 +233,81 @@ void main() {
       release.complete();
       await disposal;
       expect(await applied('streak'), {'learning-event:attempt-1'});
+    },
+  );
+
+  test(
+    'terminal prefix cursor avoids replay lookups over large history',
+    () async {
+      for (var i = 1; i <= 200; i++) {
+        await addEvent(i);
+      }
+      var calls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        pendingBatchSize: 250,
+        streakSink: (_) async {
+          calls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, 200);
+      expect(
+        await (database.select(
+              database.eventsV2,
+            )..where((row) => row.eventType.equals('LearningProjectionCursor')))
+            .get(),
+        hasLength(1),
+      );
+      final plan = await database.customSelect('''
+        EXPLAIN QUERY PLAN
+        SELECT event_id FROM events_v2 INDEXED BY idx_events_v2_owner_occurred
+        WHERE owner_id = 'owner-reconcile' AND occurred_at_utc > 0
+        ORDER BY occurred_at_utc ASC, event_id ASC LIMIT 50
+      ''').get();
+      expect(
+        plan.map((row) => row.read<String>('detail')).join('\n'),
+        contains('idx_events_v2_owner_occurred'),
+        reason: 'post-cursor reads must use the owner/time index',
+      );
+
+      calls = 0;
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, 0);
+      expect(await applied('streak'), hasLength(200));
+    },
+  );
+
+  test(
+    'quest skipped outcome advances reward without calling reward sink',
+    () async {
+      await addEvent(1);
+      var rewardCalls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (_) async => const LearningProjectionResult.notApplicable(
+          payload: {'eligible': false},
+        ),
+        rewardSink: (_, _) async {
+          rewardCalls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(rewardCalls, 0);
+      final rewardResults = await database
+          .customSelect(
+            "SELECT event_type FROM events_v2 WHERE aggregate_id = "
+            "'learning-event:attempt-1' AND json_extract(payload_json, "
+            "'\$.projection') = 'reward' AND aggregate_type = "
+            "'LearningProjection'",
+          )
+          .get();
+      expect(
+        rewardResults.single.read<String>('event_type'),
+        'LearningProjectionSkipped',
+      );
     },
   );
 }

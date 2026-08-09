@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -112,6 +113,75 @@ void main() {
         expect(dependencies.localOwners, isNotNull);
         expect(owners, hasLength(1));
         expect(owners.single.isActive, isTrue);
+      },
+    );
+
+    test(
+      'seeds quest before replay and skips pre-assignment learning',
+      () async {
+        final database = _testDatabase();
+        const ownerId = 'bootstrap-history-owner';
+        final historicalAt = DateTime.utc(2000, 1, 1);
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: ownerId,
+                createdAtUtcMs: historicalAt.millisecondsSinceEpoch,
+              ),
+            );
+        await database
+            .into(database.eventsV2)
+            .insert(
+              EventsV2Companion.insert(
+                eventId: 'learning-event:bootstrap-history',
+                eventType: 'QuizCompleted',
+                eventVersion: 1,
+                occurredAtUtc: historicalAt,
+                recordedAtUtc: historicalAt,
+                actorIdentity: ownerId,
+                ownerId: ownerId,
+                aggregateType: 'LearningSession',
+                aggregateId: 'session-history',
+                idempotencyKey: 'learning-attempt:bootstrap-history:v1',
+                consentContextJson: '{}',
+                appVersion: '1.0.0',
+                buildId: 'bootstrap-test',
+                privacyClassification: 'anonymized',
+                payloadJson: '{"correct":true}',
+              ),
+            );
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        await dependencies.learningReconciliation!.drain();
+
+        final active = await dependencies.quest!.getActiveInstances();
+        expect(active, hasLength(1));
+        expect(active.single.assignedAtUtc.isAfter(historicalAt), isTrue);
+        expect(active.single.progress.single.currentCount, 0);
+        final questResult =
+            await (database.select(database.eventsV2)..where(
+                  (row) =>
+                      row.aggregateId.equals(
+                        'learning-event:bootstrap-history',
+                      ) &
+                      row.aggregateType.equals('LearningProjection') &
+                      row.eventType.equals('LearningProjectionSkipped') &
+                      row.idempotencyKey.equals(
+                        'learning-projection:quest:'
+                        'learning-event:bootstrap-history:v1',
+                      ),
+                ))
+                .getSingleOrNull();
+        expect(questResult, isNotNull);
       },
     );
 

@@ -158,6 +158,14 @@ local learning transaction. Evidence is a same-file SQLite close/reopen
 journey, injected progress-to-completion and reward-to-receipt crashes,
 out-of-order streak and owner-switch tests, bounded/non-blocking scheduler
 tests, independent result retry tests, and focused host gates.
+Each projection maintains one durable contiguous-prefix cursor in `events_v2`;
+indexed reads begin strictly after its `(occurredAtUtc, eventId)` position,
+while immutable applied/skipped receipts remain intact. Receipt and cursor
+persistence is one conflict-safe transaction without per-event receipt
+lookups. Quest receipts carry the bounded completion grants consumed by reward
+replay, eliminating per-event quest-history scans. Bootstrap seeds the daily
+quest before replay, and events before its assignment time are deterministically
+skipped; equality is explicitly eligible.
 This is not physical process, APK, or device evidence, so the promoted learning
 rows are `verified`, not `field-certified`; quest remains `orphan` because it
 still lacks a user-visible production entry.

@@ -396,27 +396,41 @@ final class AppBootstrap {
       buildId: buildInfo.buildId,
     );
 
+    // Seed before scheduling historical replay so pre-assignment evidence is
+    // deterministically skipped instead of racing a newly created quest.
+    try {
+      await quest.startQuest(QuestCatalogProvider.dailyCorrectAnswers);
+    } catch (_) {
+      // Best-effort; catalog is also seeded on first quest start.
+    }
+
     final learningReconciler = LearningSideEffectReconciler(
       database,
       questSink: (event) async {
-        await quest.processEvent(event, QuestCatalogProvider.allQuests);
-        return LearningProjectionOutcome.applied;
+        final projection = await quest.projectEvent(
+          event,
+          QuestCatalogProvider.allQuests,
+        );
+        final payload = quest.projectionPayload(
+          projection,
+          QuestCatalogProvider.allQuests,
+        );
+        return projection.eligible
+            ? LearningProjectionResult.applied(payload: payload)
+            : LearningProjectionResult.notApplicable(payload: payload);
       },
       streakSink: (event) async {
         await streak.recordLearningDayForOwner(
           ownerId: event.ownerIdentity,
           occurredAtUtc: event.occurredAtUtc,
         );
-        return LearningProjectionOutcome.applied;
+        return const LearningProjectionResult.applied();
       },
-      rewardSink: (event) async {
-        final applied = await quest.reconcileReward(
-          event,
-          QuestCatalogProvider.allQuests,
-        );
+      rewardSink: (event, questResult) async {
+        final applied = await quest.reconcileReward(event, questResult);
         return applied
-            ? LearningProjectionOutcome.applied
-            : LearningProjectionOutcome.notApplicable;
+            ? const LearningProjectionResult.applied()
+            : const LearningProjectionResult.notApplicable();
       },
     );
     final learningReconciliation = LearningReconciliationScheduler(
@@ -518,13 +532,6 @@ final class AppBootstrap {
       // Screens fall back to VoiceUseCases.createDefault() per-screen.
     }
 
-    // ── Seed quest catalog on startup (idempotent) ────────────────────────
-    try {
-      await quest.startQuest(QuestCatalogProvider.dailyCorrectAnswers);
-    } catch (_) {
-      // Best-effort; catalog is also seeded on first quest start.
-    }
-
     // ── Wrap feature registry with runtime kill-switch support ────────────
     final featureOverrideStore = RuntimeFeatureOverrideStore(database);
     final runtimeFeatures = RuntimeFeatureRegistry(
@@ -568,6 +575,7 @@ final class AppBootstrap {
       syncEngine: syncEngine,
       syncTrigger: syncTrigger,
       learning: learning,
+      learningReconciliation: learningReconciliation,
       progress: progress,
       rewards: rewards,
       exports: exports,

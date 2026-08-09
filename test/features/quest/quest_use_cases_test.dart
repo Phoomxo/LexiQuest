@@ -1,4 +1,5 @@
 import 'package:drift/native.dart';
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
@@ -66,6 +67,38 @@ final class _ThrowAfterProgressRepository implements QuestRepository {
       delegate.upsertDefinition(def);
 }
 
+final class _RejectHistoryScanRepository implements QuestRepository {
+  _RejectHistoryScanRepository(this.delegate);
+  final QuestRepository delegate;
+
+  @override
+  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
+      throw StateError('unbounded quest history scan');
+  @override
+  Future<QuestDefinition?> getDefinition(String id) =>
+      delegate.getDefinition(id);
+  @override
+  Future<List<QuestInstance>> getActiveInstances(String ownerId) =>
+      delegate.getActiveInstances(ownerId);
+  @override
+  Future<void> markAbandoned(String id) => delegate.markAbandoned(id);
+  @override
+  Future<void> markCompleted(String id, DateTime at) =>
+      delegate.markCompleted(id, at);
+  @override
+  Future<void> markExpired(String id, DateTime at) =>
+      delegate.markExpired(id, at);
+  @override
+  Future<void> saveProgress(String id, List<ObjectiveProgress> progress) =>
+      delegate.saveProgress(id, progress);
+  @override
+  Future<void> startInstance(QuestInstance instance) =>
+      delegate.startInstance(instance);
+  @override
+  Future<void> upsertDefinition(QuestDefinition definition) =>
+      delegate.upsertDefinition(definition);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 int _seq = 0;
@@ -74,11 +107,12 @@ EventEnvelopeV2 _makeEvent({
   String eventType = 'QuizCompleted',
   Map<String, dynamic> payload = const {'correct': true},
   String ownerId = 'owner-uc',
+  DateTime? occurredAtUtc,
 }) => EventEnvelopeV2(
   eventId: 'evt-uc-${++_seq}',
   eventType: eventType,
   eventVersion: 1,
-  occurredAtUtc: DateTime.utc(2026, 8, 4, 10, 0),
+  occurredAtUtc: occurredAtUtc ?? DateTime.utc(2026, 8, 4, 10, 0),
   recordedAtUtc: DateTime.utc(2026, 8, 4, 10, 0, 1),
   actorIdentity: ownerId,
   ownerIdentity: ownerId,
@@ -210,6 +244,49 @@ void main() {
     });
 
     test(
+      'quest assignment boundary skips before and accepts equality',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 2);
+        await useCases.startQuest(def);
+
+        final before = await useCases.projectEvent(
+          _makeEvent(occurredAtUtc: DateTime.utc(2026, 8, 4, 9, 59, 59)),
+          [def],
+        );
+        expect(before.eligible, isFalse);
+        expect(
+          (await repo.getActiveInstances(
+            testOwner.id,
+          )).single.progress.single.currentCount,
+          0,
+        );
+
+        final equal = await useCases.projectEvent(
+          _makeEvent(occurredAtUtc: DateTime.utc(2026, 8, 4, 10)),
+          [def],
+        );
+        expect(
+          equal.eligible,
+          isTrue,
+          reason: 'assignment equality is eligible',
+        );
+        expect(
+          (await repo.getActiveInstances(
+            testOwner.id,
+          )).single.progress.single.currentCount,
+          1,
+        );
+
+        final after = await useCases.projectEvent(
+          _makeEvent(occurredAtUtc: DateTime.utc(2026, 8, 4, 10, 0, 1)),
+          [def],
+        );
+        expect(after.eligible, isTrue);
+        expect(after.completed, hasLength(1));
+      },
+    );
+
+    test(
       'processEvent returns QuestCompletedEvent when all objectives met',
       () async {
         final def = _singleObjectiveDef(targetCount: 2);
@@ -292,9 +369,41 @@ void main() {
             },
       );
       await rewardUseCases.startQuest(def);
-      await rewardUseCases.processEvent(event, [def]);
+      final projection = await rewardUseCases.projectEvent(event, [def]);
+      for (var i = 0; i < 200; i++) {
+        final irrelevantQuestId = 'irrelevant-quest-$i';
+        await repo.upsertDefinition(
+          _singleObjectiveDef(questId: irrelevantQuestId, targetCount: 1),
+        );
+        await database
+            .into(database.questInstances)
+            .insert(
+              db.QuestInstancesCompanion.insert(
+                instanceId: 'irrelevant-completed-$i',
+                questId: irrelevantQuestId,
+                ownerId: testOwner.id,
+                catalogVersion: def.catalogVersion,
+                assignedAtUtcMs: DateTime.utc(2025).millisecondsSinceEpoch,
+                state: 'completed',
+                completedAtUtcMs: Value(
+                  DateTime.utc(2025).millisecondsSinceEpoch,
+                ),
+              ),
+            );
+      }
 
-      await rewardUseCases.reconcileReward(event, [def]);
+      final retryOnly = QuestUseCases(
+        repository: _RejectHistoryScanRepository(repo),
+        owners: _FakeOwners(testOwner),
+        generateId: () => 'unused',
+        nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+        timezoneId: 'Asia/Bangkok',
+        rewardSink: rewardUseCases.rewardSink,
+      );
+      await retryOnly.reconcileReward(
+        event,
+        rewardUseCases.projectionPayload(projection, [def]),
+      );
 
       expect(calls, 2);
       expect(keys.toSet(), hasLength(1));

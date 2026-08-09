@@ -11,6 +11,7 @@ import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
@@ -54,6 +55,7 @@ final class AppDependencies {
     this.syncEngine,
     this.syncTrigger,
     this.learning,
+    this.learningReconciliation,
     this.progress,
     this.rewards,
     this.vocabulary,
@@ -93,6 +95,7 @@ final class AppDependencies {
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
   final LearningUseCases? learning;
+  final LearningReconciliationScheduler? learningReconciliation;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;

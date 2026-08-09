@@ -4,8 +4,26 @@ import '../data/drift_learning_event_store.dart';
 
 enum LearningProjectionOutcome { applied, notApplicable }
 
+final class LearningProjectionResult {
+  const LearningProjectionResult.applied({
+    this.payload = const <String, dynamic>{},
+  }) : outcome = LearningProjectionOutcome.applied;
+
+  const LearningProjectionResult.notApplicable({
+    this.payload = const <String, dynamic>{},
+  }) : outcome = LearningProjectionOutcome.notApplicable;
+
+  final LearningProjectionOutcome outcome;
+  final Map<String, dynamic> payload;
+}
+
 typedef LearningProjectionSink =
-    Future<LearningProjectionOutcome> Function(EventEnvelopeV2 event);
+    Future<LearningProjectionResult> Function(EventEnvelopeV2 event);
+typedef LearningRewardProjectionSink =
+    Future<LearningProjectionResult> Function(
+      EventEnvelopeV2 event,
+      Map<String, dynamic> questResult,
+    );
 
 final class LearningSideEffectReconciler {
   LearningSideEffectReconciler(
@@ -21,45 +39,67 @@ final class LearningSideEffectReconciler {
   final DriftLearningEventStore _events;
   final LearningProjectionSink? questSink;
   final LearningProjectionSink? streakSink;
-  final LearningProjectionSink? rewardSink;
+  final LearningRewardProjectionSink? rewardSink;
   final int pendingBatchSize;
 
   Future<void> reconcileOwner(String ownerId) async {
     await _applyPending(ownerId, 'quest', questSink);
     await _applyPending(ownerId, 'streak', streakSink);
-    await _applyPending(
-      ownerId,
-      'reward',
-      rewardSink,
-      requireQuestApplied: questSink != null,
-    );
+    await _applyRewardPending(ownerId);
   }
 
   Future<void> _applyPending(
     String ownerId,
     String projection,
-    LearningProjectionSink? sink, {
-    bool requireQuestApplied = false,
-  }) async {
+    LearningProjectionSink? sink,
+  ) async {
     if (sink == null) return;
     final events = await _events.listPendingProjectionEvents(
       ownerId: ownerId,
       projection: projection,
       appliedVersion: appliedVersion,
       limit: pendingBatchSize,
-      requireQuestApplied: requireQuestApplied,
     );
-    for (final event in events) {
+    for (final pending in events) {
       try {
-        final outcome = await sink(event);
+        final outcome = await sink(pending.event);
         await _events.markProjectionOutcome(
-          source: event,
+          source: pending.event,
           projection: projection,
           appliedVersion: appliedVersion,
-          applied: outcome == LearningProjectionOutcome.applied,
+          applied: outcome.outcome == LearningProjectionOutcome.applied,
+          result: outcome.payload,
         );
       } catch (_) {
         // Preserve chronological ordering: the next event cannot overtake it.
+        break;
+      }
+    }
+  }
+
+  Future<void> _applyRewardPending(String ownerId) async {
+    final sink = rewardSink;
+    if (sink == null) return;
+    final events = await _events.listPendingProjectionEvents(
+      ownerId: ownerId,
+      projection: 'reward',
+      appliedVersion: appliedVersion,
+      limit: pendingBatchSize,
+      prerequisiteProjection: 'quest',
+    );
+    for (final pending in events) {
+      try {
+        final outcome = pending.prerequisiteApplied == true
+            ? await sink(pending.event, pending.prerequisitePayload)
+            : const LearningProjectionResult.notApplicable();
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          applied: outcome.outcome == LearningProjectionOutcome.applied,
+          result: outcome.payload,
+        );
+      } catch (_) {
         break;
       }
     }

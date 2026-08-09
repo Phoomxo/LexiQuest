@@ -645,11 +645,13 @@ void main() {
         final firstReconciler = LearningSideEffectReconciler(
           database,
           questSink: (event) async {
-            await quest.processEvent(event, [definition]);
-            return LearningProjectionOutcome.applied;
+            final projection = await quest.projectEvent(event, [definition]);
+            return LearningProjectionResult.applied(
+              payload: quest.projectionPayload(projection, [definition]),
+            );
           },
-          streakSink: (_) async => LearningProjectionOutcome.applied,
-          rewardSink: (_) async => LearningProjectionOutcome.applied,
+          streakSink: (_) async => const LearningProjectionResult.applied(),
+          rewardSink: (_, _) async => const LearningProjectionResult.applied(),
         );
         await firstReconciler.reconcileOwner(owner.id);
 
@@ -692,14 +694,18 @@ void main() {
             LearningSideEffectReconciler(
               database!,
               questSink: (event) async {
-                await quest.processEvent(event, [definition]);
-                return LearningProjectionOutcome.applied;
+                final projection = await quest.projectEvent(event, [
+                  definition,
+                ]);
+                return LearningProjectionResult.applied(
+                  payload: quest.projectionPayload(projection, [definition]),
+                );
               },
-              streakSink: (_) async => LearningProjectionOutcome.applied,
-              rewardSink: (event) async =>
-                  await quest.reconcileReward(event, [definition])
-                  ? LearningProjectionOutcome.applied
-                  : LearningProjectionOutcome.notApplicable,
+              streakSink: (_) async => const LearningProjectionResult.applied(),
+              rewardSink: (event, questResult) async =>
+                  await quest.reconcileReward(event, questResult)
+                  ? const LearningProjectionResult.applied()
+                  : const LearningProjectionResult.notApplicable(),
             );
         await realReconciler().reconcileOwner(owner.id);
         expect(await _appliedReceiptCount(database, 'quest'), 1);
@@ -806,7 +812,7 @@ void main() {
               ownerId: event.ownerIdentity,
               occurredAtUtc: event.occurredAtUtc,
             );
-            return LearningProjectionOutcome.applied;
+            return const LearningProjectionResult.applied();
           },
         );
         await failing.reconcileOwner(ownerA.id);
@@ -833,7 +839,7 @@ void main() {
               ownerId: event.ownerIdentity,
               occurredAtUtc: event.occurredAtUtc,
             );
-            return LearningProjectionOutcome.applied;
+            return const LearningProjectionResult.applied();
           },
         );
         await real.reconcileOwner(ownerA.id);
@@ -874,7 +880,7 @@ void main() {
           streakSink: (_) async {
             entered.complete();
             await release.future;
-            return LearningProjectionOutcome.applied;
+            return const LearningProjectionResult.applied();
           },
         ),
       );

@@ -7,6 +7,16 @@ import '../domain/quest_repository.dart';
 typedef QuestUtcNow = DateTime Function();
 typedef QuestIdGenerator = String Function();
 
+final class QuestProjectionEvaluation {
+  const QuestProjectionEvaluation({
+    required this.eligible,
+    required this.completed,
+  });
+
+  final bool eligible;
+  final List<QuestCompletedEvent> completed;
+}
+
 /// Called when a quest completes. The callback grants the XP reward to the
 /// learner's points ledger. Errors are swallowed in production — reward
 /// failure must never break the learning flow.
@@ -102,14 +112,26 @@ final class QuestUseCases {
   Future<List<QuestCompletedEvent>> processEvent(
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
+  ) async => (await projectEvent(event, catalog)).completed;
+
+  /// Projects one event and reports whether any active quest existed at the
+  /// event time. Equality with assignment time is explicitly eligible.
+  Future<QuestProjectionEvaluation> projectEvent(
+    EventEnvelopeV2 event,
+    List<QuestDefinition> catalog,
   ) async {
     final active = await repository.getActiveInstances(event.ownerIdentity);
-    if (active.isEmpty) return const [];
+    if (active.isEmpty) {
+      return const QuestProjectionEvaluation(eligible: false, completed: []);
+    }
 
     final completed = <QuestCompletedEvent>[];
     final now = _now();
+    var eligible = false;
 
     for (final instance in active) {
+      if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
+      eligible = true;
       final def = catalog.firstWhere(
         (d) => d.questId == instance.questId,
         orElse: () => throw StateError(
@@ -132,7 +154,30 @@ final class QuestUseCases {
         completed.add(await _finalize(updated, def, event, now));
       }
     }
-    return completed;
+    return QuestProjectionEvaluation(eligible: eligible, completed: completed);
+  }
+
+  Map<String, dynamic> projectionPayload(
+    QuestProjectionEvaluation evaluation,
+    List<QuestDefinition> catalog,
+  ) {
+    return <String, dynamic>{
+      'eligible': evaluation.eligible,
+      'rewardGrants': evaluation.completed
+          .map((completion) {
+            final definition = catalog.firstWhere(
+              (candidate) => candidate.questId == completion.questId,
+            );
+            return <String, dynamic>{
+              'ownerId': completion.ownerId,
+              'idempotencyKey': completion.idempotencyKey,
+              'xpAmount': definition.reward.xpAmount,
+              if (definition.reward.rewardItemId != null)
+                'rewardItemId': definition.reward.rewardItemId,
+            };
+          })
+          .toList(growable: false),
+    };
   }
 
   /// Return all active instances for the current owner.
@@ -147,31 +192,28 @@ final class QuestUseCases {
   /// durable learning reconciler can leave the reward receipt pending.
   Future<bool> reconcileReward(
     EventEnvelopeV2 event,
-    List<QuestDefinition> catalog,
+    Map<String, dynamic> questProjection,
   ) async {
     final sink = rewardSink;
     if (sink == null) return false;
+    final grants = (questProjection['rewardGrants'] as List? ?? const [])
+        .cast<Map<String, dynamic>>();
+    if (grants.length > 64) {
+      throw StateError('quest projection reward grant batch exceeds 64');
+    }
     var reconciled = false;
-    final instances = await repository.getAllInstances(event.ownerIdentity);
-    for (final instance in instances) {
-      if (instance.state != QuestInstanceState.completed ||
-          !instance.allSourceEventIds.contains(event.eventId)) {
-        continue;
+    for (final grant in grants) {
+      final ownerId = grant['ownerId'] as String;
+      if (ownerId != event.ownerIdentity) {
+        throw StateError('quest reward owner does not match source event');
       }
-      final def = catalog.firstWhere(
-        (candidate) => candidate.questId == instance.questId,
-        orElse: () => throw StateError(
-          'QuestUseCases.reconcileReward: no catalog entry for '
-          'questId=${instance.questId}',
-        ),
-      );
-      if (def.reward.xpAmount <= 0) continue;
-      final completed = instance.complete(now: instance.completedAtUtc);
+      final xpAmount = grant['xpAmount'] as int;
+      if (xpAmount <= 0) continue;
       await sink(
-        ownerId: completed.ownerId,
-        idempotencyKey: completed.idempotencyKey,
-        xpAmount: def.reward.xpAmount,
-        rewardItemId: def.reward.rewardItemId,
+        ownerId: ownerId,
+        idempotencyKey: grant['idempotencyKey'] as String,
+        xpAmount: xpAmount,
+        rewardItemId: grant['rewardItemId'] as String?,
       );
       reconciled = true;
     }

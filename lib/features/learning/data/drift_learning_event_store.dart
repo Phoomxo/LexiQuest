@@ -5,6 +5,18 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../events/domain/event_envelope_v2.dart';
 
+final class PendingLearningProjectionEvent {
+  const PendingLearningProjectionEvent({
+    required this.event,
+    this.prerequisiteApplied,
+    this.prerequisitePayload = const <String, dynamic>{},
+  });
+
+  final EventEnvelopeV2 event;
+  final bool? prerequisiteApplied;
+  final Map<String, dynamic> prerequisitePayload;
+}
+
 final class DriftLearningEventStore {
   const DriftLearningEventStore(this.database);
 
@@ -33,54 +45,63 @@ final class DriftLearningEventStore {
         .insert(_companion(event), mode: InsertMode.insertOrIgnore);
   }
 
-  Future<List<EventEnvelopeV2>> listPendingProjectionEvents({
+  Future<List<PendingLearningProjectionEvent>> listPendingProjectionEvents({
     required String ownerId,
     required String projection,
     required int appliedVersion,
     required int limit,
-    bool requireQuestApplied = false,
+    String? prerequisiteProjection,
   }) async {
     if (limit <= 0) return const [];
-    final versionSuffix = ':v$appliedVersion';
-    final prerequisite = requireQuestApplied
-        ? '''AND EXISTS (
-              SELECT 1 FROM events_v2 quest_receipt
-              WHERE quest_receipt.owner_id = source.owner_id
-                AND quest_receipt.aggregate_id = source.event_id
-                AND quest_receipt.event_type = 'LearningProjectionApplied'
-                AND quest_receipt.idempotency_key =
-                  'learning-projection:quest:' || source.event_id || ?
-            )'''
-        : '';
+    final cursor =
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                _cursorKey(
+                  ownerId: ownerId,
+                  projection: projection,
+                  appliedVersion: appliedVersion,
+                ),
+              ),
+            ))
+            .getSingleOrNull();
+    final afterCursor = cursor == null
+        ? ''
+        : '''AND (
+              source.occurred_at_utc > ? OR
+              (source.occurred_at_utc = ? AND source.event_id > ?)
+            )''';
     final variables = <Variable<Object>>[
       Variable<String>(ownerId),
-      Variable<String>(projection),
-      Variable<String>(versionSuffix),
-      if (requireQuestApplied) Variable<String>(versionSuffix),
+      if (cursor != null) ...[
+        Variable<DateTime>(cursor.occurredAtUtc),
+        Variable<DateTime>(cursor.occurredAtUtc),
+        Variable<String>(cursor.aggregateId),
+      ],
       Variable<int>(limit),
     ];
+    final candidateSql =
+        '''
+      SELECT source.event_id, source.occurred_at_utc
+      FROM events_v2 source INDEXED BY idx_events_v2_owner_occurred
+      WHERE source.owner_id = ?
+        AND source.idempotency_key LIKE 'learning-attempt:%'
+        $afterCursor
+      ORDER BY source.occurred_at_utc ASC, source.event_id ASC
+      LIMIT ?''';
+    final prerequisite = prerequisiteProjection;
+    final sql = prerequisite == null
+        ? candidateSql
+        : '''SELECT candidate.event_id, candidate.occurred_at_utc,
+                    prerequisite.event_type AS prerequisite_type,
+                    prerequisite.payload_json AS prerequisite_payload
+             FROM ($candidateSql) candidate
+             JOIN events_v2 prerequisite
+               ON prerequisite.event_id =
+                 'learning-projection:$prerequisite:' ||
+                 candidate.event_id || ':v$appliedVersion'
+             ORDER BY candidate.occurred_at_utc ASC, candidate.event_id ASC''';
     final idRows = await database
-        .customSelect(
-          '''SELECT source.event_id
-         FROM events_v2 source
-         WHERE source.owner_id = ?
-           AND source.idempotency_key LIKE 'learning-attempt:%'
-           AND NOT EXISTS (
-             SELECT 1 FROM events_v2 receipt
-             WHERE receipt.owner_id = source.owner_id
-               AND receipt.aggregate_id = source.event_id
-               AND receipt.event_type IN (
-                 'LearningProjectionApplied', 'LearningProjectionSkipped'
-               )
-               AND receipt.idempotency_key =
-                 'learning-projection:' || ? || ':' || source.event_id || ?
-           )
-           $prerequisite
-         ORDER BY source.occurred_at_utc ASC, source.event_id ASC
-         LIMIT ?''',
-          variables: variables,
-          readsFrom: {database.eventsV2},
-        )
+        .customSelect(sql, variables: variables, readsFrom: {database.eventsV2})
         .get();
     final ids = idRows.map((row) => row.read<String>('event_id')).toList();
     if (ids.isEmpty) return const [];
@@ -92,7 +113,29 @@ final class DriftLearningEventStore {
                 (row) => OrderingTerm.asc(row.eventId),
               ]))
             .get();
-    return rows.map(_toEvent).toList(growable: false);
+    final eventsById = <String, EventEnvelopeV2>{
+      for (final row in rows) row.eventId: _toEvent(row),
+    };
+    return idRows
+        .map((row) {
+          final eventId = row.read<String>('event_id');
+          if (prerequisite == null) {
+            return PendingLearningProjectionEvent(event: eventsById[eventId]!);
+          }
+          final receiptPayload =
+              jsonDecode(row.read<String>('prerequisite_payload'))
+                  as Map<String, dynamic>;
+          return PendingLearningProjectionEvent(
+            event: eventsById[eventId]!,
+            prerequisiteApplied:
+                row.read<String>('prerequisite_type') ==
+                'LearningProjectionApplied',
+            prerequisitePayload:
+                (receiptPayload['result'] as Map?)?.cast<String, dynamic>() ??
+                const <String, dynamic>{},
+          );
+        })
+        .toList(growable: false);
   }
 
   Future<void> markProjectionOutcome({
@@ -100,39 +143,74 @@ final class DriftLearningEventStore {
     required String projection,
     required int appliedVersion,
     required bool applied,
-  }) {
+    Map<String, dynamic> result = const <String, dynamic>{},
+  }) async {
     final key = _projectionKey(
       sourceEventId: source.eventId,
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    return append(
-      EventEnvelopeV2(
-        eventId: key,
-        eventType: applied
-            ? 'LearningProjectionApplied'
-            : 'LearningProjectionSkipped',
-        eventVersion: 1,
-        occurredAtUtc: source.occurredAtUtc,
-        recordedAtUtc: source.recordedAtUtc,
-        actorIdentity: source.actorIdentity,
-        ownerIdentity: source.ownerIdentity,
-        aggregateType: 'LearningProjection',
-        aggregateId: source.eventId,
-        causationId: source.eventId,
-        idempotencyKey: key,
-        consentContext: source.consentContext,
-        appVersion: source.appVersion,
-        buildId: source.buildId,
-        privacyClassification: source.privacyClassification,
-        payload: {
-          'sourceEventId': source.eventId,
-          'projection': projection,
-          'appliedVersion': appliedVersion,
-          'outcome': applied ? 'applied' : 'notApplicable',
-        },
-      ),
+    final receipt = EventEnvelopeV2(
+      eventId: key,
+      eventType: applied
+          ? 'LearningProjectionApplied'
+          : 'LearningProjectionSkipped',
+      eventVersion: 1,
+      occurredAtUtc: source.occurredAtUtc,
+      recordedAtUtc: source.recordedAtUtc,
+      actorIdentity: source.actorIdentity,
+      ownerIdentity: source.ownerIdentity,
+      aggregateType: 'LearningProjection',
+      aggregateId: source.eventId,
+      causationId: source.eventId,
+      idempotencyKey: key,
+      consentContext: source.consentContext,
+      appVersion: source.appVersion,
+      buildId: source.buildId,
+      privacyClassification: source.privacyClassification,
+      payload: {
+        'sourceEventId': source.eventId,
+        'projection': projection,
+        'appliedVersion': appliedVersion,
+        'outcome': applied ? 'applied' : 'notApplicable',
+        'result': result,
+      },
     );
+    final cursorKey = _cursorKey(
+      ownerId: source.ownerIdentity,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    final cursor = EventEnvelopeV2(
+      eventId: cursorKey,
+      eventType: 'LearningProjectionCursor',
+      eventVersion: 1,
+      occurredAtUtc: source.occurredAtUtc,
+      recordedAtUtc: source.recordedAtUtc,
+      actorIdentity: source.actorIdentity,
+      ownerIdentity: source.ownerIdentity,
+      aggregateType: 'LearningProjectionCursor',
+      aggregateId: source.eventId,
+      causationId: source.eventId,
+      idempotencyKey: cursorKey,
+      consentContext: source.consentContext,
+      appVersion: source.appVersion,
+      buildId: source.buildId,
+      privacyClassification: source.privacyClassification,
+      payload: {
+        'sourceEventId': source.eventId,
+        'projection': projection,
+        'appliedVersion': appliedVersion,
+      },
+    );
+    await database.transaction(() async {
+      await database
+          .into(database.eventsV2)
+          .insert(_companion(receipt), mode: InsertMode.insertOrIgnore);
+      await database
+          .into(database.eventsV2)
+          .insertOnConflictUpdate(_companion(cursor));
+    });
   }
 
   String _projectionKey({
@@ -140,6 +218,12 @@ final class DriftLearningEventStore {
     required String projection,
     required int appliedVersion,
   }) => 'learning-projection:$projection:$sourceEventId:v$appliedVersion';
+
+  String _cursorKey({
+    required String ownerId,
+    required String projection,
+    required int appliedVersion,
+  }) => 'learning-projection-cursor:$ownerId:$projection:v$appliedVersion';
 
   db.EventsV2Companion _companion(EventEnvelopeV2 event) {
     return db.EventsV2Companion.insert(

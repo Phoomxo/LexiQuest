@@ -169,6 +169,7 @@ final class QuestCompletedEvent {
   const QuestCompletedEvent({
     required this.eventId,
     required this.questInstanceId,
+    required this.questId,
     required this.ownerId,
     required this.completedAtUtc,
     required this.objectiveEventIds,
@@ -177,6 +178,7 @@ final class QuestCompletedEvent {
 
   final String eventId;
   final String questInstanceId;
+  final String questId;
   final String ownerId;
   final DateTime completedAtUtc;
 
@@ -278,6 +280,7 @@ final class QuestInstance {
     return QuestCompletedEvent(
       eventId: 'qcomplete-$instanceId',
       questInstanceId: instanceId,
+      questId: questId,
       ownerId: ownerId,
       completedAtUtc: completedAt,
       objectiveEventIds: allSourceEventIds,
