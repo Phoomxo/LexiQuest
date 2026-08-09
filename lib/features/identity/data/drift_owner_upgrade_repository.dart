@@ -328,6 +328,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
         updates: {_database.srsStates},
       );
+      await _remapEntityReferences('srsState', guestId, targetWordId);
       await _retireDuplicateOutbox(sourceId, 'word', guestId);
       await _remapEntityReferences('word', guestId, targetWordId);
       await _recordMergeConflict(
@@ -443,6 +444,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         table: 'srs_states',
         entityType: 'srsState',
         join: 'target.word_id = guest.word_id',
+        outboxEntityType: 'srsState',
+        outboxEntityIdColumn: 'word_id',
       ),
       _DuplicateSpecification(
         table: 'reading_progress_entries',
@@ -462,6 +465,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         join:
             'target.achievement_id = guest.achievement_id AND '
             'target.definition_version = guest.definition_version',
+        outboxEntityType: 'achievementUnlock',
       ),
       _DuplicateSpecification(
         table: 'equipped_reward_items',
@@ -483,6 +487,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           .customSelect(
             '''
         SELECT guest.id AS guest_id, target.id AS target_id
+               ${specification.outboxEntityType == null ? '' : ', guest.${specification.outboxEntityIdColumn} AS guest_outbox_entity_id'}
         FROM ${specification.table} guest
         JOIN ${specification.table} target
           ON target.owner_id = ? AND ${specification.join}
@@ -495,6 +500,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       for (final duplicate in duplicates) {
         final guestId = duplicate.read<String>('guest_id');
         final targetEntityId = duplicate.read<String>('target_id');
+        final outboxEntityType = specification.outboxEntityType;
+        if (outboxEntityType != null) {
+          await _retireDuplicateOutbox(
+            sourceId,
+            outboxEntityType,
+            duplicate.read<String>('guest_outbox_entity_id'),
+          );
+        }
         await _recordMergeConflict(
           ownerId: targetId,
           entityType: specification.entityType,
@@ -1000,11 +1013,15 @@ final class _DuplicateSpecification {
     required this.table,
     required this.entityType,
     required this.join,
+    this.outboxEntityType,
+    this.outboxEntityIdColumn = 'id',
   });
 
   final String table;
   final String entityType;
   final String join;
+  final String? outboxEntityType;
+  final String outboxEntityIdColumn;
 }
 
 final class _RehomeSpecification {

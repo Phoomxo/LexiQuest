@@ -448,6 +448,105 @@ void main() {
     },
   );
 
+  for (final remoteAppliedBeforeLostAck in <bool>[false, true]) {
+    test('fifth reservation ambiguity blocks later same-entity work '
+        'when remoteApplied=$remoteAppliedBeforeLostAck', () async {
+      await _seedCategoryOperation(database);
+      gateway.onPush = (mutation) async {
+        if (gateway.pushCalls == 5 && remoteAppliedBeforeLostAck) {
+          gateway.appliedOperationIds.add(mutation.operationId);
+        }
+        throw const OfflineSyncFailure();
+      };
+
+      for (var reservation = 1; reservation <= 5; reservation++) {
+        await engine().run();
+        final row =
+            await (database.select(database.outboxOperations)..where(
+                  (candidate) =>
+                      candidate.operationId.equals('category:travel:1:upsert'),
+                ))
+                .getSingle();
+        if (reservation < 5) {
+          nowUtc = DateTime.fromMillisecondsSinceEpoch(
+            row.nextAttemptAtUtcMs!,
+            isUtc: true,
+          );
+        }
+      }
+
+      await (database.update(
+        database.vocabularyCategories,
+      )..where((row) => row.id.equals('category:travel'))).write(
+        VocabularyCategoriesCompanion(
+          name: const Value('Latest travel'),
+          normalizedName: const Value('latest travel'),
+          localRevision: const Value(2),
+          updatedAtUtcMs: Value(nowUtc.millisecondsSinceEpoch),
+        ),
+      );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'category:travel:2:upsert',
+              ownerId: 'owner-a',
+              entityType: 'category',
+              entityId: 'category:travel',
+              operationKind: 'upsert',
+              baseRevision: const Value(1),
+              createdAtUtcMs: 2,
+            ),
+          );
+      await _seedAdditionalCategoryOperation(
+        database,
+        id: 'category:unrelated',
+        operationId: 'category:unrelated:1:upsert',
+        createdAtUtcMs: 3,
+      );
+      gateway.onPush = (mutation) async => PushAcknowledged(
+        operationId: mutation.operationId,
+        resultingRevision: mutation.localRevision,
+        acknowledgedAtUtc: nowUtc,
+      );
+
+      final afterExhaustion = await engine().run();
+      final rows = await database.select(database.outboxOperations).get();
+      int callsFor(String operationId) => gateway.pushedMutations
+          .where((mutation) => mutation.operationId == operationId)
+          .length;
+
+      expect(afterExhaustion.pushed, 1);
+      expect(callsFor('category:travel:1:upsert'), 5);
+      expect(callsFor('category:travel:2:upsert'), 0);
+      expect(callsFor('category:unrelated:1:upsert'), 1);
+      expect(
+        rows
+            .singleWhere((row) => row.operationId == 'category:travel:1:upsert')
+            .state,
+        'permanentFailure',
+      );
+      expect(
+        rows
+            .singleWhere((row) => row.operationId == 'category:travel:2:upsert')
+            .state,
+        'pending',
+      );
+      expect(
+        rows
+            .singleWhere(
+              (row) => row.operationId == 'category:unrelated:1:upsert',
+            )
+            .state,
+        'acknowledged',
+      );
+      expect(
+        gateway.appliedOperationIds.contains('category:travel:1:upsert'),
+        remoteAppliedBeforeLostAck,
+      );
+    });
+  }
+
   test(
     'first permanent failure stops pushes and pulls and releases unstarted rows',
     () async {
@@ -563,6 +662,18 @@ void main() {
         hasLength(1),
       );
     }
+  });
+
+  test('first permanent pull failure stops all later collections', () async {
+    gateway.onPull = (_, _) => throw const PermissionDeniedSyncFailure();
+
+    final result = await engine().run();
+
+    expect(result.status, SyncRunStatus.partialFailure);
+    expect(result.failures, 1);
+    expect(result.retryRecommended, isFalse);
+    expect(gateway.pullCalls, 1);
+    expect(gateway.pulledCollections, [SyncCollection.categories]);
   });
 }
 

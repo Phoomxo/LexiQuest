@@ -146,10 +146,10 @@ void main() {
       ownerId: 'owner-1',
       collection: SyncCollection.rewardTransactions,
       page: PullPage(
-        changes: [second, first],
+        changes: [first, second],
         nextCursor: SyncCursor(
-          serverUpdatedAtUtc: first.serverUpdatedAtUtc,
-          documentId: first.entityId,
+          serverUpdatedAtUtc: second.serverUpdatedAtUtc,
+          documentId: second.entityId,
         ),
         hasMore: false,
       ),

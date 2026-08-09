@@ -205,14 +205,19 @@ pull-page transaction. Pulls remain one page per collection per run and advance
 the full timestamp/document cursor before mutation. Permanent failure stops the
 batch and does not automatically reopen permission denial.
 
-Two file-backed host scenarios provide the Task 5 evidence. Offline work
-survives close/reopen, applies once using stable operation IDs, persists its
-acknowledgement/checkpoint, and makes zero pushes after a second reopen. A
-complete anonymous inventory upgrades and reopens with stable owner, row, and
-operation IDs across all seven sync types; a sync request during upgrade waits
-and then uses only the committed UID. SQLite identity, inventory, projection,
-conflict, rehome, and checkpoint changes are atomic. External owner-secret
-deletion is deliberately non-transactional and cannot be restored by rollback.
+Two file-backed host scenarios provide the Task 5 evidence. Vocabulary and
+learning work is first applied by an idempotent fake before its retryable
+acknowledgement is lost; after the retry deadline and reopen the same
+`(uid, operationId)` is requested twice but applied once, then a second reopen
+makes zero pushes with stable IDs, attempts, acknowledgement, and checkpoint.
+A no-prior-UID anonymous owner keeps all 25 directly owner-scoped inventory
+tables plus import-row and quest-objective children through bind/reopen/replay,
+with stable owner, row, and operation IDs across all seven sync types and an
+inactive foreign owner's inventory byte-equivalent throughout. The retained
+merged-owner scenario proves a sync request during upgrade waits and then uses
+only the committed UID. SQLite identity, inventory, projection, conflict,
+rehome, and checkpoint changes are atomic. External owner-secret deletion is
+deliberately non-transactional and cannot be restored by rollback.
 Schema remains 12. This is file-backed host/fake-cloud evidence, not physical
 restart, APK, device, or provider receipt evidence, so it is `verified`, not
 `field-certified`. MaxPlus advisory evidence is unavailable after two identical

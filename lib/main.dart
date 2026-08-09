@@ -51,7 +51,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (!mounted) return;
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
-        unawaited(trigger.request(SyncTriggerReason.startup));
+        trigger.requestDetached(SyncTriggerReason.startup);
       }
     });
   }
@@ -61,7 +61,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.resumed) {
       final trigger = widget.dependencies.syncTrigger;
       if (trigger != null) {
-        unawaited(trigger.request(SyncTriggerReason.appResume));
+        trigger.requestDetached(SyncTriggerReason.appResume);
       }
     }
   }

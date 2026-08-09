@@ -280,6 +280,10 @@ final class SyncEngine {
           } on SyncFailure catch (failure) {
             failures++;
             retryRecommended = retryRecommended || failure.retryable;
+            if (!failure.retryable) {
+              permanentFailure = true;
+              break;
+            }
           }
         }
       }

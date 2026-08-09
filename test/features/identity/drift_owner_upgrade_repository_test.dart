@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
@@ -180,6 +181,113 @@ void main() {
             .then((row) => row.read<int>('count')),
         2,
       );
+    },
+  );
+
+  test(
+    'file-backed merge retires colliding SRS and unlock outbox before claim',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-owner-merge-outbox-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}identity.sqlite';
+      final firstDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await firstDatabase.customSelect('SELECT 1').getSingle();
+        await _seedOwners(firstDatabase);
+        await _seedProjectionCollisionGraph(firstDatabase);
+        await firstDatabase.customInsert(
+          "INSERT INTO achievement_unlocks VALUES "
+          "('unlock-target', 'account-owner', 'first_review', 1, "
+          "'target-source', 1)",
+        );
+        await firstDatabase.customInsert(
+          "INSERT INTO achievement_unlocks VALUES "
+          "('unlock-guest', 'guest-owner', 'first_review', 1, "
+          "'guest-source', 2)",
+        );
+        await firstDatabase.customInsert(
+          "INSERT INTO outbox_operations "
+          "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+          "created_at_utc_ms) VALUES "
+          "('srsState:word-guest:1', 'guest-owner', 'srsState', "
+          "'word-guest', 'upsert', 2)",
+        );
+        await firstDatabase.customInsert(
+          "INSERT INTO outbox_operations "
+          "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+          "created_at_utc_ms) VALUES "
+          "('achievementUnlock:unlock-guest:1', 'guest-owner', "
+          "'achievementUnlock', 'unlock-guest', 'upsert', 2)",
+        );
+        var tokenSequence = 0;
+        await DriftOwnerUpgradeRepository(
+          firstDatabase,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+          generateConflictId: () => 'merge-conflict-${tokenSequence++}',
+          generateOwnerId: () => 'unused-owner',
+          generateOwnerOperationToken: () => 'merge-operation',
+          deleteOwnerSecrets: (_) async {},
+        ).upgrade(activeOwnerId: 'guest-owner', firebaseUid: 'firebase-user');
+      } finally {
+        await firstDatabase.close();
+      }
+
+      final reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
+      try {
+        await reopenedDatabase.customSelect('SELECT 1').getSingle();
+        final now = DateTime.utc(2026, 7, 30, 12, 1);
+        expect(
+          await DriftOwnerOperationGate(reopenedDatabase).tryAcquire(
+            token: 'sync-after-merge',
+            nowUtc: now,
+            leaseDuration: const Duration(minutes: 10),
+          ),
+          isTrue,
+        );
+        final claims = await DriftSyncStore(reopenedDatabase).claimPending(
+          ownerId: 'account-owner',
+          firebaseUid: 'firebase-user',
+          limit: 50,
+          leaseToken: 'claim-after-merge',
+          ownerGateToken: 'sync-after-merge',
+          leaseDuration: const Duration(minutes: 5),
+          nowUtc: now,
+        );
+        final retired =
+            await (reopenedDatabase.select(reopenedDatabase.outboxOperations)
+                  ..where(
+                    (row) => row.operationId.isIn(const [
+                      'srsState:word-guest:1',
+                      'achievementUnlock:unlock-guest:1',
+                    ]),
+                  ))
+                .get();
+
+        expect(retired.map((row) => row.state).toSet(), {'superseded'});
+        expect(
+          retired
+              .singleWhere((row) => row.operationId == 'srsState:word-guest:1')
+              .entityId,
+          'word-target',
+        );
+        expect(
+          claims.map((claim) => claim.mutation.operationId),
+          isNot(contains('srsState:word-guest:1')),
+        );
+        expect(
+          claims.map((claim) => claim.mutation.operationId),
+          isNot(contains('achievementUnlock:unlock-guest:1')),
+        );
+      } finally {
+        await reopenedDatabase.close();
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+        await directory.delete(recursive: true);
+      }
     },
   );
 

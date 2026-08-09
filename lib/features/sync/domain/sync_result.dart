@@ -51,6 +51,35 @@ final class PullPage {
     required this.hasMore,
   }) : changes = List<SyncEntity>.unmodifiable(changes) {
     if (this.changes.isEmpty) return;
+    final entityIds = <String>{};
+    SyncEntity? previous;
+    for (final change in this.changes) {
+      if (!entityIds.add(change.entityId)) {
+        throw ArgumentError.value(
+          changes,
+          'changes',
+          'must contain unique entity ids',
+        );
+      }
+      final preceding = previous;
+      if (preceding != null) {
+        final timestampComparison = change.serverUpdatedAtUtc.compareTo(
+          preceding.serverUpdatedAtUtc,
+        );
+        final followsPreceding =
+            timestampComparison > 0 ||
+            (timestampComparison == 0 &&
+                change.entityId.compareTo(preceding.entityId) > 0);
+        if (!followsPreceding) {
+          throw ArgumentError.value(
+            changes,
+            'changes',
+            'must be strictly ordered by server timestamp and entity id',
+          );
+        }
+      }
+      previous = change;
+    }
     final cursor = nextCursor;
     if (cursor == null) {
       throw ArgumentError.value(
@@ -63,13 +92,11 @@ final class PullPage {
     final timestampComparison = cursor.serverUpdatedAtUtc.compareTo(
       last.serverUpdatedAtUtc,
     );
-    if (timestampComparison < 0 ||
-        (timestampComparison == 0 &&
-            cursor.documentId.compareTo(last.entityId) < 0)) {
+    if (timestampComparison != 0 || cursor.documentId != last.entityId) {
       throw ArgumentError.value(
         nextCursor,
         'nextCursor',
-        'must not regress behind the final change',
+        'must equal the final delivered change tuple',
       );
     }
   }

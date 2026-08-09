@@ -160,10 +160,9 @@ final class DriftLearningRepository implements LearningRepository {
       );
       // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
       // Entity ID is wordId (unique per owner-word pair).
-      await _appendImmutableOutbox(
+      await _appendSrsOutbox(
         ownerId: command.ownerId,
-        entityType: 'srsState',
-        entityId: command.wordId,
+        wordId: command.wordId,
         occurredAtUtc: command.occurredAtUtc,
       );
       final event = command.event;
@@ -383,6 +382,38 @@ final class DriftLearningRepository implements LearningRepository {
             entityId: entityId,
             operationKind: 'upsert',
             baseRevision: const Value(0),
+            createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+  }
+
+  Future<void> _appendSrsOutbox({
+    required String ownerId,
+    required String wordId,
+    required DateTime occurredAtUtc,
+  }) async {
+    final attemptCount = database.answerAttempts.id.count();
+    final revisionQuery = database.selectOnly(database.answerAttempts)
+      ..addColumns([attemptCount])
+      ..where(
+        database.answerAttempts.ownerId.equals(ownerId) &
+            database.answerAttempts.wordId.equals(wordId),
+      );
+    final revision = (await revisionQuery.getSingle()).read(attemptCount) ?? 0;
+    if (revision < 1) {
+      throw StateError('SRS revision requires durable answer evidence');
+    }
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          db.OutboxOperationsCompanion.insert(
+            operationId: 'srsState:$wordId:$revision',
+            ownerId: ownerId,
+            entityType: 'srsState',
+            entityId: wordId,
+            operationKind: 'upsert',
+            baseRevision: Value(revision - 1),
             createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
           ),
           mode: InsertMode.insertOrIgnore,

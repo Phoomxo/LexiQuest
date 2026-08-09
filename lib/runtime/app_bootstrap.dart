@@ -315,11 +315,12 @@ final class AppBootstrap {
         generateLeaseToken: idGenerator.v4,
       );
       syncTrigger = SyncTrigger(syncEngine.run);
+      resources.own(syncTrigger.dispose);
     }
     void notifyLocalMutation() {
       final trigger = syncTrigger;
       if (trigger != null) {
-        unawaited(trigger.request(SyncTriggerReason.localMutation));
+        trigger.requestDetached(SyncTriggerReason.localMutation);
       }
     }
 
@@ -333,7 +334,7 @@ final class AppBootstrap {
         onOwnerBound: () {
           final trigger = syncTrigger;
           if (trigger != null) {
-            unawaited(trigger.request(SyncTriggerReason.accountBinding));
+            trigger.requestDetached(SyncTriggerReason.accountBinding);
           }
         },
       );

@@ -128,28 +128,83 @@ final class DriftSyncStore implements SyncStore {
           updates: {database.runtimeFlags},
         );
         if (fenced != 1) return const <ClaimedSyncOperation>[];
+        await database.customUpdate(
+          '''
+          UPDATE outbox_operations
+          SET state = 'permanentFailure',
+              next_attempt_at_utc_ms = NULL,
+              lease_token = NULL,
+              lease_expires_at_utc_ms = NULL,
+              failure_code = 'deliveryUnknownAfterReservationLimit'
+          WHERE owner_id = ?
+            AND state = 'inFlight'
+            AND attempt_count >= ?
+            AND lease_expires_at_utc_ms IS NOT NULL
+            AND lease_expires_at_utc_ms <= ?
+          ''',
+          variables: [
+            Variable<String>(canonicalOwnerId),
+            const Variable<int>(maxSendReservations),
+            Variable<int>(nowMs),
+          ],
+          updates: {database.outboxOperations},
+        );
         final candidateLimit = limit * _maxCandidateMultiplier;
-        final query = database.select(database.outboxOperations)
-          ..where(
-            (row) =>
-                row.ownerId.equals(canonicalOwnerId) &
-                row.attemptCount.isSmallerThanValue(maxSendReservations) &
-                (row.state.equals('pending') |
-                    (row.state.equals('retryWaiting') &
-                        (row.nextAttemptAtUtcMs.isNull() |
-                            row.nextAttemptAtUtcMs.isSmallerOrEqualValue(
-                              nowMs,
-                            ))) |
-                    (row.state.equals('inFlight') &
-                        row.leaseExpiresAtUtcMs.isNotNull() &
-                        row.leaseExpiresAtUtcMs.isSmallerOrEqualValue(nowMs))),
-          )
-          ..orderBy([
-            (row) => OrderingTerm.asc(row.createdAtUtcMs),
-            (row) => OrderingTerm.asc(row.operationId),
-          ])
-          ..limit(candidateLimit);
-        final candidates = await query.get();
+        final candidateRows = await database
+            .customSelect(
+              '''
+          SELECT candidate.*
+          FROM outbox_operations AS candidate
+          WHERE candidate.owner_id = ?
+            AND candidate.attempt_count < ?
+            AND (
+              candidate.state = 'pending'
+              OR (
+                candidate.state = 'retryWaiting'
+                AND (
+                  candidate.next_attempt_at_utc_ms IS NULL
+                  OR candidate.next_attempt_at_utc_ms <= ?
+                )
+              )
+              OR (
+                candidate.state = 'inFlight'
+                AND candidate.lease_expires_at_utc_ms IS NOT NULL
+                AND candidate.lease_expires_at_utc_ms <= ?
+              )
+            )
+            AND NOT EXISTS (
+              SELECT 1
+              FROM outbox_operations AS barrier
+              WHERE barrier.owner_id = candidate.owner_id
+                AND barrier.entity_type = candidate.entity_type
+                AND barrier.entity_id = candidate.entity_id
+                AND barrier.state = 'permanentFailure'
+                AND barrier.attempt_count >= ?
+                AND (
+                  barrier.created_at_utc_ms < candidate.created_at_utc_ms
+                  OR (
+                    barrier.created_at_utc_ms = candidate.created_at_utc_ms
+                    AND barrier.operation_id < candidate.operation_id
+                  )
+                )
+            )
+          ORDER BY candidate.created_at_utc_ms, candidate.operation_id
+          LIMIT ?
+          ''',
+              variables: [
+                Variable<String>(canonicalOwnerId),
+                const Variable<int>(maxSendReservations),
+                Variable<int>(nowMs),
+                Variable<int>(nowMs),
+                const Variable<int>(maxSendReservations),
+                Variable<int>(candidateLimit),
+              ],
+              readsFrom: {database.outboxOperations},
+            )
+            .get();
+        final candidates = candidateRows
+            .map((row) => database.outboxOperations.map(row.data))
+            .toList();
         if (candidates.isEmpty) return const <ClaimedSyncOperation>[];
 
         final groups = <String, List<db.OutboxOperation>>{};
@@ -167,12 +222,22 @@ final class DriftSyncStore implements SyncStore {
                 ? time
                 : left.operationId.compareTo(right.operationId);
           });
-          final selected = group.last;
-          final baseRevision = group
-              .map((row) => row.baseRevision)
-              .reduce((left, right) => left < right ? left : right);
+          final attemptedIndex = group.indexWhere(
+            (candidate) => candidate.attemptCount > 0,
+          );
+          final selected = attemptedIndex < 0
+              ? group.last
+              : group[attemptedIndex];
+          final coalesced = attemptedIndex < 0
+              ? group.take(group.length - 1)
+              : const Iterable<db.OutboxOperation>.empty();
+          final baseRevision = attemptedIndex < 0
+              ? group
+                    .map((row) => row.baseRevision)
+                    .reduce((left, right) => left < right ? left : right)
+              : selected.baseRevision;
 
-          for (final superseded in group.take(group.length - 1)) {
+          for (final superseded in coalesced) {
             await (database.update(database.outboxOperations)..where(
                   (row) => row.operationId.equals(superseded.operationId),
                 ))
@@ -395,8 +460,63 @@ final class DriftSyncStore implements SyncStore {
       );
       if (changed != 1) return false;
       await _acknowledgeEntity(operation, acknowledgement);
+      await _reconcileLaterNeverAttemptedOperations(operation, acknowledgement);
       return true;
     });
+  }
+
+  Future<void> _reconcileLaterNeverAttemptedOperations(
+    db.OutboxOperation acknowledged,
+    PushAcknowledged acknowledgement,
+  ) async {
+    final sameEntity =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(acknowledged.ownerId) &
+                  row.entityType.equals(acknowledged.entityType) &
+                  row.entityId.equals(acknowledged.entityId) &
+                  row.operationId.equals(acknowledged.operationId).not() &
+                  row.attemptCount.equals(0) &
+                  (row.state.equals('pending') |
+                      row.state.equals('retryWaiting')),
+            ))
+            .get();
+    for (final later in sameEntity.where(
+      (candidate) => _operationComesAfter(candidate, acknowledged),
+    )) {
+      final localRevision = _operationRevision(later);
+      if (acknowledgement.resultingRevision >= localRevision) {
+        await (database.update(database.outboxOperations)..where(
+              (row) =>
+                  row.operationId.equals(later.operationId) &
+                  row.attemptCount.equals(0) &
+                  (row.state.equals('pending') |
+                      row.state.equals('retryWaiting')),
+            ))
+            .write(
+              const db.OutboxOperationsCompanion(
+                state: Value('superseded'),
+                nextAttemptAtUtcMs: Value(null),
+                leaseToken: Value(null),
+                leaseExpiresAtUtcMs: Value(null),
+                failureCode: Value('includedInAcknowledgedReplay'),
+              ),
+            );
+      } else {
+        await (database.update(database.outboxOperations)..where(
+              (row) =>
+                  row.operationId.equals(later.operationId) &
+                  row.attemptCount.equals(0) &
+                  (row.state.equals('pending') |
+                      row.state.equals('retryWaiting')),
+            ))
+            .write(
+              db.OutboxOperationsCompanion(
+                baseRevision: Value(acknowledgement.resultingRevision),
+              ),
+            );
+      }
+    }
   }
 
   Future<bool> _isOwnerGateOwned(String token, DateTime nowUtc) async {
@@ -762,11 +882,33 @@ final class DriftSyncStore implements SyncStore {
                 ))
                 .getSingleOrNull();
         final storedCursor = checkpoint?.serverCursor;
-        if (cursor != null && storedCursor != null) {
-          final cursorComparison = _compareCursors(
-            cursor,
-            SyncCursor.parse(storedCursor),
-          );
+        final parsedStoredCursor = storedCursor == null
+            ? null
+            : SyncCursor.parse(storedCursor);
+        if (page.changes.isEmpty) {
+          final preservesStored = switch ((cursor, parsedStoredCursor)) {
+            (null, null) => true,
+            (final SyncCursor next, final SyncCursor stored) => next == stored,
+            _ => false,
+          };
+          if (!preservesStored || page.hasMore) {
+            throw const InvalidSyncCursorFailure();
+          }
+          return true;
+        }
+        if (page.changes.any((entity) => entity.collection != collection)) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final finalChange = page.changes.last;
+        final deliveredCursor = SyncCursor(
+          serverUpdatedAtUtc: finalChange.serverUpdatedAtUtc,
+          documentId: finalChange.entityId,
+        );
+        if (cursor == null || cursor != deliveredCursor) {
+          throw const InvalidSyncCursorFailure();
+        }
+        if (storedCursor != null) {
+          final cursorComparison = _compareCursors(cursor, parsedStoredCursor!);
           if (cursorComparison < 0) {
             throw const InvalidSyncCursorFailure();
           }
@@ -777,9 +919,6 @@ final class DriftSyncStore implements SyncStore {
         }
 
         for (final entity in page.changes) {
-          if (entity.collection != collection) {
-            throw const InvalidSyncPayloadFailure();
-          }
           switch (collection) {
             case SyncCollection.categories:
               await _applyCategory(canonicalOwnerId, entity);
@@ -798,21 +937,19 @@ final class DriftSyncStore implements SyncStore {
           }
         }
 
-        if (cursor != null) {
-          await database
-              .into(database.syncCheckpoints)
-              .insertOnConflictUpdate(
-                db.SyncCheckpointsCompanion.insert(
-                  id: '$canonicalOwnerId:${collection.wireName}',
-                  ownerId: canonicalOwnerId,
-                  collectionName: collection.wireName,
-                  serverCursor: Value(cursor.toJsonString()),
-                  lastSuccessAtUtcMs: Value(
-                    cursor.serverUpdatedAtUtc.millisecondsSinceEpoch,
-                  ),
+        await database
+            .into(database.syncCheckpoints)
+            .insertOnConflictUpdate(
+              db.SyncCheckpointsCompanion.insert(
+                id: '$canonicalOwnerId:${collection.wireName}',
+                ownerId: canonicalOwnerId,
+                collectionName: collection.wireName,
+                serverCursor: Value(cursor.toJsonString()),
+                lastSuccessAtUtcMs: Value(
+                  cursor.serverUpdatedAtUtc.millisecondsSinceEpoch,
                 ),
-              );
-        }
+              ),
+            );
         return true;
       });
     } finally {
@@ -991,7 +1128,6 @@ final class DriftSyncStore implements SyncStore {
           payload: _rewardTransactionPayload(transaction),
         );
       case 'srsState':
-        // Entity ID for srsState outbox is the wordId (unique per owner-word).
         final srs =
             await (database.select(database.srsStates)..where(
                   (row) =>
@@ -1000,6 +1136,7 @@ final class DriftSyncStore implements SyncStore {
                 ))
                 .getSingleOrNull();
         if (srs == null) throw StateError('outbox srsState was not found');
+        final localRevision = await _srsLocalRevision(operation);
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
@@ -1007,8 +1144,8 @@ final class DriftSyncStore implements SyncStore {
           entityId: srs.wordId, // stable entity identifier
           operationKind: SyncOperationKind.upsert,
           payloadVersion: operation.payloadVersion,
-          baseRevision: 0,
-          localRevision: 1,
+          baseRevision: baseRevision,
+          localRevision: localRevision,
           clientUpdatedAtUtc: srs.lastReviewAtUtcMs != null
               ? _utc(srs.lastReviewAtUtcMs!)
               : DateTime.fromMillisecondsSinceEpoch(
@@ -1043,6 +1180,33 @@ final class DriftSyncStore implements SyncStore {
       default:
         throw const InvalidSyncPayloadFailure();
     }
+  }
+
+  Future<int> _srsLocalRevision(db.OutboxOperation operation) async {
+    final attemptCount = database.answerAttempts.id.count();
+    final attemptQuery = database.selectOnly(database.answerAttempts)
+      ..addColumns([attemptCount])
+      ..where(
+        database.answerAttempts.ownerId.equals(operation.ownerId) &
+            database.answerAttempts.wordId.equals(operation.entityId),
+      );
+    final durableAttempts =
+        (await attemptQuery.getSingle()).read(attemptCount) ?? 0;
+    final operations =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(operation.ownerId) &
+                  row.entityType.equals('srsState') &
+                  row.entityId.equals(operation.entityId),
+            ))
+            .get();
+    var revision = durableAttempts;
+    for (final candidate in operations) {
+      final candidateRevision = _operationRevision(candidate);
+      if (candidateRevision > revision) revision = candidateRevision;
+    }
+    final minimumRevision = operation.baseRevision + 1;
+    return revision < minimumRevision ? minimumRevision : revision;
   }
 
   Future<void> _acknowledgeEntity(
@@ -1968,6 +2132,25 @@ String _releaseStateFor(db.OutboxOperation operation) {
         : 'pending';
   }
   throw StateError('outbox operation is not claimable');
+}
+
+bool _operationComesAfter(
+  db.OutboxOperation candidate,
+  db.OutboxOperation reference,
+) {
+  final createdComparison = candidate.createdAtUtcMs.compareTo(
+    reference.createdAtUtcMs,
+  );
+  if (createdComparison != 0) return createdComparison > 0;
+  return candidate.operationId.compareTo(reference.operationId) > 0;
+}
+
+int _operationRevision(db.OutboxOperation operation) {
+  for (final segment in operation.operationId.split(':').reversed) {
+    final revision = int.tryParse(segment);
+    if (revision != null && revision > 0) return revision;
+  }
+  return operation.baseRevision + 1;
 }
 
 SyncOperationKind _operationKind(String value) => switch (value) {

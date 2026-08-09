@@ -137,6 +137,98 @@ void main() {
         throwsArgumentError,
       );
     });
+
+    test('pull page cursor equals the final delivered tuple exactly', () {
+      final timestamp = DateTime.utc(2026, 7, 30, 2);
+      final change = SyncEntity(
+        collection: SyncCollection.categories,
+        entityId: 'a',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: timestamp,
+        serverUpdatedAtUtc: timestamp,
+        payload: const <String, Object?>{'name': 'A'},
+      );
+
+      expect(
+        () => PullPage(
+          changes: <SyncEntity>[change],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: timestamp,
+            documentId: 'z',
+          ),
+          hasMore: false,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('pull page changes are strictly ordered by cursor tuple', () {
+      final timestamp = DateTime.utc(2026, 7, 30, 2);
+      final later = SyncEntity(
+        collection: SyncCollection.categories,
+        entityId: 'z',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: timestamp,
+        serverUpdatedAtUtc: timestamp,
+        payload: const <String, Object?>{'name': 'Later'},
+      );
+      final earlier = SyncEntity(
+        collection: SyncCollection.categories,
+        entityId: 'a',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: timestamp,
+        serverUpdatedAtUtc: timestamp,
+        payload: const <String, Object?>{'name': 'Earlier'},
+      );
+
+      expect(
+        () => PullPage(
+          changes: <SyncEntity>[later, earlier],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: timestamp,
+            documentId: earlier.entityId,
+          ),
+          hasMore: false,
+        ),
+        throwsArgumentError,
+      );
+    });
+
+    test('pull page changes contain unique entity ids', () {
+      final firstTimestamp = DateTime.utc(2026, 7, 30, 2);
+      final secondTimestamp = firstTimestamp.add(const Duration(seconds: 1));
+      SyncEntity change(DateTime timestamp, String name) => SyncEntity(
+        collection: SyncCollection.categories,
+        entityId: 'category:duplicate',
+        revision: 1,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: timestamp,
+        serverUpdatedAtUtc: timestamp,
+        payload: <String, Object?>{'name': name},
+      );
+
+      expect(
+        () => PullPage(
+          changes: <SyncEntity>[
+            change(firstTimestamp, 'First'),
+            change(secondTimestamp, 'Second'),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: secondTimestamp,
+            documentId: 'category:duplicate',
+          ),
+          hasMore: false,
+        ),
+        throwsArgumentError,
+      );
+    });
   });
 
   group('privacy-safe failures and policy', () {

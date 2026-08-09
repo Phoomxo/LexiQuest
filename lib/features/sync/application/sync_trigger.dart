@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'sync_engine.dart';
 
 enum SyncTriggerReason {
@@ -32,42 +34,77 @@ final class SyncTrigger {
   final Duration retryInterval;
   final Duration maxGateWait;
   Future<SyncRunResult>? _running;
-  bool _followUpRequested = false;
+  Future<void>? _disposeFuture;
+  final Completer<void> _disposeSignal = Completer<void>();
+  var _requestGeneration = 0;
+  var _disposed = false;
 
   Future<SyncRunResult> request(
     SyncTriggerReason reason, {
     Future<void>? cancelled,
   }) {
-    _followUpRequested = true;
+    if (_disposed) {
+      return Future<SyncRunResult>.error(
+        StateError('SyncTrigger has been disposed'),
+      );
+    }
+    _requestGeneration += 1;
     return _running ??= _runUntilSettled(cancelled).whenComplete(() {
       _running = null;
     });
   }
 
+  void requestDetached(SyncTriggerReason reason, {Future<void>? cancelled}) {
+    unawaited(
+      request(
+        reason,
+        cancelled: cancelled,
+      ).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+    );
+  }
+
+  Future<void> dispose() {
+    final existing = _disposeFuture;
+    if (existing != null) return existing;
+    _disposed = true;
+    if (!_disposeSignal.isCompleted) _disposeSignal.complete();
+    final disposal = _drainActiveRun();
+    _disposeFuture = disposal;
+    return disposal;
+  }
+
+  Future<void> _drainActiveRun() async {
+    final active = _running;
+    if (active == null) return;
+    try {
+      await active;
+    } catch (_) {
+      // Awaited callers retain the run failure; lifecycle cleanup is complete.
+    }
+  }
+
   Future<SyncRunResult> _runUntilSettled(Future<void>? cancelled) async {
     SyncRunResult? last;
     var waited = Duration.zero;
-    while (_followUpRequested) {
-      _followUpRequested = false;
-      while (true) {
-        last = await _run();
-        if (last.status != SyncRunStatus.alreadyRunning) break;
-        if (waited >= maxGateWait) return last;
-
-        final delay = retryDelay(retryInterval);
-        if (cancelled == null) {
-          await delay;
-        } else {
-          final wasCancelled = await Future.any<bool>(<Future<bool>>[
-            delay.then((_) => false),
-            cancelled.then((_) => true),
-          ]);
-          if (wasCancelled) return last;
-        }
-        waited += retryInterval;
+    while (true) {
+      final generationAtRunStart = _requestGeneration;
+      last = await _run();
+      if (_disposed) return last;
+      if (last.status != SyncRunStatus.alreadyRunning) {
+        if (_requestGeneration > generationAtRunStart) continue;
+        return last;
       }
+      if (waited >= maxGateWait) return last;
+
+      final delay = retryDelay(retryInterval);
+      final stopWaiting = await Future.any<bool>(<Future<bool>>[
+        delay.then((_) => false),
+        if (cancelled != null) cancelled.then((_) => true),
+        _disposeSignal.future.then((_) => true),
+      ]);
+      if (stopWaiting) return last;
+      waited += retryInterval;
     }
-    return last!;
   }
 }
 

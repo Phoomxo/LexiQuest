@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
@@ -581,6 +582,58 @@ void main() {
         );
       },
     );
+
+    test('disposal drains blocked sync before closing the database', () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final gateway = _BlockingBootstrapSyncGateway();
+      final bootstrap = AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _SuccessfulGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        bindGuestOwnership: true,
+        syncGatewayFactory: () => gateway,
+      );
+
+      final dependencies = await bootstrap.initialize();
+      await dependencies.guestSessionService.start();
+      await dependencies.syncTrigger!.request(SyncTriggerReason.manualRetry);
+      await dependencies.vocabulary!.createCategory('Blocked sync');
+      await gateway.pushEntered.future;
+
+      var disposeCompleted = false;
+      final disposing = dependencies.dispose().whenComplete(
+        () => disposeCompleted = true,
+      );
+      await Future<void>.delayed(Duration.zero);
+      final completedBeforeProvider = disposeCompleted;
+      Object? databaseErrorBeforeProvider;
+      QueryRow? databaseOpenBeforeProvider;
+      try {
+        databaseOpenBeforeProvider = await database
+            .customSelect('SELECT 1')
+            .getSingle();
+      } catch (error) {
+        databaseErrorBeforeProvider = error;
+      }
+
+      gateway.releasePush.complete();
+      await disposing;
+
+      expect(completedBeforeProvider, isFalse);
+      expect(databaseErrorBeforeProvider, isNull);
+      expect(databaseOpenBeforeProvider!.read<int>('1'), 1);
+      await expectLater(
+        database.customSelect('SELECT 1').getSingle(),
+        throwsA(anything),
+      );
+      await expectLater(
+        dependencies.syncTrigger!.request(SyncTriggerReason.manualRetry),
+        throwsA(isA<StateError>()),
+      );
+    });
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -713,5 +766,44 @@ final class _BootstrapSyncGateway implements SyncGateway {
   @override
   Future<PushResult> push(PushMutation mutation) {
     throw UnimplementedError();
+  }
+}
+
+final class _BlockingBootstrapSyncGateway implements SyncGateway {
+  final Completer<void> pushEntered = Completer<void>();
+  final Completer<void> releasePush = Completer<void>();
+
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() async {
+    final now = DateTime.now().toUtc();
+    return CloudSyncPolicy(
+      enabled: true,
+      source: CloudSyncPolicySource.remote,
+      fetchedAtUtc: now,
+      expiresAtUtc: now.add(const Duration(minutes: 15)),
+    );
+  }
+
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) async => PullPage(
+    changes: const <SyncEntity>[],
+    nextCursor: after,
+    hasMore: false,
+  );
+
+  @override
+  Future<PushResult> push(PushMutation mutation) async {
+    if (!pushEntered.isCompleted) pushEntered.complete();
+    await releasePush.future;
+    return PushAcknowledged(
+      operationId: mutation.operationId,
+      resultingRevision: mutation.localRevision,
+      acknowledgedAtUtc: DateTime.now().toUtc(),
+    );
   }
 }
