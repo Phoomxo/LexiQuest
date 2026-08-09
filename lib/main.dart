@@ -92,6 +92,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         darkTheme: M3Theme.darkTheme,
         themeMode: ThemeMode.system,
         initialRoute: widget.dependencies.initialRoute.path,
+        onGenerateInitialRoutes: (platformRoute) {
+          final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)
+              ? platformRoute
+              : widget.dependencies.initialRoute.path;
+          return <Route<dynamic>>[
+            AppRouteFactory.onGenerateRoute(RouteSettings(name: routeName)),
+          ];
+        },
         onGenerateRoute: AppRouteFactory.onGenerateRoute,
       ),
     );

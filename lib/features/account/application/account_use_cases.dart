@@ -1,4 +1,5 @@
 import '../../identity/application/upgrade_guest_owner.dart';
+import '../../identity/domain/local_owner.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../../identity/domain/owner_upgrade.dart';
 import '../../session/domain/app_entry_state.dart';
@@ -41,8 +42,7 @@ final class AccountUseCases {
       email: _email(email),
       password: _password(password),
     );
-    await _bindOrSignOut(session.uid);
-    await entryState.clear();
+    await _bindAndClearOrSignOut(session.uid);
     return session;
   }
 
@@ -54,8 +54,7 @@ final class AccountUseCases {
       email: _email(email),
       password: _password(password),
     );
-    await _bindOrSignOut(session.uid);
-    await entryState.clear();
+    await _bindAndClearOrSignOut(session.uid);
     return session;
   }
 
@@ -90,19 +89,56 @@ final class AccountUseCases {
   );
 
   Future<OwnerUpgradeResult> signOutToLocalGuest() async {
-    final previous = await owners.getOrCreateActiveOwner();
-    final guest = await upgradeGuestOwner.createLocalGuestAfterLogout();
-    try {
-      await gateway.signOut();
-    } catch (_) {
-      await upgradeGuestOwner.rollbackLocalGuestLogout(
-        previousOwnerId: previous.id,
-        guestOwnerId: guest.targetOwnerId,
-      );
-      rethrow;
-    }
+    final previousEntry = await entryState.read();
     await entryState.clear();
-    return guest;
+    LocalOwner? previous;
+    OwnerUpgradeResult? guest;
+    try {
+      previous = await owners.getOrCreateActiveOwner();
+      guest = await upgradeGuestOwner.createLocalGuestAfterLogout();
+      await gateway.signOut();
+      return guest;
+    } catch (error, stackTrace) {
+      if (previous != null && guest != null) {
+        try {
+          await upgradeGuestOwner.rollbackLocalGuestLogout(
+            previousOwnerId: previous.id,
+            guestOwnerId: guest.targetOwnerId,
+          );
+        } catch (_) {
+          // Continue restoring entry state and preserve the original failure.
+        }
+      }
+      try {
+        await _restoreEntryState(previousEntry);
+      } catch (_) {
+        // Preserve the original failure after best-effort rollback.
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<void> _bindAndClearOrSignOut(String uid) async {
+    AppEntryMode? previousEntry;
+    try {
+      previousEntry = await entryState.read();
+      await entryState.clear();
+      await _bind(uid);
+    } catch (error, stackTrace) {
+      try {
+        await gateway.signOut();
+      } catch (_) {
+        // Preserve the binding/entry failure after best-effort provider reset.
+      }
+      if (previousEntry != null) {
+        try {
+          await _restoreEntryState(previousEntry);
+        } catch (_) {
+          // Preserve the original failure after best-effort entry restoration.
+        }
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   Future<void> _bindOrSignOut(String uid) async {
@@ -117,6 +153,12 @@ final class AccountUseCases {
   Future<void> _bind(String uid) async {
     final owner = await owners.getOrCreateActiveOwner();
     await upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
+  }
+
+  Future<void> _restoreEntryState(AppEntryMode previousEntry) {
+    return previousEntry == AppEntryMode.guest
+        ? entryState.markGuest()
+        : entryState.clear();
   }
 
   String _email(String value) {

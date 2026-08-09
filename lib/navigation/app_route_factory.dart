@@ -9,6 +9,15 @@ import '../screens/register_screen.dart';
 import 'app_routes.dart';
 
 abstract final class AppRouteFactory {
+  static bool supportsInitialRoute(String routeName) {
+    final uri = Uri.tryParse(routeName);
+    if (uri != null && EmailAction.parse(uri) != null) return true;
+    return switch (routeName) {
+      '/login' || '/register' || '/home' || '/email-verification' => true,
+      _ => false,
+    };
+  }
+
   static Route<dynamic> onGenerateRoute(RouteSettings settings) {
     final uri = Uri.tryParse(settings.name ?? '');
     final action = uri == null ? null : EmailAction.parse(uri);

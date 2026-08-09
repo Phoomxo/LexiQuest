@@ -165,7 +165,7 @@ Future<AppEntryStateStore> createProductionEntryStateStore() async {
 }
 
 final class AppBootstrap {
-  const AppBootstrap({
+  AppBootstrap({
     required this.initializeFirebase,
     required this.initializeSupabase,
     required this.loadConfig,
@@ -207,10 +207,26 @@ final class AppBootstrap {
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
+  Future<AppDependencies>? _initialization;
 
-  Future<AppDependencies> initialize() async {
-    final entryState = await createEntryStateStore();
+  Future<AppDependencies> initialize() {
+    return _initialization ??= _initializeOnce();
+  }
+
+  Future<AppDependencies> _initializeOnce() async {
+    final resources = _BootstrapResourceScope();
+    try {
+      return await _compose(resources);
+    } catch (error, stackTrace) {
+      await resources.disposeAfterFailure();
+      Error.throwWithStackTrace(error, stackTrace);
+    }
+  }
+
+  Future<AppDependencies> _compose(_BootstrapResourceScope resources) async {
+    final entryState = await _createEntryState();
     final database = createDatabase();
+    resources.own(database.close);
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
     final localOwners = DriftLocalOwnerRepository(
@@ -399,6 +415,7 @@ final class AppBootstrap {
     );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());
+    resources.own(modelByteSource.close);
     final downloadCounter = DownloadCounter(
       database,
       generateEventId: idGenerator.v4,
@@ -425,16 +442,20 @@ final class AppBootstrap {
             delegate: delegate,
           ),
     );
+    resources.own(deviceModels.dispose);
     final objectScanner = ObjectScannerUseCases(
       camera: PluginCameraGateway(),
       deviceModels: deviceModels,
       vocabulary: vocabulary,
       preprocessor: const DartImagePreprocessor(),
     );
+    resources.own(objectScanner.dispose);
     final speechPractice = SpeechPracticeUseCases(
       PluginSpeechRecognitionGateway(),
     );
+    resources.own(speechPractice.dispose);
     final aiTutorHttpClient = http.Client();
+    resources.own(aiTutorHttpClient.close);
     final aiUsage = DriftAiUsageRepository(
       database,
       activeOwnerId: activeOwnerId,
@@ -447,6 +468,7 @@ final class AppBootstrap {
       usageRepository: aiUsage,
       usageEventId: idGenerator.v4,
     );
+    resources.own(aiTutor.dispose);
 
     // ── Associative learning (in-memory fallback adapter) ──────────────────
     final associativeLearning = InMemoryAssociativeLearningAdapter();
@@ -455,6 +477,8 @@ final class AppBootstrap {
     VoiceUseCases? voice;
     try {
       voice = VoiceUseCases.createDefault();
+      final ownedVoice = voice;
+      resources.own(() => ownedVoice.disposeIfOwned(true));
     } catch (_) {
       // Platform TTS unavailable in this environment (e.g. headless tests).
       // Screens fall back to VoiceUseCases.createDefault() per-screen.
@@ -475,12 +499,14 @@ final class AppBootstrap {
         nowUtc: DateTime.now().toUtc(),
       ),
     );
+    resources.own(runtimeFeatures.dispose);
     final featureControls = RuntimeFeatureControls(
       store: featureOverrideStore,
       registry: runtimeFeatures,
       nowUtc: () => DateTime.now().toUtc(),
     );
     final fieldFeatures = FeatureRegistryFieldAdapter(runtimeFeatures);
+    resources.own(fieldFeatures.dispose);
 
     final initialRoute = await AppStartRouteResolver(
       entryState: entryState,
@@ -525,18 +551,16 @@ final class AppBootstrap {
       streak: streak,
       voice: voice,
       associativeLearning: associativeLearning,
-      disposeResources: () async {
-        await aiTutor.dispose();
-        aiTutorHttpClient.close();
-        fieldFeatures.dispose();
-        runtimeFeatures.dispose();
-        await objectScanner.dispose();
-        await speechPractice.dispose();
-        await deviceModels.dispose();
-        modelByteSource.close();
-        await database.close();
-      },
+      disposeResources: resources.dispose,
     );
+  }
+
+  Future<AppEntryStateStore> _createEntryState() async {
+    try {
+      return await createEntryStateStore();
+    } catch (_) {
+      return _VolatileAppEntryStateStore();
+    }
   }
 
   Future<RuntimeAvailability> _availability(
@@ -559,7 +583,66 @@ final class AppBootstrap {
   }
 }
 
-/// No-op [ShadowLogger] for production — shadow entries are discarded.
+typedef _ResourceDisposer = FutureOr<void> Function();
+
+final class _BootstrapResourceScope {
+  final List<_ResourceDisposer> _disposers = <_ResourceDisposer>[];
+  Future<void>? _disposeFuture;
+
+  void own(_ResourceDisposer disposer) {
+    _disposers.add(disposer);
+  }
+
+  Future<void> dispose() {
+    return _disposeFuture ??= _disposeAll();
+  }
+
+  Future<void> disposeAfterFailure() async {
+    try {
+      await dispose();
+    } catch (_) {
+      // Preserve the initialization failure after exhausting cleanup.
+    }
+  }
+
+  Future<void> _disposeAll() async {
+    Object? firstError;
+    StackTrace? firstStackTrace;
+    for (final disposer in _disposers.reversed) {
+      try {
+        await Future<void>.sync(disposer);
+      } catch (error, stackTrace) {
+        firstError ??= error;
+        firstStackTrace ??= stackTrace;
+      }
+    }
+    if (firstError != null) {
+      Error.throwWithStackTrace(firstError, firstStackTrace!);
+    }
+  }
+}
+
+/// Process-local fail-closed fallback for the non-business app-entry flag.
+/// It never stores owner, learning, consent, or research data and intentionally
+/// makes no durability claim across process restarts.
+final class _VolatileAppEntryStateStore implements AppEntryStateStore {
+  AppEntryMode _mode = AppEntryMode.signedOut;
+
+  @override
+  Future<AppEntryMode> read() async => _mode;
+
+  @override
+  Future<void> markGuest() async {
+    _mode = AppEntryMode.guest;
+  }
+
+  @override
+  Future<void> clear() async {
+    _mode = AppEntryMode.signedOut;
+  }
+}
+
+/// No-op [ShadowLogger] for production; shadow entries are discarded.
 final class _NoopShadowLogger implements ShadowLogger {
   @override
   void logEntry(ShadowLogEntry entry) {}

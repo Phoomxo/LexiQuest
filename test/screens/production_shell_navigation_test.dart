@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/email_action_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/setting_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -18,12 +19,15 @@ class _FakeGuestSessionService implements GuestSessionService {
 
 const _drawerButtonKey = ValueKey<String>('legacy-drawer-button');
 
-AppDependencies _dependencies({bool ready = true}) {
+AppDependencies _dependencies({
+  bool ready = true,
+  AppRoute initialRoute = AppRoute.home,
+}) {
   final availability = ready
       ? RuntimeAvailability.ready
       : RuntimeAvailability.unavailable;
   return AppDependencies(
-    initialRoute: AppRoute.home,
+    initialRoute: initialRoute,
     runtimeStatus: AppRuntimeStatus(
       localData: RuntimeAvailability.ready,
       firebase: availability,
@@ -49,6 +53,38 @@ Future<void> _openDrawer(WidgetTester tester) async {
 }
 
 void main() {
+  testWidgets('supported cold-start email action overrides bootstrap route', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        'https://vocab-learning-app-219ef.firebaseapp.com/auth/action'
+        '?mode=resetPassword&oobCode=abc123';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: _dependencies()));
+    await tester.pump();
+
+    expect(find.byType(EmailActionScreen), findsOneWidget);
+    expect(find.byType(MainNavigationScreen), findsNothing);
+  });
+
+  testWidgets('unsupported cold-start route uses bootstrap fallback', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        '/unsupported';
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: _dependencies()));
+    await tester.pump();
+
+    expect(find.byType(MainNavigationScreen), findsOneWidget);
+  });
+
   testWidgets('/home resolves to the field-safe shell', (tester) async {
     await _pumpHome(tester);
 

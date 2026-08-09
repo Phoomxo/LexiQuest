@@ -3,6 +3,7 @@ import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
@@ -362,6 +363,107 @@ void main() {
         expect(entryState.mode, AppEntryMode.guest);
       },
     );
+
+    test('memoizes one dependency graph per bootstrap instance', () async {
+      var databaseCalls = 0;
+      var entryStateCalls = 0;
+      final bootstrap = AppBootstrap(
+        createDatabase: () {
+          databaseCalls += 1;
+          return _testDatabase();
+        },
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: () async {
+          entryStateCalls += 1;
+          return _MemoryAppEntryStateStore();
+        },
+      );
+
+      final first = await bootstrap.initialize();
+      final second = await bootstrap.initialize();
+
+      expect(identical(first, second), isTrue);
+      expect(databaseCalls, 1);
+      expect(entryStateCalls, 1);
+    });
+
+    test('closes the database when later composition fails', () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      final bootstrap = AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        syncGatewayFactory: () => throw StateError('gateway unavailable'),
+      );
+
+      await expectLater(bootstrap.initialize(), throwsStateError);
+      await expectLater(
+        database.customSelect('SELECT 1').getSingle(),
+        throwsA(anything),
+      );
+    });
+
+    test(
+      'entry-store creation failure falls back to signed-out volatile guest state',
+      () async {
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          bindGuestOwnership: true,
+          createEntryStateStore: () async {
+            throw StateError('preferences unavailable');
+          },
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final guest = await dependencies.guestSessionService.start();
+
+        expect(dependencies.initialRoute, AppRoute.login);
+        expect(guest, isA<GuestSessionStarted>());
+      },
+    );
+
+    test('shares the bootstrap entry store with account transitions', () async {
+      final entryState = _MemoryAppEntryStateStore(AppEntryMode.guest);
+      final gateway = _BootstrapAccountGateway(
+        currentSession: const AccountSession(
+          uid: 'account-user',
+          email: 'student@example.com',
+          isAnonymous: false,
+          emailVerified: true,
+        ),
+      );
+      var factoryCalls = 0;
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => gateway,
+        createEntryStateStore: () async {
+          factoryCalls += 1;
+          return entryState;
+        },
+      );
+
+      final dependencies = await bootstrap.initialize();
+      await dependencies.account!.signOutToLocalGuest();
+
+      expect(factoryCalls, 1);
+      expect(dependencies.initialRoute, AppRoute.home);
+      expect(entryState.clearCalls, 1);
+      expect(entryState.mode, AppEntryMode.signedOut);
+    });
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -396,19 +498,76 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
   _MemoryAppEntryStateStore([this.mode = AppEntryMode.signedOut]);
 
   AppEntryMode mode;
+  int clearCalls = 0;
+  int markGuestCalls = 0;
 
   @override
   Future<void> clear() async {
+    clearCalls += 1;
     mode = AppEntryMode.signedOut;
   }
 
   @override
   Future<void> markGuest() async {
+    markGuestCalls += 1;
     mode = AppEntryMode.guest;
   }
 
   @override
   Future<AppEntryMode> read() async => mode;
+}
+
+final class _BootstrapAccountGateway implements AccountGateway {
+  _BootstrapAccountGateway({this.currentSession});
+
+  @override
+  AccountSession? currentSession;
+
+  @override
+  Future<AccountSession> register({
+    required String email,
+    required String password,
+  }) async => currentSession = AccountSession(
+    uid: 'account-user',
+    email: email,
+    isAnonymous: false,
+    emailVerified: false,
+  );
+
+  @override
+  Future<AccountSession> signIn({
+    required String email,
+    required String password,
+  }) => register(email: email, password: password);
+
+  @override
+  Future<void> signOut() async {
+    currentSession = null;
+  }
+
+  @override
+  Future<void> applyEmailVerificationCode(String code) async {}
+
+  @override
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {}
+
+  @override
+  Future<void> confirmPasswordReset({
+    required String code,
+    required String newPassword,
+  }) async {}
+
+  @override
+  Future<AccountSession> reload() async => currentSession!;
+
+  @override
+  Future<void> sendPasswordReset(String email) async {}
+
+  @override
+  Future<void> sendVerification() async {}
 }
 
 final class _BootstrapSyncGateway implements SyncGateway {

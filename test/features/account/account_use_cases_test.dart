@@ -76,6 +76,35 @@ void main() {
     );
 
     expect(gateway.signOutCalls, 1);
+    expect(entryState.clearCalls, 1);
+    expect(entryState.markGuestCalls, 1);
+    expect(entryState.mode, AppEntryMode.guest);
+  });
+
+  test('registration signs out provider when entry clear fails', () async {
+    entryState.clearFailure = StateError('preferences unavailable');
+
+    await expectLater(
+      accounts.register(email: 'student@example.com', password: 'password123'),
+      throwsStateError,
+    );
+
+    expect(upgrades.upgradeCalls, 0);
+    expect(gateway.signOutCalls, 1);
+    expect(entryState.mode, AppEntryMode.guest);
+  });
+
+  test('sign in signs out provider when entry clear fails', () async {
+    entryState.clearFailure = StateError('preferences unavailable');
+
+    await expectLater(
+      accounts.signIn(email: 'student@example.com', password: 'password123'),
+      throwsStateError,
+    );
+
+    expect(upgrades.upgradeCalls, 0);
+    expect(gateway.signOutCalls, 1);
+    expect(entryState.mode, AppEntryMode.guest);
   });
 
   test(
@@ -116,8 +145,24 @@ void main() {
     expect(upgrades.rollbackCalls, 1);
     expect(upgrades.rollbackPreviousOwnerId, 'local-owner');
     expect(upgrades.rollbackGuestOwnerId, 'new-local-owner');
-    expect(entryState.clearCalls, 0);
+    expect(entryState.clearCalls, 1);
+    expect(entryState.markGuestCalls, 1);
+    expect(entryState.mode, AppEntryMode.guest);
   });
+
+  test(
+    'logout clear failure leaves provider and local owner unchanged',
+    () async {
+      entryState.clearFailure = StateError('preferences unavailable');
+
+      await expectLater(accounts.signOutToLocalGuest(), throwsStateError);
+
+      expect(gateway.signOutCalls, 0);
+      expect(upgrades.logoutCalls, 0);
+      expect(upgrades.rollbackCalls, 0);
+      expect(entryState.mode, AppEntryMode.guest);
+    },
+  );
 
   test('validates email and password before provider calls', () async {
     await expectLater(
@@ -161,15 +206,19 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
 
   AppEntryMode mode;
   int clearCalls = 0;
+  int markGuestCalls = 0;
+  Object? clearFailure;
 
   @override
   Future<void> clear() async {
     clearCalls += 1;
+    if (clearFailure case final failure?) throw failure;
     mode = AppEntryMode.signedOut;
   }
 
   @override
   Future<void> markGuest() async {
+    markGuestCalls += 1;
     mode = AppEntryMode.guest;
   }
 

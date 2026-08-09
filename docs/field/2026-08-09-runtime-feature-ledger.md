@@ -91,6 +91,13 @@ authenticated session. That same store is passed to guest and account
 transitions. Guest selection is persisted before local guest success;
 successful account binding and sign-out clear it. Local account binding still
 uses the existing `localOwnerId` and does not replace the owner identifier.
+Supported cold-start account action links remain routable; unsupported platform
+route strings fall back to the composed bootstrap route.
+
+If SharedPreferences initialization fails, bootstrap uses a signed-out,
+process-local volatile entry flag so offline business data remains available.
+That fallback stores no owner, learning, consent, or research data and makes no
+restart-durability claim.
 
 Evidence is bounded to the resolver matrix, SharedPreferences mock-backed store
 tests, bootstrap/session/account tests, and the production-shell widget gate.
