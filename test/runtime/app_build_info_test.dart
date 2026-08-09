@@ -39,9 +39,6 @@ AppDependencies _dependencies(
 Future<void> _pumpHome(WidgetTester tester, AppBuildInfo buildInfo) async {
   await tester.pumpWidget(MyApp(dependencies: _dependencies(buildInfo)));
   await tester.pump();
-  final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
-  navigator.pushReplacementNamed('/home');
-  await tester.pump();
   await tester.pump(const Duration(milliseconds: 350));
 }
 

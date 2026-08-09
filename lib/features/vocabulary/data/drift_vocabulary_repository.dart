@@ -47,9 +47,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
   Future<List<VocabularyWord>> listAllWords(String ownerId) async {
     final query = database.select(database.vocabularyWords)
       ..where(
-        (row) =>
-            row.ownerId.equals(ownerId) &
-            row.isDeleted.equals(false),
+        (row) => row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
       )
       ..orderBy([(row) => OrderingTerm.asc(row.normalizedSpelling)]);
     final rows = await query.get();

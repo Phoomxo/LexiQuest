@@ -101,10 +101,7 @@ class _AddWordScreenState extends State<AddWordScreen> {
             ),
             items: _cefrOptions
                 .map(
-                  (level) => DropdownMenuItem(
-                    value: level,
-                    child: Text(level),
-                  ),
+                  (level) => DropdownMenuItem(value: level, child: Text(level)),
                 )
                 .toList(),
             onChanged: (value) => setState(() => _cefrLevel = value),

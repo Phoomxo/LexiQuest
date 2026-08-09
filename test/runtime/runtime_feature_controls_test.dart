@@ -40,13 +40,13 @@ void main() {
       final now = DateTime.utc(2026, 8, 9, 12);
       addTearDown(database.close);
 
-    expect(
-      () => store.setEmergencyOff(
-        Feature.objectScanner,
-        updatedAtUtc: now,
-        expiresAtUtc: now.add(const Duration(hours: 1)),
-      ),
-      throwsUnsupportedError,
+      expect(
+        () => store.setEmergencyOff(
+          Feature.objectScanner,
+          updatedAtUtc: now,
+          expiresAtUtc: now.add(const Duration(hours: 1)),
+        ),
+        throwsUnsupportedError,
       );
       expect(await store.load(nowUtc: now), isEmpty);
 
