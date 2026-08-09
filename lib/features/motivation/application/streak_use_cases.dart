@@ -44,9 +44,9 @@ final class StreakUseCases {
   ///
   /// Safe to call multiple times for the same day — [StreakOutcome.sameDay]
   /// is returned for subsequent calls with no DB writes beyond the first.
-  Future<StreakUpdate> recordLearningDay() async {
+  Future<StreakUpdate> recordLearningDay({DateTime? occurredAtUtc}) async {
     final owner = await owners.getOrCreateActiveOwner();
-    final now = _now();
+    final now = _now(occurredAtUtc);
     final nowMs = now.millisecondsSinceEpoch;
 
     final current = await repository.getOrCreate(owner.id, nowMs);
@@ -118,9 +118,11 @@ final class StreakUseCases {
 
   // ── Private ────────────────────────────────────────────────────────────────
 
-  DateTime _now() {
-    final value = nowUtc();
-    if (!value.isUtc) throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
-    return value;
+  DateTime _now([DateTime? value]) {
+    final resolved = value ?? nowUtc();
+    if (!resolved.isUtc) {
+      throw ArgumentError.value(resolved, 'nowUtc', 'must be UTC');
+    }
+    return resolved;
   }
 }

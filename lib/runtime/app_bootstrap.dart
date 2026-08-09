@@ -39,6 +39,7 @@ import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
+import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -395,6 +396,21 @@ final class AppBootstrap {
       buildId: buildInfo.buildId,
     );
 
+    final learningReconciler = LearningSideEffectReconciler(
+      database,
+      questSink: (event) => quest
+          .processEvent(event, QuestCatalogProvider.allQuests)
+          .then((_) {}),
+      streakSink: (event) => streak
+          .recordLearningDay(occurredAtUtc: event.occurredAtUtc)
+          .then((_) {}),
+      rewardSink: (event) =>
+          quest.reconcileReward(event, QuestCatalogProvider.allQuests),
+    );
+    await learningReconciler.reconcileOwner(
+      (await localOwners.getOrCreateActiveOwner()).id,
+    );
+
     final learning = LearningUseCases(
       owners: localOwners,
       repository: DriftLearningRepository(database),
@@ -404,9 +420,7 @@ final class AppBootstrap {
       onLocalMutation: notifyLocalMutation,
       shadowOrchestrator: shadowOrchestrator,
       eventAdapter: eventAdapter,
-      questEventSink: (event) =>
-          quest.processEvent(event, QuestCatalogProvider.allQuests),
-      streakEventSink: () => streak.recordLearningDay(),
+      sideEffectReconciler: learningReconciler,
     );
     final exports = ExportUseCases(
       owners: localOwners,

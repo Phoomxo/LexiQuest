@@ -152,12 +152,16 @@ final class ObjectiveProgress {
   bool get isComplete => currentCount >= targetCount;
 
   /// Returns a copy with [currentCount] incremented and [eventId] appended.
-  ObjectiveProgress advance(String eventId) => ObjectiveProgress(
-    objectiveId: objectiveId,
-    currentCount: currentCount + 1,
-    targetCount: targetCount,
-    sourceEventIds: [...sourceEventIds, eventId],
-  );
+  /// Replaying an already-applied event returns this instance unchanged.
+  ObjectiveProgress advance(String eventId) {
+    if (sourceEventIds.contains(eventId)) return this;
+    return ObjectiveProgress(
+      objectiveId: objectiveId,
+      currentCount: currentCount + 1,
+      targetCount: targetCount,
+      sourceEventIds: [...sourceEventIds, eventId],
+    );
+  }
 }
 
 /// The completion event emitted when a [QuestInstance] reaches all objectives.
@@ -244,8 +248,9 @@ final class QuestInstance {
         orElse: () => null,
       );
       if (obj != null && obj.criteria.matches(event)) {
-        updated.add(p.advance(event.eventId));
-        changed = true;
+        final next = p.advance(event.eventId);
+        updated.add(next);
+        changed = changed || !identical(next, p);
       } else {
         updated.add(p);
       }

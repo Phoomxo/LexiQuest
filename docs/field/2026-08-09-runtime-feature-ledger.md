@@ -22,11 +22,11 @@ is reachable from `lib/main.dart`.
 | Capability | Feature flag | Production entry | Composed dependency | Durable store | Restart test | Field evidence | State |
 |---|---|---|---|---|---|---|---|
 | Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | Production Home shell create journey plus same-file SQLite close/reopen and foreign-owner exclusion | None; host test only | verified |
-| Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
-| Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state; `localOwnerId` | None from production shell | None | wired |
+| Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state, stable V2 learning events, and versioned projection receipts; `localOwnerId` | File-backed production-use-case journey plus post-commit failure/replay injection | None; host test only | verified |
+| Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state, and stable V2 learning events; `localOwnerId` | Correct/incorrect SRS state and due time survive same-file close/reopen | None; host test only | verified |
 | Feature: associative reading delivery target | `Feature.reading` (`enabled`) | Missing: no launcher reaches `AssociativeReadingSessionScreen`; the reachable `LearningWorldMapScreen` is a separate legacy surface under this flag | Production bootstrap currently provides `InMemoryAssociativeLearningAdapter` | Drift association tables exist, but production associative reading uses no durable adapter/path | None | None | orphan |
-| Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | None from production shell | None | wired |
-| Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | None from production shell | None | wired |
+| Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | File-backed progress reload verifies mastery count from durable evidence | None; host test only | verified |
+| Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | File-backed progress reload verifies incorrect-count weakness evidence | None; host test only | verified |
 | Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | None from production shell | None | wired |
 | Feature: achievements | `Feature.achievements` (`enabled`) | `home/achievements` → `AchievementsScreen` | `ProgressUseCases` | Drift achievement unlocks and progress evidence; `localOwnerId` | None from production shell | None | wired |
 | Feature: shop | `Feature.shop` (`enabled`) | `drawer/rewards/shop` | `RewardUseCases` | Drift reward transactions, owned/equipped items; `localOwnerId` | None from production shell | None | wired |
@@ -35,7 +35,7 @@ is reachable from `lib/main.dart`.
 | Feature: AI tutor | `Feature.aiTutor` (`limited`) | `drawer/ai-tutor/chat` and `drawer/ai-tutor/settings` | `AiTutorController`, `AiUsageRepository` (voice has a screen fallback) | Drift AI usage plus saved provider settings/secret store; `localOwnerId` | None from production shell | None; fake replies are not provider evidence | wired |
 | Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file | None from production shell | None | wired |
 | Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden` by omission) | None; not adapted into legacy navigation | Shadow reward orchestrator is internal only | Drift V2 event/reward projections | None from production shell | None | hidden |
-| Feature: quest V2 | `Feature.questV2` (`limited`) | Missing: no `FieldFeature` mapping or user-visible quest entry | `QuestUseCases` is composed | Drift quest definitions, instances, objective progress; `localOwnerId` | None from production shell | None | orphan |
+| Feature: quest V2 | `Feature.questV2` (`limited`) | Missing: no `FieldFeature` mapping or user-visible quest entry | `QuestUseCases` plus durable learning reconciler are composed | Drift quest definitions, instances, objective progress, and versioned learning projection receipts; `localOwnerId` | File-backed answer replay proves stable source-event de-duplication; no user-visible shell entry | None; host test only | orphan |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
 | Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope`; production route passes no dependency | Drift vocabulary import and word tables | Production Home shell opens the scoped bulk-add route; import behavior is not executed | None; host test only | wired |
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
@@ -131,6 +131,28 @@ journey also proves the bulk-add route resolves `ImportVocabulary` from
 `AppDependenciesScope`, but bulk import remains `wired` because the journey does
 not execute an import. There is still no physical process-restart, APK, or
 device evidence, so vocabulary is not `field-certified`.
+
+## P2 learning durability update
+
+Task 3 records one stable `EventEnvelopeV2` beside each answer attempt inside
+the same local Drift transaction as the attempt, SRS, core XP, and attempt/SRS
+outbox rows. Event ID and idempotency key derive from the durable attempt ID,
+not a process-local counter. Quest, streak, and quest-reward projections run
+after that transaction through a reconciler. Each successful projection writes
+an independent `LearningProjectionApplied` receipt with applied version 1 to
+the existing `events_v2` table; a failed projection remains receipt-free and is
+retried at bootstrap or after the next answer without rerunning successful
+projections. Quest objective evidence now rejects a repeated source event ID,
+and completed-quest reward retry reuses the quest completion idempotency key.
+
+No schema bump was needed. Schema 12 already includes `events_v2`, its unique
+owner/idempotency constraint, owner-upgrade inventory entry, and owner deletion
+coverage. The reconciler adds no network call to the local learning transaction.
+Evidence is a same-file SQLite close/reopen journey, injected post-commit quest
+and streak failures, independent receipt retry tests, and focused host gates.
+This is not physical process, APK, or device evidence, so the promoted learning
+rows are `verified`, not `field-certified`; quest remains `orphan` because it
+still lacks a user-visible production entry.
 
 ## Baseline gaps carried forward
 

@@ -5,6 +5,7 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import 'learning_side_effect_reconciler.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -36,6 +37,7 @@ final class LearningUseCases {
     this.eventAdapter,
     this.questEventSink,
     this.streakEventSink,
+    this.sideEffectReconciler,
   });
 
   final LocalOwnerRepository owners;
@@ -65,6 +67,9 @@ final class LearningUseCases {
   ///
   /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
   final StreakEventSink? streakEventSink;
+
+  /// Durable replay coordinator used by the production composition root.
+  final LearningSideEffectReconciler? sideEffectReconciler;
 
   Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
     final owner = await owners.getOrCreateActiveOwner();
@@ -173,18 +178,38 @@ final class LearningUseCases {
     String? providerProvenance,
   }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    final attemptId = 'attempt:${_nextId()}';
+    final canonicalSessionId = _requiredId(sessionId, 'sessionId');
+    final canonicalWordId = _requiredId(wordId, 'wordId');
+    final canonicalPromptMode = _requiredId(promptMode, 'promptMode');
+    final occurredAtUtc = _now();
+    final durableEvent = eventAdapter?.adaptFromCommand(
+      sourceEventId: attemptId,
+      ownerId: owner.id,
+      sessionId: canonicalSessionId,
+      wordId: canonicalWordId,
+      promptMode: canonicalPromptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: occurredAtUtc,
+      providerProvenance: providerProvenance,
+      appVersion: buildInfo.version,
+      buildId: buildInfo.buildId,
+    );
     final result = await repository.recordAnswer(
       RecordAnswerCommand(
-        id: 'attempt:${_nextId()}',
+        id: attemptId,
         ownerId: owner.id,
-        sessionId: _requiredId(sessionId, 'sessionId'),
-        wordId: _requiredId(wordId, 'wordId'),
-        promptMode: _requiredId(promptMode, 'promptMode'),
+        sessionId: canonicalSessionId,
+        wordId: canonicalWordId,
+        promptMode: canonicalPromptMode,
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        occurredAtUtc: _now(),
+        occurredAtUtc: occurredAtUtc,
         providerProvenance: providerProvenance,
+        event: durableEvent,
       ),
     );
     onLocalMutation?.call();
@@ -192,23 +217,9 @@ final class LearningUseCases {
     // Shadow V2 reward pipeline — runs after production succeeds.
     // Errors are swallowed: shadow mode must never break production.
     final shadow = shadowOrchestrator;
-    final adapter = eventAdapter;
-    if (shadow != null && adapter != null) {
+    if (shadow != null && durableEvent != null) {
       try {
-        final v2Event = adapter.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: _now(),
-          providerProvenance: providerProvenance,
-          appVersion: buildInfo.version,
-          buildId: buildInfo.buildId,
-        );
-        await shadow.processShadow(v2Event);
+        await shadow.processShadow(durableEvent);
       } catch (_) {
         // Intentionally swallowed — shadow mode must never break production.
       }
@@ -217,35 +228,28 @@ final class LearningUseCases {
     // Quest pipeline hook — forward answer event to quest use cases.
     // Uses the same V2 event produced for shadow mode when available;
     // builds a fresh event otherwise.  Errors are swallowed.
-    final questSink = questEventSink;
-    if (questSink != null) {
+    final reconciler = sideEffectReconciler;
+    if (reconciler != null) {
       try {
-        final questEvent = adapter?.adaptFromCommand(
-          ownerId: owner.id,
-          sessionId: _requiredId(sessionId, 'sessionId'),
-          wordId: _requiredId(wordId, 'wordId'),
-          promptMode: _requiredId(promptMode, 'promptMode'),
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: _now(),
-          providerProvenance: providerProvenance,
-          appVersion: buildInfo.version,
-          buildId: buildInfo.buildId,
-        );
-        if (questEvent != null) {
-          await questSink(questEvent);
-        }
+        await reconciler.reconcileOwner(owner.id);
       } catch (_) {
-        // Intentionally swallowed — quest hook must never break production.
+        // Durable core is committed; reconciliation will retry after restart.
       }
-    }
+    } else {
+      final questSink = questEventSink;
+      if (questSink != null && durableEvent != null) {
+        try {
+          await questSink(durableEvent);
+        } catch (_) {
+          // Intentionally swallowed — quest hook must never break production.
+        }
+      }
 
-    // Streak hook — notify StreakUseCases that a learning event occurred.
-    // Errors are swallowed — streak tracking must never break production.
-    try {
-      await streakEventSink?.call();
-    } catch (_) {}
+      // Legacy hook retained for tests and non-production compositions.
+      try {
+        await streakEventSink?.call();
+      } catch (_) {}
+    }
 
     return result;
   }

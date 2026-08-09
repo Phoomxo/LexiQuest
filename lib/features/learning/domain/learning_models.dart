@@ -1,3 +1,5 @@
+import '../../events/domain/event_envelope_v2.dart';
+
 final class QuizWord {
   const QuizWord({
     required this.id,
@@ -78,6 +80,7 @@ final class RecordAnswerCommand {
     required this.attemptNumber,
     required this.occurredAtUtc,
     this.providerProvenance,
+    this.event,
   });
 
   final String id;
@@ -90,6 +93,7 @@ final class RecordAnswerCommand {
   final int attemptNumber;
   final DateTime occurredAtUtc;
   final String? providerProvenance;
+  final EventEnvelopeV2? event;
 }
 
 final class SrsSnapshot {

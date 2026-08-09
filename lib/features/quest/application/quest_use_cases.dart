@@ -10,12 +10,13 @@ typedef QuestIdGenerator = String Function();
 /// Called when a quest completes. The callback grants the XP reward to the
 /// learner's points ledger. Errors are swallowed in production — reward
 /// failure must never break the learning flow.
-typedef QuestRewardSink = Future<void> Function({
-  required String ownerId,
-  required String idempotencyKey,
-  required int xpAmount,
-  String? rewardItemId,
-});
+typedef QuestRewardSink =
+    Future<void> Function({
+      required String ownerId,
+      required String idempotencyKey,
+      required int xpAmount,
+      String? rewardItemId,
+    });
 
 /// Application façade for the V2 Quest domain.
 ///
@@ -137,6 +138,40 @@ final class QuestUseCases {
   Future<List<QuestInstance>> getActiveInstances() async {
     final owner = await owners.getOrCreateActiveOwner();
     return repository.getActiveInstances(owner.id);
+  }
+
+  /// Retries the reward projection for a completed quest caused by [event].
+  ///
+  /// Unlike the interactive completion hook, sink failures propagate so the
+  /// durable learning reconciler can leave the reward receipt pending.
+  Future<void> reconcileReward(
+    EventEnvelopeV2 event,
+    List<QuestDefinition> catalog,
+  ) async {
+    final sink = rewardSink;
+    if (sink == null) return;
+    final instances = await repository.getAllInstances(event.ownerIdentity);
+    for (final instance in instances) {
+      if (instance.state != QuestInstanceState.completed ||
+          !instance.allSourceEventIds.contains(event.eventId)) {
+        continue;
+      }
+      final def = catalog.firstWhere(
+        (candidate) => candidate.questId == instance.questId,
+        orElse: () => throw StateError(
+          'QuestUseCases.reconcileReward: no catalog entry for '
+          'questId=${instance.questId}',
+        ),
+      );
+      if (def.reward.xpAmount <= 0) continue;
+      final completed = instance.complete(now: instance.completedAtUtc);
+      await sink(
+        ownerId: completed.ownerId,
+        idempotencyKey: completed.idempotencyKey,
+        xpAmount: def.reward.xpAmount,
+        rewardItemId: def.reward.rewardItemId,
+      );
+    }
   }
 
   /// Expire any active instances whose deadline has passed.

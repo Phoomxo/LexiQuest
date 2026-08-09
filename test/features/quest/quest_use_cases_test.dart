@@ -198,6 +198,38 @@ void main() {
       },
     );
 
+    test('reconcileReward retries a failed completed-quest grant', () async {
+      final def = _singleObjectiveDef(targetCount: 1);
+      final event = _makeEvent();
+      var calls = 0;
+      final keys = <String>[];
+      final rewardUseCases = QuestUseCases(
+        repository: repo,
+        owners: _FakeOwners(testOwner),
+        generateId: () => 'reward-retry-instance',
+        nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+        timezoneId: 'Asia/Bangkok',
+        rewardSink:
+            ({
+              required ownerId,
+              required idempotencyKey,
+              required xpAmount,
+              rewardItemId,
+            }) async {
+              calls++;
+              keys.add(idempotencyKey);
+              if (calls == 1) throw StateError('reward unavailable');
+            },
+      );
+      await rewardUseCases.startQuest(def);
+      await rewardUseCases.processEvent(event, [def]);
+
+      await rewardUseCases.reconcileReward(event, [def]);
+
+      expect(calls, 2);
+      expect(keys.toSet(), hasLength(1));
+    });
+
     // ── expireStale ──────────────────────────────────────────────────────────
 
     test(

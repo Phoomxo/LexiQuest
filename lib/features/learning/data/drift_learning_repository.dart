@@ -2,6 +2,7 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import 'drift_learning_event_store.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
@@ -21,6 +22,7 @@ final class DriftLearningRepository implements LearningRepository {
   final db.AppDatabase database;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
+  late final DriftLearningEventStore events = DriftLearningEventStore(database);
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -96,6 +98,8 @@ final class DriftLearningRepository implements LearningRepository {
         );
         await projections.rebuildAchievements(command.ownerId);
         await rewardProjections.rebuild(command.ownerId);
+        final event = command.event;
+        if (event != null) await events.append(event);
         return AnswerRecordResult(inserted: false, srs: srs);
       }
 
@@ -162,6 +166,8 @@ final class DriftLearningRepository implements LearningRepository {
         entityId: command.wordId,
         occurredAtUtc: command.occurredAtUtc,
       );
+      final event = command.event;
+      if (event != null) await events.append(event);
       return AnswerRecordResult(inserted: true, srs: next);
     });
   }
@@ -467,11 +473,14 @@ final class DriftLearningRepository implements LearningRepository {
   Future<LearningSessionSummary?> getActiveSession({
     required String ownerId,
   }) async {
-    final row = await (database.select(database.learningSessions)
-          ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active'))
-          ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
-          ..limit(1))
-        .getSingleOrNull();
+    final row =
+        await (database.select(database.learningSessions)
+              ..where(
+                (t) => t.ownerId.equals(ownerId) & t.state.equals('active'),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
+              ..limit(1))
+            .getSingleOrNull();
     if (row == null) return null;
     return _rowToSummary(row);
   }
@@ -488,11 +497,14 @@ final class DriftLearningRepository implements LearningRepository {
     required String ownerId,
     required int limit,
   }) async {
-    final rows = await (database.select(database.learningSessions)
-          ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('completed'))
-          ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
-          ..limit(limit))
-        .get();
+    final rows =
+        await (database.select(database.learningSessions)
+              ..where(
+                (t) => t.ownerId.equals(ownerId) & t.state.equals('completed'),
+              )
+              ..orderBy([(t) => OrderingTerm.desc(t.startedAtUtcMs)])
+              ..limit(limit))
+            .get();
     return rows.map(_rowToSummary).toList(growable: false);
   }
 
