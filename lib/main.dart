@@ -91,15 +91,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: M3Theme.lightTheme,
         darkTheme: M3Theme.darkTheme,
         themeMode: ThemeMode.system,
-        initialRoute: _initialRoute(),
+        initialRoute: widget.dependencies.initialRoute.path,
         onGenerateRoute: AppRouteFactory.onGenerateRoute,
       ),
     );
-  }
-
-  String _initialRoute() {
-    final platformRoute =
-        WidgetsBinding.instance.platformDispatcher.defaultRouteName;
-    return platformRoute == '/' ? AppRoute.login.path : platformRoute;
   }
 }

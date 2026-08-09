@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/main.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
@@ -22,6 +23,7 @@ AppDependencies _dependencies({bool ready = true}) {
       ? RuntimeAvailability.ready
       : RuntimeAvailability.unavailable;
   return AppDependencies(
+    initialRoute: AppRoute.home,
     runtimeStatus: AppRuntimeStatus(
       localData: RuntimeAvailability.ready,
       firebase: availability,
@@ -35,9 +37,6 @@ AppDependencies _dependencies({bool ready = true}) {
 
 Future<void> _pumpHome(WidgetTester tester, {bool ready = true}) async {
   await tester.pumpWidget(MyApp(dependencies: _dependencies(ready: ready)));
-  await tester.pump();
-  final navigator = tester.state<NavigatorState>(find.byType(Navigator).first);
-  navigator.pushReplacementNamed('/home');
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 350));
 }

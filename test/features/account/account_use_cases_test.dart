@@ -5,21 +5,25 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 
 void main() {
   late _FakeGateway gateway;
   late _FakeOwnerRepository owners;
   late _FakeUpgradeRepository upgrades;
+  late _MemoryAppEntryStateStore entryState;
   late AccountUseCases accounts;
 
   setUp(() {
     gateway = _FakeGateway();
     owners = _FakeOwnerRepository();
     upgrades = _FakeUpgradeRepository();
+    entryState = _MemoryAppEntryStateStore(AppEntryMode.guest);
     accounts = AccountUseCases(
       gateway: gateway,
       owners: owners,
       upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+      entryState: entryState,
     );
   });
 
@@ -35,6 +39,7 @@ void main() {
       expect(gateway.registerEmail, 'student@example.com');
       expect(upgrades.upgradeOwnerId, 'local-owner');
       expect(upgrades.upgradeUid, 'firebase-user');
+      expect(entryState.mode, AppEntryMode.signedOut);
     },
   );
 
@@ -48,6 +53,7 @@ void main() {
 
       expect(upgrades.upgradeCalls, 1);
       expect(upgrades.upgradeUid, 'firebase-user');
+      expect(entryState.mode, AppEntryMode.signedOut);
     },
   );
 
@@ -58,6 +64,7 @@ void main() {
     expect(upgrades.logoutCalls, 1);
     expect(upgrades.transitionLog, ['createGuest', 'signOut']);
     expect(result.mode, OwnerUpgradeMode.localGuestCreated);
+    expect(entryState.mode, AppEntryMode.signedOut);
   });
 
   test('sign in signs out provider when local owner binding fails', () async {
@@ -109,6 +116,7 @@ void main() {
     expect(upgrades.rollbackCalls, 1);
     expect(upgrades.rollbackPreviousOwnerId, 'local-owner');
     expect(upgrades.rollbackGuestOwnerId, 'new-local-owner');
+    expect(entryState.clearCalls, 0);
   });
 
   test('validates email and password before provider calls', () async {
@@ -146,6 +154,27 @@ void main() {
     expect(action?.code, 'abc123');
     expect(EmailAction.parse(Uri.parse('https://example.com')), isNull);
   });
+}
+
+final class _MemoryAppEntryStateStore implements AppEntryStateStore {
+  _MemoryAppEntryStateStore(this.mode);
+
+  AppEntryMode mode;
+  int clearCalls = 0;
+
+  @override
+  Future<void> clear() async {
+    clearCalls += 1;
+    mode = AppEntryMode.signedOut;
+  }
+
+  @override
+  Future<void> markGuest() async {
+    mode = AppEntryMode.guest;
+  }
+
+  @override
+  Future<AppEntryMode> read() async => mode;
 }
 
 final class _FakeGateway implements AccountGateway {

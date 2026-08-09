@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/session/domain/app_entry_state.dart';
 
 enum GuestSessionFailure {
   firebaseUnavailable,
@@ -118,6 +119,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     required GuestSessionService delegate,
     required LocalOwnerRepository localOwners,
     required UpgradeGuestOwner upgradeGuestOwner,
+    required AppEntryStateStore entryState,
     void Function()? onOwnerBound,
     GuestRetryDelay? retryDelay,
     int maxCloudBindingAttempts = 5,
@@ -125,6 +127,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     delegate,
     localOwners,
     upgradeGuestOwner,
+    entryState,
     onOwnerBound,
     retryDelay ?? ((delay) => Future<void>.delayed(_withJitter(delay))),
     maxCloudBindingAttempts,
@@ -134,6 +137,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
     this._delegate,
     this._localOwners,
     this._upgradeGuestOwner,
+    this._entryState,
     this._onOwnerBound,
     this._retryDelay,
     this._maxCloudBindingAttempts,
@@ -150,6 +154,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
   final GuestSessionService _delegate;
   final LocalOwnerRepository _localOwners;
   final UpgradeGuestOwner _upgradeGuestOwner;
+  final AppEntryStateStore _entryState;
   final void Function()? _onOwnerBound;
   final GuestRetryDelay _retryDelay;
   final int _maxCloudBindingAttempts;
@@ -159,6 +164,7 @@ final class OwnerBindingGuestSessionService implements GuestSessionService {
   Future<GuestSessionResult> start() async {
     try {
       final owner = await _localOwners.getOrCreateActiveOwner();
+      await _entryState.markGuest();
       if (owner.firebaseUid == null) {
         final binding = _cloudBinding ??= _bindAnonymousOwner(owner.id);
         unawaited(

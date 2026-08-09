@@ -24,6 +24,7 @@ import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
+import '../navigation/app_routes.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
@@ -36,6 +37,7 @@ import 'runtime_feature_override_store.dart';
 
 final class AppDependencies {
   AppDependencies({
+    required this.initialRoute,
     required this.runtimeStatus,
     required this.config,
     required this.guestSessionService,
@@ -73,6 +75,7 @@ final class AppDependencies {
     this.disposeResources,
   });
 
+  final AppRoute initialRoute;
   final AppRuntimeStatus runtimeStatus;
   final AppConfig? config;
   final GuestSessionService guestSessionService;

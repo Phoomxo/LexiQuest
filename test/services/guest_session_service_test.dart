@@ -6,6 +6,7 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 class _FakeAnonymousAuthGateway implements AnonymousAuthGateway {
@@ -168,10 +169,12 @@ void main() {
     test(
       'starts the local guest without waiting for anonymous Firebase',
       () async {
+        final entryState = _MemoryAppEntryStateStore();
         final service = OwnerBindingGuestSessionService(
           delegate: _PendingGuestSessionService(),
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          entryState: entryState,
         );
 
         final result = await service.start().timeout(
@@ -186,6 +189,7 @@ void main() {
             'local-owner',
           ),
         );
+        expect(entryState.mode, AppEntryMode.guest);
       },
     );
 
@@ -199,6 +203,7 @@ void main() {
           ),
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          entryState: _MemoryAppEntryStateStore(),
         );
 
         final result = await service.start();
@@ -223,6 +228,7 @@ void main() {
           delegate: delegate,
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(upgrades),
+          entryState: _MemoryAppEntryStateStore(),
           retryDelay: (delay) async {
             delays.add(delay);
           },
@@ -256,6 +262,7 @@ void main() {
           delegate: delegate,
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          entryState: _MemoryAppEntryStateStore(),
           retryDelay: (delay) async {
             delays.add(delay);
           },
@@ -291,6 +298,7 @@ void main() {
           delegate: delegate,
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          entryState: _MemoryAppEntryStateStore(),
           retryDelay: (delay) async {
             delays.add(delay);
           },
@@ -323,6 +331,7 @@ void main() {
           delegate: delegate,
           localOwners: _FakeLocalOwnerRepository(),
           upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          entryState: _MemoryAppEntryStateStore(),
           retryDelay: (delay) async {
             delays.add(delay);
           },
@@ -348,6 +357,7 @@ void main() {
         ),
         localOwners: _FakeLocalOwnerRepository(error: StateError('db failed')),
         upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+        entryState: _MemoryAppEntryStateStore(),
       );
 
       final result = await service.start();
@@ -362,7 +372,46 @@ void main() {
       );
       expect(result.toString(), isNot(contains('db failed')));
     });
+
+    test(
+      'does not report guest success when the choice cannot persist',
+      () async {
+        final service = OwnerBindingGuestSessionService(
+          delegate: _PendingGuestSessionService(),
+          localOwners: _FakeLocalOwnerRepository(),
+          upgradeGuestOwner: UpgradeGuestOwner(_FakeOwnerUpgradeRepository()),
+          entryState: _MemoryAppEntryStateStore(
+            markFailure: StateError('preferences unavailable'),
+          ),
+        );
+
+        final result = await service.start();
+
+        expect(result, isA<GuestSessionFailed>());
+      },
+    );
   });
+}
+
+final class _MemoryAppEntryStateStore implements AppEntryStateStore {
+  _MemoryAppEntryStateStore({this.markFailure});
+
+  final Object? markFailure;
+  AppEntryMode mode = AppEntryMode.signedOut;
+
+  @override
+  Future<void> clear() async {
+    mode = AppEntryMode.signedOut;
+  }
+
+  @override
+  Future<void> markGuest() async {
+    if (markFailure case final failure?) throw failure;
+    mode = AppEntryMode.guest;
+  }
+
+  @override
+  Future<AppEntryMode> read() async => mode;
 }
 
 final class _PendingGuestSessionService implements GuestSessionService {

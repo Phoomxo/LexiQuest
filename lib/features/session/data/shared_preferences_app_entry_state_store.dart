@@ -36,6 +36,7 @@ final class SharedPreferencesAppEntryStateStore implements AppEntryStateStore {
 
   @override
   Future<void> clear() async {
+    if (!_prefs.containsKey(_key)) return;
     final removed = await _prefs.remove(_key);
     if (!removed) {
       throw StateError('SharedPreferences rejected the app-entry removal');

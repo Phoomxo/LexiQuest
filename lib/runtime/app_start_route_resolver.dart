@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_initializing_formals
+
 import '../features/session/domain/app_entry_state.dart';
 import '../navigation/app_routes.dart';
 
@@ -5,7 +7,9 @@ import '../navigation/app_routes.dart';
 /// authenticated-session flag. An authenticated Firebase session always
 /// resolves to Home. A store failure resolves to Login (fail-closed).
 final class AppStartRouteResolver {
-  AppStartRouteResolver({required this._entryState});
+  // The public parameter name is part of the launch-state interface.
+  AppStartRouteResolver({required AppEntryStateStore entryState})
+    : _entryState = entryState;
 
   final AppEntryStateStore _entryState;
 

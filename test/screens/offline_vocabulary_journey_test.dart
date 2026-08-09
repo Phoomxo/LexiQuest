@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/features/vocabulary/application/import_vocabu
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
@@ -41,6 +42,7 @@ void main() {
       nowUtc: () => nowUtc,
     );
     dependencies = AppDependencies(
+      initialRoute: AppRoute.home,
       runtimeStatus: const AppRuntimeStatus(
         localData: RuntimeAvailability.ready,
         firebase: RuntimeAvailability.unavailable,

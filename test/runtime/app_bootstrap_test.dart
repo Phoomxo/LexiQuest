@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
+import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
@@ -11,6 +12,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/field_feature.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -40,6 +42,9 @@ AppDatabase _testDatabase() {
   return database;
 }
 
+Future<AppEntryStateStore> _createSignedOutEntryState() async =>
+    _MemoryAppEntryStateStore();
+
 void main() {
   group('AppBootstrap.initialize', () {
     test('marks all components ready and retains the exact config', () async {
@@ -50,6 +55,7 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: () => expectedConfig,
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -80,6 +86,7 @@ void main() {
           initializeSupabase: () async {},
           loadConfig: _validConfig,
           guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
         );
 
         final dependencies = await bootstrap.initialize();
@@ -105,6 +112,7 @@ void main() {
           initializeSupabase: () async {},
           loadConfig: _validConfig,
           guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
         );
 
         final dependencies = await bootstrap.initialize();
@@ -128,6 +136,7 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -151,6 +160,7 @@ void main() {
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -170,6 +180,7 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: () => throw const AppConfigException('invalid config'),
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -190,6 +201,7 @@ void main() {
         initializeSupabase: () async => throw StateError('supabase-down'),
         loadConfig: () => throw const AppConfigException('invalid config'),
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -219,6 +231,7 @@ void main() {
         initializeSupabase: () async => throw StateError(supabaseSentinel),
         loadConfig: () => throw const AppConfigException(configSentinel),
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -251,6 +264,7 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: _validConfig,
         guestSessionService: guestSessionService,
+        createEntryStateStore: _createSignedOutEntryState,
       );
 
       final dependencies = await bootstrap.initialize();
@@ -271,10 +285,14 @@ void main() {
           initializeSupabase: () async {},
           loadConfig: _validConfig,
           guestSessionService: _SuccessfulGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
           bindGuestOwnership: true,
         );
 
         final dependencies = await bootstrap.initialize();
+        final originalOwner = await (database.select(
+          database.localOwners,
+        )..where((row) => row.isActive.equals(true))).getSingle();
         final result = await dependencies.guestSessionService.start();
         LocalOwner? owner;
         for (var attempt = 0; attempt < 20; attempt++) {
@@ -288,6 +306,7 @@ void main() {
         }
 
         expect(result, isA<GuestSessionStarted>());
+        expect(owner?.id, originalOwner.id);
         expect(owner?.firebaseUid, 'anonymous-bootstrap-user');
         expect(owner?.accountState, 'firebaseBound');
       },
@@ -301,6 +320,7 @@ void main() {
         initializeSupabase: () async {},
         loadConfig: _validConfig,
         guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
         syncGatewayFactory: () => gateway,
       );
 
@@ -311,6 +331,37 @@ void main() {
       expect(dependencies.syncTrigger, isNotNull);
       expect(gateway.policyFetches, 1);
     });
+
+    test(
+      'resolves launch route from the single persisted entry store',
+      () async {
+        final entryState = _MemoryAppEntryStateStore(AppEntryMode.guest);
+        var factoryCalls = 0;
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          bindGuestOwnership: true,
+          createEntryStateStore: () async {
+            factoryCalls += 1;
+            return entryState;
+          },
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(factoryCalls, 1);
+        expect(dependencies.initialRoute, AppRoute.home);
+        await entryState.clear();
+
+        final guestResult = await dependencies.guestSessionService.start();
+
+        expect(guestResult, isA<GuestSessionStarted>());
+        expect(entryState.mode, AppEntryMode.guest);
+      },
+    );
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -339,6 +390,25 @@ void main() {
       },
     );
   });
+}
+
+final class _MemoryAppEntryStateStore implements AppEntryStateStore {
+  _MemoryAppEntryStateStore([this.mode = AppEntryMode.signedOut]);
+
+  AppEntryMode mode;
+
+  @override
+  Future<void> clear() async {
+    mode = AppEntryMode.signedOut;
+  }
+
+  @override
+  Future<void> markGuest() async {
+    mode = AppEntryMode.guest;
+  }
+
+  @override
+  Future<AppEntryMode> read() async => mode;
 }
 
 final class _BootstrapSyncGateway implements SyncGateway {

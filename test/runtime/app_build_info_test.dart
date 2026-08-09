@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/main.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -20,6 +21,7 @@ AppDependencies _dependencies(
   SyncTrigger? syncTrigger,
 }) {
   return AppDependencies(
+    initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
       localData: RuntimeAvailability.ready,
       firebase: RuntimeAvailability.ready,

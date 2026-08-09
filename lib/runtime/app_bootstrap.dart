@@ -9,6 +9,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -55,6 +56,8 @@ import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
+import '../features/session/data/shared_preferences_app_entry_state_store.dart';
+import '../features/session/domain/app_entry_state.dart';
 import '../features/sync/application/sync_backoff.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_mutex.dart';
@@ -74,6 +77,7 @@ import 'app_dependencies.dart';
 import 'download_counter.dart';
 import 'field_feature_registry.dart';
 import 'app_runtime_status.dart';
+import 'app_start_route_resolver.dart';
 import 'registries/feature_registry.dart';
 import 'runtime_feature_override_store.dart';
 import 'supabase_client_config.dart';
@@ -83,6 +87,7 @@ typedef AppConfigLoader = AppConfig Function();
 typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
+typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -154,6 +159,11 @@ Future<void> _initializeSupabaseOptional() async {
   // swap this back to _initializeSupabaseProduction.
 }
 
+Future<AppEntryStateStore> createProductionEntryStateStore() async {
+  final preferences = await SharedPreferences.getInstance();
+  return SharedPreferencesAppEntryStateStore(preferences);
+}
+
 final class AppBootstrap {
   const AppBootstrap({
     required this.initializeFirebase,
@@ -161,6 +171,7 @@ final class AppBootstrap {
     required this.loadConfig,
     required this.guestSessionService,
     required this.createDatabase,
+    required this.createEntryStateStore,
     this.bindGuestOwnership = false,
     this.syncGatewayFactory,
     this.accountGatewayFactory,
@@ -174,6 +185,7 @@ final class AppBootstrap {
       loadConfig: AppConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
+      createEntryStateStore: createProductionEntryStateStore,
       bindGuestOwnership: true,
       syncGatewayFactory: () => FirestoreSyncGateway(
         firestore: FirebaseFirestore.instance,
@@ -190,12 +202,14 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
+  final AppEntryStateStoreFactory createEntryStateStore;
   final bool bindGuestOwnership;
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
 
   Future<AppDependencies> initialize() async {
+    final entryState = await createEntryStateStore();
     final database = createDatabase();
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
@@ -230,6 +244,7 @@ final class AppBootstrap {
         gateway: createAccountGateway(),
         owners: localOwners,
         upgradeGuestOwner: upgradeGuestOwner,
+        entryState: entryState,
       );
       try {
         await candidate.reconcileLocalOwner();
@@ -275,6 +290,7 @@ final class AppBootstrap {
             delegate: guestSessionService,
             localOwners: localOwners,
             upgradeGuestOwner: upgradeGuestOwner,
+            entryState: entryState,
             onOwnerBound: () {
               final trigger = syncTrigger;
               if (trigger != null) {
@@ -466,7 +482,12 @@ final class AppBootstrap {
     );
     final fieldFeatures = FeatureRegistryFieldAdapter(runtimeFeatures);
 
+    final initialRoute = await AppStartRouteResolver(
+      entryState: entryState,
+    ).resolve(hasAuthenticatedSession: account?.currentSession != null);
+
     return AppDependencies(
+      initialRoute: initialRoute,
       runtimeStatus: AppRuntimeStatus(
         localData: RuntimeAvailability.ready,
         firebase: firebase,

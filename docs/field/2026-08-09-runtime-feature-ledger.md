@@ -57,8 +57,8 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 | Screen: `gemini_settings_screen.dart` | `Feature.aiTutor` | No production caller | Optional `GeminiTutorController` through scope | Provider settings/secret store if injected | None | None | orphan |
 | Screen: `ghost_shadow_duel_screen.dart` | `Feature.ghostDuel` | `MainNavigationScreen` drawer `learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases`; duel calculation service | Drift learning sessions/answer attempts | None from production shell | None | wired |
 | Screen: `learning_world_map_screen.dart` | `Feature.reading` | `ChooseModeScreen` world-map tile | Static screen-owned campaign nodes | None | None | None | legacy |
-| Screen: `login_screen.dart` | No `Feature` member (account shell) | Normal app start currently resolves to `/login` | Account, consent, and guest session from scope | Local owner plus external account binding | None proving restart from production composition | None | wired |
-| Screen: `main_navigation_screen.dart` | Legacy `FieldFeature` adapter backed by `FeatureRegistry` | `/home` route | `AppDependenciesScope`; `FeatureRegistryFieldAdapter` | Runtime flags persist in Drift, but no shell restart journey | None from production shell | None | wired |
+| Screen: `login_screen.dart` | No `Feature` member (account shell) | Signed-out app start resolves to `/login` from composed persisted entry/auth state | Account, consent, guest session, and launch route from one bootstrap composition | Local owner plus external account binding; explicit entry choice in SharedPreferences | Resolver/store restart-state tests and production-shell initial-route gate; no physical process/device evidence | None | wired |
+| Screen: `main_navigation_screen.dart` | Legacy `FieldFeature` adapter backed by `FeatureRegistry` | Authenticated or explicit-guest app start resolves to `/home` | `AppDependenciesScope`; `FeatureRegistryFieldAdapter`; composed launch route | Runtime flags persist in Drift; explicit guest entry choice persists separately without replacing `localOwnerId` | Resolver/store restart-state tests and production-shell initial-route gate; no physical process/device evidence | None | wired |
 | Screen: `mastery_dashboard_screen.dart` | `Feature.mastery` | `MainNavigationScreen` bottom destination and learn tile | `ProgressUseCases.load` through scope | Drift-derived progress evidence | None from production shell | None | wired |
 | Screen: `object_scanner_screen.dart` | `Feature.objectScanner` | Drawer `practice/object-scanner` | Composed scanner/model controller; constructs default voice in screen | Model downloads and accepted vocabulary in Drift | None from production shell | None; host tests only | wired |
 | Screen: `otp_screen.dart` | No `Feature` member (account shell) | `/otp` route from registration | `AccountUseCases` through scope | External account state plus local owner binding | None from production shell | None | wired |
@@ -82,6 +82,21 @@ screen-owned service behavior. `orphan` means no caller is reachable from
 | Screen: `weakness_clinic_screen.dart` | `Feature.weakness` | `MainNavigationScreen` bottom destination and learn tile | `ProgressUseCases.load` through scope | Drift-derived answer/SRS evidence | None from production shell | None | wired |
 | Screen: `word_scramble_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → word scramble | Word passed from composed vocabulary launcher | No result persistence in screen | None | None | legacy |
 | Screen: `wordbook_import_screen.dart` | `Feature.vocabulary` | No production caller | Screen-owned legacy `CustomWordbookImporter` | Parsed rows are widget memory | None | None | orphan |
+
+## P1 launch-identity update
+
+Task 1 replaces the hard-coded normal launch route with a route resolved during
+production bootstrap from one `AppEntryStateStore` instance and the current
+authenticated session. That same store is passed to guest and account
+transitions. Guest selection is persisted before local guest success;
+successful account binding and sign-out clear it. Local account binding still
+uses the existing `localOwnerId` and does not replace the owner identifier.
+
+Evidence is bounded to the resolver matrix, SharedPreferences mock-backed store
+tests, bootstrap/session/account tests, and the production-shell widget gate.
+This is not a physical process-restart or device/provider result, so the account
+shell rows remain `wired` rather than `durable`, `verified`, or
+`field-certified`.
 
 ## Baseline gaps carried forward
 

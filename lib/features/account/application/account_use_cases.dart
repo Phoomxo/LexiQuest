@@ -1,6 +1,7 @@
 import '../../identity/application/upgrade_guest_owner.dart';
 import '../../identity/domain/local_owner_repository.dart';
 import '../../identity/domain/owner_upgrade.dart';
+import '../../session/domain/app_entry_state.dart';
 import '../domain/account_contracts.dart';
 
 final class AccountUseCases {
@@ -8,11 +9,13 @@ final class AccountUseCases {
     required this.gateway,
     required this.owners,
     required this.upgradeGuestOwner,
+    required this.entryState,
   });
 
   final AccountGateway gateway;
   final LocalOwnerRepository owners;
   final UpgradeGuestOwner upgradeGuestOwner;
+  final AppEntryStateStore entryState;
 
   AccountSession? get currentSession => gateway.currentSession;
 
@@ -39,6 +42,7 @@ final class AccountUseCases {
       password: _password(password),
     );
     await _bindOrSignOut(session.uid);
+    await entryState.clear();
     return session;
   }
 
@@ -51,6 +55,7 @@ final class AccountUseCases {
       password: _password(password),
     );
     await _bindOrSignOut(session.uid);
+    await entryState.clear();
     return session;
   }
 
@@ -89,7 +94,6 @@ final class AccountUseCases {
     final guest = await upgradeGuestOwner.createLocalGuestAfterLogout();
     try {
       await gateway.signOut();
-      return guest;
     } catch (_) {
       await upgradeGuestOwner.rollbackLocalGuestLogout(
         previousOwnerId: previous.id,
@@ -97,6 +101,8 @@ final class AccountUseCases {
       );
       rethrow;
     }
+    await entryState.clear();
+    return guest;
   }
 
   Future<void> _bindOrSignOut(String uid) async {
