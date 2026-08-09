@@ -396,6 +396,15 @@ void main() {
               'Production bulk-add routes must resolve ImportVocabulary from '
               'AppDependenciesScope instead of route-owned injection.',
         );
+        expect(
+          tester
+              .widget<FilledButton>(find.byKey(const ValueKey('import-words')))
+              .onPressed,
+          isNotNull,
+          reason:
+              'The production bulk-add screen must resolve ImportVocabulary '
+              'from AppDependenciesScope and expose an enabled import action.',
+        );
         await tester.pageBack();
         await _pumpUntilGone(
           tester,
