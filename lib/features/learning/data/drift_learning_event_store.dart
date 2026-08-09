@@ -20,7 +20,20 @@ final class PendingLearningProjectionEvent {
 final class DriftLearningEventStore {
   const DriftLearningEventStore(this.database);
 
+  static const int appliedProjectionVersion = 1;
+  static const List<String> _projectionNames = ['quest', 'streak', 'reward'];
+
   final db.AppDatabase database;
+
+  static List<String> projectionCursorIds({
+    required String ownerId,
+    required int appliedVersion,
+  }) => _projectionNames
+      .map(
+        (projection) =>
+            'learning-projection-cursor:$ownerId:$projection:v$appliedVersion',
+      )
+      .toList(growable: false);
 
   Future<void> append(EventEnvelopeV2 event) async {
     final existing =
@@ -54,29 +67,22 @@ final class DriftLearningEventStore {
     // sort behind an existing cursor. Rewind only affected fixed-key cursors;
     // immutable receipts and idempotent sinks make the bounded tail replay
     // safe, while keeping semantic occurrence time intact for quest/streak.
-    final lateCursorIds = await database
-        .customSelect(
-          '''
-          SELECT event_id
-          FROM events_v2 INDEXED BY idx_events_v2_owner_occurred
-          WHERE owner_id = ?
-            AND event_type = 'LearningProjectionCursor'
-            AND (
-              occurred_at_utc > ? OR
-              (occurred_at_utc = ? AND aggregate_id >= ?)
-            )
-          ''',
-          variables: [
-            Variable<String>(event.ownerIdentity),
-            Variable<DateTime>(event.occurredAtUtc),
-            Variable<DateTime>(event.occurredAtUtc),
-            Variable<String>(event.eventId),
-          ],
-          readsFrom: {database.eventsV2},
-        )
-        .get();
-    final ids = lateCursorIds
-        .map((row) => row.read<String>('event_id'))
+    final fixedCursorIds = projectionCursorIds(
+      ownerId: event.ownerIdentity,
+      appliedVersion: appliedProjectionVersion,
+    );
+    final cursors = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.isIn(fixedCursorIds))).get();
+    final lateCursors = cursors
+        .where((cursor) {
+          final time = cursor.occurredAtUtc.compareTo(event.occurredAtUtc);
+          return time > 0 ||
+              (time == 0 && cursor.aggregateId.compareTo(event.eventId) >= 0);
+        })
+        .toList(growable: false);
+    final ids = lateCursors
+        .map((cursor) => cursor.eventId)
         .toList(growable: false);
     if (ids.isEmpty) return;
     final predecessorId = await database
@@ -115,10 +121,7 @@ final class DriftLearningEventStore {
             ))
             .getSingle();
     final source = _toEvent(predecessor);
-    final cursors = await (database.select(
-      database.eventsV2,
-    )..where((row) => row.eventId.isIn(ids))).get();
-    for (final cursor in cursors) {
+    for (final cursor in lateCursors) {
       final payload = jsonDecode(cursor.payloadJson) as Map<String, dynamic>;
       final rewound = EventEnvelopeV2(
         eventId: cursor.eventId,

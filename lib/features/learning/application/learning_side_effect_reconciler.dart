@@ -34,7 +34,8 @@ final class LearningSideEffectReconciler {
     this.pendingBatchSize = 50,
   }) : _events = DriftLearningEventStore(database);
 
-  static const int appliedVersion = 1;
+  static const int appliedVersion =
+      DriftLearningEventStore.appliedProjectionVersion;
 
   final DriftLearningEventStore _events;
   final LearningProjectionSink? questSink;

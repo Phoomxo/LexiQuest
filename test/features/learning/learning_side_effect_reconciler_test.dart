@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -276,6 +277,78 @@ void main() {
       await reconciler.reconcileOwner('owner-reconcile');
 
       expect(calls, ['learning-event:attempt-4', 'learning-event:attempt-3']);
+    },
+  );
+
+  test(
+    'cursor discovery stays on three primary keys with large later history',
+    () async {
+      await addEvent(1, occurredAt: DateTime.utc(2026, 8, 9, 12));
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+      await reconciler.reconcileOwner('owner-reconcile');
+      final laterAt = DateTime.utc(2026, 8, 9, 13);
+      await database.batch((batch) {
+        for (var index = 0; index < 2000; index++) {
+          batch.insert(
+            database.eventsV2,
+            EventsV2Companion.insert(
+              eventId: 'later-history-$index',
+              eventType: 'LaterHistoryNoise',
+              eventVersion: 1,
+              occurredAtUtc: laterAt.add(Duration(milliseconds: index)),
+              recordedAtUtc: laterAt.add(Duration(milliseconds: index)),
+              actorIdentity: 'owner-reconcile',
+              ownerId: 'owner-reconcile',
+              aggregateType: 'LaterHistoryNoise',
+              aggregateId: 'later-history-$index',
+              idempotencyKey: 'later-history:$index',
+              consentContextJson: '{}',
+              appVersion: '1.0.0',
+              buildId: 'test-build',
+              privacyClassification: 'anonymized',
+              payloadJson: '{}',
+            ),
+          );
+        }
+      });
+
+      final cursorIds = DriftLearningEventStore.projectionCursorIds(
+        ownerId: 'owner-reconcile',
+        appliedVersion: LearningSideEffectReconciler.appliedVersion,
+      );
+      expect(cursorIds, [
+        'learning-projection-cursor:owner-reconcile:quest:v1',
+        'learning-projection-cursor:owner-reconcile:streak:v1',
+        'learning-projection-cursor:owner-reconcile:reward:v1',
+      ]);
+      final placeholders = List.filled(cursorIds.length, '?').join(', ');
+      final plan = await database
+          .customSelect(
+            'EXPLAIN QUERY PLAN SELECT event_id FROM events_v2 '
+            'WHERE event_id IN ($placeholders)',
+            variables: cursorIds.map(Variable<String>.new).toList(),
+          )
+          .get();
+      expect(
+        plan.map((row) => row.read<String>('detail')).join('\n'),
+        contains('sqlite_autoindex_events_v2_1'),
+        reason: 'cursor discovery must use the event_id primary-key index',
+      );
+
+      calls.clear();
+      await addEvent(2, occurredAt: DateTime.utc(2026, 8, 9, 11));
+      await (database.delete(
+        database.eventsV2,
+      )..where((row) => row.eventType.equals('LaterHistoryNoise'))).go();
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, ['learning-event:attempt-2', 'learning-event:attempt-1']);
     },
   );
 
