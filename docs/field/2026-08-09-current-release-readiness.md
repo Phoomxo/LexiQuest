@@ -37,7 +37,7 @@ owner. Historical APK/device records are not reused for this source.
   current application source.
 - Android tooling: `adb` available; SDK `apksigner.bat` available under Android
   SDK build-tools.
-- Release contracts: field evidence 59/59, Android release signing 54/54, and
+- Release contracts: field evidence 60/60, Android release signing 54/54, and
   product-completion contract PASS.
 
 ## Release verifier result
@@ -51,7 +51,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-field-releas
 Result: BLOCKED at the first prerequisite because the field evidence file is
 missing. The gate was not weakened and no placeholder evidence was generated.
 A formatting defect that originally hid the resolved missing path was corrected
-with a failing-then-passing contract test.
+with a failing-then-passing contract test. The corrected verifier observation
+was recorded on clean repository SHA
+`aec1a8c0979bc1b6462dea72e2071d080113e5a7`.
 
 ## Required external inputs before P10 can pass
 
