@@ -294,6 +294,9 @@ foreach ($needle in @(
 )) {
     Assert-True $gateText.Contains($needle) "final gate contains $needle"
 }
+Assert-True (
+    $gateText.Contains('Field evidence is missing: $resolvedEvidence.')
+) 'missing-evidence failure reports the resolved evidence path'
 
 $collectorText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/collect-android-field-evidence.ps1'

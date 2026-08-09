@@ -126,6 +126,13 @@ pass.
 4. P10 remains blocked until signed-APK, device matrix, App Check/provider,
    field evidence, and owner approval all reconcile to the same artifact.
 
+Status: current readiness is recorded in
+`docs/field/2026-08-09-current-release-readiness.md`. Release evidence,
+signing configuration, packaged manifest/APK, physical-device matrix, App
+Check acceptance, private references, and owner approval are absent. The
+release verifier remains intentionally blocked at the missing evidence file;
+its missing-path diagnostic is covered by a corrected contract test.
+
 ## Rollback points
 
 - Pre-authority integration: `63ff15b`
