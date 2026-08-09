@@ -65,6 +65,38 @@ Future<void> _pumpUntilFound(
   fail('Widget did not appear after $maxPumps bounded pumps: $finder');
 }
 
+Future<void> _pumpUntilContinueEnabled(
+  WidgetTester tester, {
+  int maxPumps = 100,
+}) async {
+  final finder = find.widgetWithText(FilledButton, 'Complete & Continue');
+  for (var index = 0; index < maxPumps; index++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    if (finder.evaluate().isNotEmpty) {
+      final button = tester.widget<FilledButton>(finder);
+      if (button.onPressed != null) return;
+    }
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+  }
+  fail('Continue action did not re-enable after $maxPumps bounded pumps.');
+}
+
+Future<({int associations, int memory})> _pairCounts(
+  AppDatabase database,
+) async {
+  final row = await database.customSelect('''
+SELECT
+  (SELECT COUNT(*) FROM association_records) AS association_count,
+  (SELECT COUNT(*) FROM associative_memory_states) AS memory_count
+''').getSingle();
+  return (
+    associations: row.read<int>('association_count'),
+    memory: row.read<int>('memory_count'),
+  );
+}
+
 void main() {
   testWidgets(
     'production associative reading survives file reopen for active owner only',
@@ -229,6 +261,163 @@ void main() {
         expect(memory.single.ownerId, activeOwner.id);
         expect(associationRows, hasLength(2));
         expect(memoryRows, hasLength(2));
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.runAsync(() async {
+          await reopened?.dispose();
+          await first?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        });
+        await tester.pump(const Duration(milliseconds: 1));
+        binaryMessenger.setMockMethodCallHandler(_flutterTtsChannel, null);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
+
+  testWidgets(
+    'partial association failure survives reopen without advancing an empty retry',
+    (tester) async {
+      final binaryMessenger =
+          TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+      binaryMessenger.setMockMethodCallHandler(
+        _flutterTtsChannel,
+        (_) async => 1,
+      );
+      final directory = (await tester.runAsync(
+        () => Directory.systemTemp.createTemp(
+          'lexiquest-associative-pair-restart-',
+        ),
+      ))!;
+      final databasePath =
+          '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
+      AppDependencies? first;
+      AppDependencies? reopened;
+
+      try {
+        first = (await tester.runAsync(
+          () => _bootstrap(databasePath).initialize(),
+        ))!;
+        final category = (await tester.runAsync(
+          () => first!.vocabulary!.createCategory('Atomic association'),
+        ))!;
+        final word = (await tester.runAsync(
+          () => first!.vocabulary!.createWord(
+            CreateWordCommand(
+              categoryId: category.id,
+              spelling: 'anchor',
+              meaning: 'a stable point',
+              partOfSpeech: 'noun',
+            ),
+          ),
+        ))!;
+
+        Widget session(AppDependencies dependencies) {
+          return MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: 'B1',
+              targetWords: const ['anchor'],
+              targetWordIds: {'anchor': word.id},
+              passageText: 'An anchor keeps the vessel stable.',
+              documentId: 'associative-reading:atomic-review',
+              documentRevision: 1,
+              learning: dependencies.learning,
+              associativeLearning: dependencies.associativeLearning,
+            ),
+          );
+        }
+
+        await tester.pumpWidget(session(first));
+        await _pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (final title in const [
+          'Stage 2: Cue Fading',
+          'Stage 3: Active Recall',
+          'Stage 4: Memory Association',
+        ]) {
+          await tester.tap(find.text('Complete & Continue'));
+          await _pumpUntilFound(tester, find.text(title));
+        }
+        await tester.runAsync(
+          () => first!.database!.customStatement('''
+CREATE TRIGGER fail_associative_memory_insert
+BEFORE INSERT ON associative_memory_states
+BEGIN
+  SELECT RAISE(ABORT, 'injected associative memory failure');
+END
+'''),
+        );
+        await tester.enterText(find.byType(TextField).first, 'keeps me steady');
+        await tester.tap(find.text('Complete & Continue'));
+        await _pumpUntilFound(
+          tester,
+          find.text('Could not save the memory association. Try again.'),
+        );
+        await _pumpUntilContinueEnabled(tester);
+        final afterFailure = (await tester.runAsync(
+          () => _pairCounts(first!.database!),
+        ))!;
+
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump(const Duration(milliseconds: 1));
+        await tester.runAsync(() => first!.dispose());
+        first = null;
+
+        reopened = (await tester.runAsync(
+          () => _bootstrap(databasePath).initialize(),
+        ))!;
+        await tester.pumpWidget(session(reopened));
+        await _pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        expect(
+          tester
+              .widget<TextField>(find.byType(TextField).first)
+              .controller!
+              .text,
+          isEmpty,
+        );
+        await tester.tap(find.text('Complete & Continue'));
+        await _pumpUntilContinueEnabled(tester);
+        final emptyRetryStayed =
+            find.text('Stage 4: Memory Association').evaluate().isNotEmpty &&
+            find.text('Stage 5: Context Transfer').evaluate().isEmpty;
+        final afterEmptyRetry = (await tester.runAsync(
+          () => _pairCounts(reopened!.database!),
+        ))!;
+        var afterRecovery = afterEmptyRetry;
+
+        if (emptyRetryStayed) {
+          await tester.runAsync(
+            () => reopened!.database!.customStatement(
+              'DROP TRIGGER fail_associative_memory_insert',
+            ),
+          );
+          await tester.enterText(
+            find.byType(TextField).first,
+            'keeps me steady',
+          );
+          await tester.tap(find.text('Complete & Continue'));
+          await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+          afterRecovery = (await tester.runAsync(
+            () => _pairCounts(reopened!.database!),
+          ))!;
+        }
+
+        expect(
+          (
+            afterFailure: afterFailure,
+            emptyRetryStayed: emptyRetryStayed,
+            afterEmptyRetry: afterEmptyRetry,
+            afterRecovery: afterRecovery,
+          ),
+          equals((
+            afterFailure: (associations: 0, memory: 0),
+            emptyRetryStayed: true,
+            afterEmptyRetry: (associations: 0, memory: 0),
+            afterRecovery: (associations: 1, memory: 1),
+          )),
+        );
       } finally {
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump(const Duration(milliseconds: 1));

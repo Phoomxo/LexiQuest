@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
@@ -200,12 +203,12 @@ class _AssociativeReadingLauncherScreenState
     final passage = words
         .map((word) => '${word.spelling} means ${word.meaning}.')
         .join(' ');
-    final documentRevision = words.fold<int>(
-      1,
-      (revision, word) =>
-          word.localRevision > revision ? word.localRevision : revision,
-    );
-    final idSeed = words.map((word) => word.id).join('|');
+    final versionSeed = jsonEncode([
+      for (final word in words) [word.id, word.localRevision],
+    ]);
+    final documentDigest = sha256.convert(utf8.encode(versionSeed)).toString();
+    final documentRevision =
+        int.parse(documentDigest.substring(0, 13), radix: 16) + 1;
 
     return AppNavigator.pushPage<void>(
       context,
@@ -218,7 +221,7 @@ class _AssociativeReadingLauncherScreenState
               .toList(growable: false),
           targetWordIds: Map.unmodifiable(wordIds),
           passageText: passage,
-          documentId: 'associative-reading:${_stableHash(idSeed)}',
+          documentId: 'associative-reading:$documentDigest',
           documentRevision: documentRevision,
           learning: learning,
           associativeLearning: associativeLearning,
@@ -257,12 +260,4 @@ class _LauncherUnavailable extends StatelessWidget {
       ),
     );
   }
-}
-
-int _stableHash(String value) {
-  var hash = 2166136261;
-  for (final unit in value.codeUnits) {
-    hash = ((hash ^ unit) * 16777619) & 0x7fffffff;
-  }
-  return hash;
 }

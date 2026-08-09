@@ -1,19 +1,11 @@
 import 'learning_use_cases.dart';
 
-/// Port that bridges the in-memory associative learning prototype layer
-/// (`lib/learning/`) with the authoritative V2 feature layer.
+/// Persistence port for supplementary associative-learning evidence.
 ///
 /// **Purpose:**
-/// `lib/learning/` is an in-memory prototype for the associative reading
-/// loop feature (branch: `feature/associative-reading-loop`).  It stores
-/// associations, memory states, and recall attempts in plain Dart collections
-/// that are lost on app restart.  This interface defines the contract that a
-/// Drift-backed adapter will implement in Phase 1, when the associative
-/// reading feature graduates from prototype to production.
-///
-/// **Phase 0 scope:**
-/// Only the in-memory adapter [InMemoryAssociativeLearningAdapter] is
-/// provided here.  Drift persistence (schema v9) is deferred to Phase 1.
+/// Production composes the Drift-backed implementation so associations and
+/// memory states survive restart and remain owner-scoped. The in-memory
+/// implementation is retained for isolated tests and ephemeral prototypes.
 ///
 /// **Relationship to [LearningUseCases]:**
 /// SRS scheduling for production vocabulary words must go through
@@ -26,6 +18,15 @@ abstract interface class AssociativeLearningPort {
   /// Persist an association record (keyword, story, image link, etc.)
   /// for a word owned by [ownerId].
   Future<void> saveAssociation(AssociationRecord record);
+
+  /// Persist [record] and [state] as one all-or-nothing pair.
+  ///
+  /// Implementations must reject mismatched owner/word keys and must not leave
+  /// either record durable when the other write fails.
+  Future<void> saveAssociationAndMemoryState(
+    AssociationRecord record,
+    AssociativeMemoryState state,
+  );
 
   /// Return all associations the [ownerId] has created for [wordKey].
   Future<List<AssociationRecord>> getAssociationsForWord(
@@ -102,10 +103,10 @@ final class AssociativeMemoryState {
   final String algorithmVersion;
 }
 
-// ─── In-memory adapter (Phase 0) ─────────────────────────────────────────────
+// ─── In-memory adapter ───────────────────────────────────────────────────────
 
-/// In-memory [AssociativeLearningPort] for use in tests and during Phase 0
-/// while Drift persistence (schema v9) is not yet implemented.
+/// In-memory [AssociativeLearningPort] for isolated tests and ephemeral
+/// prototypes. Production uses the Drift-backed implementation.
 ///
 /// All state is held in plain Dart collections and is **lost on app restart**.
 final class InMemoryAssociativeLearningAdapter
@@ -116,6 +117,18 @@ final class InMemoryAssociativeLearningAdapter
   @override
   Future<void> saveAssociation(AssociationRecord record) async =>
       _associations[record.associationId] = record;
+
+  @override
+  Future<void> saveAssociationAndMemoryState(
+    AssociationRecord record,
+    AssociativeMemoryState state,
+  ) async {
+    if (record.ownerId != state.ownerId || record.wordKey != state.wordKey) {
+      throw ArgumentError('Association and memory-state keys must match.');
+    }
+    _associations[record.associationId] = record;
+    _states['${state.ownerId}:${state.wordKey}'] = state;
+  }
 
   @override
   Future<List<AssociationRecord>> getAssociationsForWord(

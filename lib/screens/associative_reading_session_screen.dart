@@ -287,37 +287,56 @@ class _AssociativeReadingSessionScreenState
       final ownerId = (await learning.owners.getOrCreateActiveOwner()).id;
       final now = DateTime.now().toUtc();
       for (var i = 0; i < widget.targetWords.length; i++) {
-        final cue = _cueControllers[i].text.trim();
-        if (cue.isEmpty) continue;
         final displayWord = widget.targetWords[i];
         final wordKey = widget.targetWordIds?[displayWord] ?? displayWord;
-        await associativeLearning.saveAssociation(
-          AssociationRecord(
-            associationId: 'assoc:$wordKey:${now.millisecondsSinceEpoch}:$i',
-            ownerId: ownerId,
-            wordKey: wordKey,
-            type: 'keyword',
-            content: cue,
-            createdAtUtc: now,
-          ),
-        );
+        final cue = _cueControllers[i].text.trim();
         final existing = await associativeLearning.getMemoryState(
           ownerId,
           wordKey,
         );
-        await associativeLearning.updateMemoryState(
-          existing ??
-              AssociativeMemoryState(
-                ownerId: ownerId,
-                wordKey: wordKey,
-                stability: 1,
-                difficulty: 5,
-                cueDependency: 1,
-                lapseCount: 0,
-                lastReviewedAtUtc: now,
-                nextDueAtUtc: now.add(const Duration(days: 1)),
-                algorithmVersion: 'associative-v1',
-              ),
+        if (cue.isEmpty) {
+          final associations = await associativeLearning.getAssociationsForWord(
+            ownerId,
+            wordKey,
+          );
+          if (associations.isEmpty || existing == null) {
+            if (mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text(
+                    'Create a memory cue for every target word before continuing.',
+                  ),
+                ),
+              );
+            }
+            return false;
+          }
+          continue;
+        }
+        final association = AssociationRecord(
+          associationId: 'assoc:$wordKey:${now.millisecondsSinceEpoch}:$i',
+          ownerId: ownerId,
+          wordKey: wordKey,
+          type: 'keyword',
+          content: cue,
+          createdAtUtc: now,
+        );
+        final memoryState =
+            existing ??
+            AssociativeMemoryState(
+              ownerId: ownerId,
+              wordKey: wordKey,
+              stability: 1,
+              difficulty: 5,
+              cueDependency: 1,
+              lapseCount: 0,
+              lastReviewedAtUtc: now,
+              nextDueAtUtc: now.add(const Duration(days: 1)),
+              algorithmVersion: 'associative-v1',
+            );
+        await associativeLearning.saveAssociationAndMemoryState(
+          association,
+          memoryState,
         );
       }
       return true;

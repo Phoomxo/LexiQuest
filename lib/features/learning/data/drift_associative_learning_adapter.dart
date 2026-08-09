@@ -36,6 +36,20 @@ final class DriftAssociativeLearningAdapter implements AssociativeLearningPort {
   }
 
   @override
+  Future<void> saveAssociationAndMemoryState(
+    AssociationRecord record,
+    AssociativeMemoryState state,
+  ) {
+    if (record.ownerId != state.ownerId || record.wordKey != state.wordKey) {
+      throw ArgumentError('Association and memory-state keys must match.');
+    }
+    return _database.transaction(() async {
+      await saveAssociation(record);
+      await updateMemoryState(state);
+    });
+  }
+
+  @override
   Future<List<AssociationRecord>> getAssociationsForWord(
     String ownerId,
     String wordKey,

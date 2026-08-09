@@ -1,6 +1,10 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -57,6 +61,7 @@ void main() {
   }
 
   setUp(() async {
+    id = 0;
     database = AppDatabase(NativeDatabase.memory());
     owners = DriftLocalOwnerRepository(
       database,
@@ -174,12 +179,147 @@ void main() {
         isTrue,
       );
       expect(session.cefrLevel, 'B1');
-      expect(session.documentId, startsWith('associative-reading:'));
-      expect(session.documentRevision, 1);
+      expect(
+        session.documentId,
+        matches(RegExp(r'^associative-reading:[0-9a-f]{64}$')),
+      );
+      expect(session.documentRevision, inInclusiveRange(1, 4503599627370496));
       await closeHarness(tester);
     },
     timeout: const Timeout(Duration(seconds: 20)),
   );
+
+  for (final testCase in const [
+    (
+      label: 'baseline',
+      firstRevision: 5,
+      secondRevision: 1,
+      reverse: false,
+      firstCefr: null,
+      expectedCefr: 'A2',
+    ),
+    (
+      label: 'content revision',
+      firstRevision: 5,
+      secondRevision: 2,
+      reverse: false,
+      firstCefr: null,
+      expectedCefr: 'A2',
+    ),
+    (
+      label: 'reversed order',
+      firstRevision: 5,
+      secondRevision: 2,
+      reverse: true,
+      firstCefr: null,
+      expectedCefr: 'A2',
+    ),
+    (
+      label: 'effective CEFR revision',
+      firstRevision: 6,
+      secondRevision: 2,
+      reverse: false,
+      firstCefr: 'C1',
+      expectedCefr: 'C1',
+    ),
+  ]) {
+    testWidgets('document identity and revision track ordered word revisions: '
+        '${testCase.label}', (tester) async {
+      try {
+        final seeded = await tester
+            .runAsync<({String firstId, String secondId})>(() async {
+              final category = await vocabulary.createCategory('Identity');
+              final first = await vocabulary.createWord(
+                CreateWordCommand(
+                  categoryId: category.id,
+                  spelling: 'alpha',
+                  meaning: 'first meaning',
+                  partOfSpeech: 'noun',
+                ),
+              );
+              final second = await vocabulary.createWord(
+                CreateWordCommand(
+                  categoryId: category.id,
+                  spelling: 'beta',
+                  meaning: 'second meaning',
+                  partOfSpeech: 'noun',
+                ),
+              );
+              await (database.update(
+                database.vocabularyWords,
+              )..where((row) => row.id.equals(first.id))).write(
+                VocabularyWordsCompanion(
+                  localRevision: Value(testCase.firstRevision),
+                  cefrLevel: Value(testCase.firstCefr),
+                  normalizedSpelling: Value(
+                    testCase.reverse ? 'z-alpha' : 'alpha',
+                  ),
+                ),
+              );
+              await (database.update(
+                database.vocabularyWords,
+              )..where((row) => row.id.equals(second.id))).write(
+                VocabularyWordsCompanion(
+                  meaning: Value(
+                    testCase.secondRevision > 1
+                        ? 'second meaning revised'
+                        : 'second meaning',
+                  ),
+                  normalizedMeaning: Value(
+                    testCase.secondRevision > 1
+                        ? 'second meaning revised'
+                        : 'second meaning',
+                  ),
+                  localRevision: Value(testCase.secondRevision),
+                  normalizedSpelling: Value(
+                    testCase.reverse ? 'a-beta' : 'beta',
+                  ),
+                ),
+              );
+              return (firstId: first.id, secondId: second.id);
+            });
+        final firstId = seeded!.firstId;
+        final secondId = seeded.secondId;
+
+        await pump(tester, const AssociativeReadingLauncherScreen());
+        await pumpUntilFound(tester, find.text('Start reading'));
+        await tester.tap(find.text('Start reading'));
+        await pumpUntilFound(
+          tester,
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        final session = tester.widget<AssociativeReadingSessionScreen>(
+          find.byType(AssociativeReadingSessionScreen),
+        );
+        final revisions = <String, int>{
+          firstId: testCase.firstRevision,
+          secondId: testCase.secondRevision,
+        };
+        final orderedPairs = <List<Object>>[
+          for (final word in session.targetWords)
+            [
+              session.targetWordIds![word]!,
+              revisions[session.targetWordIds![word]]!,
+            ],
+        ];
+        final digest = sha256
+            .convert(utf8.encode(jsonEncode(orderedPairs)))
+            .toString();
+        final expectedRevision =
+            int.parse(digest.substring(0, 13), radix: 16) + 1;
+
+        expect(
+          session.targetWords,
+          testCase.reverse ? const ['beta', 'alpha'] : const ['alpha', 'beta'],
+        );
+        expect(session.cefrLevel, testCase.expectedCefr);
+        expect(session.documentId, 'associative-reading:$digest');
+        expect(session.documentRevision, expectedRevision);
+      } finally {
+        await closeHarness(tester);
+      }
+    }, timeout: const Timeout(Duration(seconds: 20)));
+  }
 
   testWidgets('hidden reading feature omits the reading tile', (tester) async {
     dependencies = makeDependencies(

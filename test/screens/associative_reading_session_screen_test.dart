@@ -85,6 +85,14 @@ void main() {
       expect(find.textContaining('ephemeral moments'), findsOneWidget);
 
       for (var stage = 2; stage <= 6; stage++) {
+        if (stage == 5) {
+          for (var index = 0; index < 2; index++) {
+            await tester.enterText(
+              find.byType(TextField).at(index),
+              'memory cue $index',
+            );
+          }
+        }
         await tester.tap(find.text('Complete & Continue'));
         final title = 'Stage $stage: ${_stageName(stage)}';
         await pumpUntilFound(tester, find.text(title));
