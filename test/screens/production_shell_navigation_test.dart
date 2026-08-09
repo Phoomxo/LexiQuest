@@ -12,6 +12,8 @@ import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
+import 'package:vocab_learning_app/screens/add_multiple_words_screen.dart';
+import 'package:vocab_learning_app/screens/add_vocab_screen.dart';
 import 'package:vocab_learning_app/screens/email_action_screen.dart';
 import 'package:vocab_learning_app/screens/login_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
@@ -113,6 +115,37 @@ Future<void> _pumpUntilGone(
     );
   }
   fail('Widget remained after $maxPumps bounded pumps: $finder');
+}
+
+Future<void> _pumpUntilComplete(
+  WidgetTester tester,
+  Future<void> future, {
+  int maxPumps = 250,
+}) async {
+  var completed = false;
+  Object? failure;
+  StackTrace? failureStackTrace;
+  future.then<void>(
+    (_) => completed = true,
+    onError: (Object error, StackTrace stackTrace) {
+      failure = error;
+      failureStackTrace = stackTrace;
+      completed = true;
+    },
+  );
+  for (var index = 0; index < maxPumps && !completed; index++) {
+    await tester.pump(const Duration(milliseconds: 20));
+    if (completed) break;
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 20)),
+    );
+  }
+  if (!completed) {
+    fail('Future did not complete after $maxPumps bounded pumps');
+  }
+  if (failure != null) {
+    Error.throwWithStackTrace(failure!, failureStackTrace!);
+  }
 }
 
 void main() {
@@ -346,8 +379,39 @@ void main() {
               'AppDependenciesScope instead of route-owned injection.',
         );
 
+        await tester.tap(find.byTooltip('นำเข้าคำศัพท์'));
+        await _pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey('import-rows-field')),
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(
+          tester
+              .widget<AddMultipleWordsScreen>(
+                find.byType(AddMultipleWordsScreen),
+              )
+              .importer,
+          isNull,
+          reason:
+              'Production bulk-add routes must resolve ImportVocabulary from '
+              'AppDependenciesScope instead of route-owned injection.',
+        );
+        await tester.pageBack();
+        await _pumpUntilGone(
+          tester,
+          find.byKey(const ValueKey('import-rows-field')),
+        );
+
         await tester.tap(find.byKey(const ValueKey('add-word')));
         await _pumpUntilFound(tester, find.byKey(const ValueKey('word-field')));
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(
+          tester.widget<AddWordScreen>(find.byType(AddWordScreen)).vocabulary,
+          isNull,
+          reason:
+              'Production add-word routes must resolve VocabularyUseCases '
+              'from AppDependenciesScope instead of route-owned injection.',
+        );
         await tester.enterText(
           find.byKey(const ValueKey('word-field')),
           'station',
@@ -367,11 +431,12 @@ void main() {
         expect(find.text('station'), findsOneWidget);
         expect(find.textContaining('สถานี'), findsOneWidget);
       } finally {
-        await tester.runAsync(() async {
-          await dependencies?.dispose();
-        });
         await tester.pumpWidget(const SizedBox.shrink());
         await tester.pump();
+        await _pumpUntilComplete(
+          tester,
+          dependencies?.dispose() ?? Future<void>.value(),
+        );
         await tester.runAsync(() async {
           if (await temporaryDirectory.exists()) {
             await temporaryDirectory.delete(recursive: true);

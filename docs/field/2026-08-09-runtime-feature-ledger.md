@@ -37,7 +37,7 @@ is reachable from `lib/main.dart`.
 | Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden` by omission) | None; not adapted into legacy navigation | Shadow reward orchestrator is internal only | Drift V2 event/reward projections | None from production shell | None | hidden |
 | Feature: quest V2 | `Feature.questV2` (`limited`) | Missing: no `FieldFeature` mapping or user-visible quest entry | `QuestUseCases` is composed | Drift quest definitions, instances, objective progress; `localOwnerId` | None from production shell | None | orphan |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
-| Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope` | Drift vocabulary import and word tables | None from production shell | None | wired |
+| Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope`; production route passes no dependency | Drift vocabulary import and word tables | Production Home shell opens the scoped bulk-add route; import behavior is not executed | None; host test only | wired |
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
 | Screen: `ai_tutor_screen.dart` | `Feature.aiTutor` | `MainNavigationScreen` drawer `ai-tutor/chat` | Composed `AiTutorController`/speech when present; constructs voice fallback in screen | Drift AI usage/settings; chat list is widget memory | None from production shell | None | wired |
 | Screen: `ai_tutor_settings_screen.dart` | `Feature.aiTutor` | Drawer `ai-tutor/settings`; also opened by `AiTutorScreen` | `AiTutorController`, `AiUsageRepository` through scope | Provider settings/secret store and Drift usage | None from production shell | None | wired |
@@ -126,10 +126,11 @@ and `localOwnerId`. An inactive foreign owner's category and word are present in
 the same file and excluded from the reopened active-owner reads.
 
 This evidence promotes the bounded vocabulary vertical slice and its exercised
-screens to `verified`. Bulk import remains `wired` because the production-shell
-journey does not exercise `ImportVocabulary`. There is still no physical
-process-restart, APK, or device evidence, so vocabulary is not
-`field-certified`.
+category, list, and single-word screens to `verified`. The production-shell
+journey also proves the bulk-add route resolves `ImportVocabulary` from
+`AppDependenciesScope`, but bulk import remains `wired` because the journey does
+not execute an import. There is still no physical process-restart, APK, or
+device evidence, so vocabulary is not `field-certified`.
 
 ## Baseline gaps carried forward
 

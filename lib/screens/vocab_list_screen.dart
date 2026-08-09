@@ -95,8 +95,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                             subtitle: Text(
                               '${word.meaning} · ${word.partOfSpeech}',
                             ),
-                            onTap: () =>
-                                _openWordEditor(context, useCases, word: word),
+                            onTap: () => _openWordEditor(context, word: word),
                             trailing: IconButton(
                               tooltip: 'ลบคำศัพท์',
                               icon: const Icon(Icons.delete_outline),
@@ -129,7 +128,6 @@ class _VocabListScreenState extends State<VocabListScreen> {
                           builder: (_) => AddMultipleWordsScreen(
                             categoryId: widget.categoryId,
                             categoryName: widget.categoryName,
-                            importer: importer,
                           ),
                         ),
                       );
@@ -140,7 +138,7 @@ class _VocabListScreenState extends State<VocabListScreen> {
                 FloatingActionButton.extended(
                   key: const ValueKey('add-word'),
                   heroTag: 'words-add',
-                  onPressed: () => _openWordEditor(context, useCases),
+                  onPressed: () => _openWordEditor(context),
                   icon: const Icon(Icons.add),
                   label: const Text('เพิ่มคำศัพท์'),
                 ),
@@ -149,20 +147,13 @@ class _VocabListScreenState extends State<VocabListScreen> {
     );
   }
 
-  void _openWordEditor(
-    BuildContext context,
-    VocabularyUseCases useCases, {
-    VocabularyWord? word,
-  }) {
+  void _openWordEditor(BuildContext context, {VocabularyWord? word}) {
     AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: word == null ? 'vocabulary/add' : 'vocabulary/edit',
-        builder: (_) => AddWordScreen(
-          categoryId: widget.categoryId,
-          vocabulary: useCases,
-          word: word,
-        ),
+        builder: (_) =>
+            AddWordScreen(categoryId: widget.categoryId, word: word),
       ),
     );
   }
