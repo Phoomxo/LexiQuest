@@ -35,7 +35,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   String? _error;
   ObjectScanResult? _result;
   List<ModelBenchmarkResult> _benchmarks = const [];
-  ModelCancellation? _cancellation;
+  ModelCancellation? _captureCancellation;
+  ModelCancellation? _downloadCancellation;
+  int _captureEpoch = 0;
 
   @override
   void initState() {
@@ -92,10 +94,34 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   }
 
   void _releaseScannerLease() {
+    _invalidateCapture();
     final lease = _scannerLease;
     _scannerLease = null;
     _initializedLease = null;
     if (lease != null) lease.release().ignore();
+  }
+
+  void _invalidateCapture() {
+    _captureEpoch += 1;
+    _captureCancellation?.cancel();
+    _captureCancellation = null;
+    _capturing = false;
+  }
+
+  bool _captureIsCurrent({
+    required int epoch,
+    required ObjectScannerController scanner,
+    required ObjectScannerLease lease,
+    required ModelCancellation cancellation,
+  }) {
+    return mounted &&
+        epoch == _captureEpoch &&
+        identical(_scanner, scanner) &&
+        identical(_scannerLease, lease) &&
+        lease.isCurrent &&
+        identical(_captureCancellation, cancellation) &&
+        !cancellation.isCancelled &&
+        _cameraForeground;
   }
 
   Future<void> _initialize([ObjectScannerLease? requestedLease]) async {
@@ -145,9 +171,12 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   Future<void> _capture() async {
     final scanner = _scanner;
     final lease = _scannerLease;
-    if (scanner == null || lease?.isReady != true || _capturing) return;
+    if (scanner == null || lease == null || !lease.isReady || _capturing) {
+      return;
+    }
+    final captureEpoch = ++_captureEpoch;
     final cancellation = ModelCancellation();
-    _cancellation = cancellation;
+    _captureCancellation = cancellation;
     setState(() {
       _capturing = true;
       _accepted = false;
@@ -158,12 +187,33 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       final result = await scanner.captureAndClassify(
         cancellation: cancellation,
       );
-      if (mounted) setState(() => _result = result);
+      if (_captureIsCurrent(
+        epoch: captureEpoch,
+        scanner: scanner,
+        lease: lease,
+        cancellation: cancellation,
+      )) {
+        setState(() => _result = result);
+      }
     } on CameraPracticeException catch (error) {
-      if (mounted) setState(() => _error = _cameraFailureText(error.code));
+      if (_captureIsCurrent(
+        epoch: captureEpoch,
+        scanner: scanner,
+        lease: lease,
+        cancellation: cancellation,
+      )) {
+        setState(() => _error = _cameraFailureText(error.code));
+      }
     } finally {
-      if (mounted) setState(() => _capturing = false);
-      _cancellation = null;
+      if (_captureIsCurrent(
+        epoch: captureEpoch,
+        scanner: scanner,
+        lease: lease,
+        cancellation: cancellation,
+      )) {
+        setState(() => _capturing = false);
+        _captureCancellation = null;
+      }
     }
   }
 
@@ -171,7 +221,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final scanner = _scanner;
     if (scanner == null || _downloading) return;
     final cancellation = ModelCancellation();
-    _cancellation = cancellation;
+    _downloadCancellation = cancellation;
     setState(() {
       _downloading = true;
       _error = null;
@@ -196,7 +246,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       });
     } finally {
       if (mounted) setState(() => _downloading = false);
-      _cancellation = null;
+      if (identical(_downloadCancellation, cancellation)) {
+        _downloadCancellation = null;
+      }
     }
   }
 
@@ -291,7 +343,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
       _cameraForeground = false;
-      _cancellation?.cancel();
+      _invalidateCapture();
+      _downloadCancellation?.cancel();
       _scannerLease?.pause().ignore();
     }
   }
@@ -299,7 +352,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cancellation?.cancel();
+    _downloadCancellation?.cancel();
     _releaseScannerLease();
     // Runtime-owned scanners are disposed by AppDependencies. Injected test
     // scanners are owned by the caller.
@@ -397,7 +450,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
               OutlinedButton.icon(
                 key: const ValueKey<String>('object-scanner-download-model'),
                 onPressed: _downloading
-                    ? () => _cancellation?.cancel()
+                    ? () => _downloadCancellation?.cancel()
                     : _downloadModel,
                 icon: Icon(_downloading ? Icons.stop : Icons.download),
                 label: Text(

@@ -149,6 +149,7 @@ pinned NDK; no signed release APK or bundle was produced.
 | Missing media dependency | Scanner initialized camera without voice; Shadowing started a durable quiz without complete media composition; Speak auto-played without speech. | Fail-closed screen tests observe zero camera, learning, and voice calls. |
 | Shared voice | Outgoing route disposal stopped a replacement route's shared voice. | Replacement tests prove zero outgoing shared-voice stop; no five-screen source owns `createDefault` or provider disposal. |
 | Camera late init | A stale/disposed/backgrounded init could reactivate or pause the wrong preview; pending background resume left a spinner; push/pop left a stale lease. | Full scanner widget suite covers serialized replacement, background resume, route return, and stale fencing. |
+| Camera in-flight ownership | A parent capture remained active when a pushed child acquired the same controller; because the parent stayed mounted, its late success/error and `finally` could publish stale state or clear another operation's cancellation slot. | Both blocking late-success and late-failure route-cover tests pass. Lease release cancels the exact capture, advances its epoch, and fences result/error/finally by scanner, lease, epoch, and cancellation identity while the child and restored-parent leases remain ready. Download now has an independent cancellation handle; benchmark never shared the slot. |
 | Camera disposal tail | In `dispose drains lease initialization and closes a late runtime`, dispose completed while runtime open was blocked (`Expected: false`, `Actual: true`). | The exact test passed after manager close/drain and post-await runtime fencing; combined scanner/speech use-case selection passed 11/11. |
 | Speech takeover | A pending route could complete after replacement and globally cancel the current microphone; a pushed route left the parent stale; double tap could start twice. | Shadowing/Speak replacement, push/pop, pending-start, and reentry tests pass with one active owner. |
 | Speech disposal tail | In `dispose drains a superseded pending start before returning`, dispose completed before the blocked start (`Expected: false`, `Actual: true`). | The exact test passed after disposal awaited the serialized tail; combined scanner/speech use-case selection passed 11/11. |
@@ -188,7 +189,8 @@ substantive head:
 | Full `flutter analyze` | GREEN, no issues found |
 | Dart format check and `git diff --check` | GREEN, 48 changed Dart files formatted with 0 changes; no whitespace errors |
 | Exact staged-package inspection | GREEN, 55 intended paths; cached diff check clean; no progress, schema, generated Dart, or build output staged |
-| Non-amend commit and clean-worktree verification | Pending |
+| Non-amend commit and clean-worktree verification | GREEN at prior stable evidence commit `0f81417516c15ea8d09a8843f4de16de69604364`; the worktree was clean before consolidated stable read-only review |
+| Stable-review scanner follow-up | GREEN, final focused media/use-case capsule 25/25; two changed Dart files formatted with 0 further changes; full analysis clean. Broad APK gates intentionally retained from `0f814175` because verifier and packaging inputs did not change. |
 
 Gate chronology is retained rather than collapsed. The first device-gate
 attempt passed its PowerShell contracts and then could not resolve the script's
@@ -201,6 +203,18 @@ camera/speech attempt found the obsolete empty placeholder before starting
 Flutter; deletion plus a focused contract GREEN preceded the explicitly
 authorized changed-head full rerun. No unchanged failure was retried and no raw
 checkout-specific custom-op pin was substituted.
+
+### Stable review follow-up
+
+Consolidated read-only review started from the clean stable commit
+`0f81417516c15ea8d09a8843f4de16de69604364`. It found one remaining scanner
+ownership gap: a capture is outside the serialized lease lifecycle, so route
+cover released the camera lease but did not invalidate the capture continuation.
+The follow-up preserves all earlier gate chronology and APK evidence. Its scope
+is limited to the semantic scanner regression, capture ownership fencing,
+focused media/use-case verification, static analysis, formatting, and diff
+hygiene; native verifier inputs are unchanged, so the broad APK gates are not
+rerun.
 
 ## Evidence boundary
 

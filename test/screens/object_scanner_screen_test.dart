@@ -340,6 +340,110 @@ void main() {
     },
   );
 
+  for (final completesWithError in <bool>[false, true]) {
+    final outcome = completesWithError ? 'failure' : 'result';
+    testWidgets('covered scanner capture cannot publish a stale $outcome', (
+      tester,
+    ) async {
+      final pendingCapture = Completer<ObjectScanResult>();
+      final scanner = _FakeScanner()..capturePendings.add(pendingCapture);
+      final voice = VoiceUseCases(_FakeVoice());
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            key: const ValueKey<String>('capture-parent-scanner-route'),
+            scanner: scanner,
+            voice: voice,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pump();
+      expect(scanner.captureCalls, 1);
+      final parentCancellation = scanner.captureCancellations.single!;
+      expect(parentCancellation.isCancelled, isFalse);
+
+      final parentContext = tester.element(
+        find.byKey(const ValueKey('capture-parent-scanner-route')),
+      );
+      unawaited(
+        Navigator.of(parentContext).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => ObjectScannerScreen(
+              key: const ValueKey<String>('capture-child-scanner-route'),
+              scanner: scanner,
+              voice: voice,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(parentCancellation.isCancelled, isTrue);
+      expect(scanner.initializeCalls, 2);
+      expect(scanner.pauseCalls, 1);
+      expect(scanner.isReady, isTrue);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+
+      if (completesWithError) {
+        pendingCapture.completeError(
+          const CameraPracticeException(CameraFailureCode.captureFailed),
+        );
+      } else {
+        pendingCapture.complete(_fakeObjectScanResult());
+      }
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(scanner.isReady, isTrue);
+      expect(scanner.pauseCalls, 1);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+
+      Navigator.of(
+        tester.element(
+          find.byKey(const ValueKey('capture-child-scanner-route')),
+        ),
+      ).pop();
+      await tester.pumpAndSettle();
+
+      expect(scanner.initializeCalls, 3);
+      expect(scanner.isReady, isTrue);
+      expect(find.text('apple'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('object-scanner-error')),
+        findsNothing,
+      );
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    });
+  }
+
   testWidgets(
     'scanner route reacquires its shared controller after child pop',
     (tester) async {
@@ -396,7 +500,10 @@ final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? captureFailure;
   Completer<void>? initializePending;
   final List<Completer<void>> initializePendings = [];
+  final List<Completer<ObjectScanResult>> capturePendings = [];
+  final List<ModelCancellation?> captureCancellations = [];
   int acceptCalls = 0;
+  int captureCalls = 0;
   int initializeCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
@@ -488,30 +595,14 @@ final class _FakeScanner implements ObjectScannerController {
   Future<ObjectScanResult> captureAndClassify({
     ModelCancellation? cancellation,
   }) async {
+    captureCalls += 1;
+    captureCancellations.add(cancellation);
     final failure = captureFailure;
     if (failure != null) throw failure;
-    return ObjectScanResult(
-      classifications: const [
-        ModelClassification(index: 1, label: 'Apple', confidence: 0.91),
-      ],
-      vocabulary: const ScannedVocabulary(
-        mlLabel: 'Apple',
-        englishWord: 'apple',
-        thaiTranslation: 'แอปเปิล',
-        cefrLevel: 'A1',
-        phonetic: '/apple/',
-        exampleSentence: 'I eat an apple.',
-        category: 'Food',
-      ),
-      matchedClassification: const ModelClassification(
-        index: 1,
-        label: 'Apple',
-        confidence: 0.91,
-      ),
-      modelId: 'model',
-      modelVersion: 'model-v1',
-      capturedAtUtc: DateTime.utc(2026, 7, 30),
-    );
+    if (capturePendings.isNotEmpty) {
+      return capturePendings.removeAt(0).future;
+    }
+    return _fakeObjectScanResult();
   }
 
   @override
@@ -545,6 +636,29 @@ final class _FakeScanner implements ObjectScannerController {
     isReady = true;
   }
 }
+
+ObjectScanResult _fakeObjectScanResult() => ObjectScanResult(
+  classifications: const [
+    ModelClassification(index: 1, label: 'Apple', confidence: 0.91),
+  ],
+  vocabulary: const ScannedVocabulary(
+    mlLabel: 'Apple',
+    englishWord: 'apple',
+    thaiTranslation: 'แอปเปิล',
+    cefrLevel: 'A1',
+    phonetic: '/apple/',
+    exampleSentence: 'I eat an apple.',
+    category: 'Food',
+  ),
+  matchedClassification: const ModelClassification(
+    index: 1,
+    label: 'Apple',
+    confidence: 0.91,
+  ),
+  modelId: 'model',
+  modelVersion: 'model-v1',
+  capturedAtUtc: DateTime.utc(2026, 7, 30),
+);
 
 final class _FakeVoice implements VoiceProvider {
   @override
