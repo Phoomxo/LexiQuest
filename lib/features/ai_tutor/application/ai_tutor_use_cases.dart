@@ -332,7 +332,11 @@ final class AiTutorUseCases implements AiTutorController {
           final credential = await _requiredCredential(ownerId);
           String? summary;
           if (credential.shareLearningSummary && loadProgress != null) {
-            summary = _progressSummary(await loadProgress!());
+            try {
+              summary = _progressSummary(await loadProgress!());
+            } on Object {
+              throw const AiTutorException(AiFailureCode.localPersistence);
+            }
           }
           final gateway = _resolveGateway(
             providerId: credential.providerId,
@@ -375,10 +379,13 @@ final class AiTutorUseCases implements AiTutorController {
     return _track(
       cancellation,
       _transitionGate.run(
-        () => ownerCoordinator.run(
-          cancellation,
-          usageRepository.summarizeForOwner,
-        ),
+        () => ownerCoordinator.run(cancellation, (ownerId) async {
+          try {
+            return await usageRepository.summarizeForOwner(ownerId);
+          } on Object {
+            throw const AiTutorException(AiFailureCode.localPersistence);
+          }
+        }),
       ),
     );
   }
@@ -390,7 +397,13 @@ final class AiTutorUseCases implements AiTutorController {
     return _track(
       cancellation,
       _transitionGate.run(
-        () => ownerCoordinator.run(cancellation, usageRepository.clearForOwner),
+        () => ownerCoordinator.run(cancellation, (ownerId) async {
+          try {
+            await usageRepository.clearForOwner(ownerId);
+          } on Object {
+            throw const AiTutorException(AiFailureCode.localPersistence);
+          }
+        }),
       ),
     );
   }

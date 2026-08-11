@@ -345,6 +345,8 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
           _notice = 'Local API usage deleted.';
         });
       }
+    } on AiTutorException catch (error) {
+      if (mounted) setState(() => _error = _failureText(error.code));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

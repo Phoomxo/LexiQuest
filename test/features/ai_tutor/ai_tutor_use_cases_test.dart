@@ -6,6 +6,7 @@ import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation
 import 'package:vocab_learning_app/features/ai_tutor/data/ai_tutor_settings_store.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/gemini/data/secure_gemini_settings_store.dart';
+import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
 
 void main() {
@@ -38,6 +39,7 @@ void main() {
   AiTutorUseCases createTutor({
     String Function()? eventId,
     _OpenOwnerGate? gate,
+    Future<ProgressSnapshot> Function()? loadProgress,
   }) {
     final operationGate = gate ?? _OpenOwnerGate();
     return AiTutorUseCases(
@@ -50,6 +52,7 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 8, 9),
       usageRepository: usage,
       usageEventId: eventId ?? () => 'usage-event',
+      loadProgress: loadProgress,
       ownerCoordinator: OwnerOperationCoordinator(
         gate: operationGate,
         activeOwnerId: () async => activeOwner,
@@ -88,6 +91,54 @@ void main() {
 
       await expectLater(
         createTutor().reply(scenario: 'scenario', learnerMessage: 'message'),
+        throwsA(_aiFailure(AiFailureCode.localPersistence)),
+      );
+
+      expect(gateway.generateCalls, 0);
+    },
+  );
+
+  test(
+    'loadUsage normalizes repository failure to local-persistence',
+    () async {
+      usage.failSummarize = true;
+
+      await expectLater(
+        createTutor().loadUsage(),
+        throwsA(_aiFailure(AiFailureCode.localPersistence)),
+      );
+    },
+  );
+
+  test(
+    'clearUsage normalizes repository failure to local-persistence',
+    () async {
+      usage.failClear = true;
+
+      await expectLater(
+        createTutor().clearUsage(),
+        throwsA(_aiFailure(AiFailureCode.localPersistence)),
+      );
+    },
+  );
+
+  test(
+    'opted-in learning-summary load failure is local-persistence with zero provider calls',
+    () async {
+      await store.writeCredential(
+        const AiTutorCredential(
+          key: 'secret-key-sentinel',
+          providerId: AiProviderId.openrouter,
+          model: 'provider/model',
+          providerConsent: true,
+          shareLearningSummary: true,
+        ),
+      );
+
+      await expectLater(
+        createTutor(
+          loadProgress: () async => throw StateError('progress read failed'),
+        ).reply(scenario: 'scenario', learnerMessage: 'message'),
         throwsA(_aiFailure(AiFailureCode.localPersistence)),
       );
 
@@ -462,6 +513,8 @@ final class _MemoryUsageRepository implements AiUsageRepository {
   Future<void> Function()? beforeBegin;
   bool failBegin = false;
   bool failFinalize = false;
+  bool failSummarize = false;
+  bool failClear = false;
   int finalizeCalls = 0;
   void Function()? afterFinalize;
 
@@ -513,7 +566,9 @@ final class _MemoryUsageRepository implements AiUsageRepository {
   Future<void> clear() async {}
 
   @override
-  Future<void> clearForOwner(String ownerId) async {}
+  Future<void> clearForOwner(String ownerId) async {
+    if (failClear) throw StateError('clear failed');
+  }
 
   @override
   Future<String> exportAggregateJson({required bool researchConsent}) async =>
@@ -529,8 +584,10 @@ final class _MemoryUsageRepository implements AiUsageRepository {
   Future<List<AiUsageSummary>> summarize() async => const <AiUsageSummary>[];
 
   @override
-  Future<List<AiUsageSummary>> summarizeForOwner(String ownerId) async =>
-      const <AiUsageSummary>[];
+  Future<List<AiUsageSummary>> summarizeForOwner(String ownerId) async {
+    if (failSummarize) throw StateError('summarize failed');
+    return const <AiUsageSummary>[];
+  }
 }
 
 final class _OpenOwnerGate implements OwnerOperationGate {
