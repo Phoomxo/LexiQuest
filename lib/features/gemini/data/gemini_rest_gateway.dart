@@ -55,7 +55,7 @@ final class GeminiRestGateway implements GeminiGateway {
     final request = http.AbortableRequest(
       'GET',
       _baseUri.resolve('/v1beta/models/$model'),
-      abortTrigger: abort.future,
+      abortTrigger: abort.signal.future,
     )..headers['x-goog-api-key'] = normalized;
     final response = await _send(
       request,
@@ -99,7 +99,7 @@ final class GeminiRestGateway implements GeminiGateway {
         http.AbortableRequest(
             'POST',
             _baseUri.resolve('/v1beta/models/$model:generateContent'),
-            abortTrigger: abort.future,
+            abortTrigger: abort.signal.future,
           )
           ..headers['x-goog-api-key'] = normalized
           ..headers['content-type'] = 'application/json'
@@ -151,7 +151,7 @@ final class GeminiRestGateway implements GeminiGateway {
     final request = http.AbortableRequest(
       'GET',
       _baseUri.resolve('/v1beta/models'),
-      abortTrigger: abort.future,
+      abortTrigger: abort.signal.future,
     )..headers['x-goog-api-key'] = normalized;
     final response = await _send(
       request,
@@ -184,7 +184,7 @@ final class GeminiRestGateway implements GeminiGateway {
 
   Future<http.Response> _send(
     http.AbortableRequest request, {
-    required Completer<void> abort,
+    required _GeminiTransportAbort abort,
     GeminiCancellation? cancellation,
   }) async {
     if (cancellation?.isCancelled ?? false) {
@@ -193,7 +193,6 @@ final class GeminiRestGateway implements GeminiGateway {
     if (await _isOffline()) {
       throw const GeminiException(GeminiFailureCode.offline);
     }
-    var timedOut = false;
     try {
       final operation = () async {
         final streamed = await _client.send(request);
@@ -215,24 +214,27 @@ final class GeminiRestGateway implements GeminiGateway {
       final response = await operation.timeout(
         requestTimeout,
         onTimeout: () {
-          timedOut = true;
-          if (!abort.isCompleted) abort.complete();
-          throw const GeminiException(GeminiFailureCode.timeout);
+          abort.request(
+            cancellation?.isCancelled ?? false
+                ? _GeminiTransportAbortCause.caller
+                : _GeminiTransportAbortCause.timeout,
+          );
+          throw GeminiException(
+            abort.cause == _GeminiTransportAbortCause.caller
+                ? GeminiFailureCode.cancelled
+                : GeminiFailureCode.timeout,
+          );
         },
       );
-      if (cancellation?.isCancelled ?? false) {
-        throw const GeminiException(GeminiFailureCode.cancelled);
-      }
       return response;
     } on http.RequestAbortedException {
-      if (timedOut) {
+      if (abort.cause == _GeminiTransportAbortCause.timeout) {
         throw const GeminiException(GeminiFailureCode.timeout);
       }
-      throw GeminiException(
-        cancellation?.isCancelled ?? false
-            ? GeminiFailureCode.cancelled
-            : GeminiFailureCode.offline,
-      );
+      if (abort.cause == _GeminiTransportAbortCause.caller) {
+        throw const GeminiException(GeminiFailureCode.cancelled);
+      }
+      throw const GeminiException(GeminiFailureCode.offline);
     } on TimeoutException {
       throw const GeminiException(GeminiFailureCode.timeout);
     } on http.ClientException {
@@ -244,12 +246,12 @@ final class GeminiRestGateway implements GeminiGateway {
     }
   }
 
-  Completer<void> _abortFor(GeminiCancellation? cancellation) {
-    final abort = Completer<void>();
+  _GeminiTransportAbort _abortFor(GeminiCancellation? cancellation) {
+    final abort = _GeminiTransportAbort();
     if (cancellation != null) {
       unawaited(
         cancellation.whenCancelled.then((_) {
-          if (!abort.isCompleted) abort.complete();
+          abort.request(_GeminiTransportAbortCause.caller);
         }),
       );
     }
@@ -257,9 +259,10 @@ final class GeminiRestGateway implements GeminiGateway {
   }
 
   GeminiException _failureFor(int statusCode) => switch (statusCode) {
-    400 || 401 || 403 => const GeminiException(GeminiFailureCode.invalidKey),
+    401 || 403 => const GeminiException(GeminiFailureCode.invalidKey),
     408 => const GeminiException(GeminiFailureCode.timeout),
     429 => const GeminiException(GeminiFailureCode.quota),
+    >= 400 && < 500 => const GeminiException(GeminiFailureCode.requestRejected),
     500 ||
     502 ||
     503 ||
@@ -330,5 +333,18 @@ final class GeminiRestGateway implements GeminiGateway {
       throw const GeminiException(GeminiFailureCode.validation);
     }
     return normalized;
+  }
+}
+
+enum _GeminiTransportAbortCause { caller, timeout }
+
+final class _GeminiTransportAbort {
+  final Completer<void> signal = Completer<void>();
+  _GeminiTransportAbortCause? cause;
+
+  void request(_GeminiTransportAbortCause nextCause) {
+    if (cause != null) return;
+    cause = nextCause;
+    if (!signal.isCompleted) signal.complete();
   }
 }

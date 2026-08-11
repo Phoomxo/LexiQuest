@@ -4,10 +4,9 @@ import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../runtime/app_dependencies.dart';
 
 class AiTutorSettingsScreen extends StatefulWidget {
-  const AiTutorSettingsScreen({super.key, this.aiTutor, this.aiUsage});
+  const AiTutorSettingsScreen({super.key, this.aiTutor});
 
   final AiTutorController? aiTutor;
-  final AiUsageRepository? aiUsage;
 
   @override
   State<AiTutorSettingsScreen> createState() => _AiTutorSettingsScreenState();
@@ -17,7 +16,6 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   final TextEditingController _keyController = TextEditingController();
   final TextEditingController _baseUrlController = TextEditingController();
   AiTutorController? _tutor;
-  AiUsageRepository? _usage;
   AiCancellation? _cancellation;
   AiProviderId _providerId = AiProviderId.gemini;
   List<AiModel> _models = const [];
@@ -36,12 +34,8 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     super.didChangeDependencies();
     final dependencies = AppDependenciesScope.maybeOf(context);
     final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
-    final resolvedUsage = widget.aiUsage ?? dependencies?.aiUsage;
-    if (identical(resolvedTutor, _tutor) && identical(resolvedUsage, _usage)) {
-      return;
-    }
+    if (identical(resolvedTutor, _tutor)) return;
     _tutor = resolvedTutor;
-    _usage = resolvedUsage;
     _load();
   }
 
@@ -60,7 +54,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     });
     try {
       final status = await tutor.loadSettings();
-      final usageSummaries = await _usage?.summarize() ?? const [];
+      final usageSummaries = await tutor.loadUsage();
       if (!mounted) return;
       setState(() {
         _hasKey = status.hasKey;
@@ -317,8 +311,8 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
   }
 
   Future<void> _clearUsage() async {
-    final usage = _usage;
-    if (usage == null || _saving) return;
+    final tutor = _tutor;
+    if (tutor == null || _saving) return;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -343,8 +337,8 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     if (confirmed != true || !mounted) return;
     setState(() => _saving = true);
     try {
-      await usage.clear();
-      final summaries = await usage.summarize();
+      await tutor.clearUsage();
+      final summaries = await tutor.loadUsage();
       if (mounted) {
         setState(() {
           _usageSummaries = summaries;
@@ -382,8 +376,9 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
                   const SizedBox(height: 12),
                   const Text(
                     'Your key is stored in secure device storage. Requests go '
-                    'directly to the provider you select. There is no automatic '
-                    'fallback or retry.',
+                    'directly to the provider you select. Gemini requests may '
+                    'make up to 3 total attempts for transient failures. '
+                    'Requests never fall back to a different provider.',
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<AiProviderId>(
@@ -558,7 +553,7 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
                       child: const Text('Delete API key'),
                     ),
                   ],
-                  if (_usage != null) ...[
+                  if (_tutor != null) ...[
                     const Divider(height: 32),
                     Text(
                       'Local API usage (90 days)',
@@ -604,6 +599,11 @@ class _AiTutorSettingsScreenState extends State<AiTutorSettingsScreen> {
     AiFailureCode.timeout => 'The provider request timed out.',
     AiFailureCode.providerUnavailable =>
       'The selected provider is temporarily unavailable.',
+    AiFailureCode.providerDisabled => 'The selected provider is disabled.',
+    AiFailureCode.circuitOpen =>
+      'The selected provider is temporarily paused after repeated failures.',
+    AiFailureCode.localPersistence =>
+      'Local AI accounting is temporarily unavailable.',
     AiFailureCode.malformedResponse =>
       'The provider returned an unsupported response.',
     AiFailureCode.consentRequired => 'Provider consent is required.',

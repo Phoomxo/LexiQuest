@@ -25,7 +25,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -66,7 +69,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -93,7 +99,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -126,7 +135,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -143,6 +155,55 @@ void main() {
     expect(scanner.isReady, isTrue);
   });
 
+  testWidgets('background stops scanner result playback and pauses camera', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner();
+    final provider = _FakeVoice();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(scanner: scanner, voice: voice),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey('object-scanner-capture-button')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byIcon(Icons.volume_up_outlined));
+      await tester.pumpAndSettle();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.runAsync(
+        () => provider.stopEntered.future.timeout(
+          const Duration(milliseconds: 250),
+        ),
+      );
+
+      expect(provider.stopCalls, 1);
+      expect(scanner.pauseCalls, 1);
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.binding.setSurfaceSize(null);
+      await tester.runAsync(
+        () => voice.dispose().timeout(const Duration(seconds: 1)),
+      );
+    }
+  });
+
   testWidgets('offers verified model download when no active model exists', (
     tester,
   ) async {
@@ -156,7 +217,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -178,7 +242,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -221,7 +288,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -252,7 +322,10 @@ void main() {
       MaterialApp(
         home: ObjectScannerScreen(
           scanner: scanner,
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -293,7 +366,10 @@ void main() {
     (tester) async {
       final oldPending = Completer<void>();
       final scanner = _FakeScanner()..initializePendings.add(oldPending);
-      final voice = VoiceUseCases(_FakeVoice());
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
 
       await tester.pumpWidget(
         MaterialApp(
@@ -347,7 +423,10 @@ void main() {
     ) async {
       final pendingCapture = Completer<ObjectScanResult>();
       final scanner = _FakeScanner()..capturePendings.add(pendingCapture);
-      final voice = VoiceUseCases(_FakeVoice());
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
       await tester.binding.setSurfaceSize(const Size(800, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
@@ -448,7 +527,10 @@ void main() {
     'scanner route reacquires its shared controller after child pop',
     (tester) async {
       final scanner = _FakeScanner();
-      final voice = VoiceUseCases(_FakeVoice());
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
       await tester.binding.setSurfaceSize(const Size(800, 1200));
       addTearDown(() => tester.binding.setSurfaceSize(null));
       await tester.pumpWidget(
@@ -661,6 +743,9 @@ ObjectScanResult _fakeObjectScanResult() => ObjectScanResult(
 );
 
 final class _FakeVoice implements VoiceProvider {
+  final Completer<void> stopEntered = Completer<void>();
+  int stopCalls = 0;
+
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
     return const VoicePlaybackResult(
@@ -672,5 +757,8 @@ final class _FakeVoice implements VoiceProvider {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    stopCalls += 1;
+    if (!stopEntered.isCompleted) stopEntered.complete();
+  }
 }

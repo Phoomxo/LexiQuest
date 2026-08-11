@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'voice_models.dart';
 
+FirebaseAuth? _retainFirebaseAuth(FirebaseAuth? value) => value;
+
 /// Boundary for acquiring a Firebase ID token for OmniVoice requests.
 abstract interface class VoiceAuthTokenProvider {
   Future<String> getIdToken({bool forceRefresh = false});
@@ -15,13 +17,15 @@ abstract interface class FirebaseTokenReader {
 /// Production token reader backed by an injected-or-default [FirebaseAuth].
 final class FirebaseAuthTokenReader implements FirebaseTokenReader {
   FirebaseAuthTokenReader({FirebaseAuth? firebaseAuth})
-    : _firebaseAuth = firebaseAuth ?? FirebaseAuth.instance;
+    : _firebaseAuth = _retainFirebaseAuth(firebaseAuth);
 
-  final FirebaseAuth _firebaseAuth;
+  FirebaseAuth? _firebaseAuth;
+
+  FirebaseAuth get _resolved => _firebaseAuth ??= FirebaseAuth.instance;
 
   @override
   Future<String?> readIdToken({required bool forceRefresh}) async {
-    final user = _firebaseAuth.currentUser;
+    final user = _resolved.currentUser;
     if (user == null) {
       return null;
     }

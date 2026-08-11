@@ -9,6 +9,9 @@ enum GeminiFailureCode {
   offline,
   timeout,
   providerUnavailable,
+  providerDisabled,
+  circuitOpen,
+  requestRejected,
   malformedResponse,
   blocked,
   cancelled,
@@ -86,7 +89,10 @@ abstract interface class GeminiGateway {
     GeminiCancellation? cancellation,
   });
 
-  Future<List<String>> listModels(String key, {GeminiCancellation? cancellation});
+  Future<List<String>> listModels(
+    String key, {
+    GeminiCancellation? cancellation,
+  });
 }
 
 abstract interface class GeminiTutorController {

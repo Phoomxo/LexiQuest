@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
-import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
+import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -21,6 +21,8 @@ import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class _StubGuestSessionService implements GuestSessionService {
   @override
@@ -68,6 +70,10 @@ void main() {
   group('AppBootstrap.initialize', () {
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
+      final ai = _BootstrapAiTutorController();
+      final voice = _BootstrapManagedVoiceProvider();
+      var aiBuilds = 0;
+      var voiceBuilds = 0;
       final bootstrap = AppBootstrap(
         createDatabase: _testDatabase,
         initializeFirebase: () async {},
@@ -75,25 +81,187 @@ void main() {
         loadConfig: () => expectedConfig,
         guestSessionService: _StubGuestSessionService(),
         createEntryStateStore: _createSignedOutEntryState,
+        buildAiTutor: (_) {
+          aiBuilds += 1;
+          return ManagedAiTutor(controller: ai, disposeController: ai.dispose);
+        },
+        buildVoice: (config) {
+          voiceBuilds += 1;
+          expect(identical(config, expectedConfig), isTrue);
+          return voice;
+        },
       );
 
       final dependencies = await bootstrap.initialize();
+      final repeated = await bootstrap.initialize();
 
       expect(dependencies.runtimeStatus.firebase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
       expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+      expect(dependencies.runtimeStatus.voice, RuntimeAvailability.ready);
       expect(identical(dependencies.config, expectedConfig), isTrue);
       expect(dependencies.deviceModels, isNotNull);
       expect(dependencies.objectScanner, isNotNull);
       expect(dependencies.speechPractice, isNotNull);
-      expect(dependencies.geminiTutor, isNull);
-      expect(dependencies.aiTutor, isNotNull);
-      expect(dependencies.aiUsage, isNotNull);
+      expect(identical(dependencies, repeated), isTrue);
+      expect(identical(dependencies.aiTutor, ai), isTrue);
+      expect(dependencies.voice, isNotNull);
+      expect(aiBuilds, 1);
+      expect(voiceBuilds, 1);
       expect(dependencies.localDataEraser, isNotNull);
-      final aiTutor = dependencies.aiTutor as AiTutorUseCases;
-      expect(identical(aiTutor.usageRepository, dependencies.aiUsage), isTrue);
       expect(dependencies.featureControls, isNotNull);
     });
+
+    test(
+      'awaits and memoizes managed AI and voice disposal exactly once',
+      () async {
+        final aiDisposal = Completer<void>();
+        final voiceDisposal = Completer<void>();
+        final ai = _BootstrapAiTutorController(disposal: aiDisposal.future);
+        final voice = _BootstrapManagedVoiceProvider(
+          disposal: voiceDisposal.future,
+        );
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          buildAiTutor: (_) =>
+              ManagedAiTutor(controller: ai, disposeController: ai.dispose),
+          buildVoice: (_) => voice,
+        );
+        final dependencies = await bootstrap.initialize();
+
+        var completed = false;
+        final first = dependencies.dispose().whenComplete(
+          () => completed = true,
+        );
+        final second = dependencies.dispose();
+        await Future<void>.delayed(Duration.zero);
+
+        expect(completed, isFalse);
+        expect(voice.disposeCalls, 1);
+        expect(ai.disposeCalls, 0);
+
+        voiceDisposal.complete();
+        await Future<void>.delayed(Duration.zero);
+        expect(completed, isFalse);
+        expect(ai.disposeCalls, 1);
+
+        aiDisposal.complete();
+        await Future.wait(<Future<void>>[first, second]);
+
+        expect(completed, isTrue);
+        expect(voice.disposeCalls, 1);
+        expect(ai.disposeCalls, 1);
+      },
+    );
+
+    test('AI builder failure preserves voice and local learning', () async {
+      final voice = _BootstrapManagedVoiceProvider();
+      var aiBuilds = 0;
+      var voiceBuilds = 0;
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        buildAiTutor: (_) {
+          aiBuilds += 1;
+          throw StateError('AI builder unavailable');
+        },
+        buildVoice: (_) {
+          voiceBuilds += 1;
+          return voice;
+        },
+      );
+
+      final dependencies = await bootstrap.initialize();
+
+      expect(aiBuilds, 1);
+      expect(voiceBuilds, 1);
+      expect(dependencies.aiTutor, isNull);
+      expect(dependencies.voice, isNotNull);
+      expect(dependencies.vocabulary, isNotNull);
+      expect(dependencies.quest, isNotNull);
+    });
+
+    test('voice builder failure preserves AI and local learning', () async {
+      final ai = _BootstrapAiTutorController();
+      var aiBuilds = 0;
+      var voiceBuilds = 0;
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        buildAiTutor: (_) {
+          aiBuilds += 1;
+          return ManagedAiTutor(controller: ai, disposeController: ai.dispose);
+        },
+        buildVoice: (_) {
+          voiceBuilds += 1;
+          throw StateError('voice builder unavailable');
+        },
+      );
+
+      final dependencies = await bootstrap.initialize();
+
+      expect(aiBuilds, 1);
+      expect(voiceBuilds, 1);
+      expect(identical(dependencies.aiTutor, ai), isTrue);
+      expect(dependencies.voice, isNull);
+      expect(dependencies.vocabulary, isNotNull);
+      expect(dependencies.quest, isNotNull);
+    });
+
+    test(
+      'cleanup errors do not prevent the remaining managed stack from draining',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final ai = _BootstrapAiTutorController();
+        final voice = _BootstrapManagedVoiceProvider(
+          disposalError: StateError('voice cleanup failed'),
+        );
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          buildAiTutor: (_) =>
+              ManagedAiTutor(controller: ai, disposeController: ai.dispose),
+          buildVoice: (_) => voice,
+        );
+        final dependencies = await bootstrap.initialize();
+
+        final cleanupFailure = throwsA(
+          isA<VoiceFailure>().having(
+            (failure) => failure.category,
+            'category',
+            VoiceFailureCategory.cleanupIncomplete,
+          ),
+        );
+        await expectLater(dependencies.dispose(), cleanupFailure);
+
+        expect(voice.disposeCalls, 1);
+        expect(ai.disposeCalls, 1);
+        await expectLater(
+          database.customSelect('SELECT 1').getSingle(),
+          throwsA(anything),
+        );
+        await expectLater(dependencies.dispose(), cleanupFailure);
+        expect(voice.disposeCalls, 1);
+        expect(ai.disposeCalls, 1);
+      },
+    );
 
     test(
       'creates the active local owner before exposing dependencies',
@@ -332,7 +500,11 @@ void main() {
       expect(identical(dependencies.database, database), isTrue);
       expect(dependencies.vocabulary, isNotNull);
       expect(dependencies.runtimeStatus.supabase, RuntimeAvailability.ready);
-      expect(dependencies.runtimeStatus.backends, RuntimeAvailability.ready);
+      expect(
+        dependencies.runtimeStatus.backends,
+        RuntimeAvailability.unavailable,
+      );
+      expect(dependencies.runtimeStatus.voice, RuntimeAvailability.ready);
       expect(dependencies.config, isNotNull);
     });
 
@@ -375,6 +547,9 @@ void main() {
         RuntimeAvailability.unavailable,
       );
       expect(dependencies.config, isNull);
+      expect(dependencies.aiTutor, isNotNull);
+      expect(dependencies.voice, isNotNull);
+      expect(dependencies.vocabulary, isNotNull);
     });
 
     test('represents multiple failures independently', () async {
@@ -757,6 +932,53 @@ void main() {
       },
     );
   });
+}
+
+final class _BootstrapAiTutorController implements AiTutorController {
+  _BootstrapAiTutorController({Future<void>? disposal})
+    : _disposal = disposal ?? Future<void>.value();
+
+  final Future<void> _disposal;
+  int disposeCalls = 0;
+
+  @override
+  Future<void> dispose() {
+    disposeCalls += 1;
+    return _disposal;
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _BootstrapManagedVoiceProvider implements ManagedVoiceProvider {
+  _BootstrapManagedVoiceProvider({Future<void>? disposal, this.disposalError})
+    : _disposal = disposal ?? Future<void>.value();
+
+  final Future<void> _disposal;
+  final Object? disposalError;
+  int disposeCalls = 0;
+
+  @override
+  Future<void> dispose() async {
+    disposeCalls += 1;
+    await _disposal;
+    final error = disposalError;
+    if (error != null) throw error;
+  }
+
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async {
+    return VoicePlaybackResult(
+      requestedEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
+      actualEngine: request.assignedEngine ?? VoiceEngine.nativeTts,
+      usedFallback: false,
+      cacheHit: false,
+    );
+  }
+
+  @override
+  Future<void> stop() async {}
 }
 
 final class _MemoryAppEntryStateStore implements AppEntryStateStore {

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
+import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 
 void main() {
@@ -30,6 +32,20 @@ void main() {
 
     expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
     expect(find.text('ephemeral'), findsNothing);
+  });
+
+  testWidgets('SRS launch fails closed when no feature authority exists', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: WeaknessClinicScreen(loader: () async => _snapshot)),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(FilledButton));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+    expect(find.byType(SrsFlashcardsScreen), findsNothing);
   });
 }
 

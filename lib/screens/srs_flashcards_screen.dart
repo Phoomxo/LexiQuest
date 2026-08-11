@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../voice/voice_models.dart';
 
 class SrsFlashcardsScreen extends StatefulWidget {
@@ -26,9 +28,11 @@ class SrsFlashcardsScreen extends StatefulWidget {
 }
 
 class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
-    with SingleTickerProviderStateMixin {
-  late final VoiceUseCases _voiceProvider;
-  late final bool _ownsVoiceProvider;
+    with
+        SingleTickerProviderStateMixin,
+        WidgetsBindingObserver,
+        RouteVoiceSessionMixin<SrsFlashcardsScreen> {
+  VoiceUseCases? _voice;
   late final AnimationController _controller;
   late final Animation<double> _animation;
   LearningUseCases? _learning;
@@ -44,8 +48,6 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void initState() {
     super.initState();
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 400),
@@ -54,8 +56,13 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   @override
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _voice = widget.voice ?? AppDependenciesScope.maybeOf(context)?.voice;
+    refreshRouteVoiceSession();
     if (_load != null) return;
     if (_isCompatibilityDeck) {
       _load = Future.value(_compatibilitySession(widget.wordList!));
@@ -69,12 +76,21 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
             )
           : learning.startDueReview();
     }
-    _load!.then((session) {
+    unawaited(_primeLoadedSession(_load!));
+  }
+
+  Future<void> _primeLoadedSession(Future<QuizSession> load) async {
+    try {
+      final session = await load;
       if (!mounted || session.isEmpty) return;
       _session = session;
       _questionStartedAt = DateTime.now();
-      _playAudio();
-    });
+      await _playAudio();
+    } on Object {
+      // FutureBuilder renders the typed local-unavailable state from the
+      // original load future. This observer must not create an unhandled
+      // derived Future when loading fails.
+    }
   }
 
   QuizSession _compatibilitySession(List<Map<String, String>> rows) {
@@ -106,7 +122,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     final word = _currentQuestion.word.spelling;
     if (word.isEmpty) return;
     try {
-      await _voiceProvider.speak(
+      await routeVoiceSession?.speak(
         VoiceRequest.create(
           text: word,
           language: 'en',
@@ -191,8 +207,6 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void dispose() {
     _controller.dispose();
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 

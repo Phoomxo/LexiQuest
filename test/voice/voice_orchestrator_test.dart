@@ -62,15 +62,17 @@ Matcher _failure(VoiceFailureCategory category) {
 /// Minimal deterministic handler: optionally throws a [VoiceFailure] on speak
 /// and records the engine call order plus every request handed to native.
 class _FakeHandler implements VoiceRouteHandler {
-  _FakeHandler(this.descriptor, {this.speakFailure});
+  _FakeHandler(this.descriptor, {this.speakFailure, this.stopFailure});
 
   @override
   final VoiceProviderDescriptor descriptor;
 
   final VoiceFailure? speakFailure;
+  final VoiceFailure? stopFailure;
 
   final List<VoiceEngine> calls = <VoiceEngine>[];
   final List<VoiceRequest> requests = <VoiceRequest>[];
+  int stopCalls = 0;
 
   @override
   Future<VoicePlaybackResult> speak(
@@ -92,7 +94,12 @@ class _FakeHandler implements VoiceRouteHandler {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    stopCalls += 1;
+    if (stopFailure case final failure?) {
+      throw failure;
+    }
+  }
 }
 
 VoiceProviderRegistry<VoiceRouteHandler> _registry(
@@ -112,6 +119,73 @@ VoiceProviderRegistry<VoiceRouteHandler> _registry(
 
 void main() {
   const resolver = VoicePolicyResolver();
+
+  group('cleanup exhaustiveness', () {
+    const firstFailure = VoiceFailure(
+      category: VoiceFailureCategory.playback,
+      message: 'Native stop failed.',
+    );
+
+    _FakeHandler failingHandler() => _FakeHandler(
+      VoiceProviderDescriptor(
+        engine: VoiceEngine.nativeTts,
+        capabilities: const {VoiceCapability.standardTargetSpeech},
+        privacyScope: VoicePrivacyScope.standardContent,
+        allowsStandardCache: false,
+      ),
+      stopFailure: firstFailure,
+    );
+
+    _FakeHandler trailingHandler() => _FakeHandler(
+      VoiceProviderDescriptor(
+        engine: VoiceEngine.omniVoice,
+        capabilities: const {VoiceCapability.standardTargetSpeech},
+        privacyScope: VoicePrivacyScope.standardContent,
+        allowsStandardCache: true,
+      ),
+    );
+
+    test(
+      'public stop exhausts every handler and preserves the first failure',
+      () async {
+        final first = failingHandler();
+        final second = trailingHandler();
+        final orchestrator = VoiceOrchestrator(
+          policySource: const StaticVoicePolicySource(_online),
+          policyResolver: resolver,
+          handlerRegistry: _registry([first, second]),
+        );
+
+        await expectLater(orchestrator.stop(), throwsA(same(firstFailure)));
+
+        expect(first.stopCalls, 1);
+        expect(second.stopCalls, 1);
+      },
+    );
+
+    test(
+      'pre-speak cleanup exhausts every handler and preserves the first failure',
+      () async {
+        final first = failingHandler();
+        final second = trailingHandler();
+        final orchestrator = VoiceOrchestrator(
+          policySource: const StaticVoicePolicySource(_online),
+          policyResolver: resolver,
+          handlerRegistry: _registry([first, second]),
+        );
+
+        await expectLater(
+          orchestrator.speak(_request()),
+          throwsA(same(firstFailure)),
+        );
+
+        expect(first.stopCalls, 1);
+        expect(second.stopCalls, 1);
+        expect(first.calls, isEmpty);
+        expect(second.calls, isEmpty);
+      },
+    );
+  });
 
   group('online practice', () {
     test(

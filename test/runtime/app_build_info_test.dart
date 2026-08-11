@@ -111,6 +111,41 @@ void main() {
     expect(disposeCalls, 1);
   });
 
+  testWidgets(
+    'MyApp consumes bounded cleanup failures on replace and unmount',
+    (tester) async {
+      var firstDisposeCalls = 0;
+      var secondDisposeCalls = 0;
+      Future<void> failCleanup(void Function() count) async {
+        count();
+        await Future<void>.value();
+        throw StateError('bounded cleanup failed');
+      }
+
+      final first = _dependencies(
+        const AppBuildInfo.fromEnvironment(),
+        disposeResources: () => failCleanup(() => firstDisposeCalls += 1),
+      );
+      final second = _dependencies(
+        const AppBuildInfo.fromEnvironment(),
+        disposeResources: () => failCleanup(() => secondDisposeCalls += 1),
+      );
+
+      await tester.pumpWidget(MyApp(dependencies: first));
+      await tester.pumpWidget(MyApp(dependencies: second));
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      expect(tester.takeException(), isNull);
+      expect(firstDisposeCalls, 1);
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(() => Future<void>.delayed(Duration.zero));
+      expect(tester.takeException(), isNull);
+      expect(secondDisposeCalls, 1);
+    },
+  );
+
   testWidgets('MyApp requests shared sync after initial startup', (
     tester,
   ) async {

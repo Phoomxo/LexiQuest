@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 
 class CefrArticleReaderScreen extends StatefulWidget {
@@ -21,16 +23,21 @@ class CefrArticleReaderScreen extends StatefulWidget {
       _CefrArticleReaderScreenState();
 }
 
-class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
-  late final VoiceUseCases _voiceProvider;
-  bool _ownsVoiceProvider = false;
+class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
+    with
+        WidgetsBindingObserver,
+        RouteVoiceSessionMixin<CefrArticleReaderScreen> {
+  VoiceUseCases? _voice;
   String? _selectedWord;
 
   @override
-  void initState() {
-    super.initState();
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _voice = widget.voice ?? AppDependenciesScope.maybeOf(context)?.voice;
+    refreshRouteVoiceSession();
   }
 
   Future<void> _speakWord(String word) async {
@@ -38,7 +45,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
       _selectedWord = word;
     });
     try {
-      await _voiceProvider.speak(
+      await routeVoiceSession?.speak(
         VoiceRequest.create(
           text: word,
           language: 'en',
@@ -50,13 +57,6 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen> {
         ),
       );
     } catch (_) {}
-  }
-
-  @override
-  void dispose() {
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
-    super.dispose();
   }
 
   @override

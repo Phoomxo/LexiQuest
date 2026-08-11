@@ -6,18 +6,45 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_screen.dart';
+import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  testWidgets(
+    'BYOK disclosure states bounded Gemini retry and no provider fallback',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(home: AiTutorSettingsScreen(aiTutor: _FakeAiTutor())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('up to 3 total attempts'), findsOneWidget);
+      expect(
+        find.textContaining('never fall back to a different provider'),
+        findsOneWidget,
+      );
+      expect(
+        find.textContaining('no automatic fallback or retry'),
+        findsNothing,
+      );
+    },
+  );
+
   testWidgets('shows only live provider reply and model provenance', (
     tester,
   ) async {
     final tutor = _FakeAiTutor();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), aiTutor: tutor),
+        home: AiTutorScreen(
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+          aiTutor: tutor,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -45,7 +72,13 @@ void main() {
       );
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(_FakeVoice()), aiTutor: tutor),
+        home: AiTutorScreen(
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+          aiTutor: tutor,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -73,7 +106,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
           aiTutor: tutor,
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
@@ -90,24 +126,254 @@ void main() {
 
   testWidgets('backgrounding cancels microphone', (tester) async {
     final speechGateway = _FakeSpeechGateway()..emitResult = false;
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    final speech = SpeechPracticeUseCases(speechGateway);
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AiTutorScreen(
+            voice: voice,
+            aiTutor: _FakeAiTutor(),
+            speechPractice: speech,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+      await tester.pump();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+
+      expect(speechGateway.cancelCalls, 1);
+      await tester.runAsync(() async {
+        await speechGateway.cancelCompleted.future.timeout(
+          const Duration(milliseconds: 250),
+        );
+        await Future<void>.delayed(Duration.zero);
+      });
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(() async {
+        await Future.wait<void>([
+          voice.dispose(),
+          speech.dispose(),
+        ]).timeout(const Duration(seconds: 2));
+      });
+    }
+  });
+
+  testWidgets(
+    'lifecycle cleanup attempts voice stop after speech cancel failure',
+    (tester) async {
+      final speechGateway = _FakeSpeechGateway(
+        emitResult: false,
+        cancelError: StateError('recognizer cancel failed'),
+      );
+      final voiceProvider = _FakeVoice();
+      final voice = VoiceUseCases(
+        provider: voiceProvider,
+        disposeProvider: () async {},
+      );
+      final speech = SpeechPracticeUseCases(speechGateway);
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AiTutorScreen(
+              voice: voice,
+              aiTutor: _FakeAiTutor(),
+              speechPractice: speech,
+            ),
+          ),
+        );
+        await tester.pump();
+        await tester.pump();
+        await tester.enterText(
+          find.byKey(const ValueKey('ai-tutor-input')),
+          'Please reply',
+        );
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+        await tester.pump();
+        await tester.pump();
+        await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+        await tester.pump();
+
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pump();
+        await tester.runAsync(
+          () => voiceProvider.stopEntered.future.timeout(
+            const Duration(milliseconds: 250),
+          ),
+        );
+
+        expect(speechGateway.cancelCalls, 1);
+        expect(voiceProvider.stopCalls, 1);
+        expect(tester.takeException(), isNull);
+      } finally {
+        if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+          tester.binding.handleAppLifecycleStateChanged(
+            AppLifecycleState.resumed,
+          );
+        }
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.runAsync(() async {
+          await voice.dispose().timeout(const Duration(seconds: 1));
+          try {
+            await speech.dispose().timeout(const Duration(seconds: 1));
+          } on Object {
+            // The recognizer cleanup failure is deliberately injected.
+          }
+        });
+      }
+    },
+  );
+
+  testWidgets('background cancels and fences an in-flight AI generation', (
+    tester,
+  ) async {
+    final replyGate = Completer<void>();
+    final tutor = _FakeAiTutor()
+      ..replyGate = replyGate
+      ..ignoreCancellation = true;
+    final provider = _FakeVoice();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AiTutorScreen(voice: voice, aiTutor: tutor),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const ValueKey('ai-tutor-input')),
+        'late request',
+      );
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-send')));
+      await tester.pump();
+      expect(tutor.lastCancellation, isNotNull);
+      expect(find.byType(LinearProgressIndicator), findsOneWidget);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+
+      expect(tutor.lastCancellation!.isCancelled, isTrue);
+      replyGate.complete();
+      await tester.pumpAndSettle();
+      expect(find.text('Live Gemini reply'), findsNothing);
+      expect(provider.requests, isEmpty);
+      expect(find.byType(LinearProgressIndicator), findsNothing);
+      expect(tester.takeException(), isNull);
+    } finally {
+      if (!replyGate.isCompleted) replyGate.complete();
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(
+        () => voice.dispose().timeout(const Duration(seconds: 1)),
+      );
+    }
+  });
+
+  testWidgets('unmount consumes a speech-session release failure', (
+    tester,
+  ) async {
+    final speechGateway = _FakeSpeechGateway(
+      emitResult: false,
+      cancelError: StateError('recognizer release failed'),
+    );
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    final speech = SpeechPracticeUseCases(speechGateway);
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: voice,
           aiTutor: _FakeAiTutor(),
-          speechPractice: SpeechPracticeUseCases(speechGateway),
+          speechPractice: speech,
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
     await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
     await tester.pump();
 
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();
+    await tester.runAsync(
+      () => speechGateway.cancelEntered.future.timeout(
+        const Duration(milliseconds: 250),
+      ),
+    );
 
     expect(speechGateway.cancelCalls, 1);
+    expect(tester.takeException(), isNull);
+    await tester.runAsync(() async {
+      await voice.dispose().timeout(const Duration(seconds: 1));
+      try {
+        await speech.dispose().timeout(const Duration(seconds: 1));
+      } on Object {
+        // The recognizer cleanup failure is deliberately injected.
+      }
+    });
   });
+
+  testWidgets(
+    'speech facade rebind releases old session and uses replacement',
+    (tester) async {
+      final oldGateway = _FakeSpeechGateway()..emitResult = false;
+      final newGateway = _FakeSpeechGateway()..emitResult = false;
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      Future<void> pump(SpeechPracticeUseCases speech) => tester.pumpWidget(
+        MaterialApp(
+          home: AiTutorScreen(
+            voice: voice,
+            aiTutor: _FakeAiTutor(),
+            speechPractice: speech,
+          ),
+        ),
+      );
+
+      await pump(SpeechPracticeUseCases(oldGateway));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+      await tester.pump();
+      expect(oldGateway.startCalls, 1);
+
+      await pump(SpeechPracticeUseCases(newGateway));
+      await tester.pump();
+      await tester.tap(find.byKey(const ValueKey('ai-tutor-mic')));
+      await tester.pump();
+
+      expect(oldGateway.cancelCalls, 1);
+      expect(newGateway.startCalls, 1);
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('opening AI provider settings cancels active microphone', (
     tester,
@@ -116,7 +382,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: AiTutorScreen(
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
           aiTutor: _FakeAiTutor(),
           speechPractice: SpeechPracticeUseCases(speechGateway),
         ),
@@ -141,7 +410,10 @@ void main() {
     final voice = _FakeVoice();
     await tester.pumpWidget(
       MaterialApp(
-        home: AiTutorScreen(voice: VoiceUseCases(voice), aiTutor: tutor),
+        home: AiTutorScreen(
+          voice: VoiceUseCases(provider: voice, disposeProvider: () async {}),
+          aiTutor: tutor,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -166,6 +438,8 @@ final class _FakeAiTutor implements AiTutorController {
   final List<String> messages = [];
   AiTutorException? replyFailure;
   Completer<void>? replyGate;
+  AiCancellation? lastCancellation;
+  bool ignoreCancellation = false;
   bool hasKey = true;
 
   @override
@@ -215,13 +489,23 @@ final class _FakeAiTutor implements AiTutorController {
   Future<void> removeKey() async {}
 
   @override
+  Future<List<AiUsageSummary>> loadUsage() async => const [];
+
+  @override
+  Future<void> clearUsage() async {}
+
+  @override
   Future<AiTutorReply> reply({
     required String scenario,
     required String learnerMessage,
     AiCancellation? cancellation,
   }) async {
     messages.add(learnerMessage);
+    lastCancellation = cancellation;
     await replyGate?.future;
+    if (!ignoreCancellation && cancellation?.isCancelled == true) {
+      throw const AiTutorException(AiFailureCode.cancelled);
+    }
     final failure = replyFailure;
     if (failure != null) throw failure;
     return AiTutorReply(
@@ -240,8 +524,14 @@ final class _FakeAiTutor implements AiTutorController {
 }
 
 final class _FakeSpeechGateway implements SpeechRecognitionGateway {
-  bool emitResult = true;
+  _FakeSpeechGateway({this.emitResult = true, this.cancelError});
+
+  bool emitResult;
+  final Object? cancelError;
+  final Completer<void> cancelEntered = Completer<void>();
+  final Completer<void> cancelCompleted = Completer<void>();
   int cancelCalls = 0;
+  int startCalls = 0;
 
   @override
   bool isListening = false;
@@ -249,7 +539,11 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   @override
   Future<void> cancel() async {
     cancelCalls += 1;
+    if (!cancelEntered.isCompleted) cancelEntered.complete();
     isListening = false;
+    final error = cancelError;
+    if (!cancelCompleted.isCompleted) cancelCompleted.complete();
+    if (error != null) throw error;
   }
 
   @override
@@ -267,6 +561,7 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
     required String locale,
     required SpeechEventCallback onEvent,
   }) async {
+    startCalls += 1;
     isListening = true;
     if (!emitResult) return;
     onEvent(
@@ -289,6 +584,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 
 final class _FakeVoice implements VoiceProvider {
   final List<VoiceRequest> requests = [];
+  final Completer<void> stopEntered = Completer<void>();
+  int stopCalls = 0;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
@@ -302,5 +599,8 @@ final class _FakeVoice implements VoiceProvider {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    stopCalls += 1;
+    if (!stopEntered.isCompleted) stopEntered.complete();
+  }
 }

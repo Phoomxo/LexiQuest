@@ -6,3 +6,8 @@ abstract interface class VoiceProvider {
 
   Future<void> stop();
 }
+
+/// A provider whose external resources are owned by the composition root.
+abstract interface class ManagedVoiceProvider implements VoiceProvider {
+  Future<void> dispose();
+}

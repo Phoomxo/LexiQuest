@@ -205,7 +205,9 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
     final unavailable = <String>[
       if (status.firebase != RuntimeAvailability.ready) 'Firebase',
-      if (status.backends != RuntimeAvailability.ready) 'AI/Voice',
+      if (status.aiTutor != RuntimeAvailability.ready) 'AI Tutor',
+      if (status.voice != RuntimeAvailability.ready) 'Voice',
+      if (status.backends != RuntimeAvailability.ready) 'Cloud voice add-ons',
     ];
     return '${unavailable.join(' · ')} ยังไม่พร้อม — การเรียนในเครื่องยังใช้ได้';
   }

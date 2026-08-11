@@ -70,14 +70,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void didUpdateWidget(covariant MyApp oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.dependencies, widget.dependencies)) {
-      unawaited(oldWidget.dependencies.dispose());
+      oldWidget.dependencies.dispose().ignore();
     }
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(widget.dependencies.dispose());
+    widget.dependencies.dispose().ignore();
     super.dispose();
   }
 
@@ -91,6 +91,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         theme: M3Theme.lightTheme,
         darkTheme: M3Theme.darkTheme,
         themeMode: ThemeMode.system,
+        navigatorObservers: <NavigatorObserver>[appRouteObserver],
         initialRoute: widget.dependencies.initialRoute.path,
         onGenerateInitialRoutes: (platformRoute) {
           final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)

@@ -35,7 +35,10 @@ void main() {
             title: 'Learning Languages',
             content: 'Practice brings great opportunity for everyone',
             cefrLevel: 'B1',
-            voice: VoiceUseCases(fakeVoice),
+            voice: VoiceUseCases(
+              provider: fakeVoice,
+              disposeProvider: () async {},
+            ),
           ),
         ),
       );

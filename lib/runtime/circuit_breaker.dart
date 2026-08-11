@@ -10,8 +10,10 @@ final class CircuitBreaker {
     this.resetDelay = const Duration(seconds: 30),
     DateTime Function()? now,
     bool Function(Object error)? shouldCountFailure,
+    bool Function(Object error)? shouldKeepHalfOpen,
   }) : _now = now ?? DateTime.now,
-       _shouldCountFailure = shouldCountFailure ?? _alwaysCountFailure {
+       _shouldCountFailure = shouldCountFailure ?? _alwaysCountFailure,
+       _shouldKeepHalfOpen = shouldKeepHalfOpen ?? _neverKeepHalfOpen {
     if (threshold <= 0) {
       throw ArgumentError.value(threshold, 'threshold', 'must be positive');
     }
@@ -28,6 +30,7 @@ final class CircuitBreaker {
   final Duration resetDelay;
   final DateTime Function() _now;
   final bool Function(Object error) _shouldCountFailure;
+  final bool Function(Object error) _shouldKeepHalfOpen;
 
   CircuitState _state = CircuitState.closed;
   int _consecutiveFailures = 0;
@@ -62,7 +65,7 @@ final class CircuitBreaker {
     } catch (error) {
       if (_shouldCountFailure(error)) {
         _onFailure();
-      } else if (isProbe) {
+      } else if (isProbe && !_shouldKeepHalfOpen(error)) {
         // A validation/auth failure does not prove that the provider outage
         // continues, so it closes the outage breaker without hiding the error.
         _onSuccess();
@@ -98,6 +101,7 @@ final class CircuitBreaker {
   }
 
   static bool _alwaysCountFailure(Object error) => true;
+  static bool _neverKeepHalfOpen(Object error) => false;
 }
 
 final class CircuitBreakerOpenException implements Exception {

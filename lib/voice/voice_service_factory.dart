@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
@@ -30,6 +31,11 @@ const _disposedFailure = VoiceFailure(
   message: 'The voice service has been disposed.',
 );
 
+const _cleanupIncompleteFailure = VoiceFailure(
+  category: VoiceFailureCategory.cleanupIncomplete,
+  message: 'Voice resource cleanup did not finish.',
+);
+
 /// Production composition root for the provider-neutral voice pipeline.
 final class VoiceServiceFactory {
   const VoiceServiceFactory._();
@@ -43,7 +49,8 @@ final class VoiceServiceFactory {
     NativeTtsAdapter? nativeTtsAdapter,
     AudioPlayerAdapter? audioPlayerAdapter,
     VoiceTelemetrySink telemetrySink = const NoopVoiceTelemetrySink(),
-    Duration timeout = const Duration(seconds: 30),
+    Duration timeout = const Duration(seconds: 20),
+    Duration cleanupTimeout = const Duration(seconds: 2),
     int cacheMaxEntries = 64,
     int cacheMaxBytes = 16 * 1024 * 1024,
     String omniVoiceModelVersion = 'unresolved',
@@ -55,13 +62,25 @@ final class VoiceServiceFactory {
     int dynamicMaxConcurrent = 1,
     InstalledStandardVoicePack? installedVoicePack,
   }) {
+    if (cleanupTimeout <= Duration.zero) {
+      throw ArgumentError.value(
+        cleanupTimeout,
+        'cleanupTimeout',
+        'must be positive',
+      );
+    }
+    if ((config == null) != (client == null)) {
+      throw const VoiceFailure(
+        category: VoiceFailureCategory.configuration,
+        message:
+            'Remote voice configuration and client must be supplied together.',
+      );
+    }
     final nativeProvider = NativeTtsProvider(
       nativeTtsAdapter ?? FlutterTtsAdapter(),
     );
-    final resolvedConfig = config ?? _environmentConfigOrNull();
-    final resolvedClient = resolvedConfig == null
-        ? client
-        : client ?? http.Client();
+    final resolvedConfig = config;
+    final resolvedClient = client;
     final audioPlayer = audioPlayerAdapter == null
         ? resolvedConfig == null
               ? const _NoopVoiceAudioPlayer()
@@ -201,17 +220,9 @@ final class VoiceServiceFactory {
       audioPlayer: audioPlayer,
       client: resolvedClient,
       voiceMirrorController: activeMirrorController,
+      cleanupTimeout: cleanupTimeout,
     );
   }
-}
-
-/// A [VoiceProvider] whose lifecycle is owned by the factory caller.
-///
-/// Exposing [dispose] as part of the interface lets integration tests inject
-/// a fake managed voice service without subclassing the final concrete class.
-abstract interface class ManagedVoiceProvider implements VoiceProvider {
-  /// Releases the resources held by this provider.
-  Future<void> dispose();
 }
 
 /// Lifecycle-managed [VoiceProvider] returned by [VoiceServiceFactory].
@@ -221,13 +232,16 @@ final class ManagedVoiceService implements ManagedVoiceProvider {
     required this._audioPlayer,
     required this._client,
     required this._voiceMirrorController,
+    required this._cleanupTimeout,
   });
 
   final VoiceProvider _service;
   final VoiceAudioPlayer _audioPlayer;
   final http.Client? _client;
   final VoiceMirrorSessionController? _voiceMirrorController;
+  final Duration _cleanupTimeout;
   bool _disposed = false;
+  Future<void>? _disposeFuture;
 
   /// The participant-transient mirror controller, if the mirror capability is
   /// registered. The host forwards app lifecycle and account changes here so
@@ -253,45 +267,38 @@ final class ManagedVoiceService implements ManagedVoiceProvider {
   /// Attempts every cleanup step exactly once and preserves the first failure
   /// with its original stack trace after the remaining resources are closed.
   @override
-  Future<void> dispose() async {
-    if (_disposed) {
-      return;
-    }
+  Future<void> dispose() => _disposeFuture ??= _disposeOnce();
+
+  Future<void> _disposeOnce() async {
     _disposed = true;
 
     Object? firstError;
     StackTrace? firstStackTrace;
 
-    try {
-      await _service.stop();
-    } on Object catch (error, stackTrace) {
-      firstError = error;
-      firstStackTrace = stackTrace;
+    Future<void> cleanup(Future<void> Function() operation) async {
+      try {
+        await Future<void>.sync(operation).timeout(_cleanupTimeout);
+      } on Object catch (_, stackTrace) {
+        firstError ??= _cleanupIncompleteFailure;
+        firstStackTrace ??= stackTrace;
+      }
     }
+
+    await cleanup(_service.stop);
 
     // End any active mirror session before releasing shared audio resources.
     // The controller's cleanup is idempotent.
     final mirrorController = _voiceMirrorController;
     if (mirrorController != null) {
-      try {
-        await mirrorController.dispose();
-      } on Object catch (error, stackTrace) {
-        firstError ??= error;
-        firstStackTrace ??= stackTrace;
-      }
+      await cleanup(mirrorController.dispose);
     }
 
-    try {
-      await _audioPlayer.dispose();
-    } on Object catch (error, stackTrace) {
-      firstError ??= error;
-      firstStackTrace ??= stackTrace;
-    }
+    await cleanup(_audioPlayer.dispose);
 
     try {
       _client?.close();
-    } on Object catch (error, stackTrace) {
-      firstError ??= error;
+    } on Object catch (_, stackTrace) {
+      firstError ??= _cleanupIncompleteFailure;
       firstStackTrace ??= stackTrace;
     }
 
@@ -299,14 +306,6 @@ final class ManagedVoiceService implements ManagedVoiceProvider {
     if (error != null) {
       Error.throwWithStackTrace(error, firstStackTrace!);
     }
-  }
-}
-
-AppConfig? _environmentConfigOrNull() {
-  try {
-    return AppConfig.fromEnvironment();
-  } on AppConfigException {
-    return null;
   }
 }
 

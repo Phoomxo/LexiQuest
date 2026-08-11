@@ -6,6 +6,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
@@ -37,7 +38,7 @@ class SpeakToTextScreen extends StatefulWidget {
 }
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteVoiceSessionMixin<SpeakToTextScreen> {
   VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
   SpeechPracticeSession? _speechSession;
@@ -52,10 +53,20 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   DateTime? _startedAtUtc;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  Future<void> onVoiceRouteCovered() async {
+    _listenEpoch += 1;
+    _listenPending = false;
+    _listening = false;
+    final session = _speechSession;
+    _speechSession = null;
+    await session?.release();
   }
+
+  @override
+  void onVoiceRouteResumed() => _bindDependencies(refreshVoice: false);
 
   @override
   void didChangeDependencies() {
@@ -69,7 +80,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     _bindDependencies();
   }
 
-  void _bindDependencies() {
+  void _bindDependencies({bool refreshVoice = true}) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
     final speech = widget.speechPractice ?? dependencies?.speechPractice;
@@ -81,6 +92,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _speechSession = null;
     }
     _voice = widget.voice ?? dependencies?.voice;
+    if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
     if (routeIsCurrent &&
@@ -101,10 +113,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _speakWord() async {
-    final voice = _voice;
-    if (voice == null) return;
+    final session = routeVoiceSession;
+    if (session == null) return;
     try {
-      await voice.speak(
+      await session.speak(
         VoiceRequest.create(
           text: widget.correctWord,
           language: 'en',
@@ -227,11 +239,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
-      unawaited(_cancelForLifecycle());
+      _cancelForLifecycle().ignore();
     }
   }
 
@@ -239,13 +252,16 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final shouldCancel = _listenPending || _listening;
     _listenEpoch += 1;
     _listenPending = false;
-    if (shouldCancel) await _speechSession?.cancel();
+    try {
+      if (shouldCancel) await _speechSession?.cancel();
+    } on Object {
+      // Lifecycle cleanup is best effort and must not escape its detached hook.
+    }
     if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _listenEpoch += 1;
     _listenPending = false;
     _speechSession?.release().ignore();

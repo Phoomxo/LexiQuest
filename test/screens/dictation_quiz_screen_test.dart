@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
@@ -7,6 +9,7 @@ import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
+  final Completer<void> stopEntered = Completer<void>();
   int stopCalls = 0;
 
   @override
@@ -23,6 +26,7 @@ class FakeVoiceProvider implements VoiceProvider {
   @override
   Future<void> stop() async {
     stopCalls++;
+    if (!stopEntered.isCompleted) stopEntered.complete();
   }
 }
 
@@ -36,7 +40,10 @@ void main() {
         MaterialApp(
           home: DictationQuizScreen(
             targetWord: 'elephant',
-            voice: VoiceUseCases(fakeVoice),
+            voice: VoiceUseCases(
+              provider: fakeVoice,
+              disposeProvider: () async {},
+            ),
           ),
         ),
       );
@@ -49,6 +56,77 @@ void main() {
     },
   );
 
+  testWidgets('background stops the automatic dictation playback', (
+    tester,
+  ) async {
+    final provider = FakeVoiceProvider();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DictationQuizScreen(targetWord: 'elephant', voice: voice),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.runAsync(
+        () => provider.stopEntered.future.timeout(
+          const Duration(milliseconds: 250),
+        ),
+      );
+
+      expect(provider.stopCalls, 1);
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(
+        () => voice.dispose().timeout(const Duration(seconds: 1)),
+      );
+    }
+  });
+
+  testWidgets('post-frame autoplay cannot begin while app is inactive', (
+    tester,
+  ) async {
+    final provider = FakeVoiceProvider();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: DictationQuizScreen(targetWord: 'late', voice: voice),
+        ),
+      );
+      await tester.pump();
+
+      expect(provider.spokenRequests, isEmpty);
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(
+        () => voice.dispose().timeout(const Duration(seconds: 1)),
+      );
+    }
+  });
+
   testWidgets('Tapping Slow-Mo button triggers 0.75x speed request', (
     WidgetTester tester,
   ) async {
@@ -58,7 +136,10 @@ void main() {
       MaterialApp(
         home: DictationQuizScreen(
           targetWord: 'elephant',
-          voice: VoiceUseCases(fakeVoice),
+          voice: VoiceUseCases(
+            provider: fakeVoice,
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -83,7 +164,10 @@ void main() {
       MaterialApp(
         home: DictationQuizScreen(
           targetWord: 'elephant',
-          voice: VoiceUseCases(fakeVoice),
+          voice: VoiceUseCases(
+            provider: fakeVoice,
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );

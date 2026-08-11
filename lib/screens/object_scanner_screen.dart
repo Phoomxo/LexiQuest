@@ -5,6 +5,7 @@ import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import 'media_dependency_unavailable.dart';
@@ -20,7 +21,7 @@ class ObjectScannerScreen extends StatefulWidget {
 }
 
 class _ObjectScannerScreenState extends State<ObjectScannerScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteVoiceSessionMixin<ObjectScannerScreen> {
   ObjectScannerController? _scanner;
   ObjectScannerLease? _scannerLease;
   ObjectScannerLease? _initializedLease;
@@ -40,9 +41,17 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   int _captureEpoch = 0;
 
   @override
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  void onVoiceRouteCovered() => _releaseScannerLease();
+
+  @override
+  void onVoiceRouteResumed() => _bindDependencies(refreshVoice: false);
+
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     final lifecycleState = WidgetsBinding.instance.lifecycleState;
     _cameraForeground =
         lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
@@ -60,7 +69,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     _bindDependencies();
   }
 
-  void _bindDependencies() {
+  void _bindDependencies({bool refreshVoice = true}) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
     final scanner = widget.scanner ?? dependencies?.objectScanner;
@@ -71,6 +80,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     }
     _scanner = scanner;
     _voice = voice;
+    if (refreshVoice) refreshRouteVoiceSession();
     if (!routeIsCurrent || scanner == null || voice == null) {
       _releaseScannerLease();
       return;
@@ -293,10 +303,10 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   }
 
   Future<void> _speak(String text) async {
-    final voice = _voice;
-    if (voice == null) return;
+    final session = routeVoiceSession;
+    if (session == null) return;
     try {
-      await voice.speak(
+      await session.speak(
         VoiceRequest.create(
           text: text,
           language: 'en',
@@ -314,6 +324,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
     final scanner = _scanner;
     if (scanner == null) return;
     if (state == AppLifecycleState.resumed) {
@@ -351,7 +362,6 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _downloadCancellation?.cancel();
     _releaseScannerLease();
     // Runtime-owned scanners are disposed by AppDependencies. Injected test

@@ -5,7 +5,6 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:vocab_learning_app/features/ai_tutor/data/ai_tutor_gateway_factory.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
-import 'package:vocab_learning_app/features/gemini/domain/gemini_contracts.dart';
 import 'package:vocab_learning_app/runtime/circuit_breaker.dart';
 
 void main() {
@@ -32,7 +31,7 @@ void main() {
     });
     final gateway = AiTutorGatewayFactory(
       client: client,
-      requestTimeout: const Duration(seconds: 2),
+      requestTimeout: const Duration(seconds: 5),
     ).create(providerId: AiProvider.gemini, model: 'gemini-test-model');
 
     final reply = await gateway.generateTutorReply(
@@ -52,7 +51,7 @@ void main() {
         attempts++;
         return http.Response('', 503);
       }),
-      requestTimeout: const Duration(seconds: 2),
+      requestTimeout: const Duration(seconds: 5),
       geminiBreaker: CircuitBreaker(threshold: 1),
     );
     final first = factory.create(
@@ -70,7 +69,7 @@ void main() {
         scenario: 'practice',
         learnerMessage: 'first',
       ),
-      throwsA(isA<GeminiException>()),
+      throwsA(isA<AiTutorException>()),
     );
     await expectLater(
       second.generateTutorReply(
@@ -78,7 +77,13 @@ void main() {
         scenario: 'practice',
         learnerMessage: 'second',
       ),
-      throwsA(isA<GeminiException>()),
+      throwsA(
+        isA<AiTutorException>().having(
+          (error) => error.code,
+          'code',
+          AiFailureCode.circuitOpen,
+        ),
+      ),
     );
 
     expect(attempts, 3);

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import 'mastery_dashboard_screen.dart';
 import 'srs_flashcards_screen.dart';
 import '../navigation/app_routes.dart';
@@ -110,7 +112,10 @@ class _WeaknessBody extends StatelessWidget {
                     context,
                     AppPage<void>(
                       name: 'learning/weakness-srs',
-                      builder: (_) => const SrsFlashcardsScreen(),
+                      builder: (_) => ProductionFeatureGate(
+                        feature: Feature.srs,
+                        builder: (_) => const SrsFlashcardsScreen(),
+                      ),
                     ),
                   ),
             style: FilledButton.styleFrom(

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -6,6 +7,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/native_tts_provider.dart';
 import 'package:vocab_learning_app/voice/standard_voice_pack_download_manager.dart';
 import 'package:vocab_learning_app/voice/standard_voice_pack_manifest.dart';
@@ -256,13 +258,11 @@ void main() {
 
   test('factory without a remote endpoint routes only to native TTS with no '
       'fallback', () async {
-    final client = _RecordingHttpClient((_) async => _wavResponse());
     final native = _RecordingNativeTtsAdapter();
     final player = _RecordingAudioPlayerAdapter();
     final sink = _RecordingTelemetrySink();
 
     final service = VoiceServiceFactory.create(
-      client: client,
       nativeTtsAdapter: native,
       audioPlayerAdapter: player,
       telemetrySink: sink,
@@ -272,7 +272,6 @@ void main() {
 
     // With no remote endpoint, only native is registered and routed: the HTTP
     // client is never used and no remote audio is played back.
-    expect(client.sendCount, 0);
     expect(player.playBytesCalls, isEmpty);
     expect(native.speakCalls, <String>['Hello world.']);
 
@@ -291,11 +290,65 @@ void main() {
     expect(event.capability, VoiceCapability.standardTargetSpeech);
     expect(event.privacyScope, VoicePrivacyScope.standardContent);
 
-    // The unused HTTP client remains owned and is disposed exactly once.
     await service.dispose();
-    expect(client.closeCount, 1);
     expect(player.disposeCount, 1);
   });
+
+  test('remote configuration and owned client are an explicit pair', () {
+    expect(
+      () => VoiceServiceFactory.create(
+        config: _config(),
+        nativeTtsAdapter: _RecordingNativeTtsAdapter(),
+      ),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.configuration,
+        ),
+      ),
+    );
+    expect(
+      () => VoiceServiceFactory.create(
+        client: _RecordingHttpClient((_) async => _wavResponse()),
+        nativeTtsAdapter: _RecordingNativeTtsAdapter(),
+      ),
+      throwsA(isA<VoiceFailure>()),
+    );
+  });
+
+  test(
+    'remote timeout still reaches native fallback within the route budget',
+    () async {
+      final never = Completer<http.Response>();
+      final client = _RecordingHttpClient((_) => never.future);
+      final native = _RecordingNativeTtsAdapter();
+      final service = VoiceServiceFactory.create(
+        config: _config(),
+        client: client,
+        firebaseTokenReader: _RecordingTokenReader(_idToken),
+        nativeTtsAdapter: native,
+        audioPlayerAdapter: _RecordingAudioPlayerAdapter(),
+        timeout: const Duration(milliseconds: 10),
+      );
+
+      final facade = VoiceUseCases(
+        provider: service,
+        disposeProvider: service.dispose,
+        operationTimeout: const Duration(milliseconds: 100),
+      );
+      final session = facade.acquireSession();
+      final result = await session
+          .speak(_request())
+          .timeout(const Duration(milliseconds: 200));
+
+      expect(result.actualEngine, VoiceEngine.nativeTts);
+      expect(result.usedFallback, isTrue);
+      expect(native.speakCalls, <String>['Hello world.']);
+      await session.release();
+      await facade.dispose();
+    },
+  );
 
   test('dispose owns every resource exactly once and is idempotent', () async {
     final client = _RecordingHttpClient((_) async => _wavResponse());
@@ -319,6 +372,35 @@ void main() {
     expect(player.stopCount, 2);
     expect(player.disposeCount, 1);
     expect(client.closeCount, 1);
+  });
+
+  test('managed disposal continues after a provider stop deadline', () async {
+    final blockedStop = Completer<void>();
+    final native = _RecordingNativeTtsAdapter(stopGate: blockedStop.future);
+    final player = _RecordingAudioPlayerAdapter();
+    final service = VoiceServiceFactory.create(
+      nativeTtsAdapter: native,
+      audioPlayerAdapter: player,
+      cleanupTimeout: const Duration(milliseconds: 20),
+    );
+
+    final firstDispose = service.dispose();
+    await expectLater(
+      firstDispose.timeout(const Duration(seconds: 1)),
+      throwsA(
+        isA<VoiceFailure>().having(
+          (failure) => failure.category,
+          'category',
+          VoiceFailureCategory.cleanupIncomplete,
+        ),
+      ),
+    );
+    expect(native.stopCount, 1);
+    expect(player.disposeCount, 1);
+    await expectLater(service.dispose(), throwsA(isA<VoiceFailure>()));
+    expect(player.disposeCount, 1);
+
+    blockedStop.complete();
   });
 
   group('session voice mirror', () {
@@ -452,6 +534,9 @@ final class _RecordingTokenReader implements FirebaseTokenReader {
 }
 
 final class _RecordingNativeTtsAdapter implements NativeTtsAdapter {
+  _RecordingNativeTtsAdapter({this.stopGate});
+
+  final Future<void>? stopGate;
   final List<String> speakCalls = <String>[];
   int stopCount = 0;
 
@@ -475,6 +560,7 @@ final class _RecordingNativeTtsAdapter implements NativeTtsAdapter {
   @override
   Future<void> stop() async {
     stopCount++;
+    await stopGate;
   }
 }
 

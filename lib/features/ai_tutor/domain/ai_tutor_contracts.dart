@@ -23,6 +23,9 @@ enum AiFailureCode {
   validation,
   secureStorage,
   unsafeEndpoint,
+  providerDisabled,
+  circuitOpen,
+  localPersistence,
 }
 
 final class AiTutorException implements Exception {
@@ -197,6 +200,85 @@ final class AiUsageEvent {
   final int schemaVersion;
 }
 
+/// Durable request intent written before any provider work begins.
+final class AiUsageAttempt {
+  AiUsageAttempt({
+    required this.eventId,
+    required this.occurredAtUtc,
+    required this.providerId,
+    required this.model,
+    required this.requestType,
+    this.schemaVersion = 1,
+  }) {
+    if (!occurredAtUtc.isUtc ||
+        eventId.trim().isEmpty ||
+        model.trim().isEmpty ||
+        requestType.trim().isEmpty ||
+        schemaVersion != 1) {
+      throw ArgumentError('Invalid AI usage attempt metadata');
+    }
+  }
+
+  final String eventId;
+  final DateTime occurredAtUtc;
+  final AiProviderId providerId;
+  final String model;
+  final String requestType;
+  final int schemaVersion;
+}
+
+/// Terminal accounting fields applied to one previously-pending attempt.
+final class AiUsageCompletion {
+  AiUsageCompletion({
+    required this.eventId,
+    required this.outcome,
+    required this.latencyMs,
+    this.errorCategory,
+    this.inputTokens,
+    this.outputTokens,
+    this.totalTokens,
+    this.cachedTokens,
+    this.providerReportedCostMicrosUsd,
+  }) {
+    if (eventId.trim().isEmpty ||
+        latencyMs < 0 ||
+        (outcome != 'success' &&
+            outcome != 'failure' &&
+            outcome != 'indeterminate') ||
+        ((outcome == 'failure' || outcome == 'indeterminate') &&
+            (errorCategory == null || errorCategory!.trim().isEmpty)) ||
+        (outcome == 'success' && errorCategory != null) ||
+        <int?>[
+          inputTokens,
+          outputTokens,
+          totalTokens,
+          cachedTokens,
+          providerReportedCostMicrosUsd,
+        ].any((value) => value != null && value < 0) ||
+        (cachedTokens != null &&
+            totalTokens != null &&
+            cachedTokens! > totalTokens!) ||
+        (inputTokens != null &&
+            outputTokens != null &&
+            totalTokens != null &&
+            totalTokens! < inputTokens! + outputTokens!)) {
+      throw ArgumentError('Invalid AI usage completion metadata');
+    }
+  }
+
+  final String eventId;
+  final String outcome;
+  final String? errorCategory;
+  final int latencyMs;
+  final int? inputTokens;
+  final int? outputTokens;
+  final int? totalTokens;
+  final int? cachedTokens;
+  final int? providerReportedCostMicrosUsd;
+}
+
+enum AiUsageFinalizeResult { finalized, alreadyFinalized }
+
 final class AiUsageSummary {
   const AiUsageSummary({
     required this.providerId,
@@ -204,6 +286,7 @@ final class AiUsageSummary {
     required this.requestCount,
     required this.successCount,
     required this.failureCount,
+    required this.indeterminateCount,
     required this.totalTokens,
     required this.totalLatencyMs,
     required this.providerReportedCostMicrosUsd,
@@ -214,6 +297,7 @@ final class AiUsageSummary {
   final int requestCount;
   final int successCount;
   final int failureCount;
+  final int indeterminateCount;
   final int totalTokens;
   final int totalLatencyMs;
 
@@ -222,11 +306,21 @@ final class AiUsageSummary {
 }
 
 abstract interface class AiUsageRepository {
-  Future<void> record(AiUsageEvent event);
-  Future<void> recordForOwner(String ownerId, AiUsageEvent event);
+  Future<void> beginForOwner(String ownerId, AiUsageAttempt attempt);
+  Future<AiUsageFinalizeResult> finalizeForOwner(
+    String ownerId,
+    AiUsageCompletion completion,
+  );
+  Future<int> recoverPendingStartedBefore(
+    DateTime cutoffUtc, {
+    required DateTime recoveredAtUtc,
+  });
   Future<int> purgeExpired(DateTime nowUtc);
+  Future<int> purgeExpiredForOwner(String ownerId, DateTime nowUtc);
   Future<List<AiUsageSummary>> summarize();
+  Future<List<AiUsageSummary>> summarizeForOwner(String ownerId);
   Future<void> clear();
+  Future<void> clearForOwner(String ownerId);
   Future<String> exportAggregateJson({required bool researchConsent});
 }
 
@@ -319,6 +413,23 @@ abstract interface class AiTutorSettingsStore {
   );
   Future<void> deleteCredential();
   Future<void> deleteCredentialForOwner(String ownerId);
+  Future<void> replaceCredentialForOwnerFenced(
+    String ownerId,
+    AiTutorCredential? credential, {
+    required String operationVersion,
+    required Future<bool> Function() leaseIsOwned,
+    required DateTime Function() nowUtc,
+  });
+  Future<int> recoverCredentialMutations({
+    required String leaseToken,
+    required DateTime Function() nowUtc,
+  });
+  Future<void> eraseOwnerCredentialsFenced(
+    String ownerId, {
+    required String leaseToken,
+    required Future<bool> Function() leaseIsOwned,
+    required DateTime Function() nowUtc,
+  });
   Future<String?> readKey();
   Future<void> writeKey(String key);
   Future<void> deleteKey();
@@ -402,6 +513,10 @@ abstract interface class AiTutorController {
     AiCancellation? cancellation,
   });
 
+  Future<List<AiUsageSummary>> loadUsage();
+
+  Future<void> clearUsage();
+
   Future<void> dispose();
 }
 
@@ -426,4 +541,18 @@ Uri validateCustomAiBaseUri(Uri uri) {
     throw const AiTutorException(AiFailureCode.unsafeEndpoint);
   }
   return uri;
+}
+
+Uri parseAndValidateCustomAiBaseUri(String value) {
+  final canonical = value.trim();
+  if (canonical.isEmpty || RegExp(r'%(?![0-9a-fA-F]{2})').hasMatch(canonical)) {
+    throw const AiTutorException(AiFailureCode.unsafeEndpoint);
+  }
+  try {
+    return validateCustomAiBaseUri(Uri.parse(canonical));
+  } on AiTutorException {
+    rethrow;
+  } on Object {
+    throw const AiTutorException(AiFailureCode.unsafeEndpoint);
+  }
 }

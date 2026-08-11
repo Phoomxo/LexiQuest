@@ -6,6 +6,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import 'media_dependency_unavailable.dart';
@@ -30,7 +31,9 @@ class ShadowingChallengeScreen extends StatefulWidget {
 }
 
 class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
-    with WidgetsBindingObserver {
+    with
+        WidgetsBindingObserver,
+        RouteVoiceSessionMixin<ShadowingChallengeScreen> {
   VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
   SpeechPracticeSession? _speechSession;
@@ -48,9 +51,24 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   TranscriptPronunciationAssessment? _assessment;
 
   @override
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  Future<void> onVoiceRouteCovered() async {
+    _listenEpoch += 1;
+    _listenPending = false;
+    _listening = false;
+    final session = _speechSession;
+    _speechSession = null;
+    await session?.release();
+  }
+
+  @override
+  void onVoiceRouteResumed() => _bindDependencies(refreshVoice: false);
+
+  @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _referenceSentence = widget.referenceSentence;
   }
 
@@ -66,7 +84,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     _bindDependencies();
   }
 
-  void _bindDependencies() {
+  void _bindDependencies({bool refreshVoice = true}) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
     final speech = widget.speechPractice ?? dependencies?.speechPractice;
@@ -78,6 +96,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       _speechSession = null;
     }
     _voice = widget.voice ?? dependencies?.voice;
+    if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
     if (routeIsCurrent &&
@@ -122,10 +141,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   Future<void> _playReference() async {
     final reference = _referenceSentence;
-    final voice = _voice;
-    if (reference == null || voice == null) return;
+    final session = routeVoiceSession;
+    if (reference == null || session == null) return;
     try {
-      await voice.speak(
+      await session.speak(
         VoiceRequest.create(
           text: reference,
           language: 'en',
@@ -250,11 +269,12 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
-      unawaited(_cancelForLifecycle());
+      _cancelForLifecycle().ignore();
     }
   }
 
@@ -262,13 +282,16 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final shouldCancel = _listenPending || _listening;
     _listenEpoch += 1;
     _listenPending = false;
-    if (shouldCancel) await _speechSession?.cancel();
+    try {
+      if (shouldCancel) await _speechSession?.cancel();
+    } on Object {
+      // Lifecycle cleanup is best effort and must not escape its detached hook.
+    }
     if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _listenEpoch += 1;
     _listenPending = false;
     _speechSession?.release().ignore();

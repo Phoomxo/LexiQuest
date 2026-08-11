@@ -184,9 +184,30 @@ final class VoiceOrchestrator implements VoiceProvider {
   }
 
   Future<void> _stopHandlers(VoiceCancellationToken cancellation) async {
+    await _stopAllHandlers(cancellation: cancellation);
+  }
+
+  Future<void> _stopAllHandlers({VoiceCancellationToken? cancellation}) async {
+    Object? firstFailure;
+    StackTrace? firstStackTrace;
+
     for (final engine in _handlerRegistry.engines) {
-      await _handlerRegistry.providerFor(engine)!.stop();
-      cancellation.throwIfCancelled();
+      try {
+        await _handlerRegistry.providerFor(engine)!.stop();
+      } on Object catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstStackTrace ??= stackTrace;
+      }
+      try {
+        cancellation?.throwIfCancelled();
+      } on Object catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstStackTrace ??= stackTrace;
+      }
+    }
+
+    if (firstFailure case final failure?) {
+      Error.throwWithStackTrace(failure, firstStackTrace!);
     }
   }
 
@@ -201,9 +222,7 @@ final class VoiceOrchestrator implements VoiceProvider {
   @override
   Future<void> stop() async {
     _generation++;
-    for (final engine in _handlerRegistry.engines) {
-      await _handlerRegistry.providerFor(engine)!.stop();
-    }
+    await _stopAllHandlers();
   }
 }
 

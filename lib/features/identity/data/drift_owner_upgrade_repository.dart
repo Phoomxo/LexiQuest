@@ -14,6 +14,8 @@ import '../domain/owner_upgrade.dart';
 typedef OwnerUpgradeUtcNow = DateTime Function();
 typedef OwnerUpgradeIdGenerator = String Function();
 typedef DeleteOwnerSecretsForUpgrade = Future<void> Function(String ownerId);
+typedef DeleteOwnerSecretsFencedForUpgrade =
+    Future<void> Function(String ownerId, String operationToken);
 typedef OwnerUpgradeGateDelay = Future<void> Function(Duration delay);
 
 final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
@@ -24,6 +26,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required this.generateOwnerId,
     required this.generateOwnerOperationToken,
     required this.deleteOwnerSecrets,
+    this.deleteOwnerSecretsFenced,
     OwnerOperationGate? ownerOperationGate,
     this.ownerGateDelay = _defaultOwnerGateDelay,
     this.ownerGateLeaseDuration = const Duration(minutes: 10),
@@ -39,6 +42,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   final OwnerUpgradeIdGenerator generateOwnerId;
   final OwnerUpgradeIdGenerator generateOwnerOperationToken;
   final DeleteOwnerSecretsForUpgrade deleteOwnerSecrets;
+  final DeleteOwnerSecretsFencedForUpgrade? deleteOwnerSecretsFenced;
   final OwnerOperationGate ownerOperationGate;
   final OwnerUpgradeGateDelay ownerGateDelay;
   final Duration ownerGateLeaseDuration;
@@ -66,7 +70,12 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             targetBeforeTransaction != null) {
           // External secret deletion is intentionally outside SQLite. A later
           // inventory rollback cannot restore the deleted credential.
-          await deleteOwnerSecrets(sourceBeforeTransaction.id);
+          final fencedDelete = deleteOwnerSecretsFenced;
+          if (fencedDelete == null) {
+            await deleteOwnerSecrets(sourceBeforeTransaction.id);
+          } else {
+            await fencedDelete(sourceBeforeTransaction.id, operationToken);
+          }
         }
 
         return _database.transaction(() async {

@@ -1,10 +1,9 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
-import '../../gemini/domain/gemini_contracts.dart';
 import '../domain/ai_tutor_contracts.dart';
+import 'abortable_ai_http.dart';
 
 typedef AnthropicOfflineCheck = Future<bool> Function();
 
@@ -20,7 +19,7 @@ final class AnthropicGateway implements AiTutorGateway {
   }) {
     return AnthropicGateway._(
       client: client,
-      baseUri: baseUri,
+      baseUri: normalizeAiApiBaseUri(baseUri),
       model: model,
       isOffline: isOffline ?? _assumeOnline,
       requestTimeout: requestTimeout,
@@ -55,10 +54,7 @@ final class AnthropicGateway implements AiTutorGateway {
       'have heard audio, and reply in no more than two short sentences.';
 
   @override
-  Future<void> validateKey(
-    String key, {
-    AiCancellation? cancellation,
-  }) async {
+  Future<void> validateKey(String key, {AiCancellation? cancellation}) async {
     await listModels(key, cancellation: cancellation);
   }
 
@@ -78,7 +74,7 @@ final class AnthropicGateway implements AiTutorGateway {
     try {
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic> || decoded['data'] is! List) {
-        throw const GeminiException(GeminiFailureCode.malformedResponse);
+        throw const AiTutorException(AiFailureCode.malformedResponse);
       }
       final models =
           (decoded['data'] as List)
@@ -101,7 +97,7 @@ final class AnthropicGateway implements AiTutorGateway {
             ..sort((left, right) => left.id.compareTo(right.id));
       return models;
     } on FormatException {
-      throw const GeminiException(GeminiFailureCode.malformedResponse);
+      throw const AiTutorException(AiFailureCode.malformedResponse);
     }
   }
 
@@ -147,10 +143,10 @@ final class AnthropicGateway implements AiTutorGateway {
     AiCancellation? cancellation,
   }) async {
     if (cancellation?.isCancelled ?? false) {
-      throw const GeminiException(GeminiFailureCode.cancelled);
+      throw const AiTutorException(AiFailureCode.cancelled);
     }
     if (await _isOffline()) {
-      throw const GeminiException(GeminiFailureCode.offline);
+      throw const AiTutorException(AiFailureCode.offline);
     }
     final request = http.Request('POST', _baseUri.resolve('v1/messages'))
       ..headers['x-api-key'] = key
@@ -165,69 +161,35 @@ final class AnthropicGateway implements AiTutorGateway {
     AiCancellation? cancellation,
   }) async {
     if (cancellation?.isCancelled ?? false) {
-      throw const GeminiException(GeminiFailureCode.cancelled);
+      throw const AiTutorException(AiFailureCode.cancelled);
     }
     if (await _isOffline()) {
-      throw const GeminiException(GeminiFailureCode.offline);
+      throw const AiTutorException(AiFailureCode.offline);
     }
-    try {
-      final streamed = await _sendWithCancellation(request, cancellation);
-      final response = await http.Response.fromStream(
-        streamed,
-      ).timeout(requestTimeout);
-      if (response.statusCode != 200) {
-        throw _failureFor(response.statusCode);
-      }
-      if (cancellation?.isCancelled ?? false) {
-        throw const GeminiException(GeminiFailureCode.cancelled);
-      }
-      return response;
-    } on GeminiException {
-      rethrow;
-    } on TimeoutException {
-      throw const GeminiException(GeminiFailureCode.timeout);
-    } on http.ClientException {
-      throw const GeminiException(GeminiFailureCode.offline);
-    } on Object {
-      throw const GeminiException(GeminiFailureCode.offline);
+    final response = await sendAbortableAiRequest(
+      client: _client,
+      request: request,
+      timeout: requestTimeout,
+      cancellation: cancellation,
+    );
+    if (response.statusCode != 200) {
+      throw aiFailureForHttpStatus(response.statusCode);
     }
+    return response;
   }
-
-  Future<http.StreamedResponse> _sendWithCancellation(
-    http.Request request,
-    AiCancellation? cancellation,
-  ) {
-    final operation = _client.send(request).timeout(requestTimeout);
-    if (cancellation == null) return operation;
-    return Future.any([
-      operation,
-      cancellation.whenCancelled.then<http.StreamedResponse>(
-        (_) => throw const GeminiException(GeminiFailureCode.cancelled),
-      ),
-    ]);
-  }
-
-  GeminiException _failureFor(int statusCode) => switch (statusCode) {
-    400 || 401 || 403 => const GeminiException(GeminiFailureCode.invalidKey),
-    402 => const GeminiException(GeminiFailureCode.quota),
-    408 => const GeminiException(GeminiFailureCode.timeout),
-    429 => const GeminiException(GeminiFailureCode.rateLimited),
-    500 ||
-    502 ||
-    503 ||
-    504 => const GeminiException(GeminiFailureCode.providerUnavailable),
-    _ => const GeminiException(GeminiFailureCode.providerUnavailable),
-  };
 
   AiGatewayReply _parseReply(String body) {
     try {
       final decoded = jsonDecode(body);
       if (decoded is! Map<String, dynamic>) {
-        throw const GeminiException(GeminiFailureCode.malformedResponse);
+        throw const AiTutorException(AiFailureCode.malformedResponse);
+      }
+      if (_isBlockedResponse(decoded)) {
+        throw const AiTutorException(AiFailureCode.blocked);
       }
       final content = decoded['content'];
       if (content is! List || content.isEmpty) {
-        throw const GeminiException(GeminiFailureCode.malformedResponse);
+        throw const AiTutorException(AiFailureCode.malformedResponse);
       }
       final text = content
           .whereType<Map<String, dynamic>>()
@@ -237,12 +199,26 @@ final class AnthropicGateway implements AiTutorGateway {
           .join()
           .trim();
       if (text.isEmpty || text.length > 4000) {
-        throw const GeminiException(GeminiFailureCode.malformedResponse);
+        throw const AiTutorException(AiFailureCode.malformedResponse);
       }
       return AiGatewayReply(text: text, usage: _parseUsage(decoded['usage']));
     } on FormatException {
-      throw const GeminiException(GeminiFailureCode.malformedResponse);
+      throw const AiTutorException(AiFailureCode.malformedResponse);
     }
+  }
+
+  bool _isBlockedResponse(Map<String, dynamic> decoded) {
+    final reason = decoded['stop_reason'];
+    if (reason == 'refusal' ||
+        reason == 'content_filter' ||
+        reason == 'safety') {
+      return true;
+    }
+    final content = decoded['content'];
+    return content is List &&
+        content.whereType<Map<String, dynamic>>().any(
+          (block) => block['type'] == 'refusal',
+        );
   }
 
   AiTokenUsage? _parseUsage(Object? raw) {
@@ -264,17 +240,13 @@ final class AnthropicGateway implements AiTutorGateway {
   }
 
   String _normalizedKey(String value) {
-    final normalized = value.trim();
-    if (normalized.isEmpty || normalized.length > 512) {
-      throw const GeminiException(GeminiFailureCode.invalidKey);
-    }
-    return normalized;
+    return normalizeAiApiKey(value);
   }
 
   String _normalizedText(String value, {required int maximumLength}) {
     final normalized = value.replaceAll(RegExp(r'\s+'), ' ').trim();
     if (normalized.isEmpty || normalized.length > maximumLength) {
-      throw const GeminiException(GeminiFailureCode.validation);
+      throw const AiTutorException(AiFailureCode.validation);
     }
     return normalized;
   }

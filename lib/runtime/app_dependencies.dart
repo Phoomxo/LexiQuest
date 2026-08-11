@@ -7,7 +7,6 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
-import '../features/gemini/domain/gemini_contracts.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -64,9 +63,7 @@ final class AppDependencies {
     this.localDataEraser,
     this.researchConsent,
     this.exports,
-    this.geminiTutor,
     this.aiTutor,
-    this.aiUsage,
     this.objectScanner,
     this.speechPractice,
     this.voice,
@@ -102,9 +99,7 @@ final class AppDependencies {
   final LocalDataEraser? localDataEraser;
   final ResearchConsentUseCases? researchConsent;
   final ExportUseCases? exports;
-  final GeminiTutorController? geminiTutor;
   final AiTutorController? aiTutor;
-  final AiUsageRepository? aiUsage;
   final ObjectScannerController? objectScanner;
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;

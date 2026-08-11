@@ -21,8 +21,12 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/account/data/firebase_account_gateway.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/ai_tutor/application/ai_tutor_use_cases.dart';
+import '../features/ai_tutor/application/owner_operation_coordinator.dart';
+import '../features/ai_tutor/data/ai_tutor_gateway_factory.dart';
+import '../features/ai_tutor/data/ai_credential_version_index.dart';
 import '../features/ai_tutor/data/ai_tutor_settings_store.dart';
 import '../features/ai_tutor/data/drift_ai_usage_repository.dart';
+import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
@@ -72,6 +76,8 @@ import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
 import '../features/vocabulary/data/drift_vocabulary_repository.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../voice/voice_provider.dart';
+import '../voice/voice_service_factory.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
@@ -89,6 +95,44 @@ typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
 typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
+typedef ManagedAiTutorBuilder =
+    FutureOr<ManagedAiTutor> Function(AiTutorBuildContext context);
+typedef ManagedVoiceBuilder =
+    FutureOr<ManagedVoiceProvider> Function(AppConfig? config);
+
+Future<void> Function() _retainAsyncDisposer(Future<void> Function() value) =>
+    value;
+
+final class AiTutorBuildContext {
+  const AiTutorBuildContext({
+    required this.settings,
+    required this.usage,
+    required this.ownerCoordinator,
+    required this.loadProgress,
+    required this.nowUtc,
+    required this.usageEventId,
+  });
+
+  final AiTutorSettingsStore settings;
+  final AiUsageRepository usage;
+  final OwnerOperationCoordinator ownerCoordinator;
+  final LoadAiTutorProgress loadProgress;
+  final DateTime Function() nowUtc;
+  final String Function() usageEventId;
+}
+
+final class ManagedAiTutor {
+  ManagedAiTutor({
+    required this.controller,
+    required Future<void> Function() disposeController,
+  }) : _disposeController = _retainAsyncDisposer(disposeController);
+
+  final AiTutorController controller;
+  final Future<void> Function() _disposeController;
+  Future<void>? _disposeFuture;
+
+  Future<void> dispose() => _disposeFuture ??= _disposeController();
+}
 
 // Public client identifiers, not server credentials. The Supabase URL keeps a
 // public default, but the publishable key must be supplied per build.
@@ -177,7 +221,10 @@ final class AppBootstrap {
     this.syncGatewayFactory,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
-  });
+    ManagedAiTutorBuilder? buildAiTutor,
+    ManagedVoiceBuilder? buildVoice,
+  }) : buildAiTutor = buildAiTutor ?? _buildManagedAiTutor,
+       buildVoice = buildVoice ?? _buildManagedVoice;
 
   factory AppBootstrap.production() {
     return AppBootstrap(
@@ -208,6 +255,8 @@ final class AppBootstrap {
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
+  final ManagedAiTutorBuilder buildAiTutor;
+  final ManagedVoiceBuilder buildVoice;
   Future<AppDependencies>? _initialization;
 
   Future<AppDependencies> initialize() {
@@ -241,12 +290,59 @@ final class AppBootstrap {
     await localOwners.getOrCreateActiveOwner();
     Future<String> activeOwnerId() async =>
         (await localOwners.getOrCreateActiveOwner()).id;
+    final aiCredentialVersionIndex = DriftAiCredentialVersionIndex(database);
     final aiTutorSettings = SecureAiTutorSettingsStore.production(
       activeOwnerId: activeOwnerId,
+      versionIndex: aiCredentialVersionIndex,
+    );
+    Future<void> eraseOwnerCredentialsWithLease(
+      String ownerId,
+      String operationToken,
+    ) {
+      return aiTutorSettings.eraseOwnerCredentialsFenced(
+        ownerId,
+        leaseToken: operationToken,
+        leaseIsOwned: () => ownerOperationGate.isOwned(
+          token: operationToken,
+          nowUtc: DateTime.now().toUtc(),
+        ),
+        nowUtc: () => DateTime.now().toUtc(),
+      );
+    }
+
+    final localErasureCoordinator = OwnerOperationCoordinator(
+      gate: ownerOperationGate,
+      activeOwnerId: activeOwnerId,
+      nowUtc: () => DateTime.now().toUtc(),
+      generateToken: idGenerator.v4,
+      leaseDuration: const Duration(minutes: 1),
+      heartbeatInterval: const Duration(seconds: 20),
+      waitTimeout: const Duration(seconds: 5),
     );
     final localDataEraser = LocalDataDeletion(
       database,
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
+      deleteOwnerSecretsFenced: eraseOwnerCredentialsWithLease,
+      fenceOwnerOperation: (operationToken) => ownerOperationGate.requireOwned(
+        token: operationToken,
+        nowUtc: DateTime.now().toUtc(),
+      ),
+      coordinate: (ownerId, operation) async {
+        final cancellation = AiCancellation();
+        return localErasureCoordinator.run(cancellation, (activeOwner) {
+          if (activeOwner != ownerId) {
+            throw StateError('Only the active owner can be erased.');
+          }
+          final operationToken = OwnerOperationCoordinator.currentLeaseToken;
+          if (operationToken == null) {
+            throw StateError('Local erasure requires the owner lease.');
+          }
+          return operation(operationToken).then((deleted) {
+            localErasureCoordinator.markCurrentOperationResultCommitted();
+            return deleted;
+          });
+        });
+      },
     );
     final ownerUpgrades = DriftOwnerUpgradeRepository(
       database,
@@ -255,6 +351,7 @@ final class AppBootstrap {
       generateOwnerId: idGenerator.v4,
       generateOwnerOperationToken: idGenerator.v4,
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
+      deleteOwnerSecretsFenced: eraseOwnerCredentialsWithLease,
       ownerOperationGate: ownerOperationGate,
     );
     LearningReconciliationScheduler? ownerLearningReconciliation;
@@ -512,31 +609,65 @@ final class AppBootstrap {
       PluginSpeechRecognitionGateway(),
     );
     resources.own(speechPractice.dispose);
-    final aiTutorHttpClient = http.Client();
-    resources.own(aiTutorHttpClient.close);
     final aiUsage = DriftAiUsageRepository(
       database,
       activeOwnerId: activeOwnerId,
-    );
-    final aiTutor = AiTutorUseCases(
-      store: aiTutorSettings,
+      activeOwnerLeaseToken: () => OwnerOperationCoordinator.currentLeaseToken,
       nowUtc: () => DateTime.now().toUtc(),
-      httpClient: aiTutorHttpClient,
-      loadProgress: progress.load,
-      usageRepository: aiUsage,
-      usageEventId: idGenerator.v4,
     );
-    resources.own(aiTutor.dispose);
+    final aiOwnerCoordinator = OwnerOperationCoordinator(
+      gate: ownerOperationGate,
+      activeOwnerId: activeOwnerId,
+      nowUtc: () => DateTime.now().toUtc(),
+      generateToken: idGenerator.v4,
+      recoverPending: (cutoffUtc, {required recoveredAtUtc}) async {
+        final recoveredUsage = await aiUsage.recoverPendingStartedBefore(
+          cutoffUtc,
+          recoveredAtUtc: recoveredAtUtc,
+        );
+        final leaseToken = OwnerOperationCoordinator.currentLeaseToken;
+        if (leaseToken == null) {
+          throw StateError('Credential recovery requires the owner lease.');
+        }
+        final recoveredCredentials = await aiTutorSettings
+            .recoverCredentialMutations(
+              leaseToken: leaseToken,
+              nowUtc: () => DateTime.now().toUtc(),
+            );
+        return recoveredUsage + recoveredCredentials;
+      },
+    );
+    AiTutorController? aiTutor;
+    try {
+      final managedAi = await buildAiTutor(
+        AiTutorBuildContext(
+          settings: aiTutorSettings,
+          usage: aiUsage,
+          ownerCoordinator: aiOwnerCoordinator,
+          loadProgress: progress.load,
+          nowUtc: () => DateTime.now().toUtc(),
+          usageEventId: idGenerator.v4,
+        ),
+      );
+      resources.own(managedAi.dispose);
+      aiTutor = managedAi.controller;
+    } on Object {
+      // AI is optional. Local learning and voice composition continue.
+    }
 
     final associativeLearning = DriftAssociativeLearningAdapter(database);
 
     // ── Voice (default provider fallback, best-effort) ─────────────────────
     VoiceUseCases? voice;
     try {
-      voice = VoiceUseCases.createDefault();
+      final managedVoice = await buildVoice(config);
+      voice = VoiceUseCases(
+        provider: managedVoice,
+        disposeProvider: managedVoice.dispose,
+      );
       final ownedVoice = voice;
-      resources.own(() => ownedVoice.disposeIfOwned(true));
-    } catch (_) {
+      resources.own(ownedVoice.dispose);
+    } on Object {
       // Platform TTS unavailable in this environment (e.g. headless tests).
       // Scoped media consumers render typed unavailable; they do not create a
       // screen-owned provider fallback.
@@ -566,7 +697,13 @@ final class AppBootstrap {
         localData: RuntimeAvailability.ready,
         firebase: firebase,
         supabase: supabase,
-        backends: config == null
+        backends: config != null && firebase == RuntimeAvailability.ready
+            ? RuntimeAvailability.ready
+            : RuntimeAvailability.unavailable,
+        aiTutor: aiTutor == null
+            ? RuntimeAvailability.unavailable
+            : RuntimeAvailability.ready,
+        voice: voice == null
             ? RuntimeAvailability.unavailable
             : RuntimeAvailability.ready,
       ),
@@ -592,7 +729,6 @@ final class AppBootstrap {
       localDataEraser: localDataEraser,
       researchConsent: researchConsent,
       aiTutor: aiTutor,
-      aiUsage: aiUsage,
       objectScanner: objectScanner,
       speechPractice: speechPractice,
       quest: quest,
@@ -628,6 +764,65 @@ final class AppBootstrap {
     } catch (_) {
       return null;
     }
+  }
+}
+
+FutureOr<ManagedAiTutor> _buildManagedAiTutor(AiTutorBuildContext context) {
+  final client = http.Client();
+  try {
+    final gatewayFactory = AiTutorGatewayFactory(
+      client: client,
+      requestTimeout: const Duration(seconds: 20),
+    );
+    final controller = AiTutorUseCases(
+      store: context.settings,
+      nowUtc: context.nowUtc,
+      gatewayResolver: ({required providerId, required model, customBaseUrl}) =>
+          gatewayFactory.create(
+            providerId: providerId,
+            model: model,
+            customBaseUrl: customBaseUrl,
+          ),
+      loadProgress: context.loadProgress,
+      usageRepository: context.usage,
+      ownerCoordinator: context.ownerCoordinator,
+      usageEventId: context.usageEventId,
+    );
+    return ManagedAiTutor(
+      controller: controller,
+      disposeController: () async {
+        Object? firstError;
+        StackTrace? firstStackTrace;
+        try {
+          await controller.dispose();
+        } on Object catch (error, stackTrace) {
+          firstError = error;
+          firstStackTrace = stackTrace;
+        }
+        try {
+          client.close();
+        } on Object catch (error, stackTrace) {
+          firstError ??= error;
+          firstStackTrace ??= stackTrace;
+        }
+        if (firstError case final error?) {
+          Error.throwWithStackTrace(error, firstStackTrace!);
+        }
+      },
+    );
+  } on Object {
+    client.close();
+    rethrow;
+  }
+}
+
+FutureOr<ManagedVoiceProvider> _buildManagedVoice(AppConfig? config) {
+  final client = config == null ? null : http.Client();
+  try {
+    return VoiceServiceFactory.create(config: config, client: client);
+  } on Object {
+    client?.close();
+    rethrow;
   }
 }
 

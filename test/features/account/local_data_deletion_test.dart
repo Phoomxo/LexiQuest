@@ -1,9 +1,14 @@
-import 'package:drift/drift.dart' hide isNull;
+import 'dart:async';
+
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
+import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 
 void main() {
   test('deletion inventory stays aligned with every owner-scoped table', () {
@@ -96,6 +101,169 @@ void main() {
     expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 1);
     expect(await _ownerRows(database, 'vocabulary_imports', 'owner-a'), 1);
   });
+
+  test(
+    'one shared owner lease spans secret cleanup and the database erase',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await _seedOwner(database, 'owner-a');
+      final gate = DriftOwnerOperationGate(database);
+      final secretDeleteStarted = Completer<void>();
+      final allowSecretDelete = Completer<void>();
+      final now = DateTime.utc(2026, 8, 11);
+      final coordinator = OwnerOperationCoordinator(
+        gate: gate,
+        activeOwnerId: () async => 'owner-a',
+        nowUtc: () => now,
+        generateToken: () => 'erase-owner-a',
+        leaseDuration: const Duration(minutes: 1),
+        heartbeatInterval: const Duration(seconds: 20),
+      );
+      final deletion = LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
+        deleteOwnerSecretsFenced: (ownerId, operationToken) async {
+          expect(ownerId, 'owner-a');
+          expect(operationToken, 'erase-owner-a');
+          secretDeleteStarted.complete();
+          await allowSecretDelete.future;
+        },
+        fenceOwnerOperation: (operationToken) =>
+            gate.requireOwned(token: operationToken, nowUtc: now),
+        coordinate: (ownerId, operation) => coordinator.run(AiCancellation(), (
+          activeOwnerId,
+        ) {
+          expect(activeOwnerId, ownerId);
+          final operationToken = OwnerOperationCoordinator.currentLeaseToken;
+          expect(operationToken, isNotNull);
+          return operation(operationToken!);
+        }),
+      );
+
+      final erasure = deletion.eraseAll(ownerId: 'owner-a');
+      await secretDeleteStarted.future;
+
+      expect(
+        await gate.tryAcquire(
+          token: 'competing-operation',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        ),
+        isFalse,
+      );
+
+      allowSecretDelete.complete();
+      expect(await erasure, 8);
+      expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 0);
+      expect(
+        await gate.tryAcquire(
+          token: 'competing-operation',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 1),
+        ),
+        isTrue,
+      );
+      await gate.release(token: 'competing-operation');
+    },
+  );
+
+  test(
+    'expired owner lease after secret cleanup fences every database delete',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await _seedOwner(database, 'owner-a');
+      final gate = DriftOwnerOperationGate(database);
+      var now = DateTime.utc(2026, 8, 11);
+      final coordinator = OwnerOperationCoordinator(
+        gate: gate,
+        activeOwnerId: () async => 'owner-a',
+        nowUtc: () => now,
+        generateToken: () => 'stale-erasure',
+        leaseDuration: const Duration(minutes: 1),
+        heartbeatInterval: const Duration(seconds: 20),
+      );
+      final deletion = LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
+        deleteOwnerSecretsFenced: (_, _) async {
+          now = now.add(const Duration(minutes: 2));
+          expect(
+            await gate.tryAcquire(
+              token: 'replacement-operation',
+              nowUtc: now,
+              leaseDuration: const Duration(minutes: 1),
+            ),
+            isTrue,
+          );
+        },
+        fenceOwnerOperation: (operationToken) =>
+            gate.requireOwned(token: operationToken, nowUtc: now),
+        coordinate: (_, operation) => coordinator.run(
+          AiCancellation(),
+          (_) => operation(OwnerOperationCoordinator.currentLeaseToken!),
+        ),
+      );
+
+      await expectLater(
+        deletion.eraseAll(ownerId: 'owner-a'),
+        throwsStateError,
+      );
+
+      expect(await _ownerRows(database, 'research_consents', 'owner-a'), 1);
+      expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 1);
+      expect(await _ownerRows(database, 'vocabulary_imports', 'owner-a'), 1);
+      await gate.release(token: 'replacement-operation');
+    },
+  );
+
+  test(
+    'committed erasure result survives lease loss immediately after commit',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await _seedOwner(database, 'owner-a');
+      final gate = DriftOwnerOperationGate(database);
+      var now = DateTime.utc(2026, 8, 11);
+      final coordinator = OwnerOperationCoordinator(
+        gate: gate,
+        activeOwnerId: () async => 'owner-a',
+        nowUtc: () => now,
+        generateToken: () => 'committed-erasure',
+        leaseDuration: const Duration(minutes: 1),
+        heartbeatInterval: const Duration(seconds: 20),
+      );
+      final deletion = LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
+        deleteOwnerSecretsFenced: (_, _) async {},
+        fenceOwnerOperation: (operationToken) =>
+            gate.requireOwned(token: operationToken, nowUtc: now),
+        coordinate: (_, operation) =>
+            coordinator.run(AiCancellation(), (_) async {
+              final result = await operation(
+                OwnerOperationCoordinator.currentLeaseToken!,
+              );
+              coordinator.markCurrentOperationResultCommitted();
+              now = now.add(const Duration(minutes: 2));
+              expect(
+                await gate.tryAcquire(
+                  token: 'replacement-after-commit',
+                  nowUtc: now,
+                  leaseDuration: const Duration(minutes: 1),
+                ),
+                isTrue,
+              );
+              return result;
+            }),
+      );
+
+      expect(await deletion.eraseAll(ownerId: 'owner-a'), 8);
+      expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 0);
+      await gate.release(token: 'replacement-after-commit');
+    },
+  );
 }
 
 Future<void> _seedOwner(AppDatabase database, String ownerId) async {

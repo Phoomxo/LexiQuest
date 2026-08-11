@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '../voice/voice_models.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
+import '../runtime/app_dependencies.dart';
 
 class SentenceScrambleScreen extends StatefulWidget {
   final String targetSentence;
@@ -18,9 +20,11 @@ class SentenceScrambleScreen extends StatefulWidget {
   State<SentenceScrambleScreen> createState() => _SentenceScrambleScreenState();
 }
 
-class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
-  late final VoiceUseCases _voiceProvider;
-  bool _ownsVoiceProvider = false;
+class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
+    with
+        WidgetsBindingObserver,
+        RouteVoiceSessionMixin<SentenceScrambleScreen> {
+  VoiceUseCases? _voice;
   late List<String> _originalWords;
   late List<String> _scrambledWords;
   final List<String> _userSelection = [];
@@ -29,9 +33,6 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
   @override
   void initState() {
     super.initState();
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
-
     _originalWords = widget.targetSentence.trim().split(RegExp(r'\s+'));
     _scrambledWords = List<String>.from(_originalWords)..shuffle();
 
@@ -40,9 +41,19 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
     });
   }
 
+  @override
+  VoiceUseCases? get routeVoiceUseCases => _voice;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _voice = widget.voice ?? AppDependenciesScope.maybeOf(context)?.voice;
+    refreshRouteVoiceSession();
+  }
+
   Future<void> _playAudio() async {
     try {
-      await _voiceProvider.speak(
+      await routeVoiceSession?.speak(
         VoiceRequest.create(
           text: widget.targetSentence,
           language: 'en',
@@ -87,13 +98,6 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen> {
       _scrambledWords = List<String>.from(_originalWords)..shuffle();
       _isCorrect = null;
     });
-  }
-
-  @override
-  void dispose() {
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
-    super.dispose();
   }
 
   @override

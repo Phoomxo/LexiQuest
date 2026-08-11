@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../features/gemini/domain/gemini_contracts.dart';
-import '../runtime/app_dependencies.dart';
 
 class GeminiSettingsScreen extends StatefulWidget {
   const GeminiSettingsScreen({super.key, this.geminiTutor});
@@ -27,9 +26,7 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final resolved =
-        widget.geminiTutor ??
-        AppDependenciesScope.maybeOf(context)?.geminiTutor;
+    final resolved = widget.geminiTutor;
     if (identical(resolved, _tutor)) return;
     _tutor = resolved;
     _load();
@@ -305,6 +302,10 @@ class _GeminiSettingsScreenState extends State<GeminiSettingsScreen> {
     GeminiFailureCode.timeout => 'การตรวจสอบใช้เวลานานเกินกำหนด',
     GeminiFailureCode.providerUnavailable =>
       'ผู้ให้บริการ Gemini ไม่พร้อมใช้งานชั่วคราว',
+    GeminiFailureCode.providerDisabled => 'Gemini is disabled.',
+    GeminiFailureCode.circuitOpen => 'Gemini is temporarily paused.',
+    GeminiFailureCode.requestRejected =>
+      'Gemini rejected this request. Check the selected model and try again.',
     GeminiFailureCode.malformedResponse =>
       'Gemini ส่งข้อมูลตอบกลับที่อ่านไม่ได้',
     GeminiFailureCode.consentRequired => 'ต้องยืนยันการยินยอมก่อนบันทึก key',

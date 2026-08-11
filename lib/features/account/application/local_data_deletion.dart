@@ -1,6 +1,14 @@
 import '../../../data/local/app_database.dart' as db;
 
 typedef DeleteOwnerSecrets = Future<void> Function(String ownerId);
+typedef DeleteOwnerSecretsFenced =
+    Future<void> Function(String ownerId, String operationToken);
+typedef FenceOwnerOperation = Future<void> Function(String operationToken);
+typedef CoordinateLocalDataErasure =
+    Future<int> Function(
+      String ownerId,
+      Future<int> Function(String operationToken) operation,
+    );
 
 abstract interface class LocalDataEraser {
   Future<int> eraseAll({required String ownerId});
@@ -48,10 +56,25 @@ const List<String> localDataDeletionInventory = <String>[
 /// before SQLite work starts. A later SQLite failure rolls database changes
 /// back but cannot restore the key; the participant must configure it again.
 class LocalDataDeletion implements LocalDataEraser {
-  LocalDataDeletion(this._database, {required this.deleteOwnerSecrets});
+  LocalDataDeletion(
+    this._database, {
+    required this.deleteOwnerSecrets,
+    this.deleteOwnerSecretsFenced,
+    this.fenceOwnerOperation,
+    this.coordinate,
+  }) {
+    if (coordinate != null && fenceOwnerOperation == null) {
+      throw ArgumentError(
+        'Coordinated local erasure requires an atomic database lease fence.',
+      );
+    }
+  }
 
   final db.AppDatabase _database;
   final DeleteOwnerSecrets deleteOwnerSecrets;
+  final DeleteOwnerSecretsFenced? deleteOwnerSecretsFenced;
+  final FenceOwnerOperation? fenceOwnerOperation;
+  final CoordinateLocalDataErasure? coordinate;
 
   /// Deletes all owner-scoped data for [ownerId].
   ///
@@ -62,13 +85,38 @@ class LocalDataDeletion implements LocalDataEraser {
     if (normalizedOwnerId.isEmpty) {
       throw ArgumentError.value(ownerId, 'ownerId', 'must not be empty');
     }
-    // Secure storage cannot participate in the SQLite transaction. Erase it
-    // first so a secure-storage failure leaves all database rows untouched and
-    // a later database failure cannot leave a provider secret behind.
+    final coordinator = coordinate;
+    if (coordinator != null) {
+      return coordinator(
+        normalizedOwnerId,
+        (operationToken) => _eraseAllCoordinated(
+          ownerId: normalizedOwnerId,
+          operationToken: operationToken,
+        ),
+      );
+    }
     await deleteOwnerSecrets(normalizedOwnerId);
     return _database.transaction(
       () => _eraseAllInTransaction(ownerId: normalizedOwnerId),
     );
+  }
+
+  Future<int> _eraseAllCoordinated({
+    required String ownerId,
+    required String operationToken,
+  }) async {
+    final fencedDelete = deleteOwnerSecretsFenced;
+    if (fencedDelete == null) {
+      await deleteOwnerSecrets(ownerId);
+    } else {
+      await fencedDelete(ownerId, operationToken);
+    }
+    return _database.transaction(() async {
+      // This must be the transaction's first statement so a replacement owner
+      // operation cannot race the first irreversible SQLite delete.
+      await fenceOwnerOperation!(operationToken);
+      return _eraseAllInTransaction(ownerId: ownerId);
+    });
   }
 
   Future<int> _eraseAllInTransaction({required String ownerId}) async {

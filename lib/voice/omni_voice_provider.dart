@@ -124,7 +124,13 @@ final class OmniVoiceProvider implements VoiceSynthesisProvider {
 
   Future<VoiceAudio> _synthesizeProtected(VoiceRequest request) async {
     try {
-      return await _circuitBreaker.call(() => _synthesizeRemote(request));
+      return await _circuitBreaker.call(() async {
+        try {
+          return await _synthesizeRemote(request).timeout(_timeout);
+        } on TimeoutException {
+          throw _timeoutFailure;
+        }
+      });
     } on CircuitBreakerOpenException {
       throw _rateLimitedFailure;
     }

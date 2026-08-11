@@ -26,7 +26,7 @@ void main() {
       MaterialApp(
         home: ShadowingChallengeScreen(
           referenceSentence: 'Practice makes perfect',
-          voice: VoiceUseCases(voice),
+          voice: VoiceUseCases(provider: voice, disposeProvider: () async {}),
           speechPractice: speech,
         ),
       ),
@@ -52,27 +52,60 @@ void main() {
   });
 
   testWidgets('cancels microphone when app leaves foreground', (tester) async {
-    final gateway = _FakeSpeechGateway(emitFinal: false);
-    final speech = SpeechPracticeUseCases(gateway);
-    await tester.pumpWidget(
-      MaterialApp(
-        home: ShadowingChallengeScreen(
-          referenceSentence: 'Keep going',
-          voice: VoiceUseCases(_FakeVoice()),
-          speechPractice: speech,
-        ),
-      ),
+    final gateway = _FakeSpeechGateway(
+      emitFinal: false,
+      cancelError: StateError('recognizer cancel failed'),
     );
-    await tester.tap(find.byKey(const ValueKey('shadowing-listen-button')));
-    await tester.pump();
-    expect(gateway.isListening, isTrue);
+    final speech = SpeechPracticeUseCases(gateway);
+    final provider = _FakeVoice();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ShadowingChallengeScreen(
+            referenceSentence: 'Keep going',
+            voice: voice,
+            speechPractice: speech,
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey('shadowing-play-reference')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('shadowing-listen-button')));
+      await tester.pump();
+      expect(gateway.isListening, isTrue);
 
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
-    await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.runAsync(
+        () => provider.stopEntered.future.timeout(
+          const Duration(milliseconds: 250),
+        ),
+      );
 
-    expect(gateway.cancelCalls, 1);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
+      expect(gateway.cancelCalls, 1);
+      expect(provider.stopCalls, 1);
+      expect(tester.takeException(), isNull);
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(() async {
+        await voice.dispose().timeout(const Duration(seconds: 1));
+        try {
+          await speech.dispose().timeout(const Duration(seconds: 1));
+        } on Object {
+          // The recognizer cleanup failure is deliberately injected.
+        }
+      });
+    }
   });
 
   testWidgets('persists the actual assessment method in learning provenance', (
@@ -127,7 +160,10 @@ void main() {
     await tester.pumpWidget(
       MaterialApp(
         home: ShadowingChallengeScreen(
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
           speechPractice: SpeechPracticeUseCases(_FakeSpeechGateway()),
           learning: learning,
         ),
@@ -213,7 +249,10 @@ void main() {
       MaterialApp(
         home: ShadowingChallengeScreen(
           referenceSentence: 'Keep going',
-          voice: VoiceUseCases(_FakeVoice()),
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
           speechPractice: SpeechPracticeUseCases(gateway),
         ),
       ),
@@ -251,7 +290,10 @@ void main() {
   ) async {
     final gateway = _TwoStartSpeechGateway();
     final speech = SpeechPracticeUseCases(gateway);
-    final voice = VoiceUseCases(_FakeVoice());
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: ShadowingChallengeScreen(
@@ -302,7 +344,10 @@ void main() {
   ) async {
     final gateway = _TwoStartSpeechGateway();
     final speech = SpeechPracticeUseCases(gateway);
-    final voice = VoiceUseCases(_FakeVoice());
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: ShadowingChallengeScreen(
@@ -358,9 +403,10 @@ void main() {
 }
 
 final class _FakeSpeechGateway implements SpeechRecognitionGateway {
-  _FakeSpeechGateway({this.emitFinal = true});
+  _FakeSpeechGateway({this.emitFinal = true, this.cancelError});
 
   final bool emitFinal;
+  final Object? cancelError;
   int cancelCalls = 0;
   @override
   bool isListening = false;
@@ -369,6 +415,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   Future<void> cancel() async {
     cancelCalls += 1;
     isListening = false;
+    final error = cancelError;
+    if (error != null) throw error;
   }
 
   @override
@@ -408,6 +456,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 
 final class _FakeVoice implements VoiceProvider {
   final List<VoiceRequest> requests = [];
+  final Completer<void> stopEntered = Completer<void>();
+  int stopCalls = 0;
 
   @override
   Future<VoicePlaybackResult> speak(VoiceRequest request) async {
@@ -421,7 +471,10 @@ final class _FakeVoice implements VoiceProvider {
   }
 
   @override
-  Future<void> stop() async {}
+  Future<void> stop() async {
+    stopCalls += 1;
+    if (!stopEntered.isCompleted) stopEntered.complete();
+  }
 }
 
 final class _PendingSpeechGateway implements SpeechRecognitionGateway {

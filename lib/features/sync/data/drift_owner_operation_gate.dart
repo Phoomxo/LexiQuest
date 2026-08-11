@@ -108,6 +108,36 @@ final class DriftOwnerOperationGate implements OwnerOperationGate {
     return row != null;
   }
 
+  /// Performs a write fence suitable as the first statement of a larger
+  /// owner-scoped transaction.
+  Future<void> requireOwned({
+    required String token,
+    required DateTime nowUtc,
+  }) async {
+    final canonicalToken = _requiredToken(token);
+    _requireUtc(nowUtc);
+    final changed = await database.customUpdate(
+      '''
+      UPDATE runtime_flags
+      SET updated_at_utc_ms = updated_at_utc_ms
+      WHERE "key" = ?
+        AND bool_value = 1
+        AND source = ?
+        AND expires_at_utc_ms IS NOT NULL
+        AND expires_at_utc_ms > ?
+      ''',
+      variables: <Variable<Object>>[
+        const Variable<String>(gateKey),
+        Variable<String>(canonicalToken),
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+      ],
+      updates: <TableInfo<Table, Object?>>{database.runtimeFlags},
+    );
+    if (changed != 1) {
+      throw StateError('Owner-operation lease was lost.');
+    }
+  }
+
   @override
   Future<void> release({required String token}) async {
     final canonicalToken = _requiredToken(token);

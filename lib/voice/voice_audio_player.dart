@@ -4,6 +4,8 @@ import 'package:audioplayers/audioplayers.dart';
 
 import 'voice_models.dart';
 
+AudioPlayer? _retainAudioPlayer(AudioPlayer? value) => value;
+
 /// Provider-neutral boundary for playing synthesized WAV bytes.
 abstract interface class VoiceAudioPlayer {
   Future<void> play(Uint8List bytes);
@@ -25,19 +27,28 @@ abstract interface class AudioPlayerAdapter {
 /// Production adapter backed by an injected-or-default [AudioPlayer].
 final class AudioplayersAdapter implements AudioPlayerAdapter {
   AudioplayersAdapter({AudioPlayer? audioPlayer})
-    : _audioPlayer = audioPlayer ?? AudioPlayer();
+    : _audioPlayer = _retainAudioPlayer(audioPlayer);
 
-  final AudioPlayer _audioPlayer;
+  AudioPlayer? _audioPlayer;
+
+  AudioPlayer get _resolved => _audioPlayer ??= AudioPlayer();
 
   @override
   Future<void> playBytes(Uint8List bytes) =>
-      _audioPlayer.play(BytesSource(bytes, mimeType: 'audio/wav'));
+      _resolved.play(BytesSource(bytes, mimeType: 'audio/wav'));
 
   @override
-  Future<void> stop() => _audioPlayer.stop();
+  Future<void> stop() async {
+    final player = _audioPlayer;
+    if (player != null) await player.stop();
+  }
 
   @override
-  Future<void> dispose() => _audioPlayer.dispose();
+  Future<void> dispose() async {
+    final player = _audioPlayer;
+    _audioPlayer = null;
+    if (player != null) await player.dispose();
+  }
 }
 
 const _emptyBytesFailure = VoiceFailure(

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 
+/// Shared observer used by route-owned media sessions. A covered screen
+/// releases its opaque lease; returning to it acquires a fresh lease.
+final RouteObserver<PageRoute<dynamic>> appRouteObserver =
+    RouteObserver<PageRoute<dynamic>>();
+
 enum AppRoute { login, register, emailVerification, home }
 
 final class EmailVerificationArgs {

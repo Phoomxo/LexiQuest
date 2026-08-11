@@ -8,6 +8,7 @@ import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
 import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../voice/voice_models.dart';
 import 'ai_tutor_settings_screen.dart';
 
@@ -42,7 +43,7 @@ class AiTutorScreen extends StatefulWidget {
 }
 
 class _AiTutorScreenState extends State<AiTutorScreen>
-    with WidgetsBindingObserver {
+    with WidgetsBindingObserver, RouteVoiceSessionMixin<AiTutorScreen> {
   static const _scenarios = [
     'Job Interview',
     'Airport Check-in',
@@ -51,10 +52,10 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     'Hotel Check-in',
   ];
 
-  late final VoiceUseCases _voiceProvider;
-  bool _ownsVoiceProvider = false;
+  VoiceUseCases? _voice;
   AiTutorController? _tutor;
   SpeechPracticeUseCases? _speech;
+  SpeechPracticeSession? _speechSession;
   final TextEditingController _inputController = TextEditingController();
   final List<ChatMessage> _messages = [];
   AiCancellation? _generationCancellation;
@@ -66,24 +67,66 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   int _interactionEpoch = 0;
 
   @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
-  }
+  VoiceUseCases? get routeVoiceUseCases => _voice;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindResolvedDependencies();
+  }
+
+  @override
+  void didUpdateWidget(covariant AiTutorScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(widget.voice, oldWidget.voice) ||
+        !identical(widget.aiTutor, oldWidget.aiTutor) ||
+        !identical(widget.speechPractice, oldWidget.speechPractice)) {
+      _bindResolvedDependencies();
+    }
+  }
+
+  void _bindResolvedDependencies() {
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _voice = widget.voice ?? dependencies?.voice;
+    refreshRouteVoiceSession();
     final resolvedTutor = widget.aiTutor ?? dependencies?.aiTutor;
-    _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
+    _bindSpeechPractice(widget.speechPractice ?? dependencies?.speechPractice);
     if (!identical(resolvedTutor, _tutor)) {
       _tutor = resolvedTutor;
       unawaited(_loadKeyStatus());
     }
   }
+
+  void _bindSpeechPractice(SpeechPracticeUseCases? resolved) {
+    if (identical(resolved, _speech)) {
+      _ensureSpeechSession();
+      return;
+    }
+    final previous = _speechSession;
+    _speechSession = null;
+    _speech = resolved;
+    _isListening = false;
+    previous?.release().ignore();
+    _ensureSpeechSession();
+  }
+
+  void _ensureSpeechSession() {
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) return;
+    final speech = _speech;
+    if (speech != null && _speechSession?.isCurrent != true) {
+      _speechSession = speech.acquireSession();
+    }
+  }
+
+  @override
+  Future<void> onVoiceRouteCovered() async {
+    final speechSession = _speechSession;
+    _speechSession = null;
+    await speechSession?.release();
+  }
+
+  @override
+  void onVoiceRouteResumed() => _ensureSpeechSession();
 
   Future<void> _loadKeyStatus() async {
     final tutor = _tutor;
@@ -148,7 +191,8 @@ class _AiTutorScreenState extends State<AiTutorScreen>
   }
 
   Future<void> _toggleMicListening() async {
-    final speech = _speech;
+    _ensureSpeechSession();
+    final speech = _speechSession;
     if (_isListening) {
       await speech?.cancel();
       if (mounted) setState(() => _isListening = false);
@@ -190,7 +234,7 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   Future<void> _speakAiResponse(String text) async {
     try {
-      await _voiceProvider.speak(
+      await routeVoiceSession?.speak(
         VoiceRequest.create(
           text: text,
           language: 'en',
@@ -208,26 +252,48 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    super.didChangeAppLifecycleState(state);
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
-      unawaited(_cancelAudioForLifecycle());
+      _cancelGenerationForLifecycle();
+      _cancelSpeechForLifecycle().ignore();
     }
   }
 
-  Future<void> _cancelAudioForLifecycle() async {
-    await _speech?.cancel();
-    await _voiceProvider.stop();
+  void _cancelGenerationForLifecycle() {
+    _interactionEpoch += 1;
+    _generationCancellation?.cancel();
+    _generationCancellation = null;
+    if (mounted && _isGenerating) {
+      setState(() => _isGenerating = false);
+    }
+  }
+
+  Future<void> _cancelSpeechForLifecycle() async {
+    try {
+      await _speechSession?.cancel();
+    } on Object {
+      // Best-effort microphone cleanup cannot block route voice cleanup.
+    }
     if (mounted && _isListening) setState(() => _isListening = false);
+  }
+
+  Future<void> _cancelAudioForLifecycle() async {
+    await _cancelSpeechForLifecycle();
+    try {
+      await routeVoiceSession?.stop();
+    } on Object {
+      // The route remains usable after resume; cleanup failures are bounded.
+    }
   }
 
   Future<void> _openAiSettings() async {
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
     _generationCancellation = null;
-    await _speech?.cancel();
-    await _voiceProvider.stop();
+    await _cancelAudioForLifecycle();
     if (!mounted) return;
     setState(() {
       _isListening = false;
@@ -245,13 +311,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
 
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _interactionEpoch += 1;
     _generationCancellation?.cancel();
-    unawaited(_speech?.cancel());
-    unawaited(_voiceProvider.stop());
+    _speechSession?.release().ignore();
+    _speechSession = null;
     _inputController.dispose();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 
@@ -437,6 +501,11 @@ class _AiTutorScreenState extends State<AiTutorScreen>
     AiFailureCode.timeout => 'The provider timed out. Try again.',
     AiFailureCode.providerUnavailable =>
       'The provider is temporarily unavailable. Local data is unaffected.',
+    AiFailureCode.providerDisabled => 'The selected provider is disabled.',
+    AiFailureCode.circuitOpen =>
+      'The provider is temporarily paused after repeated failures.',
+    AiFailureCode.localPersistence =>
+      'Local AI accounting is temporarily unavailable.',
     AiFailureCode.malformedResponse =>
       'The provider returned an invalid reply.',
     AiFailureCode.blocked => 'The provider blocked this request.',

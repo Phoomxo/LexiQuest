@@ -1,9 +1,70 @@
 #Requires -Version 5.1
+[CmdletBinding()]
+param(
+    [switch]$ResolveToolsOnly
+)
+
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 $results = @()
+
+function Resolve-ToolPath {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Name,
+        [Parameter(Mandatory = $true)]
+        [string[]]$Candidates
+    )
+
+    $command = Get-Command -Name $Name -CommandType Application `
+        -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($null -ne $command) {
+        return $command.Source
+    }
+    foreach ($candidate in $Candidates) {
+        if ([string]::IsNullOrWhiteSpace($candidate)) {
+            continue
+        }
+        try {
+            if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+                return (Resolve-Path -LiteralPath $candidate).Path
+            }
+        }
+        catch [System.UnauthorizedAccessException] {
+            # Managed sandboxes can permit execution of an explicitly approved
+            # SDK path while denying metadata probes outside the workspace.
+            # The first real invocation remains the executable validation.
+            return $candidate
+        }
+    }
+    throw "Required executable '$Name' was not found."
+}
+
+$localAppData = [Environment]::GetFolderPath('LocalApplicationData')
+$flutterCandidates = @(
+    (Join-Path $repoRoot '.fvm/flutter_sdk/bin/flutter.bat')
+)
+$flutterRoot = [Environment]::GetEnvironmentVariable('FLUTTER_ROOT')
+if (-not [string]::IsNullOrWhiteSpace($flutterRoot)) {
+    $flutterCandidates += Join-Path $flutterRoot 'bin/flutter.bat'
+}
+if (-not [string]::IsNullOrWhiteSpace($localAppData)) {
+    $flutterCandidates += Join-Path $localAppData 'Programs/flutter/bin/flutter.bat'
+}
+$flutterExecutable = Resolve-ToolPath -Name 'flutter' -Candidates $flutterCandidates
+$flutterBin = Split-Path -Parent $flutterExecutable
+$dartExecutable = Resolve-ToolPath -Name 'dart' -Candidates @(
+    (Join-Path $flutterBin 'dart.bat'),
+    (Join-Path $flutterBin 'cache/dart-sdk/bin/dart.exe')
+)
+
+if ($ResolveToolsOnly) {
+    Write-Output "Flutter: $flutterExecutable"
+    Write-Output "Dart: $dartExecutable"
+    exit 0
+}
 
 function Invoke-Gate {
     param(
@@ -20,13 +81,17 @@ function Invoke-Gate {
 }
 
 $dartFiles = @(
+    'lib/features/ai_tutor',
     'lib/features/gemini',
     'lib/runtime/app_bootstrap.dart',
     'lib/runtime/app_dependencies.dart',
     'lib/screens/ai_tutor_screen.dart',
+    'lib/screens/ai_tutor_settings_screen.dart',
     'lib/screens/gemini_settings_screen.dart',
     'lib/screens/main_navigation_screen.dart',
+    'test/features/ai_tutor',
     'test/features/gemini',
+    'test/architecture/provider_composition_boundary_test.dart',
     'test/screens/ai_tutor_screen_test.dart',
     'test/screens/gemini_settings_screen_test.dart',
     'test/config/flutter_dependency_surface_test.dart'
@@ -40,14 +105,17 @@ try {
     }
     Invoke-Gate 'Dart format' {
         # Contract marker: dart format --output=none --set-exit-if-changed
-        & dart format --output=none --set-exit-if-changed $dartFiles
+        & $dartExecutable format --output=none --set-exit-if-changed $dartFiles
     }
     Invoke-Gate 'Static analysis' {
-        & flutter analyze
+        # Contract marker: flutter analyze
+        & $flutterExecutable analyze
     }
     Invoke-Gate 'Gemini BYOK tests' {
-        & flutter test `
+        & $flutterExecutable test `
+            test/features/ai_tutor `
             test/features/gemini `
+            test/architecture/provider_composition_boundary_test.dart `
             test/screens/ai_tutor_screen_test.dart `
             test/screens/gemini_settings_screen_test.dart `
             test/config/flutter_dependency_surface_test.dart `
@@ -64,7 +132,7 @@ try {
             '--dart-define=LEXIQUEST_VERSION=1.0.0+1',
             '--dart-define=LEXIQUEST_BUILD_ID=p6-gemini-byok'
         )
-        & flutter @buildArguments
+        & $flutterExecutable @buildArguments
     }
     Invoke-Gate 'APK model runtime integrity' {
         & powershell -NoProfile -ExecutionPolicy Bypass -File `

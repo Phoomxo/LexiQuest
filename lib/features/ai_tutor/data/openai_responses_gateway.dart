@@ -1,20 +1,21 @@
-import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
 import '../domain/ai_tutor_contracts.dart';
+import 'abortable_ai_http.dart';
 
 typedef OpenAiResponsesOfflineCheck = Future<bool> Function();
 
 final class OpenAiResponsesGateway implements AiTutorGateway {
   OpenAiResponsesGateway({
     required this.client,
-    required this.baseUri,
+    required Uri baseUri,
     required this.model,
     OpenAiResponsesOfflineCheck? isOffline,
     this.requestTimeout = const Duration(seconds: 20),
-  }) : _isOffline = isOffline ?? _assumeOnline;
+  }) : baseUri = normalizeAiApiBaseUri(baseUri),
+       _isOffline = isOffline ?? _assumeOnline;
 
   final http.Client client;
   final Uri baseUri;
@@ -116,58 +117,26 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
     if (await _isOffline()) {
       throw const AiTutorException(AiFailureCode.offline);
     }
-    try {
-      final streamed = await _sendWithCancellation(request, cancellation);
-      final response = await http.Response.fromStream(
-        streamed,
-      ).timeout(requestTimeout);
-      if (response.statusCode != 200) throw _failureFor(response.statusCode);
-      if (cancellation?.isCancelled ?? false) {
-        throw const AiTutorException(AiFailureCode.cancelled);
-      }
-      return response;
-    } on AiTutorException {
-      rethrow;
-    } on TimeoutException {
-      throw const AiTutorException(AiFailureCode.timeout);
-    } on http.ClientException {
-      throw const AiTutorException(AiFailureCode.offline);
-    } on Object {
-      throw const AiTutorException(AiFailureCode.offline);
+    final response = await sendAbortableAiRequest(
+      client: client,
+      request: request,
+      timeout: requestTimeout,
+      cancellation: cancellation,
+    );
+    if (response.statusCode != 200) {
+      throw aiFailureForHttpStatus(response.statusCode);
     }
+    return response;
   }
-
-  Future<http.StreamedResponse> _sendWithCancellation(
-    http.Request request,
-    AiCancellation? cancellation,
-  ) {
-    final operation = client.send(request).timeout(requestTimeout);
-    if (cancellation == null) return operation;
-    return Future.any([
-      operation,
-      cancellation.whenCancelled.then<http.StreamedResponse>(
-        (_) => throw const AiTutorException(AiFailureCode.cancelled),
-      ),
-    ]);
-  }
-
-  AiTutorException _failureFor(int statusCode) => switch (statusCode) {
-    400 || 401 || 403 => const AiTutorException(AiFailureCode.invalidKey),
-    402 => const AiTutorException(AiFailureCode.quota),
-    408 => const AiTutorException(AiFailureCode.timeout),
-    429 => const AiTutorException(AiFailureCode.rateLimited),
-    500 ||
-    502 ||
-    503 ||
-    504 => const AiTutorException(AiFailureCode.providerUnavailable),
-    _ => const AiTutorException(AiFailureCode.providerUnavailable),
-  };
 
   AiGatewayReply _parseReply(String body) {
     try {
       final decoded = jsonDecode(body);
       if (decoded is! Map<String, dynamic>) {
         throw const AiTutorException(AiFailureCode.malformedResponse);
+      }
+      if (_isBlockedResponse(decoded)) {
+        throw const AiTutorException(AiFailureCode.blocked);
       }
       final direct = decoded['output_text'];
       final text = direct is String
@@ -180,6 +149,25 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
     } on FormatException {
       throw const AiTutorException(AiFailureCode.malformedResponse);
     }
+  }
+
+  bool _isBlockedResponse(Map<String, dynamic> decoded) {
+    final details = decoded['incomplete_details'];
+    final reason = details is Map<String, dynamic> ? details['reason'] : null;
+    if (reason == 'content_filter' ||
+        reason == 'safety' ||
+        reason == 'refusal') {
+      return true;
+    }
+    final output = decoded['output'];
+    if (output is! List) return false;
+    return output.whereType<Map<String, dynamic>>().any((item) {
+      final content = item['content'];
+      return content is List &&
+          content.whereType<Map<String, dynamic>>().any(
+            (block) => block['type'] == 'refusal',
+          );
+    });
   }
 
   String _readOutputBlocks(Map<String, dynamic> decoded) {
@@ -226,13 +214,7 @@ final class OpenAiResponsesGateway implements AiTutorGateway {
   }
 
   String _normalizedKey(String value) {
-    final normalized = value.trim();
-    if (normalized.isEmpty ||
-        normalized.length > 512 ||
-        normalized.contains(RegExp(r'\s'))) {
-      throw const AiTutorException(AiFailureCode.invalidKey);
-    }
-    return normalized;
+    return normalizeAiApiKey(value);
   }
 
   String _normalizedText(String value, {required int maximumLength}) {

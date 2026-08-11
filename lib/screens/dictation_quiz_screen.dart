@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/voice/application/voice_use_cases.dart';
+import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import 'media_dependency_unavailable.dart';
@@ -15,17 +16,22 @@ class DictationQuizScreen extends StatefulWidget {
   State<DictationQuizScreen> createState() => _DictationQuizScreenState();
 }
 
-class _DictationQuizScreenState extends State<DictationQuizScreen> {
+class _DictationQuizScreenState extends State<DictationQuizScreen>
+    with WidgetsBindingObserver, RouteVoiceSessionMixin<DictationQuizScreen> {
   VoiceUseCases? _voiceProvider;
   bool _initialPlaybackScheduled = false;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
 
   @override
+  VoiceUseCases? get routeVoiceUseCases => _voiceProvider;
+
+  @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     final dependencies = AppDependenciesScope.maybeOf(context);
     _voiceProvider = widget.voice ?? dependencies?.voice;
+    refreshRouteVoiceSession();
     if (_voiceProvider != null && !_initialPlaybackScheduled) {
       _initialPlaybackScheduled = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -35,10 +41,10 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
   }
 
   Future<void> _playAudio({required double speed}) async {
-    final voice = _voiceProvider;
-    if (voice == null) return;
+    final session = routeVoiceSession;
+    if (session == null) return;
     try {
-      await voice.speak(
+      await session.speak(
         VoiceRequest.create(
           text: widget.targetWord,
           language: 'en',

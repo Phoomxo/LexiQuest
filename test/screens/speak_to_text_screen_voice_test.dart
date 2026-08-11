@@ -18,6 +18,7 @@ import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
+  final Completer<void> stopEntered = Completer<void>();
   int stopCalls = 0;
   VoicePlaybackResult? resultToReturn;
   Object? errorToThrow;
@@ -42,6 +43,7 @@ class FakeVoiceProvider implements VoiceProvider {
   @override
   Future<void> stop() async {
     stopCalls++;
+    if (!stopEntered.isCompleted) stopEntered.complete();
   }
 }
 
@@ -55,7 +57,10 @@ void main() {
         MaterialApp(
           home: SpeakToTextScreen(
             correctWord: 'apple',
-            voice: VoiceUseCases(fakeVoice),
+            voice: VoiceUseCases(
+              provider: fakeVoice,
+              disposeProvider: () async {},
+            ),
             speechPractice: SpeechPracticeUseCases(_LifecycleSpeechGateway()),
           ),
         ),
@@ -81,7 +86,10 @@ void main() {
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'banana',
-          voice: VoiceUseCases(fakeVoice),
+          voice: VoiceUseCases(
+            provider: fakeVoice,
+            disposeProvider: () async {},
+          ),
           speechPractice: SpeechPracticeUseCases(_LifecycleSpeechGateway()),
         ),
       ),
@@ -101,11 +109,14 @@ void main() {
     expect(fakeVoice.spokenRequests[1].text, 'banana');
   });
 
-  testWidgets('outgoing route cannot stop shared voice used by replacement', (
+  testWidgets('route takeover stops old playback but never the replacement', (
     WidgetTester tester,
   ) async {
     final fakeVoice = FakeVoiceProvider();
-    final sharedVoice = VoiceUseCases(fakeVoice);
+    final sharedVoice = VoiceUseCases(
+      provider: fakeVoice,
+      disposeProvider: () async {},
+    );
     final sharedGateway = _LifecycleSpeechGateway();
     final sharedSpeech = SpeechPracticeUseCases(sharedGateway);
 
@@ -138,32 +149,66 @@ void main() {
       'cat',
       'banana',
     ]);
-    expect(fakeVoice.stopCalls, 0);
+    // The replacement session owns one takeover stop before speaking banana.
+    // The disposed cat route's stale release must not add a second stop.
+    expect(fakeVoice.stopCalls, 1);
     expect(sharedGateway.cancelCalls, 0);
   });
 
   testWidgets('cancels microphone when app leaves foreground', (tester) async {
-    final gateway = _LifecycleSpeechGateway();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SpeakToTextScreen(
-          correctWord: 'cat',
-          voice: VoiceUseCases(FakeVoiceProvider()),
-          speechPractice: SpeechPracticeUseCases(gateway),
-        ),
-      ),
+    final gateway = _LifecycleSpeechGateway(
+      cancelError: StateError('recognizer cancel failed'),
     );
+    final provider = FakeVoiceProvider();
+    final voice = VoiceUseCases(
+      provider: provider,
+      disposeProvider: () async {},
+    );
+    final speech = SpeechPracticeUseCases(gateway);
+    try {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpeakToTextScreen(
+            correctWord: 'cat',
+            voice: voice,
+            speechPractice: speech,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
-    await tester.pump();
-    expect(gateway.isListening, isTrue);
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pump();
+      expect(gateway.isListening, isTrue);
 
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
-    await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pump();
+      await tester.runAsync(
+        () => provider.stopEntered.future.timeout(
+          const Duration(milliseconds: 250),
+        ),
+      );
 
-    expect(gateway.cancelCalls, 1);
-    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pump();
+      expect(gateway.cancelCalls, 1);
+      expect(provider.stopCalls, 1);
+      expect(tester.takeException(), isNull);
+    } finally {
+      if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      }
+      await tester.pumpWidget(const SizedBox.shrink());
+      await tester.pump();
+      await tester.runAsync(() async {
+        await voice.dispose().timeout(const Duration(seconds: 1));
+        try {
+          await speech.dispose().timeout(const Duration(seconds: 1));
+        } on Object {
+          // The recognizer cleanup failure is deliberately injected.
+        }
+      });
+    }
   });
 
   testWidgets('missing speech fails closed before automatic voice playback', (
@@ -175,7 +220,10 @@ void main() {
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'cat',
-          voice: VoiceUseCases(fakeVoice),
+          voice: VoiceUseCases(
+            provider: fakeVoice,
+            disposeProvider: () async {},
+          ),
         ),
       ),
     );
@@ -197,7 +245,10 @@ void main() {
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'cat',
-          voice: VoiceUseCases(FakeVoiceProvider()),
+          voice: VoiceUseCases(
+            provider: FakeVoiceProvider(),
+            disposeProvider: () async {},
+          ),
           speechPractice: SpeechPracticeUseCases(gateway),
         ),
       ),
@@ -235,7 +286,10 @@ void main() {
   ) async {
     final gateway = _SharedSpeechGateway();
     final speech = SpeechPracticeUseCases(gateway);
-    final voice = VoiceUseCases(FakeVoiceProvider());
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: SpeakToTextScreen(
@@ -280,7 +334,10 @@ void main() {
   ) async {
     final gateway = _TwoStartSpeechGateway();
     final speech = SpeechPracticeUseCases(gateway);
-    final voice = VoiceUseCases(FakeVoiceProvider());
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: SpeakToTextScreen(
@@ -331,7 +388,10 @@ void main() {
   ) async {
     final gateway = _TwoStartSpeechGateway();
     final speech = SpeechPracticeUseCases(gateway);
-    final voice = VoiceUseCases(FakeVoiceProvider());
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
     await tester.pumpWidget(
       MaterialApp(
         home: SpeakToTextScreen(
@@ -428,7 +488,10 @@ void main() {
         MaterialApp(
           home: SpeakToTextScreen(
             correctWord: 'cat',
-            voice: VoiceUseCases(FakeVoiceProvider()),
+            voice: VoiceUseCases(
+              provider: FakeVoiceProvider(),
+              disposeProvider: () async {},
+            ),
             speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
             learning: learning,
             sessionId: idCase.sessionId,
@@ -587,6 +650,9 @@ final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
 }
 
 final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
+  _LifecycleSpeechGateway({this.cancelError});
+
+  final Object? cancelError;
   int cancelCalls = 0;
 
   @override
@@ -596,6 +662,8 @@ final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
   Future<void> cancel() async {
     cancelCalls += 1;
     isListening = false;
+    final error = cancelError;
+    if (error != null) throw error;
   }
 
   @override

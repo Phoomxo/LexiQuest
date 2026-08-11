@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
@@ -111,6 +112,34 @@ void main() {
     },
   );
 
+  test(
+    'deterministic client errors are request rejection, not outage',
+    () async {
+      var calls = 0;
+      final gateway = GeminiRestGateway(
+        client: MockClient((_) async {
+          calls += 1;
+          return http.Response('{}', 404);
+        }),
+      );
+
+      for (var attempt = 0; attempt < 2; attempt++) {
+        await expectLater(
+          gateway.validateKey(key),
+          throwsA(
+            isA<GeminiException>().having(
+              (error) => error.code,
+              'code',
+              GeminiFailureCode.requestRejected,
+            ),
+          ),
+        );
+      }
+
+      expect(calls, 2);
+    },
+  );
+
   test('aborts an in-flight request on cancellation', () async {
     final cancellation = GeminiCancellation();
     final gateway = GeminiRestGateway(client: _AbortAwareClient());
@@ -131,6 +160,34 @@ void main() {
     );
   });
 
+  test(
+    'caller cancellation stays cancelled when transport abort is acknowledged late',
+    () async {
+      final cancellation = GeminiCancellation();
+      final client = _DelayedAbortAwareClient();
+      final gateway = GeminiRestGateway(
+        client: client,
+        requestTimeout: const Duration(milliseconds: 20),
+      );
+      final validation = gateway.validateKey(key, cancellation: cancellation);
+      await client.entered.future;
+
+      cancellation.cancel();
+
+      await expectLater(
+        validation,
+        throwsA(
+          isA<GeminiException>().having(
+            (error) => error.code,
+            'code',
+            GeminiFailureCode.cancelled,
+          ),
+        ),
+      );
+      await client.finished.future.timeout(const Duration(seconds: 1));
+    },
+  );
+
   test('aborts a stalled request at the configured timeout', () async {
     final gateway = GeminiRestGateway(
       client: _AbortAwareClient(),
@@ -148,6 +205,20 @@ void main() {
       ),
     );
   });
+
+  test(
+    'a completely received response wins over cancellation at stream close',
+    () async {
+      final cancellation = GeminiCancellation();
+      final gateway = GeminiRestGateway(
+        client: _CancelOnBodyCompletionClient(cancellation),
+      );
+
+      await gateway.validateKey(key, cancellation: cancellation);
+
+      expect(cancellation.isCancelled, isTrue);
+    },
+  );
 }
 
 final class _AbortAwareClient extends http.BaseClient {
@@ -156,5 +227,41 @@ final class _AbortAwareClient extends http.BaseClient {
     final abortable = request as http.Abortable;
     await abortable.abortTrigger;
     throw http.RequestAbortedException(request.url);
+  }
+}
+
+final class _DelayedAbortAwareClient extends http.BaseClient {
+  final Completer<void> entered = Completer<void>();
+  final Completer<void> finished = Completer<void>();
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    if (!entered.isCompleted) entered.complete();
+    final abortable = request as http.Abortable;
+    await abortable.abortTrigger;
+    await Future<void>.delayed(const Duration(milliseconds: 50));
+    if (!finished.isCompleted) finished.complete();
+    throw http.RequestAbortedException(request.url);
+  }
+}
+
+final class _CancelOnBodyCompletionClient extends http.BaseClient {
+  _CancelOnBodyCompletionClient(this.cancellation);
+
+  final GeminiCancellation cancellation;
+
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    Stream<List<int>> responseBody() async* {
+      yield utf8.encode(jsonEncode({'name': 'models/gemini-2.5-flash-lite'}));
+      cancellation.cancel();
+    }
+
+    return http.StreamedResponse(
+      responseBody(),
+      200,
+      headers: const {'content-type': 'application/json'},
+      request: request,
+    );
   }
 }

@@ -33,7 +33,10 @@ void main() {
         MaterialApp(
           home: SentenceScrambleScreen(
             targetSentence: 'cat is sleeping',
-            voice: VoiceUseCases(fakeVoice),
+            voice: VoiceUseCases(
+              provider: fakeVoice,
+              disposeProvider: () async {},
+            ),
           ),
         ),
       );

@@ -3,6 +3,8 @@ import 'package:flutter_tts/flutter_tts.dart';
 import 'voice_models.dart';
 import 'voice_provider.dart';
 
+FlutterTts? _retainFlutterTts(FlutterTts? value) => value;
+
 /// Narrow boundary over the on-device plugin for platform-free provider tests.
 abstract interface class NativeTtsAdapter {
   Future<void> setLanguage(String language);
@@ -21,38 +23,47 @@ abstract interface class NativeTtsAdapter {
 /// Production [NativeTtsAdapter] backed by an injected-or-default [FlutterTts].
 final class FlutterTtsAdapter implements NativeTtsAdapter {
   FlutterTtsAdapter({FlutterTts? flutterTts})
-    : _flutterTts = flutterTts ?? FlutterTts();
+    : _flutterTts = _retainFlutterTts(flutterTts);
 
-  final FlutterTts _flutterTts;
+  FlutterTts? _flutterTts;
+
+  // Plugin construction is deliberately deferred until the first native
+  // request. Bootstrap can therefore expose native speech even when a
+  // headless host has no platform messenger, and remote composition failure
+  // cannot remove the native route.
+  FlutterTts get _resolved => _flutterTts ??= FlutterTts();
 
   @override
   Future<void> setLanguage(String language) async {
-    await _flutterTts.setLanguage(language);
+    await _resolved.setLanguage(language);
   }
 
   @override
   Future<void> setSpeechRate(double rate) async {
-    await _flutterTts.setSpeechRate(rate);
+    await _resolved.setSpeechRate(rate);
   }
 
   @override
   Future<void> setVolume(double volume) async {
-    await _flutterTts.setVolume(volume);
+    await _resolved.setVolume(volume);
   }
 
   @override
   Future<void> setPitch(double pitch) async {
-    await _flutterTts.setPitch(pitch);
+    await _resolved.setPitch(pitch);
   }
 
   @override
   Future<void> speak(String text) async {
-    await _flutterTts.speak(text);
+    await _resolved.speak(text);
   }
 
   @override
   Future<void> stop() async {
-    await _flutterTts.stop();
+    final flutterTts = _flutterTts;
+    if (flutterTts != null) {
+      await flutterTts.stop();
+    }
   }
 }
 
