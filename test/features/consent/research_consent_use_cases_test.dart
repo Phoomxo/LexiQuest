@@ -46,4 +46,20 @@ void main() {
       );
     },
   );
+
+  test('withdrawal evidence fails closed for an accepted state', () async {
+    await consent.accept();
+    await database.customUpdate(
+      'UPDATE research_consents SET withdrawn_at_utc_ms = 200 '
+      "WHERE consent_state = 'accepted'",
+    );
+
+    final malformed = await consent.load();
+
+    expect(malformed.accepted, isFalse);
+    expect(
+      malformed.withdrawnAtUtc,
+      DateTime.fromMillisecondsSinceEpoch(200, isUtc: true),
+    );
+  });
 }

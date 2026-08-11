@@ -5,7 +5,6 @@ import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
-import '../../identity/domain/local_owner_repository.dart';
 import '../../consent/application/research_consent_use_cases.dart';
 import '../data/drift_export_reader.dart';
 import '../domain/export_contracts.dart';
@@ -15,20 +14,16 @@ typedef ExportFontLoader = Future<ByteData> Function();
 
 final class ExportUseCases {
   const ExportUseCases({
-    required this.owners,
     required this.reader,
     required this.store,
     required this.nowUtc,
     required this.loadThaiFont,
-    required this.researchConsent,
   });
 
-  final LocalOwnerRepository owners;
   final DriftExportReader reader;
   final ExportArtifactStore store;
   final ExportUtcNow nowUtc;
   final ExportFontLoader loadThaiFont;
-  final ResearchConsentUseCases researchConsent;
 
   Future<ExportArtifact> prepare({
     required ExportFormat format,
@@ -38,17 +33,14 @@ final class ExportUseCases {
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }
-    if (format == ExportFormat.researchJson &&
-        !(await researchConsent.load()).accepted) {
-      throw const ExportException(ExportFailureCode.consentRequired);
-    }
     cancellation.throwIfCancelled();
-    final owner = await owners.getOrCreateActiveOwner();
-    final data = await reader.load(
-      ownerId: owner.id,
+    final data = await reader.loadActiveSnapshot(
       vocabulary: selection.includeVocabulary,
       attempts: selection.includeAttempts,
       reading: selection.includeReading,
+      researchConsentVersion: format == ExportFormat.researchJson
+          ? ResearchConsentUseCases.currentVersion
+          : null,
     );
     cancellation.throwIfCancelled();
     if (data.recordCount == 0) {

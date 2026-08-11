@@ -307,3 +307,53 @@ All commands below ran sequentially after the repair; no Flutter, Dart, build, o
 | Final whitespace check | `git diff --check` | GREEN; line-ending conversion notices only |
 
 Formatting execution note: a controller-supplied SDK-internal Dart path did not exist, so that distinct command stopped after its first failure and was not retried. The subsequently authorized verified wrapper command, `C:\Users\Phet\AppData\Local\Programs\flutter\bin\dart.bat format lib/features/identity/data/drift_owner_upgrade_repository.dart`, succeeded once and normalized that exact file; the later sync verifier found zero additional formatting changes. The verifier emitted only the existing non-blocking Android Kotlin-plugin migration notice.
+
+## Reopened owner-consistent research-export review at `f8bde2c`
+
+Rollback SHA for this review cycle: `f8bde2c8ca78ff1db55a60db561135e66c071648`.
+
+The stable review was **NOT READY** with one cross-owner authorization finding and one fail-closed consent finding:
+
+1. **CRITICAL — research consent and exported owner data were read in separate operations.** `ExportUseCases` first loaded consent through `ResearchConsentUseCases`, then independently resolved the active owner and loaded export rows. A two-handle owner upgrade between those operations allowed owner A's accepted consent to authorize owner B's private rows.
+2. **IMPORTANT — malformed accepted consent with withdrawal evidence remained accepted.** Both the consent repository and research-export gate treated `consent_state == 'accepted'` as sufficient even when `withdrawn_at_utc_ms` was non-null.
+
+### Semantic RED evidence
+
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/export/export_use_cases_test.dart --plain-name "research export never mixes source consent with upgraded owner data" --reporter expanded`
+  - Expected exit 1 before repair. After the first consent read, the second file-backed database handle upgraded owner A into owner B. The pre-repair export then resolved the newly active owner B and exposed `target-private` under owner A's accepted decision.
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/consent/research_consent_use_cases_test.dart --plain-name "withdrawal evidence fails closed for an accepted state" --reporter expanded`
+  - Expected exit 1 before repair. A row with `consent_state = 'accepted'` and non-null `withdrawn_at_utc_ms` returned `accepted == true` instead of false.
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/export/export_use_cases_test.dart --plain-name "research export rejects accepted state with withdrawal evidence" --reporter expanded`
+  - Expected exit 1 before repair. The malformed row authorized a research artifact instead of throwing `consentRequired` before any bytes were written.
+
+### Repair and focused GREEN evidence
+
+- `DriftExportReader.loadActiveSnapshot` now opens one Drift transaction, requires exactly one active owner, validates current-version consent for that same owner when the format is research JSON, and reads every selected collection under the same SQLite snapshot. Personal exports use the same owner-consistent snapshot without requiring research consent.
+- The two-handle regression enables WAL and interleaves an upgrade immediately after the consent query. A SQLite result code 5 is accepted only as valid read serialization; the upgrade retry happens after the export transaction has ended. The pre-upgrade artifact contains only `source-only`. After owner B becomes active with withdrawn consent, the next research export throws `consentRequired` and writes zero bytes.
+- Both `DriftExportReader` and `DriftResearchConsentRepository` now require `consent_state == 'accepted'` **and** a null withdrawal timestamp. No owner gate, schema bump, migration, or generated Drift change was added.
+- Focused export/consent command after the final analyzer-only import cleanup: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/export/export_use_cases_test.dart test/features/consent/research_consent_use_cases_test.dart --reporter compact`; GREEN, 11/11.
+- Owner-upgrade/guest interaction command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact`; GREEN, 26/26.
+
+### Current sequential verification
+
+All commands ran sequentially with literal path validation and no competing Flutter process started by this task. The authoritative verifier ran exactly once. No MaxPlus, Codex Security, or repository-wide security workflow ran.
+
+| Gate | Exact command | Result |
+| --- | --- | --- |
+| Affected export and consent | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/export/export_use_cases_test.dart test/features/consent/research_consent_use_cases_test.dart --reporter compact` | GREEN, 11/11 after final import cleanup |
+| Affected owner upgrade and guest restart | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 26/26 |
+| Full Task 5 selection | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/sync test/features/identity test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 158/158 |
+| Recovery acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/file_backed_sync_recovery_test.dart --reporter compact` | GREEN, 1/1 |
+| Guest acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 3/3 |
+| Sync engine/store acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/sync/sync_engine_test.dart test/features/sync/drift_sync_store_test.dart --reporter compact` | GREEN, 52/52 |
+| Identity/service acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart test/features/identity/upgrade_guest_owner_test.dart test/services/guest_session_service_test.dart --reporter compact` | GREEN, 44/44 |
+| Bootstrap acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/runtime/app_bootstrap_test.dart --reporter compact` | GREEN, 22/22 |
+| Authoritative sync verifier | `$env:PATH = 'C:\Users\Phet\AppData\Local\Programs\flutter\bin;' + $env:PATH; powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-sync.ps1` | GREEN, 7/7 phases in 01:22; 102 files format-stable, scoped analysis clean, local/sync tests and 31 Firestore rules tests passed, debug APK built, whitespace clean |
+| Checkpoint A exact five scenarios | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/production_vocabulary_restart_test.dart test/scenarios/production_learning_restart_test.dart test/scenarios/associative_reading_restart_test.dart test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 14/14 |
+| Targeted final-file format check | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\dart.bat format --output=none --set-exit-if-changed test/features/export/export_use_cases_test.dart` | GREEN, 1 file checked, 0 changed |
+| First full analysis | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat analyze` | Expected final-cycle RED: the race test's direct `sqlite3` import was redundant and referenced a transitive package; 2 info findings |
+| Focused analyzer rerun | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat analyze test/features/export/export_use_cases_test.dart` | GREEN, no issues after removing only the redundant import |
+| Final full analysis | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat analyze` | GREEN, no issues in 9.3 seconds |
+| Final whitespace check | `git diff --check` | GREEN; line-ending conversion notices only |
+
+The verifier preceded the final analyzer-only import cleanup and was not repeated because this resumed cycle authorized exactly one invocation. The only later code delta removed an unnecessary test import; fresh targeted formatting, focused analysis, the affected 11-test selection, full analysis, and `git diff --check` close that final delta. The verifier emitted only the existing non-blocking Android Kotlin-plugin migration notice.

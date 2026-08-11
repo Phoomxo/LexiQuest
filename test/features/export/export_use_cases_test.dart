@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,7 +9,10 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/export/application/export_use_cases.dart';
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 
@@ -16,6 +21,7 @@ void main() {
   late AppDatabase database;
   late _MemoryStore store;
   late ExportUseCases exports;
+  late ResearchConsentUseCases consent;
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
@@ -26,20 +32,18 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 7, 30),
     );
     await owners.getOrCreateActiveOwner();
-    final consent = ResearchConsentUseCases(
+    consent = ResearchConsentUseCases(
       owners: owners,
       repository: DriftResearchConsentRepository(database),
       nowUtc: () => DateTime.utc(2026, 7, 30),
     );
     await consent.accept();
     exports = ExportUseCases(
-      owners: owners,
       reader: DriftExportReader(database),
       store: store,
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
-      researchConsent: consent,
     );
     await _seed(database);
   });
@@ -107,7 +111,7 @@ void main() {
   });
 
   test('research dataset export stops after consent withdrawal', () async {
-    await exports.researchConsent.withdraw();
+    await consent.withdraw();
 
     await expectLater(
       exports.prepare(
@@ -130,6 +134,153 @@ void main() {
     );
     expect(personal.recordCount, 3);
   });
+
+  test(
+    'research export rejects accepted state with withdrawal evidence',
+    () async {
+      await database.customUpdate(
+        'UPDATE research_consents SET withdrawn_at_utc_ms = 200 '
+        "WHERE owner_id = 'local:owner' AND consent_version = 1",
+      );
+
+      await expectLater(
+        exports.export(
+          format: ExportFormat.researchJson,
+          selection: _all,
+          cancellation: ExportCancellation(),
+        ),
+        throwsA(
+          isA<ExportException>().having(
+            (error) => error.code,
+            'code',
+            ExportFailureCode.consentRequired,
+          ),
+        ),
+      );
+      expect(store.bytesWritten, 0);
+    },
+  );
+
+  test(
+    'research export never mixes source consent with upgraded owner data',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-export-owner-race-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}export.sqlite';
+      final consentReadInterceptor = _ConsentReadInterceptor();
+      AppDatabase openExportDatabase() => AppDatabase(
+        NativeDatabase(File(path)).interceptWith(consentReadInterceptor),
+      );
+      AppDatabase openUpgradeDatabase() =>
+          AppDatabase(NativeDatabase(File(path)));
+
+      AppDatabase? exportDatabase;
+      AppDatabase? upgradeDatabase;
+      try {
+        exportDatabase = openExportDatabase();
+        await exportDatabase.customSelect('SELECT 1').getSingle();
+        await exportDatabase.customSelect('PRAGMA journal_mode = WAL').get();
+        upgradeDatabase = openUpgradeDatabase();
+        await upgradeDatabase.customSelect('SELECT 1').getSingle();
+        await upgradeDatabase.customSelect('PRAGMA journal_mode = WAL').get();
+        await _seedResearchExportOwnerRace(exportDatabase);
+
+        var upgradeId = 0;
+        final upgrade = UpgradeGuestOwner(
+          DriftOwnerUpgradeRepository(
+            upgradeDatabase,
+            nowUtc: () => DateTime.utc(2026, 8, 11, 12),
+            generateConflictId: () => 'export-race-${upgradeId++}',
+            generateOwnerId: () => 'unexpected-upgrade-owner',
+            generateOwnerOperationToken: () => 'export-race-owner-operation',
+            deleteOwnerSecrets: (_) async {},
+          ),
+        );
+        OwnerUpgradeResult? interleavedUpgrade;
+        SqliteException? serializedUpgrade;
+        consentReadInterceptor.afterFirstConsentRead = () async {
+          try {
+            interleavedUpgrade = await upgrade(
+              activeOwnerId: 'owner-a',
+              firebaseUid: 'firebase-b',
+            );
+          } on SqliteException catch (error) {
+            if (error.resultCode != 5) rethrow;
+            serializedUpgrade = error;
+          }
+        };
+        final raceStore = _MemoryStore();
+        final raceExports = ExportUseCases(
+          reader: DriftExportReader(exportDatabase),
+          store: raceStore,
+          nowUtc: () => DateTime.utc(2026, 8, 11, 12),
+          loadThaiFont: () =>
+              rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+        );
+        const selection = ExportSelection(
+          includeVocabulary: true,
+          includeAttempts: false,
+          includeReading: false,
+        );
+
+        final artifact = await raceExports.prepare(
+          format: ExportFormat.researchJson,
+          selection: selection,
+          cancellation: ExportCancellation(),
+        );
+        final payload =
+            jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+        final spellings = (payload['vocabulary'] as List<dynamic>)
+            .map((row) => (row as Map<String, dynamic>)['spelling'] as String)
+            .toList(growable: false);
+        expect(spellings, const ['source-only']);
+        expect(consentReadInterceptor.didInterleave, isTrue);
+
+        final completedUpgrade =
+            interleavedUpgrade ??
+            await upgrade(activeOwnerId: 'owner-a', firebaseUid: 'firebase-b');
+        if (interleavedUpgrade == null) {
+          expect(serializedUpgrade?.resultCode, 5);
+        }
+        expect(completedUpgrade.mode, OwnerUpgradeMode.mergedExisting);
+        expect(completedUpgrade.targetOwnerId, 'owner-b');
+
+        final denialStore = _MemoryStore();
+        final postUpgradeExports = ExportUseCases(
+          reader: DriftExportReader(exportDatabase),
+          store: denialStore,
+          nowUtc: () => DateTime.utc(2026, 8, 11, 12),
+          loadThaiFont: () =>
+              rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+        );
+        await expectLater(
+          postUpgradeExports.export(
+            format: ExportFormat.researchJson,
+            selection: selection,
+            cancellation: ExportCancellation(),
+          ),
+          throwsA(
+            isA<ExportException>().having(
+              (error) => error.code,
+              'code',
+              ExportFailureCode.consentRequired,
+            ),
+          ),
+        );
+        expect(denialStore.bytesWritten, 0);
+      } finally {
+        await exportDatabase?.close();
+        await upgradeDatabase?.close();
+        await directory.delete(recursive: true);
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+      }
+    },
+  );
 
   test('Anki exports only real vocabulary and stable evidence id', () async {
     final artifact = await exports.prepare(
@@ -213,6 +364,7 @@ const _all = ExportSelection(
 
 final class _MemoryStore implements ExportArtifactStore {
   ExportException? failure;
+  int bytesWritten = 0;
 
   @override
   Future<ExportSaveResult> save(
@@ -221,11 +373,64 @@ final class _MemoryStore implements ExportArtifactStore {
   }) async {
     if (failure case final error?) throw error;
     cancellation.throwIfCancelled();
+    bytesWritten += artifact.bytes.length;
     return ExportSaveResult(
       path: artifact.suggestedFileName,
       bytesWritten: artifact.bytes.length,
     );
   }
+}
+
+final class _ConsentReadInterceptor extends QueryInterceptor {
+  Future<void> Function()? afterFirstConsentRead;
+  bool _didInterleave = false;
+
+  bool get didInterleave => _didInterleave;
+
+  @override
+  Future<List<Map<String, Object?>>> runSelect(
+    QueryExecutor executor,
+    String statement,
+    List<Object?> args,
+  ) async {
+    final rows = await executor.runSelect(statement, args);
+    if (!_didInterleave && statement.contains('research_consents')) {
+      _didInterleave = true;
+      await afterFirstConsentRead?.call();
+    }
+    return rows;
+  }
+}
+
+Future<void> _seedResearchExportOwnerRace(AppDatabase database) async {
+  await database.customInsert(
+    'INSERT INTO local_owners '
+    '(id, firebase_uid, account_state, created_at_utc_ms, is_active) VALUES '
+    "('owner-a', NULL, 'localGuest', 1, 1), "
+    "('owner-b', 'firebase-b', 'firebaseBound', 2, 0)",
+  );
+  await database.customInsert(
+    "INSERT INTO research_consents VALUES "
+    "('consent-a', 'owner-a', 1, 'accepted', 100, NULL), "
+    "('consent-b', 'owner-b', 1, 'withdrawn', 200, 200)",
+  );
+  await database.customInsert(
+    'INSERT INTO vocabulary_categories '
+    '(id, owner_id, name, normalized_name, created_at_utc_ms, '
+    'updated_at_utc_ms) VALUES '
+    "('category-a', 'owner-a', 'Source', 'source', 1, 1), "
+    "('category-b', 'owner-b', 'Target', 'target', 2, 2)",
+  );
+  await database.customInsert(
+    'INSERT INTO vocabulary_words '
+    '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
+    'normalized_meaning, part_of_speech, created_at_utc_ms, '
+    'updated_at_utc_ms) VALUES '
+    "('word-a', 'owner-a', 'category-a', 'source-only', 'source-only', "
+    "'source', 'source', 'noun', 1, 1), "
+    "('word-b', 'owner-b', 'category-b', 'target-private', "
+    "'target-private', 'target', 'target', 'noun', 2, 2)",
+  );
 }
 
 Future<void> _seed(AppDatabase database) async {

@@ -23,7 +23,8 @@ final class DriftResearchConsentRepository
             .getSingleOrNull();
     return ResearchConsentStatus(
       version: version,
-      accepted: row?.consentState == 'accepted',
+      accepted:
+          row?.consentState == 'accepted' && row?.withdrawnAtUtcMs == null,
       decidedAtUtc: row == null ? null : _utc(row.decidedAtUtcMs),
       withdrawnAtUtc: row?.withdrawnAtUtcMs == null
           ? null

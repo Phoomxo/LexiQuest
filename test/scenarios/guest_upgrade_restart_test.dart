@@ -800,12 +800,10 @@ Future<void> _expectWithdrawnResearchConsent(
   );
 
   final exports = ExportUseCases(
-    owners: owners,
     reader: DriftExportReader(database),
     store: _UnexpectedExportStore(),
     nowUtc: () => nowUtc,
     loadThaiFont: () async => throw StateError('font load was unexpected'),
-    researchConsent: researchConsent,
   );
   await expectLater(
     exports.prepare(

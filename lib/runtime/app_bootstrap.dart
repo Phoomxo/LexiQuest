@@ -475,13 +475,11 @@ final class AppBootstrap {
       onSideEffectsPending: learningReconciliation.request,
     );
     final exports = ExportUseCases(
-      owners: localOwners,
       reader: DriftExportReader(database),
       store: const FileSelectorExportStore(),
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
-      researchConsent: researchConsent,
     );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());

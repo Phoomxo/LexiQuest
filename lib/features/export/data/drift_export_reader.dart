@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../domain/export_contracts.dart';
 
 final class ExportVocabularyRow {
   const ExportVocabularyRow({
@@ -80,6 +81,50 @@ final class DriftExportReader {
   const DriftExportReader(this.database);
 
   final AppDatabase database;
+
+  Future<ExportDataSet> loadActiveSnapshot({
+    required bool vocabulary,
+    required bool attempts,
+    required bool reading,
+    int? researchConsentVersion,
+  }) {
+    final consentVersion = researchConsentVersion;
+    if (consentVersion != null && consentVersion < 1) {
+      throw ArgumentError.value(
+        consentVersion,
+        'researchConsentVersion',
+        'must be at least one',
+      );
+    }
+    return database.transaction(() async {
+      final activeOwners = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).get();
+      if (activeOwners.length != 1) {
+        throw const ExportException(ExportFailureCode.unavailable);
+      }
+      final ownerId = activeOwners.single.id;
+      if (consentVersion != null) {
+        final consent =
+            await (database.select(database.researchConsents)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.consentVersion.equals(consentVersion),
+                ))
+                .getSingleOrNull();
+        if (consent?.consentState != 'accepted' ||
+            consent?.withdrawnAtUtcMs != null) {
+          throw const ExportException(ExportFailureCode.consentRequired);
+        }
+      }
+      return load(
+        ownerId: ownerId,
+        vocabulary: vocabulary,
+        attempts: attempts,
+        reading: reading,
+      );
+    });
+  }
 
   Future<ExportDataSet> load({
     required String ownerId,
