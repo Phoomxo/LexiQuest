@@ -5,6 +5,11 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/export/application/export_use_cases.dart';
+import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
+import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
@@ -447,6 +452,18 @@ void main() {
         await database.customSelect('SELECT 1').getSingle();
         await _seedAnonymousBoundCompleteInventory(database);
         await _seedTargetCollisionInventory(database);
+        await database.customUpdate(
+          "UPDATE research_consents SET consent_state = 'withdrawn', "
+          'decided_at_utc_ms = 200, withdrawn_at_utc_ms = 200 '
+          'WHERE id = ?',
+          variables: const [Variable<String>('consent-1')],
+        );
+        await database.customUpdate(
+          "UPDATE research_consents SET consent_state = 'accepted', "
+          'decided_at_utc_ms = 100, withdrawn_at_utc_ms = NULL '
+          'WHERE id = ?',
+          variables: const [Variable<String>('target:consent-1')],
+        );
         await database.customInsert(
           'INSERT INTO events_v2 '
           '(event_id, event_type, event_version, occurred_at_utc, '
@@ -552,6 +569,7 @@ void main() {
           database.localOwners,
         )..where((row) => row.isActive.equals(true))).getSingle();
         expect(active.id, 'account-owner');
+        await _expectWithdrawnResearchConsent(database, nowUtc);
         expect(await _foreignOwnerSnapshot(database), foreignBefore);
         for (final table in ownerUpgradeInventory) {
           expect(
@@ -700,6 +718,18 @@ void main() {
         await database.close();
         database = openDatabase();
         await database.customSelect('SELECT 1').getSingle();
+        final replay = await UpgradeGuestOwner(
+          DriftOwnerUpgradeRepository(
+            database,
+            nowUtc: () => nowUtc,
+            generateConflictId: () => 'replay-${conflictSequence++}',
+            generateOwnerId: () => 'unexpected-owner',
+            generateOwnerOperationToken: () => 'replay-owner-operation',
+            deleteOwnerSecrets: (_) async {},
+          ),
+        )(activeOwnerId: 'account-owner', firebaseUid: 'firebase-new');
+        expect(replay.mode, OwnerUpgradeMode.alreadyBound);
+        await _expectWithdrawnResearchConsent(database, nowUtc);
         final firstRun = await buildEngine(database).run();
         expect(firstRun.status, SyncRunStatus.completed);
         expect(firstRun.pushed, greaterThan(0));
@@ -718,6 +748,7 @@ void main() {
 
         expect(secondRun.status, SyncRunStatus.completed);
         expect(secondRun.pushed, 0);
+        await _expectWithdrawnResearchConsent(database, nowUtc);
         expect(gateway.pushFirebaseUids, hasLength(pushesAfterFirstRun));
         expect(
           await _ownerInventorySnapshot(database, 'account-owner'),
@@ -732,6 +763,78 @@ void main() {
       }
     },
   );
+}
+
+Future<void> _expectWithdrawnResearchConsent(
+  AppDatabase database,
+  DateTime nowUtc,
+) async {
+  final rows = await (database.select(
+    database.researchConsents,
+  )..where((row) => row.ownerId.equals('account-owner'))).get();
+  expect(rows, hasLength(1));
+  expect(rows.single.id, 'target:consent-1');
+  expect(rows.single.consentState, 'withdrawn');
+  expect(rows.single.decidedAtUtcMs, 200);
+  expect(rows.single.withdrawnAtUtcMs, 200);
+
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'unexpected-consent-owner',
+    nowUtc: () => nowUtc,
+  );
+  final researchConsent = ResearchConsentUseCases(
+    owners: owners,
+    repository: DriftResearchConsentRepository(database),
+    nowUtc: () => nowUtc,
+  );
+  final status = await researchConsent.load();
+  expect(status.accepted, isFalse);
+  expect(
+    status.decidedAtUtc,
+    DateTime.fromMillisecondsSinceEpoch(200, isUtc: true),
+  );
+  expect(
+    status.withdrawnAtUtc,
+    DateTime.fromMillisecondsSinceEpoch(200, isUtc: true),
+  );
+
+  final exports = ExportUseCases(
+    owners: owners,
+    reader: DriftExportReader(database),
+    store: _UnexpectedExportStore(),
+    nowUtc: () => nowUtc,
+    loadThaiFont: () async => throw StateError('font load was unexpected'),
+    researchConsent: researchConsent,
+  );
+  await expectLater(
+    exports.prepare(
+      format: ExportFormat.researchJson,
+      selection: const ExportSelection(
+        includeVocabulary: true,
+        includeAttempts: false,
+        includeReading: false,
+      ),
+      cancellation: ExportCancellation(),
+    ),
+    throwsA(
+      isA<ExportException>().having(
+        (error) => error.code,
+        'code',
+        ExportFailureCode.consentRequired,
+      ),
+    ),
+  );
+}
+
+final class _UnexpectedExportStore implements ExportArtifactStore {
+  @override
+  Future<ExportSaveResult> save(
+    ExportArtifact artifact, {
+    required ExportCancellation cancellation,
+  }) async {
+    throw StateError('research export save was unexpected');
+  }
 }
 
 const Set<String> _sevenEntityTypes = <String>{

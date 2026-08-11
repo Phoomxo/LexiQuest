@@ -249,3 +249,61 @@ All commands ran sequentially after the substantive changes. No repository-wide 
 | Final `git diff --check` | GREEN; line-ending conversion notices only |
 
 The verifier emitted only the existing non-blocking Android Kotlin-plugin migration notice. MaxPlus advisory remains unavailable after the two prior identical `invalidKey` failures and was not retried because external configuration did not change. This remains file-backed host/fake-provider evidence: it does not claim physical process-kill durability, device certification, or exact provider receipt.
+
+## Reopened privacy and truthful merge-evidence review at `e906daf`
+
+Rollback SHA for this review cycle: `e906daf7144c65f1c8ffc92c39f01a3b7eedbdb2`.
+
+The stable review was **NOT READY** with two accepted findings:
+
+1. **CRITICAL — same-version consent deduplication can erase a withdrawal.** `_discardNaturalKeyDuplicates` matched `research_consents` only by `consent_version` and always deleted the guest row. The required fail-safe reconciliation retains the canonical target ID, selects the later decision, and selects withdrawal for an exact tie or ambiguous ordering. Merge, reopen, and replay must leave `ResearchConsentUseCases` unaccepted and research export blocked with `consentRequired`; source rows disappear and unrelated foreign-owner consent remains unchanged.
+2. **IMPORTANT — merge-conflict evidence hardcoded a false target-win result.** `_recordMergeConflict` always stored `guestUpgradeTargetWins/targetRetained`, although SRS, streak, association, memory, and quest policies can select guest evidence, learning-day reconciliation combines evidence, and event/reward key collisions preserve both rows. Every call site must supply a bounded schema-12-compatible policy and actual outcome. Semantic tests must prove representative `targetRetained`, `guestRetained`, and `evidenceMerged` rows against their canonical stored values.
+
+### Semantic RED evidence
+
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "later guest withdrawal replaces canonical target consent decision" --reporter expanded`
+  - Expected exit 1. The canonical row was expected to be `withdrawn` but was `accepted`, directly proving that the later guest withdrawal was discarded.
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "withdrawal wins an exact consent decision tie" --reporter expanded`
+  - Expected exit 1. The tied canonical row was expected to be `withdrawn` but was `accepted`, proving the absence of the withdrawal tie-break.
+- Characterization command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "newer target withdrawal beats an older guest acceptance" --reporter expanded`
+  - Exit 0, 1/1. The already-safe target-withdrawal direction was fixed as a regression invariant.
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "merge conflict evidence identifies target guest and merged outcomes" --reporter expanded`
+  - Expected exit 1. The association policy was expected to be `guestUpgradeLatestAssociation` but was the hardcoded `guestUpgradeTargetWins`, before the test could reach its guest-retained memory and merged learning-day assertions.
+- Command: `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/guest_upgrade_restart_test.dart --plain-name "merged existing resolves complete overlapping inventory across reopen" --reporter expanded`
+  - Expected exit 1. With target v1 accepted at 100 and guest v1 withdrawn at 200/200, the post-merge helper expected `withdrawn` but observed `accepted` before reopen. The scenario also fixes canonical target ID, foreign-owner invariance, consent use-case state, research-export denial, reopen, and replay requirements.
+
+### Repair and focused GREEN evidence
+
+- A dedicated consent reconciliation now runs before generic natural-key deletion. It retains the target row ID, canonicalizes accepted/withdrawn state, selects the later effective decision, makes withdrawal win exact ties or ambiguous ordering, records the actual source of the retained decision, and deletes only the source duplicate.
+- `_recordMergeConflict` now requires every caller to pass validated nonempty bounded policy/outcome values. Call sites use explicit stable values for canonical-target selection, latest consent/SRS/association/memory decisions, combined answer/day/streak evidence, ranked quest decisions, and preserve-both key reconciliation. Representative snapshots include the values needed to match canonical rows.
+- Focused later-withdrawal unit rerun: exit 0, 1/1.
+- Focused target/guest/merged conflict-evidence rerun: exit 0, 1/1. The target association snapshot matches the canonical target row, the guest memory snapshot matches the canonical guest-derived row, and the minimum of both learning-day timestamps matches the canonical merged row.
+- Focused complete file-backed merged-existing scenario rerun: exit 0, 1/1. The canonical `target:consent-1` is withdrawn at 200/200 through reopen and `alreadyBound` replay; `ResearchConsentUseCases.load().accepted` remains false, research JSON export throws `consentRequired`, the source owner has no consent row, and the complete foreign-owner fingerprint remains byte-equivalent.
+- Full focused owner-upgrade file: exit 0, 23/23.
+- Full guest-upgrade restart scenario file: exit 0, 3/3.
+
+Schema remains 12. No Drift table, migration, or generated file changed.
+
+### Final reopened sequential GREEN evidence
+
+All commands below ran sequentially after the repair; no Flutter, Dart, build, or analysis process ran concurrently.
+
+| Gate | Exact command | Result |
+| --- | --- | --- |
+| Later-withdrawal unit | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "later guest withdrawal replaces canonical target consent decision" --reporter expanded` | GREEN, 1/1 |
+| Conflict-evidence unit | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --plain-name "merge conflict evidence identifies target guest and merged outcomes" --reporter expanded` | GREEN, 1/1 |
+| Complete merged-existing scenario | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/guest_upgrade_restart_test.dart --plain-name "merged existing resolves complete overlapping inventory across reopen" --reporter expanded` | GREEN, 1/1 |
+| Full owner-upgrade file | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart --reporter compact` | GREEN, 23/23 |
+| Full guest-upgrade scenario file | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 3/3 |
+| Task 5 sync/identity/recovery/guest selection | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/sync test/features/identity test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 158/158 (154 baseline plus 4 reopened tests) |
+| Recovery acceptance scenario | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/file_backed_sync_recovery_test.dart --reporter compact` | GREEN, 1/1 |
+| Guest acceptance scenarios | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 3/3 |
+| Sync engine/store acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/sync/sync_engine_test.dart test/features/sync/drift_sync_store_test.dart --reporter compact` | GREEN, 52/52 |
+| Identity/service acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/features/identity/drift_owner_upgrade_repository_test.dart test/features/identity/upgrade_guest_owner_test.dart test/features/identity/guest_identity_service_test.dart --reporter compact` | GREEN, 44/44 |
+| Bootstrap acceptance | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/bootstrap --reporter compact` | GREEN, 22/22 |
+| Sync verifier | `$env:PATH = 'C:\Users\Phet\AppData\Local\Programs\flutter\bin;' + $env:PATH; powershell -ExecutionPolicy Bypass -File scripts/verify-sync.ps1` | GREEN, 7/7 phases in 01:20: 102 scoped files format-stable, scoped analysis clean, 279 Flutter tests passed, 31 Firestore rules tests passed, debug APK built, whitespace clean |
+| Checkpoint A | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat test test/scenarios/vocabulary_crud_restart_test.dart test/scenarios/learning_session_restart_test.dart test/scenarios/associative_memory_recovery_test.dart test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart --reporter compact` | GREEN, 14/14 |
+| Full analysis | `C:\Users\Phet\AppData\Local\Programs\flutter\bin\flutter.bat analyze` | GREEN, no issues in 8.6 seconds |
+| Final whitespace check | `git diff --check` | GREEN; line-ending conversion notices only |
+
+Formatting execution note: a controller-supplied SDK-internal Dart path did not exist, so that distinct command stopped after its first failure and was not retried. The subsequently authorized verified wrapper command, `C:\Users\Phet\AppData\Local\Programs\flutter\bin\dart.bat format lib/features/identity/data/drift_owner_upgrade_repository.dart`, succeeded once and normalized that exact file; the later sync verifier found zero additional formatting changes. The verifier emitted only the existing non-blocking Android Kotlin-plugin migration notice.

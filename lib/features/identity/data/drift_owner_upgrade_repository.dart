@@ -131,6 +131,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          conflicts += await _mergeResearchConsents(
+            source.id,
+            target.id,
+            upgradedAt,
+          );
           conflicts += await _discardNaturalKeyDuplicates(
             source.id,
             target.id,
@@ -304,6 +309,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'id': targetCategoryId,
           'name': collision.read<String>('target_name'),
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.canonicalTarget,
+        outcome: _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -410,6 +417,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'id': targetWordId,
           'spelling': collision.read<String>('target_spelling'),
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.canonicalTarget,
+        outcome: _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -471,9 +480,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           collision.readNullable<int>('target_last_review') ?? -1;
       final guestDue = collision.read<int>('guest_due');
       final targetDue = collision.read<int>('target_due');
-      if (evidenceCount == 0 &&
+      final guestWins =
+          evidenceCount == 0 &&
           (guestLast > targetLast ||
-              (guestLast == targetLast && guestDue > targetDue))) {
+              (guestLast == targetLast && guestDue > targetDue));
+      if (guestWins) {
         await (_database.update(
           _database.srsStates,
         )..where((row) => row.id.equals(targetSrsId))).write(
@@ -498,6 +509,14 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityId: wordId,
         localSnapshot: <String, Object?>{'id': guestId},
         targetSnapshot: <String, Object?>{'id': targetSrsId},
+        resolutionPolicy: evidenceCount > 0
+            ? _GuestUpgradeConflictPolicy.combinedAnswerEvidence
+            : _GuestUpgradeConflictPolicy.latestSrs,
+        outcome: evidenceCount > 0
+            ? _GuestUpgradeConflictOutcome.evidenceMerged
+            : guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -535,27 +554,24 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       target.longestStreakDays,
       current,
     ].reduce((left, right) => left > right ? left : right);
+    final freezeCount = guest.freezeCount > target.freezeCount
+        ? guest.freezeCount
+        : target.freezeCount;
+    final lastLearnedAt = guestLast > targetLast
+        ? guest.lastLearnedAtUtcMs
+        : target.lastLearnedAtUtcMs;
+    final updatedAt = guest.updatedAtUtcMs > target.updatedAtUtcMs
+        ? guest.updatedAtUtcMs
+        : target.updatedAtUtcMs;
     await (_database.update(
       _database.streakStates,
     )..where((row) => row.ownerId.equals(targetId))).write(
       db.StreakStatesCompanion(
         currentStreakDays: Value(current),
         longestStreakDays: Value(longest),
-        freezeCount: Value(
-          guest.freezeCount > target.freezeCount
-              ? guest.freezeCount
-              : target.freezeCount,
-        ),
-        lastLearnedAtUtcMs: Value(
-          guestLast > targetLast
-              ? guest.lastLearnedAtUtcMs
-              : target.lastLearnedAtUtcMs,
-        ),
-        updatedAtUtcMs: Value(
-          guest.updatedAtUtcMs > target.updatedAtUtcMs
-              ? guest.updatedAtUtcMs
-              : target.updatedAtUtcMs,
-        ),
+        freezeCount: Value(freezeCount),
+        lastLearnedAtUtcMs: Value(lastLearnedAt),
+        updatedAtUtcMs: Value(updatedAt),
       ),
     );
     await (_database.delete(
@@ -565,8 +581,18 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       ownerId: targetId,
       entityType: 'streakState',
       entityId: targetId,
-      localSnapshot: <String, Object?>{'ownerId': sourceId},
-      targetSnapshot: <String, Object?>{'ownerId': targetId},
+      localSnapshot: _streakSnapshot(guest),
+      targetSnapshot: _streakSnapshot(target),
+      resolutionPolicy: _GuestUpgradeConflictPolicy.streakReconciliation,
+      outcome: _resolvedStreakOutcome(
+        guest: guest,
+        target: target,
+        current: current,
+        longest: longest,
+        freezeCount: freezeCount,
+        lastLearnedAtUtcMs: lastLearnedAt,
+        updatedAtUtcMs: updatedAt,
+      ),
       resolvedAt: resolvedAt,
     );
     return 1;
@@ -611,10 +637,16 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityId: collision.read<String>('target_id'),
         localSnapshot: <String, Object?>{
           'id': collision.read<String>('guest_id'),
+          'learningDay': collision.read<String>('learning_day'),
+          'firstSessionAtUtcMs': guestFirst,
         },
         targetSnapshot: <String, Object?>{
           'id': collision.read<String>('target_id'),
+          'learningDay': collision.read<String>('learning_day'),
+          'firstSessionAtUtcMs': targetFirst,
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.earliestLearningDay,
+        outcome: _GuestUpgradeConflictOutcome.evidenceMerged,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -655,6 +687,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       SELECT guest.id AS guest_id, target.id AS target_id,
              guest.content AS guest_content,
              guest.created_at_utc_ms AS guest_created,
+             target.content AS target_content,
              target.created_at_utc_ms AS target_created
       FROM association_records AS guest
       JOIN association_records AS target
@@ -668,14 +701,16 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         )
         .get();
     for (final collision in associations) {
-      if (collision.read<int>('guest_created') >
-          collision.read<int>('target_created')) {
+      final guestCreated = collision.read<int>('guest_created');
+      final targetCreated = collision.read<int>('target_created');
+      final guestWins = guestCreated > targetCreated;
+      if (guestWins) {
         await _database.customUpdate(
           'UPDATE association_records SET content = ?, '
           'created_at_utc_ms = ? WHERE id = ?',
           variables: [
             Variable<String>(collision.read<String>('guest_content')),
-            Variable<int>(collision.read<int>('guest_created')),
+            Variable<int>(guestCreated),
             Variable<String>(collision.read<String>('target_id')),
           ],
           updates: {_database.associationRecords},
@@ -687,10 +722,18 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityId: collision.read<String>('target_id'),
         localSnapshot: <String, Object?>{
           'id': collision.read<String>('guest_id'),
+          'content': collision.read<String>('guest_content'),
+          'createdAtUtcMs': guestCreated,
         },
         targetSnapshot: <String, Object?>{
           'id': collision.read<String>('target_id'),
+          'content': collision.read<String>('target_content'),
+          'createdAtUtcMs': targetCreated,
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.latestAssociation,
+        outcome: guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -730,8 +773,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           collision.readNullable<int>('target_last_reviewed') ?? -1;
       final guestDue = collision.read<int>('guest_next_due');
       final targetDue = collision.read<int>('target_next_due');
-      if (guestLast > targetLast ||
-          (guestLast == targetLast && guestDue > targetDue)) {
+      final guestWins =
+          guestLast > targetLast ||
+          (guestLast == targetLast && guestDue > targetDue);
+      if (guestWins) {
         await (_database.update(_database.associativeMemoryStates)..where(
               (row) => row.id.equals(collision.read<String>('target_id')),
             ))
@@ -759,10 +804,27 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityId: collision.read<String>('target_id'),
         localSnapshot: <String, Object?>{
           'id': collision.read<String>('guest_id'),
+          'stability': collision.read<double>('guest_stability'),
+          'difficulty': collision.read<double>('guest_difficulty'),
+          'cueDependency': collision.read<double>('guest_cue_dependency'),
+          'lapseCount': collision.read<int>('guest_lapse_count'),
+          'lastReviewedAtUtcMs': collision.readNullable<int>(
+            'guest_last_reviewed',
+          ),
+          'nextDueAtUtcMs': guestDue,
+          'algorithmVersion': collision.read<String>('guest_algorithm'),
         },
         targetSnapshot: <String, Object?>{
           'id': collision.read<String>('target_id'),
+          'lastReviewedAtUtcMs': collision.readNullable<int>(
+            'target_last_reviewed',
+          ),
+          'nextDueAtUtcMs': targetDue,
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.latestMemory,
+        outcome: guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await _database.customUpdate(
@@ -908,8 +970,26 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             ownerId: targetId,
             entityType: 'questObjective',
             entityId: targetObjective.id,
-            localSnapshot: <String, Object?>{'id': guestObjective.id},
-            targetSnapshot: <String, Object?>{'id': targetObjective.id},
+            localSnapshot: <String, Object?>{
+              'id': guestObjective.id,
+              'currentCount': guestObjective.currentCount,
+              'targetCount': guestObjective.targetCount,
+              'sourceEventIds': _decodeStringList(
+                guestObjective.sourceEventIdsJson,
+              ),
+            },
+            targetSnapshot: <String, Object?>{
+              'id': targetObjective.id,
+              'currentCount': targetObjective.currentCount,
+              'targetCount': targetObjective.targetCount,
+              'sourceEventIds': _decodeStringList(
+                targetObjective.sourceEventIdsJson,
+              ),
+            },
+            resolutionPolicy: _GuestUpgradeConflictPolicy.rankedQuestObjective,
+            outcome: guestWins
+                ? _GuestUpgradeConflictOutcome.guestRetained
+                : _GuestUpgradeConflictOutcome.targetRetained,
             resolvedAt: resolvedAt,
           );
           conflictCount += 1;
@@ -927,6 +1007,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'id': targetInstanceId,
           'state': targetState,
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.rankedQuest,
+        outcome: guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
       await (_database.delete(
@@ -987,6 +1071,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'id': collision.read<String>('target_id'),
           'idempotencyKey': collision.read<String>('idempotency_key'),
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.preserveBoth,
+        outcome: _GuestUpgradeConflictOutcome.bothRetained,
         resolvedAt: resolvedAt,
       );
     }
@@ -1131,8 +1217,85 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'id': targetTransactionId,
           'idempotencyKey': key,
         },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.preserveBoth,
+        outcome: _GuestUpgradeConflictOutcome.bothRetained,
         resolvedAt: resolvedAt,
       );
+    }
+    return collisions.length;
+  }
+
+  Future<int> _mergeResearchConsents(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id,
+             guest.consent_version AS guest_version,
+             guest.consent_state AS guest_state,
+             guest.decided_at_utc_ms AS guest_decided,
+             guest.withdrawn_at_utc_ms AS guest_withdrawn,
+             target.id AS target_id,
+             target.consent_version AS target_version,
+             target.consent_state AS target_state,
+             target.decided_at_utc_ms AS target_decided,
+             target.withdrawn_at_utc_ms AS target_withdrawn
+      FROM research_consents AS guest
+      JOIN research_consents AS target
+        ON target.owner_id = ?
+       AND target.consent_version = guest.consent_version
+      WHERE guest.owner_id = ?
+      ORDER BY guest.consent_version, guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+          readsFrom: {_database.researchConsents},
+        )
+        .get();
+    for (final collision in collisions) {
+      final guest = _ResearchConsentDecision(
+        id: collision.read<String>('guest_id'),
+        version: collision.read<int>('guest_version'),
+        state: collision.read<String>('guest_state'),
+        decidedAtUtcMs: collision.read<int>('guest_decided'),
+        withdrawnAtUtcMs: collision.readNullable<int>('guest_withdrawn'),
+      );
+      final target = _ResearchConsentDecision(
+        id: collision.read<String>('target_id'),
+        version: collision.read<int>('target_version'),
+        state: collision.read<String>('target_state'),
+        decidedAtUtcMs: collision.read<int>('target_decided'),
+        withdrawnAtUtcMs: collision.readNullable<int>('target_withdrawn'),
+      );
+      final guestWins = _guestConsentDecisionWins(guest, target);
+      final winner = guestWins ? guest : target;
+      final decidedAt = winner.effectiveDecisionAtUtcMs;
+      await (_database.update(
+        _database.researchConsents,
+      )..where((row) => row.id.equals(target.id))).write(
+        db.ResearchConsentsCompanion(
+          consentState: Value(winner.isWithdrawn ? 'withdrawn' : 'accepted'),
+          decidedAtUtcMs: Value(decidedAt),
+          withdrawnAtUtcMs: Value(winner.isWithdrawn ? decidedAt : null),
+        ),
+      );
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'researchConsent',
+        entityId: target.id,
+        localSnapshot: guest.snapshot,
+        targetSnapshot: target.snapshot,
+        resolutionPolicy: _GuestUpgradeConflictPolicy.latestConsentDecision,
+        outcome: guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
+        resolvedAt: resolvedAt,
+      );
+      await (_database.delete(
+        _database.researchConsents,
+      )..where((row) => row.id.equals(guest.id))).go();
     }
     return collisions.length;
   }
@@ -1144,11 +1307,6 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   ) async {
     var conflicts = 0;
     for (final specification in const <_DuplicateSpecification>[
-      _DuplicateSpecification(
-        table: 'research_consents',
-        entityType: 'researchConsent',
-        join: 'target.consent_version = guest.consent_version',
-      ),
       _DuplicateSpecification(
         table: 'reading_progress_entries',
         entityType: 'readingProgress',
@@ -1216,6 +1374,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           entityId: targetEntityId,
           localSnapshot: <String, Object?>{'id': guestId},
           targetSnapshot: <String, Object?>{'id': targetEntityId},
+          resolutionPolicy: _GuestUpgradeConflictPolicy.canonicalTarget,
+          outcome: _GuestUpgradeConflictOutcome.targetRetained,
           resolvedAt: resolvedAt,
         );
         await _database.customUpdate(
@@ -1627,6 +1787,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     required String entityId,
     required Map<String, Object?> localSnapshot,
     required Map<String, Object?> targetSnapshot,
+    required String resolutionPolicy,
+    required String outcome,
     required int resolvedAt,
   }) async {
     final conflictId = _requiredId(generateConflictId(), 'conflictId');
@@ -1636,14 +1798,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         (id, owner_id, entity_type, entity_id, local_revision, cloud_revision,
          resolution_policy, outcome, local_snapshot_json,
          cloud_snapshot_json, resolved_at_utc_ms)
-      VALUES (?, ?, ?, ?, 0, 0, 'guestUpgradeTargetWins',
-              'targetRetained', ?, ?, ?)
+      VALUES (?, ?, ?, ?, 0, 0, ?, ?, ?, ?, ?)
       ''',
       variables: [
         Variable<String>(conflictId),
         Variable<String>(ownerId),
         Variable<String>(entityType),
         Variable<String>(entityId),
+        Variable<String>(_requiredId(resolutionPolicy, 'resolutionPolicy')),
+        Variable<String>(_requiredId(outcome, 'outcome')),
         Variable<String>(jsonEncode(localSnapshot)),
         Variable<String>(jsonEncode(targetSnapshot)),
         Variable<int>(resolvedAt),
@@ -1746,6 +1909,110 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       completer.complete();
     }
   }
+}
+
+abstract final class _GuestUpgradeConflictPolicy {
+  static const canonicalTarget = 'guestUpgradeCanonicalTarget';
+  static const latestConsentDecision = 'guestUpgradeLatestConsentDecision';
+  static const combinedAnswerEvidence = 'guestUpgradeCombinedAnswerEvidence';
+  static const latestSrs = 'guestUpgradeLatestSrs';
+  static const streakReconciliation = 'guestUpgradeStreakReconciliation';
+  static const earliestLearningDay = 'guestUpgradeEarliestLearningDay';
+  static const latestAssociation = 'guestUpgradeLatestAssociation';
+  static const latestMemory = 'guestUpgradeLatestMemory';
+  static const rankedQuest = 'guestUpgradeRankedQuest';
+  static const rankedQuestObjective = 'guestUpgradeRankedQuestObjective';
+  static const preserveBoth = 'guestUpgradePreserveBoth';
+}
+
+abstract final class _GuestUpgradeConflictOutcome {
+  static const targetRetained = 'targetRetained';
+  static const guestRetained = 'guestRetained';
+  static const evidenceMerged = 'evidenceMerged';
+  static const bothRetained = 'bothRetained';
+}
+
+Map<String, Object?> _streakSnapshot(db.StreakState value) => <String, Object?>{
+  'ownerId': value.ownerId,
+  'currentStreakDays': value.currentStreakDays,
+  'longestStreakDays': value.longestStreakDays,
+  'freezeCount': value.freezeCount,
+  'lastLearnedAtUtcMs': value.lastLearnedAtUtcMs,
+  'updatedAtUtcMs': value.updatedAtUtcMs,
+};
+
+String _resolvedStreakOutcome({
+  required db.StreakState guest,
+  required db.StreakState target,
+  required int current,
+  required int longest,
+  required int freezeCount,
+  required int? lastLearnedAtUtcMs,
+  required int updatedAtUtcMs,
+}) {
+  bool matches(db.StreakState candidate) =>
+      candidate.currentStreakDays == current &&
+      candidate.longestStreakDays == longest &&
+      candidate.freezeCount == freezeCount &&
+      candidate.lastLearnedAtUtcMs == lastLearnedAtUtcMs &&
+      candidate.updatedAtUtcMs == updatedAtUtcMs;
+  if (matches(target)) return _GuestUpgradeConflictOutcome.targetRetained;
+  if (matches(guest)) return _GuestUpgradeConflictOutcome.guestRetained;
+  return _GuestUpgradeConflictOutcome.evidenceMerged;
+}
+
+final class _ResearchConsentDecision {
+  const _ResearchConsentDecision({
+    required this.id,
+    required this.version,
+    required this.state,
+    required this.decidedAtUtcMs,
+    required this.withdrawnAtUtcMs,
+  });
+
+  final String id;
+  final int version;
+  final String state;
+  final int decidedAtUtcMs;
+  final int? withdrawnAtUtcMs;
+
+  bool get isWithdrawn => state != 'accepted' || withdrawnAtUtcMs != null;
+
+  bool get hasAmbiguousOrdering =>
+      (state != 'accepted' && state != 'withdrawn') ||
+      (state == 'accepted' && withdrawnAtUtcMs != null) ||
+      (state == 'withdrawn' && withdrawnAtUtcMs != decidedAtUtcMs);
+
+  int get effectiveDecisionAtUtcMs {
+    final withdrawal = withdrawnAtUtcMs;
+    return withdrawal != null && withdrawal > decidedAtUtcMs
+        ? withdrawal
+        : decidedAtUtcMs;
+  }
+
+  Map<String, Object?> get snapshot => <String, Object?>{
+    'id': id,
+    'consentVersion': version,
+    'consentState': state,
+    'decidedAtUtcMs': decidedAtUtcMs,
+    'withdrawnAtUtcMs': withdrawnAtUtcMs,
+  };
+}
+
+bool _guestConsentDecisionWins(
+  _ResearchConsentDecision guest,
+  _ResearchConsentDecision target,
+) {
+  if ((guest.hasAmbiguousOrdering || target.hasAmbiguousOrdering) &&
+      guest.isWithdrawn != target.isWithdrawn) {
+    return guest.isWithdrawn;
+  }
+  final timeComparison = guest.effectiveDecisionAtUtcMs.compareTo(
+    target.effectiveDecisionAtUtcMs,
+  );
+  if (timeComparison != 0) return timeComparison > 0;
+  if (guest.isWithdrawn != target.isWithdrawn) return guest.isWithdrawn;
+  return false;
 }
 
 final class _DuplicateSpecification {

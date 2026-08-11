@@ -79,6 +79,224 @@ void main() {
     },
   );
 
+  test(
+    'later guest withdrawal replaces canonical target consent decision',
+    () async {
+      await database.customInsert(
+        "INSERT INTO research_consents VALUES "
+        "('consent-target', 'account-owner', 1, 'accepted', 100, NULL)",
+      );
+      await database.customInsert(
+        "INSERT INTO research_consents VALUES "
+        "('consent-guest', 'guest-owner', 1, 'withdrawn', 200, 200)",
+      );
+      await database.customInsert(
+        'INSERT INTO local_owners '
+        '(id, firebase_uid, account_state, created_at_utc_ms, is_active) '
+        "VALUES ('foreign-owner', 'firebase-foreign', 'firebaseBound', 3, 0)",
+      );
+      await database.customInsert(
+        "INSERT INTO research_consents VALUES "
+        "('consent-foreign', 'foreign-owner', 1, 'accepted', 300, NULL)",
+      );
+      final foreignBefore = await database
+          .customSelect(
+            'SELECT * FROM research_consents WHERE id = ?',
+            variables: const [Variable<String>('consent-foreign')],
+          )
+          .getSingle()
+          .then((row) => Map<String, Object?>.from(row.data));
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final consent = await (database.select(
+        database.researchConsents,
+      )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+      expect(consent.id, 'consent-target');
+      expect(consent.consentState, 'withdrawn');
+      expect(consent.decidedAtUtcMs, 200);
+      expect(consent.withdrawnAtUtcMs, 200);
+      expect(
+        await database
+            .customSelect(
+              'SELECT * FROM research_consents WHERE id = ?',
+              variables: const [Variable<String>('consent-foreign')],
+            )
+            .getSingle()
+            .then((row) => Map<String, Object?>.from(row.data)),
+        foreignBefore,
+      );
+      expect(
+        await (database.select(
+          database.researchConsents,
+        )..where((row) => row.ownerId.equals('guest-owner'))).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test('newer target withdrawal beats an older guest acceptance', () async {
+    await database.customInsert(
+      "INSERT INTO research_consents VALUES "
+      "('consent-target', 'account-owner', 1, 'withdrawn', 300, 300)",
+    );
+    await database.customInsert(
+      "INSERT INTO research_consents VALUES "
+      "('consent-guest', 'guest-owner', 1, 'accepted', 200, NULL)",
+    );
+
+    await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+
+    final consent = await (database.select(
+      database.researchConsents,
+    )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+    expect(consent.id, 'consent-target');
+    expect(consent.consentState, 'withdrawn');
+    expect(consent.decidedAtUtcMs, 300);
+    expect(consent.withdrawnAtUtcMs, 300);
+  });
+
+  test('withdrawal wins an exact consent decision tie', () async {
+    await database.customInsert(
+      "INSERT INTO research_consents VALUES "
+      "('consent-target', 'account-owner', 1, 'accepted', 300, NULL)",
+    );
+    await database.customInsert(
+      "INSERT INTO research_consents VALUES "
+      "('consent-guest', 'guest-owner', 1, 'withdrawn', 300, 300)",
+    );
+
+    await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'firebase-user',
+    );
+
+    final consent = await (database.select(
+      database.researchConsents,
+    )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+    expect(consent.id, 'consent-target');
+    expect(consent.consentState, 'withdrawn');
+    expect(consent.decidedAtUtcMs, 300);
+    expect(consent.withdrawnAtUtcMs, 300);
+  });
+
+  test(
+    'merge conflict evidence identifies target guest and merged outcomes',
+    () async {
+      await database.customInsert(
+        'INSERT INTO association_records '
+        '(id, owner_id, word_key, type, content, created_at_utc_ms) VALUES '
+        "('association-target', 'account-owner', 'station', 'keyword', "
+        "'target-newer', 200)",
+      );
+      await database.customInsert(
+        'INSERT INTO association_records '
+        '(id, owner_id, word_key, type, content, created_at_utc_ms) VALUES '
+        "('association-guest', 'guest-owner', 'station', 'keyword', "
+        "'guest-older', 100)",
+      );
+      await database.customInsert(
+        'INSERT INTO associative_memory_states '
+        '(id, owner_id, word_key, stability, difficulty, cue_dependency, '
+        'lapse_count, last_reviewed_at_utc_ms, next_due_at_utc_ms, '
+        'algorithm_version) VALUES '
+        "('memory-target', 'account-owner', 'station', 2, 4, 0.2, 1, "
+        "100, 200, 'v1')",
+      );
+      await database.customInsert(
+        'INSERT INTO associative_memory_states '
+        '(id, owner_id, word_key, stability, difficulty, cue_dependency, '
+        'lapse_count, last_reviewed_at_utc_ms, next_due_at_utc_ms, '
+        'algorithm_version) VALUES '
+        "('memory-guest', 'guest-owner', 'station', 9, 3, 0.1, 2, "
+        "200, 300, 'v2')",
+      );
+      await database.customInsert(
+        'INSERT INTO learning_day_log '
+        '(id, owner_id, learning_day, first_session_at_utc_ms) VALUES '
+        "('day-target', 'account-owner', '2026-08-11', 200)",
+      );
+      await database.customInsert(
+        'INSERT INTO learning_day_log '
+        '(id, owner_id, learning_day, first_session_at_utc_ms) VALUES '
+        "('day-guest', 'guest-owner', '2026-08-11', 100)",
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final association = await (database.select(
+        database.associationRecords,
+      )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+      final associationConflict = await _mergeConflictFor(
+        database,
+        'associationRecord',
+      );
+      expect(
+        associationConflict.read<String>('resolution_policy'),
+        'guestUpgradeLatestAssociation',
+      );
+      expect(associationConflict.read<String>('outcome'), 'targetRetained');
+      final associationTarget =
+          jsonDecode(associationConflict.read<String>('cloud_snapshot_json'))
+              as Map<String, dynamic>;
+      expect(association.id, associationTarget['id']);
+      expect(association.content, associationTarget['content']);
+      expect(association.createdAtUtcMs, associationTarget['createdAtUtcMs']);
+
+      final memory = await (database.select(
+        database.associativeMemoryStates,
+      )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+      final memoryConflict = await _mergeConflictFor(
+        database,
+        'associativeMemoryState',
+      );
+      expect(
+        memoryConflict.read<String>('resolution_policy'),
+        'guestUpgradeLatestMemory',
+      );
+      expect(memoryConflict.read<String>('outcome'), 'guestRetained');
+      final memoryGuest =
+          jsonDecode(memoryConflict.read<String>('local_snapshot_json'))
+              as Map<String, dynamic>;
+      expect(memory.stability, memoryGuest['stability']);
+      expect(memory.lastReviewedAtUtcMs, memoryGuest['lastReviewedAtUtcMs']);
+      expect(memory.nextDueAtUtcMs, memoryGuest['nextDueAtUtcMs']);
+
+      final day = await (database.select(
+        database.learningDayLog,
+      )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+      final dayConflict = await _mergeConflictFor(database, 'learningDay');
+      expect(
+        dayConflict.read<String>('resolution_policy'),
+        'guestUpgradeEarliestLearningDay',
+      );
+      expect(dayConflict.read<String>('outcome'), 'evidenceMerged');
+      final guestDay =
+          jsonDecode(dayConflict.read<String>('local_snapshot_json'))
+              as Map<String, dynamic>;
+      final targetDay =
+          jsonDecode(dayConflict.read<String>('cloud_snapshot_json'))
+              as Map<String, dynamic>;
+      expect(day.id, targetDay['id']);
+      expect(
+        day.firstSessionAtUtcMs,
+        <int>[
+          guestDay['firstSessionAtUtcMs'] as int,
+          targetDay['firstSessionAtUtcMs'] as int,
+        ].reduce((left, right) => left < right ? left : right),
+      );
+    },
+  );
+
   test('anonymous rehome creates an anchored SRS operation identity', () async {
     await (database.delete(
       database.localOwners,
@@ -220,10 +438,11 @@ void main() {
         await database
             .customSelect(
               'SELECT COUNT(*) AS count FROM sync_conflicts '
-              'WHERE owner_id = ? AND resolution_policy = ?',
+              'WHERE owner_id = ? AND resolution_policy = ? AND outcome = ?',
               variables: const [
                 Variable<String>('account-owner'),
-                Variable<String>('guestUpgradeTargetWins'),
+                Variable<String>('guestUpgradeCanonicalTarget'),
+                Variable<String>('targetRetained'),
               ],
             )
             .getSingle()
@@ -1213,6 +1432,19 @@ final class _StealingOwnerGate implements OwnerOperationGate {
   @override
   Future<void> release({required String token}) =>
       delegate.release(token: token);
+}
+
+Future<QueryRow> _mergeConflictFor(AppDatabase database, String entityType) {
+  return database
+      .customSelect(
+        'SELECT * FROM sync_conflicts '
+        'WHERE owner_id = ? AND entity_type = ?',
+        variables: [
+          const Variable<String>('account-owner'),
+          Variable<String>(entityType),
+        ],
+      )
+      .getSingle();
 }
 
 Future<void> _seedOwners(AppDatabase database) async {
