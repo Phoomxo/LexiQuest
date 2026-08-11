@@ -1,14 +1,13 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 
 import '../features/device_model/application/model_benchmark.dart';
 import '../features/device_model/domain/model_lifecycle.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
-import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
 
 class ObjectScannerScreen extends StatefulWidget {
   const ObjectScannerScreen({super.key, this.scanner, this.voice});
@@ -23,8 +22,10 @@ class ObjectScannerScreen extends StatefulWidget {
 class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     with WidgetsBindingObserver {
   ObjectScannerController? _scanner;
-  late final VoiceUseCases _voice;
-  bool _ownsVoice = false;
+  ObjectScannerLease? _scannerLease;
+  ObjectScannerLease? _initializedLease;
+  VoiceUseCases? _voice;
+  bool _cameraForeground = true;
   bool _initializing = true;
   bool _capturing = false;
   bool _downloading = false;
@@ -40,22 +41,67 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoice = widget.voice == null;
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    _cameraForeground =
+        lifecycleState == null || lifecycleState == AppLifecycleState.resumed;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_scanner != null) return;
-    _scanner =
-        widget.scanner ?? AppDependenciesScope.maybeOf(context)?.objectScanner;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initialize());
+    _bindDependencies();
   }
 
-  Future<void> _initialize() async {
+  @override
+  void didUpdateWidget(ObjectScannerScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  void _bindDependencies() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
+    final scanner = widget.scanner ?? dependencies?.objectScanner;
+    final voice = widget.voice ?? dependencies?.voice;
+    if (!identical(scanner, _scanner)) {
+      _releaseScannerLease();
+      _initializedLease = null;
+    }
+    _scanner = scanner;
+    _voice = voice;
+    if (!routeIsCurrent || scanner == null || voice == null) {
+      _releaseScannerLease();
+      return;
+    }
+    if (_cameraForeground && _scannerLease == null) {
+      _scannerLease = scanner.acquireLease();
+    }
+    final lease = _scannerLease;
+    if (lease != null &&
+        lease.isCurrent &&
+        _cameraForeground &&
+        !identical(lease, _initializedLease)) {
+      _initializedLease = lease;
+      _initializing = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && identical(_scannerLease, lease)) {
+          _initialize(lease);
+        }
+      });
+    }
+  }
+
+  void _releaseScannerLease() {
+    final lease = _scannerLease;
+    _scannerLease = null;
+    _initializedLease = null;
+    if (lease != null) lease.release().ignore();
+  }
+
+  Future<void> _initialize([ObjectScannerLease? requestedLease]) async {
     final scanner = _scanner;
-    if (scanner == null) {
+    final lease = requestedLease ?? _scannerLease;
+    if (scanner == null || lease == null) {
       if (mounted) {
         setState(() {
           _initializing = false;
@@ -65,27 +111,41 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
       return;
     }
     try {
-      await scanner.initialize();
-      if (mounted) {
-        setState(() {
-          _initializing = false;
-          _error = null;
-        });
+      final initialized = await lease.initialize();
+      if (!initialized) return;
+      if (!mounted ||
+          !identical(_scanner, scanner) ||
+          !identical(_scannerLease, lease) ||
+          !lease.isCurrent ||
+          _voice == null ||
+          !_cameraForeground) {
+        return;
       }
+      setState(() {
+        _initializing = false;
+        _error = null;
+      });
     } on CameraPracticeException catch (error) {
-      if (mounted) {
-        setState(() {
-          _initializing = false;
-          _modelUnavailable = error.code == CameraFailureCode.modelUnavailable;
-          _error = _cameraFailureText(error.code);
-        });
+      if (!mounted ||
+          !identical(_scanner, scanner) ||
+          !identical(_scannerLease, lease) ||
+          !lease.isCurrent ||
+          _voice == null ||
+          !_cameraForeground) {
+        return;
       }
+      setState(() {
+        _initializing = false;
+        _modelUnavailable = error.code == CameraFailureCode.modelUnavailable;
+        _error = _cameraFailureText(error.code);
+      });
     }
   }
 
   Future<void> _capture() async {
     final scanner = _scanner;
-    if (scanner == null || _capturing) return;
+    final lease = _scannerLease;
+    if (scanner == null || lease?.isReady != true || _capturing) return;
     final cancellation = ModelCancellation();
     _cancellation = cancellation;
     setState(() {
@@ -181,8 +241,10 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   }
 
   Future<void> _speak(String text) async {
+    final voice = _voice;
+    if (voice == null) return;
     try {
-      await _voice.speak(
+      await voice.speak(
         VoiceRequest.create(
           text: text,
           language: 'en',
@@ -203,10 +265,23 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
     final scanner = _scanner;
     if (scanner == null) return;
     if (state == AppLifecycleState.resumed) {
-      scanner
+      _cameraForeground = true;
+      final previousLease = _scannerLease;
+      _bindDependencies();
+      final lease = _scannerLease;
+      if (lease == null || !identical(previousLease, lease)) return;
+      lease
           .resume()
           .then((_) {
-            if (mounted) setState(() => _error = null);
+            if (mounted &&
+                identical(_scannerLease, lease) &&
+                lease.isCurrent &&
+                _cameraForeground) {
+              setState(() {
+                _initializing = false;
+                _error = null;
+              });
+            }
           })
           .catchError((_) {
             if (mounted) setState(() => _error = 'เปิดกล้องอีกครั้งไม่สำเร็จ');
@@ -215,8 +290,9 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.detached ||
         state == AppLifecycleState.hidden) {
+      _cameraForeground = false;
       _cancellation?.cancel();
-      scanner.pause();
+      _scannerLease?.pause().ignore();
     }
   }
 
@@ -224,10 +300,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _cancellation?.cancel();
-    final scanner = _scanner;
-    if (scanner != null) unawaited(scanner.pause());
-    _voice.stop();
-    _voice.disposeIfOwned(_ownsVoice);
+    _releaseScannerLease();
     // Runtime-owned scanners are disposed by AppDependencies. Injected test
     // scanners are owned by the caller.
     super.dispose();
@@ -236,7 +309,18 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
   @override
   Widget build(BuildContext context) {
     final scanner = _scanner;
+    if (scanner == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.objectScanner,
+      );
+    }
+    if (_voice == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
     final result = _result;
+    final scannerReady = _scannerLease?.isReady == true;
     return Scaffold(
       appBar: AppBar(title: const Text('สแกนวัตถุเป็นคำศัพท์')),
       body: SafeArea(
@@ -251,8 +335,8 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
                   child: _initializing
                       ? const Center(child: CircularProgressIndicator())
-                      : scanner?.isReady ?? false
-                      ? scanner!.buildPreview()
+                      : scannerReady
+                      ? scanner.buildPreview()
                       : const Center(
                           child: Icon(Icons.no_photography_outlined, size: 64),
                         ),
@@ -262,9 +346,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
             const SizedBox(height: 16),
             FilledButton.icon(
               key: const ValueKey<String>('object-scanner-capture-button'),
-              onPressed: scanner?.isReady == true && !_capturing
-                  ? _capture
-                  : null,
+              onPressed: scannerReady && !_capturing ? _capture : null,
               icon: _capturing
                   ? const SizedBox.square(
                       dimension: 20,
@@ -275,7 +357,7 @@ class _ObjectScannerScreenState extends State<ObjectScannerScreen>
                 _capturing ? 'กำลังวิเคราะห์...' : 'ถ่ายภาพและวิเคราะห์',
               ),
             ),
-            if (scanner?.isReady == true) ...[
+            if (scannerReady) ...[
               const SizedBox(height: 8),
               OutlinedButton.icon(
                 key: const ValueKey<String>('object-scanner-benchmark-model'),

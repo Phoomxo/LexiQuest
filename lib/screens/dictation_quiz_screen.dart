@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+
 import '../features/voice/application/voice_use_cases.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
 
 class DictationQuizScreen extends StatefulWidget {
   final String targetWord;
@@ -13,24 +16,29 @@ class DictationQuizScreen extends StatefulWidget {
 }
 
 class _DictationQuizScreenState extends State<DictationQuizScreen> {
-  late final VoiceUseCases _voiceProvider;
-  bool _ownsVoiceProvider = false;
+  VoiceUseCases? _voiceProvider;
+  bool _initialPlaybackScheduled = false;
   final TextEditingController _textController = TextEditingController();
   bool? _isCorrect;
 
   @override
-  void initState() {
-    super.initState();
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _playAudio(speed: 1.0);
-    });
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _voiceProvider = widget.voice ?? dependencies?.voice;
+    if (_voiceProvider != null && !_initialPlaybackScheduled) {
+      _initialPlaybackScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _playAudio(speed: 1.0);
+      });
+    }
   }
 
   Future<void> _playAudio({required double speed}) async {
+    final voice = _voiceProvider;
+    if (voice == null) return;
     try {
-      await _voiceProvider.speak(
+      await voice.speak(
         VoiceRequest.create(
           text: widget.targetWord,
           language: 'en',
@@ -57,13 +65,16 @@ class _DictationQuizScreenState extends State<DictationQuizScreen> {
   @override
   void dispose() {
     _textController.dispose();
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_voiceProvider == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(

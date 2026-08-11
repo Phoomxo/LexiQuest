@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/widgets.dart';
 
 import '../../device_model/application/device_model_use_cases.dart';
@@ -13,6 +15,8 @@ import 'image_preprocessor.dart';
 
 abstract interface class ObjectScannerController {
   bool get isReady;
+
+  ObjectScannerLease acquireLease();
 
   Future<void> initialize();
 
@@ -39,6 +43,158 @@ abstract interface class ObjectScannerController {
   Future<void> resume();
 
   Future<void> dispose();
+}
+
+abstract interface class ObjectScannerLease {
+  bool get isCurrent;
+
+  bool get isReady;
+
+  Future<bool> initialize();
+
+  Future<void> pause();
+
+  Future<void> resume();
+
+  Future<void> release();
+}
+
+/// Serializes lifecycle ownership for a runtime-scoped scanner controller.
+///
+/// A newly acquired lease synchronously supersedes the previous consumer. Its
+/// initialization is queued behind both any in-flight operation and a takeover
+/// pause, so a stale route can never pause a newer preview after completing
+/// late.
+final class ObjectScannerLeaseManager {
+  factory ObjectScannerLeaseManager({
+    required bool Function() isReady,
+    required Future<void> Function() initialize,
+    required Future<void> Function() pause,
+    required Future<void> Function() resume,
+  }) => ObjectScannerLeaseManager._(isReady, initialize, pause, resume);
+
+  ObjectScannerLeaseManager._(
+    this._isReady,
+    this._initialize,
+    this._pause,
+    this._resume,
+  );
+
+  final bool Function() _isReady;
+  final Future<void> Function() _initialize;
+  final Future<void> Function() _pause;
+  final Future<void> Function() _resume;
+  Future<void> _operationTail = Future<void>.value();
+  int _nextLeaseId = 0;
+  int? _activeLeaseId;
+  bool _closed = false;
+
+  ObjectScannerLease acquire() {
+    if (_closed) {
+      throw StateError('ObjectScannerLeaseManager is closed.');
+    }
+    final hadActiveLease = _activeLeaseId != null;
+    final leaseId = ++_nextLeaseId;
+    _activeLeaseId = leaseId;
+    if (hadActiveLease) {
+      _enqueue<void>(() async {
+        if (_activeLeaseId == leaseId) await _pause();
+      }).ignore();
+    }
+    return _ManagedObjectScannerLease(this, leaseId);
+  }
+
+  bool _isCurrent(int leaseId) => !_closed && _activeLeaseId == leaseId;
+
+  bool _leaseIsReady(int leaseId) => _isCurrent(leaseId) && _isReady();
+
+  Future<bool> _initializeLease(int leaseId) {
+    return _enqueue<bool>(() async {
+      if (!_isCurrent(leaseId)) return false;
+      await _initialize();
+      return _isCurrent(leaseId);
+    });
+  }
+
+  Future<void> _pauseLease(int leaseId) {
+    return _enqueue<void>(() async {
+      if (_isCurrent(leaseId)) await _pause();
+    });
+  }
+
+  Future<void> _resumeLease(int leaseId) {
+    return _enqueue<void>(() async {
+      if (_isCurrent(leaseId)) await _resume();
+    });
+  }
+
+  Future<void> _releaseLease(int leaseId) {
+    if (!_isCurrent(leaseId)) return Future<void>.value();
+    _activeLeaseId = null;
+    // This cleanup remains ahead of any subsequently acquired lease's
+    // initialization in the shared operation queue.
+    return _enqueue<void>(_pause);
+  }
+
+  /// Invalidates every lease and drains any serialized lifecycle work.
+  Future<void> close() async {
+    if (!_closed) {
+      _closed = true;
+      _activeLeaseId = null;
+    }
+    await _operationTail;
+  }
+
+  Future<T> _enqueue<T>(Future<T> Function() operation) {
+    final completion = Completer<T>();
+    _operationTail = _operationTail.then((_) async {
+      try {
+        completion.complete(await operation());
+      } on Object catch (error, stackTrace) {
+        completion.completeError(error, stackTrace);
+      }
+    });
+    return completion.future;
+  }
+}
+
+final class _ManagedObjectScannerLease implements ObjectScannerLease {
+  _ManagedObjectScannerLease(this._manager, this._leaseId);
+
+  final ObjectScannerLeaseManager _manager;
+  final int _leaseId;
+  bool _released = false;
+
+  @override
+  bool get isCurrent => !_released && _manager._isCurrent(_leaseId);
+
+  @override
+  bool get isReady => !_released && _manager._leaseIsReady(_leaseId);
+
+  @override
+  Future<bool> initialize() {
+    if (_released) return Future<bool>.value(false);
+    return _manager._initializeLease(_leaseId);
+  }
+
+  @override
+  Future<void> pause() {
+    if (_released) return Future<void>.value();
+    return _manager._pauseLease(_leaseId);
+  }
+
+  @override
+  Future<void> resume() {
+    if (_released) return Future<void>.value();
+    return _manager._resumeLease(_leaseId);
+  }
+
+  @override
+  Future<void> release() {
+    if (_released) return Future<void>.value();
+    _released = true;
+    return _manager._releaseLease(_leaseId);
+  }
 }
 
 final class ObjectScanResult {
@@ -79,6 +235,20 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   final double minimumConfidence;
   ImageClassifierRuntime? _runtime;
   bool _disposed = false;
+  Future<void>? _disposeFuture;
+  late final ObjectScannerLeaseManager _leaseManager =
+      ObjectScannerLeaseManager(
+        isReady: () => isReady,
+        initialize: initialize,
+        pause: pause,
+        resume: resume,
+      );
+
+  @override
+  ObjectScannerLease acquireLease() {
+    _checkNotDisposed();
+    return _leaseManager.acquire();
+  }
 
   @override
   bool get isReady => camera.isInitialized && _runtime != null && !_disposed;
@@ -124,9 +294,24 @@ final class ObjectScannerUseCases implements ObjectScannerController {
       case MediaPermissionState.unavailable:
         throw const CameraPracticeException(CameraFailureCode.unavailable);
     }
+    if (_disposed) return;
     try {
       await camera.initialize();
-      _runtime ??= await deviceModels.openActive(delegate: ModelDelegate.cpu);
+      if (_disposed) {
+        await camera.pause();
+        return;
+      }
+      if (_runtime == null) {
+        final opened = await deviceModels.openActive(
+          delegate: ModelDelegate.cpu,
+        );
+        if (_disposed) {
+          opened.close();
+          await camera.pause();
+          return;
+        }
+        _runtime = opened;
+      }
     } on ModelLifecycleException {
       await camera.pause();
       throw const CameraPracticeException(CameraFailureCode.modelUnavailable);
@@ -259,11 +444,14 @@ final class ObjectScannerUseCases implements ObjectScannerController {
   }
 
   @override
-  Future<void> dispose() async {
-    if (_disposed) return;
+  Future<void> dispose() => _disposeFuture ??= _dispose();
+
+  Future<void> _dispose() async {
     _disposed = true;
-    _runtime?.close();
+    await _leaseManager.close();
+    final runtime = _runtime;
     _runtime = null;
+    runtime?.close();
     await camera.dispose();
   }
 

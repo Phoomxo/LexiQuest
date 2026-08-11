@@ -11,6 +11,14 @@ Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+$canonicalHashPath = Join-Path `
+    (Join-Path (Join-Path $repoRoot 'tool') 'cli') `
+    'lib/elf-canonical-hash.ps1'
+if (-not (Test-Path -LiteralPath $canonicalHashPath -PathType Leaf)) {
+    throw "ELF canonical hash policy is missing: $canonicalHashPath"
+}
+. $canonicalHashPath
+
 $resolvedApk = if ([System.IO.Path]::IsPathRooted($ApkPath)) {
     [System.IO.Path]::GetFullPath($ApkPath)
 } else {
@@ -47,94 +55,64 @@ if ($actualAarSha256 -ne $expectedAarSha256) {
     )
 }
 
-$expectedLibraries = [ordered]@{
+$expectedRawLibraries = [ordered]@{
     'lib/arm64-v8a/libLiteRt.so' =
         '366E3E040B00692158F9F8F9105870672C93348A3D8E9024120B40045A074B0B'
     'lib/arm64-v8a/libtensorflowlite_gpu_jni.so' =
         '03D7EAE3457E3805D7173875E777CB7F79CCF9F837E394EBDB555415A3503C58'
     'lib/arm64-v8a/libtensorflowlite_jni.so' =
         '3BA28CE98B0E6AB7E417B9CC8D9AD0E7E1616EF86DD83CF1EA16EF109A029FA4'
-    'lib/arm64-v8a/libtflite_custom_ops.so' =
-        'DCAF40FC640C99413DCD8652FB6C3B6F65CDAC50AF001922CB162C155B4E407F'
     'lib/armeabi-v7a/libLiteRt.so' =
         '836EE7A2321C9453F02658B6774FC4C5951716432B450BA6BC4E9A94FE524E6C'
     'lib/armeabi-v7a/libtensorflowlite_gpu_jni.so' =
         '222374E093DD0BD492F044F04C53CFB383754B4C5B96EF6B2BD266BE9425461E'
     'lib/armeabi-v7a/libtensorflowlite_jni.so' =
         '5C3280CBA72ED9563CFA47C39B79670BC8F4C2ED26FF545874B33DBA805D8E4B'
-    'lib/armeabi-v7a/libtflite_custom_ops.so' =
-        '43135F9C6E328D6F9597AF213AAF9333ABCCFE2CEECE228817E5854624BF77C6'
     'lib/x86_64/libLiteRt.so' =
         '6D5B2F35D536A3B2D38B26D26328CC9C259133EF2AA0413EC554CD7EF84F6604'
     'lib/x86_64/libtensorflowlite_gpu_jni.so' =
         '4960E910A8CEFA4DEDA380D5B4B270BFE2ABBCE0C8D6CE0F5A0E8CCCB32C1186'
     'lib/x86_64/libtensorflowlite_jni.so' =
         'F0B4F69DD1EC93E289A2A47CBF8623FF9403C1C71E72616B12FC25BA2D284A88'
-    'lib/x86_64/libtflite_custom_ops.so' =
-        '52143132085C15890859DB7DE74316AF109EC5A95D3F2C131131F33986A8B42F'
 }
 
-if ($resolvedBuildMode -eq 'Release') {
-    # flutter_litert compiles this project-owned JNI shim as RelWithDebInfo for
-    # release while the vendor LiteRT binaries remain byte-identical. Pin the
-    # reproducible release outputs separately instead of applying debug hashes
-    # to a correctly optimized release APK.
-    $expectedLibraries['lib/arm64-v8a/libtflite_custom_ops.so'] =
-        '570E067F5EED5F3EB27C653D7650CB65846FECED0F5A4543CBFF80260493B10E'
-    $expectedLibraries['lib/armeabi-v7a/libtflite_custom_ops.so'] =
-        'ED8A789CDE1266E388818DFA259101628942D336AF4B1A2D7D4264571D923FAB'
-    $expectedLibraries['lib/x86_64/libtflite_custom_ops.so'] =
-        'B1E7A49EE12AEF57A65717536F205E4D0E6E17DE857A5BD4B75F02EEF9328D95'
+$expectedCanonicalCustomOps = @{
+    # Debug pins were derived from the stripped entries in the Task 6 debug APK.
+    # Release pins were derived from the exact output of
+    # :flutter_litert:stripReleaseDebugSymbols using pinned NDK 28.2.13676358.
+    # Only the 20-byte GNU build-id descriptor is zeroed. Source, ELF structure,
+    # ABI machine, mode-specific code, and every other byte remain integrity
+    # sensitive. Immutable Maven/vendor libraries above remain raw-pinned.
+    Debug = [ordered]@{
+        'lib/arm64-v8a/libtflite_custom_ops.so' =
+            '4D57B6CCCB974930E6FAE223020862128F9B411AC2D33455B2C1D566D7186BB1'
+        'lib/armeabi-v7a/libtflite_custom_ops.so' =
+            'F414A52EE4200CAF06A411CC089AEE19A829F6A970FA7A6253357D5FB977D427'
+        'lib/x86_64/libtflite_custom_ops.so' =
+            '39C312A9144A9DC9248FACB7D040B3D532921203D3C60E0A02B2EBFD2025B04F'
+    }
+    Release = [ordered]@{
+        'lib/arm64-v8a/libtflite_custom_ops.so' =
+            'A6E4E4A4B160525E70788CBFD78F4F3D85C3CA93B24A0E9FC61D8F6C293A12E8'
+        'lib/armeabi-v7a/libtflite_custom_ops.so' =
+            '6ADAD6189B89023A511A97C95B1BF1532D2509CE0AA4E65207FB13E3928CDAD3'
+        'lib/x86_64/libtflite_custom_ops.so' =
+            '5A1F4249AB30AF158CA9966D6518EB13EEB38AB9DEEFDEDEF7F203E4031AD6ED'
+    }
 }
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [System.IO.Compression.ZipFile]::OpenRead($resolvedApk)
 try {
-    foreach ($entryName in $expectedLibraries.Keys) {
-        $entry = $archive.GetEntry($entryName)
-        if ($null -eq $entry) {
-            throw "Required model runtime library is missing: $entryName"
-        }
-        $stream = $entry.Open()
-        $sha256 = [System.Security.Cryptography.SHA256]::Create()
-        try {
-            $bytes = $sha256.ComputeHash($stream)
-            $actual = ([BitConverter]::ToString($bytes)).Replace('-', '')
-        }
-        finally {
-            $sha256.Dispose()
-            $stream.Dispose()
-        }
-        if ($actual -ne $expectedLibraries[$entryName]) {
-            throw (
-                'Packaged native checksum mismatch for {0}. Expected {1}, got {2}.' -f
-                $entryName,
-                $expectedLibraries[$entryName],
-                $actual
-            )
-        }
-    }
+    $runtimeLibraryBytes = Read-LexiQuestNativeLibraryBytes -Archive $archive
 
-    $runtimeLibraries = @(
-        $archive.Entries |
-            Where-Object {
-                $_.FullName -match (
-                    '^lib/[^/]+/(libLiteRt.*|libtensorflowlite.*|' +
-                    'libtflite.*)\.so$'
-                )
-            }
-    )
-    $unexpected = @(
-        $runtimeLibraries |
-            Where-Object { -not $expectedLibraries.Contains($_.FullName) }
-    )
-    if ($unexpected.Count -ne 0) {
-        $names = ($unexpected | ForEach-Object { $_.FullName }) -join ', '
-        throw "Unexpected model runtime libraries or ABIs: $names"
-    }
-    if (
-        $runtimeLibraries.FullName -match 'libLiteRt.*Accelerator\.so$'
-    ) {
+    Assert-LexiQuestNativeLibrarySetIntegrity `
+        -LibraryBytesByEntry $runtimeLibraryBytes `
+        -BuildMode $resolvedBuildMode `
+        -ExpectedRawSha256ByEntry $expectedRawLibraries `
+        -ExpectedCanonicalSha256ByMode $expectedCanonicalCustomOps
+
+    if ($runtimeLibraryBytes.Keys -match 'libLiteRt.*Accelerator\.so$') {
         throw 'GPU accelerator libraries must not be packaged before hardware certification.'
     }
 }

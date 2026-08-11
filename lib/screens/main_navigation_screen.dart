@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
-import '../runtime/field_feature.dart';
-import '../runtime/field_feature_registry.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
 import 'achievements_screen.dart';
 import 'ai_tutor_screen.dart';
@@ -15,6 +15,7 @@ import 'ghost_shadow_duel_screen.dart';
 import 'export_center_screen.dart';
 import 'object_scanner_screen.dart';
 import 'profile_settings_screen.dart';
+import 'quest_status_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
@@ -28,7 +29,7 @@ class MainNavigationScreen extends StatefulWidget {
   });
 
   final int initialIndex;
-  final FieldFeatureRegistry? featureRegistry;
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<MainNavigationScreen> createState() => _MainNavigationScreenState();
@@ -36,20 +37,16 @@ class MainNavigationScreen extends StatefulWidget {
 
 class _MainNavigationScreenState extends State<MainNavigationScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-  late int _currentIndex;
   List<_NavigationEntry> _entries = const [];
+  List<_NavigationEntry> _visibleEntries = const [];
+  String? _selectedEntryId;
+  bool _selectionInitialized = false;
   Listenable? _featureChanges;
-
-  @override
-  void initState() {
-    super.initState();
-    _currentIndex = widget.initialIndex;
-  }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final features = _fieldFeatures(context);
+    final features = _features(context);
     _observeFeatureChanges(features);
     _refreshEntries(features);
   }
@@ -58,13 +55,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void didUpdateWidget(MainNavigationScreen oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.featureRegistry, widget.featureRegistry)) {
-      final features = _fieldFeatures(context);
+      final features = _features(context);
       _observeFeatureChanges(features);
       _refreshEntries(features);
     }
   }
 
-  void _observeFeatureChanges(FieldFeatureRegistry features) {
+  void _observeFeatureChanges(FeatureRegistry? features) {
     final Listenable? next = features is Listenable
         ? features as Listenable
         : null;
@@ -76,12 +73,26 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
 
   void _onFeatureChanged() {
     if (!mounted) return;
-    setState(() => _refreshEntries(_fieldFeatures(context)));
+    setState(() => _refreshEntries(_features(context)));
   }
 
-  void _refreshEntries(FieldFeatureRegistry features) {
-    _entries = _buildEntries(features);
-    _currentIndex = _currentIndex.clamp(0, _entries.length - 1);
+  void _refreshEntries(FeatureRegistry? features) {
+    _entries = _buildEntries();
+    _visibleEntries = _entries
+        .where((entry) => entry.isVisible(features))
+        .toList(growable: false);
+    if (!_selectionInitialized) {
+      final initialIndex = widget.initialIndex.clamp(
+        0,
+        _visibleEntries.length - 1,
+      );
+      _selectedEntryId = _visibleEntries[initialIndex].id;
+      _selectionInitialized = true;
+      return;
+    }
+    if (!_entries.any((entry) => entry.id == _selectedEntryId)) {
+      _selectedEntryId = _visibleEntries.first.id;
+    }
   }
 
   @override
@@ -90,58 +101,97 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     super.dispose();
   }
 
-  FieldFeatureRegistry _fieldFeatures(BuildContext context) {
+  FeatureRegistry? _features(BuildContext context) {
     return widget.featureRegistry ??
-        AppDependenciesScope.maybeOf(context)?.fieldFeatures ??
-        const BuildFieldFeatureRegistry.allEnabled();
+        AppDependenciesScope.maybeOf(context)?.features;
   }
 
-  List<_NavigationEntry> _buildEntries(FieldFeatureRegistry features) {
+  List<_NavigationEntry> _buildEntries() {
     return [
-      if (features.isVisible(FieldFeature.vocabulary))
-        _NavigationEntry(
-          screen: CategoriesPage(),
-          icon: Icons.menu_book_outlined,
-          selectedIcon: Icons.menu_book,
-          label: 'คลังคำศัพท์',
+      _NavigationEntry(
+        id: 'vocabulary',
+        productionEntryId: 'home/vocabulary',
+        visibilityFeatures: const [Feature.vocabulary],
+        screen: _gate(
+          'vocabulary',
+          Feature.vocabulary,
+          (_) => CategoriesPage(),
         ),
-      if (features.isVisible(FieldFeature.quiz) ||
-          features.isVisible(FieldFeature.srs) ||
-          features.isVisible(FieldFeature.reading))
-        const _NavigationEntry(
-          screen: ChooseModeScreen(),
-          icon: Icons.school_outlined,
-          selectedIcon: Icons.school,
-          label: 'เรียนรู้',
+        icon: Icons.menu_book_outlined,
+        selectedIcon: Icons.menu_book,
+        label: 'คลังคำศัพท์',
+      ),
+      _NavigationEntry(
+        id: 'learning',
+        productionEntryId: 'home/learn',
+        showUnavailableWhenHidden: true,
+        visibilityFeatures: const [Feature.quiz, Feature.srs, Feature.reading],
+        screen: KeyedSubtree(
+          key: const ValueKey<String>('production-feature-view-learning'),
+          child: ChooseModeScreen(featureRegistry: widget.featureRegistry),
         ),
-      if (features.isVisible(FieldFeature.mastery))
-        const _NavigationEntry(
-          screen: MasteryDashboardScreen(),
-          icon: Icons.analytics_outlined,
-          selectedIcon: Icons.analytics,
-          label: 'สถิติ',
+        icon: Icons.school_outlined,
+        selectedIcon: Icons.school,
+        label: 'เรียนรู้',
+      ),
+      _NavigationEntry(
+        id: 'mastery',
+        productionEntryId: 'home/mastery',
+        visibilityFeatures: const [Feature.mastery],
+        screen: _gate(
+          'mastery',
+          Feature.mastery,
+          (_) => const MasteryDashboardScreen(),
         ),
-      if (features.isVisible(FieldFeature.weakness))
-        const _NavigationEntry(
-          screen: WeaknessClinicScreen(),
-          icon: Icons.healing_outlined,
-          selectedIcon: Icons.healing,
-          label: 'จุดอ่อน',
+        icon: Icons.analytics_outlined,
+        selectedIcon: Icons.analytics,
+        label: 'สถิติ',
+      ),
+      _NavigationEntry(
+        id: 'weakness',
+        productionEntryId: 'home/weakness',
+        visibilityFeatures: const [Feature.weakness],
+        screen: _gate(
+          'weakness',
+          Feature.weakness,
+          (_) => const WeaknessClinicScreen(),
         ),
-      if (features.isVisible(FieldFeature.achievements))
-        const _NavigationEntry(
-          screen: AchievementsScreen(),
-          icon: Icons.emoji_events_outlined,
-          selectedIcon: Icons.emoji_events,
-          label: 'รางวัล',
+        icon: Icons.healing_outlined,
+        selectedIcon: Icons.healing,
+        label: 'จุดอ่อน',
+      ),
+      _NavigationEntry(
+        id: 'achievements',
+        productionEntryId: 'home/achievements',
+        visibilityFeatures: const [Feature.achievements],
+        screen: _gate(
+          'achievements',
+          Feature.achievements,
+          (_) => const AchievementsScreen(),
         ),
+        icon: Icons.emoji_events_outlined,
+        selectedIcon: Icons.emoji_events,
+        label: 'รางวัล',
+      ),
       const _NavigationEntry(
+        id: 'profile',
+        productionEntryId: 'home/profile',
+        alwaysVisible: true,
         screen: ProfileSettingsScreen(),
         icon: Icons.person_outlined,
         selectedIcon: Icons.person,
         label: 'โปรไฟล์',
       ),
     ];
+  }
+
+  Widget _gate(String id, Feature feature, WidgetBuilder builder) {
+    return ProductionFeatureGate(
+      key: ValueKey<String>('production-feature-view-$id'),
+      feature: feature,
+      registry: widget.featureRegistry,
+      builder: builder,
+    );
   }
 
   String _runtimeStatusSummary(BuildContext context) {
@@ -166,17 +216,42 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     return '${buildInfo.version} · ${buildInfo.buildId}';
   }
 
-  void _pushDestination(String name, Widget destination) {
+  void _pushDestination(String name, WidgetBuilder builder) {
     _scaffoldKey.currentState?.closeDrawer();
     AppNavigator.pushPage<void>(
       context,
-      AppPage<void>(name: name, builder: (_) => destination),
+      AppPage<void>(name: name, builder: builder),
+    );
+  }
+
+  void _pushFeatureDestination(
+    String name,
+    Feature feature,
+    WidgetBuilder builder,
+  ) {
+    _pushDestination(
+      name,
+      (_) => ProductionFeatureGate(
+        feature: feature,
+        registry: widget.featureRegistry,
+        builder: builder,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final features = _fieldFeatures(context);
+    final features = _features(context);
+    final selectedStackIndex = _entries.indexWhere(
+      (entry) => entry.id == _selectedEntryId,
+    );
+    final selectedDestinationIndex = _visibleEntries.indexWhere(
+      (entry) => entry.id == _selectedEntryId,
+    );
+    final selectedEntry = _entries[selectedStackIndex];
+    final showAggregateUnavailable =
+        selectedEntry.showUnavailableWhenHidden &&
+        !selectedEntry.isVisible(features);
     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
     final showBanner = status != null && !status.isFullyReady;
     return Scaffold(
@@ -213,9 +288,25 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
               ),
             ),
           Expanded(
-            child: IndexedStack(
-              index: _currentIndex,
-              children: [for (final entry in _entries) entry.screen],
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                Offstage(
+                  offstage: showAggregateUnavailable,
+                  child: IndexedStack(
+                    index: selectedStackIndex,
+                    children: [for (final entry in _entries) entry.screen],
+                  ),
+                ),
+                if (showAggregateUnavailable)
+                  ProductionFeatureUnavailable(
+                    feature: selectedEntry.visibilityFeatures.first,
+                    reason: ProductionFeatureUnavailableReason.unavailableState,
+                    state: features?.stateOf(
+                      selectedEntry.visibilityFeatures.first,
+                    ),
+                  ),
+              ],
             ),
           ),
         ],
@@ -245,81 +336,109 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   ),
                 ),
               ),
-              if (features.isVisible(FieldFeature.vocabulary))
+              if (features?.isVisible(Feature.vocabulary) == true)
                 ListTile(
                   leading: const Icon(Icons.menu_book),
                   title: const Text('คลังคำศัพท์'),
                   onTap: () {
                     _scaffoldKey.currentState?.closeDrawer();
                     setState(() {
-                      _currentIndex = 0;
+                      _selectedEntryId = 'vocabulary';
                     });
                   },
                 ),
-              if (features.isVisible(FieldFeature.shop))
+              if (features?.isVisible(Feature.shop) == true)
                 ListTile(
+                  key: const ValueKey<String>('drawer/rewards/shop'),
                   leading: const Icon(Icons.shopping_bag),
                   title: const Text('ร้านค้า'),
-                  onTap: () =>
-                      _pushDestination('rewards/shop', const ShopPage()),
+                  onTap: () => _pushFeatureDestination(
+                    'rewards/shop',
+                    Feature.shop,
+                    (_) => const ShopPage(),
+                  ),
                 ),
-              if (features.isVisible(FieldFeature.objectScanner))
+              if (features?.isVisible(Feature.objectScanner) == true)
                 ListTile(
+                  key: const ValueKey<String>('drawer/practice/object-scanner'),
                   leading: const Icon(Icons.document_scanner_outlined),
                   title: const Text('สแกนวัตถุ'),
-                  onTap: () => _pushDestination(
+                  onTap: () => _pushFeatureDestination(
                     'practice/object-scanner',
-                    const ObjectScannerScreen(),
+                    Feature.objectScanner,
+                    (_) => const ObjectScannerScreen(),
                   ),
                 ),
-              if (features.isVisible(FieldFeature.speechPractice))
+              if (features?.isVisible(Feature.speechPractice) == true)
                 ListTile(
+                  key: const ValueKey<String>('drawer/practice/shadowing'),
                   leading: const Icon(Icons.mic_none),
                   title: const Text('ฝึกพูดตามเสียง'),
-                  onTap: () => _pushDestination(
+                  onTap: () => _pushFeatureDestination(
                     'practice/shadowing',
-                    const ShadowingChallengeScreen(),
+                    Feature.speechPractice,
+                    (_) => const ShadowingChallengeScreen(),
                   ),
                 ),
-              if (features.isVisible(FieldFeature.ghostDuel))
+              if (features?.isVisible(Feature.ghostDuel) == true)
                 ListTile(
+                  key: const ValueKey<String>('drawer/learning/ghost-duel'),
                   leading: const Icon(Icons.sports_esports_outlined),
                   title: const Text('ดวลกับสถิติเดิม'),
-                  onTap: () => _pushDestination(
+                  onTap: () => _pushFeatureDestination(
                     'learning/ghost-duel',
-                    const GhostShadowDuelScreen(),
+                    Feature.ghostDuel,
+                    (_) => const GhostShadowDuelScreen(),
                   ),
                 ),
-              if (features.isVisible(FieldFeature.aiTutor)) ...[
+              if (features?.isVisible(Feature.aiTutor) == true) ...[
                 ListTile(
+                  key: const ValueKey<String>('drawer/ai-tutor/chat'),
                   leading: const Icon(Icons.chat_bubble_outline),
                   title: const Text('AI Tutor'),
-                  onTap: () =>
-                      _pushDestination('ai-tutor/chat', const AiTutorScreen()),
+                  onTap: () => _pushFeatureDestination(
+                    'ai-tutor/chat',
+                    Feature.aiTutor,
+                    (_) => const AiTutorScreen(),
+                  ),
                 ),
                 ListTile(
                   leading: const Icon(Icons.key_outlined),
                   title: const Text('AI Provider BYOK'),
-                  onTap: () => _pushDestination(
+                  onTap: () => _pushFeatureDestination(
                     'ai-tutor/settings',
-                    const AiTutorSettingsScreen(),
+                    Feature.aiTutor,
+                    (_) => const AiTutorSettingsScreen(),
                   ),
                 ),
               ],
-              if (features.isVisible(FieldFeature.export))
+              if (features?.isVisible(Feature.export) == true)
                 ListTile(
+                  key: const ValueKey<String>('drawer/export/center'),
                   leading: const Icon(Icons.file_download_outlined),
                   title: const Text('ส่งออกข้อมูล'),
-                  onTap: () => _pushDestination(
+                  onTap: () => _pushFeatureDestination(
                     'export/center',
-                    const ExportCenterScreen(),
+                    Feature.export,
+                    (_) => const ExportCenterScreen(),
+                  ),
+                ),
+              if (features?.isVisible(Feature.questV2) == true)
+                ListTile(
+                  key: const ValueKey<String>('drawer/rewards/quests'),
+                  leading: const Icon(Icons.flag_outlined),
+                  title: const Text('Quests'),
+                  onTap: () => _pushFeatureDestination(
+                    'rewards/quests',
+                    Feature.questV2,
+                    (_) => const QuestStatusScreen(),
                   ),
                 ),
               ListTile(
                 leading: const Icon(Icons.settings),
                 title: const Text('ตั้งค่า'),
                 onTap: () =>
-                    _pushDestination('settings', const SettingScreen()),
+                    _pushDestination('settings', (_) => const SettingScreen()),
               ),
               const Divider(),
               Padding(
@@ -346,36 +465,69 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
-        },
-        destinations: [
-          for (final entry in _entries)
-            NavigationDestination(
-              icon: Icon(entry.icon),
-              selectedIcon: Icon(entry.selectedIcon),
-              label: entry.label,
+      bottomNavigationBar: _visibleEntries.length < 2
+          ? BottomAppBar(
+              child: SizedBox(
+                height: 64,
+                child: TextButton.icon(
+                  key: const ValueKey<String>('profile-fallback-destination'),
+                  onPressed: () {
+                    setState(() => _selectedEntryId = 'profile');
+                  },
+                  icon: const Icon(Icons.person_outlined),
+                  label: const Text('โปรไฟล์'),
+                ),
+              ),
+            )
+          : NavigationBar(
+              selectedIndex: selectedDestinationIndex < 0
+                  ? 0
+                  : selectedDestinationIndex,
+              onDestinationSelected: (index) {
+                setState(() {
+                  _selectedEntryId = _visibleEntries[index].id;
+                });
+              },
+              destinations: [
+                for (final entry in _visibleEntries)
+                  NavigationDestination(
+                    key: ValueKey<String>(entry.productionEntryId),
+                    icon: Icon(entry.icon),
+                    selectedIcon: Icon(entry.selectedIcon),
+                    label: entry.label,
+                  ),
+              ],
             ),
-        ],
-      ),
     );
   }
 }
 
 final class _NavigationEntry {
   const _NavigationEntry({
+    required this.id,
+    required this.productionEntryId,
     required this.screen,
     required this.icon,
     required this.selectedIcon,
     required this.label,
+    this.visibilityFeatures = const [],
+    this.alwaysVisible = false,
+    this.showUnavailableWhenHidden = false,
   });
 
+  final String id;
+  final String productionEntryId;
   final Widget screen;
   final IconData icon;
   final IconData selectedIcon;
   final String label;
+  final List<Feature> visibilityFeatures;
+  final bool alwaysVisible;
+  final bool showUnavailableWhenHidden;
+
+  bool isVisible(FeatureRegistry? features) {
+    if (alwaysVisible) return true;
+    if (features == null) return false;
+    return visibilityFeatures.any(features.isVisible);
+  }
 }

@@ -1,8 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
-import 'package:vocab_learning_app/runtime/field_feature.dart';
-import 'package:vocab_learning_app/runtime/field_feature_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 
@@ -24,11 +22,9 @@ void main() {
         const BuildFeatureRegistry.fieldDefaults(),
         overrides: await store.load(nowUtc: now),
       );
-      final legacy = FeatureRegistryFieldAdapter(registry);
-
       expect(registry.stateOf(Feature.aiTutor), FeatureState.emergencyOff);
-      expect(legacy.stateOf(FieldFeature.aiTutor), FieldFeatureState.hidden);
-      expect(legacy.isVisible(FieldFeature.aiTutor), isFalse);
+      expect(registry.isVisible(Feature.aiTutor), isFalse);
+      expect(registry.isEnabled(Feature.aiTutor), isFalse);
     },
   );
 

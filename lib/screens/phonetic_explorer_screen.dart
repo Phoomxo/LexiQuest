@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
-import '../voice/voice_models.dart';
+
 import '../features/voice/application/voice_use_cases.dart';
+import '../runtime/app_dependencies.dart';
+import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
 
 class PhoneticSymbol {
   final String ipa;
@@ -24,8 +27,7 @@ class PhoneticExplorerScreen extends StatefulWidget {
 }
 
 class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
-  late final VoiceUseCases _voiceProvider;
-  bool _ownsVoiceProvider = false;
+  VoiceUseCases? _voiceProvider;
   String? _selectedIpa;
 
   final List<PhoneticSymbol> _phonetics = const [
@@ -62,18 +64,20 @@ class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
   ];
 
   @override
-  void initState() {
-    super.initState();
-    _voiceProvider = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoiceProvider = widget.voice == null;
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _voiceProvider = widget.voice ?? dependencies?.voice;
   }
 
   Future<void> _speakWord(PhoneticSymbol symbol) async {
+    final voice = _voiceProvider;
+    if (voice == null) return;
     setState(() {
       _selectedIpa = symbol.ipa;
     });
     try {
-      await _voiceProvider.speak(
+      await voice.speak(
         VoiceRequest.create(
           text: symbol.exampleWord,
           language: 'en',
@@ -88,14 +92,12 @@ class _PhoneticExplorerScreenState extends State<PhoneticExplorerScreen> {
   }
 
   @override
-  void dispose() {
-    _voiceProvider.stop();
-    _voiceProvider.disposeIfOwned(_ownsVoiceProvider);
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (_voiceProvider == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
     return Scaffold(
       appBar: AppBar(
         title: const Text(

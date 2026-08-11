@@ -34,6 +34,8 @@ QuestInstance _newInstance({
   String ownerId = 'owner-test',
   String? questId,
   QuestInstanceState state = QuestInstanceState.active,
+  DateTime? assignedAtUtc,
+  List<ObjectiveProgress>? progress,
 }) {
   final def = _dailyVocabDef();
   final qid = questId ?? def.questId;
@@ -42,15 +44,17 @@ QuestInstance _newInstance({
     questId: qid,
     ownerId: ownerId,
     catalogVersion: def.catalogVersion,
-    assignedAtUtc: DateTime.utc(2026, 8, 4, 8, 0),
+    assignedAtUtc: assignedAtUtc ?? DateTime.utc(2026, 8, 4, 8, 0),
     state: state,
-    progress: [
-      const ObjectiveProgress(
-        objectiveId: 'obj-review',
-        currentCount: 0,
-        targetCount: 3,
-      ),
-    ],
+    progress:
+        progress ??
+        const [
+          ObjectiveProgress(
+            objectiveId: 'obj-review',
+            currentCount: 0,
+            targetCount: 3,
+          ),
+        ],
   );
 }
 
@@ -151,6 +155,89 @@ void main() {
       final all = await repo.getAllInstances('owner-test');
       expect(all, hasLength(2));
     });
+
+    test('getAllInstances rejects limits outside 1 through 50', () async {
+      await expectLater(
+        repo.getAllInstances('owner-test', limit: 0),
+        throwsRangeError,
+      );
+      await expectLater(
+        repo.getAllInstances('owner-test', limit: 51),
+        throwsRangeError,
+      );
+    });
+
+    test(
+      'getAllInstances is owner isolated SQL bounded and deterministic',
+      () async {
+        await database.customInsert(
+          "INSERT INTO local_owners(id, account_state, created_at_utc_ms) "
+          "VALUES ('owner-foreign', 'localGuest', 1722758400000)",
+        );
+
+        final fixtures = <QuestInstance>[
+          _newInstance(
+            instanceId: 'active-b',
+            questId: 'q-active-b',
+            assignedAtUtc: DateTime.utc(2026, 8, 10),
+          ),
+          _newInstance(
+            instanceId: 'active-a',
+            questId: 'q-active-a',
+            assignedAtUtc: DateTime.utc(2026, 8, 10),
+            progress: const [
+              ObjectiveProgress(
+                objectiveId: 'z-objective',
+                currentCount: 1,
+                targetCount: 2,
+              ),
+              ObjectiveProgress(
+                objectiveId: 'a-objective',
+                currentCount: 0,
+                targetCount: 1,
+              ),
+            ],
+          ),
+          _newInstance(
+            instanceId: 'completed-new',
+            questId: 'q-completed-new',
+            assignedAtUtc: DateTime.utc(2026, 8, 11),
+            state: QuestInstanceState.completed,
+          ),
+          _newInstance(
+            instanceId: 'expired-old',
+            questId: 'q-expired-old',
+            assignedAtUtc: DateTime.utc(2026, 8, 9),
+            state: QuestInstanceState.expired,
+          ),
+          _newInstance(
+            instanceId: 'foreign-active',
+            ownerId: 'owner-foreign',
+            questId: 'q-foreign-active',
+            assignedAtUtc: DateTime.utc(2026, 8, 12),
+          ),
+        ];
+        for (final instance in fixtures) {
+          await repo.upsertDefinition(
+            _dailyVocabDef(questId: instance.questId),
+          );
+          await repo.startInstance(instance);
+        }
+
+        final all = await repo.getAllInstances('owner-test', limit: 3);
+
+        expect(all.map((instance) => instance.instanceId), [
+          'active-a',
+          'active-b',
+          'completed-new',
+        ]);
+        expect(all.first.progress.map((objective) => objective.objectiveId), [
+          'a-objective',
+          'z-objective',
+        ]);
+        expect(all.map((instance) => instance.ownerId).toSet(), {'owner-test'});
+      },
+    );
 
     // ── Progress updates ─────────────────────────────────────────────────────
 

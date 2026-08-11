@@ -16,9 +16,13 @@ import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository
 class _FakeOwners implements LocalOwnerRepository {
   final LocalOwner owner;
   _FakeOwners(this.owner);
+  int getCalls = 0;
 
   @override
-  Future<LocalOwner> getOrCreateActiveOwner() async => owner;
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    getCalls += 1;
+    return owner;
+  }
 
   @override
   Future<LocalOwner> bindFirebaseUid(String ownerId, String uid) async => owner;
@@ -29,6 +33,9 @@ final class _ThrowAfterProgressRepository implements QuestRepository {
 
   final QuestRepository delegate;
   bool throwAfterNextProgress = true;
+  String? allInstancesOwnerId;
+  int? allInstancesLimit;
+  int allInstancesCalls = 0;
 
   @override
   Future<void> saveProgress(
@@ -49,8 +56,16 @@ final class _ThrowAfterProgressRepository implements QuestRepository {
   Future<List<QuestInstance>> getActiveInstances(String ownerId) =>
       delegate.getActiveInstances(ownerId);
   @override
-  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
-      delegate.getAllInstances(ownerId);
+  Future<List<QuestInstance>> getAllInstances(
+    String ownerId, {
+    int limit = 50,
+  }) {
+    allInstancesCalls += 1;
+    allInstancesOwnerId = ownerId;
+    allInstancesLimit = limit;
+    return delegate.getAllInstances(ownerId, limit: limit);
+  }
+
   @override
   Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
     required String ownerId,
@@ -102,8 +117,10 @@ final class _ThrowAfterCompletionRepository implements QuestRepository {
   Future<List<QuestInstance>> getActiveInstances(String ownerId) =>
       delegate.getActiveInstances(ownerId);
   @override
-  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
-      delegate.getAllInstances(ownerId);
+  Future<List<QuestInstance>> getAllInstances(
+    String ownerId, {
+    int limit = 50,
+  }) => delegate.getAllInstances(ownerId, limit: limit);
   @override
   Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
     required String ownerId,
@@ -140,8 +157,10 @@ final class _RejectHistoryScanRepository implements QuestRepository {
   final QuestRepository delegate;
 
   @override
-  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
-      throw StateError('unbounded quest history scan');
+  Future<List<QuestInstance>> getAllInstances(
+    String ownerId, {
+    int limit = 50,
+  }) => throw StateError('unbounded quest history scan');
   @override
   Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
     required String ownerId,
@@ -293,6 +312,49 @@ void main() {
       expect(stored, isNotNull);
       expect(stored!.title, def.title);
     });
+
+    test('bounded status read forwards current owner and limit', () async {
+      final capturingRepository = _ThrowAfterProgressRepository(repo);
+      final statusUseCases = QuestUseCases(
+        repository: capturingRepository,
+        owners: _FakeOwners(testOwner),
+        generateId: () => 'status-id',
+        nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+        timezoneId: 'Asia/Bangkok',
+      );
+
+      expect(
+        await statusUseCases.getAllInstancesForCurrentOwner(limit: 17),
+        isEmpty,
+      );
+      expect(capturingRepository.allInstancesOwnerId, testOwner.id);
+      expect(capturingRepository.allInstancesLimit, 17);
+    });
+
+    test(
+      'invalid status limits fail before owner or repository lookup',
+      () async {
+        final capturingRepository = _ThrowAfterProgressRepository(repo);
+        final owners = _FakeOwners(testOwner);
+        final statusUseCases = QuestUseCases(
+          repository: capturingRepository,
+          owners: owners,
+          generateId: () => 'status-id',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+          timezoneId: 'Asia/Bangkok',
+        );
+
+        for (final invalidLimit in const [0, 51]) {
+          await expectLater(
+            statusUseCases.getAllInstancesForCurrentOwner(limit: invalidLimit),
+            throwsRangeError,
+          );
+        }
+
+        expect(owners.getCalls, 0);
+        expect(capturingRepository.allInstancesCalls, 0);
+      },
+    );
 
     // ── processEvent ─────────────────────────────────────────────────────────
 

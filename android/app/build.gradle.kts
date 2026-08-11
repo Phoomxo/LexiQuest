@@ -22,7 +22,8 @@ android {
     namespace = "com.lexiquest.app"
     compileSdk = flutter.compileSdkVersion
     // Pinned because the APK integrity gate verifies locally compiled LiteRT
-    // custom-op binaries byte-for-byte.
+    // custom ops with build-id-descriptor-insensitive canonical hashing while
+    // retaining exact source, ABI, mode, and all other byte integrity.
     ndkVersion = "28.2.13676358"
 
     compileOptions {

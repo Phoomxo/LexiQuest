@@ -9,6 +9,8 @@ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/test_quest_use_cases.dart';
+
 class _FakeGuestSessionService implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
@@ -30,6 +32,7 @@ AppDependencies _dependencies(
     ),
     config: null,
     guestSessionService: _FakeGuestSessionService(),
+    quest: testQuestUseCases(),
     buildInfo: buildInfo,
     syncTrigger: syncTrigger,
     disposeResources: disposeResources,

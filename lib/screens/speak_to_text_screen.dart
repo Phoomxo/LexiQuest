@@ -5,11 +5,12 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
-import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
-import '../voice/voice_models.dart';
-import 'word_scramble_screen.dart';
 import '../navigation/app_routes.dart';
+import '../runtime/app_dependencies.dart';
+import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
+import 'word_scramble_screen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   const SpeakToTextScreen({
@@ -17,6 +18,7 @@ class SpeakToTextScreen extends StatefulWidget {
     required this.correctWord,
     this.voice,
     this.speechPractice,
+    this.learning,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -25,6 +27,7 @@ class SpeakToTextScreen extends StatefulWidget {
   final String correctWord;
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
+  final LearningUseCases? learning;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -35,10 +38,13 @@ class SpeakToTextScreen extends StatefulWidget {
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     with WidgetsBindingObserver {
-  late final VoiceUseCases _voice;
-  bool _ownsVoice = false;
+  VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
+  SpeechPracticeSession? _speechSession;
   LearningUseCases? _learning;
+  bool _initialPlaybackScheduled = false;
+  bool _listenPending = false;
+  int _listenEpoch = 0;
   bool _listening = false;
   String _transcript = '';
   String? _error;
@@ -49,22 +55,56 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoice = widget.voice == null;
-    WidgetsBinding.instance.addPostFrameCallback((_) => _speakWord());
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _bindDependencies();
+  }
+
+  @override
+  void didUpdateWidget(SpeakToTextScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  void _bindDependencies() {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    _speech ??= widget.speechPractice ?? dependencies?.speechPractice;
-    _learning ??= dependencies?.learning;
+    final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
+    final speech = widget.speechPractice ?? dependencies?.speechPractice;
+    if (!identical(speech, _speech) || !routeIsCurrent) {
+      _listenEpoch += 1;
+      _listenPending = false;
+      _listening = false;
+      _speechSession?.release().ignore();
+      _speechSession = null;
+    }
+    _voice = widget.voice ?? dependencies?.voice;
+    _speech = speech;
+    _learning = widget.learning ?? dependencies?.learning;
+    if (routeIsCurrent &&
+        speech != null &&
+        (_speechSession == null || !_speechSession!.isCurrent)) {
+      _speechSession?.release().ignore();
+      _speechSession = speech.acquireSession();
+    }
+    if (routeIsCurrent &&
+        _voice != null &&
+        _speech != null &&
+        !_initialPlaybackScheduled) {
+      _initialPlaybackScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _speakWord();
+      });
+    }
   }
 
   Future<void> _speakWord() async {
+    final voice = _voice;
+    if (voice == null) return;
     try {
-      await _voice.speak(
+      await voice.speak(
         VoiceRequest.create(
           text: widget.correctWord,
           language: 'en',
@@ -81,11 +121,21 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _startListening() async {
+    if (_listenPending) return;
     final speech = _speech;
+    var session = _speechSession;
     if (speech == null) {
       setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งานบนอุปกรณ์นี้');
       return;
     }
+    if (session == null || !session.isCurrent) {
+      session?.release().ignore();
+      session = speech.acquireSession();
+      _speechSession = session;
+    }
+    final activeSession = session;
+    final epoch = ++_listenEpoch;
+    _listenPending = true;
     setState(() {
       _error = null;
       _transcript = '';
@@ -93,34 +143,41 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     });
     _startedAtUtc = DateTime.now().toUtc();
     try {
-      await speech.start(
+      final started = await activeSession.start(
         locale: 'en-US',
-        onEvent: _onSpeechEvent,
+        onEvent: (event) => _onSpeechEvent(event, epoch),
         onFailure: (failure) {
-          if (!mounted) return;
+          if (!mounted || epoch != _listenEpoch) return;
           setState(() {
             _listening = false;
             _error = _speechFailureText(failure);
           });
         },
         onStatus: (status) {
-          if (!mounted) return;
+          if (!mounted || epoch != _listenEpoch) return;
           setState(() => _listening = status == 'listening');
         },
       );
-      if (mounted) setState(() => _listening = speech.isListening);
-    } on SpeechPracticeException catch (error) {
-      if (mounted) {
-        setState(() {
-          _listening = false;
-          _error = _speechFailureText(error.code);
-        });
+      if (!mounted || epoch != _listenEpoch) return;
+      if (!started) {
+        _listenPending = false;
+        setState(() => _listening = false);
+        return;
       }
+      _listenPending = false;
+      setState(() => _listening = activeSession.isListening);
+    } on SpeechPracticeException catch (error) {
+      if (!mounted || epoch != _listenEpoch) return;
+      _listenPending = false;
+      setState(() {
+        _listening = false;
+        _error = _speechFailureText(error.code);
+      });
     }
   }
 
-  void _onSpeechEvent(SpeechRecognitionEvent event) {
-    if (!mounted) return;
+  void _onSpeechEvent(SpeechRecognitionEvent event, int epoch) {
+    if (!mounted || epoch != _listenEpoch) return;
     final assessment = _speech!.assess(
       target: widget.correctWord,
       event: event,
@@ -162,7 +219,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _stopListening() async {
-    await _speech?.stop();
+    _listenEpoch += 1;
+    _listenPending = false;
+    await _speechSession?.stop();
     if (mounted) setState(() => _listening = false);
   }
 
@@ -177,21 +236,35 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _cancelForLifecycle() async {
-    await _speech?.cancel();
+    final shouldCancel = _listenPending || _listening;
+    _listenEpoch += 1;
+    _listenPending = false;
+    if (shouldCancel) await _speechSession?.cancel();
     if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_speech?.cancel());
-    unawaited(_voice.stop());
-    _voice.disposeIfOwned(_ownsVoice);
+    _listenEpoch += 1;
+    _listenPending = false;
+    _speechSession?.release().ignore();
+    _speechSession = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_voice == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
+    if (_speech == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.speechPractice,
+      );
+    }
     final assessment = _assessment;
     return Scaffold(
       appBar: AppBar(title: const Text('ฝึกออกเสียง')),
@@ -265,7 +338,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
             const SizedBox(height: 24),
             FilledButton.icon(
               key: const ValueKey<String>('speech-listen-button'),
-              onPressed: _listening ? _stopListening : _startListening,
+              onPressed: _listenPending
+                  ? null
+                  : (_listening ? _stopListening : _startListening),
               icon: Icon(_listening ? Icons.stop : Icons.mic),
               label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
             ),

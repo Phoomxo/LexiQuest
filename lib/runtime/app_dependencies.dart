@@ -29,7 +29,6 @@ import '../navigation/app_routes.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_runtime_status.dart';
-import 'field_feature_registry.dart';
 import 'registries/consent_registry.dart';
 import 'registries/entitlement_registry.dart';
 import 'registries/experiment_registry.dart';
@@ -42,8 +41,8 @@ final class AppDependencies {
     required this.runtimeStatus,
     required this.config,
     required this.guestSessionService,
+    required this.quest,
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
-    this.fieldFeatures = const BuildFieldFeatureRegistry.fieldDefaults(),
     this.features = const BuildFeatureRegistry.fieldDefaults(),
     this.featureControls,
     this.experiments = const NoOpExperimentRegistry(),
@@ -71,7 +70,6 @@ final class AppDependencies {
     this.objectScanner,
     this.speechPractice,
     this.voice,
-    this.quest,
     this.streak,
     this.associativeLearning,
     this.disposeResources,
@@ -82,8 +80,7 @@ final class AppDependencies {
   final AppConfig? config;
   final GuestSessionService guestSessionService;
   final AppBuildInfo buildInfo;
-  final FieldFeatureRegistry fieldFeatures;
-  // V2 registries — use these for new code; FieldFeatureRegistry is legacy.
+  // V2 registry is the sole production feature authority.
   final FeatureRegistry features;
   final RuntimeFeatureControls? featureControls;
   final ExperimentRegistry experiments;
@@ -112,9 +109,8 @@ final class AppDependencies {
   final SpeechPracticeUseCases? speechPractice;
   final VoiceUseCases? voice;
 
-  /// V2 Quest pipeline — wired when [Feature.questV2] is enabled.
-  /// Null when the feature flag is off (hidden state).
-  final QuestUseCases? quest;
+  /// Durable V2 Quest projection. [Feature.questV2] gates UI invocation only.
+  final QuestUseCases quest;
 
   /// Streak tracking — wired at composition root.
   final StreakUseCases? streak;

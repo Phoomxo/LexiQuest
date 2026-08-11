@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -207,6 +208,62 @@ void main() {
       ),
     );
   });
+
+  test(
+    'dispose drains lease initialization and closes a late runtime',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'scanner-dispose-race-',
+      );
+      addTearDown(() => directory.delete(recursive: true));
+      final modelBytes = utf8.encode('verified-test-model');
+      final modelFile = File('${directory.path}/model.tflite');
+      await modelFile.writeAsBytes(modelBytes);
+      final manifest = _manifest(modelBytes);
+      final repository = _ModelRepository(
+        _activeRecord(manifest, modelFile.path),
+      );
+      final runtime = _FakeRuntime();
+      final runtimeOpen = Completer<ImageClassifierRuntime>();
+      final openCalled = Completer<void>();
+      final camera = _FakeCamera();
+      final scanner = ObjectScannerUseCases(
+        camera: camera,
+        deviceModels: DeviceModelUseCases(
+          manifest: manifest,
+          repository: repository,
+          downloadManager: _uncalledManager(repository, directory),
+          openRuntime: ({required path, required manifest, required delegate}) {
+            openCalled.complete();
+            return runtimeOpen.future;
+          },
+        ),
+        vocabulary: _throwingVocabulary(),
+        preprocessor: _FakePreprocessor(),
+      );
+      final lease = scanner.acquireLease();
+      final initialization = lease.initialize();
+      await openCalled.future;
+
+      var disposeCompleted = false;
+      final disposeFuture = scanner.dispose().then((_) {
+        disposeCompleted = true;
+      });
+      await Future<void>.delayed(Duration.zero);
+
+      expect(disposeCompleted, isFalse);
+
+      runtimeOpen.complete(runtime);
+      expect(await initialization, isFalse);
+      await disposeFuture;
+
+      expect(disposeCompleted, isTrue);
+      expect(runtime.closeCalls, 1);
+      expect(camera.isInitialized, isFalse);
+      expect(scanner.isReady, isFalse);
+      expect(scanner.acquireLease, throwsStateError);
+    },
+  );
 }
 
 ModelManifest _manifest(List<int> bytes) => ModelManifest(
@@ -322,6 +379,7 @@ final class _FakeRuntime implements ImageClassifierRuntime {
     ModelClassification(index: 1, label: 'Apple', confidence: 0.92),
     ModelClassification(index: 0, label: 'background', confidence: 0.05),
   ];
+  int closeCalls = 0;
 
   @override
   ModelDelegate get delegate => ModelDelegate.xnnpack;
@@ -333,7 +391,9 @@ final class _FakeRuntime implements ImageClassifierRuntime {
   }) async => classifications;
 
   @override
-  void close() {}
+  void close() {
+    closeCalls += 1;
+  }
 
   @override
   Future<void> run(Uint8List input) async {}

@@ -1,7 +1,16 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/screens/media_dependency_unavailable.dart';
 import 'package:vocab_learning_app/screens/speak_to_text_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
@@ -47,6 +56,7 @@ void main() {
           home: SpeakToTextScreen(
             correctWord: 'apple',
             voice: VoiceUseCases(fakeVoice),
+            speechPractice: SpeechPracticeUseCases(_LifecycleSpeechGateway()),
           ),
         ),
       );
@@ -72,6 +82,7 @@ void main() {
         home: SpeakToTextScreen(
           correctWord: 'banana',
           voice: VoiceUseCases(fakeVoice),
+          speechPractice: SpeechPracticeUseCases(_LifecycleSpeechGateway()),
         ),
       ),
     );
@@ -90,25 +101,45 @@ void main() {
     expect(fakeVoice.spokenRequests[1].text, 'banana');
   });
 
-  testWidgets('Disposing SpeakToTextScreen calls stop on VoiceProvider', (
+  testWidgets('outgoing route cannot stop shared voice used by replacement', (
     WidgetTester tester,
   ) async {
     final fakeVoice = FakeVoiceProvider();
+    final sharedVoice = VoiceUseCases(fakeVoice);
+    final sharedGateway = _LifecycleSpeechGateway();
+    final sharedSpeech = SpeechPracticeUseCases(sharedGateway);
 
     await tester.pumpWidget(
       MaterialApp(
         home: SpeakToTextScreen(
           correctWord: 'cat',
-          voice: VoiceUseCases(fakeVoice),
+          voice: sharedVoice,
+          speechPractice: sharedSpeech,
         ),
       ),
     );
     await tester.pumpAndSettle();
 
-    // Replace widget to trigger dispose
-    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    final context = tester.element(find.byType(SpeakToTextScreen));
+    unawaited(
+      Navigator.of(context).pushReplacement<void, void>(
+        MaterialPageRoute<void>(
+          builder: (_) => SpeakToTextScreen(
+            correctWord: 'banana',
+            voice: sharedVoice,
+            speechPractice: sharedSpeech,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-    expect(fakeVoice.stopCalls, greaterThanOrEqualTo(1));
+    expect(fakeVoice.spokenRequests.map((request) => request.text), [
+      'cat',
+      'banana',
+    ]);
+    expect(fakeVoice.stopCalls, 0);
+    expect(sharedGateway.cancelCalls, 0);
   });
 
   testWidgets('cancels microphone when app leaves foreground', (tester) async {
@@ -123,22 +154,402 @@ void main() {
       ),
     );
 
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.isListening, isTrue);
+
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
     await tester.pump();
 
     expect(gateway.cancelCalls, 1);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
   });
+
+  testWidgets('missing speech fails closed before automatic voice playback', (
+    tester,
+  ) async {
+    final fakeVoice = FakeVoiceProvider();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: VoiceUseCases(fakeVoice),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.widget<MediaDependencyUnavailable>(
+      find.byType(MediaDependencyUnavailable),
+    );
+    expect(state.reason, MediaDependencyUnavailableReason.speechPractice);
+    expect(fakeVoice.spokenRequests, isEmpty);
+  });
+
+  testWidgets('late microphone start cancels itself after route disposal', (
+    tester,
+  ) async {
+    final gateway = _PendingSpeechGateway();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: VoiceUseCases(FakeVoiceProvider()),
+          speechPractice: SpeechPracticeUseCases(gateway),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.startCalls, 1);
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.startCalls, 1);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('speech-listen-button')),
+          )
+          .onPressed,
+      isNull,
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pump();
+    expect(gateway.cancelCalls, 0);
+
+    gateway.allowStart.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(gateway.isListening, isFalse);
+    expect(gateway.cancelCalls, 1);
+  });
+
+  testWidgets('outgoing route cannot cancel replacement microphone', (
+    tester,
+  ) async {
+    final gateway = _SharedSpeechGateway();
+    final speech = SpeechPracticeUseCases(gateway);
+    final voice = VoiceUseCases(FakeVoiceProvider());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: voice,
+          speechPractice: speech,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final context = tester.element(find.byType(SpeakToTextScreen));
+    unawaited(
+      Navigator.of(context).pushReplacement<void, void>(
+        MaterialPageRoute<void>(
+          builder: (_) => SpeakToTextScreen(
+            correctWord: 'banana',
+            voice: voice,
+            speechPractice: speech,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.isListening, isTrue);
+
+    if (gateway.cancelCalls > 0) {
+      gateway.allowCancel.complete();
+      await tester.pump();
+      await tester.pump();
+    }
+
+    expect(gateway.isListening, isTrue);
+    expect(gateway.cancelCalls, 0);
+    gateway.allowCancel.complete();
+  });
+
+  testWidgets('stale pending route cannot cancel replacement listening', (
+    tester,
+  ) async {
+    final gateway = _TwoStartSpeechGateway();
+    final speech = SpeechPracticeUseCases(gateway);
+    final voice = VoiceUseCases(FakeVoiceProvider());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: voice,
+          speechPractice: speech,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.startCalls, 1);
+
+    final context = tester.element(find.byType(SpeakToTextScreen));
+    unawaited(
+      Navigator.of(context).pushReplacement<void, void>(
+        MaterialPageRoute<void>(
+          builder: (_) => SpeakToTextScreen(
+            correctWord: 'banana',
+            voice: voice,
+            speechPractice: speech,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+
+    expect(gateway.startCalls, 1);
+    gateway.startCompletions.first.complete();
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.cancelCalls, 1);
+    expect(gateway.startCalls, 2);
+
+    gateway.startCompletions.last.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(gateway.isListening, isTrue);
+    expect(gateway.cancelCalls, 1);
+  });
+
+  testWidgets('covered route reacquires speech after child pop', (
+    tester,
+  ) async {
+    final gateway = _TwoStartSpeechGateway();
+    final speech = SpeechPracticeUseCases(gateway);
+    final voice = VoiceUseCases(FakeVoiceProvider());
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: voice,
+          speechPractice: speech,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.startCalls, 1);
+
+    final parentContext = tester.element(find.byType(SpeakToTextScreen));
+    unawaited(
+      Navigator.of(parentContext).push<void>(
+        MaterialPageRoute<void>(
+          builder: (_) => SpeakToTextScreen(
+            correctWord: 'banana',
+            voice: voice,
+            speechPractice: speech,
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    gateway.startCompletions.first.complete();
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.cancelCalls, 1);
+
+    Navigator.of(tester.element(find.byType(SpeakToTextScreen))).pop();
+    await tester.pumpAndSettle();
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('speech-listen-button')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pump();
+    expect(gateway.startCalls, 2);
+    gateway.startCompletions.last.complete();
+    await tester.pump();
+    await tester.pump();
+    expect(gateway.isListening, isTrue);
+  });
+
+  for (final idCase
+      in <
+        ({String name, String? sessionId, String? wordId, int expectedWrites})
+      >[
+        (
+          name: 'neither learning id',
+          sessionId: null,
+          wordId: null,
+          expectedWrites: 0,
+        ),
+        (
+          name: 'only session id',
+          sessionId: 'session-1',
+          wordId: null,
+          expectedWrites: 0,
+        ),
+        (
+          name: 'only word id',
+          sessionId: null,
+          wordId: 'word-1',
+          expectedWrites: 0,
+        ),
+        (
+          name: 'both learning ids',
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          expectedWrites: 1,
+        ),
+      ]) {
+    testWidgets('learning write guard accepts ${idCase.name}', (tester) async {
+      final repository = _CountingLearningRepository();
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'attempt-1',
+        nowUtc: () => DateTime.utc(2026, 8, 11),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpeakToTextScreen(
+            correctWord: 'cat',
+            voice: VoiceUseCases(FakeVoiceProvider()),
+            speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
+            learning: learning,
+            sessionId: idCase.sessionId,
+            wordId: idCase.wordId,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pumpAndSettle();
+
+      expect(repository.recordCalls, idCase.expectedWrites);
+      if (idCase.expectedWrites == 1) {
+        expect(repository.lastCommand?.sessionId, 'session-1');
+        expect(repository.lastCommand?.wordId, 'word-1');
+        expect(
+          repository.lastCommand?.providerProvenance,
+          'device-stt|en-US|transcript-edit-distance-v1',
+        );
+      }
+    });
+  }
 }
 
-final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
-  int cancelCalls = 0;
+final class _LearningOwnerRepository implements LocalOwnerRepository {
+  static final owner = LocalOwner(
+    id: 'owner-1',
+    createdAtUtc: DateTime.utc(2026, 8, 1),
+  );
 
   @override
-  bool get isListening => false;
+  Future<LocalOwner> getOrCreateActiveOwner() async => owner;
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) async => owner;
+}
+
+final class _CountingLearningRepository implements LearningRepository {
+  int recordCalls = 0;
+  RecordAnswerCommand? lastCommand;
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    recordCalls += 1;
+    lastCommand = command;
+    return const AnswerRecordResult(
+      inserted: true,
+      srs: SrsSnapshot(
+        intervalDays: 1,
+        repetitions: 1,
+        lapses: 0,
+        stability: 1,
+        difficulty: 5,
+        lastReviewAtUtc: null,
+        dueAtUtc: null,
+        algorithmVersion: 1,
+      ),
+    );
+  }
+
+  @override
+  Future<List<QuizWord>> listQuizWords({
+    required String ownerId,
+    String? categoryId,
+    required int limit,
+  }) async => const [];
+
+  @override
+  Future<List<QuizWord>> listDueWords({
+    required String ownerId,
+    required DateTime nowUtc,
+    required int limit,
+  }) async => const [];
+
+  @override
+  Future<void> startSession(LearningSessionDraft session) async {}
+
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) => throw UnimplementedError();
+
+  @override
+  Future<LearningSessionSummary?> getActiveSession({
+    required String ownerId,
+  }) async => null;
+
+  @override
+  Future<void> abandonActiveSessions({required String ownerId}) async {}
+
+  @override
+  Future<List<LearningSessionSummary>> listSessionHistory({
+    required String ownerId,
+    required int limit,
+  }) async => const [];
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) async => null;
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) => throw UnimplementedError();
+}
+
+final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
+  @override
+  bool isListening = false;
 
   @override
   Future<void> cancel() async {
-    cancelCalls += 1;
+    isListening = false;
   }
 
   @override
@@ -155,8 +566,179 @@ final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
   Future<void> start({
     required String locale,
     required SpeechEventCallback onEvent,
+  }) async {
+    isListening = true;
+    onEvent(
+      SpeechRecognitionEvent(
+        transcript: 'cat',
+        isFinal: true,
+        recognizedAtUtc: DateTime.utc(2026, 8, 11),
+        engine: 'device-stt',
+        locale: locale,
+      ),
+    );
+    isListening = false;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
+  int cancelCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
   }) async {}
 
   @override
-  Future<void> stop() async {}
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    isListening = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _PendingSpeechGateway implements SpeechRecognitionGateway {
+  final Completer<void> allowStart = Completer<void>();
+  int startCalls = 0;
+  int cancelCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    startCalls += 1;
+    await allowStart.future;
+    isListening = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _SharedSpeechGateway implements SpeechRecognitionGateway {
+  final Completer<void> allowCancel = Completer<void>();
+  int cancelCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+    await allowCancel.future;
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    isListening = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _TwoStartSpeechGateway implements SpeechRecognitionGateway {
+  final List<Completer<void>> startCompletions = [
+    Completer<void>(),
+    Completer<void>(),
+  ];
+  int startCalls = 0;
+  int cancelCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    final call = startCalls++;
+    await startCompletions[call].future;
+    isListening = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
 }

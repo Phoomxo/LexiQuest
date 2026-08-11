@@ -5,9 +5,10 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
-import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
+import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
+import 'media_dependency_unavailable.dart';
 
 class ShadowingChallengeScreen extends StatefulWidget {
   const ShadowingChallengeScreen({
@@ -30,15 +31,17 @@ class ShadowingChallengeScreen extends StatefulWidget {
 
 class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     with WidgetsBindingObserver {
-  late final VoiceUseCases _voice;
-  bool _ownsVoice = false;
+  VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
+  SpeechPracticeSession? _speechSession;
   LearningUseCases? _learning;
   String? _referenceSentence;
   String? _wordId;
   String? _sessionId;
   Future<void>? _learningLoad;
   bool _evidenceSaved = false;
+  bool _listenPending = false;
+  int _listenEpoch = 0;
   bool _listening = false;
   String _transcript = '';
   String? _error;
@@ -48,20 +51,46 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _voice = widget.voice ?? VoiceUseCases.createDefault();
-    _ownsVoice = widget.voice == null;
     _referenceSentence = widget.referenceSentence;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _speech ??=
-        widget.speechPractice ??
-        AppDependenciesScope.maybeOf(context)?.speechPractice;
-    _learning ??=
-        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
-    if (_referenceSentence == null && _learningLoad == null) {
+    _bindDependencies();
+  }
+
+  @override
+  void didUpdateWidget(ShadowingChallengeScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _bindDependencies();
+  }
+
+  void _bindDependencies() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final routeIsCurrent = ModalRoute.isCurrentOf(context) ?? true;
+    final speech = widget.speechPractice ?? dependencies?.speechPractice;
+    if (!identical(speech, _speech) || !routeIsCurrent) {
+      _listenEpoch += 1;
+      _listenPending = false;
+      _listening = false;
+      _speechSession?.release().ignore();
+      _speechSession = null;
+    }
+    _voice = widget.voice ?? dependencies?.voice;
+    _speech = speech;
+    _learning = widget.learning ?? dependencies?.learning;
+    if (routeIsCurrent &&
+        speech != null &&
+        (_speechSession == null || !_speechSession!.isCurrent)) {
+      _speechSession?.release().ignore();
+      _speechSession = speech.acquireSession();
+    }
+    if (routeIsCurrent &&
+        _voice != null &&
+        _speech != null &&
+        _referenceSentence == null &&
+        _learningLoad == null) {
       _learningLoad = _loadLocalPrompt();
     }
   }
@@ -93,9 +122,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   Future<void> _playReference() async {
     final reference = _referenceSentence;
-    if (reference == null) return;
+    final voice = _voice;
+    if (reference == null || voice == null) return;
     try {
-      await _voice.speak(
+      await voice.speak(
         VoiceRequest.create(
           text: reference,
           language: 'en',
@@ -112,26 +142,38 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
+    if (_listenPending) return;
     if (_listening) {
-      await _speech?.stop();
+      _listenEpoch += 1;
+      _listenPending = false;
+      await _speechSession?.stop();
       if (mounted) setState(() => _listening = false);
       return;
     }
     final speech = _speech;
+    var session = _speechSession;
     if (speech == null) {
       setState(() => _error = 'ระบบรู้จำเสียงไม่พร้อมใช้งาน');
       return;
     }
+    if (session == null || !session.isCurrent) {
+      session?.release().ignore();
+      session = speech.acquireSession();
+      _speechSession = session;
+    }
+    final activeSession = session;
+    final epoch = ++_listenEpoch;
+    _listenPending = true;
     setState(() {
       _error = null;
       _transcript = '';
       _assessment = null;
     });
     try {
-      await speech.start(
+      final started = await activeSession.start(
         locale: 'en-US',
         onEvent: (event) {
-          if (!mounted) return;
+          if (!mounted || epoch != _listenEpoch) return;
           final reference = _referenceSentence;
           if (reference == null) return;
           final assessment = speech.assess(target: reference, event: event);
@@ -145,19 +187,30 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           }
         },
         onFailure: (failure) {
-          if (!mounted) return;
+          if (!mounted || epoch != _listenEpoch) return;
           setState(() {
             _listening = false;
             _error = _failureText(failure);
           });
         },
         onStatus: (status) {
-          if (mounted) setState(() => _listening = status == 'listening');
+          if (mounted && epoch == _listenEpoch) {
+            setState(() => _listening = status == 'listening');
+          }
         },
       );
-      if (mounted) setState(() => _listening = speech.isListening);
+      if (!mounted || epoch != _listenEpoch) return;
+      if (!started) {
+        _listenPending = false;
+        setState(() => _listening = false);
+        return;
+      }
+      _listenPending = false;
+      setState(() => _listening = activeSession.isListening);
     } on SpeechPracticeException catch (error) {
-      if (mounted) setState(() => _error = _failureText(error.code));
+      if (!mounted || epoch != _listenEpoch) return;
+      _listenPending = false;
+      setState(() => _error = _failureText(error.code));
     }
   }
 
@@ -184,7 +237,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         responseTimeMs: null,
         attemptNumber: 1,
         providerProvenance:
-            '${event.engine}:${event.locale}:transcript-similarity-v1',
+            '${event.engine}|${event.locale}|${assessment.method}',
       );
       await learning.finishSession(sessionId);
     } catch (_) {
@@ -206,21 +259,35 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _cancelForLifecycle() async {
-    await _speech?.cancel();
+    final shouldCancel = _listenPending || _listening;
+    _listenEpoch += 1;
+    _listenPending = false;
+    if (shouldCancel) await _speechSession?.cancel();
     if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    unawaited(_speech?.cancel());
-    unawaited(_voice.stop());
-    _voice.disposeIfOwned(_ownsVoice);
+    _listenEpoch += 1;
+    _listenPending = false;
+    _speechSession?.release().ignore();
+    _speechSession = null;
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_voice == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.voice,
+      );
+    }
+    if (_speech == null) {
+      return const MediaDependencyUnavailable(
+        reason: MediaDependencyUnavailableReason.speechPractice,
+      );
+    }
     final assessment = _assessment;
     final reference = _referenceSentence;
     return Scaffold(
@@ -243,7 +310,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
             const SizedBox(height: 12),
             FilledButton.icon(
               key: const ValueKey<String>('shadowing-listen-button'),
-              onPressed: reference == null ? null : _toggleListening,
+              onPressed: reference == null || _listenPending
+                  ? null
+                  : _toggleListening,
               icon: Icon(_listening ? Icons.stop : Icons.mic),
               label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
             ),

@@ -31,8 +31,8 @@ enum Feature {
   /// production.  Disabled by default; enable in debug builds only.
   shadowRewardV2,
 
-  /// V2 Quest persistence — persists [QuestInstance] to Drift (schema v8).
-  /// Default: hidden.  Enable internally to test before public rollout.
+  /// Learner-facing Quest Status invocation. Durable quest projection remains
+  /// composed regardless of this state. Production default: limited.
   questV2,
 }
 
@@ -47,12 +47,15 @@ enum FeatureState {
   /// Not available and not shown in the UI.
   hidden,
 
-  /// Explicitly disabled by a kill switch. UI shows a "feature unavailable"
-  /// message rather than hiding the feature entirely.
+  /// Explicitly disabled by a kill switch. Entry surfaces hide it; a retained
+  /// or direct route renders the shared typed unavailable experience.
   disabled,
 
-  /// Emergency shut-off — feature and all its data paths are blocked.
-  /// Takes precedence over every other state.
+  /// Emergency shut-off — learner invocation and feature-owned live side
+  /// effects are blocked. Takes precedence over every other UI state.
+  ///
+  /// `questV2` is an invocation switch: its durable background projection,
+  /// receipt, and reconciliation pipeline remains composed under emergency-off.
   emergencyOff,
 }
 
@@ -62,8 +65,9 @@ abstract interface class FeatureRegistry {
   FeatureState stateOf(Feature feature);
 
   /// Convenience: returns `true` when the feature should be shown in the UI
-  /// (i.e. its state is not [FeatureState.hidden] or [FeatureState.disabled]
-  /// or [FeatureState.emergencyOff]).
+  /// (i.e. its state is not [FeatureState.hidden], [FeatureState.disabled], or
+  /// [FeatureState.emergencyOff]). Direct/stale routes use the shared typed
+  /// unavailable experience instead of rebuilding a hidden entry surface.
   bool isVisible(Feature feature);
 
   /// Returns `true` when the feature is safe to invoke. Features in
@@ -98,9 +102,7 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.speechPractice: FeatureState.limited,
         Feature.aiTutor: FeatureState.limited,
         Feature.export: FeatureState.enabled,
-        // V2 features hidden by default in production builds.
-        // shadowRewardV2 and questV2 are opt-in for internal testing.
-        // Phase 1: questV2 promoted to limited (internal beta).
+        Feature.shadowRewardV2: FeatureState.hidden,
         Feature.questV2: FeatureState.limited,
       };
 
@@ -124,6 +126,12 @@ final class BuildFeatureRegistry implements FeatureRegistry {
       };
 
   final Map<Feature, FeatureState> _states;
+
+  /// Features explicitly configured by this build registry.
+  ///
+  /// Production defaults enumerate the entire [Feature] domain so adding a
+  /// feature cannot silently inherit a fail-open state.
+  Iterable<Feature> get configuredFeatures => _states.keys;
 
   @override
   FeatureState stateOf(Feature feature) =>

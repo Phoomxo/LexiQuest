@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'fill_in_the_blanks_screen.dart';
-import '../navigation/app_routes.dart';
-
 List<String> createStableScramble(String word) {
   final letters = word.characters.toList();
   if (letters.length < 2) return letters;
@@ -34,6 +31,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
   List<String> scrambledLetters = [];
   List<String?> userAnswer = [];
   List<int> usedIndexes = [];
+  bool _isComplete = false;
 
   @override
   void initState() {
@@ -49,21 +47,10 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
 
   void _checkAnswer() {
     if (userAnswer.join() == widget.word) {
+      setState(() => _isComplete = true);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('ถูกต้อง กำลังไปหน้าถัดไป')));
-      Future.delayed(const Duration(seconds: 1), () {
-        if (mounted) {
-          AppNavigator.pushPage<void>(
-            context,
-            AppPage<void>(
-              name: 'learning/fill-blanks',
-              builder: (context) => FillInTheBlanksScreen(word: widget.word),
-            ),
-            replace: true,
-          );
-        }
-      });
+      ).showSnackBar(const SnackBar(content: Text('ถูกต้อง')));
     } else {
       ScaffoldMessenger.of(
         context,
@@ -73,6 +60,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
 
   void _resetGame() {
     setState(() {
+      _isComplete = false;
       _scrambleWord();
     });
   }
@@ -88,6 +76,16 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
+                if (_isComplete) ...[
+                  const Card(
+                    key: ValueKey<String>('word-scramble-complete'),
+                    child: Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text('เรียงคำศัพท์สำเร็จ'),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
                 Wrap(
                   alignment: WrapAlignment.center,
                   children: List.generate(scrambledLetters.length, (index) {
@@ -152,7 +150,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
                 ),
                 const SizedBox(height: 20),
                 FilledButton(
-                  onPressed: _checkAnswer,
+                  onPressed: _isComplete ? null : _checkAnswer,
                   child: const Text('ตรวจสอบคำตอบ'),
                 ),
                 const SizedBox(height: 10),

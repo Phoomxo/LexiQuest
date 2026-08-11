@@ -31,74 +31,72 @@ class GameLauncherScreen extends StatefulWidget {
 
 enum GameMode { wordScramble, dictation, bossBattle }
 
+enum GameLauncherUnavailableReason {
+  missingDependency,
+  emptyInventory,
+  loadFailure,
+}
+
 class _GameLauncherScreenState extends State<GameLauncherScreen> {
   List<VocabularyWord>? _words;
-  String? _error;
+  GameLauncherUnavailableReason? _unavailableReason;
+  bool _loadStarted = false;
+  bool _navigationScheduled = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _loadWords();
-  }
-
-  Future<void> _loadWords() async {
-    final useCases = widget.vocabulary ??
-        AppDependenciesScope.maybeOf(context)?.vocabulary;
+    if (_loadStarted) return;
+    _loadStarted = true;
+    final useCases =
+        widget.vocabulary ?? AppDependenciesScope.maybeOf(context)?.vocabulary;
     if (useCases == null) {
-      setState(() => _error = 'ไม่สามารถเข้าถึงคลังคำศัพท์ได้');
+      _unavailableReason = GameLauncherUnavailableReason.missingDependency;
       return;
     }
+    _loadWords(useCases);
+  }
+
+  Future<void> _loadWords(VocabularyUseCases useCases) async {
     try {
       final words = await useCases.getGameWords(limit: 10);
       if (!mounted) return;
       if (words.isEmpty) {
-        setState(() => _error = 'ยังไม่มีคำศัพท์ในคลัง — เพิ่มคำศัพท์ก่อนเล่นเกม');
+        setState(
+          () =>
+              _unavailableReason = GameLauncherUnavailableReason.emptyInventory,
+        );
         return;
       }
-      setState(() => _words = words);
+      setState(
+        () => _words = List<VocabularyWord>.unmodifiable(words.take(10)),
+      );
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'โหลดคำศัพท์ไม่สำเร็จ');
+      setState(
+        () => _unavailableReason = GameLauncherUnavailableReason.loadFailure,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final words = _words;
-    final error = _error;
-    if (error != null) {
-      return Scaffold(
-        appBar: AppBar(title: const Text('เกม')),
-        body: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.library_books_outlined, size: 48),
-                const SizedBox(height: 16),
-                Text(error, textAlign: TextAlign.center),
-                const SizedBox(height: 24),
-                FilledButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('กลับ'),
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
+    final unavailableReason = _unavailableReason;
+    if (unavailableReason != null) {
+      return GameLauncherUnavailable(reason: unavailableReason);
     }
     if (words == null) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
     // Content is ready — launch the game.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _navigateToGame(context, words);
-    });
+    if (!_navigationScheduled) {
+      _navigationScheduled = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _navigateToGame(context, words);
+      });
+    }
     return const Scaffold(body: Center(child: CircularProgressIndicator()));
   }
 
@@ -137,5 +135,44 @@ class _GameLauncherScreenState extends State<GameLauncherScreen> {
           replace: true,
         );
     }
+  }
+}
+
+class GameLauncherUnavailable extends StatelessWidget {
+  const GameLauncherUnavailable({super.key, required this.reason});
+
+  final GameLauncherUnavailableReason reason;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = switch (reason) {
+      GameLauncherUnavailableReason.missingDependency =>
+        'Vocabulary is unavailable for this game.',
+      GameLauncherUnavailableReason.emptyInventory =>
+        'Save at least one vocabulary word before playing.',
+      GameLauncherUnavailableReason.loadFailure =>
+        'Vocabulary could not be loaded for this game.',
+    };
+    return Scaffold(
+      appBar: AppBar(title: const Text('Game unavailable')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.library_books_outlined, size: 48),
+              const SizedBox(height: 16),
+              Text(message, textAlign: TextAlign.center),
+              const SizedBox(height: 24),
+              FilledButton(
+                onPressed: () => Navigator.maybePop(context),
+                child: const Text('Back'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

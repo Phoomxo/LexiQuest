@@ -33,10 +33,9 @@ typedef QuestRewardSink =
 /// All mutations go through this class; callers never touch [QuestRepository]
 /// or [QuestInstance] state directly.
 ///
-/// The use-case is **feature-flagged**: callers must check
-/// `features.isEnabled(Feature.questV2)` before constructing this class.
-/// When the flag is off, instantiate nothing — this class assumes the flag
-/// is already checked by the caller.
+/// The durable projection is always composed. `Feature.questV2` controls only
+/// learner-facing invocation; it must never disable event projection, reward
+/// reconciliation, or scheduling.
 final class QuestUseCases {
   QuestUseCases({
     required this.repository,
@@ -207,6 +206,17 @@ final class QuestUseCases {
   Future<List<QuestInstance>> getActiveInstances() async {
     final owner = await owners.getOrCreateActiveOwner();
     return repository.getActiveInstances(owner.id);
+  }
+
+  /// Returns a bounded read-only status projection for the active owner.
+  Future<List<QuestInstance>> getAllInstancesForCurrentOwner({
+    int limit = 50,
+  }) async {
+    if (limit < 1 || limit > 50) {
+      throw RangeError.range(limit, 1, 50, 'limit');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    return repository.getAllInstances(owner.id, limit: limit);
   }
 
   /// Retries the reward projection for a completed quest caused by [event].

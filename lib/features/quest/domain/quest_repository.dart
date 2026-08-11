@@ -28,7 +28,7 @@ abstract interface class QuestRepository {
   Future<List<QuestInstance>> getActiveInstances(String ownerId);
 
   /// Return all instances regardless of state for [ownerId].
-  Future<List<QuestInstance>> getAllInstances(String ownerId);
+  Future<List<QuestInstance>> getAllInstances(String ownerId, {int limit = 50});
 
   /// Return a bounded set of completed instances whose durable objective
   /// evidence contains [sourceEventId]. Used to reconstruct a projection

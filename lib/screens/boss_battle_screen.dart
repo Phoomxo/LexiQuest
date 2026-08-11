@@ -1,75 +1,61 @@
 import 'package:flutter/material.dart';
-import '../services/rank_service.dart';
 
 class BossBattleScreen extends StatefulWidget {
-  final String bossName;
-  final int initialBossHp;
-  final List<Map<String, String>> questions;
-  final RankService? rankService;
-
-  const BossBattleScreen({
+  BossBattleScreen({
     super.key,
-    this.bossName = 'บอสคำศัพท์ C1 (Vocab Titan)',
-    this.initialBossHp = 100,
-    this.questions = const [
-      {'word': 'ephemeral', 'translation': 'ชั่วคราว'},
-      {'word': 'meticulous', 'translation': 'พิถีพิถัน'},
-      {'word': 'sustainable', 'translation': 'ยั่งยืน'},
-    ],
-    this.rankService,
-  });
+    this.bossName = 'Vocabulary Challenge',
+    required this.questions,
+  }) {
+    if (questions.isEmpty) {
+      throw ArgumentError.value(
+        questions,
+        'questions',
+        'at least one owned question is required',
+      );
+    }
+  }
+
+  final String bossName;
+  final List<Map<String, String>> questions;
 
   @override
   State<BossBattleScreen> createState() => _BossBattleScreenState();
 }
 
 class _BossBattleScreenState extends State<BossBattleScreen> {
-  late final RankService _rankService;
-  late int _bossHp;
+  late int _remainingQuestions;
   int _currentIndex = 0;
-  int _earnedXp = 0;
-  int _earnedCoins = 0;
   bool _isVictory = false;
   final TextEditingController _inputController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _rankService = widget.rankService ?? const RankService();
-    _bossHp = widget.initialBossHp;
+    _remainingQuestions = widget.questions.length;
   }
 
   void _attackBoss() {
-    if (_currentIndex >= widget.questions.length || _bossHp <= 0) return;
+    if (_isVictory || _currentIndex >= widget.questions.length) return;
 
     final currentQuestion = widget.questions[_currentIndex];
-    final targetWord = currentQuestion['word']!.toLowerCase().trim();
+    final targetWord = (currentQuestion['word'] ?? '').toLowerCase().trim();
     final userInput = _inputController.text.toLowerCase().trim();
 
-    if (userInput == targetWord) {
-      final damage = 35;
+    if (targetWord.isNotEmpty && userInput == targetWord) {
       setState(() {
-        _bossHp = (_bossHp - damage).clamp(0, widget.initialBossHp);
-        final xpGain = _rankService.calculateXpGain(
-          isCorrect: true,
-          latencyMs: 1000,
-          isBossBattle: true,
-        );
-        _earnedXp += xpGain;
-        _earnedCoins += 30;
+        _remainingQuestions -= 1;
         _inputController.clear();
-
-        if (_bossHp <= 0) {
+        if (_remainingQuestions == 0) {
           _isVictory = true;
-        } else if (_currentIndex < widget.questions.length - 1) {
-          _currentIndex++;
+        } else {
+          _currentIndex += 1;
         }
       });
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('สะกดคำไม่ถูกต้อง! บอสป้องกันไว้ได้')),
-      );
+      return;
     }
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('สะกดคำไม่ถูกต้อง! บอสป้องกันไว้ได้')),
+    );
   }
 
   @override
@@ -80,24 +66,24 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final currentQuestion = _currentIndex < widget.questions.length
+    final totalQuestions = widget.questions.length;
+    final currentQuestion = _currentIndex < totalQuestions
         ? widget.questions[_currentIndex]
-        : {'word': '', 'translation': ''};
+        : const <String, String>{};
 
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '⚔️ ต่อสู้บอสคำศัพท์ประจำวัน',
+          '⚔️ Vocabulary Challenge',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: Colors.red.shade900,
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            // Boss Status Card
             Card(
               elevation: 6,
               color: Colors.red.shade50,
@@ -105,22 +91,25 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text(
-                          widget.bossName,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.red,
+                        Expanded(
+                          child: Text(
+                            widget.bossName,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.red,
+                            ),
                           ),
                         ),
+                        const SizedBox(width: 12),
                         Text(
-                          'HP: $_bossHp / ${widget.initialBossHp}',
+                          'HP: $_remainingQuestions / $totalQuestions',
                           style: const TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
@@ -130,7 +119,7 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
                     ),
                     const SizedBox(height: 12),
                     LinearProgressIndicator(
-                      value: _bossHp / widget.initialBossHp,
+                      value: _remainingQuestions / totalQuestions,
                       color: Colors.red,
                       backgroundColor: Colors.grey.shade300,
                       minHeight: 12,
@@ -151,18 +140,9 @@ class _BossBattleScreenState extends State<BossBattleScreen> {
                   color: Colors.green,
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'ได้รับ +$_earnedXp XP และ +$_earnedCoins เหรียญ!',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.deepOrange,
-                ),
-              ),
             ] else ...[
               Text(
-                'คำแปล: "${currentQuestion['translation']}"',
+                'คำแปล: "${currentQuestion['translation'] ?? ''}"',
                 style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,

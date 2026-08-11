@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_benchmark.dart';
@@ -5,6 +7,7 @@ import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
+import 'package:vocab_learning_app/screens/media_dependency_unavailable.dart';
 import 'package:vocab_learning_app/screens/object_scanner_screen.dart';
 import 'package:vocab_learning_app/services/object_vocabulary_database.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -134,7 +137,8 @@ void main() {
     expect(scanner.pauseCalls, 1);
 
     tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
-    await tester.pumpAndSettle();
+    await tester.pump();
+    await tester.pump();
     expect(scanner.resumeCalls, 1);
     expect(scanner.isReady, isTrue);
   });
@@ -189,17 +193,227 @@ void main() {
     expect(find.textContaining('CPU n=10'), findsOneWidget);
     expect(find.textContaining('XNNPACK n=10'), findsOneWidget);
   });
+
+  testWidgets('missing voice fails closed before camera initialization', (
+    tester,
+  ) async {
+    final scanner = _FakeScanner();
+
+    await tester.pumpWidget(
+      MaterialApp(home: ObjectScannerScreen(scanner: scanner)),
+    );
+    await tester.pumpAndSettle();
+
+    final state = tester.widget<MediaDependencyUnavailable>(
+      find.byType(MediaDependencyUnavailable),
+    );
+    expect(state.reason, MediaDependencyUnavailableReason.voice);
+    expect(scanner.initializeCalls, 0);
+  });
+
+  testWidgets('late camera initialization is paused after route disposal', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final scanner = _FakeScanner()..initializePending = pending;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(scanner.initializeCalls, 1);
+
+    await tester.pumpWidget(const MaterialApp(home: SizedBox()));
+    await tester.pump();
+    expect(scanner.pauseCalls, 0);
+
+    pending.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(scanner.isReady, isFalse);
+    expect(scanner.pauseCalls, 1);
+  });
+
+  testWidgets('late camera initialization stays paused in background', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final scanner = _FakeScanner()..initializePending = pending;
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(_FakeVoice()),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(scanner.initializeCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+    expect(scanner.pauseCalls, 0);
+
+    pending.complete();
+    await tester.pump();
+    await tester.pump();
+
+    expect(scanner.isReady, isFalse);
+    expect(scanner.pauseCalls, 1);
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+    await tester.pump();
+
+    expect(scanner.resumeCalls, 1);
+    expect(scanner.isReady, isTrue);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+    expect(find.byKey(const ValueKey('camera-preview')), findsOneWidget);
+    expect(
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey('object-scanner-capture-button')),
+          )
+          .onPressed,
+      isNotNull,
+    );
+  });
+
+  testWidgets(
+    'stale route initialization cannot pause a newer shared scanner consumer',
+    (tester) async {
+      final oldPending = Completer<void>();
+      final scanner = _FakeScanner()..initializePendings.add(oldPending);
+      final voice = VoiceUseCases(_FakeVoice());
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            key: const ValueKey<String>('old-scanner-route'),
+            scanner: scanner,
+            voice: voice,
+          ),
+        ),
+      );
+      await tester.pump();
+      expect(scanner.initializeCalls, 1);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            key: const ValueKey<String>('new-scanner-route'),
+            scanner: scanner,
+            voice: voice,
+          ),
+        ),
+      );
+      await tester.pump();
+      await tester.pump();
+
+      expect(scanner.initializeCalls, 1);
+      expect(scanner.isReady, isFalse);
+
+      oldPending.complete();
+      await tester.pump();
+      await tester.pump();
+      await tester.pumpAndSettle();
+
+      expect(scanner.initializeCalls, 2);
+      expect(scanner.isReady, isTrue);
+      expect(scanner.pauseCalls, 1);
+      expect(scanner.lifecycleEvents, [
+        'initialize:1:start',
+        'initialize:1:ready',
+        'pause',
+        'initialize:2:start',
+        'initialize:2:ready',
+      ]);
+    },
+  );
+
+  testWidgets(
+    'scanner route reacquires its shared controller after child pop',
+    (tester) async {
+      final scanner = _FakeScanner();
+      final voice = VoiceUseCases(_FakeVoice());
+      await tester.binding.setSurfaceSize(const Size(800, 1200));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ObjectScannerScreen(
+            key: const ValueKey<String>('parent-scanner-route'),
+            scanner: scanner,
+            voice: voice,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(scanner.initializeCalls, 1);
+
+      final context = tester.element(find.byType(ObjectScannerScreen));
+      unawaited(
+        Navigator.of(context).push<void>(
+          MaterialPageRoute<void>(
+            builder: (_) => ObjectScannerScreen(
+              key: const ValueKey<String>('child-scanner-route'),
+              scanner: scanner,
+              voice: voice,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(scanner.initializeCalls, 2);
+
+      Navigator.of(tester.element(find.byType(ObjectScannerScreen))).pop();
+      await tester.pumpAndSettle();
+
+      expect(scanner.initializeCalls, 3);
+      expect(scanner.isReady, isTrue);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.byKey(const ValueKey('object-scanner-capture-button')),
+            )
+            .onPressed,
+        isNotNull,
+      );
+    },
+  );
 }
 
 final class _FakeScanner implements ObjectScannerController {
   CameraPracticeException? initializeFailure;
   CameraPracticeException? captureFailure;
+  Completer<void>? initializePending;
+  final List<Completer<void>> initializePendings = [];
   int acceptCalls = 0;
+  int initializeCalls = 0;
   int pauseCalls = 0;
   int resumeCalls = 0;
   int benchmarkCalls = 0;
+  final List<String> lifecycleEvents = [];
   @override
   bool isReady = false;
+  late final ObjectScannerLeaseManager _leaseManager =
+      ObjectScannerLeaseManager(
+        isReady: () => isReady,
+        initialize: initialize,
+        pause: pause,
+        resume: resume,
+      );
+
+  @override
+  ObjectScannerLease acquireLease() => _leaseManager.acquire();
 
   @override
   Future<VocabularyWord> accept(ObjectScanResult result) async {
@@ -305,14 +519,23 @@ final class _FakeScanner implements ObjectScannerController {
 
   @override
   Future<void> initialize() async {
+    initializeCalls += 1;
+    final call = initializeCalls;
+    lifecycleEvents.add('initialize:$call:start');
     final failure = initializeFailure;
     if (failure != null) throw failure;
+    final pending = initializePendings.isEmpty
+        ? initializePending
+        : initializePendings.removeAt(0);
+    if (pending != null) await pending.future;
     isReady = true;
+    lifecycleEvents.add('initialize:$call:ready');
   }
 
   @override
   Future<void> pause() async {
     pauseCalls += 1;
+    lifecycleEvents.add('pause');
     isReady = false;
   }
 

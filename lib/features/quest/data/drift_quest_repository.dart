@@ -90,8 +90,15 @@ final class DriftQuestRepository implements QuestRepository {
       _queryInstances(ownerId, stateFilter: 'active');
 
   @override
-  Future<List<QuestInstance>> getAllInstances(String ownerId) =>
-      _queryInstances(ownerId);
+  Future<List<QuestInstance>> getAllInstances(
+    String ownerId, {
+    int limit = 50,
+  }) async {
+    if (limit < 1 || limit > 50) {
+      throw RangeError.range(limit, 1, 50, 'limit');
+    }
+    return _queryInstances(ownerId, limit: limit);
+  }
 
   @override
   Future<List<QuestInstance>> getCompletedInstancesForSourceEvent({
@@ -218,6 +225,7 @@ final class DriftQuestRepository implements QuestRepository {
   Future<List<QuestInstance>> _queryInstances(
     String ownerId, {
     String? stateFilter,
+    int? limit,
   }) async {
     final instanceQuery = _database.select(_database.questInstances)
       ..where(
@@ -225,7 +233,19 @@ final class DriftQuestRepository implements QuestRepository {
             ? t.ownerId.equals(ownerId) & t.state.equals(stateFilter)
             : t.ownerId.equals(ownerId),
       )
-      ..orderBy([(t) => OrderingTerm.asc(t.assignedAtUtcMs)]);
+      ..orderBy(
+        stateFilter == null
+            ? [
+                (t) => OrderingTerm.desc(t.state.equals('active')),
+                (t) => OrderingTerm.desc(t.assignedAtUtcMs),
+                (t) => OrderingTerm.asc(t.instanceId),
+              ]
+            : [
+                (t) => OrderingTerm.asc(t.assignedAtUtcMs),
+                (t) => OrderingTerm.asc(t.instanceId),
+              ],
+      );
+    if (limit != null) instanceQuery.limit(limit);
 
     final instanceRows = await instanceQuery.get();
     return _instancesFromRows(instanceRows);
@@ -237,9 +257,11 @@ final class DriftQuestRepository implements QuestRepository {
     if (instanceRows.isEmpty) return const [];
 
     final instanceIds = instanceRows.map((r) => r.instanceId).toList();
-    final progressRows = await (_database.select(
-      _database.questObjectiveProgress,
-    )..where((t) => t.instanceId.isIn(instanceIds))).get();
+    final progressRows =
+        await (_database.select(_database.questObjectiveProgress)
+              ..where((t) => t.instanceId.isIn(instanceIds))
+              ..orderBy([(t) => OrderingTerm.asc(t.objectiveId)]))
+            .get();
 
     // Group progress rows by instanceId.
     final progressByInstance = <String, List<db.QuestObjectiveProgressData>>{};

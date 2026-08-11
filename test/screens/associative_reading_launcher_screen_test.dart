@@ -23,6 +23,8 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/test_quest_use_cases.dart';
+
 final class _GuestSession implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
@@ -51,6 +53,7 @@ void main() {
       ),
       config: null,
       guestSessionService: _GuestSession(),
+      quest: testQuestUseCases(),
       features: features,
       database: database,
       localOwners: owners,

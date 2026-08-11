@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/ai_tutor_use_cases.dart';
+import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
@@ -16,7 +17,6 @@ import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
-import 'package:vocab_learning_app/runtime/field_feature.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
@@ -164,7 +164,7 @@ void main() {
         final dependencies = await bootstrap.initialize();
         await dependencies.learningReconciliation!.drain();
 
-        final active = await dependencies.quest!.getActiveInstances();
+        final active = await dependencies.quest.getActiveInstances();
         expect(active, hasLength(1));
         expect(active.single.assignedAtUtc.isAfter(historicalAt), isTrue);
         expect(active.single.progress.single.currentCount, 0);
@@ -209,10 +209,105 @@ void main() {
           dependencies.features.stateOf(Feature.aiTutor),
           FeatureState.emergencyOff,
         );
-        expect(
-          dependencies.fieldFeatures.isVisible(FieldFeature.aiTutor),
-          isFalse,
+        expect(dependencies.features.isVisible(Feature.aiTutor), isFalse);
+      },
+    );
+
+    test(
+      'quest projection and reward reconciliation survive quest emergency-off',
+      () async {
+        final database = _testDatabase();
+        await RuntimeFeatureOverrideStore(database).setEmergencyOff(
+          Feature.questV2,
+          updatedAtUtc: DateTime.utc(2026, 8, 11, 12),
         );
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        await dependencies.learningReconciliation!.drain();
+        final quest = dependencies.quest;
+        final active = await quest.getActiveInstances();
+        expect(
+          dependencies.features.stateOf(Feature.questV2),
+          FeatureState.emergencyOff,
+        );
+        expect(active, hasLength(1));
+
+        final ownerId = active.single.ownerId;
+        // events_v2 uses Drift's DateTime precision while quest assignment is
+        // stored as explicit epoch milliseconds. Keep test evidence safely
+        // beyond the assignment boundary instead of relying on subsecond
+        // rounding in the in-memory SQLite adapter.
+        final base = active.single.assignedAtUtc.add(
+          const Duration(minutes: 1),
+        );
+        for (var index = 1; index <= 5; index++) {
+          final occurredAt = base.add(Duration(milliseconds: index));
+          await database
+              .into(database.eventsV2)
+              .insert(
+                EventsV2Companion.insert(
+                  eventId: 'learning-event:quest-off-$index',
+                  eventType: 'QuizCompleted',
+                  eventVersion: 1,
+                  occurredAtUtc: occurredAt,
+                  recordedAtUtc: occurredAt,
+                  actorIdentity: ownerId,
+                  ownerId: ownerId,
+                  aggregateType: 'LearningSession',
+                  aggregateId: 'session-quest-off',
+                  idempotencyKey: 'learning-attempt:quest-off-$index:v1',
+                  consentContextJson: '{}',
+                  appVersion: '1.0.0',
+                  buildId: 'bootstrap-test',
+                  privacyClassification: 'anonymized',
+                  payloadJson: '{"correct":true}',
+                ),
+              );
+        }
+
+        dependencies.learningReconciliation!.request(ownerId);
+        await dependencies.learningReconciliation!.drain();
+
+        final firstQuestReceipt =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals(
+                    'learning-projection:quest:'
+                    'learning-event:quest-off-1:v1',
+                  ),
+                ))
+                .getSingleOrNull();
+        expect(firstQuestReceipt, isNotNull);
+        expect(firstQuestReceipt?.eventType, 'LearningProjectionApplied');
+        final instances = await quest.getAllInstancesForCurrentOwner();
+        expect(instances, hasLength(1));
+        expect(instances.single.progress.single.currentCount, 5);
+        expect(instances.single.state, QuestInstanceState.completed);
+        final rewards =
+            await (database.select(database.pointsLedgerEntries)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.entryType.equals('questCompletion'),
+                ))
+                .get();
+        expect(rewards, hasLength(1));
+        expect(rewards.single.amount, 50);
+        final rewardReceipt =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals(
+                    'learning-projection:reward:'
+                    'learning-event:quest-off-5:v1',
+                  ),
+                ))
+                .getSingleOrNull();
+        expect(rewardReceipt?.eventType, 'LearningProjectionApplied');
       },
     );
 

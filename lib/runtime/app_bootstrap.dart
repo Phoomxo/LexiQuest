@@ -51,7 +51,6 @@ import '../features/motivation/data/drift_streak_repository.dart';
 import '../features/quest/application/quest_catalog_provider.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/quest/data/drift_quest_repository.dart';
-import '../features/rewards/application/shadow_reward_orchestrator.dart';
 import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
@@ -77,7 +76,6 @@ import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
 import 'download_counter.dart';
-import 'field_feature_registry.dart';
 import 'app_runtime_status.dart';
 import 'app_start_route_resolver.dart';
 import 'registries/feature_registry.dart';
@@ -377,19 +375,12 @@ final class AppBootstrap {
     // ── V2 Quest pipeline (must precede learning wiring) ─────────────────
     final questRepository = DriftQuestRepository(database);
     final buildInfo = const AppBuildInfo.fromEnvironment();
-    final shadowOrchestrator = ShadowRewardOrchestrator(
-      logger: _NoopShadowLogger(),
-      canGrant: (_, _) async => true,
-      generateId: idGenerator.v4,
-      nowUtc: () => DateTime.now().toUtc(),
-    );
     final quest = QuestUseCases(
       repository: questRepository,
       owners: localOwners,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: DateTime.now().timeZoneName,
-      shadowOrchestrator: shadowOrchestrator,
       rewardSink:
           ({
             required ownerId,
@@ -470,7 +461,6 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
-      shadowOrchestrator: shadowOrchestrator,
       eventAdapter: eventAdapter,
       onSideEffectsPending: learningReconciliation.request,
     );
@@ -548,7 +538,8 @@ final class AppBootstrap {
       resources.own(() => ownedVoice.disposeIfOwned(true));
     } catch (_) {
       // Platform TTS unavailable in this environment (e.g. headless tests).
-      // Screens fall back to VoiceUseCases.createDefault() per-screen.
+      // Scoped media consumers render typed unavailable; they do not create a
+      // screen-owned provider fallback.
     }
 
     // ── Wrap feature registry with runtime kill-switch support ────────────
@@ -565,9 +556,6 @@ final class AppBootstrap {
       registry: runtimeFeatures,
       nowUtc: () => DateTime.now().toUtc(),
     );
-    final fieldFeatures = FeatureRegistryFieldAdapter(runtimeFeatures);
-    resources.own(fieldFeatures.dispose);
-
     final initialRoute = await AppStartRouteResolver(
       entryState: entryState,
     ).resolve(hasAuthenticatedSession: account?.currentSession != null);
@@ -584,7 +572,6 @@ final class AppBootstrap {
       ),
       config: config,
       guestSessionService: exposedGuestSession,
-      fieldFeatures: fieldFeatures,
       features: runtimeFeatures,
       featureControls: featureControls,
       buildInfo: const AppBuildInfo.fromEnvironment(),
@@ -662,16 +649,4 @@ final class _VolatileAppEntryStateStore implements AppEntryStateStore {
   Future<void> clear() async {
     _mode = AppEntryMode.signedOut;
   }
-}
-
-/// No-op [ShadowLogger] for production; shadow entries are discarded.
-final class _NoopShadowLogger implements ShadowLogger {
-  @override
-  void logEntry(ShadowLogEntry entry) {}
-
-  @override
-  void logError(String eventId, Object error, StackTrace stack) {}
-
-  @override
-  List<ShadowLogEntry> get entries => const [];
 }

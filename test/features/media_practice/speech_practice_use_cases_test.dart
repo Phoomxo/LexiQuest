@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
@@ -71,6 +73,167 @@ void main() {
     expect(assessment.hasAcousticPitchMeasurement, isFalse);
     expect(assessment.hasPhonemeAlignment, isFalse);
   });
+
+  test(
+    'sessions serialize takeover and stale consumers cannot cancel the owner',
+    () async {
+      final firstStart = Completer<void>();
+      final secondStart = Completer<void>();
+      final gateway = _ControlledSpeechGateway([firstStart, secondStart]);
+      final useCases = SpeechPracticeUseCases(gateway);
+      final first = useCases.acquireSession();
+
+      final firstResult = first.start(
+        locale: 'en-US',
+        onEvent: (_) {},
+        onFailure: (_) {},
+        onStatus: (_) {},
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(gateway.startCalls, 1);
+
+      final second = useCases.acquireSession();
+      final secondResult = second.start(
+        locale: 'en-US',
+        onEvent: (_) {},
+        onFailure: (_) {},
+        onStatus: (_) {},
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(gateway.startCalls, 1);
+      expect(gateway.cancelCalls, 0);
+
+      firstStart.complete();
+      expect(await firstResult, isFalse);
+      await Future<void>.delayed(Duration.zero);
+      expect(gateway.cancelCalls, 1);
+      expect(gateway.startCalls, 2);
+
+      secondStart.complete();
+      expect(await secondResult, isTrue);
+      expect(second.isListening, isTrue);
+
+      await first.cancel();
+      await first.release();
+      expect(gateway.cancelCalls, 1);
+      expect(second.isListening, isTrue);
+
+      await second.cancel();
+      expect(gateway.cancelCalls, 2);
+      expect(second.isListening, isFalse);
+    },
+  );
+
+  test('a failed session operation does not poison the next session', () async {
+    final gateway = _ControlledSpeechGateway(const [])..failNextStart = true;
+    final useCases = SpeechPracticeUseCases(gateway);
+    final first = useCases.acquireSession();
+
+    await expectLater(
+      first.start(
+        locale: 'en-US',
+        onEvent: (_) {},
+        onFailure: (_) {},
+        onStatus: (_) {},
+      ),
+      throwsStateError,
+    );
+
+    final second = useCases.acquireSession();
+    expect(
+      await second.start(
+        locale: 'en-US',
+        onEvent: (_) {},
+        onFailure: (_) {},
+        onStatus: (_) {},
+      ),
+      isTrue,
+    );
+    expect(second.isListening, isTrue);
+  });
+
+  test('dispose drains a superseded pending start before returning', () async {
+    final firstStart = Completer<void>();
+    final gateway = _ControlledSpeechGateway([firstStart]);
+    final useCases = SpeechPracticeUseCases(gateway);
+    final first = useCases.acquireSession();
+
+    final firstResult = first.start(
+      locale: 'en-US',
+      onEvent: (_) {},
+      onFailure: (_) {},
+      onStatus: (_) {},
+    );
+    await Future<void>.delayed(Duration.zero);
+    expect(gateway.startCalls, 1);
+
+    useCases.acquireSession();
+    var disposeCompleted = false;
+    final disposeFuture = useCases.dispose().then((_) {
+      disposeCompleted = true;
+    });
+    await Future<void>.delayed(Duration.zero);
+
+    expect(disposeCompleted, isFalse);
+    expect(gateway.cancelCalls, 0);
+
+    firstStart.complete();
+    expect(await firstResult, isFalse);
+    await disposeFuture;
+
+    expect(disposeCompleted, isTrue);
+    expect(gateway.cancelCalls, 1);
+    expect(gateway.isListening, isFalse);
+  });
+}
+
+final class _ControlledSpeechGateway implements SpeechRecognitionGateway {
+  _ControlledSpeechGateway(this.startCompletions);
+
+  final List<Completer<void>> startCompletions;
+  int startCalls = 0;
+  int cancelCalls = 0;
+  bool failNextStart = false;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    cancelCalls += 1;
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    final call = startCalls++;
+    if (failNextStart) {
+      failNextStart = false;
+      throw StateError('controlled start failure');
+    }
+    if (call < startCompletions.length) {
+      await startCompletions[call].future;
+    }
+    isListening = true;
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
 }
 
 final class _FakeSpeechGateway implements SpeechRecognitionGateway {

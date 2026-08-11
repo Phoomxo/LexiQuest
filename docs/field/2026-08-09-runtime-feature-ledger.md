@@ -3,7 +3,7 @@
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
 
 This ledger is an inventory, not a release claim. It contains all 15 members of
-`Feature.values` and all 47 files returned by `rg --files lib/screens` (62 rows
+`Feature.values` and all 49 files returned by `rg --files lib/screens` (64 rows
 total). Production reachability was traced from `lib/main.dart` through Dart
 imports and then checked against the actual navigation callbacks. Dependency
 claims require either `AppDependenciesScope` lookup or an explicit value passed
@@ -19,23 +19,32 @@ user-visible surfaces that the current production path still uses but that
 retain static/demo or screen-owned service behavior. `orphan` means no caller
 is reachable from `lib/main.dart`.
 
+For the 15 `Feature` rows, the first value in **Composed dependency** is the
+exact frozen `dependencyId` from `productionFeatureContract`; any additional
+values are supporting composition and do not alter that contract. `Durable`
+means participant state or an output artifact is backed by a durable subsystem.
+It does not claim that every route writes, that every row has its own restart
+journey, or that host evidence is physical process/device/provider proof. The
+restart column therefore cites the closest existing subsystem evidence and
+states route-specific gaps rather than inventing field proof.
+
 | Capability | Feature flag | Production entry | Composed dependency | Durable store | Restart test | Field evidence | State |
 |---|---|---|---|---|---|---|---|
 | Feature: vocabulary | `Feature.vocabulary` (`enabled`) | `home/vocabulary` → `CategoriesPage` | `VocabularyUseCases`, `ImportVocabulary` | Drift `vocabulary_categories`, `vocabulary_words`, import tables; `localOwnerId` | Production Home shell create journey plus same-file SQLite close/reopen and foreign-owner exclusion | None; host test only | verified |
 | Feature: quiz | `Feature.quiz` (`enabled`) | `home/learn/quiz` → `QuizScreen` | `LearningUseCases` | Drift learning sessions, answer attempts, SRS state, stable V2 learning events, and versioned projection receipts; `localOwnerId` | File-backed production-use-case journey plus post-commit failure/replay injection | None; host test only | verified |
 | Feature: SRS | `Feature.srs` (`enabled`) | `home/learn/srs` → `SrsFlashcardsScreen` | `LearningUseCases` (voice has a screen fallback) | Drift learning sessions, answer attempts, SRS state, and stable V2 learning events; `localOwnerId` | Correct/incorrect SRS state and due time survive same-file close/reopen | None; host test only | verified |
-| Feature: associative reading delivery target | `Feature.reading` (`enabled`) | `ChooseModeScreen` reading tile → `AssociativeReadingLauncherScreen` → `AssociativeReadingSessionScreen` | `VocabularyUseCases`, `LearningUseCases`, `DriftAssociativeLearningAdapter` from the production scope; the launcher explicitly passes learning and associative persistence | Drift `association_records`, `associative_memory_states`, and reading progress; active `localOwnerId` | Production shell journey plus same-file SQLite close/reopen verifies both association tables and excludes an inactive foreign owner | None; host test only | verified |
+| Feature: associative reading delivery target | `Feature.reading` (`enabled`) | `home/learn/associative-reading` → `AssociativeReadingLauncherScreen` → `AssociativeReadingSessionScreen` | `VocabularyUseCases+LearningUseCases+AssociativeLearningPort`; production supporting adapter is `DriftAssociativeLearningAdapter` | Drift `association_records`, `associative_memory_states`, and reading progress; active `localOwnerId` | Production shell journey plus same-file SQLite close/reopen verifies both association tables and excludes an inactive foreign owner | None; host test only | verified |
 | Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | File-backed progress reload verifies mastery count from durable evidence | None; host test only | verified |
 | Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | File-backed progress reload verifies incorrect-count weakness evidence | None; host test only | verified |
-| Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | None from production shell | None | wired |
-| Feature: achievements | `Feature.achievements` (`enabled`) | `home/achievements` → `AchievementsScreen` | `ProgressUseCases` | Drift achievement unlocks and progress evidence; `localOwnerId` | None from production shell | None | wired |
-| Feature: shop | `Feature.shop` (`enabled`) | `drawer/rewards/shop` | `RewardUseCases` | Drift reward transactions, owned/equipped items; `localOwnerId` | None from production shell | None | wired |
-| Feature: object scanner | `Feature.objectScanner` (`limited`) | `drawer/practice/object-scanner` | `ObjectScannerController`, `DeviceModelUseCases`, vocabulary use cases | Drift model downloads and accepted vocabulary; `localOwnerId` where applicable | None from production shell | None; host fakes are not device evidence | wired |
-| Feature: speech practice | `Feature.speechPractice` (`limited`) | `drawer/practice/shadowing` | `SpeechPracticeUseCases`, `LearningUseCases` (voice has a screen fallback) | Drift learning/answer and speech evidence; `localOwnerId` | None from production shell | None; host fakes are not microphone evidence | wired |
-| Feature: AI tutor | `Feature.aiTutor` (`limited`) | `drawer/ai-tutor/chat` and `drawer/ai-tutor/settings` | `AiTutorController`, `AiUsageRepository` (voice has a screen fallback) | Drift AI usage plus saved provider settings/secret store; `localOwnerId` | None from production shell | None; fake replies are not provider evidence | wired |
-| Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file | None from production shell | None | wired |
-| Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden` by omission) | None; not adapted into legacy navigation | Shadow reward orchestrator is internal only | Drift V2 event/reward projections | None from production shell | None | hidden |
-| Feature: quest V2 | `Feature.questV2` (`limited`) | Missing: no `FieldFeature` mapping or user-visible quest entry | `QuestUseCases` plus durable learning reconciler are composed | Drift quest definitions, instances, objective progress, and versioned learning projection receipts; `localOwnerId` | File-backed answer replay proves stable source-event de-duplication; no user-visible shell entry | None; host test only | orphan |
+| Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`; supporting `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | Shared learning subsystem survives same-file reopen in `production_learning_restart_test.dart`; no duel-route-specific restart journey | None; host test only | wired |
+| Feature: achievements | `Feature.achievements` (`enabled`) | `home/achievements` → `AchievementsScreen` | `ProgressUseCases` | Drift achievement unlocks and progress evidence; `localOwnerId` | Achievement inventory survives owner upgrade and reopen in `guest_upgrade_restart_test.dart`; no achievements-route-specific restart journey | None; host test only | wired |
+| Feature: shop | `Feature.shop` (`enabled`) | `drawer/rewards/shop` | `RewardUseCases` | Drift reward transactions, owned/equipped items; `localOwnerId` | `reward_use_cases_test.dart` proves atomic durable/idempotent purchase and equipment; complete reward inventory survives reopen in `guest_upgrade_restart_test.dart`; no shop-route-specific restart journey | None; host test only | wired |
+| Feature: object scanner | `Feature.objectScanner` (`limited`) | `drawer/practice/object-scanner` | `ObjectScannerController`; supporting `DeviceModelUseCases`, `VocabularyUseCases`, and `VoiceUseCases`; missing composition fails closed before camera initialization | Drift model-download records, model file, and accepted vocabulary; `localOwnerId` where applicable | Model repository/download crash-recovery and vocabulary restart tests cover the durable subsystems; host lease tests cover replacement, push/pop, backgrounding, pending init, and disposal-tail fencing, not a physical scanner restart | None; host fakes are not device evidence | wired |
+| Feature: speech practice | `Feature.speechPractice` (`limited`) | `drawer/practice/shadowing` | `SpeechPracticeUseCases`; supporting `LearningUseCases` and `VoiceUseCases`; missing media composition fails closed | Drift learning/answer and transcript-assessment provenance; `localOwnerId` | Shared learning evidence survives same-file reopen; host session tests cover replacement, push/pop, pending start, disposal-tail fencing, and actual assessment provenance, not a physical microphone restart | None; host fakes are not microphone evidence | wired |
+| Feature: AI tutor | `Feature.aiTutor` (`limited`) | `drawer/ai-tutor/chat` and `drawer/ai-tutor/settings` | `AiTutorController`; supporting `AiUsageRepository` (voice cleanup remains Task 7) | Drift AI usage plus saved provider settings/secret store; `localOwnerId` | AI inventory survives complete owner-upgrade reopen journeys and owner isolation is covered by `drift_ai_usage_repository_test.dart`; no tutor-route/provider restart journey | None; fake replies are not provider evidence | wired |
+| Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file artifact | `export_use_cases_test.dart` covers stable evidence/artifact construction and owner-consistency fencing; export-store tests cover selected-file writes, not an app-route restart | None; host test only | wired |
+| Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden`) | Empty frozen `productionEntryId` | Empty frozen `dependencyId`; Production does not construct or inject `ShadowRewardOrchestrator`, while durable learning projection uses the non-shadow reconciler | No delivery-owned store for this hidden row | Static production-composition boundary test | None | hidden |
+| Feature: quest V2 | `Feature.questV2` (`limited`) | `drawer/rewards/quests` → `QuestStatusScreen` (route `rewards/quests`) | `QuestUseCases`; supporting durable learning reconciler remains always composed because the switch gates UI invocation only | Drift quest definitions, instances, objective progress, reward receipts, and versioned learning projection receipts; `localOwnerId` | File-backed replay plus bootstrap emergency-off reconciliation and bounded owner-resolving Quest Status host tests | None; host/debug evidence only | verified |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
 | Screen: `add_multiple_words_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → bulk add | `ImportVocabulary` through `AppDependenciesScope`; production route passes no dependency | Drift vocabulary import and word tables | Production Home shell opens the scoped bulk-add route; import behavior is not executed | None; host test only | wired |
 | Screen: `add_vocab_screen.dart` | `Feature.vocabulary` | `CategoriesPage` → `VocabListScreen` → add/edit | `VocabularyUseCases` through `AppDependenciesScope` | Drift vocabulary word/category tables | Production Home shell creates and renders a word | None; host test only | verified |
@@ -44,27 +53,29 @@ is reachable from `lib/main.dart`.
 | Screen: `associative_reading_launcher_screen.dart` | `Feature.reading` | `ChooseModeScreen` reading tile | Resolves scoped `VocabularyUseCases`, `LearningUseCases`, and `AssociativeLearningPort`; loads at most 10 active-owner words and explicitly injects the latter two into the session | Reads owner-scoped Drift vocabulary; session writes reading and association evidence | Production shell file-backed close/reopen journey | None; host test only | verified |
 | Screen: `associative_reading_session_screen.dart` | `Feature.reading` | `AssociativeReadingLauncherScreen` | Explicit `LearningUseCases` and production `DriftAssociativeLearningAdapter`; missing dependencies render a typed unavailable state | Drift reading progress, `association_records`, and `associative_memory_states`; active `localOwnerId` | Same-file SQLite close/reopen with foreign-owner exclusion | None; host test only | verified |
 | Screen: `avatar_equipment_screen.dart` | `Feature.shop` | No production caller | Optional `RewardUseCases`; delegates to `ShopPage` | Drift reward ownership if injected | None | None | orphan |
-| Screen: `boss_battle_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → boss battle | Screen constructs `RankService`; questions are passed from vocabulary | No result persistence in screen | None | None | legacy |
+| Screen: `boss_battle_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → boss battle | Requires the bounded owned-vocabulary questions passed by `GameLauncherScreen`; no synthetic defaults or `RankService` | No result persistence or reward grant in screen | Focused host tests cover one-question completion and question-count-derived progress | None; host test only | wired |
 | Screen: `categories_page.dart` | `Feature.vocabulary` | `MainNavigationScreen` bottom destination | `VocabularyUseCases` through scope | Drift vocabulary categories/words | Production Home shell creates and opens a category | None; host test only | verified |
 | Screen: `cefr_article_reader_screen.dart` | `Feature.reading` | No production caller | Optional voice; constructs default voice in screen | None | None | None | orphan |
-| Screen: `cefr_diagnostic_test_screen.dart` | `Feature.reading` | `ChooseModeScreen` diagnostic tile | Static screen-owned question list | None; answers/results are widget memory | None | None | legacy |
-| Screen: `cefr_selection_screen.dart` | `Feature.srs` | `ChooseModeScreen` → `LearningWorldMapScreen` | Screen constructs legacy `CefrService`; passes map data to SRS | No CEFR selection persistence | None | None | legacy |
-| Screen: `choose_mode_screen.dart` | Parent aggregate plus an independently guarded `Feature.reading` tile; other legacy tiles retain parent-only checks | `MainNavigationScreen` learn destination | Reads `FeatureRegistry` from `AppDependenciesScope` for the associative-reading entry | None | Reading-tile visible/hidden widget coverage and production-shell reachability | None; host test only | wired |
-| Screen: `dictation_quiz_screen.dart` | `Feature.quiz`, `Feature.speechPractice` | `ChooseModeScreen` → `GameLauncherScreen` → dictation | Optional voice; constructs default voice in screen | No result persistence in screen | None | None | legacy |
+| Screen: `cefr_diagnostic_test_screen.dart` | `Feature.reading` | No production caller; removed from `ChooseModeScreen` | Static screen-owned question list | None; answers/results are widget memory | Static production-entry boundary test | None | orphan |
+| Screen: `cefr_selection_screen.dart` | `Feature.srs` | No production caller; its former World Map parent is not a production entry | Screen constructs legacy `CefrService`; passes map data to SRS | No CEFR selection persistence | None | None | orphan |
+| Screen: `choose_mode_screen.dart` | Visible when the V2 quiz, SRS, or reading aggregate has an enabled/limited member; individual tiles use V2 visibility and shared invocation gates | `MainNavigationScreen` learn destination | Reads the sole `FeatureRegistry` from `AppDependenciesScope`; never substitutes a fail-open registry | None | Host navigation tests cover tile visibility, lazy routes, live emergency-off, and the all-hidden aggregate | None; host test only | verified |
+| Screen: `dictation_quiz_screen.dart` | `Feature.quiz`, `Feature.speechPractice` | `ChooseModeScreen` → `GameLauncherScreen` → dictation | Receives the first owned word and resolves injected-then-scoped `VoiceUseCases`; missing voice is typed unavailable | No result persistence in screen | Focused host voice/composition and launcher tests | None; host test only | wired |
 | Screen: `email_action_screen.dart` | No `Feature` member (account shell) | `AppRouteFactory` email action route | `AccountUseCases` through scope | External account state plus local owner binding | None from production shell | None | wired |
 | Screen: `export_center_screen.dart` | `Feature.export` | `MainNavigationScreen` drawer `export/center` | `ExportUseCases` through scope | Reads Drift and writes selected export file | None from production shell | None | wired |
-| Screen: `fill_in_the_blanks_screen.dart` | `Feature.quiz` | `WordScrambleScreen` completion | Screen constructs legacy `SentenceService` | No result persistence in screen | None | None | legacy |
-| Screen: `game_launcher_screen.dart` | `Feature.quiz` | Three tiles in `ChooseModeScreen` | `VocabularyUseCases` through scope | Reads owner-scoped Drift vocabulary | None from production shell | None | wired |
+| Screen: `fill_in_the_blanks_screen.dart` | `Feature.quiz` | No production caller; Word Scramble completion remains on its own result state | Screen constructs legacy `SentenceService` | No result persistence in screen | Focused Word Scramble host test proves no hidden follow-on | None | orphan |
+| Screen: `game_launcher_screen.dart` | `Feature.quiz` | Three V2-gated tiles in `ChooseModeScreen` | `VocabularyUseCases` through scope; exactly one `getGameWords(limit: 10)` load | Reads at most ten owner-scoped Drift vocabulary words and passes only those words to games | Focused host tests cover one load, at most one route, typed missing/empty/failure states, and owned inputs | None; host test only | verified |
 | Screen: `gemini_settings_screen.dart` | `Feature.aiTutor` | No production caller | Optional `GeminiTutorController` through scope | Provider settings/secret store if injected | None | None | orphan |
 | Screen: `ghost_shadow_duel_screen.dart` | `Feature.ghostDuel` | `MainNavigationScreen` drawer `learning/ghost-duel` | `LearningUseCases`, `ProgressUseCases`; duel calculation service | Drift learning sessions/answer attempts | None from production shell | None | wired |
-| Screen: `learning_world_map_screen.dart` | `Feature.reading` | `ChooseModeScreen` world-map tile | Static screen-owned campaign nodes | None | None | None | legacy |
+| Screen: `learning_world_map_screen.dart` | `Feature.reading` | No production caller; removed from `ChooseModeScreen` | Static screen-owned campaign nodes | None | Static production-entry boundary test | None | orphan |
 | Screen: `login_screen.dart` | No `Feature` member (account shell) | Signed-out app start resolves to `/login` from composed persisted entry/auth state | Account, consent, guest session, and launch route from one bootstrap composition | Local owner plus external account binding; explicit entry choice in SharedPreferences | Resolver/store restart-state tests and production-shell initial-route gate; no physical process/device evidence | None | wired |
-| Screen: `main_navigation_screen.dart` | Legacy `FieldFeature` adapter backed by `FeatureRegistry` | Authenticated or explicit-guest app start resolves to `/home` | `AppDependenciesScope`; `FeatureRegistryFieldAdapter`; composed launch route | Runtime flags persist in Drift; explicit guest entry choice persists separately without replacing `localOwnerId` | Resolver/store restart-state tests and production-shell initial-route gate; no physical process/device evidence | None | wired |
+| Screen: `main_navigation_screen.dart` | Sole V2 `FeatureRegistry` authority with shared lazy/live/fail-closed `ProductionFeatureGate` routes | Authenticated or explicit-guest app start resolves to `/home` | `AppDependenciesScope`, composed launch route, stable destination identities/keys; no legacy field adapter or fail-open fallback | Runtime flags persist in Drift; explicit guest entry choice persists separately without replacing `localOwnerId` | Host tests cover live entry removal, retained selected-feature unavailable state, stable state across earlier removal, aggregate hiding, and one-entry Profile liveness | None; host/debug evidence only | verified |
+| Screen: `media_dependency_unavailable.dart` | Shared typed dependency state for Task 6 media routes | Rendered by Object Scanner, Shadowing, Speak-to-Text, Dictation, and Phonetic Explorer when required composition is absent | No provider construction or ownership | None | Focused five-screen composition tests | None; host test only | wired |
 | Screen: `mastery_dashboard_screen.dart` | `Feature.mastery` | `MainNavigationScreen` bottom destination and learn tile | `ProgressUseCases.load` through scope | Drift-derived progress evidence | None from production shell | None | wired |
-| Screen: `object_scanner_screen.dart` | `Feature.objectScanner` | Drawer `practice/object-scanner` | Composed scanner/model controller; constructs default voice in screen | Model downloads and accepted vocabulary in Drift | None from production shell | None; host tests only | wired |
+| Screen: `object_scanner_screen.dart` | `Feature.objectScanner` | Drawer `practice/object-scanner` | Injected-then-scoped scanner and `VoiceUseCases`; controller-scoped serialized lease owns camera lifecycle; typed unavailable when either is absent; no screen-owned voice lifecycle | Model downloads and accepted vocabulary in Drift | Host tests cover zero unavailable initialization, replacement and push/pop lease ownership, pending-init pause/resume, late-runtime disposal drain, and stale-owner fencing | None; host tests are not device evidence | wired |
 | Screen: `otp_screen.dart` | No `Feature` member (account shell) | `/otp` route from registration | `AccountUseCases` through scope | External account state plus local owner binding | None from production shell | None | wired |
-| Screen: `phonetic_explorer_screen.dart` | `Feature.speechPractice` | `ChooseModeScreen` phonetic tile | Static symbols; constructs default voice in screen | None | None | None | legacy |
+| Screen: `phonetic_explorer_screen.dart` | `Feature.speechPractice` | V2-gated `ChooseModeScreen` phonetic tile | Static symbols plus injected-then-scoped `VoiceUseCases`; typed unavailable when absent; no screen-owned voice lifecycle | None | Focused host voice/composition test | None; host test only | wired |
 | Screen: `profile_settings_screen.dart` | No `Feature` member (always-visible shell) | `MainNavigationScreen` profile destination | `ProgressUseCases`; account sign-out through scope | Drift-derived progress and local/account identity | None from production shell | None | wired |
+| Screen: `quest_status_screen.dart` | `Feature.questV2` | Drawer `rewards/quests` through exact route `rewards/quests` | Owner-resolving `QuestUseCases` from injection or scope; one bounded read per dependency identity | Read-only Drift quest instances/objective progress | Host tests cover limit 50, loading/empty/failure/unavailable, all lifecycle states, no IDs/mutations, and owner dependency replacement | None; host/debug evidence only | verified |
 | Screen: `quiz_screen.dart` | `Feature.quiz` | `ChooseModeScreen` direct/category quiz | `LearningUseCases` through scope | Drift sessions, answer attempts, SRS state | None from production shell | None | wired |
 | Screen: `register_screen.dart` | No `Feature` member (account shell) | `/register` route from login | Account and consent use cases through scope | External account state plus local owner binding/consent | None from production shell | None | wired |
 | Screen: `result_screen.dart` | No current flag | No production caller | None | None | None | None | orphan |
@@ -73,15 +84,15 @@ is reachable from `lib/main.dart`.
 | Screen: `select_wallpaper_screen.dart` | `Feature.shop` | No production caller | Optional `RewardUseCases`; delegates to `ShopPage` | Drift reward ownership if injected | None | None | orphan |
 | Screen: `sentence_scramble_screen.dart` | `Feature.quiz`, `Feature.speechPractice` | No production caller | Optional voice only | No result persistence in screen | None | None | orphan |
 | Screen: `setting_screen.dart` | No `Feature` member (always-visible shell) | `MainNavigationScreen` drawer `settings` | Account, local owner/deletion, consent, runtime status through scope | Drift owner/consent/business data plus secret erasure surface | None from production shell | None | wired |
-| Screen: `shadowing_challenge_screen.dart` | `Feature.speechPractice` | Drawer `practice/shadowing` and unguarded learn tile | Composed speech and learning; constructs default voice in screen | Records Drift learning session/answer evidence | None from production shell | None; host microphone fakes only | wired |
+| Screen: `shadowing_challenge_screen.dart` | `Feature.speechPractice` | Drawer `practice/shadowing` and V2-gated learn tile | Injected-then-scoped voice/speech/learning dependencies; a serialized shared speech session owns microphone work; typed unavailable for missing media composition; no screen-owned voice lifecycle | Records Drift learning session/answer evidence with actual `assessment.method` provenance | Host tests cover provenance, zero unavailable session creation, double-start fencing, pending replacement, push/pop reacquisition, and disposal-tail cleanup | None; host microphone fakes only | wired |
 | Screen: `shop_page.dart` | `Feature.shop` | Drawer `rewards/shop` | `RewardUseCases` through scope | Drift reward transactions and ownership/equipment | None from production shell | None | wired |
 | Screen: `smart_audio_playlist_screen.dart` | `Feature.speechPractice` | No production caller | Optional voice and screen-owned audio service | None | None | None | orphan |
-| Screen: `speak_to_text_screen.dart` | `Feature.speechPractice` | No production caller | Optional learning/speech/voice with screen voice fallback | Can record learning when injected, but no production path | None | None | orphan |
+| Screen: `speak_to_text_screen.dart` | `Feature.speechPractice` | No production caller | Injected-then-scoped voice/speech/learning dependencies; a serialized shared speech session owns microphone work; typed unavailable for missing media composition; no screen-owned voice lifecycle | Records learning only when both session and word IDs exist, but has no production path | Host tests cover shared-voice replacement, zero unavailable playback, pending replacement/push-pop session ownership, disposal-tail cleanup, and the neither/session-only/word-only/both-ID write matrix | None; host test only | orphan |
 | Screen: `srs_flashcards_screen.dart` | `Feature.srs` | `ChooseModeScreen`, weakness clinic, and CEFR selection | `LearningUseCases` through scope; constructs default voice in screen | Drift sessions, answer attempts, SRS state | None from production shell | None | wired |
 | Screen: `thesis_chart_screen.dart` | No current flag | No production caller | Presentation-only score arguments | None | None | None | orphan |
 | Screen: `vocab_list_screen.dart` | `Feature.vocabulary` | `CategoriesPage` category selection | Vocabulary/import use cases through scope | Drift vocabulary/import tables | Production Home shell resolves scoped use cases and renders the created word | None; host test only | verified |
 | Screen: `weakness_clinic_screen.dart` | `Feature.weakness` | `MainNavigationScreen` bottom destination and learn tile | `ProgressUseCases.load` through scope | Drift-derived answer/SRS evidence | None from production shell | None | wired |
-| Screen: `word_scramble_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → word scramble | Word passed from composed vocabulary launcher | No result persistence in screen | None | None | legacy |
+| Screen: `word_scramble_screen.dart` | `Feature.quiz` | `ChooseModeScreen` → `GameLauncherScreen` → word scramble | First owned word passed from the composed vocabulary launcher | No result persistence in screen | Focused host test proves explicit completion remains on-screen with no hidden Fill-in-the-Blanks route | None; host test only | wired |
 | Screen: `wordbook_import_screen.dart` | `Feature.vocabulary` | No production caller | Screen-owned legacy `CustomWordbookImporter` | Parsed rows are widget memory | None | None | orphan |
 
 ## P1 launch-identity update
@@ -171,8 +182,8 @@ On merged-owner upgrade, projection cursors are re-keyed to the account and
 merged at the earlier safe contiguous prefix; quest receipt reward owners are
 normalized in the same transaction so pending guest evidence remains replayable.
 This is not physical process, APK, or device evidence, so the promoted learning
-rows are `verified`, not `field-certified`; quest remains `orphan` because it
-still lacks a user-visible production entry.
+rows are `verified`, not `field-certified`. Task 6 subsequently adds the
+read-only Quest Status production entry without changing that durable design.
 
 ## P2 associative reading update
 
@@ -238,21 +249,60 @@ not physical restart, APK, device, or provider receipt evidence, so it is
 after two identical `invalidKey` failures and was not retried without changed
 external configuration.
 
+## P3 production feature delivery update
+
+Task 6 freezes one exact 15-row production delivery contract and makes the V2
+`FeatureRegistry` the sole UI invocation authority. The shared gate constructs
+enabled subtrees lazily, observes live runtime overrides, and fails closed for
+missing, hidden, disabled, or emergency-off state. Entry surfaces disappear,
+while a retained or direct route renders the same typed unavailable experience.
+Stable destination identities preserve selection and widget state when earlier
+entries disappear; an all-hidden aggregate cannot expose its enabled subtree,
+and Profile remains reachable when it is the only visible destination. The
+legacy field adapter and UI fail-open defaults are absent from production.
+Fresh `MyApp` journeys key and invoke every one of the 14 enabled/limited
+contract entries, assert the intended destination first, and then prove the
+same feature fails closed after a live emergency-off. The hidden shadow entry
+is absent and a direct invocation renders typed unavailable.
+
+Quest Status is a read-only route at `drawer/rewards/quests`, with route setting
+`rewards/quests`. It resolves the active owner through `QuestUseCases`, reads at
+most 50 instances in deterministic SQL order, and renders no internal IDs or
+mutation action. Changing the composed quest dependency reloads exactly once
+for the new identity. The `questV2` switch controls that invocation only:
+bootstrap still composes quest seed, projection, reward receipt, reconciliation,
+and scheduling under emergency-off. Production does not construct or inject the
+hidden shadow reward orchestrator.
+
+The three game routes load owner-scoped vocabulary exactly once with limit 10
+and navigate at most once. Boss progress derives only from the supplied owned
+questions and grants no synthetic rank, XP, coin, daily, or CEFR result. Word
+Scramble completes in place. The demo World Map and CEFR Diagnostic surfaces
+are no longer production entries. The five Task 6 media screens resolve
+injection first and then the runtime scope, fail closed before side effects when
+required composition is missing, and do not create, stop, or dispose a shared
+voice provider. Controller-scoped camera leases and use-case-scoped speech
+sessions serialize takeover, fence pending replacement and push/pop ownership,
+and drain disposal before runtime ownership ends. Shadowing persists the actual
+transcript assessment method. Speak-to-Text writes learning evidence only when
+both session and word IDs are present; the other three ID combinations write
+nothing. There is no Speak-to-Text production entry.
+
+All Task 6 evidence is bounded host/widget/bootstrap/SQLite or debug-script
+evidence. It is `verified` where the row says so, never `field-certified`, and
+does not establish physical camera, microphone, APK, provider, or device
+performance. Schema remains 12 and no generated Drift file changed. MaxPlus
+remains advisory-unavailable after repeated `invalidKey`; it was not retried.
+
 ## Baseline gaps carried forward
 
-- `Feature.questV2` is visible under `BuildFeatureRegistry.fieldDefaults()` but
-  still has no declared user-visible production path. The associative-reading
-  gap is closed by Task 4. `LearningWorldMapScreen` remains a separate legacy
-  surface under the reading flag.
-- `ChooseModeScreen` is shown when any of quiz, SRS, or reading is visible, but
-  only its new associative-reading tile independently enforces its feature
-  state. Other legacy tiles retain parent-only checks. The shadowing tile is
-  also reachable independently of the drawer guard.
-- Ten screen files are unreachable from `lib/main.dart`: avatar equipment,
-  CEFR article reader, Gemini settings, result, wallpaper selection, sentence
-  scramble, smart audio playlist, speak-to-text, thesis chart, and wordbook
-  import.
-- Several reachable media/voice screens create their own default voice provider;
-  this is not single-composition evidence.
-- The existing device-certification scenario uses in-memory Drift and explicitly
-  says it is not an integration/device test. It is not field evidence.
+- AI Tutor, SRS, and media files outside the five-screen Task 6 capsule still
+  contain legacy voice composition or screen-owned services; Task 7 owns that
+  global cleanup.
+- Unreachable legacy/demo files remain in the tree, including CEFR article,
+  diagnostic, and selection screens, Learning World Map, Fill-in-the-Blanks,
+  avatar equipment, Gemini settings, result, wallpaper selection, sentence
+  scramble, smart audio playlist, Speak-to-Text, thesis chart, and wordbook
+  import. Their presence is not a production-entry claim.
+- The device/camera/speech verification scripts and widget scenarios are host or
+  debug-only checks. They are not physical integration/device field evidence.
