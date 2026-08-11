@@ -334,6 +334,8 @@ final class AiTutorUseCases implements AiTutorController {
           if (credential.shareLearningSummary && loadProgress != null) {
             try {
               summary = _progressSummary(await loadProgress!());
+            } on AiTutorException {
+              rethrow;
             } on Object {
               throw const AiTutorException(AiFailureCode.localPersistence);
             }
@@ -382,6 +384,8 @@ final class AiTutorUseCases implements AiTutorController {
         () => ownerCoordinator.run(cancellation, (ownerId) async {
           try {
             return await usageRepository.summarizeForOwner(ownerId);
+          } on AiTutorException {
+            rethrow;
           } on Object {
             throw const AiTutorException(AiFailureCode.localPersistence);
           }
@@ -400,6 +404,8 @@ final class AiTutorUseCases implements AiTutorController {
         () => ownerCoordinator.run(cancellation, (ownerId) async {
           try {
             await usageRepository.clearForOwner(ownerId);
+          } on AiTutorException {
+            rethrow;
           } on Object {
             throw const AiTutorException(AiFailureCode.localPersistence);
           }

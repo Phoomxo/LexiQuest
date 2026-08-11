@@ -110,6 +110,25 @@ void main() {
     },
   );
 
+  test('loadUsage preserves typed repository failure identity', () async {
+    final sentinel = AiTutorException(AiFailureCode.timeout);
+    usage.summarizeFailure = sentinel;
+
+    await expectLater(
+      createTutor().loadUsage(),
+      throwsA(
+        allOf(
+          same(sentinel),
+          isA<AiTutorException>().having(
+            (error) => error.code,
+            'code',
+            AiFailureCode.timeout,
+          ),
+        ),
+      ),
+    );
+  });
+
   test(
     'clearUsage normalizes repository failure to local-persistence',
     () async {
@@ -121,6 +140,25 @@ void main() {
       );
     },
   );
+
+  test('clearUsage preserves typed repository failure identity', () async {
+    final sentinel = AiTutorException(AiFailureCode.cancelled);
+    usage.clearFailure = sentinel;
+
+    await expectLater(
+      createTutor().clearUsage(),
+      throwsA(
+        allOf(
+          same(sentinel),
+          isA<AiTutorException>().having(
+            (error) => error.code,
+            'code',
+            AiFailureCode.cancelled,
+          ),
+        ),
+      ),
+    );
+  });
 
   test(
     'opted-in learning-summary load failure is local-persistence with zero provider calls',
@@ -140,6 +178,40 @@ void main() {
           loadProgress: () async => throw StateError('progress read failed'),
         ).reply(scenario: 'scenario', learnerMessage: 'message'),
         throwsA(_aiFailure(AiFailureCode.localPersistence)),
+      );
+
+      expect(gateway.generateCalls, 0);
+    },
+  );
+
+  test(
+    'opted-in learning-summary preserves typed failure identity with zero provider calls',
+    () async {
+      final sentinel = AiTutorException(AiFailureCode.circuitOpen);
+      await store.writeCredential(
+        const AiTutorCredential(
+          key: 'secret-key-sentinel',
+          providerId: AiProviderId.openrouter,
+          model: 'provider/model',
+          providerConsent: true,
+          shareLearningSummary: true,
+        ),
+      );
+
+      await expectLater(
+        createTutor(
+          loadProgress: () async => throw sentinel,
+        ).reply(scenario: 'scenario', learnerMessage: 'message'),
+        throwsA(
+          allOf(
+            same(sentinel),
+            isA<AiTutorException>().having(
+              (error) => error.code,
+              'code',
+              AiFailureCode.circuitOpen,
+            ),
+          ),
+        ),
       );
 
       expect(gateway.generateCalls, 0);
@@ -515,6 +587,8 @@ final class _MemoryUsageRepository implements AiUsageRepository {
   bool failFinalize = false;
   bool failSummarize = false;
   bool failClear = false;
+  AiTutorException? summarizeFailure;
+  AiTutorException? clearFailure;
   int finalizeCalls = 0;
   void Function()? afterFinalize;
 
@@ -567,6 +641,8 @@ final class _MemoryUsageRepository implements AiUsageRepository {
 
   @override
   Future<void> clearForOwner(String ownerId) async {
+    final failure = clearFailure;
+    if (failure != null) throw failure;
     if (failClear) throw StateError('clear failed');
   }
 
@@ -585,6 +661,8 @@ final class _MemoryUsageRepository implements AiUsageRepository {
 
   @override
   Future<List<AiUsageSummary>> summarizeForOwner(String ownerId) async {
+    final failure = summarizeFailure;
+    if (failure != null) throw failure;
     if (failSummarize) throw StateError('summarize failed');
     return const <AiUsageSummary>[];
   }
