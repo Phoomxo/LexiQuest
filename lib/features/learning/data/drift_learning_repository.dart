@@ -8,6 +8,7 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
+import '../domain/srs_operation_identity.dart';
 
 final class DriftLearningRepository implements LearningRepository {
   DriftLearningRepository(
@@ -163,6 +164,7 @@ final class DriftLearningRepository implements LearningRepository {
       await _appendSrsOutbox(
         ownerId: command.ownerId,
         wordId: command.wordId,
+        answerAttemptId: command.id,
         occurredAtUtc: command.occurredAtUtc,
       );
       final event = command.event;
@@ -391,6 +393,7 @@ final class DriftLearningRepository implements LearningRepository {
   Future<void> _appendSrsOutbox({
     required String ownerId,
     required String wordId,
+    required String answerAttemptId,
     required DateTime occurredAtUtc,
   }) async {
     final attemptCount = database.answerAttempts.id.count();
@@ -408,7 +411,12 @@ final class DriftLearningRepository implements LearningRepository {
         .into(database.outboxOperations)
         .insert(
           db.OutboxOperationsCompanion.insert(
-            operationId: 'srsState:$wordId:$revision',
+            operationId: SrsOperationIdentity.create(
+              ownerId: ownerId,
+              wordId: wordId,
+              answerAttemptId: answerAttemptId,
+              revision: revision,
+            ),
             ownerId: ownerId,
             entityType: 'srsState',
             entityId: wordId,

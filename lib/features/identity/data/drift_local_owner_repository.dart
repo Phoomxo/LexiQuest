@@ -103,6 +103,12 @@ final class DriftLocalOwnerRepository implements LocalOwnerRepository {
           if (row.firebaseUid == canonicalUid) {
             return _toDomain(row);
           }
+          if (row.firebaseUid != null) {
+            throw StateError(
+              'direct Firebase UID rebinding is forbidden; use '
+              'UpgradeGuestOwner',
+            );
+          }
 
           final upgradedAt = _requireUtc(nowUtc());
           await (_database.update(

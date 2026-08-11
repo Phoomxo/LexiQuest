@@ -90,6 +90,29 @@ void main() {
       expect(rows.first.repetitions, 1);
     });
 
+    test('applyPullPage accepts a mutable revision-two SRS state', () async {
+      final entity = _srsEntity(revision: 2);
+
+      await store.applyPullPage(
+        ownerId: _ownerId,
+        collection: SyncCollection.srsStates,
+        page: PullPage(
+          changes: [entity],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+            documentId: entity.entityId,
+          ),
+          hasMore: false,
+        ),
+      );
+
+      final state = await (database.select(
+        database.srsStates,
+      )..where((row) => row.wordId.equals(_wordId))).getSingle();
+      expect(state.intervalDays, 3);
+      expect(state.repetitions, 1);
+    });
+
     test(
       'applyPullPage updates existing SRS state (last-write-wins)',
       () async {
@@ -125,6 +148,60 @@ void main() {
           rows.first.intervalDays,
           3,
           reason: 'server state must overwrite local',
+        );
+      },
+    );
+
+    test(
+      'revision-two pull preserves an answer-derived local SRS projection',
+      () async {
+        await database.customInsert(
+          "INSERT INTO learning_sessions "
+          "(id, owner_id, activity_type, state, started_at_utc_ms, "
+          "app_version, build_id) VALUES "
+          "('session-local', '$_ownerId', 'quiz', 'completed', 10, "
+          "'test', 'test')",
+        );
+        await database.customInsert(
+          "INSERT INTO answer_attempts "
+          "(id, owner_id, session_id, word_id, prompt_mode, is_correct, "
+          "attempt_number, occurred_at_utc_ms) VALUES "
+          "('attempt-local', '$_ownerId', 'session-local', '$_wordId', "
+          "'meaningChoice', 0, 1, 20)",
+        );
+        await database.customInsert(
+          "INSERT INTO srs_states "
+          "(id, owner_id, word_id, stability, difficulty, interval_days, "
+          "repetitions, lapses, last_review_at_utc_ms, due_at_utc_ms, "
+          "algorithm_version) VALUES "
+          "('$_srsId', '$_ownerId', '$_wordId', 1.0, 8.0, 1, 0, 1, 20, "
+          "30, 1)",
+        );
+        final entity = _srsEntity(revision: 2);
+
+        await store.applyPullPage(
+          ownerId: _ownerId,
+          collection: SyncCollection.srsStates,
+          page: PullPage(
+            changes: [entity],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+              documentId: entity.entityId,
+            ),
+            hasMore: false,
+          ),
+        );
+
+        final rebuilt = await database.select(database.srsStates).getSingle();
+        expect(rebuilt.id, 'srs:$_ownerId:$_wordId');
+        expect(rebuilt.repetitions, 0);
+        expect(rebuilt.lapses, 1);
+        expect(rebuilt.lastReviewAtUtcMs, 20);
+        expect(rebuilt.intervalDays, 1);
+        expect(
+          rebuilt.stability,
+          isNot(2.5),
+          reason: 'immutable answers are authoritative over the cloud cache',
         );
       },
     );

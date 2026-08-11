@@ -222,13 +222,15 @@ final class DriftLearningProjectionRebuilder {
     required db.AnswerAttempt source,
   }) async {
     const definitionVersion = 1;
-    await (database.delete(database.achievementUnlocks)..where(
-          (row) =>
-              row.ownerId.equals(ownerId) &
-              row.achievementId.equals(achievementId) &
-              row.definitionVersion.equals(definitionVersion),
-        ))
-        .go();
+    final existing =
+        await (database.select(database.achievementUnlocks)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.achievementId.equals(achievementId) &
+                  row.definitionVersion.equals(definitionVersion),
+            ))
+            .getSingleOrNull();
+    if (existing != null) return;
     await database
         .into(database.achievementUnlocks)
         .insert(

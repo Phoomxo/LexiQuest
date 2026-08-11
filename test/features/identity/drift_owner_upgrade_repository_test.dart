@@ -79,6 +79,55 @@ void main() {
     },
   );
 
+  test('anonymous rehome creates an anchored SRS operation identity', () async {
+    await (database.delete(
+      database.localOwners,
+    )..where((row) => row.id.equals('account-owner'))).go();
+    await database.customInsert(
+      "INSERT INTO vocabulary_categories "
+      "(id, owner_id, name, normalized_name, created_at_utc_ms, "
+      "updated_at_utc_ms) VALUES "
+      "('category-srs', 'guest-owner', 'SRS', 'srs', 1, 1)",
+    );
+    await database.customInsert(
+      "INSERT INTO vocabulary_words "
+      "(id, owner_id, category_id, spelling, normalized_spelling, meaning, "
+      "normalized_meaning, part_of_speech, created_at_utc_ms, "
+      "updated_at_utc_ms) VALUES "
+      "('word-srs', 'guest-owner', 'category-srs', 'one', 'one', 'one', "
+      "'one', 'noun', 1, 1)",
+    );
+    await database.customInsert(
+      "INSERT INTO learning_sessions VALUES "
+      "('session-srs', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, "
+      "100, '1', '1')",
+    );
+    await database.customInsert(
+      "INSERT INTO answer_attempts VALUES "
+      "('answer-srs', 'guest-owner', 'session-srs', 'word-srs', 'meaning', "
+      "1, 10, 1, 2, NULL)",
+    );
+    await database.customInsert(
+      "INSERT INTO srs_states VALUES "
+      "('state-srs', 'guest-owner', 'word-srs', 1, 1, 1, 1, 0, 2, 3, 1)",
+    );
+
+    await repository.upgrade(
+      activeOwnerId: 'guest-owner',
+      firebaseUid: 'new-firebase-user',
+    );
+
+    final operation = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.entityType.equals('srsState'))).getSingle();
+    expect(
+      operation.operationId,
+      matches(RegExp(r'^srsState:v2:[0-9a-f]{64}:r1$')),
+    );
+    expect(operation.entityId, 'word-srs');
+    expect(operation.baseRevision, 0);
+  });
+
   test('moves every owner-scoped row and replays as a no-op', () async {
     await _seedEveryOwnerScopedTable(database);
 
@@ -185,6 +234,71 @@ void main() {
   );
 
   test(
+    'collision remaps leave a third owner bookkeeping byte-equivalent',
+    () async {
+      await _seedCollisionGraph(database);
+      await database.customInsert(
+        "INSERT INTO local_owners "
+        "(id, firebase_uid, account_state, created_at_utc_ms, is_active) VALUES "
+        "('foreign-owner', 'firebase-foreign', 'firebaseBound', 3, 0)",
+      );
+      await database.customInsert(
+        "INSERT INTO outbox_operations "
+        "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+        "state, attempt_count, created_at_utc_ms) VALUES "
+        "('foreign-operation', 'foreign-owner', 'word', 'word-guest', "
+        "'upsert', 'retryWaiting', 2, 3)",
+      );
+      await database.customInsert(
+        "INSERT INTO sync_conflicts "
+        "(id, owner_id, entity_type, entity_id, local_revision, cloud_revision, "
+        "resolution_policy, outcome, local_snapshot_json, cloud_snapshot_json, "
+        "resolved_at_utc_ms) VALUES "
+        "('foreign-conflict', 'foreign-owner', 'word', 'word-guest', 1, 2, "
+        "'foreignPolicy', 'foreignOutcome', '{\"foreign\":true}', "
+        "'{\"foreign\":false}', 3)",
+      );
+      final outboxBefore = await database
+          .customSelect(
+            'SELECT * FROM outbox_operations WHERE operation_id = ?',
+            variables: const [Variable<String>('foreign-operation')],
+          )
+          .getSingle()
+          .then((row) => Map<String, Object?>.from(row.data));
+      final conflictBefore = await database
+          .customSelect(
+            'SELECT * FROM sync_conflicts WHERE id = ?',
+            variables: const [Variable<String>('foreign-conflict')],
+          )
+          .getSingle()
+          .then((row) => Map<String, Object?>.from(row.data));
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final outboxAfter = await database
+          .customSelect(
+            'SELECT * FROM outbox_operations WHERE operation_id = ?',
+            variables: const [Variable<String>('foreign-operation')],
+          )
+          .getSingle()
+          .then((row) => Map<String, Object?>.from(row.data));
+      final conflictAfter = await database
+          .customSelect(
+            'SELECT * FROM sync_conflicts WHERE id = ?',
+            variables: const [Variable<String>('foreign-conflict')],
+          )
+          .getSingle()
+          .then((row) => Map<String, Object?>.from(row.data));
+
+      expect(outboxAfter, outboxBefore);
+      expect(conflictAfter, conflictBefore);
+    },
+  );
+
+  test(
     'file-backed merge retires colliding SRS and unlock outbox before claim',
     () async {
       final previousWarningSetting =
@@ -201,12 +315,12 @@ void main() {
         await _seedProjectionCollisionGraph(firstDatabase);
         await firstDatabase.customInsert(
           "INSERT INTO achievement_unlocks VALUES "
-          "('unlock-target', 'account-owner', 'first_review', 1, "
+          "('unlock-target', 'account-owner', 'first_answer', 1, "
           "'target-source', 1)",
         );
         await firstDatabase.customInsert(
           "INSERT INTO achievement_unlocks VALUES "
-          "('unlock-guest', 'guest-owner', 'first_review', 1, "
+          "('unlock-guest', 'guest-owner', 'first_answer', 1, "
           "'guest-source', 2)",
         );
         await firstDatabase.customInsert(
@@ -281,6 +395,13 @@ void main() {
         expect(
           claims.map((claim) => claim.mutation.operationId),
           isNot(contains('achievementUnlock:unlock-guest:1')),
+        );
+        expect(
+          await (reopenedDatabase.select(
+            reopenedDatabase.achievementUnlocks,
+          )..where((row) => row.id.equals('unlock-target'))).getSingleOrNull(),
+          isNot(equals(null)),
+          reason: 'projection rebuild must preserve the target unlock identity',
         );
       } finally {
         await reopenedDatabase.close();

@@ -6,6 +6,7 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
@@ -21,6 +22,7 @@ final class DriftSyncStore implements SyncStore {
 
   static const int maxClaimLimit = 50;
   static const int maxSendReservations = maxSyncSendReservations;
+  static const int maxLegacySrsNormalizationsPerClaim = 20;
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
@@ -148,6 +150,12 @@ final class DriftSyncStore implements SyncStore {
             Variable<int>(nowMs),
           ],
           updates: {database.outboxOperations},
+        );
+        await _normalizeLegacySrsOutbox(
+          ownerId: canonicalOwnerId,
+          limit: limit < maxLegacySrsNormalizationsPerClaim
+              ? limit
+              : maxLegacySrsNormalizationsPerClaim,
         );
         final candidateLimit = limit * _maxCandidateMultiplier;
         final candidateRows = await database
@@ -738,6 +746,12 @@ final class DriftSyncStore implements SyncStore {
       }
 
       final localSnapshot = await _localSnapshot(operation);
+      final preserveLocalSrsEvidence =
+          cloudEntity.collection == SyncCollection.srsStates &&
+          await _hasAnswerEvidence(operation.ownerId, operation.entityId);
+      final conflictOutcome = preserveLocalSrsEvidence
+          ? 'localEvidenceWins'
+          : 'cloudWins';
       final cloudSnapshot = <String, Object?>{
         'collection': cloudEntity.collection.wireName,
         'entityId': cloudEntity.entityId,
@@ -760,8 +774,10 @@ final class DriftSyncStore implements SyncStore {
               entityId: operation.entityId,
               localRevision: mutation.localRevision,
               cloudRevision: cloudEntity.revision,
-              resolutionPolicy: 'highestAcknowledgedRevision',
-              outcome: 'cloudWins',
+              resolutionPolicy: preserveLocalSrsEvidence
+                  ? 'immutableAnswerEvidence'
+                  : 'highestAcknowledgedRevision',
+              outcome: conflictOutcome,
               localSnapshotJson: Value(jsonEncode(localSnapshot)),
               cloudSnapshotJson: Value(jsonEncode(cloudSnapshot)),
               resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
@@ -788,18 +804,18 @@ final class DriftSyncStore implements SyncStore {
         case SyncCollection.achievementUnlocks:
           throw const InvalidSyncPayloadFailure();
         case SyncCollection.srsStates:
-          // SRS states are last-write-wins; apply server state directly.
+          // Resolve mutable cache state without overriding local answer evidence.
           await _applySrsState(operation.ownerId, cloudEntity);
       }
       await (database.update(
         database.outboxOperations,
       )..where((row) => row.operationId.equals(operation.operationId))).write(
-        const db.OutboxOperationsCompanion(
-          state: Value('conflictResolved'),
-          leaseToken: Value(null),
-          leaseExpiresAtUtcMs: Value(null),
-          nextAttemptAtUtcMs: Value(null),
-          failureCode: Value('cloudWins'),
+        db.OutboxOperationsCompanion(
+          state: const Value('conflictResolved'),
+          leaseToken: const Value(null),
+          leaseExpiresAtUtcMs: const Value(null),
+          nextAttemptAtUtcMs: const Value(null),
+          failureCode: Value(conflictOutcome),
         ),
       );
       return true;
@@ -968,6 +984,93 @@ final class DriftSyncStore implements SyncStore {
       return await operation();
     } finally {
       completer.complete();
+    }
+  }
+
+  Future<void> _normalizeLegacySrsOutbox({
+    required String ownerId,
+    required int limit,
+  }) async {
+    // One owner-scoped grouped scan repairs at most [limit] words per claim.
+    // The cap prevents reopen normalization from creating an unbounded write
+    // transaction; additional legacy words are repaired by later runs.
+    final missing = await database
+        .customSelect(
+          '''
+      WITH revisions AS (
+        SELECT state.word_id AS word_id,
+               COUNT(attempt.id) AS revision,
+               MAX(attempt.occurred_at_utc_ms) AS latest_occurred_at_utc_ms,
+               (
+                 SELECT latest.id
+                 FROM answer_attempts AS latest
+                 WHERE latest.owner_id = state.owner_id
+                   AND latest.word_id = state.word_id
+                 ORDER BY latest.occurred_at_utc_ms DESC, latest.id DESC
+                 LIMIT 1
+               ) AS latest_attempt_id
+        FROM srs_states AS state
+        JOIN answer_attempts AS attempt
+          ON attempt.owner_id = state.owner_id
+         AND attempt.word_id = state.word_id
+        WHERE state.owner_id = ?
+        GROUP BY state.word_id
+      )
+      SELECT word_id, revision, latest_attempt_id, latest_occurred_at_utc_ms
+      FROM revisions
+      WHERE revision > 0
+        AND NOT EXISTS (
+          SELECT 1
+          FROM outbox_operations AS operation
+          WHERE operation.owner_id = ?
+            AND operation.entity_type = 'srsState'
+            AND operation.entity_id = revisions.word_id
+            AND (
+              operation.operation_id LIKE
+                'srsState:v2:%:r' || CAST(revisions.revision AS TEXT)
+              OR operation.operation_id =
+                'srsState:' || revisions.word_id ||
+                ':' || CAST(revisions.revision AS TEXT)
+              OR operation.base_revision + 1 >= revisions.revision
+            )
+        )
+      ORDER BY latest_occurred_at_utc_ms, word_id
+      LIMIT ?
+      ''',
+          variables: [
+            Variable<String>(ownerId),
+            Variable<String>(ownerId),
+            Variable<int>(limit),
+          ],
+          readsFrom: {
+            database.srsStates,
+            database.answerAttempts,
+            database.outboxOperations,
+          },
+        )
+        .get();
+    for (final row in missing) {
+      final revision = row.read<int>('revision');
+      final attemptId = row.read<String>('latest_attempt_id');
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            db.OutboxOperationsCompanion.insert(
+              operationId: SrsOperationIdentity.create(
+                ownerId: ownerId,
+                wordId: row.read<String>('word_id'),
+                answerAttemptId: attemptId,
+                revision: revision,
+              ),
+              ownerId: ownerId,
+              entityType: 'srsState',
+              entityId: row.read<String>('word_id'),
+              operationKind: 'upsert',
+              baseRevision: Value(revision - 1),
+              createdAtUtcMs: row.read<int>('latest_occurred_at_utc_ms'),
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
     }
   }
 
@@ -1249,7 +1352,7 @@ final class DriftSyncStore implements SyncStore {
         // acknowledged outbox row is the durable local receipt.
         return;
       case 'srsState':
-        // SRS states are last-write-wins; no cloud revision columns.
+        // SRS revisions live in the durable operation rather than cache rows.
         return;
       case 'achievementUnlock':
         // Immutable unlock; no revision tracking needed.
@@ -1669,11 +1772,11 @@ final class DriftSyncStore implements SyncStore {
 
   /// Apply a pulled [SyncCollection.srsStates] entity.
   ///
-  /// Uses last-write-wins semantics: the server state unconditionally
-  /// replaces the local projection.  SRS states are derived projections so
-  /// the local rebuild will overwrite on the next review anyway.
+  /// Local immutable answer evidence is authoritative. When such evidence is
+  /// present the projection is rebuilt from it; the cloud cache is used only
+  /// when this owner has no local answer evidence for the word.
   Future<void> _applySrsState(String ownerId, SyncEntity entity) async {
-    _requireImmutableEntity(entity, SyncCollection.srsStates);
+    _requireMutableSrsEntity(entity);
     final payload = entity.payload;
     final wordId = _requiredString(payload, 'wordId');
     final stability = _requiredDouble(payload, 'stability');
@@ -1691,6 +1794,11 @@ final class DriftSyncStore implements SyncStore {
               ..where((r) => r.id.equals(wordId) & r.ownerId.equals(ownerId)))
             .getSingleOrNull();
     if (word == null) throw const InvalidSyncPayloadFailure();
+
+    if (await _hasAnswerEvidence(ownerId, wordId)) {
+      await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
+      return;
+    }
 
     // Upsert: server state replaces local.
     final existing =
@@ -1734,6 +1842,18 @@ final class DriftSyncStore implements SyncStore {
             mode: InsertMode.insertOrIgnore,
           );
     }
+  }
+
+  Future<bool> _hasAnswerEvidence(String ownerId, String wordId) async {
+    final evidence =
+        await (database.select(database.answerAttempts)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+              )
+              ..limit(1))
+            .getSingleOrNull();
+    return evidence != null;
   }
 
   /// Apply a pulled [SyncCollection.achievementUnlocks] entity.
@@ -2093,6 +2213,16 @@ void _requireImmutableEntity(
   }
 }
 
+void _requireMutableSrsEntity(SyncEntity entity) {
+  if (entity.collection != SyncCollection.srsStates ||
+      entity.revision < 1 ||
+      entity.isDeleted ||
+      entity.payload['wordId'] is! String ||
+      entity.payload['wordId'] != entity.entityId) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
 bool _jsonEquivalent(Object? left, Object? right) {
   if (identical(left, right) || left == right) return true;
   if (left is List && right is List) {
@@ -2146,6 +2276,13 @@ bool _operationComesAfter(
 }
 
 int _operationRevision(db.OutboxOperation operation) {
+  final srsRevision = SrsOperationIdentity.tryParseRevision(
+    operation.operationId,
+  );
+  if (srsRevision != null) return srsRevision;
+  if (operation.entityType == 'srsState') {
+    return operation.baseRevision + 1;
+  }
   for (final segment in operation.operationId.split(':').reversed) {
     final revision = int.tryParse(segment);
     if (revision != null && revision > 0) return revision;

@@ -89,6 +89,30 @@ void main() {
   );
 
   test(
+    'direct binding rejects a different non-null UID without mutation',
+    () async {
+      final ownerRepository = repository();
+      final guest = await ownerRepository.getOrCreateActiveOwner();
+      await ownerRepository.bindFirebaseUid(guest.id, 'firebase-user-a');
+      final before = await database.select(database.localOwners).get();
+      nowUtc = nowUtc.add(const Duration(hours: 1));
+
+      await expectLater(
+        ownerRepository.bindFirebaseUid(guest.id, 'firebase-user-b'),
+        throwsA(
+          isA<StateError>().having(
+            (error) => error.message,
+            'message',
+            contains('UpgradeGuestOwner'),
+          ),
+        ),
+      );
+
+      expect(await database.select(database.localOwners).get(), before);
+    },
+  );
+
+  test(
     'binding rejects a blank Firebase UID without changing storage',
     () async {
       final ownerRepository = repository();

@@ -205,23 +205,38 @@ pull-page transaction. Pulls remain one page per collection per run and advance
 the full timestamp/document cursor before mutation. Permanent failure stops the
 batch and does not automatically reopen permission denial.
 
-Two file-backed host scenarios provide the Task 5 evidence. Vocabulary and
+Two file-backed host test files provide the Task 5 evidence. Vocabulary and
 learning work is first applied by an idempotent fake before its retryable
 acknowledgement is lost; after the retry deadline and reopen the same
 `(uid, operationId)` is requested twice but applied once, then a second reopen
 makes zero pushes with stable IDs, attempts, acknowledgement, and checkpoint.
+Mutable SRS operations use an event-specific, revision-suffixed SHA-256 identity.
+Two independent databases under one UID at the same base revision emit distinct
+raw operations; the second receives its own explicit cloud conflict, immutable
+answer evidence remains authoritative locally, and no receipt is aliased.
+
 A no-prior-UID anonymous owner keeps all 25 directly owner-scoped inventory
 tables plus import-row and quest-objective children through bind/reopen/replay,
 with stable owner, row, and operation IDs across all seven sync types and an
-inactive foreign owner's inventory byte-equivalent throughout. The retained
-merged-owner scenario proves a sync request during upgrade waits and then uses
-only the committed UID. SQLite identity, inventory, projection, conflict,
-rehome, and checkpoint changes are atomic. External owner-secret deletion is
-deliberately non-transactional and cannot be restored by rollback.
-Schema remains 12. This is file-backed host/fake-cloud evidence, not physical
-restart, APK, device, or provider receipt evidence, so it is `verified`, not
-`field-certified`. MaxPlus advisory evidence is unavailable after two identical
-`invalidKey` failures and was not retried without changed external configuration.
+inactive foreign owner's inventory byte-equivalent throughout. A separate
+fully populated `mergedExisting` scenario overlaps both owners' natural keys,
+foreign keys, bookkeeping, and event IDs, then proves deterministic merge,
+reopen/replay, stable target identity, byte-equivalent foreign data, and a
+zero-push second run. Direct non-null UID A-to-B rebinding is rejected with all
+state unchanged; callers must use the upgrade path. A sync request during
+upgrade waits and then uses only the committed UID.
+
+Legacy schema-12 SRS repair is owner-gate-fenced and restart-idempotent. Each
+claim scans the authoritative owner's SRS/answer/outbox evidence once and
+inserts at most 20 missing latest-answer operations; the write bound does not
+claim a bounded row scan. SQLite identity, inventory, projection, conflict,
+rehome, and checkpoint changes are one token-fenced transaction. External
+owner-secret deletion is deliberately non-transactional and cannot be restored
+by rollback. Schema remains 12. This is file-backed host/fake-cloud evidence,
+not physical restart, APK, device, or provider receipt evidence, so it is
+`verified`, not `field-certified`. MaxPlus advisory evidence is unavailable
+after two identical `invalidKey` failures and was not retried without changed
+external configuration.
 
 ## Baseline gaps carried forward
 

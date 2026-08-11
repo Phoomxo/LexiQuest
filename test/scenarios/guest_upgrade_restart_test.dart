@@ -403,6 +403,335 @@ void main() {
       }
     },
   );
+
+  test(
+    'merged existing resolves complete overlapping inventory across reopen',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-complete-owner-merge-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}upgrade.sqlite';
+      var nowUtc = DateTime.utc(2026, 8, 10, 9);
+      var leaseSequence = 0;
+      var conflictSequence = 0;
+      final gateway = _AnonymousBoundCloud(nowUtc);
+
+      AppDatabase openDatabase() => AppDatabase(NativeDatabase(File(path)));
+      SyncEngine buildEngine(AppDatabase database) => SyncEngine(
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => nowUtc,
+        ),
+        store: DriftSyncStore(database),
+        gateway: gateway,
+        policyProvider: () async => CloudSyncPolicy(
+          enabled: true,
+          source: CloudSyncPolicySource.cache,
+          fetchedAtUtc: nowUtc,
+          expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
+        ),
+        ownerGate: DriftOwnerOperationGate(database),
+        mutex: SyncMutex(),
+        backoff: const SyncBackoff(jitterFraction: 0),
+        nowUtc: () => nowUtc,
+        generateLeaseToken: () => 'complete-merge-${leaseSequence++}',
+      );
+
+      AppDatabase? database;
+      try {
+        database = openDatabase();
+        await database.customSelect('SELECT 1').getSingle();
+        await _seedAnonymousBoundCompleteInventory(database);
+        await _seedTargetCollisionInventory(database);
+        await database.customInsert(
+          'INSERT INTO events_v2 '
+          '(event_id, event_type, event_version, occurred_at_utc, '
+          'recorded_at_utc, actor_identity, owner_id, tenant_context_json, '
+          'aggregate_type, aggregate_id, correlation_id, causation_id, '
+          'idempotency_key, consent_context_json, experiment_context_json, '
+          'content_revision, policy_version, app_version, build_id, '
+          'provider_provenance_json, privacy_classification, payload_json) '
+          "SELECT 'target:event-key-blocker', event_type, event_version, "
+          'occurred_at_utc, recorded_at_utc, actor_identity, owner_id, '
+          'tenant_context_json, aggregate_type, aggregate_id, correlation_id, '
+          "causation_id, 'merged:event-source-1', consent_context_json, "
+          'experiment_context_json, content_revision, policy_version, '
+          'app_version, build_id, provider_provenance_json, '
+          'privacy_classification, payload_json FROM events_v2 '
+          'WHERE event_id = ?',
+          variables: const [Variable<String>('target:event-source-1')],
+        );
+        await database.customInsert(
+          'INSERT INTO vocabulary_imports '
+          '(id, owner_id, category_id, source_type, source_name, source_hash, '
+          'status, accepted_count, duplicate_count, rejected_count, '
+          'created_at_utc_ms, completed_at_utc_ms) VALUES '
+          "('target:import-key-blocker', 'account-owner', "
+          "'target:category-1', 'csv', 'blocker.csv', "
+          "'hash-1:merged:import-1', 'complete', 0, 0, 0, 12, 12)",
+        );
+        await database.customInsert(
+          'INSERT INTO reward_transactions '
+          '(id, owner_id, idempotency_key, transaction_type, amount, '
+          'item_id, catalog_version, source_event_id, occurred_at_utc_ms) '
+          "VALUES ('target:reward-key-blocker', 'account-owner', "
+          "'merged:reward-1', 'grant', 1, NULL, 1, NULL, 12)",
+        );
+        await database.customInsert(
+          'INSERT INTO quest_objective_progress '
+          '(id, instance_id, objective_id, current_count, target_count, '
+          'source_event_ids_json) VALUES '
+          "('guest-only-objective', 'quest-instance-1', 'guest-only', "
+          "2, 3, '[\"guest-only-event\"]')",
+        );
+        await database.customUpdate(
+          'UPDATE streak_states SET current_streak_days = 7, '
+          'longest_streak_days = 9, freeze_count = 2, '
+          'last_learned_at_utc_ms = 100, updated_at_utc_ms = 100 '
+          'WHERE owner_id = ?',
+          variables: const [Variable<String>('guest-owner')],
+        );
+        await database.customUpdate(
+          'UPDATE streak_states SET current_streak_days = 3, '
+          'longest_streak_days = 12, freeze_count = 5, '
+          'last_learned_at_utc_ms = 200, updated_at_utc_ms = 200 '
+          'WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        );
+        await database.customUpdate(
+          'UPDATE learning_day_log SET first_session_at_utc_ms = 30 '
+          'WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        );
+        await database.customUpdate(
+          "UPDATE association_records SET content = 'account-newer', "
+          'created_at_utc_ms = 30 WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        );
+        await database.customUpdate(
+          'UPDATE associative_memory_states SET stability = 9, '
+          'last_reviewed_at_utc_ms = 200, next_due_at_utc_ms = 300 '
+          'WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        );
+        await database.customUpdate(
+          "UPDATE quest_instances SET catalog_version = 2, state = 'expired', "
+          'expired_at_utc_ms = 200 WHERE owner_id = ?',
+          variables: const [Variable<String>('account-owner')],
+        );
+        await database.customUpdate(
+          'UPDATE events_v2 SET payload_json = ? '
+          'WHERE event_type = ? AND owner_id IN (?, ?)',
+          variables: const [
+            Variable<String>('{"projection":"quest","appliedVersion":1}'),
+            Variable<String>('LearningProjectionCursor'),
+            Variable<String>('guest-owner'),
+            Variable<String>('account-owner'),
+          ],
+        );
+        final foreignBefore = await _foreignOwnerSnapshot(database);
+
+        final result = await UpgradeGuestOwner(
+          DriftOwnerUpgradeRepository(
+            database,
+            nowUtc: () => nowUtc,
+            generateConflictId: () => 'complete-${conflictSequence++}',
+            generateOwnerId: () => 'unexpected-owner',
+            generateOwnerOperationToken: () => 'complete-owner-operation',
+            deleteOwnerSecrets: (_) async {},
+          ),
+        )(activeOwnerId: 'guest-owner', firebaseUid: 'firebase-new');
+
+        expect(result.mode, OwnerUpgradeMode.mergedExisting);
+        expect(result.targetOwnerId, 'account-owner');
+        final active = await (database.select(
+          database.localOwners,
+        )..where((row) => row.isActive.equals(true))).getSingle();
+        expect(active.id, 'account-owner');
+        expect(await _foreignOwnerSnapshot(database), foreignBefore);
+        for (final table in ownerUpgradeInventory) {
+          expect(
+            await _ownerRowCount(database, table, 'guest-owner'),
+            0,
+            reason: '$table must be fully rehomed',
+          );
+        }
+        expect(
+          await _ownerNaturalKeyCount(
+            database,
+            'streak_states',
+            'account-owner',
+          ),
+          1,
+        );
+        final streak = await (database.select(
+          database.streakStates,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(streak.currentStreakDays, 3);
+        expect(streak.longestStreakDays, 12);
+        expect(streak.freezeCount, 5);
+        expect(streak.lastLearnedAtUtcMs, 200);
+        final day = await (database.select(
+          database.learningDayLog,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(day.id, 'target:day:guest-owner:2026-08-09');
+        expect(day.firstSessionAtUtcMs, 20);
+        final association = await (database.select(
+          database.associationRecords,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(association.id, 'target:association-1');
+        expect(association.content, 'account-newer');
+        final memory = await (database.select(
+          database.associativeMemoryStates,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(memory.id, 'target:memory-1');
+        expect(memory.stability, 9);
+        expect(memory.lastReviewedAtUtcMs, 200);
+        final quest = await (database.select(
+          database.questInstances,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(quest.instanceId, 'target:quest-instance-1');
+        expect(quest.state, 'active');
+        final objectives =
+            await (database.select(database.questObjectiveProgress)
+                  ..where(
+                    (row) => row.instanceId.equals('target:quest-instance-1'),
+                  )
+                  ..orderBy([(row) => OrderingTerm.asc(row.objectiveId)]))
+                .get();
+        expect(objectives, hasLength(2));
+        final objective = objectives.singleWhere(
+          (row) => row.objectiveId == 'answer-once',
+        );
+        expect(objective.id, 'target:objective-1');
+        expect(objective.currentCount, 1);
+        expect(objective.targetCount, 1);
+        final guestOnlyObjective = objectives.singleWhere(
+          (row) => row.objectiveId == 'guest-only',
+        );
+        expect(guestOnlyObjective.id, 'target:quest-instance-1:guest-only');
+        expect(guestOnlyObjective.currentCount, 2);
+        expect(guestOnlyObjective.targetCount, 3);
+        final importHashes = await database
+            .customSelect(
+              'SELECT source_hash FROM vocabulary_imports '
+              'WHERE owner_id = ? ORDER BY source_hash',
+              variables: const [Variable<String>('account-owner')],
+            )
+            .get()
+            .then(
+              (rows) =>
+                  rows.map((row) => row.read<String>('source_hash')).toList(),
+            );
+        expect(importHashes, <String>[
+          'hash-1',
+          'hash-1:merged:import-1',
+          'hash-1:merged:import-1:1',
+        ]);
+        final rewardKeys = await database
+            .customSelect(
+              'SELECT idempotency_key FROM reward_transactions '
+              'WHERE owner_id = ? ORDER BY idempotency_key',
+              variables: const [Variable<String>('account-owner')],
+            )
+            .get()
+            .then(
+              (rows) => rows
+                  .map((row) => row.read<String>('idempotency_key'))
+                  .toList(),
+            );
+        expect(rewardKeys, <String>[
+          'merged:reward-1',
+          'merged:reward-1:1',
+          'reward-key-1',
+        ]);
+        final mergedSrs = await (database.select(
+          database.srsStates,
+        )..where((row) => row.ownerId.equals('account-owner'))).getSingle();
+        expect(mergedSrs.id, 'srs:account-owner:target:word-1');
+        expect(mergedSrs.repetitions, 2);
+        expect(
+          await _ownerNaturalKeyCount(
+            database,
+            'learning_day_log',
+            'account-owner',
+          ),
+          1,
+        );
+        expect(
+          await _ownerNaturalKeyCount(
+            database,
+            'association_records',
+            'account-owner',
+          ),
+          1,
+        );
+        expect(
+          await _ownerNaturalKeyCount(
+            database,
+            'associative_memory_states',
+            'account-owner',
+          ),
+          1,
+        );
+        expect(
+          await _ownerNaturalKeyCount(
+            database,
+            'quest_instances',
+            'account-owner',
+          ),
+          1,
+        );
+        expect(
+          await database
+              .customSelect(
+                'SELECT word_id FROM speech_evidence WHERE owner_id = ?',
+                variables: const [Variable<String>('account-owner')],
+              )
+              .map((row) => row.read<String>('word_id'))
+              .get(),
+          everyElement('target:word-1'),
+        );
+
+        await database.close();
+        database = openDatabase();
+        await database.customSelect('SELECT 1').getSingle();
+        final firstRun = await buildEngine(database).run();
+        expect(firstRun.status, SyncRunStatus.completed);
+        expect(firstRun.pushed, greaterThan(0));
+        final afterFirstRun = await _ownerInventorySnapshot(
+          database,
+          'account-owner',
+        );
+        final pushesAfterFirstRun = gateway.pushFirebaseUids.length;
+        expect(await _foreignOwnerSnapshot(database), foreignBefore);
+
+        await database.close();
+        database = openDatabase();
+        await database.customSelect('SELECT 1').getSingle();
+        nowUtc = nowUtc.add(const Duration(minutes: 1));
+        final secondRun = await buildEngine(database).run();
+
+        expect(secondRun.status, SyncRunStatus.completed);
+        expect(secondRun.pushed, 0);
+        expect(gateway.pushFirebaseUids, hasLength(pushesAfterFirstRun));
+        expect(
+          await _ownerInventorySnapshot(database, 'account-owner'),
+          afterFirstRun,
+        );
+        expect(await _foreignOwnerSnapshot(database), foreignBefore);
+      } finally {
+        await database?.close();
+        await directory.delete(recursive: true);
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+      }
+    },
+  );
 }
 
 const Set<String> _sevenEntityTypes = <String>{
@@ -579,6 +908,24 @@ Future<int> _tableCount(AppDatabase database, String table) => database
     .getSingle()
     .then((row) => row.read<int>('count'));
 
+Future<int> _ownerRowCount(
+  AppDatabase database,
+  String table,
+  String ownerId,
+) => database
+    .customSelect(
+      'SELECT COUNT(*) AS count FROM $table WHERE owner_id = ?',
+      variables: [Variable<String>(ownerId)],
+    )
+    .getSingle()
+    .then((row) => row.read<int>('count'));
+
+Future<int> _ownerNaturalKeyCount(
+  AppDatabase database,
+  String table,
+  String ownerId,
+) => _ownerRowCount(database, table, ownerId);
+
 Future<int> _projectionEventCount(AppDatabase database, String ownerId) =>
     database
         .customSelect(
@@ -592,14 +939,18 @@ Future<int> _projectionEventCount(AppDatabase database, String ownerId) =>
         .getSingle()
         .then((row) => row.read<int>('count'));
 
-Future<Map<String, List<String>>> _foreignOwnerSnapshot(
+Future<Map<String, List<String>>> _foreignOwnerSnapshot(AppDatabase database) =>
+    _ownerInventorySnapshot(database, 'foreign-owner');
+
+Future<Map<String, List<String>>> _ownerInventorySnapshot(
   AppDatabase database,
+  String ownerId,
 ) async {
   final result = <String, List<String>>{};
   final ownerRows = await database
       .customSelect(
         'SELECT * FROM local_owners WHERE id = ?',
-        variables: [const Variable<String>('foreign-owner')],
+        variables: [Variable<String>(ownerId)],
       )
       .get();
   result['local_owners'] = ownerRows.map(_rowFingerprint).toList();
@@ -607,7 +958,7 @@ Future<Map<String, List<String>>> _foreignOwnerSnapshot(
     final rows = await database
         .customSelect(
           'SELECT * FROM $table WHERE owner_id = ? ORDER BY rowid',
-          variables: [const Variable<String>('foreign-owner')],
+          variables: [Variable<String>(ownerId)],
         )
         .get();
     result[table] = rows.map(_rowFingerprint).toList();
@@ -617,7 +968,7 @@ Future<Map<String, List<String>>> _foreignOwnerSnapshot(
         'SELECT child.* FROM vocabulary_import_rows AS child '
         'JOIN vocabulary_imports AS parent ON parent.id = child.import_id '
         'WHERE parent.owner_id = ? ORDER BY child.rowid',
-        variables: [const Variable<String>('foreign-owner')],
+        variables: [Variable<String>(ownerId)],
       )
       .get();
   result['vocabulary_import_rows'] = importRows.map(_rowFingerprint).toList();
@@ -627,7 +978,7 @@ Future<Map<String, List<String>>> _foreignOwnerSnapshot(
         'JOIN quest_instances AS parent '
         'ON parent.instance_id = child.instance_id '
         'WHERE parent.owner_id = ? ORDER BY child.rowid',
-        variables: [const Variable<String>('foreign-owner')],
+        variables: [Variable<String>(ownerId)],
       )
       .get();
   result['quest_objective_progress'] = objectiveRows
@@ -1147,6 +1498,65 @@ Future<void> _seedForeignOwnerInventory(AppDatabase database) async {
     'source_event_ids_json) '
     "SELECT 'foreign:' || id, 'foreign:' || instance_id, objective_id, "
     'current_count, target_count, source_event_ids_json '
+    'FROM quest_objective_progress WHERE instance_id = ?',
+    variables: [const Variable<String>('quest-instance-1')],
+  );
+}
+
+Future<void> _seedTargetCollisionInventory(AppDatabase database) async {
+  await database.customInsert(
+    'INSERT INTO local_owners '
+    '(id, firebase_uid, account_state, created_at_utc_ms, is_active) VALUES '
+    "('account-owner', 'firebase-new', 'firebaseBound', 3, 0)",
+  );
+  for (final table in ownerUpgradeInventory) {
+    final schema = await database
+        .customSelect('PRAGMA table_info("$table")')
+        .get();
+    final columns = schema.map((row) => row.read<String>('name')).toList();
+    final quotedColumns = columns.map((column) => '"$column"').join(', ');
+    final projections = columns
+        .map((column) {
+          final quoted = '"$column"';
+          if (column == 'owner_id') return "'account-owner'";
+          if (column == 'actor_identity') return "'account-owner'";
+          if (table == 'ai_usage_events' && column == 'event_id') {
+            return quoted;
+          }
+          if (column == 'quest_id' ||
+              column == 'achievement_id' ||
+              column == 'item_id' ||
+              column == 'idempotency_key') {
+            return quoted;
+          }
+          if (column == 'id' || column.endsWith('_id')) {
+            return 'CASE WHEN $quoted IS NULL THEN NULL '
+                "ELSE 'target:' || $quoted END";
+          }
+          return quoted;
+        })
+        .join(', ');
+    await database.customInsert(
+      'INSERT INTO "$table" ($quotedColumns) '
+      'SELECT $projections FROM "$table" WHERE owner_id = ?',
+      variables: [const Variable<String>('guest-owner')],
+    );
+  }
+  await database.customInsert(
+    'INSERT INTO vocabulary_import_rows '
+    '(id, import_id, row_number, payload_hash, status, failure_code, word_id) '
+    "SELECT 'target:' || id, 'target:' || import_id, row_number, "
+    'payload_hash, status, failure_code, '
+    "CASE WHEN word_id IS NULL THEN NULL ELSE 'target:' || word_id END "
+    'FROM vocabulary_import_rows WHERE import_id = ?',
+    variables: [const Variable<String>('import-1')],
+  );
+  await database.customInsert(
+    'INSERT INTO quest_objective_progress '
+    '(id, instance_id, objective_id, current_count, target_count, '
+    'source_event_ids_json) '
+    "SELECT 'target:' || id, 'target:' || instance_id, objective_id, "
+    'current_count + 1, target_count + 1, source_event_ids_json '
     'FROM quest_objective_progress WHERE instance_id = ?',
     variables: [const Variable<String>('quest-instance-1')],
   );
