@@ -378,6 +378,10 @@ try {
     $flutterArguments = @(
         Get-Content -LiteralPath $fixture.ArgumentLog -Encoding utf8
     )
+    Assert-True ($flutterArguments -ccontains '--release') `
+        'Flutter receives the release build mode'
+    Assert-True (-not ($flutterArguments -ccontains '--no-pub')) `
+        'release packaging allows Flutter to regenerate release-mode plugins'
     Assert-True ($flutterArguments -ccontains (
         '--android-project-arg=lexiquestSourceCommit=' +
             $fixture.SourceCommit

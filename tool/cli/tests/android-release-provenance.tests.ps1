@@ -92,6 +92,11 @@ foreach ($needle in @(
 }
 Assert-True (-not $packager.Contains('ORG_GRADLE_PROJECT_lexiquest')) `
     'release provenance has one explicit Flutter-to-Gradle argument source'
+Assert-True (-not $packager.Contains('--no-pub')) `
+    'release packaging does not skip release-mode plugin regeneration'
+Assert-True $packager.Contains(
+    'release-mode plugin filtering excludes dev dependencies'
+) 'release packaging documents why the Flutter pub freshness step is required'
 
 Write-Host (
     'Android release provenance tests: {0} passed, {1} failed' -f

@@ -265,7 +265,8 @@ try {
     if (Test-Path -LiteralPath $sourceApk -PathType Leaf) {
         Remove-Item -LiteralPath $sourceApk -Force
     }
-    & flutter build apk --release --no-pub `
+    # Keep Flutter's pub freshness step: release-mode plugin filtering excludes dev dependencies when it regenerates the Android registrant.
+    & flutter build apk --release `
         "--android-project-arg=lexiquestSourceCommit=$sourceCommit" `
         "--android-project-arg=lexiquestBuildId=$buildId" `
         "--android-project-arg=lexiquestModelSha256=$modelSha256" `
