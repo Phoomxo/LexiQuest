@@ -48,6 +48,8 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
     'ai_active_profile_v1',
     'ai_api_key',
     'gemini_api_key',
+    'gemini_provider_consent',
+    'gemini_learning_summary_consent',
     'ai_provider_consent',
     'ai_learning_summary_consent',
     'ai_provider_id',
@@ -372,11 +374,11 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
     required Future<bool> Function() leaseIsOwned,
     required DateTime Function() nowUtc,
   }) async {
-    await _discardUnscopedLegacyValues();
     final ownerToken = _ownerToken(_requireOwnerId(ownerId));
     if (!await _owned(leaseIsOwned)) {
       throw const AiTutorException(AiFailureCode.cancelled);
     }
+    await _discardUnscopedLegacyValues(leaseIsOwned: leaseIsOwned);
     late List<AiCredentialMutationIntent> intents;
     try {
       intents = (await _versionIndex.pendingMutations(
@@ -402,7 +404,10 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
       }
       await _delete(_versionedProfileKey(ownerToken, version));
     }
-    await _deleteLegacyScopedValues(ownerToken);
+    if (!await _owned(leaseIsOwned)) {
+      throw const AiTutorException(AiFailureCode.cancelled);
+    }
+    await _deleteLegacyScopedValues(ownerToken, leaseIsOwned: leaseIsOwned);
     if (!await _owned(leaseIsOwned)) {
       throw const AiTutorException(AiFailureCode.cancelled);
     }
@@ -563,9 +568,15 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
     await _writeForOwner(_customBaseUrl, ownerId, url);
   }
 
-  Future<void> _discardUnscopedLegacyValues() async {
+  Future<void> _discardUnscopedLegacyValues({
+    Future<bool> Function()? leaseIsOwned,
+  }) async {
     if (_legacyDiscarded) return;
     for (final key in _legacyKeys) {
+      final ownershipCheck = leaseIsOwned;
+      if (ownershipCheck != null && !await _owned(ownershipCheck)) {
+        throw const AiTutorException(AiFailureCode.cancelled);
+      }
       await _delete(key);
     }
     _legacyDiscarded = true;
@@ -636,8 +647,15 @@ final class SecureAiTutorSettingsStore implements AiTutorSettingsStore {
     await _deleteLegacyScopedValues(ownerToken);
   }
 
-  Future<void> _deleteLegacyScopedValues(String ownerToken) async {
+  Future<void> _deleteLegacyScopedValues(
+    String ownerToken, {
+    Future<bool> Function()? leaseIsOwned,
+  }) async {
     for (final baseKey in _scopedKeys) {
+      final ownershipCheck = leaseIsOwned;
+      if (ownershipCheck != null && !await _owned(ownershipCheck)) {
+        throw const AiTutorException(AiFailureCode.cancelled);
+      }
       await _delete('$baseKey:$ownerToken');
     }
   }

@@ -15,11 +15,18 @@ foreach ($needle in @(
     'test/features/account',
     'test/features/consent',
     'test/features/export',
+    'lib/features/ai_tutor',
+    'lib/features/device_model',
+    'test/features/ai_tutor',
+    'test/features/device_model',
+    'test/features/gemini/retry_gemini_gateway_test.dart',
     'test/features/rewards',
     'test/features/sync',
     'test/features/progress',
     'test/architecture',
     'test/screens/accessibility_smoke_test.dart',
+    'test/scenarios/runtime_kill_switch_journey_test.dart',
+    'test/scenarios/complete_owner_export_delete_test.dart',
     'npm run test:auth',
     'npm run test:rules',
     'flutter build apk --debug',
@@ -28,6 +35,96 @@ foreach ($needle in @(
 )) {
     if (-not $gate.Contains($needle)) {
         Write-Error "Missing P7 gate command or path: $needle"
+    }
+}
+
+$dartFilesStart = $gate.IndexOf('$dartFiles = @(', [StringComparison]::Ordinal)
+$flutterTestsStart = $gate.IndexOf('$flutterTests = @(', [StringComparison]::Ordinal)
+$pushLocationStart = $gate.IndexOf('Push-Location', [StringComparison]::Ordinal)
+if ($dartFilesStart -lt 0 -or $flutterTestsStart -le $dartFilesStart -or `
+    $pushLocationStart -le $flutterTestsStart) {
+    Write-Error 'Product gate file scopes are not structurally readable.'
+}
+$dartFilesBlock = $gate.Substring(
+    $dartFilesStart,
+    $flutterTestsStart - $dartFilesStart
+)
+$flutterTestsBlock = $gate.Substring(
+    $flutterTestsStart,
+    $pushLocationStart - $flutterTestsStart
+)
+$mandatoryScenarios = @(
+    'test/scenarios/ai_voice_fallback_journey_test.dart',
+    'test/scenarios/runtime_kill_switch_journey_test.dart',
+    'test/scenarios/complete_owner_export_delete_test.dart'
+)
+foreach ($relativePath in $mandatoryScenarios) {
+    if (-not $dartFilesBlock.Contains($relativePath)) {
+        Write-Error "Mandatory scenario is absent from Dart format scope: $relativePath"
+    }
+    if (-not $flutterTestsBlock.Contains($relativePath)) {
+        Write-Error "Mandatory scenario is absent from Flutter test scope: $relativePath"
+    }
+}
+
+foreach ($relativePath in @(
+    'test/scenarios/ai_voice_fallback_journey_test.dart',
+    'test/scenarios/runtime_kill_switch_journey_test.dart',
+    'test/scenarios/complete_owner_export_delete_test.dart',
+    'test/runtime/central_cost_policy_test.dart',
+    'test/features/ai_tutor/drift_ai_usage_repository_test.dart',
+    'test/features/device_model/model_download_manager_test.dart',
+    'test/features/gemini/retry_gemini_gateway_test.dart'
+)) {
+    if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $relativePath) -PathType Leaf)) {
+        Write-Error "Required Task 8 hardening test is missing: $relativePath"
+    }
+}
+
+$hardeningEvidencePath = Join-Path $repoRoot `
+    'docs/field/2026-08-09-p8-hardening-evidence.md'
+if (-not (Test-Path -LiteralPath $hardeningEvidencePath -PathType Leaf)) {
+    Write-Error "Required Task 8 evidence is missing: $hardeningEvidencePath"
+}
+$hardeningEvidence = Get-Content -LiteralPath $hardeningEvidencePath `
+    -Raw -Encoding utf8
+$checkpointHeading = '## Checkpoint C execution ledger'
+$checkpointStart = $hardeningEvidence.IndexOf(
+    $checkpointHeading,
+    [StringComparison]::Ordinal
+)
+if ($checkpointStart -lt 0) {
+    Write-Error 'Task 8 evidence has no Checkpoint C execution ledger.'
+}
+$checkpointSection = $hardeningEvidence.Substring($checkpointStart)
+$checkpointNormalized = [regex]::Replace($checkpointSection, '\s+', ' ')
+if ($checkpointSection.Contains('[PENDING]')) {
+    foreach ($needle in @(
+        'Unbound WIP diagnostics',
+        'are not Checkpoint C evidence',
+        'do not populate the ledger above',
+        'must be rerun sequentially',
+        'source SHA, numeric exit code, and result'
+    )) {
+        if (-not $checkpointNormalized.Contains($needle)) {
+            Write-Error (
+                'Pending Checkpoint C rows require an explicit unbound-WIP ' +
+                "disclaimer: $needle"
+            )
+        }
+    }
+    foreach ($forbiddenClaim in @(
+        'completed successfully',
+        'found no unsuppressed leak',
+        'All six scans exit zero',
+        '`flutter pub outdated` completed'
+    )) {
+        if ($checkpointNormalized.Contains($forbiddenClaim)) {
+            Write-Error (
+                'Pending Checkpoint C rows cannot coexist with an unbound ' +
+                "completion claim: $forbiddenClaim"
+            )
+        }
     }
 }
 

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../../runtime/runtime_flag_namespaces.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 
 enum AiCredentialMutationKind { replace, delete }
@@ -112,8 +113,8 @@ abstract interface class AiCredentialVersionIndex {
 final class DriftAiCredentialVersionIndex implements AiCredentialVersionIndex {
   const DriftAiCredentialVersionIndex(this.database);
 
-  static const _pointerPrefix = 'aiCredentialPointer:';
-  static const _intentPrefix = 'aiCredentialIntent:';
+  static const _pointerPrefix = RuntimeFlagNamespaces.aiCredentialPointerPrefix;
+  static const _intentPrefix = RuntimeFlagNamespaces.aiCredentialIntentPrefix;
 
   final AppDatabase database;
 
@@ -187,13 +188,20 @@ final class DriftAiCredentialVersionIndex implements AiCredentialVersionIndex {
     required DateTime nowUtc,
   }) {
     final owner = _requiredToken(ownerToken);
+    final intentPrefix = '$_intentPrefix$owner:';
     return database.transaction(() async {
       await _requireLease(leaseToken, nowUtc);
       await database.customUpdate(
-        'DELETE FROM runtime_flags WHERE "key" = ? OR "key" LIKE ?',
+        '''
+        DELETE FROM runtime_flags
+        WHERE "key" = ? OR ("key" >= ? AND "key" < ?)
+        ''',
         variables: <Variable<Object>>[
           Variable<String>(_pointerKey(owner)),
-          Variable<String>('$_intentPrefix$owner:%'),
+          Variable<String>(intentPrefix),
+          Variable<String>(
+            RuntimeFlagNamespaces.prefixUpperBound(intentPrefix),
+          ),
         ],
         updates: <TableInfo<Table, Object?>>{database.runtimeFlags},
       );
@@ -276,13 +284,18 @@ final class DriftAiCredentialVersionIndex implements AiCredentialVersionIndex {
     required String leaseToken,
     required DateTime nowUtc,
   }) {
+    final intentUpperBound = RuntimeFlagNamespaces.prefixUpperBound(
+      _intentPrefix,
+    );
     return database.transaction(() async {
       await _requireLease(leaseToken, nowUtc);
       final rows = await database
           .customSelect(
-            'SELECT source FROM runtime_flags WHERE "key" LIKE ?',
-            variables: const <Variable<Object>>[
-              Variable<String>('aiCredentialIntent:%'),
+            'SELECT source FROM runtime_flags '
+            'WHERE "key" >= ? AND "key" < ?',
+            variables: <Variable<Object>>[
+              const Variable<String>(_intentPrefix),
+              Variable<String>(intentUpperBound),
             ],
             readsFrom: <ResultSetImplementation<Table, Object?>>{
               database.runtimeFlags,

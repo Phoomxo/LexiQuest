@@ -92,7 +92,7 @@ final class DriftAiUsageRepository implements AiUsageRepository {
   Future<int> recoverPendingStartedBefore(
     DateTime cutoffUtc, {
     required DateTime recoveredAtUtc,
-  }) {
+  }) async {
     _requireUtc(cutoffUtc, 'cutoffUtc');
     _requireUtc(recoveredAtUtc, 'recoveredAtUtc');
     if (recoveredAtUtc.isBefore(cutoffUtc)) {
@@ -102,6 +102,7 @@ final class DriftAiUsageRepository implements AiUsageRepository {
         'must not precede cutoffUtc',
       );
     }
+    final ownerId = _requireOwnerId(await activeOwnerId());
     return _database.transaction(() async {
       await _requireOwnedLease();
       return _database.customUpdate(
@@ -114,11 +115,13 @@ final class DriftAiUsageRepository implements AiUsageRepository {
             ELSE 0
           END
       WHERE outcome = 'pending'
+        AND owner_id = ?
         AND occurred_at_utc_ms < ?
       ''',
         variables: <Variable<Object>>[
           Variable<int>(recoveredAtUtc.millisecondsSinceEpoch),
           Variable<int>(recoveredAtUtc.millisecondsSinceEpoch),
+          Variable<String>(ownerId),
           Variable<int>(cutoffUtc.millisecondsSinceEpoch),
         ],
         updates: <TableInfo<Table, Object?>>{_database.aiUsageEvents},
@@ -182,7 +185,7 @@ final class DriftAiUsageRepository implements AiUsageRepository {
         ..providerReportedCostMicrosUsd +=
             row.providerReportedCostMicrosUsd ?? 0;
       if (row.providerReportedCostMicrosUsd != null) {
-        bucket.hasProviderReportedCost = true;
+        bucket.providerReportedCostCount += 1;
       }
       if (row.outcome == 'success') {
         bucket.successCount += 1;
@@ -205,7 +208,8 @@ final class DriftAiUsageRepository implements AiUsageRepository {
                 totalTokens: entry.value.totalTokens,
                 totalLatencyMs: entry.value.totalLatencyMs,
                 providerReportedCostMicrosUsd:
-                    entry.value.hasProviderReportedCost
+                    entry.value.providerReportedCostCount ==
+                        entry.value.requestCount
                     ? entry.value.providerReportedCostMicrosUsd
                     : null,
               ),
@@ -327,7 +331,7 @@ final class _UsageAccumulator {
   int totalTokens = 0;
   int totalLatencyMs = 0;
   int providerReportedCostMicrosUsd = 0;
-  bool hasProviderReportedCost = false;
+  int providerReportedCostCount = 0;
 }
 
 DateTime _defaultNowUtc() => DateTime.now().toUtc();

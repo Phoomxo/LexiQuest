@@ -61,6 +61,35 @@ void main() {
     );
   });
 
+  test('mixed reported and unknown provider costs fail closed', () async {
+    for (final eventId in const ['known-cost', 'unknown-cost']) {
+      await repository.beginForOwner('owner-a', _attempt(eventId));
+    }
+    await repository.finalizeForOwner(
+      'owner-a',
+      AiUsageCompletion(
+        eventId: 'known-cost',
+        outcome: 'success',
+        latencyMs: 10,
+        totalTokens: 7,
+        providerReportedCostMicrosUsd: 100,
+      ),
+    );
+    await repository.finalizeForOwner(
+      'owner-a',
+      AiUsageCompletion(
+        eventId: 'unknown-cost',
+        outcome: 'success',
+        latencyMs: 10,
+        totalTokens: 7,
+      ),
+    );
+
+    final summary = (await repository.summarizeForOwner('owner-a')).single;
+    expect(summary.requestCount, 2);
+    expect(summary.providerReportedCostMicrosUsd, isNull);
+  });
+
   test('pending rows are neither summarized, cleared, nor purged', () async {
     await repository.beginForOwner(
       'owner-a',
@@ -94,7 +123,7 @@ void main() {
   });
 
   test(
-    'file reopen recovers stale pending across owners exactly once',
+    'file reopen recovers stale pending for only the active owner',
     () async {
       await database.close();
       final root = await Directory.systemTemp.createTemp('ai-journal-');
@@ -134,7 +163,7 @@ void main() {
           DateTime.utc(2026, 8, 1, 11),
           recoveredAtUtc: DateTime.utc(2026, 8, 1, 13),
         ),
-        2,
+        1,
       );
       expect(
         await repository.recoverPendingStartedBefore(
@@ -149,7 +178,7 @@ void main() {
       };
       expect(byId['old-a']!.outcome, 'indeterminate');
       expect(byId['old-a']!.errorCategory, 'processInterrupted');
-      expect(byId['old-b']!.outcome, 'indeterminate');
+      expect(byId['old-b']!.outcome, 'pending');
       expect(byId['recent-b']!.outcome, 'pending');
       final summary = (await repository.summarize()).single;
       expect(summary.failureCount, 0);

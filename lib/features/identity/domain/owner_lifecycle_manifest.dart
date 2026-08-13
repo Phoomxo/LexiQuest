@@ -1,0 +1,532 @@
+import '../../../runtime/runtime_flag_namespaces.dart';
+
+enum OwnerLifecycleAuthority { root, directOwner, transitiveOwner, global }
+
+enum OwnerLifecycleExportDisposition {
+  redactedIdentity,
+  allowlistedPersonal,
+  aggregateOnly,
+  redactedOwnerMetadata,
+  preservedGlobal,
+}
+
+enum OwnerLifecycleDeletionDisposition {
+  deleteRoot,
+  deleteDirect,
+  deleteTransitive,
+  deleteOwnerMetadataOnly,
+  preserveGlobal,
+}
+
+enum RuntimeFlagNamespaceMatch { exact, prefix, fallback }
+
+enum RuntimeFlagExportDisposition {
+  aggregateDiagnostic,
+  omitSensitive,
+  omitInternal,
+}
+
+enum RuntimeFlagDeletionDisposition { preserve, deleteTargetOwner }
+
+final class RuntimeFlagLifecycleNamespaceDescriptor {
+  const RuntimeFlagLifecycleNamespaceDescriptor({
+    required this.name,
+    required this.match,
+    required this.keyPattern,
+    required this.exportDisposition,
+    required this.deletionDisposition,
+    required this.allowedDiagnosticFields,
+  });
+
+  final String name;
+  final RuntimeFlagNamespaceMatch match;
+  final String keyPattern;
+  final RuntimeFlagExportDisposition exportDisposition;
+  final RuntimeFlagDeletionDisposition deletionDisposition;
+  final Set<String> allowedDiagnosticFields;
+}
+
+const runtimeFlagLifecycleNamespaces =
+    <RuntimeFlagLifecycleNamespaceDescriptor>[
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'ownerOperationGate',
+        match: RuntimeFlagNamespaceMatch.exact,
+        keyPattern: RuntimeFlagNamespaces.ownerOperationGate,
+        exportDisposition: RuntimeFlagExportDisposition.omitInternal,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'cloudSyncEnabled',
+        match: RuntimeFlagNamespaceMatch.exact,
+        keyPattern: RuntimeFlagNamespaces.cloudSyncEnabled,
+        exportDisposition: RuntimeFlagExportDisposition.omitInternal,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'featureOverrides',
+        match: RuntimeFlagNamespaceMatch.prefix,
+        keyPattern: RuntimeFlagNamespaces.featureEmergencyOffPrefix,
+        exportDisposition: RuntimeFlagExportDisposition.aggregateDiagnostic,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {'feature', 'effectiveState', 'active'},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'downloadCounters',
+        match: RuntimeFlagNamespaceMatch.prefix,
+        keyPattern: RuntimeFlagNamespaces.downloadCountPrefix,
+        exportDisposition: RuntimeFlagExportDisposition.aggregateDiagnostic,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {
+          'modelVersion',
+          'successfulDownloadCount',
+          'retentionLimit',
+          'countMayBeSaturated',
+          'countSemantics',
+          'trackedVersionLimit',
+          'versionWindowMayHaveEvicted',
+          'versionWindowSemantics',
+        },
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'aiCredentialPointers',
+        match: RuntimeFlagNamespaceMatch.prefix,
+        keyPattern: RuntimeFlagNamespaces.aiCredentialPointerPrefix,
+        exportDisposition: RuntimeFlagExportDisposition.omitSensitive,
+        deletionDisposition: RuntimeFlagDeletionDisposition.deleteTargetOwner,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'aiCredentialIntents',
+        match: RuntimeFlagNamespaceMatch.prefix,
+        keyPattern: RuntimeFlagNamespaces.aiCredentialIntentPrefix,
+        exportDisposition: RuntimeFlagExportDisposition.omitSensitive,
+        deletionDisposition: RuntimeFlagDeletionDisposition.deleteTargetOwner,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'unknown',
+        match: RuntimeFlagNamespaceMatch.fallback,
+        keyPattern: '',
+        exportDisposition: RuntimeFlagExportDisposition.omitInternal,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {},
+      ),
+    ];
+
+final class OwnerLifecycleTableDescriptor {
+  const OwnerLifecycleTableDescriptor({
+    required this.tableName,
+    required this.alias,
+    required this.authority,
+    required this.exportDisposition,
+    required this.deletionDisposition,
+    required this.allowedExportFields,
+  });
+
+  final String tableName;
+  final String alias;
+  final OwnerLifecycleAuthority authority;
+  final OwnerLifecycleExportDisposition exportDisposition;
+  final OwnerLifecycleDeletionDisposition deletionDisposition;
+  final List<String> allowedExportFields;
+}
+
+const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
+  OwnerLifecycleTableDescriptor(
+    tableName: 'local_owners',
+    alias: 'participant',
+    authority: OwnerLifecycleAuthority.root,
+    exportDisposition: OwnerLifecycleExportDisposition.redactedIdentity,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteRoot,
+    allowedExportFields: ['recordCount', 'accountState'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'research_consents',
+    alias: 'researchConsents',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'consentVersion',
+      'consentState',
+      'decidedAtUtc',
+      'withdrawnAtUtc',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'vocabulary_categories',
+    alias: 'vocabularyCategories',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount', 'name', 'sortOrder'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'vocabulary_words',
+    alias: 'vocabularyWords',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'spelling',
+      'meaning',
+      'partOfSpeech',
+      'cefrLevel',
+      'source',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'vocabulary_imports',
+    alias: 'vocabularyImports',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'sourceType',
+      'status',
+      'acceptedCount',
+      'duplicateCount',
+      'rejectedCount',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'vocabulary_import_rows',
+    alias: 'vocabularyImportRows',
+    authority: OwnerLifecycleAuthority.transitiveOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteTransitive,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'learning_sessions',
+    alias: 'learningSessions',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'activityType',
+      'state',
+      'startedAtUtc',
+      'endedAtUtc',
+      'correctCount',
+      'wrongCount',
+      'score',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'answer_attempts',
+    alias: 'answerAttempts',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'promptMode',
+      'isCorrect',
+      'responseTimeMs',
+      'attemptNumber',
+      'occurredAtUtc',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'srs_states',
+    alias: 'srsStates',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'stability',
+      'difficulty',
+      'intervalDays',
+      'repetitions',
+      'lapses',
+      'lastReviewAtUtc',
+      'dueAtUtc',
+      'algorithmVersion',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'reading_progress_entries',
+    alias: 'readingProgress',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'documentAlias',
+      'documentRevision',
+      'lastPosition',
+      'isCompleted',
+      'updatedAtUtc',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'reading_events',
+    alias: 'readingEvents',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'documentAlias',
+      'documentRevision',
+      'eventType',
+      'position',
+      'occurredAtUtc',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'points_ledger_entries',
+    alias: 'pointsLedger',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount', 'netPoints'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'achievement_unlocks',
+    alias: 'achievementUnlocks',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'reward_transactions',
+    alias: 'rewardTransactions',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount', 'netAmount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'owned_reward_items',
+    alias: 'ownedRewardItems',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'equipped_reward_items',
+    alias: 'equippedRewardItems',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'outbox_operations',
+    alias: 'syncOutbox',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'sync_checkpoints',
+    alias: 'syncCheckpoints',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'sync_conflicts',
+    alias: 'syncConflicts',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'runtime_flags',
+    alias: 'runtimeControlsAndMetadata',
+    authority: OwnerLifecycleAuthority.global,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition:
+        OwnerLifecycleDeletionDisposition.deleteOwnerMetadataOnly,
+    allowedExportFields: [
+      'feature',
+      'effectiveState',
+      'active',
+      'modelVersion',
+      'successfulDownloadCount',
+      'retentionLimit',
+      'countMayBeSaturated',
+      'countSemantics',
+      'trackedVersionLimit',
+      'versionWindowMayHaveEvicted',
+      'versionWindowSemantics',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'model_downloads',
+    alias: 'globalModelDownloads',
+    authority: OwnerLifecycleAuthority.global,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [
+      'modelVersion',
+      'state',
+      'expectedBytes',
+      'downloadedBytes',
+      'retryCount',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'events_v2',
+    alias: 'learningEvents',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'quest_definitions',
+    alias: 'globalQuestDefinitions',
+    authority: OwnerLifecycleAuthority.global,
+    exportDisposition: OwnerLifecycleExportDisposition.preservedGlobal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'quest_instances',
+    alias: 'questInstances',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'quest_objective_progress',
+    alias: 'questObjectiveProgress',
+    authority: OwnerLifecycleAuthority.transitiveOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteTransitive,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'streak_states',
+    alias: 'streakState',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'currentStreakDays',
+      'longestStreakDays',
+      'freezeCount',
+      'lastLearnedAtUtc',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'learning_day_log',
+    alias: 'learningDays',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.allowlistedPersonal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount', 'learningDay', 'firstSessionAtUtc'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'association_records',
+    alias: 'associationRecords',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'associative_memory_states',
+    alias: 'associativeMemoryStates',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'ai_usage_events',
+    alias: 'aiUsageDiagnostics',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: [
+      'recordCount',
+      'providerId',
+      'model',
+      'requestCount',
+      'successCount',
+      'failureCount',
+      'indeterminateCount',
+      'totalTokens',
+      'totalLatencyMs',
+      'providerReportedCostMicrosUsd',
+    ],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'speech_evidence',
+    alias: 'speechEvidence',
+    authority: OwnerLifecycleAuthority.directOwner,
+    exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.deleteDirect,
+    allowedExportFields: ['recordCount'],
+  ),
+];
+
+final Set<String> ownerLifecycleExportTableNames = Set<String>.unmodifiable(
+  ownerLifecycleManifest.map((entry) => entry.tableName),
+);
+
+final Set<String> ownerLifecycleDeletionTableNames = Set<String>.unmodifiable(
+  ownerLifecycleManifest.map((entry) => entry.tableName),
+);
+
+final Set<String> ownerLifecycleDirectOwnerTableNames =
+    Set<String>.unmodifiable(
+      ownerLifecycleManifest
+          .where(
+            (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
+          )
+          .map((entry) => entry.tableName),
+    );
+
+/// Exact physical action order. `runtime_flags` means selective deletion of
+/// target-owner credential metadata, never deletion of the global table.
+const ownerLifecyclePhysicalDeletionOrder = <String>[
+  'runtime_flags',
+  'quest_objective_progress',
+  'vocabulary_import_rows',
+  'answer_attempts',
+  'speech_evidence',
+  'srs_states',
+  'owned_reward_items',
+  'equipped_reward_items',
+  'reading_progress_entries',
+  'reading_events',
+  'points_ledger_entries',
+  'achievement_unlocks',
+  'streak_states',
+  'learning_day_log',
+  'association_records',
+  'associative_memory_states',
+  'ai_usage_events',
+  'events_v2',
+  'outbox_operations',
+  'sync_checkpoints',
+  'sync_conflicts',
+  'research_consents',
+  'learning_sessions',
+  'vocabulary_words',
+  'vocabulary_imports',
+  'reward_transactions',
+  'quest_instances',
+  'vocabulary_categories',
+  'local_owners',
+];

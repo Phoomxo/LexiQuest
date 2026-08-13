@@ -1,3 +1,5 @@
+import 'owner_lifecycle_manifest.dart';
+
 enum OwnerUpgradeMode {
   anonymousBound,
   mergedExisting,
@@ -31,37 +33,4 @@ abstract interface class OwnerUpgradeRepository {
   });
 }
 
-const Set<String> ownerUpgradeInventory = <String>{
-  'research_consents',
-  'vocabulary_categories',
-  'vocabulary_words',
-  'vocabulary_imports',
-  'learning_sessions',
-  'answer_attempts',
-  'srs_states',
-  'reading_progress_entries',
-  'reading_events',
-  'points_ledger_entries',
-  'achievement_unlocks',
-  'reward_transactions',
-  'owned_reward_items',
-  'equipped_reward_items',
-  'outbox_operations',
-  'sync_checkpoints',
-  'sync_conflicts',
-  'events_v2',
-  // Phase 0 Week 10-11 — quest instances are owner-scoped.
-  // quest_objective_progress is excluded: it has no owner_id column and
-  // cascades automatically when quest_instances rows are re-owned.
-  'quest_instances',
-  // Phase 1 D7.2 — streak state is owner-scoped.
-  'streak_states',
-  'learning_day_log',
-  // Phase 2 D8.3 — associative learning data is owner-scoped.
-  'association_records',
-  'associative_memory_states',
-  // Schema v11 — speech evidence is owner-scoped.
-  'speech_evidence',
-  // Schema v12 — provider-neutral AI usage is owner-scoped.
-  'ai_usage_events',
-};
+final Set<String> ownerUpgradeInventory = ownerLifecycleDirectOwnerTableNames;

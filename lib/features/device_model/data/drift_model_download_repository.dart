@@ -33,7 +33,6 @@ final class DriftModelDownloadRepository implements ModelDownloadRepository {
           .write(
             ModelDownloadsCompanion(
               state: Value(ModelDownloadState.ready.name),
-              updatedAtUtcMs: Value(record.updatedAtUtc.millisecondsSinceEpoch),
             ),
           );
       await database

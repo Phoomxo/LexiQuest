@@ -1,8 +1,8 @@
-# OSV-Scanner exceptions for the root npm lockfile.
+# Repository-wide OSV-Scanner exceptions.
 #
 # Each entry is reviewed, narrow, and time-bounded. No package or ecosystem
-# is ignored wholesale. Recheck upstream firebase-admin dependencies by the
-# expiry date and remove each entry as soon as a fixed dependency tree ships.
+# is ignored wholesale. Recheck each dependency by its expiry date and remove
+# an entry as soon as a verified compatible dependency tree ships.
 
 [[IgnoredVulns]]
 id = "GHSA-w5hq-g745-h8pq"

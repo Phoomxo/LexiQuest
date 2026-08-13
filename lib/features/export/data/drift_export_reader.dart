@@ -33,7 +33,7 @@ final class ExportAttemptRow {
     required this.isCorrect,
     required this.responseTimeMs,
     required this.occurredAtUtc,
-    required this.providerProvenance,
+    this.providerProvenance,
   });
 
   final String id;
@@ -44,6 +44,10 @@ final class ExportAttemptRow {
   final bool isCorrect;
   final int? responseTimeMs;
   final DateTime occurredAtUtc;
+
+  /// Retained only for source compatibility. Raw provenance is never loaded
+  /// by the production reader or emitted by an export artifact.
+  @Deprecated('Raw provider provenance is excluded from exports.')
   final String? providerProvenance;
 }
 
@@ -158,7 +162,7 @@ final class DriftExportReader {
                 '''
                 SELECT a.id, a.session_id, a.word_id, w.spelling,
                        a.prompt_mode, a.is_correct, a.response_time_ms,
-                       a.occurred_at_utc_ms, a.provider_provenance
+                       a.occurred_at_utc_ms
                 FROM answer_attempts a
                 INNER JOIN vocabulary_words w
                   ON w.id = a.word_id AND w.owner_id = a.owner_id
@@ -206,9 +210,6 @@ final class DriftExportReader {
               occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
                 row.read<int>('occurred_at_utc_ms'),
                 isUtc: true,
-              ),
-              providerProvenance: row.readNullable<String>(
-                'provider_provenance',
               ),
             ),
           )

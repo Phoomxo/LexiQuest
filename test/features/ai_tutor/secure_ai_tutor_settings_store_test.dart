@@ -45,6 +45,9 @@ void main() {
         'providerConsent': true,
         'shareLearningSummary': true,
       }),
+      'gemini_api_key': 'legacy-gemini-secret',
+      'gemini_provider_consent': 'true',
+      'gemini_learning_summary_consent': 'true',
     };
     final store = SecureAiTutorSettingsStore(
       _MemorySecureStore(values),
@@ -54,6 +57,41 @@ void main() {
     expect(await store.readCredential(), isNull);
     expect(values, isNot(contains('ai_active_profile_v1')));
     expect(values.values.join(), isNot(contains('legacy-secret')));
+    expect(values, isNot(contains('gemini_api_key')));
+    expect(values, isNot(contains('gemini_provider_consent')));
+    expect(values, isNot(contains('gemini_learning_summary_consent')));
+  });
+
+  test('unowned fenced erasure cannot mutate unscoped legacy values', () async {
+    final values = <String, String>{
+      'ai_active_profile_v1': 'legacy-profile',
+      'ai_api_key': 'legacy-ai-key',
+      'gemini_api_key': 'legacy-gemini-key',
+      'gemini_provider_consent': 'true',
+      'gemini_learning_summary_consent': 'true',
+      'ai_provider_consent': 'true',
+      'ai_learning_summary_consent': 'true',
+      'ai_provider_id': 'gemini',
+      'ai_model': 'legacy-model',
+      'ai_custom_base_url': 'https://private.invalid',
+    };
+    final before = Map<String, String>.of(values);
+    final store = SecureAiTutorSettingsStore(
+      _MemorySecureStore(values),
+      activeOwnerId: () async => 'owner-a',
+    );
+
+    await expectLater(
+      store.eraseOwnerCredentialsFenced(
+        'owner-a',
+        leaseToken: 'stale-token',
+        leaseIsOwned: () async => false,
+        nowUtc: () => DateTime.utc(2026, 8, 11, 1),
+      ),
+      throwsA(_aiFailure(AiFailureCode.cancelled)),
+    );
+
+    expect(values, before);
   });
 
   test(
@@ -75,6 +113,143 @@ void main() {
       expect(await store.readCredentialForOwner('owner-a'), isNull);
       expect((await store.readCredentialForOwner('owner-b'))?.key, 'key-b');
       expect(values.values.join(), isNot(contains('key-a')));
+    },
+  );
+
+  test(
+    'credential metadata erase treats wildcard and case tokens literally',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final gate = DriftOwnerOperationGate(database);
+      final index = DriftAiCredentialVersionIndex(database);
+      final now = DateTime.utc(2026, 8, 11, 0, 30);
+      const leaseToken = 'owner-metadata-lease';
+      expect(
+        await gate.tryAcquire(
+          token: leaseToken,
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 5),
+        ),
+        isTrue,
+      );
+      await index.prepareMutation(
+        ownerToken: 'owner_a',
+        operationVersion: 'operation-a',
+        kind: AiCredentialMutationKind.replace,
+        legacyBlobExists: false,
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+      await index.prepareMutation(
+        ownerToken: 'ownerXa',
+        operationVersion: 'operation-b',
+        kind: AiCredentialMutationKind.replace,
+        legacyBlobExists: false,
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+      await database.customInsert(
+        'INSERT INTO runtime_flags '
+        '("key", bool_value, source, updated_at_utc_ms) VALUES (?, 1, ?, ?)',
+        variables: const <Variable<Object>>[
+          Variable<String>('AICREDENTIALINTENT:operator'),
+          Variable<String>('opaque-global-source'),
+          Variable<int>(1),
+        ],
+      );
+      final unknownBefore =
+          (await database
+                  .customSelect(
+                    'SELECT * FROM runtime_flags WHERE "key" = ?',
+                    variables: const <Variable<Object>>[
+                      Variable<String>('AICREDENTIALINTENT:operator'),
+                    ],
+                  )
+                  .getSingle())
+              .data
+              .toString();
+      expect(
+        await index.pendingMutations(leaseToken: leaseToken, nowUtc: now),
+        hasLength(2),
+      );
+
+      await index.eraseOwnerMetadata(
+        ownerToken: 'owner_a',
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+
+      final keys = await database
+          .customSelect(
+            'SELECT "key" FROM runtime_flags '
+            'WHERE "key" >= ? AND "key" < ? ORDER BY "key"',
+            variables: const <Variable<Object>>[
+              Variable<String>('aiCredentialIntent:'),
+              Variable<String>('aiCredentialIntent;'),
+            ],
+          )
+          .map((row) => row.read<String>('key'))
+          .get();
+      expect(keys, const ['aiCredentialIntent:ownerXa:operation-b']);
+
+      await index.prepareMutation(
+        ownerToken: 'YWFh',
+        operationVersion: 'operation-c',
+        kind: AiCredentialMutationKind.replace,
+        legacyBlobExists: false,
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+      await index.prepareMutation(
+        ownerToken: 'YWFH',
+        operationVersion: 'operation-d',
+        kind: AiCredentialMutationKind.replace,
+        legacyBlobExists: false,
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+      final foreignBefore = await database
+          .customSelect(
+            'SELECT source FROM runtime_flags WHERE "key" = ?',
+            variables: const <Variable<Object>>[
+              Variable<String>('aiCredentialIntent:YWFH:operation-d'),
+            ],
+          )
+          .map((row) => row.read<String>('source'))
+          .getSingle();
+
+      await index.eraseOwnerMetadata(
+        ownerToken: 'YWFh',
+        leaseToken: leaseToken,
+        nowUtc: now,
+      );
+
+      expect(
+        await database
+            .customSelect(
+              'SELECT source FROM runtime_flags WHERE "key" = ?',
+              variables: const <Variable<Object>>[
+                Variable<String>('aiCredentialIntent:YWFH:operation-d'),
+              ],
+            )
+            .map((row) => row.read<String>('source'))
+            .getSingle(),
+        foreignBefore,
+      );
+      expect(
+        (await database
+                .customSelect(
+                  'SELECT * FROM runtime_flags WHERE "key" = ?',
+                  variables: const <Variable<Object>>[
+                    Variable<String>('AICREDENTIALINTENT:operator'),
+                  ],
+                )
+                .getSingle())
+            .data
+            .toString(),
+        unknownBefore,
+      );
     },
   );
 

@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 
-enum ExportFormat { csv, pdf, anki, researchJson }
+enum ExportFormat { csv, pdf, anki, researchJson, ownerArchiveJson }
 
 final class ExportSelection {
   const ExportSelection({

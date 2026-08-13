@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -8,6 +9,7 @@ import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -110,6 +112,21 @@ void main() {
       expect(voiceBuilds, 1);
       expect(dependencies.localDataEraser, isNotNull);
       expect(dependencies.featureControls, isNotNull);
+      final ownerArchive = await dependencies.exports!.prepare(
+        format: ExportFormat.ownerArchiveJson,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final archiveEnvelope =
+          jsonDecode(utf8.decode(ownerArchive.bytes)) as Map<String, dynamic>;
+      expect(
+        (archiveEnvelope['content'] as Map<String, dynamic>)['tables'],
+        hasLength(31),
+      );
     });
 
     test(
@@ -378,6 +395,159 @@ void main() {
           FeatureState.emergencyOff,
         );
         expect(dependencies.features.isVisible(Feature.aiTutor), isFalse);
+      },
+    );
+
+    test(
+      'restored TTL controls schedule live expiry during bootstrap',
+      () async {
+        final database = _testDatabase();
+        var now = DateTime.utc(2026, 8, 9, 12);
+        final seedRegistry = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.fieldDefaults(),
+        );
+        final seedControls = RuntimeFeatureControls(
+          store: RuntimeFeatureOverrideStore(database),
+          registry: seedRegistry,
+          nowUtc: () => now,
+          scheduleExpiry: (_, _) => () {},
+        );
+        await seedControls.emergencyOff(
+          Feature.aiTutor,
+          expiresAtUtc: now.add(const Duration(hours: 1)),
+        );
+        seedControls.dispose();
+        seedRegistry.dispose();
+
+        void Function()? expiryCallback;
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          runtimeFeatureNowUtc: () => now,
+          scheduleRuntimeFeatureExpiry: (_, callback) {
+            expiryCallback = callback;
+            return () {};
+          },
+        );
+
+        final dependencies = await bootstrap.initialize();
+        expect(
+          dependencies.features.stateOf(Feature.aiTutor),
+          FeatureState.emergencyOff,
+        );
+        expect(expiryCallback, isNotNull);
+
+        now = now.add(const Duration(hours: 1));
+        expiryCallback!();
+        await Future<void>.delayed(Duration.zero);
+        await Future<void>.delayed(Duration.zero);
+
+        expect(
+          dependencies.features.stateOf(Feature.aiTutor),
+          FeatureState.limited,
+        );
+      },
+    );
+
+    test(
+      'gated AI recovery purges only expired active-owner terminal usage',
+      () async {
+        final database = _testDatabase();
+        final now = DateTime.utc(2026, 8, 11, 12);
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(id: 'owner-a', createdAtUtcMs: 1),
+            );
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'owner-b',
+                createdAtUtcMs: 2,
+                isActive: const Value(false),
+              ),
+            );
+        Future<void> seedUsage({
+          required String eventId,
+          required String ownerId,
+          required DateTime occurredAt,
+          required String outcome,
+        }) => database
+            .into(database.aiUsageEvents)
+            .insert(
+              AiUsageEventsCompanion.insert(
+                eventId: eventId,
+                ownerId: ownerId,
+                occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+                providerId: 'gemini',
+                model: 'typed-model',
+                requestType: 'tutorReply',
+                outcome: outcome,
+                latencyMs: 1,
+              ),
+            );
+        await seedUsage(
+          eventId: 'expired-a',
+          ownerId: 'owner-a',
+          occurredAt: now.subtract(const Duration(days: 91)),
+          outcome: 'success',
+        );
+        await seedUsage(
+          eventId: 'recent-a',
+          ownerId: 'owner-a',
+          occurredAt: now.subtract(const Duration(days: 1)),
+          outcome: 'failure',
+        );
+        await seedUsage(
+          eventId: 'pending-a',
+          ownerId: 'owner-a',
+          occurredAt: now.subtract(const Duration(minutes: 1)),
+          outcome: 'pending',
+        );
+        await seedUsage(
+          eventId: 'expired-pending-a',
+          ownerId: 'owner-a',
+          occurredAt: now.subtract(const Duration(days: 91)),
+          outcome: 'pending',
+        );
+        await seedUsage(
+          eventId: 'expired-b',
+          ownerId: 'owner-b',
+          occurredAt: now.subtract(const Duration(days: 91)),
+          outcome: 'success',
+        );
+        final ai = _BootstrapAiTutorController();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          aiNowUtc: () => now,
+          buildAiTutor: (context) async {
+            await context.ownerCoordinator.run(AiCancellation(), (_) async {});
+            return ManagedAiTutor(
+              controller: ai,
+              disposeController: ai.dispose,
+            );
+          },
+        );
+
+        await bootstrap.initialize();
+
+        final rows = await database.select(database.aiUsageEvents).get();
+        final byId = {for (final row in rows) row.eventId: row};
+        expect(byId, isNot(contains('expired-a')));
+        expect(byId['recent-a']?.outcome, 'failure');
+        expect(byId['pending-a']?.outcome, 'pending');
+        expect(byId, isNot(contains('expired-pending-a')));
+        expect(byId['expired-b']?.outcome, 'success');
       },
     );
 

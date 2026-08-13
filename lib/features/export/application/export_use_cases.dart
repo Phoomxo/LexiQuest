@@ -6,8 +6,10 @@ import 'package:flutter/services.dart';
 import 'package:pdf/widgets.dart' as pw;
 
 import '../../consent/application/research_consent_use_cases.dart';
+import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../data/drift_export_reader.dart';
 import '../domain/export_contracts.dart';
+import 'owner_lifecycle_archive.dart';
 
 typedef ExportUtcNow = DateTime Function();
 typedef ExportFontLoader = Future<ByteData> Function();
@@ -18,18 +20,23 @@ final class ExportUseCases {
     required this.store,
     required this.nowUtc,
     required this.loadThaiFont,
+    this.lifecycleArchive,
   });
 
   final DriftExportReader reader;
   final ExportArtifactStore store;
   final ExportUtcNow nowUtc;
   final ExportFontLoader loadThaiFont;
+  final OwnerLifecycleArchiveExporter? lifecycleArchive;
 
   Future<ExportArtifact> prepare({
     required ExportFormat format,
     required ExportSelection selection,
     required ExportCancellation cancellation,
   }) async {
+    if (format == ExportFormat.ownerArchiveJson) {
+      return _prepareOwnerArchive(cancellation);
+    }
     if (selection.isEmpty) {
       throw const ExportException(ExportFailureCode.noSelection);
     }
@@ -52,6 +59,9 @@ final class ExportUseCases {
       ExportFormat.anki => _anki(data),
       ExportFormat.researchJson => _researchJson(data, generatedAt),
       ExportFormat.pdf => await _pdf(data, generatedAt, cancellation),
+      ExportFormat.ownerArchiveJson => throw StateError(
+        'Owner archive must use its dedicated manifest snapshot.',
+      ),
     };
     cancellation.throwIfCancelled();
     final sha256 = crypto.sha256.convert(bytes).toString();
@@ -64,6 +74,7 @@ final class ExportUseCases {
         ExportFormat.anki => 'text/tab-separated-values',
         ExportFormat.researchJson => 'application/json',
         ExportFormat.pdf => 'application/pdf',
+        ExportFormat.ownerArchiveJson => 'application/json',
       },
       bytes: bytes,
       recordCount: data.recordCount,
@@ -78,6 +89,44 @@ final class ExportUseCases {
         'Firebase authentication token',
         'direct personal identifiers',
         'raw microphone audio',
+      ],
+    );
+  }
+
+  Future<ExportArtifact> _prepareOwnerArchive(
+    ExportCancellation cancellation,
+  ) async {
+    final archive = lifecycleArchive;
+    if (archive == null) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
+    cancellation.throwIfCancelled();
+    late OwnerLifecycleArchiveArtifact artifact;
+    try {
+      artifact = await archive.prepareActive();
+    } on Object catch (error) {
+      throw ExportException(ExportFailureCode.unavailable, error);
+    }
+    cancellation.throwIfCancelled();
+    return ExportArtifact(
+      format: ExportFormat.ownerArchiveJson,
+      suggestedFileName: _fileName(
+        ExportFormat.ownerArchiveJson,
+        artifact.generatedAtUtc,
+      ),
+      mimeType: 'application/json',
+      bytes: artifact.bytes,
+      recordCount: ownerLifecycleManifest.length,
+      schemaVersion: 1,
+      algorithmVersion: 1,
+      generatedAtUtc: artifact.generatedAtUtc,
+      timeZone: 'UTC',
+      sha256: artifact.sha256,
+      exclusions: const [
+        'credentials and authentication tokens',
+        'raw participant identifiers',
+        'opaque payloads and provider provenance',
+        'source URLs and local paths',
       ],
     );
   }
@@ -128,7 +177,7 @@ final class ExportUseCases {
           row.isCorrect ? '1' : '0',
           row.responseTimeMs?.toString() ?? '',
           row.occurredAtUtc.toIso8601String(),
-          row.providerProvenance ?? '',
+          '',
         ]),
       );
     }
@@ -202,7 +251,6 @@ final class ExportUseCases {
             'isCorrect': row.isCorrect,
             'responseTimeMs': row.responseTimeMs,
             'occurredAtUtc': row.occurredAtUtc.toIso8601String(),
-            'providerProvenance': row.providerProvenance,
           },
       ],
       'reading': [
@@ -304,6 +352,7 @@ final class ExportUseCases {
       ExportFormat.anki => 'txt',
       ExportFormat.researchJson => 'json',
       ExportFormat.pdf => 'pdf',
+      ExportFormat.ownerArchiveJson => 'json',
     };
     return 'lexiquest-$stamp.$extension';
   }

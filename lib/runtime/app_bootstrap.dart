@@ -36,6 +36,7 @@ import '../features/device_model/data/http_model_byte_source.dart';
 import '../features/device_model/data/litert_image_classifier.dart';
 import '../features/device_model/domain/model_manifest.dart';
 import '../features/export/application/export_use_cases.dart';
+import '../features/export/application/owner_lifecycle_archive.dart';
 import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
@@ -81,6 +82,7 @@ import '../voice/voice_service_factory.dart';
 import '../services/guest_session_service.dart';
 import 'app_build_info.dart';
 import 'app_dependencies.dart';
+import 'central_cost_policy.dart';
 import 'download_counter.dart';
 import 'app_runtime_status.dart';
 import 'app_start_route_resolver.dart';
@@ -99,6 +101,9 @@ typedef ManagedAiTutorBuilder =
     FutureOr<ManagedAiTutor> Function(AiTutorBuildContext context);
 typedef ManagedVoiceBuilder =
     FutureOr<ManagedVoiceProvider> Function(AppConfig? config);
+
+DateTime _runtimeFeatureSystemNowUtc() => DateTime.now().toUtc();
+DateTime _aiSystemNowUtc() => DateTime.now().toUtc();
 
 Future<void> Function() _retainAsyncDisposer(Future<void> Function() value) =>
     value;
@@ -142,10 +147,6 @@ const _productionSupabaseUrl = String.fromEnvironment(
 );
 const _productionSupabasePublishableKey = String.fromEnvironment(
   'LEXIQUEST_SUPABASE_PUBLISHABLE_KEY',
-);
-const _productionCloudSyncEnabled = bool.fromEnvironment(
-  'LEXIQUEST_CLOUD_SYNC_ENABLED',
-  defaultValue: true,
 );
 const _productionAppCheckDebug = bool.fromEnvironment(
   'LEXIQUEST_APP_CHECK_DEBUG',
@@ -221,10 +222,16 @@ final class AppBootstrap {
     this.syncGatewayFactory,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
+    DateTime Function()? runtimeFeatureNowUtc,
+    DateTime Function()? aiNowUtc,
+    this.scheduleRuntimeFeatureExpiry,
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
   }) : buildAiTutor = buildAiTutor ?? _buildManagedAiTutor,
-       buildVoice = buildVoice ?? _buildManagedVoice;
+       buildVoice = buildVoice ?? _buildManagedVoice,
+       runtimeFeatureNowUtc =
+           runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
+       aiNowUtc = aiNowUtc ?? _aiSystemNowUtc;
 
   factory AppBootstrap.production() {
     return AppBootstrap(
@@ -241,7 +248,7 @@ final class AppBootstrap {
       ),
       accountGatewayFactory: () =>
           FirebaseAccountGateway(FirebaseAuth.instance),
-      cloudSyncEnabled: _productionCloudSyncEnabled,
+      cloudSyncEnabled: productionCloudSyncEnabledByDefault,
     );
   }
 
@@ -255,6 +262,9 @@ final class AppBootstrap {
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
+  final DateTime Function() runtimeFeatureNowUtc;
+  final DateTime Function() aiNowUtc;
+  final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ManagedAiTutorBuilder buildAiTutor;
   final ManagedVoiceBuilder buildVoice;
   Future<AppDependencies>? _initialization;
@@ -567,6 +577,10 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+      lifecycleArchive: OwnerLifecycleArchiveExporter(
+        database: database,
+        nowUtc: aiNowUtc,
+      ),
     );
     final modelRepository = DriftModelDownloadRepository(database);
     final modelByteSource = HttpModelByteSource(http.Client());
@@ -584,7 +598,11 @@ final class AppBootstrap {
         return Directory('${support.path}${Platform.pathSeparator}models');
       },
       nowUtc: () => DateTime.now().toUtc(),
-      onDownloadCompleted: downloadCounter.increment,
+      onVerifiedActivation: ({required modelVersion, required completionId}) =>
+          downloadCounter.recordCompletion(modelVersion, completionId),
+      onCachedArtifactVerified:
+          ({required modelVersion, required completionId}) =>
+              downloadCounter.reconcileCompletion(modelVersion, completionId),
     );
     final deviceModels = DeviceModelUseCases(
       manifest: ModelManifest.fieldImageClassifier,
@@ -613,18 +631,19 @@ final class AppBootstrap {
       database,
       activeOwnerId: activeOwnerId,
       activeOwnerLeaseToken: () => OwnerOperationCoordinator.currentLeaseToken,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: aiNowUtc,
     );
     final aiOwnerCoordinator = OwnerOperationCoordinator(
       gate: ownerOperationGate,
       activeOwnerId: activeOwnerId,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: aiNowUtc,
       generateToken: idGenerator.v4,
       recoverPending: (cutoffUtc, {required recoveredAtUtc}) async {
         final recoveredUsage = await aiUsage.recoverPendingStartedBefore(
           cutoffUtc,
           recoveredAtUtc: recoveredAtUtc,
         );
+        await aiUsage.purgeExpired(recoveredAtUtc);
         final leaseToken = OwnerOperationCoordinator.currentLeaseToken;
         if (leaseToken == null) {
           throw StateError('Credential recovery requires the owner lease.');
@@ -632,7 +651,7 @@ final class AppBootstrap {
         final recoveredCredentials = await aiTutorSettings
             .recoverCredentialMutations(
               leaseToken: leaseToken,
-              nowUtc: () => DateTime.now().toUtc(),
+              nowUtc: aiNowUtc,
             );
         return recoveredUsage + recoveredCredentials;
       },
@@ -645,7 +664,7 @@ final class AppBootstrap {
           usage: aiUsage,
           ownerCoordinator: aiOwnerCoordinator,
           loadProgress: progress.load,
-          nowUtc: () => DateTime.now().toUtc(),
+          nowUtc: aiNowUtc,
           usageEventId: idGenerator.v4,
         ),
       );
@@ -677,16 +696,16 @@ final class AppBootstrap {
     final featureOverrideStore = RuntimeFeatureOverrideStore(database);
     final runtimeFeatures = RuntimeFeatureRegistry(
       const BuildFeatureRegistry.fieldDefaults(),
-      overrides: await featureOverrideStore.load(
-        nowUtc: DateTime.now().toUtc(),
-      ),
     );
     resources.own(runtimeFeatures.dispose);
     final featureControls = RuntimeFeatureControls(
       store: featureOverrideStore,
       registry: runtimeFeatures,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: runtimeFeatureNowUtc,
+      scheduleExpiry: scheduleRuntimeFeatureExpiry,
     );
+    resources.own(featureControls.dispose);
+    await featureControls.initialize();
     final initialRoute = await AppStartRouteResolver(
       entryState: entryState,
     ).resolve(hasAuthenticatedSession: account?.currentSession != null);

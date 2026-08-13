@@ -230,7 +230,26 @@ final class DriftLearningProjectionRebuilder {
                   row.definitionVersion.equals(definitionVersion),
             ))
             .getSingleOrNull();
-    if (existing != null) return;
+    if (existing != null) {
+      final canonicalSourceIsEarlier =
+          source.occurredAtUtcMs < existing.unlockedAtUtcMs ||
+          (source.occurredAtUtcMs == existing.unlockedAtUtcMs &&
+              source.id.compareTo(existing.sourceEventId) < 0);
+      if (!canonicalSourceIsEarlier) return;
+
+      // Achievement evidence is append-only, but an older attempt can arrive
+      // after the unlock projection was first materialized. Correct only its
+      // canonical provenance; the unlock identity itself remains unchanged.
+      await (database.update(
+        database.achievementUnlocks,
+      )..where((row) => row.id.equals(existing.id))).write(
+        db.AchievementUnlocksCompanion(
+          sourceEventId: Value(source.id),
+          unlockedAtUtcMs: Value(source.occurredAtUtcMs),
+        ),
+      );
+      return;
+    }
     await database
         .into(database.achievementUnlocks)
         .insert(

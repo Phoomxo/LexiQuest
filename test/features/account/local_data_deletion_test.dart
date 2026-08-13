@@ -7,12 +7,17 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 
 void main() {
   test('deletion inventory stays aligned with every owner-scoped table', () {
-    expect(localDataDeletionInventory.toSet(), ownerUpgradeInventory);
+    expect(localDataDeletionInventory, ownerLifecyclePhysicalDeletionOrder);
+    expect(
+      localDataDeletionInventory.where(ownerUpgradeInventory.contains).toSet(),
+      ownerUpgradeInventory,
+    );
   });
 
   test(
@@ -31,8 +36,11 @@ void main() {
         },
       ).eraseAll(ownerId: 'owner-a');
 
-      expect(deleted, 8);
+      expect(deleted, 12);
       expect(deletedSecretOwnerIds, ['owner-a']);
+      expect(await _rootRows(database, 'owner-a'), 0);
+      expect(await _importRowCount(database, 'owner-a'), 0);
+      expect(await _questProgressCount(database, 'owner-a'), 0);
       expect(await _ownerRows(database, 'research_consents', 'owner-a'), 0);
       expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 0);
       expect(await _ownerRows(database, 'reward_transactions', 'owner-a'), 0);
@@ -49,6 +57,10 @@ void main() {
       expect(await _ownerRows(database, 'vocabulary_imports', 'owner-b'), 1);
       expect(await _ownerRows(database, 'vocabulary_words', 'owner-b'), 1);
       expect(await _ownerRows(database, 'vocabulary_categories', 'owner-b'), 1);
+      expect(await _rootRows(database, 'owner-b'), 1);
+      expect(await _importRowCount(database, 'owner-b'), 1);
+      expect(await _questProgressCount(database, 'owner-b'), 1);
+      expect(await _questDefinitionCount(database, 'owner-a'), 1);
     },
   );
 
@@ -154,7 +166,7 @@ void main() {
       );
 
       allowSecretDelete.complete();
-      expect(await erasure, 8);
+      expect(await erasure, 12);
       expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 0);
       expect(
         await gate.tryAcquire(
@@ -259,7 +271,7 @@ void main() {
             }),
       );
 
-      expect(await deletion.eraseAll(ownerId: 'owner-a'), 8);
+      expect(await deletion.eraseAll(ownerId: 'owner-a'), 12);
       expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 0);
       await gate.release(token: 'replacement-after-commit');
     },
@@ -373,6 +385,52 @@ Future<void> _seedOwner(AppDatabase database, String ownerId) async {
       const Variable<String>('complete'),
     ],
   );
+  await database
+      .into(database.vocabularyImportRows)
+      .insert(
+        VocabularyImportRowsCompanion.insert(
+          id: 'import-row:$ownerId',
+          importId: 'import:$ownerId',
+          rowNumber: 1,
+          payloadHash: 'payload:$ownerId',
+          status: 'accepted',
+        ),
+      );
+  await database
+      .into(database.questDefinitions)
+      .insert(
+        QuestDefinitionsCompanion.insert(
+          questId: 'quest:$ownerId',
+          catalogVersion: 1,
+          title: 'Quest $ownerId',
+          description: 'description',
+          type: 'daily',
+          objectivesJson: '[]',
+          rewardJson: '{}',
+        ),
+      );
+  await database
+      .into(database.questInstances)
+      .insert(
+        QuestInstancesCompanion.insert(
+          instanceId: 'quest-instance:$ownerId',
+          questId: 'quest:$ownerId',
+          ownerId: ownerId,
+          catalogVersion: 1,
+          assignedAtUtcMs: 1,
+          state: 'active',
+        ),
+      );
+  await database
+      .into(database.questObjectiveProgress)
+      .insert(
+        QuestObjectiveProgressCompanion.insert(
+          id: 'quest-progress:$ownerId',
+          instanceId: 'quest-instance:$ownerId',
+          objectiveId: 'objective',
+          targetCount: 1,
+        ),
+      );
 }
 
 Future<int> _ownerRows(AppDatabase database, String table, String ownerId) =>
@@ -380,6 +438,42 @@ Future<int> _ownerRows(AppDatabase database, String table, String ownerId) =>
         .customSelect(
           'SELECT COUNT(*) AS count FROM $table WHERE owner_id = ?',
           variables: [Variable<String>(ownerId)],
+        )
+        .map((row) => row.read<int>('count'))
+        .getSingle();
+
+Future<int> _rootRows(AppDatabase database, String ownerId) => database
+    .customSelect(
+      'SELECT COUNT(*) AS count FROM local_owners WHERE id = ?',
+      variables: [Variable<String>(ownerId)],
+    )
+    .map((row) => row.read<int>('count'))
+    .getSingle();
+
+Future<int> _importRowCount(AppDatabase database, String ownerId) => database
+    .customSelect(
+      'SELECT COUNT(*) AS count FROM vocabulary_import_rows '
+      'WHERE import_id = ?',
+      variables: [Variable<String>('import:$ownerId')],
+    )
+    .map((row) => row.read<int>('count'))
+    .getSingle();
+
+Future<int> _questProgressCount(AppDatabase database, String ownerId) =>
+    database
+        .customSelect(
+          'SELECT COUNT(*) AS count FROM quest_objective_progress '
+          'WHERE instance_id = ?',
+          variables: [Variable<String>('quest-instance:$ownerId')],
+        )
+        .map((row) => row.read<int>('count'))
+        .getSingle();
+
+Future<int> _questDefinitionCount(AppDatabase database, String ownerId) =>
+    database
+        .customSelect(
+          'SELECT COUNT(*) AS count FROM quest_definitions WHERE quest_id = ?',
+          variables: [Variable<String>('quest:$ownerId')],
         )
         .map((row) => row.read<int>('count'))
         .getSingle();

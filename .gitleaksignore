@@ -7,3 +7,15 @@ a458aac08354a7b5f3c5a553e4a53ff53070df57:lib/main.dart:jwt:21
 886953b4afe413640ac7abeacc39b9154982892c:lib/main.dart:jwt:20
 c75b0187d765211a666084e3f099c984b4a148b8:lib/main.dart:jwt:20
 001c467f89975e1c678c5934d353445c692d0a76:lib/main.dart:jwt:20
+
+# Fixed dummy API-key values used only by historical gateway tests. These exact
+# findings are suppressed; new values, locations, or commits remain detectable.
+90ea99799a08670ab197096da3c0762c0a46ff13:test/features/ai_tutor/openai_compatible_gateway_test.dart:generic-api-key:25
+a9dede84b799df68c9bdbfd7bc99b98742223cba:test/features/gemini/gemini_rest_gateway_test.dart:generic-api-key:10
+
+# Former public Supabase anon mobile-client configuration. The current tree
+# injects its publishable client key from the environment; server secrets are
+# not classified or suppressed here. Only these historical findings are ignored.
+ff2364209c53bf3b4ff5e3bff7630484d9c5fd05:lib/main.dart:jwt:21
+15ae3e0e6b510296c4d064f974993f167730f8c4:lib/main.dart:jwt:20
+52a478a7a9589766bfbdf8a88bff97e3a6c771b7:lib/main.dart:jwt:20

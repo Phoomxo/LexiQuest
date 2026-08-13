@@ -202,7 +202,9 @@ final class DriftRewardRepository {
   }) async {
     if (xpAmount == 0) return;
     return _serialized(() async {
-      await database.into(database.pointsLedgerEntries).insert(
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
             PointsLedgerEntriesCompanion.insert(
               id: idempotencyKey,
               ownerId: ownerId,

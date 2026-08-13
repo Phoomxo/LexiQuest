@@ -3,10 +3,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/device_model/application/model_download_manager.dart';
+import 'package:vocab_learning_app/features/device_model/data/drift_model_download_repository.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_lifecycle.dart';
 import 'package:vocab_learning_app/features/device_model/domain/model_manifest.dart';
+import 'package:vocab_learning_app/runtime/download_counter.dart';
 
 void main() {
   late Directory directory;
@@ -236,6 +240,199 @@ void main() {
     expect(repository.activations, 1);
   });
 
+  test(
+    'restart reconciles one missed activation count without inflation',
+    () async {
+      final bytes = utf8.encode('verified-reconciled-model');
+      final manifest = _manifestFor(bytes);
+      final databaseFile = File(
+        '${directory.path}${Platform.pathSeparator}model-state.sqlite',
+      );
+      var database = AppDatabase(NativeDatabase(databaseFile));
+      addTearDown(() => database.close());
+      var failFirstRecord = true;
+
+      ModelDownloadManager buildManager() {
+        final counter = DownloadCounter(
+          database,
+          generateEventId: () => 'unused-random-event',
+          nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+        );
+        return ModelDownloadManager(
+          repository: DriftModelDownloadRepository(database),
+          source: _MemoryRangeSource(bytes),
+          verifier: _RecordingVerifier(),
+          modelDirectory: () async => directory,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+          onVerifiedActivation:
+              ({required modelVersion, required completionId}) async {
+                if (failFirstRecord) {
+                  failFirstRecord = false;
+                  throw StateError('counter unavailable after activation');
+                }
+                await counter.recordCompletion(modelVersion, completionId);
+              },
+        );
+      }
+
+      final first = await buildManager().downloadAndActivate(manifest);
+      expect(first.state, ModelDownloadState.active);
+      expect(
+        await DownloadCounter(
+          database,
+          generateEventId: () => 'unused',
+        ).count(manifest.version),
+        0,
+      );
+
+      await database.close();
+      database = AppDatabase(NativeDatabase(databaseFile));
+      final recovered = await buildManager().downloadAndActivate(manifest);
+      expect(recovered.state, ModelDownloadState.active);
+      expect(
+        await DownloadCounter(
+          database,
+          generateEventId: () => 'unused',
+        ).count(manifest.version),
+        1,
+      );
+
+      await database.close();
+      database = AppDatabase(NativeDatabase(databaseFile));
+      final cached = await buildManager().downloadAndActivate(manifest);
+      expect(cached.state, ModelDownloadState.active);
+      expect(
+        await DownloadCounter(
+          database,
+          generateEventId: () => 'unused',
+        ).count(manifest.version),
+        1,
+      );
+
+      await File(cached.localPath!).delete();
+      final redownloaded = await buildManager().downloadAndActivate(manifest);
+      expect(redownloaded.state, ModelDownloadState.active);
+      expect(
+        await DownloadCounter(
+          database,
+          generateEventId: () => 'unused',
+        ).count(manifest.version),
+        2,
+        reason: 'a second verified network transfer is a second success',
+      );
+
+      await buildManager().downloadAndActivate(manifest);
+      expect(
+        await DownloadCounter(
+          database,
+          generateEventId: () => 'unused',
+        ).count(manifest.version),
+        2,
+        reason: 'a cached verified open must not inflate the counter',
+      );
+    },
+  );
+
+  test(
+    'upgraded cached artifact does not add to its legacy success count',
+    () async {
+      final bytes = utf8.encode('verified-before-task-eight');
+      final manifest = _manifestFor(bytes);
+      final source = _MemoryRangeSource(bytes);
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final counter = DownloadCounter(
+        database,
+        generateEventId: () => '123e4567-e89b-42d3-a456-426614174000',
+        nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+      );
+      final repository = DriftModelDownloadRepository(database);
+
+      await ModelDownloadManager(
+        repository: repository,
+        source: source,
+        verifier: _RecordingVerifier(),
+        modelDirectory: () async => directory,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+        onDownloadCompleted: counter.increment,
+      ).downloadAndActivate(manifest);
+      expect(await counter.count(manifest.version), 1);
+
+      await ModelDownloadManager(
+        repository: repository,
+        source: source,
+        verifier: _RecordingVerifier(),
+        modelDirectory: () async => directory,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 9),
+        onVerifiedActivation:
+            ({required modelVersion, required completionId}) =>
+                counter.recordCompletion(modelVersion, completionId),
+        onCachedArtifactVerified:
+            ({required modelVersion, required completionId}) =>
+                counter.reconcileCompletion(modelVersion, completionId),
+      ).downloadAndActivate(manifest);
+
+      expect(source.requestedStarts, [0]);
+      expect(
+        await counter.count(manifest.version),
+        1,
+        reason: 'migration replaces one legacy marker; it is not a transfer',
+      );
+    },
+  );
+
+  test(
+    'cached cross-version reactivation preserves the original completion',
+    () async {
+      final bytesA = utf8.encode('verified-model-version-a');
+      final bytesB = utf8.encode('verified-model-version-b');
+      final manifestA = _manifestFor(
+        bytesA,
+        id: 'test-model-a',
+        version: 'v-a',
+      );
+      final manifestB = _manifestFor(
+        bytesB,
+        id: 'test-model-b',
+        version: 'v-b',
+      );
+      final sourceA = _MemoryRangeSource(bytesA);
+      final sourceB = _MemoryRangeSource(bytesB);
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final counter = DownloadCounter(
+        database,
+        generateEventId: () => 'unused-random-event',
+        nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+      );
+
+      ModelDownloadManager buildManager(
+        ModelManifest manifest,
+        ModelByteSource source,
+      ) {
+        return ModelDownloadManager(
+          repository: DriftModelDownloadRepository(database),
+          source: source,
+          verifier: _RecordingVerifier(),
+          modelDirectory: () async => directory,
+          nowUtc: () => DateTime.utc(2026, 7, 30, 8),
+          onVerifiedActivation:
+              ({required modelVersion, required completionId}) =>
+                  counter.recordCompletion(modelVersion, completionId),
+        );
+      }
+
+      await buildManager(manifestA, sourceA).downloadAndActivate(manifestA);
+      await buildManager(manifestB, sourceB).downloadAndActivate(manifestB);
+      await buildManager(manifestA, sourceA).downloadAndActivate(manifestA);
+
+      expect(sourceA.requestedStarts, [0]);
+      expect(sourceB.requestedStarts, [0]);
+      expect(await counter.count(manifestA.version), 1);
+      expect(await counter.count(manifestB.version), 1);
+    },
+  );
+
   test('rejects a mismatched Content-Range before appending', () async {
     final bytes = utf8.encode('range-protected-model');
     final manifest = _manifestFor(bytes);
@@ -376,9 +573,13 @@ void main() {
   });
 }
 
-ModelManifest _manifestFor(List<int> bytes) => ModelManifest(
-  id: 'test-model',
-  version: 'v1',
+ModelManifest _manifestFor(
+  List<int> bytes, {
+  String id = 'test-model',
+  String version = 'v1',
+}) => ModelManifest(
+  id: id,
+  version: version,
   minimumAppVersion: '1.0.0+1',
   sourceUri: Uri.https('models.example', '/test.tflite'),
   license: 'Apache-2.0',

@@ -98,6 +98,10 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                 value: ExportFormat.researchJson,
                 label: Text('Research'),
               ),
+              ButtonSegment(
+                value: ExportFormat.ownerArchiveJson,
+                label: Text('Complete archive'),
+              ),
             ],
             selected: {_format},
             onSelectionChanged: _busy
@@ -120,7 +124,7 @@ class _ExportCenterScreenState extends State<ExportCenterScreen> {
                 ? null
                 : (value) => setState(() => _attempts = value ?? false),
             title: const Text('ประวัติคำตอบ'),
-            subtitle: const Text('ผลตอบ เวลาตอบ โหมด และ provenance'),
+            subtitle: const Text('ผลตอบ เวลาตอบ และโหมดคำตอบ'),
           ),
           CheckboxListTile(
             value: _reading,

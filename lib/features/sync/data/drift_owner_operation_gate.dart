@@ -1,12 +1,13 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../../runtime/runtime_flag_namespaces.dart';
 import '../domain/owner_operation_gate.dart';
 
 final class DriftOwnerOperationGate implements OwnerOperationGate {
   const DriftOwnerOperationGate(this.database);
 
-  static const String gateKey = 'ownerOperationGate';
+  static const String gateKey = RuntimeFlagNamespaces.ownerOperationGate;
 
   final db.AppDatabase database;
 

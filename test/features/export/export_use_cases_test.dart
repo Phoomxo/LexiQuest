@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/export/application/export_use_cases.dart';
+import 'package:vocab_learning_app/features/export/application/owner_lifecycle_archive.dart';
 import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
@@ -44,6 +45,10 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
+      lifecycleArchive: OwnerLifecycleArchiveExporter(
+        database: database,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      ),
     );
     await _seed(database);
   });
@@ -109,6 +114,94 @@ void main() {
     expect(parsed['timeZone'], 'UTC');
     expect((parsed['attempts'] as List).single['evidenceId'], 'attempt-1');
   });
+
+  test('every artifact omits raw provider provenance secrets', () async {
+    const sentinel = 'provider-token-SENTINEL-DO-NOT-EXPORT';
+    await database.customUpdate(
+      'UPDATE answer_attempts SET provider_provenance = ? WHERE id = ?',
+      variables: const [
+        Variable<String>(sentinel),
+        Variable<String>('attempt-1'),
+      ],
+    );
+
+    for (final format in ExportFormat.values) {
+      final artifact = await exports.prepare(
+        format: format,
+        selection: _all,
+        cancellation: ExportCancellation(),
+      );
+      expect(
+        utf8.decode(artifact.bytes, allowMalformed: true),
+        isNot(contains(sentinel)),
+        reason: '$format must use an explicit non-secret allowlist',
+      );
+    }
+  });
+
+  test(
+    'complete owner archive is reachable and saved through export facade',
+    () async {
+      final artifact = await exports.prepare(
+        format: ExportFormat.ownerArchiveJson,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final envelope =
+          jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+      final content = envelope['content'] as Map<String, dynamic>;
+      expect(content['tables'], hasLength(31));
+      expect(content['archiveSchemaVersion'], 1);
+      expect(content['algorithmVersion'], 1);
+      expect(content['databaseSchemaVersion'], 12);
+      expect(content['manifestEntryCount'], 31);
+      expect(artifact.schemaVersion, content['archiveSchemaVersion']);
+      expect(artifact.algorithmVersion, content['algorithmVersion']);
+      expect(artifact.recordCount, content['manifestEntryCount']);
+      expect(artifact.sha256, isNotEmpty);
+
+      final saved = await exports.export(
+        format: ExportFormat.ownerArchiveJson,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      expect(saved.bytesWritten, artifact.bytes.length);
+    },
+  );
+
+  test(
+    'owner archive maps missing active owner to typed unavailable',
+    () async {
+      await database.customUpdate('UPDATE local_owners SET is_active = 0');
+
+      await expectLater(
+        exports.prepare(
+          format: ExportFormat.ownerArchiveJson,
+          selection: const ExportSelection(
+            includeVocabulary: false,
+            includeAttempts: false,
+            includeReading: false,
+          ),
+          cancellation: ExportCancellation(),
+        ),
+        throwsA(
+          isA<ExportException>().having(
+            (error) => error.code,
+            'code',
+            ExportFailureCode.unavailable,
+          ),
+        ),
+      );
+    },
+  );
 
   test('research dataset export stops after consent withdrawal', () async {
     await consent.withdraw();

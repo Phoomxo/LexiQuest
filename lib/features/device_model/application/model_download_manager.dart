@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:crypto/crypto.dart';
@@ -38,6 +39,12 @@ abstract interface class ModelFileVerifier {
   Future<void> verify(String path, ModelManifest manifest);
 }
 
+typedef ModelVerifiedActivationRecorder =
+    Future<void> Function({
+      required String modelVersion,
+      required String completionId,
+    });
+
 final class ModelDownloadManager {
   ModelDownloadManager({
     required this.repository,
@@ -48,6 +55,8 @@ final class ModelDownloadManager {
     this.lockTimeout = const Duration(seconds: 30),
     this.lockRetryDelay = const Duration(milliseconds: 50),
     this.onDownloadCompleted,
+    this.onVerifiedActivation,
+    this.onCachedArtifactVerified,
   });
 
   final ModelDownloadRepository repository;
@@ -58,6 +67,8 @@ final class ModelDownloadManager {
   final Duration lockTimeout;
   final Duration lockRetryDelay;
   final Future<void> Function(String modelVersion)? onDownloadCompleted;
+  final ModelVerifiedActivationRecorder? onVerifiedActivation;
+  final ModelVerifiedActivationRecorder? onCachedArtifactVerified;
   Future<ModelDownloadRecord>? _inFlight;
   ModelCancellation? _activeCancellation;
   bool _disposed = false;
@@ -171,19 +182,28 @@ final class ModelDownloadManager {
     var existing = await repository.find(manifest.recordId);
     if (await finalFile.exists()) {
       if (await _isValidModelFile(finalFile, manifest)) {
-        final recovered = (existing ?? _newRecord(manifest, finalFile.path))
-            .copyWith(
-              state: ModelDownloadState.ready,
-              downloadedBytes: manifest.expectedBytes,
-              updatedAtUtc: nowUtc(),
-              localPath: finalFile.path,
-              clearFailure: true,
-            );
-        if (existing?.state == ModelDownloadState.active &&
-            existing?.localPath == finalFile.path) {
-          return existing!;
+        if (_isPreviouslyVerifiedArtifact(existing, manifest, finalFile)) {
+          if (existing!.state == ModelDownloadState.ready) {
+            await repository.activate(existing);
+          }
+          await _recordVerifiedActivation(
+            manifest,
+            existing,
+            allowLegacy: false,
+            cachedArtifact: true,
+          );
+          return existing.copyWith(state: ModelDownloadState.active);
         }
+        final recoveredBase = existing ?? _newRecord(manifest, finalFile.path);
+        final recovered = recoveredBase.copyWith(
+          state: ModelDownloadState.ready,
+          downloadedBytes: manifest.expectedBytes,
+          updatedAtUtc: _nextUpdatedAt(recoveredBase.updatedAtUtc),
+          localPath: finalFile.path,
+          clearFailure: true,
+        );
         await repository.activate(recovered);
+        await _recordVerifiedActivation(manifest, recovered, allowLegacy: true);
         return recovered.copyWith(state: ModelDownloadState.active);
       }
       await finalFile.delete();
@@ -191,7 +211,7 @@ final class ModelDownloadManager {
         existing = existing.copyWith(
           state: ModelDownloadState.failed,
           downloadedBytes: 0,
-          updatedAtUtc: nowUtc(),
+          updatedAtUtc: _nextUpdatedAt(existing.updatedAtUtc),
           localPath: partial.path,
           failureCode: ModelFailureCode.checksumMismatch,
         );
@@ -210,7 +230,7 @@ final class ModelDownloadManager {
     record = record.copyWith(
       downloadedBytes: downloaded,
       state: ModelDownloadState.downloading,
-      updatedAtUtc: nowUtc(),
+      updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
       localPath: partial.path,
       clearFailure: true,
     );
@@ -248,7 +268,7 @@ final class ModelDownloadManager {
           }
           record = record.copyWith(
             downloadedBytes: downloaded,
-            updatedAtUtc: nowUtc(),
+            updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
           );
           await repository.save(record);
           if (cancellation.isCancelled || _disposed) {
@@ -268,7 +288,7 @@ final class ModelDownloadManager {
       record = record.copyWith(
         state: ModelDownloadState.verifying,
         downloadedBytes: downloaded,
-        updatedAtUtc: nowUtc(),
+        updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
       );
       await repository.save(record);
       final digest = await partial.openRead().transform(sha256).single;
@@ -293,17 +313,12 @@ final class ModelDownloadManager {
       record = record.copyWith(
         state: ModelDownloadState.ready,
         downloadedBytes: downloaded,
-        updatedAtUtc: nowUtc(),
+        updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
         localPath: finalFile.path,
         clearFailure: true,
       );
       await repository.activate(record);
-      try {
-        await onDownloadCompleted?.call(manifest.version);
-      } catch (_) {
-        // Cost observability must not turn an already activated, verified
-        // local model into a user-visible download failure.
-      }
+      await _recordVerifiedActivation(manifest, record, allowLegacy: true);
       return record.copyWith(state: ModelDownloadState.active);
     } on ModelLifecycleException catch (error) {
       final state = error.code == ModelFailureCode.cancelled
@@ -315,7 +330,7 @@ final class ModelDownloadManager {
         retryCount: error.code == ModelFailureCode.cancelled
             ? record.retryCount
             : record.retryCount + 1,
-        updatedAtUtc: nowUtc(),
+        updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
         localPath: partial.path,
         failureCode: error.code,
       );
@@ -359,7 +374,7 @@ final class ModelDownloadManager {
       downloadedBytes: downloadedBytes,
       retryCount: 0,
       state: ModelDownloadState.notStarted,
-      updatedAtUtc: nowUtc(),
+      updatedAtUtc: _currentUtc(),
       localPath: localPath,
     );
   }
@@ -380,6 +395,74 @@ final class ModelDownloadManager {
     }
   }
 
+  bool _isPreviouslyVerifiedArtifact(
+    ModelDownloadRecord? record,
+    ModelManifest manifest,
+    File finalFile,
+  ) {
+    if (record == null ||
+        (record.state != ModelDownloadState.active &&
+            record.state != ModelDownloadState.ready)) {
+      return false;
+    }
+    return record.id == manifest.recordId &&
+        record.modelVersion == manifest.version &&
+        record.expectedChecksum == manifest.expectedSha256 &&
+        record.expectedBytes == manifest.expectedBytes &&
+        record.downloadedBytes == manifest.expectedBytes &&
+        record.localPath == finalFile.path;
+  }
+
+  Future<void> _recordVerifiedActivation(
+    ModelManifest manifest,
+    ModelDownloadRecord record, {
+    required bool allowLegacy,
+    bool cachedArtifact = false,
+  }) async {
+    try {
+      final recorder = cachedArtifact
+          ? onCachedArtifactVerified ?? onVerifiedActivation
+          : onVerifiedActivation;
+      if (recorder != null) {
+        await recorder(
+          modelVersion: manifest.version,
+          completionId: _verifiedCompletionId(manifest, record),
+        );
+      } else if (allowLegacy) {
+        await onDownloadCompleted?.call(manifest.version);
+      }
+    } catch (_) {
+      // Diagnostics must not turn an already activated, verified local model
+      // into a user-visible failure. A later validated open retries the stable
+      // idempotency marker through [onVerifiedActivation].
+    }
+  }
+
+  String _verifiedCompletionId(
+    ModelManifest manifest,
+    ModelDownloadRecord record,
+  ) {
+    final identity = utf8.encode(
+      '${manifest.recordId}\n${manifest.version}\n${manifest.expectedSha256}'
+      '\n${record.updatedAtUtc.millisecondsSinceEpoch}',
+    );
+    return 'verified-${sha256.convert(identity)}';
+  }
+
+  DateTime _currentUtc() {
+    final current = nowUtc();
+    if (!current.isUtc) {
+      throw ArgumentError.value(current, 'nowUtc', 'must return UTC');
+    }
+    return current;
+  }
+
+  DateTime _nextUpdatedAt(DateTime previous) {
+    final current = _currentUtc();
+    if (current.isAfter(previous)) return current;
+    return previous.add(const Duration(milliseconds: 1));
+  }
+
   Future<ModelDownloadRecord> _failAndThrow(
     ModelDownloadRecord record,
     int downloaded,
@@ -391,7 +474,7 @@ final class ModelDownloadManager {
         state: ModelDownloadState.failed,
         downloadedBytes: downloaded,
         retryCount: record.retryCount + 1,
-        updatedAtUtc: nowUtc(),
+        updatedAtUtc: _nextUpdatedAt(record.updatedAtUtc),
         localPath: partialPath,
         failureCode: code,
       ),

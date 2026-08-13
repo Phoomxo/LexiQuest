@@ -1,13 +1,14 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../../runtime/runtime_flag_namespaces.dart';
 import '../domain/cloud_sync_policy.dart';
 import '../domain/sync_gateway.dart';
 
 final class DriftCloudPolicyCache {
   const DriftCloudPolicyCache(this._database);
 
-  static const String flagKey = 'cloudSyncEnabled';
+  static const String flagKey = RuntimeFlagNamespaces.cloudSyncEnabled;
 
   final db.AppDatabase _database;
 

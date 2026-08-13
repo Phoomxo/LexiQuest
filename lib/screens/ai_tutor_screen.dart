@@ -6,6 +6,8 @@ import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../navigation/app_routes.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/voice/presentation/route_voice_session_mixin.dart';
@@ -32,11 +34,13 @@ class AiTutorScreen extends StatefulWidget {
     this.voice,
     this.aiTutor,
     this.speechPractice,
+    this.featureRegistry,
   });
 
   final VoiceUseCases? voice;
   final AiTutorController? aiTutor;
   final SpeechPracticeUseCases? speechPractice;
+  final FeatureRegistry? featureRegistry;
 
   @override
   State<AiTutorScreen> createState() => _AiTutorScreenState();
@@ -299,11 +303,18 @@ class _AiTutorScreenState extends State<AiTutorScreen>
       _isListening = false;
       _isGenerating = false;
     });
+    final featureRegistry =
+        widget.featureRegistry ??
+        AppDependenciesScope.maybeOf(context)?.features;
     await AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: 'ai-tutor/settings',
-        builder: (_) => AiTutorSettingsScreen(aiTutor: _tutor),
+        builder: (_) => ProductionFeatureGate(
+          feature: Feature.aiTutor,
+          registry: featureRegistry,
+          builder: (_) => AiTutorSettingsScreen(aiTutor: _tutor),
+        ),
       ),
     );
     await _loadKeyStatus();
