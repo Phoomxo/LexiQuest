@@ -69,14 +69,17 @@ Assert-Match $gradle `
     'Gradle strictly validates commit, build, and model hash lengths'
 Assert-True $gradle.Contains('rootProject.file(it).canonicalFile') `
     'relative signing storeFile resolves from android root'
+Assert-Match $gradle `
+    'if\s*\(isReleaseArtifact\s*&&\s*!releaseProvenanceReady\)[\s\S]*?throw GradleException' `
+    'release Gradle tasks fail closed when any provenance value is missing or invalid'
 
 $packager = Get-Content -LiteralPath $packagerPath -Raw -Encoding utf8
 foreach ($needle in @(
     'Find-ApkAnalyzer',
     'verify-field-package.ps1',
-    'ORG_GRADLE_PROJECT_lexiquestSourceCommit',
-    'ORG_GRADLE_PROJECT_lexiquestBuildId',
-    'ORG_GRADLE_PROJECT_lexiquestModelSha256',
+    '--android-project-arg=lexiquestSourceCommit=',
+    '--android-project-arg=lexiquestBuildId=',
+    '--android-project-arg=lexiquestModelSha256=',
     "-Verb 'application-id'",
     "-Verb 'version-name'",
     "-Verb 'version-code'",
@@ -87,6 +90,8 @@ foreach ($needle in @(
 )) {
     Assert-True $packager.Contains($needle) "release packager contains $needle"
 }
+Assert-True (-not $packager.Contains('ORG_GRADLE_PROJECT_lexiquest')) `
+    'release provenance has one explicit Flutter-to-Gradle argument source'
 
 Write-Host (
     'Android release provenance tests: {0} passed, {1} failed' -f

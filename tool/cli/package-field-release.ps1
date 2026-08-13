@@ -189,9 +189,6 @@ function Read-PinnedModelSha256 {
 Push-Location -LiteralPath $repoRoot
 $stagingRoot = $null
 $published = $false
-$previousSourceCommit = $env:ORG_GRADLE_PROJECT_lexiquestSourceCommit
-$previousBuildId = $env:ORG_GRADLE_PROJECT_lexiquestBuildId
-$previousModelSha256 = $env:ORG_GRADLE_PROJECT_lexiquestModelSha256
 $keyProperties = $null
 try {
     $resolvedOutput = Resolve-ReleaseOutputPath -Path $OutputPath
@@ -268,10 +265,10 @@ try {
     if (Test-Path -LiteralPath $sourceApk -PathType Leaf) {
         Remove-Item -LiteralPath $sourceApk -Force
     }
-    $env:ORG_GRADLE_PROJECT_lexiquestSourceCommit = $sourceCommit
-    $env:ORG_GRADLE_PROJECT_lexiquestBuildId = $buildId
-    $env:ORG_GRADLE_PROJECT_lexiquestModelSha256 = $modelSha256
     & flutter build apk --release --no-pub `
+        "--android-project-arg=lexiquestSourceCommit=$sourceCommit" `
+        "--android-project-arg=lexiquestBuildId=$buildId" `
+        "--android-project-arg=lexiquestModelSha256=$modelSha256" `
         "--build-name=$($Version.Split('+')[0])" `
         "--build-number=$($Version.Split('+')[1])" `
         --dart-define=LEXIQUEST_CLOUD_SYNC_ENABLED=true `
@@ -406,9 +403,6 @@ try {
         -ForegroundColor Green
 }
 finally {
-    $env:ORG_GRADLE_PROJECT_lexiquestSourceCommit = $previousSourceCommit
-    $env:ORG_GRADLE_PROJECT_lexiquestBuildId = $previousBuildId
-    $env:ORG_GRADLE_PROJECT_lexiquestModelSha256 = $previousModelSha256
     if (
         -not $published -and
         -not [string]::IsNullOrWhiteSpace($stagingRoot) -and

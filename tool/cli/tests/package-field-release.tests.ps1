@@ -43,6 +43,7 @@ function New-PackagerFixture {
     $fakeHome = Join-Path $root 'home'
     $fakeBin = Join-Path $root 'bin'
     $callLog = Join-Path $root 'calls.log'
+    $argumentLog = Join-Path $root 'flutter-args.log'
     foreach ($directory in @($repository, $fakeHome, $fakeBin)) {
         New-Item -ItemType Directory -Path $directory -Force | Out-Null
     }
@@ -116,6 +117,11 @@ keyPassword=TEST_ONLY_NON_SECRET_VALUE
 
     Write-Utf8File -Path (Join-Path $fakeBin 'fake-flutter.ps1') -Content @'
 Add-Content -LiteralPath $env:LEXIQUEST_PACKAGE_TEST_LOG -Value 'flutter'
+[System.IO.File]::WriteAllLines(
+    $env:LEXIQUEST_PACKAGE_TEST_ARGS,
+    [string[]]$args,
+    [System.Text.UTF8Encoding]::new($false)
+)
 $apk = Join-Path (Get-Location) 'build\app\outputs\flutter-apk\app-release.apk'
 New-Item -ItemType Directory -Path (Split-Path -Parent $apk) -Force | Out-Null
 [System.IO.File]::WriteAllBytes($apk, [System.Text.Encoding]::UTF8.GetBytes('fixture-apk'))
@@ -141,21 +147,59 @@ echo apksigner>>"%LEXIQUEST_PACKAGE_TEST_LOG%"
 echo Signer #1 certificate SHA-256 digest: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 exit /b 0
 '@
+    Write-Utf8File -Path (Join-Path $fakeBin 'fake-apkanalyzer.ps1') -Content @'
+Add-Content -LiteralPath $env:LEXIQUEST_PACKAGE_TEST_LOG -Value 'apkanalyzer'
+$verb = "$($args[0]) $($args[1])"
+if ($verb -ceq 'manifest application-id') { 'com.lexiquest.app'; exit 0 }
+if ($verb -ceq 'manifest version-name') { '1.0.0'; exit 0 }
+if ($verb -ceq 'manifest version-code') { '13'; exit 0 }
+if ($verb -ceq 'manifest debuggable') { 'false'; exit 0 }
+if ($verb -ceq 'manifest print') {
+    $projectArguments = @{}
+    if (Test-Path -LiteralPath $env:LEXIQUEST_PACKAGE_TEST_ARGS) {
+        foreach ($argument in Get-Content -LiteralPath `
+            $env:LEXIQUEST_PACKAGE_TEST_ARGS -Encoding utf8) {
+            if (
+                $argument -match
+                    '^--android-project-arg=(?<name>[^=]+)=(?<value>.+)$'
+            ) {
+                $projectArguments[$Matches.name] = $Matches.value
+            }
+        }
+    }
+    $sourceCommit = if ($projectArguments.ContainsKey(
+        'lexiquestSourceCommit'
+    )) {
+        $projectArguments.lexiquestSourceCommit
+    } else {
+        ''
+    }
+    $buildId = if ($projectArguments.ContainsKey('lexiquestBuildId')) {
+        $projectArguments.lexiquestBuildId
+    } else {
+        ''
+    }
+    $modelSha256 = if ($projectArguments.ContainsKey(
+        'lexiquestModelSha256'
+    )) {
+        $projectArguments.lexiquestModelSha256
+    } else {
+        ''
+    }
+    @"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"><application>
+<meta-data android:name="com.lexiquest.release.SOURCE_COMMIT" android:value="$sourceCommit" />
+<meta-data android:name="com.lexiquest.release.BUILD_ID" android:value="$buildId" />
+<meta-data android:name="com.lexiquest.release.MODEL_SHA256" android:value="$modelSha256" />
+</application></manifest>
+"@
+}
+exit 0
+'@
     Write-Utf8File -Path (Join-Path $fakeBin 'apkanalyzer.cmd') -Content @'
 @echo off
-echo apkanalyzer>>"%LEXIQUEST_PACKAGE_TEST_LOG%"
-if "%1 %2"=="manifest application-id" echo com.lexiquest.app
-if "%1 %2"=="manifest version-name" echo 1.0.0
-if "%1 %2"=="manifest version-code" echo 13
-if "%1 %2"=="manifest debuggable" echo false
-if "%1 %2"=="manifest print" (
-  echo ^<manifest xmlns:android="http://schemas.android.com/apk/res/android"^>^<application^>
-  echo ^<meta-data android:name="com.lexiquest.release.SOURCE_COMMIT" android:value="%ORG_GRADLE_PROJECT_lexiquestSourceCommit%" /^>
-  echo ^<meta-data android:name="com.lexiquest.release.BUILD_ID" android:value="%ORG_GRADLE_PROJECT_lexiquestBuildId%" /^>
-  echo ^<meta-data android:name="com.lexiquest.release.MODEL_SHA256" android:value="%ORG_GRADLE_PROJECT_lexiquestModelSha256%" /^>
-  echo ^</application^>^</manifest^>
-)
-exit /b 0
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0fake-apkanalyzer.ps1" %*
+exit /b %ERRORLEVEL%
 '@
 
     Push-Location -LiteralPath $repository
@@ -180,6 +224,7 @@ exit /b 0
         FakeHome = $fakeHome
         FakeBin = $fakeBin
         CallLog = $callLog
+        ArgumentLog = $argumentLog
         PackagerPath = $packagerPath
         SourceCommit = $sourceCommit
     }
@@ -196,6 +241,7 @@ function Invoke-PackagerFixture {
     $previousUserProfile = $env:USERPROFILE
     $previousHome = $env:HOME
     $previousLog = $env:LEXIQUEST_PACKAGE_TEST_LOG
+    $previousArguments = $env:LEXIQUEST_PACKAGE_TEST_ARGS
     $previousErrorAction = $ErrorActionPreference
     $previousEnvironment = @{}
     try {
@@ -204,6 +250,7 @@ function Invoke-PackagerFixture {
         $env:USERPROFILE = $Fixture.FakeHome
         $env:HOME = $Fixture.FakeHome
         $env:LEXIQUEST_PACKAGE_TEST_LOG = $Fixture.CallLog
+        $env:LEXIQUEST_PACKAGE_TEST_ARGS = $Fixture.ArgumentLog
         foreach ($name in $Environment.Keys) {
             $existing = Get-Item -LiteralPath "Env:$name" `
                 -ErrorAction SilentlyContinue
@@ -244,6 +291,7 @@ function Invoke-PackagerFixture {
         $env:USERPROFILE = $previousUserProfile
         $env:HOME = $previousHome
         $env:LEXIQUEST_PACKAGE_TEST_LOG = $previousLog
+        $env:LEXIQUEST_PACKAGE_TEST_ARGS = $previousArguments
         $ErrorActionPreference = $previousErrorAction
         foreach ($name in $Environment.Keys) {
             if ($null -eq $previousEnvironment[$name]) {
@@ -327,6 +375,21 @@ try {
     $calls = Get-Content -LiteralPath $fixture.CallLog -Raw -Encoding utf8
     Assert-True ($calls.Contains('runtime-verifier')) `
         'the release runtime verifier runs before publication'
+    $flutterArguments = @(
+        Get-Content -LiteralPath $fixture.ArgumentLog -Encoding utf8
+    )
+    Assert-True ($flutterArguments -ccontains (
+        '--android-project-arg=lexiquestSourceCommit=' +
+            $fixture.SourceCommit
+    )) 'Flutter receives the exact frozen source commit as a Gradle property'
+    Assert-True ($flutterArguments -ccontains (
+        '--android-project-arg=lexiquestBuildId=' +
+            $fixture.SourceCommit.Substring(0, 12)
+    )) 'Flutter receives the exact build ID as a Gradle property'
+    Assert-True ($flutterArguments -ccontains (
+        '--android-project-arg=lexiquestModelSha256=' +
+            'D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B'
+    )) 'Flutter receives the exact model SHA-256 as a Gradle property'
     $packageRoot = Join-Path $fixture.Repository 'build\field-release'
     $manifestPath = Join-Path $packageRoot 'release-manifest.json'
     Assert-True (Test-Path -LiteralPath $manifestPath -PathType Leaf) `
