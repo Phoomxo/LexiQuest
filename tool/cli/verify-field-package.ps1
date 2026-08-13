@@ -6,14 +6,16 @@ param(
         Join-Path $env:USERPROFILE `
             '.lexiquest\signing\signing-metadata.json'
     ),
-    [string]$RuntimeVerifierPath = (
-        Join-Path $PSScriptRoot 'verify-apk-model-runtime.ps1'
-    )
+    [string]$RuntimeVerifierPath = ''
 )
 
 Set-StrictMode -Version 3.0
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
+if ([string]::IsNullOrWhiteSpace($RuntimeVerifierPath)) {
+    $RuntimeVerifierPath = Join-Path $PSScriptRoot `
+        'verify-apk-model-runtime.ps1'
+}
 
 function Resolve-InputPath {
     param([Parameter(Mandatory)][string]$Path)

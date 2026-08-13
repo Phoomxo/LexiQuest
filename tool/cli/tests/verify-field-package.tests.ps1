@@ -44,10 +44,21 @@ function Invoke-Verifier {
     try {
         $env:PATH = $FakeBin + [System.IO.Path]::PathSeparator + $previousPath
         $ErrorActionPreference = 'Continue'
-        $output = & powershell -NoProfile -ExecutionPolicy Bypass -File `
-            $VerifierPath -PackagePath $PackagePath `
-            -SigningMetadataPath $SigningMetadataPath `
-            -RuntimeVerifierPath $RuntimeVerifierPath 2>&1
+        $arguments = @(
+            '-NoProfile',
+            '-ExecutionPolicy',
+            'Bypass',
+            '-File',
+            $VerifierPath,
+            '-PackagePath',
+            $PackagePath,
+            '-SigningMetadataPath',
+            $SigningMetadataPath
+        )
+        if (-not [string]::IsNullOrWhiteSpace($RuntimeVerifierPath)) {
+            $arguments += @('-RuntimeVerifierPath', $RuntimeVerifierPath)
+        }
+        $output = & powershell @arguments 2>&1
         return [pscustomobject]@{
             ExitCode = [int]$LASTEXITCODE
             Output = ($output -join "`n")
@@ -113,6 +124,16 @@ param([string]$ApkPath, [string]$BuildMode)
 if ($BuildMode -cne 'Release') { exit 19 }
 exit 0
 '@
+    $standaloneVerifierPath = Join-Path $tempRoot `
+        'standalone\tool\cli\verify-field-package.ps1'
+    New-Item -ItemType Directory -Path (
+        Split-Path -Parent $standaloneVerifierPath
+    ) -Force | Out-Null
+    Copy-Item -LiteralPath $verifierPath -Destination $standaloneVerifierPath
+    Copy-Item -LiteralPath $runtimeVerifierPath -Destination (
+        Join-Path (Split-Path -Parent $standaloneVerifierPath) `
+            'verify-apk-model-runtime.ps1'
+    )
     Write-Utf8File -Path (Join-Path $fakeBin 'apksigner.cmd') -Content @'
 @echo off
 echo Signer #1 certificate SHA-256 digest: AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
@@ -132,6 +153,13 @@ if "%1 %2"=="manifest print" (
 )
 exit /b 0
 "@
+
+    $result = Invoke-Verifier -VerifierPath $standaloneVerifierPath `
+        -PackagePath $packageRoot `
+        -SigningMetadataPath $signingMetadataPath `
+        -FakeBin $fakeBin
+    Assert-True ($result.ExitCode -eq 0) `
+        'standalone package verification resolves its sibling runtime verifier'
 
     $result = Invoke-Verifier -VerifierPath $verifierPath `
         -PackagePath $packageRoot `
