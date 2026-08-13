@@ -12,19 +12,19 @@ owner evidence.
 ## Artifact boundary
 
 - Artifact source:
-  `4e4b398e5dc19a29a4f81953e16b084bfe0400d3`
+  `c55f7bb13705256ecf39b9ce62ac524d0a1ad8f1`
 - APK SHA-256:
-  `D455CD3FB6EBEB122F4CE84297195774480B59DFF795B05AE66644D0B392343A`
+  `3C699B0237789E30DFB32429BE72415B8D0A4CA1CC5F0AD1C7FEAED2BB7B312C`
 - Signing-certificate SHA-256:
   `E1B00E17896BFB73FE0DC42429768B966465213D49A8A5165DE06688CC8FDC1F`
-- Version/build: `1.0.0+14` / `4e4b398e5dc1`
+- Version/build: `1.0.0+14` / `c55f7bb13705`
 - Model SHA-256:
   `D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B`
 - Package: `build/field-release`
 - Ignored evidence shell: `field/evidence/release-evidence.json`
 
 The package and its release model runtime passed independent verification for
-artifact source `4e4b398`. Only declared final-metadata documentation follows
+artifact source `c55f7bb`. Only declared final-metadata documentation follows
 that frozen source.
 
 ## Physical-device matrix
@@ -81,7 +81,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
 Result: `blocked-external` is expected until genuine records exist. The v2
 evidence shell remains `pending` for Cloud controls/cost, all three physical
 tiers, private references, beta/rollback, and owner approval. The verifier
-binds every accepted record to source `4e4b398`, the +14 APK, a signed raw
+binds every accepted record to source `c55f7bb`, the +14 APK, a signed raw
 source envelope, and (for device outcomes) the revalidated physical collector
 receipt.
 

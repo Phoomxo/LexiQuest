@@ -2,7 +2,7 @@
 
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
 Release reconciliation and the signed internal artifact are both bound to
-`4e4b398e5dc19a29a4f81953e16b084bfe0400d3`; later changes are limited to
+`c55f7bb13705256ecf39b9ce62ac524d0a1ad8f1`; later changes are limited to
 declared final-metadata documents.
 
 This ledger is an inventory, not a release claim. It contains all 15 members of
@@ -369,7 +369,7 @@ the frozen product-completion gate reruns them. This is local `verified`
 evidence at the release-control level; it does not rewrite the more specific
 route rows above or promote any row to `field-certified`.
 
-The current signed internal APK is independently bound to source `4e4b398`,
+The current signed internal APK is independently bound to source `c55f7bb`,
 package `com.lexiquest.app`, version `1.0.0+14`, one pinned certificate, exact
 APK and model hashes, and embedded source/build/model provenance. It is the
 current frozen candidate; only declared final-metadata commits may follow it.
