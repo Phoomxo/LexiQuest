@@ -97,6 +97,9 @@ if ($null -eq $cloudControls) {
         appCheckConfigured = $false
         appCheckValidTrafficObserved = $false
         appCheckEnforced = $false
+        budgetAlertsConfigured = $false
+        budgetAlertsNotApplicable = $false
+        billingMode = 'pending'
         assetLinksVerified = $false
         cloudKillSwitchVerified = $false
         appCheckObservedAtUtc = ''

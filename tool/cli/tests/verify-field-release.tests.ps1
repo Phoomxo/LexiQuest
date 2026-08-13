@@ -1897,6 +1897,14 @@ foreach ($needle in @(
 )) {
     Assert-True $assemblerText.Contains($needle) "assembler contains $needle"
 }
+foreach ($requiredCloudDefault in @(
+    'budgetAlertsConfigured = $false',
+    'budgetAlertsNotApplicable = $false',
+    "billingMode = 'pending'"
+)) {
+    Assert-True $assemblerText.Contains($requiredCloudDefault) `
+        "pending evidence shell contains $requiredCloudDefault"
+}
 Assert-True (
     $assemblerText -notmatch
         '\[switch\]\$(BudgetAlertsConfigured|NoBillingAccount|OwnerApproved)'
