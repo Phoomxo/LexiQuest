@@ -115,6 +115,18 @@ try {
         & powershell -NoProfile -ExecutionPolicy Bypass -File `
             'tool/cli/tests/verify-product-completion.tests.ps1'
     }
+    Invoke-Gate 'Release packaging contracts' {
+        foreach ($contract in @(
+            'tool/cli/tests/android-release-signing.tests.ps1',
+            'tool/cli/tests/android-release-provenance.tests.ps1',
+            'tool/cli/tests/package-field-release.tests.ps1',
+            'tool/cli/tests/verify-field-package.tests.ps1',
+            'tool/cli/tests/verify-field-release.tests.ps1'
+        )) {
+            & powershell -NoProfile -ExecutionPolicy Bypass -File $contract
+            if ($LASTEXITCODE -ne 0) { break }
+        }
+    }
     Invoke-Gate 'Dart format' {
         # Contract marker: dart format --output=none --set-exit-if-changed
         & dart format --output=none --set-exit-if-changed $dartFiles

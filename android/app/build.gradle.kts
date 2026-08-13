@@ -13,10 +13,30 @@ if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(FileInputStream(keystorePropertiesFile))
 }
 
-val releaseSigningReady = keystoreProperties["storeFile"] != null &&
-    keystoreProperties["storePassword"] != null &&
-    keystoreProperties["keyAlias"] != null &&
-    keystoreProperties["keyPassword"] != null
+val storeFileValue =
+    keystoreProperties.getProperty("storeFile")?.trim().orEmpty()
+val releaseStoreFile = storeFileValue
+    .takeIf { it.isNotEmpty() }
+    ?.let { rootProject.file(it).canonicalFile }
+val releaseSigningReady = releaseStoreFile?.isFile == true &&
+    listOf("storePassword", "keyAlias", "keyPassword").all { key ->
+        !keystoreProperties.getProperty(key).isNullOrBlank()
+    }
+
+val releaseSourceCommit = providers
+    .gradleProperty("lexiquestSourceCommit")
+    .orNull?.trim()?.lowercase().orEmpty()
+val releaseBuildId = providers
+    .gradleProperty("lexiquestBuildId")
+    .orNull?.trim()?.lowercase().orEmpty()
+val releaseModelSha256 = providers
+    .gradleProperty("lexiquestModelSha256")
+    .orNull?.trim()?.uppercase().orEmpty()
+val releaseProvenanceReady =
+    Regex("^[0-9a-f]{40}$").matches(releaseSourceCommit) &&
+        Regex("^[0-9a-f]{12}$").matches(releaseBuildId) &&
+        releaseBuildId == releaseSourceCommit.take(12) &&
+        Regex("^[0-9A-F]{64}$").matches(releaseModelSha256)
 
 android {
     namespace = "com.lexiquest.app"
@@ -46,7 +66,7 @@ android {
     signingConfigs {
         create("release") {
             if (releaseSigningReady) {
-                storeFile = file(keystoreProperties["storeFile"] as String)
+                storeFile = releaseStoreFile
                 storePassword = keystoreProperties["storePassword"] as String
                 keyAlias = keystoreProperties["keyAlias"] as String
                 keyPassword = keystoreProperties["keyPassword"] as String
@@ -57,6 +77,16 @@ android {
     buildTypes {
         release {
             signingConfig = signingConfigs.getByName("release")
+            manifestPlaceholders.putAll(
+                mapOf(
+                    "lexiquestSourceCommit" to
+                        releaseSourceCommit.ifEmpty { "missing" },
+                    "lexiquestBuildId" to
+                        releaseBuildId.ifEmpty { "missing" },
+                    "lexiquestModelSha256" to
+                        releaseModelSha256.ifEmpty { "missing" },
+                ),
+            )
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
@@ -76,6 +106,12 @@ gradle.taskGraph.whenReady {
                 "(see android/key.properties.example) with storeFile, " +
                 "storePassword, keyAlias and keyPassword before building a " +
                 "release artifact. Debug builds are unaffected.",
+        )
+    }
+    if (isReleaseArtifact && !releaseProvenanceReady) {
+        throw GradleException(
+            "Release provenance is missing or invalid. Use " +
+                "tool/cli/package-field-release.ps1.",
         )
     }
 }

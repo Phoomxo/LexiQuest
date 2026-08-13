@@ -20,33 +20,6 @@ function Resolve-RepositoryPath {
     return [System.IO.Path]::GetFullPath((Join-Path $repoRoot $Path))
 }
 
-function Find-ApkSigner {
-    $command = Get-Command apksigner -ErrorAction SilentlyContinue
-    if ($null -ne $command) {
-        return $command.Source
-    }
-    $sdkCandidates = @(
-        $env:ANDROID_SDK_ROOT,
-        $env:ANDROID_HOME,
-        (Join-Path $env:LOCALAPPDATA 'Android\Sdk')
-    ) | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
-    foreach ($sdk in $sdkCandidates) {
-        $buildTools = Join-Path $sdk 'build-tools'
-        if (-not (Test-Path -LiteralPath $buildTools -PathType Container)) {
-            continue
-        }
-        $candidate = Get-ChildItem -LiteralPath $buildTools -Directory |
-            Sort-Object Name -Descending |
-            ForEach-Object { Join-Path $_.FullName 'apksigner.bat' } |
-            Where-Object { Test-Path -LiteralPath $_ -PathType Leaf } |
-            Select-Object -First 1
-        if ($null -ne $candidate) {
-            return $candidate
-        }
-    }
-    throw 'apksigner is required to verify the release certificate.'
-}
-
 $resolvedEvidence = Resolve-RepositoryPath $EvidencePath
 $resolvedPackage = Resolve-RepositoryPath $ParticipantPackagePath
 if (-not (Test-Path -LiteralPath $resolvedEvidence -PathType Leaf)) {
@@ -67,6 +40,7 @@ $releaseManifest =
     Get-Content -LiteralPath $releaseManifestPath -Raw -Encoding utf8 |
         ConvertFrom-Json
 foreach ($field in @(
+    'apkPath',
     'apkSha256',
     'signingCertificateSha256',
     'packageName',
@@ -81,26 +55,22 @@ foreach ($field in @(
         throw "Evidence artifact.$field does not match release-manifest.json."
     }
 }
-$apkPath = Resolve-RepositoryPath ([string]$evidence.artifact.apkPath)
+$apkPath = [System.IO.Path]::GetFullPath(
+    (Join-Path $resolvedPackage ([string]$releaseManifest.artifact.apkPath))
+)
 if (-not (Test-Path -LiteralPath $apkPath -PathType Leaf)) {
     throw "Release APK is missing: $apkPath"
 }
 
-$actualApkSha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash
-$apkSigner = Find-ApkSigner
-$signatureOutput = & $apkSigner verify --verbose --print-certs $apkPath 2>&1
+& powershell -NoProfile -ExecutionPolicy Bypass -File `
+    (Join-Path $PSScriptRoot 'verify-field-package.ps1') `
+    -PackagePath $resolvedPackage
 if ([int]$LASTEXITCODE -ne 0) {
-    throw "apksigner rejected the release APK: $signatureOutput"
+    throw 'The immutable field package failed independent verification.'
 }
-$certificateMatch = [regex]::Match(
-    ($signatureOutput -join "`n"),
-    '(?m)^(?:Signer #1|V\d+(?:\.\d+)? Signer): ' +
-        'certificate SHA-256 digest:\s*([A-Fa-f0-9:]{64,95})$'
-)
-if (-not $certificateMatch.Success) {
-    throw 'apksigner did not report a SHA-256 signing certificate digest.'
-}
-$actualCertificateSha256 = $certificateMatch.Groups[1].Value
+$actualApkSha256 = (Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash
+$actualCertificateSha256 =
+    [string]$releaseManifest.artifact.signingCertificateSha256
 
 $evidenceErrors = Test-LexiQuestFieldReleaseEvidence `
     -Evidence $evidence `
@@ -117,13 +87,6 @@ if ($evidenceErrors.Count -gt 0) {
     (Join-Path $PSScriptRoot 'verify-product-completion.ps1')
 if ([int]$LASTEXITCODE -ne 0) {
     throw 'P7 product completion gate failed.'
-}
-
-& powershell -NoProfile -ExecutionPolicy Bypass -File `
-    (Join-Path $PSScriptRoot 'verify-apk-model-runtime.ps1') `
-    -ApkPath $apkPath
-if ([int]$LASTEXITCODE -ne 0) {
-    throw 'Release APK model runtime integrity failed.'
 }
 
 Write-Host 'LexiQuest P8 field release gate: PASS' -ForegroundColor Green

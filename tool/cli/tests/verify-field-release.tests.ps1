@@ -285,11 +285,11 @@ $gateText = Get-Content -LiteralPath (
     Join-Path $repoRoot 'tool/cli/verify-field-release.ps1'
 ) -Raw -Encoding utf8
 foreach ($needle in @(
-    'apksigner',
-    'V\d+',
+    'verify-field-package.ps1',
+    "Join-Path `$resolvedPackage",
+    "'apkPath'",
     'Get-FileHash',
     'verify-product-completion.ps1',
-    'verify-apk-model-runtime.ps1',
     'Test-LexiQuestFieldReleaseEvidence'
 )) {
     Assert-True $gateText.Contains($needle) "final gate contains $needle"
@@ -338,9 +338,7 @@ foreach ($needle in @(
     'Get-FileHash',
     'git status --porcelain',
     'docs/field',
-    'tool/cli/package-field-release.ps1',
-    'tool/cli/lib/field-release-evidence.ps1',
-    'tool/cli/new-field-release-evidence.ps1'
+    '--untracked-files=all'
 )) {
     Assert-True $packagerText.Contains($needle) "packager contains $needle"
 }
