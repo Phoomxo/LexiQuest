@@ -142,6 +142,7 @@ try {
             researchProtocolRef = 'private:research-protocol'
         }
         devices = @(
+            (New-Device 'low' '0'),
             (New-Device 'mid' '1'),
             (New-Device 'high' '2')
         )
@@ -163,6 +164,22 @@ try {
     )
     Assert-True ($errors.Count -eq 0) `
         'complete, reconciled evidence passes the pure validator'
+
+    $completeDevices = @($evidence.devices)
+    $evidence.devices = @(
+        $completeDevices | Where-Object { $_.tier -cne 'low' }
+    )
+    $errors = @(
+        Test-LexiQuestFieldReleaseEvidence `
+            -Evidence $evidence `
+            -ActualApkSha256 ('A' * 64) `
+            -ActualCertificateSha256 ('B' * 64) `
+            -ParticipantPackagePath $tempRoot
+    )
+    Assert-True (
+        ($errors -join "`n") -match 'low-tier device record is required'
+    ) 'missing low-tier physical evidence blocks field acceptance'
+    $evidence.devices = $completeDevices
 
     $evidence.cloudControls.budgetAlertsConfigured = $false
     $evidence.cloudControls.budgetAlertsNotApplicable = $true

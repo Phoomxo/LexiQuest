@@ -179,11 +179,14 @@ function Test-LexiQuestFieldReleaseEvidence {
     }
 
     $devices = @($Evidence.devices)
-    if ($devices.Count -ne 2) {
-        $errors.Add('Exactly two physical Android device records are required (mid and high tier).')
+    if ($devices.Count -ne 3) {
+        $errors.Add(
+            'Exactly three physical Android device records are required ' +
+                '(low, mid, and high tier).'
+        )
     }
     $tiers = @($devices | ForEach-Object { [string]$_.tier })
-    foreach ($tier in @('mid', 'high')) {
+    foreach ($tier in @('low', 'mid', 'high')) {
         if (@($tiers | Where-Object { $_ -eq $tier }).Count -ne 1) {
             $errors.Add("Exactly one $tier-tier device record is required.")
         }
