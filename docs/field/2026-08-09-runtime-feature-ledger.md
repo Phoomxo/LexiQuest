@@ -1,10 +1,9 @@
 # Runtime Feature Ledger — 2026-08-09 P0 Baseline
 
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
-Release reconciliation verified through
-`555b0b9343ce78cbf04692f048bf049d90fb559f`; the signed internal artifact
-remains bound to its actual source
-`c199d501adb8b83d0a1b9e7bd529c9f123f168f9`.
+Release reconciliation and the signed internal artifact are both bound to
+`4e4b398e5dc19a29a4f81953e16b084bfe0400d3`; later changes are limited to
+declared final-metadata documents.
 
 This ledger is an inventory, not a release claim. It contains all 15 members of
 `Feature.values` and all 49 files returned by `rg --files lib/screens` (64 rows
@@ -370,12 +369,10 @@ the frozen product-completion gate reruns them. This is local `verified`
 evidence at the release-control level; it does not rewrite the more specific
 route rows above or promote any row to `field-certified`.
 
-The historical signed internal APK is independently bound to source `c199d50`, package
-`com.lexiquest.app`, version `1.0.0+13`, one pinned certificate, exact APK and
-model hashes, and embedded source/build/model provenance. Post-package verifier
-and integration-harness changes mean it is no longer the final frozen
-candidate; the stricter verifier requires a rebuild from a frozen source and
-permits only declared final-metadata commits afterward.
+The current signed internal APK is independently bound to source `4e4b398`,
+package `com.lexiquest.app`, version `1.0.0+14`, one pinned certificate, exact
+APK and model hashes, and embedded source/build/model provenance. It is the
+current frozen candidate; only declared final-metadata commits may follow it.
 
 Object Scanner, Speech Practice, and AI Tutor remain visible `limited`
 device/provider-dependent capabilities without exact-artifact physical or live
@@ -383,8 +380,9 @@ provider certification. They are therefore explicit final-acceptance blockers,
 not hidden or field-certified rows. The exact low/mid/high device matrix, App
 Check/provider controls, hosted asset links, cloud kill-switch drill, current
 cost evidence, private channels, beta operations, rollback drill, and owner
-approval are also absent. The field verifier fails closed on the source/artifact
-mismatch before it can consider those external records.
+approval are also absent. The field verifier fails closed across source/artifact,
+receipt/payload, device/release, cost, beta, rollback, and approval checks rather
+than accepting a host fake or pending record.
 
 Accordingly, the reconciled P10 decision is **NOT READY**. No host fake,
 emulator, debug APK, historical record, pending reference, or unknown cost is

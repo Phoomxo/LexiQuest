@@ -7,19 +7,19 @@ certification, beta approval, or release-readiness decision.
 ## Frozen source and artifact
 
 - Artifact source commit:
-  `c199d501adb8b83d0a1b9e7bd529c9f123f168f9`
-- Build ID: `c199d501adb8`
+  `4e4b398e5dc19a29a4f81953e16b084bfe0400d3`
+- Build ID: `4e4b398e5dc1`
 - Package: `com.lexiquest.app`
-- Version: `1.0.0+13`
-- APK: `lexiquest-1.0.0+13.apk`
-- APK size: `113567712` bytes
+- Version: `1.0.0+14`
+- APK: `lexiquest-1.0.0+14.apk`
+- APK size: `113567700` bytes
 - APK SHA-256:
-  `EAE42C9193CCBABF0EEA8ECA5B0FB089FA5D2BD0F9E717D3ED62052184CD0158`
+  `D455CD3FB6EBEB122F4CE84297195774480B59DFF795B05AE66644D0B392343A`
 - Signing-certificate SHA-256:
   `E1B00E17896BFB73FE0DC42429768B966465213D49A8A5165DE06688CC8FDC1F`
 - Device-model SHA-256:
   `D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B`
-- Package manifest generated at: `2026-08-13T13:36:54.1827172Z`
+- Package manifest generated at: `2026-08-13T16:40:42.3018171Z`
 
 The ignored package directory is `build/field-release`. Its
 `release-manifest.json` contains the relative APK filename and the same values
@@ -59,10 +59,13 @@ Two earlier attempts produced no APK or package:
    because `--no-pub` preserved a stale Android registrant referencing the
    development-only `integration_test` plugin outside the release classpath.
 
-The final authorized attempt at `c199d50` retained explicit project arguments
+The earlier authorized attempt at `c199d50` retained explicit project arguments
 and allowed Flutter's normal pub freshness step to regenerate release-mode
-plugin registration. It produced and verified the single artifact recorded
-above. No retry followed the successful build.
+plugin registration. Task 12 then required a new candidate after verifier and
+field-evidence hardening. At clean commit `4e4b398`, the stale ignored +13
+package was archived without deletion; one actual +14 release build produced
+and verified the single artifact recorded above. No release-build retry
+followed that successful build.
 
 ## Tool boundary
 
@@ -71,9 +74,11 @@ above. No retry followed the successful build.
 - Dart: `3.12.2`
 - Android SDK build-tools: `37.0.0`
 - `apksigner`: `0.9`
-- Product completion gate on the frozen source: PASS
+- Product completion gate on the frozen source: PASS; one initial committed-head
+  run had a field-journey harness failure, all three exact journeys then passed
+  individually, and one bounded full-gate rerun passed.
 - Focused release contracts: Android signing 54/54, provenance 28/28,
-  packager 27/27, independent package verifier 4/4, field verifier 58/58,
+  packager 27/27, independent package verifier 5/5, field verifier 152/152,
   product-gate contract PASS
 - Stable manual release-packaging diff review: CLEAN
 - MaxPlus advisory review: unavailable after the prior `invalidKey`; it was not
