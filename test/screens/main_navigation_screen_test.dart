@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
@@ -88,6 +89,28 @@ void main() {
     expect(find.text('สแกนวัตถุ'), findsOneWidget);
     expect(find.text('ฝึกพูดตามเสียง'), findsOneWidget);
     expect(find.text('AI Tutor'), findsOneWidget);
+  });
+
+  testWidgets('only the selected indexed destination keeps tickers active', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: MainNavigationScreen(
+          featureRegistry: BuildFeatureRegistry.allEnabled(),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    await tester.tap(find.byKey(const ValueKey<String>('home/mastery')));
+    await tester.pump();
+
+    final masteryContext = tester.element(find.byType(MasteryDashboardScreen));
+    expect(TickerMode.valuesOf(masteryContext).enabled, isTrue);
+    await tester.tap(find.byKey(const ValueKey<String>('home/vocabulary')));
+    await tester.pump();
+    expect(TickerMode.valuesOf(masteryContext).enabled, isFalse);
   });
 
   testWidgets('live emergency-off rebuilds mounted navigation', (

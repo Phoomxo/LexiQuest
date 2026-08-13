@@ -16,11 +16,16 @@ class ProfileSettingsScreen extends StatefulWidget {
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   Future<ProgressSnapshot>? _load;
+  var _wasActive = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (_load != null) return;
+    final isActive = TickerMode.valuesOf(context).enabled;
+    if (!isActive || (_wasActive && _load != null)) {
+      _wasActive = isActive;
+      return;
+    }
     final loader =
         widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
     _load = loader == null
@@ -28,6 +33,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             StateError('progress dependency unavailable'),
           )
         : loader();
+    _wasActive = true;
   }
 
   @override

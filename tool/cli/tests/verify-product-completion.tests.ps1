@@ -27,6 +27,13 @@ foreach ($needle in @(
     'test/screens/accessibility_smoke_test.dart',
     'test/scenarios/runtime_kill_switch_journey_test.dart',
     'test/scenarios/complete_owner_export_delete_test.dart',
+    "Invoke-Gate 'Production field-trial integration journeys'",
+    '-d flutter-tester',
+    'foreach ($integrationTest in $integrationTests)',
+    'integration_test/field_trial_core_journey_test.dart',
+    'integration_test/field_trial_feature_controls_test.dart',
+    'integration_test/field_trial_media_smoke_test.dart',
+    'integration_test/support/field_trial_external_fakes.dart',
     'npm run test:auth',
     'npm run test:rules',
     'flutter build apk --debug',
@@ -78,6 +85,40 @@ foreach ($relativePath in @(
 )) {
     if (-not (Test-Path -LiteralPath (Join-Path $repoRoot $relativePath) -PathType Leaf)) {
         Write-Error "Required Task 8 hardening test is missing: $relativePath"
+    }
+}
+
+$integrationGateStart = $gate.IndexOf(
+    "Invoke-Gate 'Production field-trial integration journeys'",
+    [StringComparison]::Ordinal
+)
+$firebaseAuthGateStart = $gate.IndexOf(
+    "Invoke-Gate 'Firebase Auth emulator journey'",
+    [StringComparison]::Ordinal
+)
+if ($integrationGateStart -lt 0 -or `
+    $firebaseAuthGateStart -le $integrationGateStart) {
+    Write-Error (
+        'Production field-trial integration journeys must run as a named ' +
+        'phase before external emulator and physical-device assertions.'
+    )
+}
+
+foreach ($relativePath in @(
+    'integration_test/field_trial_core_journey_test.dart',
+    'integration_test/field_trial_feature_controls_test.dart',
+    'integration_test/field_trial_media_smoke_test.dart'
+)) {
+    $source = Get-Content -LiteralPath (Join-Path $repoRoot $relativePath) `
+        -Raw -Encoding utf8
+    foreach ($factory in @(
+        'exportStoreFactory:',
+        'cameraGatewayFactory:',
+        'speechRecognitionGatewayFactory:'
+    )) {
+        if (-not $source.Contains($factory)) {
+            Write-Error "$relativePath must explicitly inject $factory"
+        }
     }
 }
 

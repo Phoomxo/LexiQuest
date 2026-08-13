@@ -60,7 +60,11 @@ $dartFiles = @(
     'test/scenarios/ai_voice_fallback_journey_test.dart',
     'test/scenarios/runtime_kill_switch_journey_test.dart',
     'test/scenarios/complete_owner_export_delete_test.dart',
-    'test/screens'
+    'test/screens',
+    'integration_test/field_trial_core_journey_test.dart',
+    'integration_test/field_trial_feature_controls_test.dart',
+    'integration_test/field_trial_media_smoke_test.dart',
+    'integration_test/support/field_trial_external_fakes.dart'
 )
 
 $flutterTests = @(
@@ -99,6 +103,12 @@ $flutterTests = @(
     'test/screens/word_scramble_screen_test.dart'
 )
 
+$integrationTests = @(
+    'integration_test/field_trial_core_journey_test.dart',
+    'integration_test/field_trial_feature_controls_test.dart',
+    'integration_test/field_trial_media_smoke_test.dart'
+)
+
 Push-Location -LiteralPath $repoRoot
 try {
     Invoke-Gate 'CLI contract' {
@@ -115,6 +125,15 @@ try {
     Invoke-Gate 'Product completion tests' {
         & flutter test --no-pub --timeout 90s --reporter compact $flutterTests
     }
+    Invoke-Gate 'Production field-trial integration journeys' {
+        foreach ($integrationTest in $integrationTests) {
+            & flutter test -d flutter-tester --no-pub --timeout 90s `
+                --reporter compact $integrationTest
+            if ($LASTEXITCODE -ne 0) { break }
+        }
+    }
+    # Host-fake journeys above prove UI/composition behavior only. Physical
+    # camera, microphone, and LiteRT assertions remain in their device gates.
     Invoke-Gate 'Firebase Auth emulator journey' {
         & npm run test:auth
     }

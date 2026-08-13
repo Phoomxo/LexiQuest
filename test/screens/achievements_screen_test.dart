@@ -29,6 +29,27 @@ void main() {
     expect(find.textContaining('จำนวนหลักฐาน: 0'), findsOneWidget);
     expect(find.byIcon(Icons.workspace_premium_outlined), findsNothing);
   });
+
+  testWidgets('does not load while its indexed destination is inactive', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TickerMode(
+          enabled: false,
+          child: AchievementsScreen(
+            loader: () async {
+              calls += 1;
+              return _empty;
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(calls, 0);
+  });
 }
 
 final _withAchievement = ProgressSnapshot(

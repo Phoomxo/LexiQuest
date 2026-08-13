@@ -39,6 +39,7 @@ import '../features/export/application/export_use_cases.dart';
 import '../features/export/application/owner_lifecycle_archive.dart';
 import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
+import '../features/export/domain/export_contracts.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -51,6 +52,7 @@ import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/data/plugin_camera_gateway.dart';
 import '../features/media_practice/data/plugin_speech_recognition_gateway.dart';
+import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/motivation/data/drift_streak_repository.dart';
 import '../features/quest/application/quest_catalog_provider.dart';
@@ -97,6 +99,9 @@ typedef AppDatabaseFactory = AppDatabase Function();
 typedef SyncGatewayFactory = SyncGateway Function();
 typedef AccountGatewayFactory = AccountGateway Function();
 typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
+typedef ExportArtifactStoreFactory = ExportArtifactStore Function();
+typedef CameraGatewayFactory = CameraGateway Function();
+typedef SpeechRecognitionGatewayFactory = SpeechRecognitionGateway Function();
 typedef ManagedAiTutorBuilder =
     FutureOr<ManagedAiTutor> Function(AiTutorBuildContext context);
 typedef ManagedVoiceBuilder =
@@ -104,6 +109,10 @@ typedef ManagedVoiceBuilder =
 
 DateTime _runtimeFeatureSystemNowUtc() => DateTime.now().toUtc();
 DateTime _aiSystemNowUtc() => DateTime.now().toUtc();
+ExportArtifactStore _productionExportStore() => const FileSelectorExportStore();
+CameraGateway _productionCameraGateway() => PluginCameraGateway();
+SpeechRecognitionGateway _productionSpeechRecognitionGateway() =>
+    PluginSpeechRecognitionGateway();
 
 Future<void> Function() _retainAsyncDisposer(Future<void> Function() value) =>
     value;
@@ -225,9 +234,17 @@ final class AppBootstrap {
     DateTime Function()? runtimeFeatureNowUtc,
     DateTime Function()? aiNowUtc,
     this.scheduleRuntimeFeatureExpiry,
+    ExportArtifactStoreFactory? exportStoreFactory,
+    CameraGatewayFactory? cameraGatewayFactory,
+    SpeechRecognitionGatewayFactory? speechRecognitionGatewayFactory,
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
-  }) : buildAiTutor = buildAiTutor ?? _buildManagedAiTutor,
+  }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
+       cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
+       speechRecognitionGatewayFactory =
+           speechRecognitionGatewayFactory ??
+           _productionSpeechRecognitionGateway,
+       buildAiTutor = buildAiTutor ?? _buildManagedAiTutor,
        buildVoice = buildVoice ?? _buildManagedVoice,
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
@@ -265,6 +282,9 @@ final class AppBootstrap {
   final DateTime Function() runtimeFeatureNowUtc;
   final DateTime Function() aiNowUtc;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
+  final ExportArtifactStoreFactory exportStoreFactory;
+  final CameraGatewayFactory cameraGatewayFactory;
+  final SpeechRecognitionGatewayFactory speechRecognitionGatewayFactory;
   final ManagedAiTutorBuilder buildAiTutor;
   final ManagedVoiceBuilder buildVoice;
   Future<AppDependencies>? _initialization;
@@ -573,7 +593,7 @@ final class AppBootstrap {
     );
     final exports = ExportUseCases(
       reader: DriftExportReader(database),
-      store: const FileSelectorExportStore(),
+      store: exportStoreFactory(),
       nowUtc: () => DateTime.now().toUtc(),
       loadThaiFont: () =>
           rootBundle.load('assets/fonts/NotoSansThai-Variable.ttf'),
@@ -617,14 +637,14 @@ final class AppBootstrap {
     );
     resources.own(deviceModels.dispose);
     final objectScanner = ObjectScannerUseCases(
-      camera: PluginCameraGateway(),
+      camera: cameraGatewayFactory(),
       deviceModels: deviceModels,
       vocabulary: vocabulary,
       preprocessor: const DartImagePreprocessor(),
     );
     resources.own(objectScanner.dispose);
     final speechPractice = SpeechPracticeUseCases(
-      PluginSpeechRecognitionGateway(),
+      speechRecognitionGatewayFactory(),
     );
     resources.own(speechPractice.dispose);
     final aiUsage = DriftAiUsageRepository(

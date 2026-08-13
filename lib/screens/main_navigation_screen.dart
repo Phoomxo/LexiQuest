@@ -297,7 +297,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                   offstage: showAggregateUnavailable,
                   child: IndexedStack(
                     index: selectedStackIndex,
-                    children: [for (final entry in _entries) entry.screen],
+                    children: [
+                      for (var index = 0; index < _entries.length; index++)
+                        TickerMode(
+                          enabled: index == selectedStackIndex,
+                          child: _entries[index].screen,
+                        ),
+                    ],
                   ),
                 ),
                 if (showAggregateUnavailable)

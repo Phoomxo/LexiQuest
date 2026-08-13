@@ -32,6 +32,46 @@ void main() {
 
     expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
   });
+
+  testWidgets('reloads evidence whenever an indexed tab becomes active', (
+    tester,
+  ) async {
+    final active = ValueNotifier<bool>(false);
+    addTearDown(active.dispose);
+    var progress = _emptySnapshot;
+    var loadCalls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ValueListenableBuilder<bool>(
+          valueListenable: active,
+          builder: (context, enabled, _) => TickerMode(
+            enabled: enabled,
+            child: MasteryDashboardScreen(
+              loader: () async {
+                loadCalls += 1;
+                return progress;
+              },
+            ),
+          ),
+        ),
+      ),
+    );
+    expect(loadCalls, 0);
+
+    active.value = true;
+    await tester.pumpAndSettle();
+    expect(loadCalls, 1);
+    expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
+
+    active.value = false;
+    await tester.pump();
+    progress = _snapshot;
+    active.value = true;
+    await tester.pumpAndSettle();
+
+    expect(loadCalls, 2);
+    expect(find.text('Listening'), findsOneWidget);
+  });
 }
 
 const _snapshot = ProgressSnapshot(

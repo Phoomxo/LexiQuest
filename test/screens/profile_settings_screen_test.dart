@@ -17,6 +17,27 @@ void main() {
     expect(find.textContaining('อัลกอริทึม v1'), findsOneWidget);
     expect(find.textContaining('Khun Phet'), findsNothing);
   });
+
+  testWidgets('does not load while its indexed destination is inactive', (
+    tester,
+  ) async {
+    var calls = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: TickerMode(
+          enabled: false,
+          child: ProfileSettingsScreen(
+            loader: () async {
+              calls += 1;
+              return _progress;
+            },
+          ),
+        ),
+      ),
+    );
+
+    expect(calls, 0);
+  });
 }
 
 const _progress = ProgressSnapshot(

@@ -89,6 +89,39 @@ void main() {
     );
   });
 
+  testWidgets('renders a delayed camera initialization failure while current', (
+    tester,
+  ) async {
+    final pending = Completer<void>();
+    final scanner = _FakeScanner()..initializePending = pending;
+    await tester.binding.setSurfaceSize(const Size(800, 1200));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ObjectScannerScreen(
+          scanner: scanner,
+          voice: VoiceUseCases(
+            provider: _FakeVoice(),
+            disposeProvider: () async {},
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(scanner.initializeCalls, 1);
+
+    pending.completeError(
+      const CameraPracticeException(CameraFailureCode.permissionDenied),
+    );
+    await tester.pump();
+
+    expect(
+      find.byKey(const ValueKey<String>('object-scanner-error')),
+      findsOneWidget,
+    );
+    expect(find.textContaining('ไม่ได้รับสิทธิ์ใช้กล้อง'), findsOneWidget);
+  });
+
   testWidgets('clears stale result before a failed new capture', (
     tester,
   ) async {
