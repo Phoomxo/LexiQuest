@@ -2,9 +2,11 @@
 
 ## Status and evidence boundary
 
-Checkpoint C is not claimed in this document until the frozen gates are run
-sequentially against the final source state. The execution ledger below keeps
-its UTC time, source SHA, exit code, and result slots explicitly unclaimed.
+The local Checkpoint C gates were run sequentially against immutable Task 8
+implementation commit `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` and are
+recorded below. Overall Task 8 acceptance remains blocked-external because the
+current centrally funded Firebase baseline has no owner-controlled billing or
+no-billing evidence proving the 0–100 THB/month target.
 
 The implemented evidence boundary is host/widget/SQLite/file-backed and
 fake-provider evidence. It does not claim a live provider request, a physical
@@ -204,26 +206,24 @@ gate.
 
 ## Checkpoint C execution ledger
 
-These fields remain pending until the controller confirms that no concurrent
-implementation or audit agent is active and runs the gates sequentially. Even
-with local gates green, Checkpoint C remains blocked-external until the current
-central-cost evidence above exists.
+No concurrent implementation or audit agent was active during this sequential
+run. The local gates are complete, but Checkpoint C remains blocked-external
+until the current central-cost evidence above exists.
 
 | Gate | Command | UTC | Source SHA | Exit code | Result |
 |---|---|---|---|---|---|
-| Task 8 Flutter scenarios | `[PENDING — frozen Task 8 Flutter command]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
-| Product completion gate | `[PENDING — verify-product-completion.ps1]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
-| Gitleaks | `[PENDING — gitleaks git . --redact --no-banner]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
-| OSV Scanner | `[PENDING — powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-osv-locks.ps1 -ScannerPath <absolute-osv-scanner.exe>]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
-| Dependency inventory | `[PENDING — flutter pub outdated]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
-| Diff hygiene | `[PENDING — git diff --check]` | `[PENDING]` | `[PENDING]` | `[PENDING]` | NOT CLAIMED |
+| Task 8 Flutter scenarios | `flutter test test/runtime/runtime_feature_controls_test.dart test/scenarios/runtime_kill_switch_journey_test.dart test/scenarios/complete_owner_export_delete_test.dart --reporter compact` | `2026-08-13T04:31:17.7464287Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS — 20/20 |
+| Product completion gate | `powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-product-completion.ps1` | `2026-08-13T04:33:23.7803781Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS — contract, format, analysis, product tests, Firebase Auth and Firestore emulators, debug APK, model integrity, and diff hygiene |
+| Gitleaks | `gitleaks git . --redact --no-banner` | `2026-08-13T04:34:01.6207444Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS — 562 commits, 102.58 MB, no leaks found |
+| OSV Scanner | `powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/verify-osv-locks.ps1 -ScannerPath C:\Users\Phet\AppData\Local\Microsoft\WinGet\Packages\Google.OSVScanner_Microsoft.Winget.Source_8wekyb3d8bbwe\osv-scanner.exe` | `2026-08-13T04:34:24.8480798Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS — six literal dependency files; one root UUID disposition and eight voice-lock-only Torch dispositions documented above |
+| Dependency inventory | `flutter pub outdated` | `2026-08-13T04:34:41.2352431Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS (inventory) — 34 locked packages upgradable, 11 constrained; retracted transitive `build_daemon 4.1.3` is resolvable to `4.1.5`; no mutation |
+| Diff hygiene | `git diff --check` | `2026-08-13T04:34:48.5072682Z` | `b854c63a4eb7e77f6f7f622d0b7924bbef22a29f` | `0` | PASS |
 
-Unbound WIP diagnostics observed before the Task 8 source was committed are not Checkpoint C evidence and do not populate the ledger above. They included a
+Unbound WIP diagnostics observed before the Task 8 source was committed are not Checkpoint C evidence and did not populate the ledger above. They included a
 complete product-gate run, a 561-commit Gitleaks scan, literal scans of all six
 dependency files under the reviewed root and voice-lock OSV policies, and `flutter pub outdated`
 inventory. These diagnostics guided the lock and policy changes, but their
-results are intentionally not claimed against a source SHA. After the Task 8
-commit is frozen, every Checkpoint C command must be rerun sequentially and the
-corresponding row must receive its exact command, UTC time, source SHA, numeric
-exit code, and result. The central-cost evidence blocker remains external and
-cannot be converted into a pass by any local rerun.
+results are intentionally not claimed against a source SHA. The ledger contains
+only the later sequential reruns against the immutable implementation commit.
+The central-cost evidence blocker remains external and cannot be converted into
+a pass by any local rerun.
