@@ -1,83 +1,93 @@
 # LexiQuest field release runbook
 
-กระบวนการนี้เป็น gate เดียวต่อ release candidate ไม่ใช่วงจรทดสอบไม่สิ้นสุด
-เมื่อขั้นใดไม่ผ่าน ให้แก้เฉพาะสาเหตุที่ gate รายงาน แล้วเริ่ม release candidate
-ใหม่หาก APK เปลี่ยน hash เท่านั้น ห้ามคัดลอกผลจาก APK รุ่นอื่น
+This is a single fail-closed gate for one release candidate. A changed APK,
+non-metadata source change, signing-key rotation, or stale evidence starts a new
+candidate. Host tests, emulators, debug APKs, free-form references, and unsigned
+JSON cannot replace physical or provider evidence.
 
-## 1. เตรียมลายเซ็นและสร้างชุดติดตั้ง
+## 1. Package one frozen source
 
-สร้าง release key หนึ่งครั้งด้วยคำสั่งด้านล่าง ระบบจะสุ่มรหัสผ่านด้วย
-cryptographic RNG เก็บ keystore แยกจาก repository และป้องกัน recovery secret
-ด้วย Windows DPAPI:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/initialize-release-signing.ps1
-```
-
-สำรองโฟลเดอร์ `%USERPROFILE%\.lexiquest\signing` แบบออฟไลน์ก่อนแจก APK
-จากนั้นรัน:
+Release signing uses the existing owner-controlled Android identity. Never
+create an unsigned substitute or a second Android signing identity.
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/package-field-release.ps1 -Version 1.0.0+1
+  tool/cli/package-field-release.ps1 -Version 1.0.0+14
 ```
 
-คำสั่งจะไม่สร้าง key ปลอม ไม่ใช้ debug signing และจะหยุดหาก source Android
-ที่เกี่ยวข้องยังไม่ commit ผลลัพธ์อยู่ใน `build/field-release/` พร้อม hash
-และ certificate digest
+The packager requires a clean worktree and writes the verified APK plus
+`release-manifest.json` under `build/field-release/`.
 
-## 2. เก็บหลักฐานมือถือจริง
+## 2. Use the pinned evidence-signing identity
 
-เชื่อมต่อมือถือจริงครั้งละหนึ่งเครื่อง เปิด USB debugging แล้วรันให้ครบ
-low, mid และ high tier:
+The tracked public key is
+`tool/cli/trusted-field-evidence-public-key.xml`. Its matching non-exportable
+private key remains in the current Windows user's certificate store. Initialize
+it only when the tracked public key does not yet exist:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File `
+  tool/cli/initialize-field-evidence-signing.ps1 `
+  -ConfirmOwnerControlledKeyCreation
+```
+
+Do not rotate or overwrite this identity during an evidence run. The full
+receipt and payload contract is documented in
+`docs/field/2026-08-13-field-evidence-signing.md`.
+
+## 3. Collect low-, mid-, and high-tier Android drafts
+
+Connect exactly one authorized physical device per run. Supply the thumbprint
+of the matching current-user evidence certificate:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
   tool/cli/collect-android-field-evidence.ps1 `
-  -Tier low -NetworkProfile offline-mixed
+  -Tier low `
+  -NetworkProfile offline-mixed `
+  -SigningCertificateThumbprint '<CURRENT_USER_CERT_THUMBPRINT>'
 ```
 
-ตัว collector จะปฏิเสธ emulator, hash serial ก่อนบันทึก, ติดตั้งและเปิด APK
-จริง และสร้างรายการอื่นเป็น `pending` โดยตั้งใจ ผู้ทดสอบต้องทำ journey
-ตาม `docs/superpowers/specs/2026-07-31-p8-hybrid-voice-field-release-design.md`
-พร้อม evidence reference แล้วกรอกผลจริง ห้ามเปลี่ยน `pending` เป็น `pass`
-โดยไม่ได้ทำการทดสอบ
+The collector rejects emulator/debug markers, installs and launches the exact
+APK, pseudonymizes the device, signs its collector attestation, and records all
+unobserved journeys/benchmarks/endurance as `pending`.
 
-## 3. รวม evidence
+After a real instrumented result is exported under ignored `field/evidence/`,
+attach its typed receipt with
+`tool/cli/sign-android-field-evidence-result.ps1 -InstrumentedResultPath ...`.
+The signer revalidates the collector attestation and derives the claim from the
+raw source; editing the device JSON alone or using a host fake cannot pass.
+Repeat for every mandatory journey, the CPU benchmark, the declared GPU
+outcome, and endurance.
 
-หลังตั้ง App Check, budget alert 50/80/100 (หรือยืนยันว่า Cloud Billing
-ไม่ได้เปิด), asset links, kill switch,
-ช่องทาง feedback/support และ owner smoke test จริงแล้ว ใช้:
+## 4. Collect provider and operations evidence
+
+Store typed provider/operations/owner source envelopes under ignored
+`field/evidence/` paths. Create their signed receipts with
+`tool/cli/new-field-evidence-receipt.ps1`; the receipt payload is derived only
+from the envelope, and source/capture/release binding is checked. Insert only
+the returned content-addressed reference into the matching ignored Cloud,
+cost, participant-package, beta, rollback, or owner record. Rollback and
+kill-switch envelopes must share one UUID-v4 drill ID, candidate, target, and
+ordered start/completion timestamps.
+
+No receipt payload may contain a secret, keystore, participant identifier,
+decrypted evidence, or raw provider credential.
+
+## 5. Assemble and verify
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/new-field-release-evidence.ps1 `
-  -FeedbackChannelRef 'private:configured-feedback-record' `
-  -SupportChannelRef 'private:configured-support-record' `
-  -ResearchProtocolRef 'private:approved-research-protocol' `
-  -AppCheckConfigured -AppCheckValidTrafficObserved -AppCheckEnforced `
-  -NoBillingAccount -AssetLinksVerified `
-  -CloudKillSwitchVerified -OwnerApproved `
-  -AppCheckEvidenceRef 'private:app-check-record' `
-  -BudgetAlertsEvidenceRef 'private:budget-record' `
-  -AssetLinksEvidenceRef 'private:app-link-record' `
-  -CloudKillSwitchEvidenceRef 'private:kill-switch-record' `
-  -OwnerApprovalEvidenceRef 'private:owner-smoke-record'
-```
+  tool/cli/new-field-release-evidence.ps1
 
-ไฟล์ evidence อยู่ในโฟลเดอร์ที่ git ignore เพื่อไม่เผยข้อมูลการปฏิบัติการ
-หรือผู้เข้าร่วม
-
-## 4. Final gate
-
-```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File `
-  tool/cli/verify-field-release.ps1
+  tool/cli/verify-field-release.ps1 `
+  -EvidencePath field/evidence/release-evidence.json `
+  -ParticipantPackagePath build/field-release
 ```
 
-Final gate ตรวจลายเซ็นและ hash, ความตรงกันของ manifest, เอกสารผู้เข้าร่วม,
-หลักฐานสามเครื่อง, journey ทุกข้อ, benchmark CPU/XNNPACK, สถานะ GPU
-ที่ไม่กล่าวอ้างเกินจริง, endurance 30 นาที, Cloud controls และ owner approval
-จากนั้นรัน software regression gate หนึ่งครั้ง ถ้า APK เปลี่ยนแม้หนึ่ง byte
-หลักฐานอุปกรณ์และ owner approval เดิมใช้ต่อไม่ได้
+The final verifier independently checks the immutable package, canonical
+tracked public key, receipt signatures/digests/payloads, source and artifact
+identity, strict freshness/order, physical-device matrix, central cost,
+beta/rollback outcomes, and exact owner approval before rerunning the product
+completion gate.

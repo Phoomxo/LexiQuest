@@ -6,7 +6,7 @@ const path = require("node:path");
 const projectId = "vocab-learning-app-219ef";
 const projectNumber = "145034183638";
 const displayName = "LexiQuest 30-participant field trial";
-const monthlyAmountThb = "500";
+const monthlyAmountThb = "100";
 const npmRoot = path.join(process.env.APPDATA || "", "npm", "node_modules");
 if (!fs.existsSync(npmRoot)) {
   throw new Error(`Global npm module directory is missing: ${npmRoot}`);

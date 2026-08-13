@@ -370,10 +370,12 @@ the frozen product-completion gate reruns them. This is local `verified`
 evidence at the release-control level; it does not rewrite the more specific
 route rows above or promote any row to `field-certified`.
 
-The signed internal APK is independently bound to source `c199d50`, package
+The historical signed internal APK is independently bound to source `c199d50`, package
 `com.lexiquest.app`, version `1.0.0+13`, one pinned certificate, exact APK and
-model hashes, and embedded source/build/model provenance. It is an internal
-evidence-collection artifact only.
+model hashes, and embedded source/build/model provenance. Post-package verifier
+and integration-harness changes mean it is no longer the final frozen
+candidate; the stricter verifier requires a rebuild from a frozen source and
+permits only declared final-metadata commits afterward.
 
 Object Scanner, Speech Practice, and AI Tutor remain visible `limited`
 device/provider-dependent capabilities without exact-artifact physical or live
@@ -381,8 +383,8 @@ provider certification. They are therefore explicit final-acceptance blockers,
 not hidden or field-certified rows. The exact low/mid/high device matrix, App
 Check/provider controls, hosted asset links, cloud kill-switch drill, current
 cost evidence, private channels, beta operations, rollback drill, and owner
-approval are also absent. The field verifier fails closed after independently
-verifying the package.
+approval are also absent. The field verifier fails closed on the source/artifact
+mismatch before it can consider those external records.
 
 Accordingly, the reconciled P10 decision is **NOT READY**. No host fake,
 emulator, debug APK, historical record, pending reference, or unknown cost is

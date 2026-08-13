@@ -864,7 +864,7 @@ Expected: both exist. If `android/key.properties` is absent, P6 is externally bl
 Run:
 
 ~~~powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/package-field-release.ps1 -Version 1.0.0+13
+powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/package-field-release.ps1 -Version 1.0.0+14
 Get-FileHash build/field-release/*.apk -Algorithm SHA256
 ~~~
 

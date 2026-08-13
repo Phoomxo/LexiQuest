@@ -2,7 +2,7 @@
 
 **Recorded:** 2026-08-13
 
-**Decision:** BLOCKED-EXTERNAL — no field-distribution approval
+**Decision:** FAIL / BLOCKED-EXTERNAL — no field-distribution approval
 
 This matrix is bound to the verified internal Task 10 artifact. It records
 missing evidence as missing; host tests, emulators, and synthetic journeys are
@@ -23,8 +23,10 @@ owner evidence.
 - Package: `build/field-release`
 - Ignored evidence shell: `field/evidence/release-evidence.json`
 
-The package and its release model runtime passed independent verification
-before this matrix was created.
+The package and its release model runtime passed independent verification for
+artifact source `c199d50`. Later verifier/integration-harness changes invalidate
+it as the current frozen candidate; a new frozen-source package is required before
+collecting final field evidence.
 
 ## Physical-device matrix
 
@@ -50,7 +52,7 @@ currently present.
 | App Check enforcement | blocked-external | Controlled enforcement record |
 | Hosted asset links | blocked-external | Verified hosted asset-link record |
 | Cloud kill switch | blocked-external | Controlled production drill record |
-| Shared-infrastructure cost guard | blocked-external | Verified 50/80/100 budget alerts or owner-controlled no-billing proof |
+| Shared-infrastructure cost guard | blocked-external | Current measured project-total cost at 0-100 THB/month (or verified no-billing zero), exact 100 THB ceiling, and 50/80/100 alerts when billed |
 | Feedback channel | blocked-external | Real private channel reference |
 | Support channel | blocked-external | Real private channel reference |
 | Research protocol | blocked-external | Approved private protocol reference |
@@ -69,18 +71,18 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
   -ParticipantPackagePath build/field-release
 ```
 
-Result: `blocked-external` (exit 1). Package signature, fingerprint, artifact
-metadata, APK hash, and release model runtime verified first. The evidence gate
-then rejected every missing Cloud control/reference, all three missing physical
-device tiers, the three pending private references, and missing owner approval.
-The gate did not run the final product regression phase because external field
-evidence failed first.
+Result: `fail` (exit 1). The current verifier rejects the non-metadata source
+changes made after `release-manifest.sourceCommit`, so the historical package
+is not a current candidate. The v2 evidence shell also remains `pending` for Cloud
+controls/cost, all three physical tiers, private references, beta/rollback, and
+owner approval. The final product regression phase is not run.
 
 ## Blocker report
 
-- **Observed:** a genuine signed package exists and verifies, but no physical
-  device, provider-console, private-channel, beta-operations, or owner-approval
-  records are available for its exact hash.
+- **Observed:** a genuine historical signed package exists and verifies, but it
+  no longer matches final HEAD. No physical device, provider-console,
+  private-channel, beta-operations, rollback, or owner-approval records are
+  available for a newly frozen candidate.
 - **Expected:** three distinct physical device records plus all provider,
   operations, private-reference, and exact-hash owner-approval fields pass the
   closed field-evidence validator.
@@ -88,8 +90,9 @@ evidence failed first.
   shell) and this matrix.
 - **Attempts:** one evidence-shell generation and one field-gate observation;
   no missing field was converted to PASS and no historical artifact was reused.
-- **Smallest external action:** conduct and record the low/mid/high exact-APK
-  device matrix, configure and evidence the Cloud controls/cost guard, provide
-  real private references, then obtain owner approval for this APK hash.
+- **Smallest action sequence:** commit the final verifier, rebuild/verify one
+  frozen-source signed package, then conduct the low/mid/high matrix, collect
+  signed content-addressed provider/cost/beta/rollback records, and obtain owner
+  approval for that exact APK hash.
 - **Unaffected work:** local release-readiness reconciliation and a truthful
   `NOT READY` final acceptance record can proceed without fabricating evidence.

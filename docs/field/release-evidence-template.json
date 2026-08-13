@@ -1,15 +1,18 @@
 {
-  "schemaVersion": 1,
-  "releaseId": "<OWNER_CONFIG_REQUIRED>",
+  "schemaVersion": 2,
+  "sourceCommit": "<FROM_RELEASE_MANIFEST>",
+  "releaseId": "<SOURCE_COMMIT>:<APK_SHA256>",
+  "manifestGeneratedAtUtc": "<FROM_RELEASE_MANIFEST>",
+  "assembledAtUtc": "",
   "artifact": {
-    "apkPath": "build/field-release/lexiquest-1.0.0+1.apk",
+    "apkPath": "lexiquest-1.0.0+14.apk",
     "apkSha256": "<FROM_RELEASE_MANIFEST>",
     "signingCertificateSha256": "<FROM_RELEASE_MANIFEST>",
     "packageName": "com.lexiquest.app",
     "versionName": "1.0.0",
-    "versionCode": 1,
+    "versionCode": 14,
     "buildId": "<FROM_RELEASE_MANIFEST>",
-    "modelSha256": "D3949E8A3556C79739CB675E0BE7476503BCCE76938031C6A1048E13E0CB7D8B"
+    "modelSha256": "<FROM_RELEASE_MANIFEST>"
   },
   "cloudControls": {
     "appCheckConfigured": false,
@@ -17,13 +20,32 @@
     "appCheckEnforced": false,
     "budgetAlertsConfigured": false,
     "budgetAlertsNotApplicable": false,
-    "billingMode": "budgeted",
+    "billingMode": "pending",
     "assetLinksVerified": false,
     "cloudKillSwitchVerified": false,
+    "appCheckObservedAtUtc": "",
+    "assetLinksObservedAtUtc": "",
+    "cloudKillSwitchObservedAtUtc": "",
     "appCheckEvidenceRef": "",
     "budgetAlertsEvidenceRef": "",
     "assetLinksEvidenceRef": "",
-    "cloudKillSwitchEvidenceRef": ""
+    "cloudKillSwitchEvidenceRef": "",
+    "centralCost": {
+      "schemaVersion": 1,
+      "mode": "pending",
+      "scope": "firebaseProjectTotal",
+      "projectId": "vocab-learning-app-219ef",
+      "projectNumber": "145034183638",
+      "currencyCode": "THB",
+      "approvedMonthlyMinimumSatang": 0,
+      "approvedMonthlyMaximumSatang": 10000,
+      "measurementBasis": "pending",
+      "measurementMonthUtc": "",
+      "measuredAtUtc": "",
+      "measuredMonthlyCostSatang": null,
+      "budget": null,
+      "evidenceRef": ""
+    }
   },
   "participantPackage": {
     "installGuide": "docs/install-and-update.md",
@@ -33,14 +55,121 @@
     "feedbackGuide": "docs/feedback-and-support.md",
     "researchProtocol": "docs/research-protocol-v1.md",
     "consentVersion": 1,
-    "feedbackChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
-    "supportChannelRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>",
-    "researchProtocolRef": "<OWNER_CONFIG_REQUIRED_PRIVATE_REFERENCE>"
+    "documentSha256": {
+      "installGuide": "",
+      "privacyNotice": "",
+      "dataRightsGuide": "",
+      "knownLimitations": "",
+      "feedbackGuide": "",
+      "researchProtocol": ""
+    },
+    "verifiedAtUtc": "",
+    "feedbackChannelRef": "",
+    "supportChannelRef": "",
+    "researchProtocolRef": ""
   },
   "devices": [],
+  "betaOperations": {
+    "status": "pending",
+    "release": {
+      "apkSha256": "<FROM_RELEASE_MANIFEST>",
+      "buildId": "<FROM_RELEASE_MANIFEST>",
+      "versionCode": 14
+    },
+    "windowStartedAtUtc": "",
+    "windowEndedAtUtc": "",
+    "testerCount": 0,
+    "consentVersion": 1,
+    "sessions": {
+      "totalCount": 0,
+      "crashFreeCount": 0,
+      "crashCount": null,
+      "anrCount": null,
+      "evidenceRef": ""
+    },
+    "sync": {
+      "attemptCount": 0,
+      "failureCount": null,
+      "evidenceRef": ""
+    },
+    "openIssues": {
+      "criticalCount": null,
+      "highCount": null,
+      "mediumCount": null,
+      "lowCount": null,
+      "evidenceRef": ""
+    },
+    "providerUsage": {
+      "requestCount": 0,
+      "successCount": 0,
+      "failureCount": null,
+      "indeterminateCount": null,
+      "costKnownRequestCount": 0,
+      "providerReportedCostMicrosUsd": null,
+      "evidenceRef": ""
+    },
+    "modelDownloads": {
+      "successfulCount": 0,
+      "failedCount": null,
+      "countMayBeSaturated": false,
+      "evidenceRef": ""
+    },
+    "ownerDecision": {
+      "decision": "hold",
+      "decidedAtUtc": "",
+      "evidenceRef": ""
+    }
+  },
+  "rollbackEvidence": {
+    "status": "pending",
+    "drillId": "",
+    "candidate": {
+      "apkSha256": "<FROM_RELEASE_MANIFEST>",
+      "buildId": "<FROM_RELEASE_MANIFEST>",
+      "versionCode": 14
+    },
+    "target": {
+      "apkSha256": "",
+      "signingCertificateSha256": "",
+      "versionCode": 0
+    },
+    "startedAtUtc": "",
+    "completedAtUtc": "",
+    "targetLaunchVerified": false,
+    "coreOfflineJourneyVerified": false,
+    "serviceRestored": false,
+    "dataOutcome": "pending",
+    "evidenceRef": "",
+    "killSwitchDrill": {
+      "drillId": "",
+      "candidate": {
+        "apkSha256": "<FROM_RELEASE_MANIFEST>",
+        "buildId": "<FROM_RELEASE_MANIFEST>",
+        "versionCode": 14
+      },
+      "target": {
+        "apkSha256": "",
+        "signingCertificateSha256": "",
+        "versionCode": 0
+      },
+      "startedAtUtc": "",
+      "completedAtUtc": "",
+      "status": "pending",
+      "cloudSyncDisabledObserved": false,
+      "localLearningUsable": false,
+      "cloudSyncRestored": false,
+      "evidenceRef": ""
+    }
+  },
   "ownerApproval": {
     "approved": false,
     "apkSha256": "<FROM_RELEASE_MANIFEST>",
+    "sourceCommit": "<FROM_RELEASE_MANIFEST>",
+    "signingCertificateSha256": "<FROM_RELEASE_MANIFEST>",
+    "modelSha256": "<FROM_RELEASE_MANIFEST>",
+    "versionName": "1.0.0",
+    "versionCode": 14,
+    "buildId": "<FROM_RELEASE_MANIFEST>",
     "approvedAtUtc": "",
     "approverRole": "owner",
     "evidenceRef": ""
