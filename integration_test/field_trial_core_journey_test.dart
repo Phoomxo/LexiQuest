@@ -212,7 +212,10 @@ void main() {
         );
         await tester.tap(find.text('Complete & Continue'));
         await _pumpUntilFound(tester, find.text('Stage 6: Finish'));
-        await tester.tap(find.text('Finish Session'));
+        await _tapVisibleTop(
+          tester,
+          find.widgetWithText(FilledButton, 'Finish Session'),
+        );
         await _pumpUntilFound(tester, find.text('Start reading'));
 
         await tester.runAsync(first.learningReconciliation!.drain);
@@ -539,6 +542,13 @@ Future<void> _scrollDrawerTo(WidgetTester tester, Finder target) async {
       matching: find.byType(Scrollable),
     ),
   );
+}
+
+Future<void> _tapVisibleTop(WidgetTester tester, Finder target) async {
+  final rect = tester.getRect(target);
+  // The retained production shell can cover the bottom edge during a bounded
+  // host frame; use a real hit-tested point near the visible top of the button.
+  await tester.tapAt(Offset(rect.center.dx, rect.top + 8));
 }
 
 final class _FileEntryStateStore implements AppEntryStateStore {
