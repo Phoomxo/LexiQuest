@@ -1,6 +1,10 @@
 # Runtime Feature Ledger — 2026-08-09 P0 Baseline
 
 Source baseline: `c706ce2` on `codex/runtime-convergence`.
+Release reconciliation verified through
+`555b0b9343ce78cbf04692f048bf049d90fb559f`; the signed internal artifact
+remains bound to its actual source
+`c199d501adb8b83d0a1b9e7bd529c9f123f168f9`.
 
 This ledger is an inventory, not a release claim. It contains all 15 members of
 `Feature.values` and all 49 files returned by `rg --files lib/screens` (64 rows
@@ -36,13 +40,13 @@ states route-specific gaps rather than inventing field proof.
 | Feature: associative reading delivery target | `Feature.reading` (`enabled`) | `home/learn/associative-reading` → `AssociativeReadingLauncherScreen` → `AssociativeReadingSessionScreen` | `VocabularyUseCases+LearningUseCases+AssociativeLearningPort`; production supporting adapter is `DriftAssociativeLearningAdapter` | Drift `association_records`, `associative_memory_states`, and reading progress; active `localOwnerId` | Production shell journey plus same-file SQLite close/reopen verifies both association tables and excludes an inactive foreign owner | None; host test only | verified |
 | Feature: mastery | `Feature.mastery` (`enabled`) | `home/mastery` → `MasteryDashboardScreen` | `ProgressUseCases` | Drift-derived learning/progress evidence; `localOwnerId` | File-backed progress reload verifies mastery count from durable evidence | None; host test only | verified |
 | Feature: weakness | `Feature.weakness` (`enabled`) | `home/weakness` → `WeaknessClinicScreen` | `ProgressUseCases` | Drift-derived answer/SRS evidence; `localOwnerId` | File-backed progress reload verifies incorrect-count weakness evidence | None; host test only | verified |
-| Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`; supporting `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | Shared learning subsystem survives same-file reopen in `production_learning_restart_test.dart`; no duel-route-specific restart journey | None; host test only | wired |
-| Feature: achievements | `Feature.achievements` (`enabled`) | `home/achievements` → `AchievementsScreen` | `ProgressUseCases` | Drift achievement unlocks and progress evidence; `localOwnerId` | Achievement inventory survives owner upgrade and reopen in `guest_upgrade_restart_test.dart`; no achievements-route-specific restart journey | None; host test only | wired |
-| Feature: shop | `Feature.shop` (`enabled`) | `drawer/rewards/shop` | `RewardUseCases` | Drift reward transactions, owned/equipped items; `localOwnerId` | `reward_use_cases_test.dart` proves atomic durable/idempotent purchase and equipment; complete reward inventory survives reopen in `guest_upgrade_restart_test.dart`; no shop-route-specific restart journey | None; host test only | wired |
-| Feature: object scanner | `Feature.objectScanner` (`limited`) | `drawer/practice/object-scanner` | `ObjectScannerController`; supporting `DeviceModelUseCases`, `VocabularyUseCases`, and `VoiceUseCases`; missing composition fails closed before camera initialization | Drift model-download records, model file, and accepted vocabulary; `localOwnerId` where applicable | Model repository/download crash-recovery and vocabulary restart tests cover the durable subsystems; host lease tests cover replacement, push/pop, backgrounding, pending init, and disposal-tail fencing, not a physical scanner restart | None; host fakes are not device evidence | wired |
-| Feature: speech practice | `Feature.speechPractice` (`limited`) | `drawer/practice/shadowing` | `SpeechPracticeUseCases`; supporting `LearningUseCases` and one bootstrap-owned `VoiceUseCases`; missing media composition fails closed | Drift learning/answer and transcript-assessment provenance; `localOwnerId` | Shared learning evidence survives same-file reopen; host session tests cover replacement, push/pop, app lifecycle, pending start, disposal-tail fencing, and actual assessment provenance, not a physical microphone restart | None; host fakes are not microphone evidence | wired |
-| Feature: AI tutor | `Feature.aiTutor` (`limited`) | `drawer/ai-tutor/chat` and `drawer/ai-tutor/settings` | One bootstrap-owned `AiTutorController`; supporting speech and opaque voice sessions are composed independently; the usage repository is not exposed to UI | Schema-12 Drift AI request journal plus versioned provider settings/secure blobs; owner pinned before outbound work | File-backed pending recovery, owner-gate contention, owner isolation, restart, and upgrade journeys are covered; provider replies remain fake/host evidence | None; fake replies are not provider evidence | wired |
-| Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file artifact | `export_use_cases_test.dart` covers stable evidence/artifact construction and owner-consistency fencing; export-store tests cover selected-file writes, not an app-route restart | None; host test only | wired |
+| Feature: ghost duel | `Feature.ghostDuel` (`enabled`) | `drawer/learning/ghost-duel` | `LearningUseCases`; supporting `ProgressUseCases` | Drift learning sessions and answer attempts; `localOwnerId` | Shared learning subsystem survives same-file reopen in `production_learning_restart_test.dart`; the exhaustive production invocation journey verifies the guarded route | None; host test only | verified |
+| Feature: achievements | `Feature.achievements` (`enabled`) | `home/achievements` → `AchievementsScreen` | `ProgressUseCases` | Drift achievement unlocks and progress evidence; `localOwnerId` | Achievement inventory survives owner upgrade and reopen in `guest_upgrade_restart_test.dart`; the exhaustive production invocation journey verifies the guarded route | None; host test only | verified |
+| Feature: shop | `Feature.shop` (`enabled`) | `drawer/rewards/shop` | `RewardUseCases` | Drift reward transactions, owned/equipped items; `localOwnerId` | Atomic durable/idempotent purchase and equipment plus complete reward inventory reopen are covered; the Task 9 production shell inspects the reward surface | None; host test only | verified |
+| Feature: object scanner | `Feature.objectScanner` (`limited`) | `drawer/practice/object-scanner` | `ObjectScannerController`; supporting `DeviceModelUseCases`, `VocabularyUseCases`, and `VoiceUseCases`; missing composition fails closed before camera initialization | Drift model-download records, model file, and accepted vocabulary; `localOwnerId` where applicable | Durable model/vocabulary and lifecycle ownership are covered; the Task 9 production shell verifies host-fake camera/model unavailable behavior, not a physical scanner | None; host fakes are not device evidence | verified |
+| Feature: speech practice | `Feature.speechPractice` (`limited`) | `drawer/practice/shadowing` | `SpeechPracticeUseCases`; supporting `LearningUseCases` and one bootstrap-owned `VoiceUseCases`; missing media composition fails closed | Drift learning/answer and transcript-assessment provenance; `localOwnerId` | Durable learning and lifecycle ownership are covered; the Task 9 production shell verifies host-fake microphone unavailable behavior, not a physical microphone | None; host fakes are not microphone evidence | verified |
+| Feature: AI tutor | `Feature.aiTutor` (`limited`) | `drawer/ai-tutor/chat` and `drawer/ai-tutor/settings` | One bootstrap-owned `AiTutorController`; supporting speech and opaque voice sessions are composed independently; the usage repository is not exposed to UI | Schema-12 Drift AI request journal plus versioned provider settings/secure blobs; owner pinned before outbound work | File-backed pending recovery, owner-gate contention, owner isolation, restart, upgrade, and production invocation journeys are covered; provider replies remain fake/host evidence | None; fake replies are not provider evidence | verified |
+| Feature: export | `Feature.export` (`enabled`) | `drawer/export/center` | `ExportUseCases` | Reads allowlisted Drift data and writes a selected file artifact | Task 9 invokes export through the rendered production shell and verifies persisted learning after same-file restart; export construction, owner-consistency fencing, and selected-file writes have focused coverage | None; host test only | verified |
 | Feature: shadow reward V2 | `Feature.shadowRewardV2` (`hidden`) | Empty frozen `productionEntryId` | Empty frozen `dependencyId`; Production does not construct or inject `ShadowRewardOrchestrator`, while durable learning projection uses the non-shadow reconciler | No delivery-owned store for this hidden row | Static production-composition boundary test | None | hidden |
 | Feature: quest V2 | `Feature.questV2` (`limited`) | `drawer/rewards/quests` → `QuestStatusScreen` (route `rewards/quests`) | `QuestUseCases`; supporting durable learning reconciler remains always composed because the switch gates UI invocation only | Drift quest definitions, instances, objective progress, reward receipts, and versioned learning projection receipts; `localOwnerId` | File-backed replay plus bootstrap emergency-off reconciliation and bounded owner-resolving Quest Status host tests | None; host/debug evidence only | verified |
 | Screen: `achievements_screen.dart` | `Feature.achievements` | `MainNavigationScreen` bottom destination | `ProgressUseCases.load` through `AppDependenciesScope` | Drift achievement/progress evidence | None from production shell | None | wired |
@@ -350,3 +354,36 @@ used instead.
   import. Their presence is not a production-entry claim.
 - The device/camera/speech verification scripts and widget scenarios are host or
   debug-only checks. They are not physical integration/device field evidence.
+
+## P6-P10 release reconciliation
+
+The production-entry inventory remains exhaustive. Every row marked `orphan`
+has no production caller and no visible navigation entry; the production
+invocation architecture gate rejects a hidden direct invocation path. No orphan
+capability is presented as delivered merely because its source file remains in
+the repository.
+
+All visible enabled or limited feature rows have local composition and
+invocation evidence. Task 9 adds production-shell Guest learning,
+export/restart/sign-out, persistent control, and host-fake media journeys, and
+the frozen product-completion gate reruns them. This is local `verified`
+evidence at the release-control level; it does not rewrite the more specific
+route rows above or promote any row to `field-certified`.
+
+The signed internal APK is independently bound to source `c199d50`, package
+`com.lexiquest.app`, version `1.0.0+13`, one pinned certificate, exact APK and
+model hashes, and embedded source/build/model provenance. It is an internal
+evidence-collection artifact only.
+
+Object Scanner, Speech Practice, and AI Tutor remain visible `limited`
+device/provider-dependent capabilities without exact-artifact physical or live
+provider certification. They are therefore explicit final-acceptance blockers,
+not hidden or field-certified rows. The exact low/mid/high device matrix, App
+Check/provider controls, hosted asset links, cloud kill-switch drill, current
+cost evidence, private channels, beta operations, rollback drill, and owner
+approval are also absent. The field verifier fails closed after independently
+verifying the package.
+
+Accordingly, the reconciled P10 decision is **NOT READY**. No host fake,
+emulator, debug APK, historical record, pending reference, or unknown cost is
+treated as field evidence, and no publication or distribution occurred.
