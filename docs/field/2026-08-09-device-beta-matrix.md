@@ -31,24 +31,27 @@ that frozen source.
 
 | Tier | Required evidence | Status | Evidence |
 |---|---|---|---|
-| Low | Physical Android device; exact APK/certificate/model hashes; all mandatory journeys; CPU/XNNPACK benchmark; allowlisted GPU result or honest N/A; at least 30-minute endurance with crash, ANR, memory, battery, and temperature measurements | blocked-external | No device record; no attached device was visible, so no tier could be measured |
-| Mid | Same exact-artifact, journey, benchmark, and endurance contract | blocked-external | No device record; no attached device was visible, so no tier could be measured |
-| High | Same exact-artifact, journey, benchmark, and endurance contract | blocked-external | No device record; no attached device was visible, so no tier could be measured |
+| Low | Physical Android device; exact APK/certificate/model hashes; all mandatory journeys; CPU/XNNPACK benchmark; allowlisted GPU result or honest N/A; at least 30-minute endurance with crash, ANR, memory, battery, and temperature measurements | blocked-external | No low-tier device record; the connected device measured as mid tier and cannot be reused for this row |
+| Mid | Same exact-artifact, journey, benchmark, and endurance contract | blocked-external | Signed physical draft exists for Android 13 / 7,631 MB RAM. Exact +14 installation, launch, installed-APK pull/hash verification, and upgrade-install outcome were collected; 13 journeys, CPU/XNNPACK, and endurance remain pending, so this is not certification |
+| High | Same exact-artifact, journey, benchmark, and endurance contract | blocked-external | No high-tier device record; the connected device measured as mid tier and cannot be reused for this row |
 
 Every device must complete consent/guest startup, offline vocabulary, learning
 core, offline restart and sync, account lifecycle, model lifecycle, camera
 scanner, speech/TTS/pronunciation, Gemini BYOK, clean install, upgrade install,
 reboot/foreground/background, cloud kill switch, and data export. Each result
-requires a private evidence reference. No such physical-device observation is
-currently present.
+requires a private evidence reference. One signed mid-tier collector draft is
+present, but none of its mandatory journey, CPU/XNNPACK, or endurance outcomes
+is complete.
 
-On 2026-08-13 the authorized collector preflight saw zero entries from `adb
-devices`. Starting the ADB server once produced the same zero-device state, and
-an independent Windows present-device query found zero Android, ADB, or MTP
-interfaces. No serial, model, tier, install, journey, or benchmark claim was
-created. Exactly three distinct tier records are still missing; one physical
-device may fill at most the one tier that its measured RAM/hardware actually
-satisfies after the host sees it.
+On 2026-08-13 the authorized collector preflight first saw zero entries from
+`adb devices`. Starting the ADB server once produced the same zero-device
+state, and an independent Windows present-device query found zero Android,
+ADB, or MTP interfaces. A later bounded check found exactly one authorized
+physical device. Its measured Android 13 / 7,631 MB configuration binds it only
+to the mid tier. The signed collector installed and launched the exact +14 APK,
+pulled the installed APK back, confirmed its hash, and recorded an
+upgrade-install pass. Low and high still require two other devices, while the
+mid-tier draft still requires genuine instrumented outcomes.
 
 ## Provider and beta operations
 
@@ -79,28 +82,31 @@ powershell -NoProfile -ExecutionPolicy Bypass -File `
 ```
 
 Result: `blocked-external` is expected until genuine records exist. The v2
-evidence shell remains `pending` for Cloud controls/cost, all three physical
-tiers, private references, beta/rollback, and owner approval. The verifier
+evidence shell remains `pending` for Cloud controls/cost, low/high physical
+tiers, completion of the mid-tier outcomes, private references, beta/rollback,
+and owner approval. The verifier
 binds every accepted record to source `c55f7bb`, the +14 APK, a signed raw
 source envelope, and (for device outcomes) the revalidated physical collector
 receipt.
 
 ## Blocker report
 
-- **Observed:** a genuine current signed package exists and verifies. The host
-  exposes no Android/ADB/MTP device interface, and no provider-console,
-  private-channel, beta-operations, rollback, or owner-approval records are
-  available for this candidate.
+- **Observed:** a genuine current signed package exists and verifies. One
+  authorized mid-tier device produced a signed exact-artifact draft, but its
+  journeys, CPU/XNNPACK benchmark, and endurance run remain pending. No
+  low/high records or provider-console, private-channel, beta-operations,
+  rollback, or owner-approval records are available for this candidate.
 - **Expected:** three distinct physical device records plus all provider,
   operations, private-reference, and exact-hash owner-approval fields pass the
   closed field-evidence validator.
 - **Evidence path:** `field/evidence/release-evidence.json` (ignored, pending
   shell) and this matrix.
-- **Attempts:** ADB enumeration, one ADB server start, and one independent PnP
-  interface check; no missing field was converted to PASS.
-- **Smallest action sequence:** reconnect/authorize one Android device in data
-  mode, collect only its measured tier, obtain two other distinct tiers, collect
-  signed content-addressed provider/cost/beta/rollback records, and obtain owner
-  approval for that exact APK hash.
+- **Attempts:** initial ADB enumeration, one ADB server start, one independent
+  PnP query, then one changed-state ADB check and one successful physical
+  collector run; no pending journey was converted to PASS.
+- **Smallest action sequence:** complete the genuine mid-tier instrumented
+  journeys/benchmark/endurance, obtain distinct low- and high-tier devices,
+  collect signed content-addressed provider/cost/beta/rollback records, and
+  obtain owner approval for that exact APK hash.
 - **Unaffected work:** local release-readiness reconciliation and a truthful
   `NOT READY` final acceptance record can proceed without fabricating evidence.
