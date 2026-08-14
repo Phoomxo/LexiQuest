@@ -947,6 +947,8 @@ Rollback after deployment: disable all new activity invocation and continue read
 - Modify: `test/features/events/event_v1_to_v2_adapter_test.dart`
 - Modify: `test/features/learning/drift_learning_repository_test.dart`
 - Create: `test/features/learning/drift_learning_event_store_test.dart`
+- Modify: `test/features/sync/learning_event_sync_test.dart`
+- Modify: `test/features/progress/progress_projector_test.dart`
 
 **Interfaces:**
 - Consumes: schema v13 attempt metadata.
@@ -956,7 +958,7 @@ Rollback after deployment: disable all new activity invocation and continue read
 
 Reserve the longest planned 59-scalar derived-receipt suffix/prefix budget under the existing 256-scalar identifier ceiling. A new caller-owned `sourceEvidenceId` is therefore at most 197 Unicode scalars (`runes.length`); every deterministic event, outbox, cursor, and receipt ID derived from it must remain at most 256 scalars.
 
-Canonical new evidence always supplies its correlated Event V2. A null event is permitted only through one explicitly named frozen-v13 legacy ingress whose evidence metadata exactly equals the immutable v13 migration default. That eventless row remains eventless forever: neither a canonical retry may omit its event nor a legacy retry may retrofit one. This task does not change the schema version, event table, generated database files, Firestore rules, or any other policy/rules artifact.
+Canonical new evidence always supplies its correlated Event V2, and the canonical `RecordAnswerCommand` constructor requires that event. Eventless evidence cannot be constructed through the canonical constructor; a null event is permitted only through a separately named `RecordAnswerCommand.frozenV13LegacyIngress(...)` factory whose evidence metadata exactly equals the immutable v13 migration default. That eventless row remains eventless forever: neither a canonical retry may omit its event nor a legacy retry may retrofit one. This task does not change the schema version, event table, generated database files, Firestore rules, or any other policy/rules artifact.
 
 - [ ] **Step 1: Write failing durable identity and replay tests**
 
@@ -1033,13 +1035,14 @@ payload: <String, Object?>{
 
 Populate the envelope's existing `consentContext` and `experimentContext` from `LearningEventContextProvider`; do not leave hard-coded zero/null research context for Shadow, Enforced, or Assessment evidence. Require envelope experiment ID/variant/assigned-at, consent version, and the provider's contract identity to agree with `EvidenceContext`; version, assignment ID, protocol, and feature-contract revision/hash remain in the complete serialized context inside the payload because the frozen envelope has no fields for them.
 
-Add the event-store read needed by `replayCommittedAnswer(candidate)` and validate the stored event against the exact attempt plus the canonical whole-second timestamp. Tighten the normal repository command/constructor so canonical evidence requires the correlated event. Isolate nullable-event compatibility behind the explicit frozen-v13 legacy ingress and exact migration-default metadata check. If an existing canonical attempt has a missing/corrupt event, fail closed; if an existing exact legacy-ingress attempt is eventless, return only its stored snapshot through that same ingress and reject any event retrofit. Never append an event during replay. Do not change Quest event types in this task; eligibility becomes the authoritative gate in Task 7.
+Add the event-store read needed by `replayCommittedAnswer(candidate)` and validate the stored event against the exact attempt plus the canonical whole-second timestamp. Tighten the normal repository command/constructor so canonical evidence requires the correlated event. Isolate nullable-event compatibility behind `RecordAnswerCommand.frozenV13LegacyIngress(...)` and its exact migration-default metadata check. Migrate all five inventoried direct eventless test callers—three in `test/features/sync/learning_event_sync_test.dart` and two in `test/features/progress/progress_projector_test.dart`—to that factory during this fix. Those fixture-only edits do not implement outbound/cloud sync v2, which remains owned by Task 8, and do not replace Task 7's later evidence-projection changes in the Progress tests. If an existing canonical attempt has a missing/corrupt event, fail closed; if an existing exact legacy-ingress attempt is eventless, return only its stored snapshot through that same ingress and reject any event retrofit. Never append an event during replay. Do not change Quest event types in this task; eligibility becomes the authoritative gate in Task 7.
 
 - [ ] **Step 5: Run focused tests and commit**
 
 ```powershell
 flutter test --no-pub test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/drift_learning_event_store_test.dart
-git add -- lib/features/learning/domain/learning_event_context.dart lib/features/learning/domain/learning_repository.dart lib/features/learning/domain/learning_evidence_contract.dart lib/features/learning/application/learning_use_cases.dart lib/features/events/application/event_v1_to_v2_adapter.dart lib/features/learning/domain/learning_models.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_event_store.dart lib/runtime/app_bootstrap.dart test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/drift_learning_event_store_test.dart
+flutter test --no-pub test/features/sync/learning_event_sync_test.dart test/features/progress/progress_projector_test.dart
+git add -- lib/features/learning/domain/learning_event_context.dart lib/features/learning/domain/learning_repository.dart lib/features/learning/domain/learning_evidence_contract.dart lib/features/learning/application/learning_use_cases.dart lib/features/events/application/event_v1_to_v2_adapter.dart lib/features/learning/domain/learning_models.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_event_store.dart lib/runtime/app_bootstrap.dart test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/sync/learning_event_sync_test.dart test/features/progress/progress_projector_test.dart
 git diff --cached --check
 git commit -m "refactor: reuse one learning evidence identity"
 ```
