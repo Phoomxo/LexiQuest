@@ -157,7 +157,10 @@ void main() {
       expect(content['tables'], hasLength(31));
       expect(content['archiveSchemaVersion'], 1);
       expect(content['algorithmVersion'], 1);
-      expect(content['databaseSchemaVersion'], 12);
+      expect(
+        content['databaseSchemaVersion'],
+        AppDatabase.currentSchemaVersion,
+      );
       expect(content['manifestEntryCount'], 31);
       expect(artifact.schemaVersion, content['archiveSchemaVersion']);
       expect(artifact.algorithmVersion, content['algorithmVersion']);
