@@ -270,7 +270,11 @@ final class DriftLearningEventStore {
       database.eventsV2,
     )..where((row) => row.eventId.equals(eventId))).getSingleOrNull();
     if (existing != null) {
-      _validateStoredDecisionSet(row: existing, expected: candidate);
+      await _validateStoredDecisionSet(
+        row: existing,
+        expected: candidate,
+        allowHistoricalEventlessActor: validatedSource == null,
+      );
       return expected;
     }
 
@@ -290,7 +294,11 @@ final class DriftLearningEventStore {
       final stored = await (database.select(
         database.eventsV2,
       )..where((row) => row.eventId.equals(eventId))).getSingle();
-      _validateStoredDecisionSet(row: stored, expected: candidate);
+      await _validateStoredDecisionSet(
+        row: stored,
+        expected: candidate,
+        allowHistoricalEventlessActor: validatedSource == null,
+      );
     });
     return expected;
   }
@@ -675,13 +683,30 @@ final class DriftLearningEventStore {
     );
   }
 
-  void _validateStoredDecisionSet({
+  Future<void> _validateStoredDecisionSet({
     required db.EventsV2Data row,
     required EventEnvelopeV2 expected,
-  }) {
-    if (!_isExactStoredEvent(row, expected)) {
-      throw StateError('learning evidence decision-set identity conflict');
+    required bool allowHistoricalEventlessActor,
+  }) async {
+    if (_isExactStoredEvent(row, expected)) return;
+    if (allowHistoricalEventlessActor &&
+        row.actorIdentity != expected.actorIdentity &&
+        await _isAuthorizedActor(
+          actorIdentity: row.actorIdentity,
+          ownerIdentity: expected.ownerIdentity,
+        )) {
+      try {
+        final historicalExpectedJson = expected.toJson()
+          ..['actorIdentity'] = row.actorIdentity;
+        final historicalExpected = EventEnvelopeV2.fromJson(
+          historicalExpectedJson,
+        );
+        if (_isExactStoredEvent(row, historicalExpected)) return;
+      } catch (_) {
+        // Fall through to the one stable conflict below.
+      }
     }
+    throw StateError('learning evidence decision-set identity conflict');
   }
 
   String _decisionSetEventId(String sourceEvidenceId) {

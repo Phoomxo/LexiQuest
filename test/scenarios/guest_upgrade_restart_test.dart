@@ -17,7 +17,9 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -247,6 +249,202 @@ void main() {
               .singleWhere((event) => event.eventId == decisionEventId)
               .toJson(),
           decisionBeforeReplay.toJson(),
+        );
+      } finally {
+        await database?.close();
+        await directory.delete(recursive: true);
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+      }
+    },
+  );
+
+  test(
+    'eventless frozen-v13 audit preserves merged guest provenance after reopen',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-eventless-owner-upgrade-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}upgrade.sqlite';
+      final nowUtc = DateTime.utc(2026, 8, 14, 10);
+      final occurredAtUtc = nowUtc.add(
+        const Duration(seconds: 3, milliseconds: 321),
+      );
+      const sourceEvidenceId = 'guest-eventless-evidence';
+      const decisionEventId =
+          'learning-evidence-decisions:$sourceEvidenceId:v1';
+      const learningEventId = 'learning-event:$sourceEvidenceId';
+      const accountOwnerId = 'account-eventless-owner';
+      const firebaseUid = 'firebase-eventless-owner';
+      final evidenceContext =
+          LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+
+      AppDatabase openDatabase() => AppDatabase(NativeDatabase(File(path)));
+      AppDatabase? database;
+      try {
+        database = openDatabase();
+        final guestOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'eventless-guest',
+          nowUtc: () => nowUtc,
+        );
+        final guest = await guestOwners.getOrCreateActiveOwner();
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: accountOwnerId,
+                firebaseUid: const Value(firebaseUid),
+                accountState: const Value('firebaseBound'),
+                createdAtUtcMs: nowUtc.millisecondsSinceEpoch - 1,
+                isActive: const Value(false),
+              ),
+            );
+        await _seedLearningEvidenceVocabulary(database, guest.id);
+        final firstLearning = LearningUseCases(
+          owners: guestOwners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'eventless-session-id',
+          nowUtc: () => nowUtc,
+          buildInfo: const AppBuildInfo(
+            version: '1.0.0',
+            buildId: 'eventless-upgrade-test',
+          ),
+        );
+        final quiz = await firstLearning.startQuiz(
+          categoryId: 'learning-category',
+          limit: 1,
+        );
+        final firstCommand = RecordAnswerCommand.frozenV13LegacyIngress(
+          id: sourceEvidenceId,
+          ownerId: guest.id,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 650,
+          attemptNumber: 1,
+          occurredAtUtc: occurredAtUtc,
+          evidenceContext: evidenceContext,
+        );
+        expect(
+          (await DriftLearningRepository(
+            database,
+          ).recordAnswer(firstCommand)).inserted,
+          isTrue,
+        );
+        final guestAudit = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(decisionEventId))).getSingle();
+        expect(guestAudit.ownerId, guest.id);
+        expect(guestAudit.actorIdentity, guest.id);
+        expect(
+          await (database.select(database.eventsV2)
+                ..where((row) => row.eventId.equals(learningEventId)))
+              .getSingleOrNull(),
+          isNull,
+        );
+
+        var eventlessConflictSequence = 0;
+        final upgraded = await UpgradeGuestOwner(
+          DriftOwnerUpgradeRepository(
+            database,
+            nowUtc: () => nowUtc.add(const Duration(minutes: 1)),
+            generateConflictId: () =>
+                'eventless-upgrade-conflict-${eventlessConflictSequence++}',
+            generateOwnerId: () => 'unexpected-eventless-owner',
+            generateOwnerOperationToken: () => 'eventless-upgrade-operation',
+            deleteOwnerSecrets: (_) async {},
+          ),
+        )(activeOwnerId: guest.id, firebaseUid: firebaseUid);
+        expect(upgraded.targetOwnerId, accountOwnerId);
+        expect(upgraded.mode, OwnerUpgradeMode.mergedExisting);
+        final upgradedAudit = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(decisionEventId))).getSingle();
+        expect(upgradedAudit.ownerId, accountOwnerId);
+        expect(upgradedAudit.actorIdentity, guest.id);
+        final upgradedAuditBytes = upgradedAudit.toJson();
+
+        await database.close();
+        database = openDatabase();
+        final reopenedOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner-after-eventless-reopen',
+          nowUtc: () => nowUtc.add(const Duration(minutes: 2)),
+        );
+        expect(
+          (await reopenedOwners.getOrCreateActiveOwner()).id,
+          accountOwnerId,
+        );
+        final retryCommand = RecordAnswerCommand.frozenV13LegacyIngress(
+          id: sourceEvidenceId,
+          ownerId: accountOwnerId,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 650,
+          attemptNumber: 1,
+          occurredAtUtc: occurredAtUtc,
+          evidenceContext: evidenceContext,
+        );
+        final reopenedRepository = DriftLearningRepository(database);
+        expect(
+          (await reopenedRepository.recordAnswer(retryCommand)).inserted,
+          isFalse,
+        );
+        final afterRetry = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(decisionEventId))).getSingle();
+        expect(afterRetry.toJson(), upgradedAuditBytes);
+        expect(afterRetry.ownerId, accountOwnerId);
+        expect(afterRetry.actorIdentity, guest.id);
+
+        await expectLater(
+          reopenedRepository.recordAnswer(
+            RecordAnswerCommand.frozenV13LegacyIngress(
+              id: sourceEvidenceId,
+              ownerId: accountOwnerId,
+              sessionId: quiz.id,
+              wordId: quiz.questions.single.word.id,
+              promptMode: 'meaningChoice',
+              isCorrect: true,
+              responseTimeMs: 651,
+              attemptNumber: 1,
+              occurredAtUtc: occurredAtUtc,
+              evidenceContext: evidenceContext,
+            ),
+          ),
+          throwsStateError,
+        );
+
+        await database.customUpdate(
+          'UPDATE events_v2 SET actor_identity = ? WHERE event_id = ?',
+          variables: const <Variable<Object>>[
+            Variable<String>('unauthorized-eventless-actor'),
+            Variable<String>(decisionEventId),
+          ],
+          updates: {database.eventsV2},
+        );
+        final unauthorizedBytes =
+            (await (database.select(database.eventsV2)
+                      ..where((row) => row.eventId.equals(decisionEventId)))
+                    .getSingle())
+                .toJson();
+        await expectLater(
+          reopenedRepository.recordAnswer(retryCommand),
+          throwsStateError,
+        );
+        expect(
+          (await (database.select(database.eventsV2)
+                    ..where((row) => row.eventId.equals(decisionEventId)))
+                  .getSingle())
+              .toJson(),
+          unauthorizedBytes,
         );
       } finally {
         await database?.close();
