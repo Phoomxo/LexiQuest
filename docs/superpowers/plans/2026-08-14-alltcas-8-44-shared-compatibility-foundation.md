@@ -935,28 +935,45 @@ Rollback after deployment: disable all new activity invocation and continue read
 
 **Files:**
 - Create: `lib/features/learning/domain/learning_event_context.dart`
+- Modify: `lib/features/learning/domain/learning_repository.dart`
+- Modify: `lib/features/learning/domain/learning_evidence_contract.dart`
 - Modify: `lib/features/learning/application/learning_use_cases.dart`
 - Modify: `lib/features/events/application/event_v1_to_v2_adapter.dart`
 - Modify: `lib/features/learning/domain/learning_models.dart`
 - Modify: `lib/features/learning/data/drift_learning_repository.dart`
+- Modify: `lib/features/learning/data/drift_learning_event_store.dart`
 - Modify: `lib/runtime/app_bootstrap.dart`
 - Modify: `test/features/learning/learning_use_cases_test.dart`
 - Modify: `test/features/events/event_v1_to_v2_adapter_test.dart`
 - Modify: `test/features/learning/drift_learning_repository_test.dart`
+- Create: `test/features/learning/drift_learning_event_store_test.dart`
 
 **Interfaces:**
 - Consumes: schema v13 attempt metadata.
-- Produces: a new caller-owned `recordEvidence` API, versioned learning-event context, optional SRS result, and Event V2 payload version 2 with serialized evidence context while preserving the old compatibility entry point until all production callers migrate.
+- Produces: a new caller-owned `recordEvidence` API, a source-keyed `replayCommittedAnswer(candidate)` repository query, versioned learning-event context, optional SRS result, and Event V2 payload version 2 with serialized evidence context while preserving the old compatibility entry point until all production callers migrate.
 
-- [ ] **Step 1: Write failing deterministic identity tests**
+`AnswerAttempts` remains the canonical semantic/conflict authority and retains the exact caller-supplied UTC millisecond. `EventsV2` is its required correlated downstream record and canonicalizes `occurredAtUtc`/`recordedAtUtc` to UTC whole seconds before persistence so the in-memory envelope equals the value read back through Drift. Event timestamp truncation never weakens attempt equality: a candidate at `.123Z` may replay only the attempt stored at `.123Z`, while `.124Z` is a conflict even though both correlate to an event at `.000Z`.
 
-Test that two retries with the same ID/context/time create one attempt, one `learning-event:{sourceEvidenceId}`, one attempt outbox row, and at most one receipt per projection. Test that the same ID with a changed answer, time, or evidence context throws.
+Reserve the longest planned 59-scalar derived-receipt suffix/prefix budget under the existing 256-scalar identifier ceiling. A new caller-owned `sourceEvidenceId` is therefore at most 197 Unicode scalars (`runes.length`); every deterministic event, outbox, cursor, and receipt ID derived from it must remain at most 256 scalars.
+
+Canonical new evidence always supplies its correlated Event V2. A null event is permitted only through one explicitly named frozen-v13 legacy ingress whose evidence metadata exactly equals the immutable v13 migration default. That eventless row remains eventless forever: neither a canonical retry may omit its event nor a legacy retry may retrofit one. This task does not change the schema version, event table, generated database files, Firestore rules, or any other policy/rules artifact.
+
+- [ ] **Step 1: Write failing durable identity and replay tests**
+
+Cover this complete RED matrix:
+
+- Record an attempt at `.123Z`; verify its event is persisted at `.000Z`, then retry in the same process and after closing/reopening the database. Both retries return the stored event/snapshot and leave one attempt, one `learning-event:{sourceEvidenceId}`, one attempt outbox row, and at most one receipt per projection. A `.124Z` candidate is an exact-millisecond conflict.
+- After the first durable commit, retry with a provider that now throws and with one that would return changed consent/experiment/contract context. Persisted replay bypasses both providers and returns the original stored event/snapshot.
+- Delete the correlated event or corrupt its immutable fields and assert replay fails closed; it must not resolve the provider, synthesize a replacement, or run side effects from a candidate event.
+- Reject `event == null` for declared or ordinary canonical evidence. Accept eventless insertion only through the explicit ingress with the exact frozen-v13 legacy context, and assert that replay cannot retrofit an event onto that row or omit the event from a canonical row.
+- Accept a caller-owned ID of exactly 197 Unicode scalars, reject 198, and assert every planned event/outbox/cursor/receipt identifier derived from the accepted ID is at most 256 Unicode scalars.
+- Retain the same-ID changed-answer and changed-evidence-context conflict cases in addition to the exact-time conflict.
 
 ```powershell
 flutter test --no-pub test/features/learning/learning_use_cases_test.dart --plain-name "recordEvidence reuses one source identity across retry"
 ```
 
-Expected: compile/test failure because `recordEvidence` and `LearningEventContextProvider` do not exist.
+Expected: compile/test failure because the durable replay query, timestamp canonicalization, strict event ingress, and 197-scalar source-ID boundary do not exist.
 
 - [ ] **Step 2: Add the evidence-first use-case without breaking callers**
 
@@ -975,7 +992,9 @@ Future<AnswerRecordResult> recordEvidence({
 });
 ```
 
-Move the shared implementation behind `recordEvidence`. Validate the supplied UTC time and stable identifier. Keep `recordAnswer` as a clearly deprecated compatibility wrapper that generates identity/time once per invocation and supplies `legacyInferred/legacy-v1`; Task 8 removes every production-screen dependency on that wrapper. An architecture test later forbids `recordAnswer` calls under `lib/screens/`.
+Move the shared implementation behind `recordEvidence`. Validate the supplied exact UTC time and the caller-owned source identifier against the 197-Unicode-scalar limit. After resolving the owner and validating the caller-owned attempt semantics, call source-keyed `replayCommittedAnswer(candidate)` before `LearningEventContextProvider.resolve`. The candidate contains every exact `AnswerAttempts` semantic field but no newly resolved event context. When the source ID is absent, continue through provider resolution and the new write. When it exists, the repository must compare every exact attempt field, load and validate the correlated stored event, and return that stored event plus the current stored projection snapshot; `recordEvidence` must use the returned event for its bounded post-commit scheduling and must not call the provider or adapt a replacement event.
+
+Keep `recordAnswer` as a clearly deprecated compatibility wrapper that generates identity/time once per invocation and supplies `legacyInferred/legacy-v1`; Task 8 removes every production-screen dependency on that wrapper. An architecture test later forbids `recordAnswer` calls under `lib/screens/`.
 
 Define an injected asynchronous `LearningEventContextProvider`. Its baseline implementation returns an explicit no-research context only for Legacy evidence. Shadow or Enforced evidence requires a nonzero consent snapshot, experiment assignment, protocol version, assignment ID, and a feature-contract identity equal to the declared `EvidenceContext`; before Task 11 provides a persisted implementation it fails closed. Widgets never construct ConsentContext, ExperimentContext, or contract identity.
 
@@ -991,9 +1010,9 @@ final class AnswerRecordResult {
 
 Existing independent-recall callers still receive a non-null SRS result. Denied future evidence receives null.
 
-- [ ] **Step 4: Put evidence context in the existing event payload**
+- [ ] **Step 4: Require and durably reload the correlated event**
 
-Keep frozen `EventEnvelopeV2` fields unchanged. `adaptFromCommand` must use:
+Keep frozen `EventEnvelopeV2` fields unchanged. Canonicalize the event occurrence/recorded timestamp to UTC whole seconds before constructing the envelope; do not round or overwrite the exact millisecond retained by `AnswerAttempts`. `adaptFromCommand` must use:
 
 ```dart
 eventId: 'learning-event:$sourceEvidenceId',
@@ -1012,13 +1031,15 @@ payload: <String, Object?>{
 },
 ```
 
-Populate the envelope's existing `consentContext` and `experimentContext` from `LearningEventContextProvider`; do not leave hard-coded zero/null research context for Shadow, Enforced, or Assessment evidence. Require envelope experiment ID/variant/assigned-at, consent version, and the provider's contract identity to agree with `EvidenceContext`; version, assignment ID, protocol, and feature-contract revision/hash remain in the complete serialized context inside the payload because the frozen envelope has no fields for them. Do not change Quest event types in this task; eligibility becomes the authoritative gate in Task 7.
+Populate the envelope's existing `consentContext` and `experimentContext` from `LearningEventContextProvider`; do not leave hard-coded zero/null research context for Shadow, Enforced, or Assessment evidence. Require envelope experiment ID/variant/assigned-at, consent version, and the provider's contract identity to agree with `EvidenceContext`; version, assignment ID, protocol, and feature-contract revision/hash remain in the complete serialized context inside the payload because the frozen envelope has no fields for them.
+
+Add the event-store read needed by `replayCommittedAnswer(candidate)` and validate the stored event against the exact attempt plus the canonical whole-second timestamp. Tighten the normal repository command/constructor so canonical evidence requires the correlated event. Isolate nullable-event compatibility behind the explicit frozen-v13 legacy ingress and exact migration-default metadata check. If an existing canonical attempt has a missing/corrupt event, fail closed; if an existing exact legacy-ingress attempt is eventless, return only its stored snapshot through that same ingress and reject any event retrofit. Never append an event during replay. Do not change Quest event types in this task; eligibility becomes the authoritative gate in Task 7.
 
 - [ ] **Step 5: Run focused tests and commit**
 
 ```powershell
-flutter test --no-pub test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart
-git add -- lib/features/learning/domain/learning_event_context.dart lib/features/learning/application/learning_use_cases.dart lib/features/events/application/event_v1_to_v2_adapter.dart lib/features/learning/domain/learning_models.dart lib/features/learning/data/drift_learning_repository.dart lib/runtime/app_bootstrap.dart test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart
+flutter test --no-pub test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/drift_learning_event_store_test.dart
+git add -- lib/features/learning/domain/learning_event_context.dart lib/features/learning/domain/learning_repository.dart lib/features/learning/domain/learning_evidence_contract.dart lib/features/learning/application/learning_use_cases.dart lib/features/events/application/event_v1_to_v2_adapter.dart lib/features/learning/domain/learning_models.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_event_store.dart lib/runtime/app_bootstrap.dart test/features/learning/learning_use_cases_test.dart test/features/events/event_v1_to_v2_adapter_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/drift_learning_event_store_test.dart
 git diff --cached --check
 git commit -m "refactor: reuse one learning evidence identity"
 ```
@@ -1036,7 +1057,7 @@ git commit -m "refactor: reuse one learning evidence identity"
 - Modify: `lib/runtime/app_bootstrap.dart`
 - Modify: `test/features/learning/data/drift_learning_projection_rebuilder_test.dart`
 - Modify: `test/features/learning/learning_side_effect_reconciler_test.dart`
-- Create: `test/features/learning/drift_learning_event_store_test.dart`
+- Modify: `test/features/learning/drift_learning_event_store_test.dart`
 - Modify: `test/features/quest/quest_learning_integration_test.dart`
 - Modify: `test/features/motivation/streak_learning_integration_test.dart`
 - Modify: `test/features/progress/progress_projector_test.dart`
