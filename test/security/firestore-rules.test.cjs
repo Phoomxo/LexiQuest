@@ -156,6 +156,7 @@ function writeFieldLearningEvent(db, {
   entityType = 'attempt',
   entityId = 'attempt-1',
   operationId = 'attempt-operation-1',
+  schemaVersion = 1,
   payload,
 } = {}) {
   const resolvedPayload = payload ?? {
@@ -170,7 +171,7 @@ function writeFieldLearningEvent(db, {
   };
   const batch = writeBatch(db);
   batch.set(doc(db, 'field_users', uid, collection, entityId), {
-    schemaVersion: 1,
+    schemaVersion,
     entityId,
     payload: resolvedPayload,
     revision: 1,
@@ -180,7 +181,7 @@ function writeFieldLearningEvent(db, {
     lastOperationId: operationId,
   });
   batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
-    schemaVersion: 1,
+    schemaVersion,
     operationId,
     entityType,
     entityId,
@@ -190,6 +191,53 @@ function writeFieldLearningEvent(db, {
     acknowledgedAt: serverTimestamp(),
   });
   return batch.commit();
+}
+
+function fieldEvidenceContext(overrides = {}) {
+  return {
+    schemaVersion: 1,
+    evidenceClass: 'independentRecall',
+    skillId: 'meaning-recall',
+    hintLevel: 0,
+    policyVersion: 'learning-evidence-v1',
+    contentRevision: 'built-in-v1',
+    featureContractRevision: '1.0.0',
+    featureContractHash:
+      'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0',
+    classificationSource: 'declared',
+    rolloutMode: 'shadow',
+    protocolId: 'evidence-pilot',
+    protocolVersion: '1.0.0',
+    experimentId: 'evidence-eligibility',
+    experimentVersion: 1,
+    assignmentId: 'assignment-1',
+    cohort: 'shadow',
+    researchConsentVersion: 1,
+    instrumentId: null,
+    instrumentVersion: null,
+    formId: null,
+    formVersion: null,
+    assessmentItemId: null,
+    assessmentResponseCode: null,
+    scoringRuleVersion: null,
+    engagementAllowed: true,
+    ...overrides,
+  };
+}
+
+function fieldAttemptV2Payload(context = fieldEvidenceContext()) {
+  return {
+    sessionId: 'session-1',
+    wordId: 'word-1',
+    promptMode: 'meaningChoice',
+    isCorrect: true,
+    responseTimeMs: 320,
+    attemptNumber: 1,
+    occurredAtUtcMs: 2000,
+    providerProvenance: null,
+    evidenceClass: context.evidenceClass,
+    evidenceContext: context,
+  };
 }
 
 function writeFieldRewardTransaction(db, {
@@ -546,6 +594,156 @@ describe('field sync ownership and atomic revision contract', () => {
         },
       }),
     );
+  });
+
+  it('accepts the exact AnswerAttempt payload v2 evidence context', async () => {
+    const db = authDb();
+    await assertSucceeds(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2',
+        operationId: 'attempt-v2-operation',
+        schemaVersion: 2,
+        payload: fieldAttemptV2Payload(),
+      }),
+    );
+  });
+
+  it('rejects payload v2 for every legacy-v1-only sync collection', async () => {
+    const db = authDb();
+    const legacyCollections = [
+      ['categories', 'category'],
+      ['words', 'word'],
+      ['reading_events', 'readingEvent'],
+      ['reward_transactions', 'rewardTransaction'],
+      ['srs_states', 'srsState'],
+      ['achievement_unlocks', 'achievementUnlock'],
+    ];
+    for (const [collection, entityType] of legacyCollections) {
+      await assertFails(
+        writeFieldLearningEvent(db, {
+          collection,
+          entityType,
+          entityId: `${collection}-v2`,
+          operationId: `${collection}-v2-operation`,
+          schemaVersion: 2,
+          payload: {},
+        }),
+      );
+    }
+  });
+
+  it('rejects AnswerAttempt v2 unknown keys and class mismatch', async () => {
+    const db = authDb();
+    const extraContext = fieldEvidenceContext({ leakedField: 'not allowed' });
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2-extra-context',
+        operationId: 'attempt-v2-extra-context-operation',
+        schemaVersion: 2,
+        payload: fieldAttemptV2Payload(extraContext),
+      }),
+    );
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2-extra-payload',
+        operationId: 'attempt-v2-extra-payload-operation',
+        schemaVersion: 2,
+        payload: { ...fieldAttemptV2Payload(), rawAudio: 'not allowed' },
+      }),
+    );
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2-class-mismatch',
+        operationId: 'attempt-v2-class-mismatch-operation',
+        schemaVersion: 2,
+        payload: {
+          ...fieldAttemptV2Payload(),
+          evidenceClass: 'recognition',
+        },
+      }),
+    );
+  });
+
+  it('rejects missing keys from either exact AnswerAttempt v2 schema', async () => {
+    const db = authDb();
+    const missingPayloadKey = fieldAttemptV2Payload();
+    delete missingPayloadKey.providerProvenance;
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2-missing-payload-key',
+        operationId: 'attempt-v2-missing-payload-key-operation',
+        schemaVersion: 2,
+        payload: missingPayloadKey,
+      }),
+    );
+
+    const missingContextKey = fieldEvidenceContext();
+    delete missingContextKey.formId;
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-v2-missing-context-key',
+        operationId: 'attempt-v2-missing-context-key-operation',
+        schemaVersion: 2,
+        payload: fieldAttemptV2Payload(missingContextKey),
+      }),
+    );
+  });
+
+  it('rejects AnswerAttempt v2 invalid enums and oversized context fields', async () => {
+    const db = authDb();
+    const invalidContexts = [
+      fieldEvidenceContext({ evidenceClass: 'unknown' }),
+      fieldEvidenceContext({ classificationSource: 'guessed' }),
+      fieldEvidenceContext({ rolloutMode: 'active' }),
+      fieldEvidenceContext({ skillId: 'x'.repeat(257) }),
+      fieldEvidenceContext({ protocolId: 'x'.repeat(257) }),
+    ];
+    for (let index = 0; index < invalidContexts.length; index += 1) {
+      await assertFails(
+        writeFieldLearningEvent(db, {
+          entityId: `attempt-v2-invalid-${index}`,
+          operationId: `attempt-v2-invalid-${index}-operation`,
+          schemaVersion: 2,
+          payload: fieldAttemptV2Payload(invalidContexts[index]),
+        }),
+      );
+    }
+  });
+
+  it('rejects mismatched AnswerAttempt entity and operation schema versions', async () => {
+    const db = authDb();
+    const batch = writeBatch(db);
+    batch.set(doc(db, 'field_users', alice, 'attempts', 'attempt-v2-mismatch'), {
+      schemaVersion: 2,
+      entityId: 'attempt-v2-mismatch',
+      payload: fieldAttemptV2Payload(),
+      revision: 1,
+      isDeleted: false,
+      clientUpdatedAtUtcMs: 2000,
+      serverUpdatedAt: serverTimestamp(),
+      lastOperationId: 'attempt-v2-mismatch-operation',
+    });
+    batch.set(
+      doc(
+        db,
+        'field_users',
+        alice,
+        'operations',
+        'attempt-v2-mismatch-operation',
+      ),
+      {
+        schemaVersion: 1,
+        operationId: 'attempt-v2-mismatch-operation',
+        entityType: 'attempt',
+        entityId: 'attempt-v2-mismatch',
+        operationKind: 'upsert',
+        baseRevision: 0,
+        resultingRevision: 1,
+        acknowledgedAt: serverTimestamp(),
+      },
+    );
+
+    await assertFails(batch.commit());
   });
 
   it('keeps learning evidence create-only and owner-isolated', async () => {

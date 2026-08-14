@@ -108,6 +108,87 @@ void main() {
       );
     });
 
+    test('accepts attempt entity payload versions 1 and 2', () {
+      for (final version in const <int>[1, 2]) {
+        final entity = FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.attempts,
+          documentId: 'attempt-$version',
+          data: <String, Object?>{
+            'schemaVersion': version,
+            'entityId': 'attempt-$version',
+            'revision': 1,
+            'isDeleted': false,
+            'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+            'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+            'lastOperationId': 'operation-$version',
+            'payload': const <String, Object?>{'attemptNumber': 1},
+          },
+        );
+
+        expect(entity.payloadVersion, version);
+      }
+    });
+
+    test('rejects payload v2 for every legacy-v1-only collection', () {
+      for (final collection in SyncCollection.values.where(
+        (value) => value != SyncCollection.attempts,
+      )) {
+        expect(
+          () => FirestoreSyncCodec.decodeEntity(
+            collection: collection,
+            documentId: '${collection.entityType}-1',
+            data: <String, Object?>{
+              'schemaVersion': 2,
+              'entityId': '${collection.entityType}-1',
+              'revision': 1,
+              'isDeleted': false,
+              'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+              'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+              'lastOperationId': 'operation-1',
+              'payload': const <String, Object?>{'value': 1},
+            },
+          ),
+          throwsA(isA<UnsupportedSyncSchemaFailure>()),
+          reason: collection.name,
+        );
+      }
+    });
+
+    test('acknowledgement validates collection type and payload version', () {
+      final base = <String, Object?>{
+        'schemaVersion': 2,
+        'operationId': 'operation-2',
+        'entityType': SyncCollection.attempts.entityType,
+        'resultingRevision': 1,
+        'acknowledgedAt': Timestamp.fromDate(serverUpdatedAt),
+      };
+
+      expect(
+        FirestoreSyncCodec.decodeAcknowledgement(
+          base,
+          expectedOperationId: 'operation-2',
+          expectedCollection: SyncCollection.attempts,
+        ).resultingRevision,
+        1,
+      );
+      expect(
+        () => FirestoreSyncCodec.decodeAcknowledgement(
+          base,
+          expectedOperationId: 'operation-2',
+          expectedCollection: SyncCollection.words,
+        ),
+        throwsA(isA<UnsupportedSyncSchemaFailure>()),
+      );
+      expect(
+        () => FirestoreSyncCodec.decodeAcknowledgement(
+          <String, Object?>{...base, 'schemaVersion': 1},
+          expectedOperationId: 'operation-2',
+          expectedCollection: SyncCollection.words,
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+    });
+
     test('rejects a missing server timestamp', () {
       expect(
         () => FirestoreSyncCodec.decodeEntity(
@@ -127,6 +208,52 @@ void main() {
         throwsA(isA<InvalidSyncPayloadFailure>()),
       );
     });
+  });
+
+  group('FirestoreSyncPreflight', () {
+    test('admits attempts v1/v2 and starts the transaction once', () async {
+      const preflight = FirestoreSyncPreflight();
+      var transactions = 0;
+
+      for (final version in const <int>[1, 2]) {
+        final result = await preflight.beforeTransaction(
+          collection: SyncCollection.attempts,
+          payloadVersion: version,
+          beginTransaction: () async {
+            transactions += 1;
+            return version;
+          },
+        );
+        expect(result, version);
+      }
+
+      expect(transactions, 2);
+    });
+
+    test(
+      'rejects legacy collection v2 without starting a transaction',
+      () async {
+        const preflight = FirestoreSyncPreflight();
+        var transactions = 0;
+
+        for (final collection in SyncCollection.values.where(
+          (value) => value != SyncCollection.attempts,
+        )) {
+          await expectLater(
+            preflight.beforeTransaction<void>(
+              collection: collection,
+              payloadVersion: 2,
+              beginTransaction: () async {
+                transactions += 1;
+              },
+            ),
+            throwsA(isA<UnsupportedSyncSchemaFailure>()),
+          );
+        }
+
+        expect(transactions, 0);
+      },
+    );
   });
 
   group('FirestoreSyncErrorMapper', () {

@@ -2,7 +2,9 @@ import 'dart:convert';
 
 import 'sync_failure.dart';
 
-const int currentSyncPayloadVersion = 1;
+const int currentCloudSyncPolicySchemaVersion = 1;
+const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
+const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
   categories,
@@ -41,6 +43,45 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.rewardTransactions => 'rewardTransaction',
     SyncCollection.srsStates => 'srsState',
     SyncCollection.achievementUnlocks => 'achievementUnlock',
+  };
+
+  Set<int> get supportedPayloadVersions => switch (this) {
+    SyncCollection.attempts => const <int>{1, 2},
+    SyncCollection.categories ||
+    SyncCollection.words ||
+    SyncCollection.readingEvents ||
+    SyncCollection.rewardTransactions ||
+    SyncCollection.srsStates ||
+    SyncCollection.achievementUnlocks => const <int>{1},
+  };
+
+  int get defaultWritePayloadVersion => 1;
+
+  bool supportsPayloadVersion(int value) =>
+      supportedPayloadVersions.contains(value);
+
+  void requireSupportedPayloadVersion(int value) {
+    if (!supportsPayloadVersion(value)) {
+      throw const UnsupportedSyncSchemaFailure();
+    }
+  }
+}
+
+final class SyncPayloadRollout {
+  const SyncPayloadRollout.productionDefault() : answerAttemptWriteVersion = 1;
+
+  const SyncPayloadRollout.answerAttemptV2() : answerAttemptWriteVersion = 2;
+
+  final int answerAttemptWriteVersion;
+
+  int writeVersionFor(SyncCollection collection) => switch (collection) {
+    SyncCollection.attempts => answerAttemptWriteVersion,
+    SyncCollection.categories ||
+    SyncCollection.words ||
+    SyncCollection.readingEvents ||
+    SyncCollection.rewardTransactions ||
+    SyncCollection.srsStates ||
+    SyncCollection.achievementUnlocks => collection.defaultWritePayloadVersion,
   };
 }
 
@@ -109,7 +150,7 @@ final class PushMutation {
        firebaseUid = _requiredId(firebaseUid, 'firebaseUid'),
        entityId = _requiredId(entityId, 'entityId'),
        payload = Map<String, Object?>.unmodifiable(payload) {
-    _requirePayloadVersion(payloadVersion);
+    collection.requireSupportedPayloadVersion(payloadVersion);
     _requireRevision(baseRevision, 'baseRevision', allowZero: true);
     _requireRevision(localRevision, 'localRevision');
     if (localRevision <= baseRevision) {
@@ -147,7 +188,7 @@ final class SyncEntity {
     required Map<String, Object?> payload,
   }) : entityId = _requiredId(entityId, 'entityId'),
        payload = Map<String, Object?>.unmodifiable(payload) {
-    _requirePayloadVersion(payloadVersion);
+    collection.requireSupportedPayloadVersion(payloadVersion);
     _requireRevision(revision, 'revision');
     _requireUtc(clientUpdatedAtUtc, 'clientUpdatedAtUtc');
     _requireUtc(serverUpdatedAtUtc, 'serverUpdatedAtUtc');
@@ -162,12 +203,6 @@ final class SyncEntity {
   final DateTime clientUpdatedAtUtc;
   final DateTime serverUpdatedAtUtc;
   final Map<String, Object?> payload;
-}
-
-void _requirePayloadVersion(int value) {
-  if (value != currentSyncPayloadVersion) {
-    throw const UnsupportedSyncSchemaFailure();
-  }
 }
 
 void _requireRevision(int value, String field, {bool allowZero = false}) {

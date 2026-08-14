@@ -15,6 +15,7 @@ import 'package:vocab_learning_app/features/learning/domain/srs_operation_identi
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
 
@@ -113,6 +114,82 @@ void main() {
     expect(claim.mutation.baseRevision, 0);
     expect(claim.mutation.payload['wordId'], 'word-1');
     expect(claim.mutation.payload['isCorrect'], isTrue);
+    expect(claim.mutation.payloadVersion, 1);
+    expect(claim.mutation.payload, isNot(contains('evidenceContext')));
+  });
+
+  test(
+    'attempt payload v2 preserves the complete declared evidence context',
+    () async {
+      final context = _declaredEvidence();
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-v2',
+        sessionId: 'session-v2',
+        occurredAt: now,
+        evidenceContext: context,
+      );
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'attempt-v2-gate',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final v2Store = DriftSyncStore(
+        database,
+        payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+      );
+
+      final claim = (await v2Store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-1',
+        limit: 10,
+        leaseToken: 'attempt-v2-lease',
+        ownerGateToken: 'attempt-v2-gate',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      )).single;
+
+      expect(claim.mutation.payloadVersion, 2);
+      expect(
+        claim.mutation.payload['evidenceClass'],
+        context.evidenceClass.name,
+      );
+      expect(claim.mutation.payload['evidenceContext'], context.toJson());
+    },
+  );
+
+  test('payload v1 refuses to down-convert declared evidence', () async {
+    await _insertAttemptForSync(
+      database,
+      id: 'attempt-declared-v1',
+      sessionId: 'session-declared-v1',
+      occurredAt: now,
+      evidenceContext: _declaredEvidence(),
+    );
+    expect(
+      await DriftOwnerOperationGate(database).tryAcquire(
+        token: 'attempt-declared-v1-gate',
+        nowUtc: now,
+        leaseDuration: const Duration(minutes: 10),
+      ),
+      isTrue,
+    );
+
+    await expectLater(
+      store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-1',
+        limit: 10,
+        leaseToken: 'attempt-declared-v1-lease',
+        ownerGateToken: 'attempt-declared-v1-gate',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: now,
+      ),
+      throwsA(isA<InvalidSyncPayloadFailure>()),
+    );
   });
 
   test(
@@ -184,6 +261,123 @@ void main() {
       );
     },
   );
+
+  test(
+    'pulled attempt payload v2 preserves declared evidence exactly',
+    () async {
+      final context = _declaredEvidence();
+      final v2Store = DriftSyncStore(
+        database,
+        rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
+          EvidencePolicyRolloutMode.shadow,
+        ),
+      );
+      final entity = _attemptEntity(
+        id: 'attempt-remote-v2',
+        sessionId: 'session-remote-v2',
+        occurredAt: now,
+        payloadVersion: 2,
+        evidenceContext: context,
+      );
+
+      await v2Store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(entity),
+      );
+      await v2Store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(_laterServerReplay(entity)),
+      );
+
+      final attempt = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      expect(attempt.evidenceClass, context.evidenceClass.name);
+      expect(
+        EvidenceContext.fromJson(
+          (jsonDecode(attempt.evidenceContextJson) as Map)
+              .cast<String, Object?>(),
+        ).toJson(),
+        context.toJson(),
+      );
+    },
+  );
+
+  test(
+    'pulled attempt payload v2 rejects top-level context mismatch',
+    () async {
+      final context = _declaredEvidence();
+      final v2Store = DriftSyncStore(
+        database,
+        rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
+          EvidencePolicyRolloutMode.shadow,
+        ),
+      );
+      final entity = _attemptEntity(
+        id: 'attempt-remote-v2-mismatch',
+        sessionId: 'session-remote-v2-mismatch',
+        occurredAt: now,
+        payloadVersion: 2,
+        evidenceContext: context,
+      );
+      final malformed = SyncEntity(
+        collection: entity.collection,
+        entityId: entity.entityId,
+        revision: entity.revision,
+        isDeleted: entity.isDeleted,
+        payloadVersion: entity.payloadVersion,
+        clientUpdatedAtUtc: entity.clientUpdatedAtUtc,
+        serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+        payload: <String, Object?>{
+          ...entity.payload,
+          'evidenceClass': EvidenceClass.recognition.name,
+        },
+      );
+
+      await expectLater(
+        v2Store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.attempts,
+          page: _page(malformed),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    },
+  );
+
+  test('pulled attempt payload v2 rejects unknown payload keys', () async {
+    final context = _declaredEvidence();
+    final entity = _attemptEntity(
+      id: 'attempt-remote-v2-extra',
+      sessionId: 'session-remote-v2-extra',
+      occurredAt: now,
+      payloadVersion: 2,
+      evidenceContext: context,
+    );
+    final malformed = SyncEntity(
+      collection: entity.collection,
+      entityId: entity.entityId,
+      revision: entity.revision,
+      isDeleted: entity.isDeleted,
+      payloadVersion: entity.payloadVersion,
+      clientUpdatedAtUtc: entity.clientUpdatedAtUtc,
+      serverUpdatedAtUtc: entity.serverUpdatedAtUtc,
+      payload: <String, Object?>{...entity.payload, 'rawAudio': 'not allowed'},
+    );
+
+    await expectLater(
+      store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.attempts,
+        page: _page(malformed),
+      ),
+      throwsA(isA<InvalidSyncPayloadFailure>()),
+    );
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+  });
 
   test(
     'historical attempt remains valid after its word is soft deleted',
@@ -1154,12 +1348,14 @@ SyncEntity _attemptEntity({
   required String id,
   required String sessionId,
   required DateTime occurredAt,
+  int payloadVersion = 1,
+  EvidenceContext? evidenceContext,
 }) => SyncEntity(
   collection: SyncCollection.attempts,
   entityId: id,
   revision: 1,
   isDeleted: false,
-  payloadVersion: 1,
+  payloadVersion: payloadVersion,
   clientUpdatedAtUtc: occurredAt,
   serverUpdatedAtUtc: occurredAt.add(const Duration(seconds: 1)),
   payload: <String, Object?>{
@@ -1171,8 +1367,81 @@ SyncEntity _attemptEntity({
     'attemptNumber': 1,
     'occurredAtUtcMs': occurredAt.millisecondsSinceEpoch,
     'providerProvenance': null,
+    if (payloadVersion == 2) ...<String, Object?>{
+      'evidenceClass': evidenceContext!.evidenceClass.name,
+      'evidenceContext': evidenceContext.toJson(),
+    },
   },
 );
+
+EvidenceContext _declaredEvidence() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'meaning-recall',
+  hintLevel: 0,
+  contentRevision: 'built-in-v1',
+  rolloutMode: EvidencePolicyRolloutMode.shadow,
+  protocolId: 'evidence-pilot',
+  protocolVersion: '1.0.0',
+  experimentId: 'evidence-eligibility',
+  experimentVersion: 1,
+  assignmentId: 'assignment-1',
+  cohort: 'shadow',
+  researchConsentVersion: 1,
+  engagementAllowed: true,
+);
+
+Future<void> _insertAttemptForSync(
+  AppDatabase database, {
+  required String id,
+  required String sessionId,
+  required DateTime occurredAt,
+  required EvidenceContext evidenceContext,
+}) async {
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+  await database
+      .into(database.answerAttempts)
+      .insert(
+        AnswerAttemptsCompanion.insert(
+          id: id,
+          ownerId: 'owner-1',
+          sessionId: sessionId,
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: const Value(300),
+          attemptNumber: 1,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          evidenceClass: Value(evidenceContext.evidenceClass.name),
+          evidenceContextJson: Value(jsonEncode(evidenceContext.toJson())),
+        ),
+      );
+  await database
+      .into(database.outboxOperations)
+      .insert(
+        OutboxOperationsCompanion.insert(
+          operationId: LearningEvidenceContract.answerAttemptOutboxOperationId(
+            id,
+          ),
+          ownerId: 'owner-1',
+          entityType: 'attempt',
+          entityId: id,
+          operationKind: 'upsert',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+      );
+}
 
 SyncEntity _readingEntity({
   required String id,

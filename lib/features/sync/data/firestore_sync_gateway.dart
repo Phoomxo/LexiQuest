@@ -14,13 +14,24 @@ final class FirestoreSyncGateway implements SyncGateway {
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
     UtcClock? utcClock,
-  }) => FirestoreSyncGateway._(firestore, auth, utcClock ?? _systemUtcClock);
+  }) => FirestoreSyncGateway._(
+    firestore,
+    auth,
+    utcClock ?? _systemUtcClock,
+    const FirestoreSyncPreflight(),
+  );
 
-  FirestoreSyncGateway._(this._firestore, this._auth, this._utcClock);
+  FirestoreSyncGateway._(
+    this._firestore,
+    this._auth,
+    this._utcClock,
+    this._preflight,
+  );
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
   final UtcClock _utcClock;
+  final FirestoreSyncPreflight _preflight;
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
@@ -35,51 +46,57 @@ final class FirestoreSyncGateway implements SyncGateway {
         .doc(mutation.entityId);
 
     try {
-      final transactionResult = await _firestore
-          .runTransaction<_TransactionPushResult>((transaction) async {
-            final operationSnapshot = await transaction.get(operation);
-            if (operationSnapshot.exists) {
-              return _TransactionPushResult.acknowledged(
-                FirestoreSyncCodec.decodeAcknowledgement(
-                  operationSnapshot.data()!,
-                  expectedOperationId: mutation.operationId,
-                ),
-              );
-            }
+      final transactionResult = await _preflight
+          .beforeTransaction<_TransactionPushResult>(
+            collection: mutation.collection,
+            payloadVersion: mutation.payloadVersion,
+            beginTransaction: () => _firestore
+                .runTransaction<_TransactionPushResult>((transaction) async {
+                  final operationSnapshot = await transaction.get(operation);
+                  if (operationSnapshot.exists) {
+                    return _TransactionPushResult.acknowledged(
+                      FirestoreSyncCodec.decodeAcknowledgement(
+                        operationSnapshot.data()!,
+                        expectedOperationId: mutation.operationId,
+                        expectedCollection: mutation.collection,
+                      ),
+                    );
+                  }
 
-            final entitySnapshot = await transaction.get(entity);
-            final currentRevision = entitySnapshot.exists
-                ? _requiredInt(entitySnapshot.data()!, 'revision')
-                : 0;
-            if (currentRevision != mutation.baseRevision) {
-              if (!entitySnapshot.exists) {
-                throw const InvalidSyncPayloadFailure();
-              }
-              return _TransactionPushResult.conflict(
-                FirestoreSyncCodec.decodeEntity(
-                  collection: mutation.collection,
-                  documentId: entitySnapshot.id,
-                  data: entitySnapshot.data()!,
-                ),
-              );
-            }
+                  final entitySnapshot = await transaction.get(entity);
+                  final currentRevision = entitySnapshot.exists
+                      ? _requiredInt(entitySnapshot.data()!, 'revision')
+                      : 0;
+                  if (currentRevision != mutation.baseRevision) {
+                    if (!entitySnapshot.exists) {
+                      throw const InvalidSyncPayloadFailure();
+                    }
+                    return _TransactionPushResult.conflict(
+                      FirestoreSyncCodec.decodeEntity(
+                        collection: mutation.collection,
+                        documentId: entitySnapshot.id,
+                        data: entitySnapshot.data()!,
+                      ),
+                    );
+                  }
 
-            transaction.set(
-              entity,
-              FirestoreSyncCodec.encodeEntity(
-                mutation,
-                serverTimestamp: FieldValue.serverTimestamp(),
-              ),
-            );
-            transaction.set(
-              operation,
-              FirestoreSyncCodec.encodeOperation(
-                mutation,
-                acknowledgedAt: FieldValue.serverTimestamp(),
-              ),
-            );
-            return const _TransactionPushResult.pendingAcknowledgement();
-          });
+                  transaction.set(
+                    entity,
+                    FirestoreSyncCodec.encodeEntity(
+                      mutation,
+                      serverTimestamp: FieldValue.serverTimestamp(),
+                    ),
+                  );
+                  transaction.set(
+                    operation,
+                    FirestoreSyncCodec.encodeOperation(
+                      mutation,
+                      acknowledgedAt: FieldValue.serverTimestamp(),
+                    ),
+                  );
+                  return const _TransactionPushResult.pendingAcknowledgement();
+                }),
+          );
 
       final immediate = transactionResult.result;
       if (immediate != null) return immediate;
@@ -93,6 +110,7 @@ final class FirestoreSyncGateway implements SyncGateway {
       return FirestoreSyncCodec.decodeAcknowledgement(
         acknowledgement.data()!,
         expectedOperationId: mutation.operationId,
+        expectedCollection: mutation.collection,
       );
     } on SyncFailure {
       rethrow;
@@ -171,7 +189,7 @@ final class FirestoreSyncGateway implements SyncGateway {
           .get(const GetOptions(source: Source.server));
       final data = snapshot.data();
       if (data == null ||
-          data['schemaVersion'] != currentSyncPayloadVersion ||
+          data['schemaVersion'] != currentCloudSyncPolicySchemaVersion ||
           data['cloudSyncEnabled'] is! bool) {
         throw const InvalidSyncPayloadFailure();
       }
@@ -189,6 +207,19 @@ final class FirestoreSyncGateway implements SyncGateway {
     } catch (_) {
       throw const InvalidSyncPayloadFailure();
     }
+  }
+}
+
+final class FirestoreSyncPreflight {
+  const FirestoreSyncPreflight();
+
+  Future<T> beforeTransaction<T>({
+    required SyncCollection collection,
+    required int payloadVersion,
+    required Future<T> Function() beginTransaction,
+  }) async {
+    collection.requireSupportedPayloadVersion(payloadVersion);
+    return beginTransaction();
   }
 }
 
@@ -229,9 +260,7 @@ final class FirestoreSyncCodec {
     required Map<String, Object?> data,
   }) {
     final schemaVersion = _requiredInt(data, 'schemaVersion');
-    if (schemaVersion != currentSyncPayloadVersion) {
-      throw const UnsupportedSyncSchemaFailure();
-    }
+    collection.requireSupportedPayloadVersion(schemaVersion);
     final entityId = _requiredString(data, 'entityId');
     if (entityId != documentId) {
       throw const InvalidSyncPayloadFailure();
@@ -266,9 +295,13 @@ final class FirestoreSyncCodec {
   static PushAcknowledged decodeAcknowledgement(
     Map<String, Object?> data, {
     required String expectedOperationId,
+    required SyncCollection expectedCollection,
   }) {
-    if (_requiredInt(data, 'schemaVersion') != currentSyncPayloadVersion ||
-        _requiredString(data, 'operationId') != expectedOperationId) {
+    expectedCollection.requireSupportedPayloadVersion(
+      _requiredInt(data, 'schemaVersion'),
+    );
+    if (_requiredString(data, 'operationId') != expectedOperationId ||
+        _requiredString(data, 'entityType') != expectedCollection.entityType) {
       throw const InvalidSyncPayloadFailure();
     }
     final timestamp = data['acknowledgedAt'];

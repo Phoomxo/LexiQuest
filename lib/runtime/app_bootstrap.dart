@@ -14,6 +14,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
+import '../config/research_runtime_config.dart';
 import '../data/local/app_database.dart';
 import '../firebase_options.dart';
 import '../features/account/application/account_use_cases.dart';
@@ -116,6 +117,8 @@ ExportArtifactStore _productionExportStore() => const FileSelectorExportStore();
 CameraGateway _productionCameraGateway() => PluginCameraGateway();
 SpeechRecognitionGateway _productionSpeechRecognitionGateway() =>
     PluginSpeechRecognitionGateway();
+ResearchRuntimeConfig _legacyResearchRuntimeConfig() =>
+    ResearchRuntimeConfig.legacySafe();
 
 Future<void> Function() _retainAsyncDisposer(Future<void> Function() value) =>
     value;
@@ -242,6 +245,7 @@ final class AppBootstrap {
     SpeechRecognitionGatewayFactory? speechRecognitionGatewayFactory,
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
+    ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -249,6 +253,8 @@ final class AppBootstrap {
            _productionSpeechRecognitionGateway,
        buildAiTutor = buildAiTutor ?? _buildManagedAiTutor,
        buildVoice = buildVoice ?? _buildManagedVoice,
+       loadResearchRuntimeConfig =
+           loadResearchRuntimeConfig ?? _legacyResearchRuntimeConfig,
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
        aiNowUtc = aiNowUtc ?? _aiSystemNowUtc;
@@ -258,6 +264,7 @@ final class AppBootstrap {
       initializeFirebase: _initializeFirebaseProduction,
       initializeSupabase: _initializeSupabaseOptional,
       loadConfig: AppConfig.fromEnvironment,
+      loadResearchRuntimeConfig: ResearchRuntimeConfig.fromEnvironment,
       guestSessionService: FirebaseGuestSessionService.production(),
       createDatabase: AppDatabase.production,
       createEntryStateStore: createProductionEntryStateStore,
@@ -275,6 +282,7 @@ final class AppBootstrap {
   final RuntimeInitializer initializeFirebase;
   final RuntimeInitializer initializeSupabase;
   final AppConfigLoader loadConfig;
+  final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final AppEntryStateStoreFactory createEntryStateStore;
@@ -307,6 +315,7 @@ final class AppBootstrap {
   }
 
   Future<AppDependencies> _compose(ResourceDisposerStack resources) async {
+    final researchRuntimeConfig = loadResearchRuntimeConfig();
     final entryState = await _createEntryState();
     final database = createDatabase();
     resources.own(database.close);
@@ -314,8 +323,9 @@ final class AppBootstrap {
     final idGenerator = const Uuid();
     final ownerOperationGate = DriftOwnerOperationGate(database);
     const evidencePolicy = EvidenceEligibilityPolicySet();
-    const evidenceRolloutModeProvider =
-        FixedEvidencePolicyRolloutModeProvider.legacy();
+    final evidenceRolloutModeProvider = FixedEvidencePolicyRolloutModeProvider(
+      researchRuntimeConfig.evidenceRollout,
+    );
     final localOwners = DriftLocalOwnerRepository(
       database,
       generateId: idGenerator.v4,
@@ -442,6 +452,7 @@ final class AppBootstrap {
           database,
           evidencePolicy: evidencePolicy,
           rolloutModeProvider: evidenceRolloutModeProvider,
+          payloadRollout: researchRuntimeConfig.syncPayloadRollout,
         ),
         gateway: gateway,
         policyProvider: policy.call,

@@ -4,11 +4,15 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../../product/feature_contract/feature_contract_digest.dart';
+import '../../events/application/event_v1_to_v2_adapter.dart';
+import '../../events/domain/event_envelope_v2.dart';
 import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning/domain/learning_event_context.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../rewards/domain/reward_models.dart';
@@ -25,6 +29,7 @@ final class DriftSyncStore implements SyncStore {
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
         const FixedEvidencePolicyRolloutModeProvider.legacy(),
+    this.payloadRollout = const SyncPayloadRollout.productionDefault(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          evidencePolicy: evidencePolicy,
@@ -38,6 +43,7 @@ final class DriftSyncStore implements SyncStore {
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
+  final SyncPayloadRollout payloadRollout;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
@@ -1169,26 +1175,20 @@ final class DriftSyncStore implements SyncStore {
         if (attempt == null) {
           throw StateError('outbox attempt was not found');
         }
+        final payloadVersion = payloadRollout.writeVersionFor(
+          SyncCollection.attempts,
+        );
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
           collection: SyncCollection.attempts,
           entityId: attempt.id,
           operationKind: SyncOperationKind.upsert,
-          payloadVersion: operation.payloadVersion,
+          payloadVersion: payloadVersion,
           baseRevision: 0,
           localRevision: 1,
           clientUpdatedAtUtc: _utc(attempt.occurredAtUtcMs),
-          payload: <String, Object?>{
-            'sessionId': attempt.sessionId,
-            'wordId': attempt.wordId,
-            'promptMode': attempt.promptMode,
-            'isCorrect': attempt.isCorrect,
-            'responseTimeMs': attempt.responseTimeMs,
-            'attemptNumber': attempt.attemptNumber,
-            'occurredAtUtcMs': attempt.occurredAtUtcMs,
-            'providerProvenance': attempt.providerProvenance,
-          },
+          payload: _attemptPayload(attempt, payloadVersion: payloadVersion),
         );
       case 'readingEvent':
         final event =
@@ -1423,7 +1423,12 @@ final class DriftSyncStore implements SyncStore {
                       row.ownerId.equals(operation.ownerId),
                 ))
                 .getSingle();
-        return _attemptPayload(attempt);
+        return _attemptPayload(
+          attempt,
+          payloadVersion: payloadRollout.writeVersionFor(
+            SyncCollection.attempts,
+          ),
+        );
       case 'readingEvent':
         final event =
             await (database.select(database.readingEvents)..where(
@@ -1564,7 +1569,10 @@ final class DriftSyncStore implements SyncStore {
       await _handleExistingImmutable(
         ownerId: ownerId,
         entity: entity,
-        localPayload: _attemptPayload(existing),
+        localPayload: _attemptPayload(
+          existing,
+          payloadVersion: entity.payloadVersion,
+        ),
       );
       await projections.rebuildWord(ownerId: ownerId, wordId: existing.wordId);
       await projections.rebuildSession(
@@ -1583,13 +1591,7 @@ final class DriftSyncStore implements SyncStore {
     final attemptNumber = _requiredInt(payload, 'attemptNumber');
     final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
     final providerProvenance = _optionalString(payload, 'providerProvenance');
-    final evidenceContext = EvidenceContext.legacyCompatibility(
-      evidenceClass: EvidenceClass.independentRecall,
-      skillId: 'legacy-unspecified',
-      hintLevel: 0,
-      contentRevision: 'legacy-unknown',
-      engagementAllowed: true,
-    );
+    final evidenceContext = _attemptEvidenceContext(entity);
     final evidenceContextJson = jsonEncode(evidenceContext.toJson());
     if (!LearningEvidenceContract.validAttempt(
       id: entity.entityId,
@@ -1635,6 +1637,19 @@ final class DriftSyncStore implements SyncStore {
           );
     }
     final isCorrect = _requiredBool(payload, 'isCorrect');
+    final sourceEvent = entity.payloadVersion == 2
+        ? _syncedAttemptSourceEvent(
+            attemptId: entity.entityId,
+            ownerId: ownerId,
+            sessionId: sessionId,
+            wordId: wordId,
+            promptMode: promptMode,
+            isCorrect: isCorrect,
+            attemptNumber: attemptNumber,
+            occurredAtUtc: _utc(occurredAtUtcMs),
+            evidenceContext: evidenceContext,
+          )
+        : null;
     await database
         .into(database.answerAttempts)
         .insert(
@@ -1653,6 +1668,9 @@ final class DriftSyncStore implements SyncStore {
             evidenceContextJson: Value(evidenceContextJson),
           ),
         );
+    if (sourceEvent != null) {
+      await projections.evidenceDecisions.append(sourceEvent);
+    }
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
     await projections.rebuildAchievements(ownerId);
@@ -2167,17 +2185,169 @@ final class DriftSyncStore implements SyncStore {
   }
 }
 
-Map<String, Object?> _attemptPayload(db.AnswerAttempt attempt) =>
-    <String, Object?>{
-      'sessionId': attempt.sessionId,
-      'wordId': attempt.wordId,
-      'promptMode': attempt.promptMode,
-      'isCorrect': attempt.isCorrect,
-      'responseTimeMs': attempt.responseTimeMs,
-      'attemptNumber': attempt.attemptNumber,
-      'occurredAtUtcMs': attempt.occurredAtUtcMs,
-      'providerProvenance': attempt.providerProvenance,
-    };
+Map<String, Object?> _attemptPayload(
+  db.AnswerAttempt attempt, {
+  required int payloadVersion,
+}) {
+  final context = _storedAttemptEvidenceContext(attempt);
+  final payload = <String, Object?>{
+    'sessionId': attempt.sessionId,
+    'wordId': attempt.wordId,
+    'promptMode': attempt.promptMode,
+    'isCorrect': attempt.isCorrect,
+    'responseTimeMs': attempt.responseTimeMs,
+    'attemptNumber': attempt.attemptNumber,
+    'occurredAtUtcMs': attempt.occurredAtUtcMs,
+    'providerProvenance': attempt.providerProvenance,
+  };
+  switch (payloadVersion) {
+    case 1:
+      if (context.classificationSource !=
+          EvidenceClassificationSource.legacyInferred) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return payload;
+    case 2:
+      payload['evidenceClass'] = context.evidenceClass.name;
+      payload['evidenceContext'] = context.toJson();
+      return payload;
+    default:
+      throw const UnsupportedSyncSchemaFailure();
+  }
+}
+
+EvidenceContext _storedAttemptEvidenceContext(db.AnswerAttempt attempt) {
+  try {
+    final decoded = jsonDecode(attempt.evidenceContextJson);
+    if (decoded is! Map) throw const FormatException();
+    final context = EvidenceContext.fromJson(decoded.cast<String, Object?>());
+    if (attempt.evidenceClass != context.evidenceClass.name) {
+      throw const FormatException();
+    }
+    return context;
+  } catch (_) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+EvidenceContext _attemptEvidenceContext(SyncEntity entity) {
+  switch (entity.payloadVersion) {
+    case 1:
+      if (!_hasExactKeys(entity.payload, _attemptPayloadV1Keys)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'legacy-unspecified',
+        hintLevel: 0,
+        contentRevision: 'legacy-unknown',
+        engagementAllowed: true,
+      );
+    case 2:
+      if (!_hasExactKeys(entity.payload, _attemptPayloadV2Keys)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final topLevelClass = entity.payload['evidenceClass'];
+      final serializedContext = entity.payload['evidenceContext'];
+      if (topLevelClass is! String || serializedContext is! Map) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      try {
+        final context = EvidenceContext.fromJson(
+          serializedContext.cast<String, Object?>(),
+        );
+        if (topLevelClass != context.evidenceClass.name) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        return context;
+      } on SyncFailure {
+        rethrow;
+      } catch (_) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    default:
+      throw const UnsupportedSyncSchemaFailure();
+  }
+}
+
+const Set<String> _attemptPayloadV1Keys = <String>{
+  'sessionId',
+  'wordId',
+  'promptMode',
+  'isCorrect',
+  'responseTimeMs',
+  'attemptNumber',
+  'occurredAtUtcMs',
+  'providerProvenance',
+};
+
+const Set<String> _attemptPayloadV2Keys = <String>{
+  ..._attemptPayloadV1Keys,
+  'evidenceClass',
+  'evidenceContext',
+};
+
+bool _hasExactKeys(Map<String, Object?> payload, Set<String> expected) =>
+    payload.length == expected.length && payload.keys.every(expected.contains);
+
+EventEnvelopeV2 _syncedAttemptSourceEvent({
+  required String attemptId,
+  required String ownerId,
+  required String sessionId,
+  required String wordId,
+  required String promptMode,
+  required bool isCorrect,
+  required int attemptNumber,
+  required DateTime occurredAtUtc,
+  required EvidenceContext evidenceContext,
+}) {
+  final consentVersion = evidenceContext.researchConsentVersion;
+  final experimentId = evidenceContext.experimentId;
+  final cohort = evidenceContext.cohort;
+  if (consentVersion == null || experimentId == null || cohort == null) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  final eventContext = LearningEventContext(
+    consentContext: ConsentContext(
+      researchConsentVersion: consentVersion,
+      aiConsentGranted: false,
+      voiceConsentGranted: false,
+      socialConsentGranted: false,
+    ),
+    experimentContext: ExperimentContext(
+      experimentId: experimentId,
+      variantId: cohort,
+      assignedAtUtc: occurredAtUtc,
+    ),
+    protocolId: evidenceContext.protocolId,
+    protocolVersion: evidenceContext.protocolVersion,
+    experimentVersion: evidenceContext.experimentVersion,
+    assignmentId: evidenceContext.assignmentId,
+    featureContractIdentity: FeatureContractIdentity(
+      revision: evidenceContext.featureContractRevision,
+      semanticHash: evidenceContext.featureContractHash,
+    ),
+  );
+  try {
+    return const EventV1ToV2Adapter(
+      appVersion: 'synced',
+      buildId: 'synced',
+    ).adaptFromCommand(
+      sourceEvidenceId: attemptId,
+      ownerId: ownerId,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: occurredAtUtc,
+      evidenceContext: evidenceContext,
+      learningEventContext: eventContext,
+    );
+  } catch (_) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
 
 Map<String, Object?> _readingEventPayload(db.ReadingEvent event) =>
     <String, Object?>{

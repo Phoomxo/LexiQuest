@@ -6,14 +6,18 @@ import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
+import 'package:vocab_learning_app/config/research_runtime_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
@@ -164,6 +168,100 @@ Future<void> _insertFrozenLearningEvidence(
 
 void main() {
   group('AppBootstrap.initialize', () {
+    test(
+      'research configuration failure propagates before composition',
+      () async {
+        var databaseCalls = 0;
+        var entryStateCalls = 0;
+        final bootstrap = AppBootstrap(
+          createDatabase: () {
+            databaseCalls += 1;
+            return _testDatabase();
+          },
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          loadResearchRuntimeConfig: () =>
+              throw const ResearchRuntimeConfigException(),
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: () async {
+            entryStateCalls += 1;
+            return _MemoryAppEntryStateStore();
+          },
+        );
+
+        await expectLater(
+          bootstrap.initialize(),
+          throwsA(isA<ResearchRuntimeConfigException>()),
+        );
+        expect(databaseCalls, 0);
+        expect(entryStateCalls, 0);
+      },
+    );
+
+    test(
+      'valid research configuration reaches policy and sync composition',
+      () async {
+        final gateway = _BootstrapSyncGateway();
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
+            evidenceRollout: 'shadow',
+            answerAttemptWriteVersion: '2',
+            firestoreRulesRevision: answerAttemptV2RulesRevision,
+          ),
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          syncGatewayFactory: () => gateway,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final store = dependencies.syncEngine!.store as DriftSyncStore;
+
+        expect(
+          store.payloadRollout.writeVersionFor(SyncCollection.attempts),
+          2,
+        );
+        expect(
+          store.projections.evidenceDecisions.rolloutModeProvider,
+          isA<FixedEvidencePolicyRolloutModeProvider>().having(
+            (provider) => provider.mode,
+            'mode',
+            EvidencePolicyRolloutMode.shadow,
+          ),
+        );
+      },
+    );
+
+    test('general constructor defaults policy and sync to Legacy/v1', () async {
+      final gateway = _BootstrapSyncGateway();
+      final bootstrap = AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        syncGatewayFactory: () => gateway,
+      );
+
+      final dependencies = await bootstrap.initialize();
+      final store = dependencies.syncEngine!.store as DriftSyncStore;
+
+      expect(store.payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
+      expect(
+        store.projections.evidenceDecisions.rolloutModeProvider,
+        isA<FixedEvidencePolicyRolloutModeProvider>().having(
+          (provider) => provider.mode,
+          'mode',
+          EvidencePolicyRolloutMode.legacy,
+        ),
+      );
+    });
+
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
       final ai = _BootstrapAiTutorController();

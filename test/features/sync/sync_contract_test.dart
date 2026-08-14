@@ -40,18 +40,90 @@ void main() {
   });
 
   group('sync entity contracts', () {
-    test('push mutation rejects unsupported payload versions', () {
+    test(
+      'payload-version policy is exhaustive and defaults every write to v1',
+      () {
+        const expected = <SyncCollection, Set<int>>{
+          SyncCollection.categories: <int>{1},
+          SyncCollection.words: <int>{1},
+          SyncCollection.attempts: <int>{1, 2},
+          SyncCollection.readingEvents: <int>{1},
+          SyncCollection.rewardTransactions: <int>{1},
+          SyncCollection.srsStates: <int>{1},
+          SyncCollection.achievementUnlocks: <int>{1},
+        };
+
+        expect(expected.keys.toSet(), SyncCollection.values.toSet());
+        for (final collection in SyncCollection.values) {
+          expect(
+            collection.supportedPayloadVersions,
+            expected[collection],
+            reason: collection.name,
+          );
+          expect(
+            const SyncPayloadRollout.productionDefault().writeVersionFor(
+              collection,
+            ),
+            1,
+            reason: collection.name,
+          );
+        }
+        expect(
+          const SyncPayloadRollout.answerAttemptV2().writeVersionFor(
+            SyncCollection.attempts,
+          ),
+          2,
+        );
+        expect(
+          const SyncPayloadRollout.answerAttemptV2().writeVersionFor(
+            SyncCollection.words,
+          ),
+          1,
+        );
+      },
+    );
+
+    test(
+      'attempts accept payload v1 and v2 while legacy collections reject v2',
+      () {
+        PushMutation mutation(SyncCollection collection, int payloadVersion) =>
+            PushMutation(
+              operationId: 'operation:${collection.name}:$payloadVersion',
+              firebaseUid: 'uid-a',
+              collection: collection,
+              entityId: '${collection.entityType}:entity',
+              operationKind: SyncOperationKind.upsert,
+              payloadVersion: payloadVersion,
+              baseRevision: 0,
+              localRevision: 1,
+              clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
+              payload: const <String, Object?>{'value': 'safe'},
+            );
+
+        expect(mutation(SyncCollection.attempts, 1).payloadVersion, 1);
+        expect(mutation(SyncCollection.attempts, 2).payloadVersion, 2);
+        for (final collection in SyncCollection.values.where(
+          (value) => value != SyncCollection.attempts,
+        )) {
+          expect(
+            () => mutation(collection, 2),
+            throwsA(isA<UnsupportedSyncSchemaFailure>()),
+            reason: collection.name,
+          );
+        }
+      },
+    );
+
+    test('sync entity rejects unsupported payload versions per collection', () {
       expect(
-        () => PushMutation(
-          operationId: 'operation:1',
-          firebaseUid: 'uid-a',
+        () => SyncEntity(
           collection: SyncCollection.words,
           entityId: 'word:station',
-          operationKind: SyncOperationKind.upsert,
+          revision: 1,
+          isDeleted: false,
           payloadVersion: 2,
-          baseRevision: 0,
-          localRevision: 1,
           clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
+          serverUpdatedAtUtc: DateTime.utc(2026, 7, 30, 0, 1),
           payload: const <String, Object?>{'spelling': 'station'},
         ),
         throwsA(isA<UnsupportedSyncSchemaFailure>()),

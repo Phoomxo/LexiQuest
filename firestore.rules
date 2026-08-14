@@ -39,13 +39,13 @@ service cloud.firestore {
       return isSignedIn() && request.auth.uid == uid;
     }
 
-    function fieldEntityEnvelopeOk(entityId) {
+    function fieldEntityEnvelopeShapeOk(entityId) {
       return request.resource.data is map
         && request.resource.data.keys().hasOnly([
              'schemaVersion', 'entityId', 'payload', 'revision', 'isDeleted',
              'clientUpdatedAtUtcMs', 'serverUpdatedAt', 'lastOperationId'
            ])
-        && request.resource.data.schemaVersion == 1
+        && request.resource.data.schemaVersion is int
         && request.resource.data.entityId == entityId
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -60,6 +60,16 @@ service cloud.firestore {
         && request.resource.data.lastOperationId is string
         && request.resource.data.lastOperationId.size() > 0
         && request.resource.data.lastOperationId.size() <= 256;
+    }
+
+    function fieldEntityEnvelopeOk(entityId) {
+      return fieldEntityEnvelopeShapeOk(entityId)
+        && request.resource.data.schemaVersion == 1;
+    }
+
+    function fieldAttemptEntityEnvelopeOk(entityId) {
+      return fieldEntityEnvelopeShapeOk(entityId)
+        && request.resource.data.schemaVersion in [1, 2];
     }
 
     function fieldCategoryPayloadOk() {
@@ -129,13 +139,160 @@ service cloud.firestore {
       );
     }
 
+    function fieldEvidenceContextShapeOk(context) {
+      return context is map
+        && context.keys().hasOnly([
+             'schemaVersion', 'evidenceClass', 'skillId', 'hintLevel',
+             'policyVersion', 'contentRevision',
+             'featureContractRevision', 'featureContractHash',
+             'classificationSource', 'rolloutMode', 'protocolId',
+             'protocolVersion', 'experimentId', 'experimentVersion',
+             'assignmentId', 'cohort', 'researchConsentVersion',
+             'instrumentId', 'instrumentVersion', 'formId', 'formVersion',
+             'assessmentItemId', 'assessmentResponseCode',
+             'scoringRuleVersion', 'engagementAllowed'
+           ])
+        && context.keys().size() == 25
+        && context.schemaVersion == 1
+        && context.evidenceClass in [
+             'assessment', 'independentRecall', 'recognition',
+             'guidedPractice', 'pronunciation', 'exposure', 'recreational'
+           ]
+        && context.skillId is string
+        && context.skillId.size() > 0
+        && context.skillId.size() <= 256
+        && context.hintLevel is int
+        && context.hintLevel >= 0
+        && context.policyVersion is string
+        && context.policyVersion.size() > 0
+        && context.policyVersion.size() <= 256
+        && context.contentRevision is string
+        && context.contentRevision.size() > 0
+        && context.contentRevision.size() <= 256
+        && context.featureContractRevision is string
+        && context.featureContractRevision.size() > 0
+        && context.featureContractRevision.size() <= 256
+        && context.featureContractHash is string
+        && context.featureContractHash.matches('^[0-9a-f]{64}$')
+        && context.classificationSource in ['declared', 'legacyInferred']
+        && context.rolloutMode in ['legacy', 'shadow', 'enforced']
+        && (context.protocolId == null
+            || (context.protocolId is string
+                && context.protocolId.size() > 0
+                && context.protocolId.size() <= 256))
+        && (context.protocolVersion == null
+            || (context.protocolVersion is string
+                && context.protocolVersion.size() > 0
+                && context.protocolVersion.size() <= 256))
+        && (context.experimentId == null
+            || (context.experimentId is string
+                && context.experimentId.size() > 0
+                && context.experimentId.size() <= 256))
+        && (context.experimentVersion == null
+            || (context.experimentVersion is int
+                && context.experimentVersion > 0))
+        && (context.assignmentId == null
+            || (context.assignmentId is string
+                && context.assignmentId.size() > 0
+                && context.assignmentId.size() <= 256))
+        && (context.cohort == null
+            || (context.cohort is string
+                && context.cohort.size() > 0
+                && context.cohort.size() <= 256))
+        && (context.researchConsentVersion == null
+            || (context.researchConsentVersion is int
+                && context.researchConsentVersion > 0))
+        && (context.instrumentId == null
+            || (context.instrumentId is string
+                && context.instrumentId.size() > 0
+                && context.instrumentId.size() <= 256))
+        && (context.instrumentVersion == null
+            || (context.instrumentVersion is string
+                && context.instrumentVersion.size() > 0
+                && context.instrumentVersion.size() <= 256))
+        && (context.formId == null
+            || (context.formId is string
+                && context.formId.size() > 0
+                && context.formId.size() <= 256))
+        && (context.formVersion == null
+            || (context.formVersion is string
+                && context.formVersion.size() > 0
+                && context.formVersion.size() <= 256))
+        && (context.assessmentItemId == null
+            || (context.assessmentItemId is string
+                && context.assessmentItemId.size() > 0
+                && context.assessmentItemId.size() <= 256))
+        && (context.assessmentResponseCode == null
+            || (context.assessmentResponseCode is string
+                && context.assessmentResponseCode.size() <= 256
+                && context.assessmentResponseCode.matches(
+                     '^[a-z0-9][a-z0-9._:-]*$'
+                   )))
+        && (context.scoringRuleVersion == null
+            || (context.scoringRuleVersion is string
+                && context.scoringRuleVersion.size() > 0
+                && context.scoringRuleVersion.size() <= 256))
+        && context.engagementAllowed is bool;
+    }
+
+    function fieldEvidenceContextPolicyOk(context) {
+      return ((context.classificationSource == 'legacyInferred'
+               && context.policyVersion == 'legacy-v1'
+               && context.rolloutMode == 'legacy'
+               && context.featureContractRevision == 'legacy-unversioned'
+               && context.featureContractHash
+                    == '0000000000000000000000000000000000000000000000000000000000000000')
+              || (context.classificationSource == 'declared'
+                  && context.policyVersion == 'learning-evidence-v1'
+                  && context.featureContractRevision == '1.0.0'
+                  && context.featureContractHash
+                       == 'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0'))
+        && (!(context.classificationSource == 'declared'
+              && context.rolloutMode in ['shadow', 'enforced'])
+            || (context.protocolId != null
+                && context.protocolVersion != null
+                && context.experimentId != null
+                && context.experimentVersion != null
+                && context.assignmentId != null
+                && context.cohort != null
+                && context.researchConsentVersion != null))
+        && (context.evidenceClass != 'assessment'
+            || (context.instrumentId != null
+                && context.instrumentVersion != null
+                && context.formId != null
+                && context.formVersion != null
+                && context.assessmentItemId != null
+                && context.assessmentResponseCode != null
+                && context.scoringRuleVersion != null));
+    }
+
+    function fieldEvidenceContextOk(context) {
+      return fieldEvidenceContextShapeOk(context)
+        && fieldEvidenceContextPolicyOk(context);
+    }
+
     function fieldAttemptPayloadOk() {
       let payload = request.resource.data.payload;
-      return payload.keys().hasOnly([
-          'sessionId', 'wordId', 'promptMode', 'isCorrect',
-          'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
-          'providerProvenance'
-        ])
+      let v1Keys = [
+        'sessionId', 'wordId', 'promptMode', 'isCorrect',
+        'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
+        'providerProvenance'
+      ];
+      let v2Keys = [
+        'sessionId', 'wordId', 'promptMode', 'isCorrect',
+        'responseTimeMs', 'attemptNumber', 'occurredAtUtcMs',
+        'providerProvenance', 'evidenceClass', 'evidenceContext'
+      ];
+      return (request.resource.data.schemaVersion == 1
+              ? (payload.keys().hasOnly(v1Keys)
+                 && payload.keys().size() == 8)
+              : (request.resource.data.schemaVersion == 2
+                 && payload.keys().hasOnly(v2Keys)
+                 && payload.keys().size() == 10
+                 && payload.evidenceClass is string
+                 && fieldEvidenceContextOk(payload.evidenceContext)
+                 && payload.evidenceClass
+                      == payload.evidenceContext.evidenceClass))
         && payload.sessionId is string
         && payload.sessionId.size() > 0
         && payload.sessionId.size() <= 256
@@ -309,7 +466,7 @@ service cloud.firestore {
         uid,
         request.resource.data.lastOperationId
       );
-      return operation.schemaVersion == 1
+      return operation.schemaVersion == request.resource.data.schemaVersion
         && operation.operationId == request.resource.data.lastOperationId
         && operation.entityType == entityType
         && operation.entityId == entityId
@@ -330,7 +487,9 @@ service cloud.firestore {
              'operationKind', 'baseRevision', 'resultingRevision',
              'acknowledgedAt'
            ])
-        && request.resource.data.schemaVersion == 1
+        && ((request.resource.data.schemaVersion == 1)
+            || (request.resource.data.schemaVersion == 2
+                && request.resource.data.entityType == 'attempt'))
         && request.resource.data.operationId == operationId
         && request.resource.data.operationId is string
         && request.resource.data.operationId.size() > 0
@@ -392,6 +551,7 @@ service cloud.firestore {
         && request.resource.data.resultingRevision == 1
         && entity.entityId == entityId
         && entity.lastOperationId == request.resource.data.operationId
+        && entity.schemaVersion == request.resource.data.schemaVersion
         && entity.revision == 1;
     }
 
@@ -587,7 +747,7 @@ service cloud.firestore {
       match /attempts/{attemptId} {
         allow read: if ownsFieldUser(uid);
         allow create: if ownsFieldUser(uid)
-          && fieldEntityEnvelopeOk(attemptId)
+          && fieldAttemptEntityEnvelopeOk(attemptId)
           && fieldAttemptPayloadOk()
           && fieldOperationLinksEntity(uid, 'attempt', attemptId);
         allow update, delete: if false;
