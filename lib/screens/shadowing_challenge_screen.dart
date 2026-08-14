@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -18,12 +19,14 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.voice,
     this.speechPractice,
     this.learning,
+    this.evidenceAdapter,
   });
 
   final String? referenceSentence;
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -49,6 +52,8 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   String _transcript = '';
   String? _error;
   TranscriptPronunciationAssessment? _assessment;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -99,6 +104,12 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
+    final learning = _learning;
+    if (learning != null) {
+      _evidenceAdapter =
+          widget.evidenceAdapter ??
+          CurrentActivityEvidenceAdapter.legacy(learning);
+    }
     if (routeIsCurrent &&
         speech != null &&
         (_speechSession == null || !_speechSession!.isCurrent)) {
@@ -248,17 +259,19 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     }
     _evidenceSaved = true;
     try {
-      await learning.recordAnswer(
+      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
+        input: CurrentActivityInput.shadowing,
         sessionId: sessionId,
         wordId: wordId,
-        promptMode: 'shadowing',
         isCorrect: assessment.similarityPercent >= 80,
         responseTimeMs: null,
         attemptNumber: 1,
         providerProvenance:
             '${event.engine}|${event.locale}|${assessment.method}',
       );
+      await pending.record(learning);
       await learning.finishSession(sessionId);
+      _pendingEvidence = null;
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {

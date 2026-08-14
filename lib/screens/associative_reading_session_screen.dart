@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../runtime/app_dependencies.dart';
 
@@ -12,7 +13,7 @@ import '../runtime/app_dependencies.dart';
 ///   1 Supported Reading  — read passage with target-word hints
 ///   2 Cue Fading         — re-read without translations
 ///   3 Active Recall      — type each target word from memory; answer recorded
-///                          via [LearningUseCases.recordAnswer]
+///                          through the current-activity evidence adapter
 ///   4 Memory Association — enter a personal keyword/story for each word;
 ///                          saved via [AssociativeLearningPort]
 ///   5 Context Transfer   — write a new sentence using a target word
@@ -29,6 +30,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.associativeLearning,
     this.targetWordIds,
     this.sessionId,
+    this.evidenceAdapter,
   });
 
   final String cefrLevel;
@@ -52,6 +54,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
   /// navigating to this screen.
   final String? sessionId;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -107,6 +110,8 @@ class _AssociativeReadingSessionScreenState
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
   late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
+  late List<PendingCurrentActivityEvidence?> _pendingRecallEvidence;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
 
   // Stage 4 — per-word association cue controllers.
   late List<TextEditingController> _cueControllers;
@@ -130,6 +135,10 @@ class _AssociativeReadingSessionScreenState
       (_) => TextEditingController(),
     );
     _recallResults = List.filled(widget.targetWords.length, null);
+    _pendingRecallEvidence = List<PendingCurrentActivityEvidence?>.filled(
+      widget.targetWords.length,
+      null,
+    );
     _cueControllers = List.generate(
       widget.targetWords.length,
       (_) => TextEditingController(),
@@ -151,6 +160,9 @@ class _AssociativeReadingSessionScreenState
       _loading = false;
       return;
     }
+    _evidenceAdapter =
+        widget.evidenceAdapter ??
+        CurrentActivityEvidenceAdapter.legacy(learning);
     if (_associativeLearning == null) {
       _unavailableReason =
           AssociativeReadingUnavailableReason.associativeLearning;
@@ -204,7 +216,17 @@ class _AssociativeReadingSessionScreenState
 
     // Stage-specific side effects before advancing.
     if (_currentStage == 3) {
-      await _submitRecallAnswers();
+      final answersSaved = await _submitRecallAnswers();
+      if (!mounted) return;
+      if (!answersSaved) {
+        setState(() => _saving = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Could not save recall evidence. Try again.'),
+          ),
+        );
+        return;
+      }
     } else if (_currentStage == 4) {
       final associationsSaved = await _saveAssociations();
       if (!mounted) return;
@@ -226,6 +248,11 @@ class _AssociativeReadingSessionScreenState
       setState(() => _saving = false);
       return;
     }
+    if (_currentStage == 3) {
+      for (var i = 0; i < _pendingRecallEvidence.length; i++) {
+        _pendingRecallEvidence[i] = null;
+      }
+    }
     if (finishing) {
       setState(() {
         _saving = false;
@@ -242,13 +269,14 @@ class _AssociativeReadingSessionScreenState
 
   // ── Stage 3: Active Recall ─────────────────────────────────────────────────
 
-  Future<void> _submitRecallAnswers() async {
+  Future<bool> _submitRecallAnswers() async {
     final learning = _learning;
     final sessionId = widget.sessionId;
     final wordIds = widget.targetWordIds;
-    if (learning == null || sessionId == null || wordIds == null) return;
+    if (learning == null || sessionId == null || wordIds == null) return true;
 
     final results = <bool?>[];
+    var allSaved = true;
     for (var i = 0; i < widget.targetWords.length; i++) {
       final word = widget.targetWords[i];
       final wordId = wordIds[word];
@@ -261,19 +289,22 @@ class _AssociativeReadingSessionScreenState
       final isCorrect = typed == expected;
       results.add(isCorrect);
       try {
-        await learning.recordAnswer(
-          sessionId: sessionId,
-          wordId: wordId,
-          promptMode: 'associativeRecall',
-          isCorrect: isCorrect,
-          responseTimeMs: null,
-          attemptNumber: i + 1,
-        );
+        final pending = _pendingRecallEvidence[i] ??= await _evidenceAdapter!
+            .prepare(
+              input: CurrentActivityInput.associativeRecall,
+              sessionId: sessionId,
+              wordId: wordId,
+              isCorrect: isCorrect,
+              responseTimeMs: null,
+              attemptNumber: i + 1,
+            );
+        await pending.record(learning);
       } catch (_) {
-        // Non-fatal — SRS update failure must not block the reading loop.
+        allSaved = false;
       }
     }
     if (mounted) setState(() => _recallResults = results);
+    return allSaved;
   }
 
   // ── Stage 4: Memory Association ────────────────────────────────────────────

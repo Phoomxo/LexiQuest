@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -16,12 +17,14 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.wordList,
     this.voice,
     this.learning,
+    this.evidenceAdapter,
   });
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
   final List<Map<String, String>>? wordList;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<SrsFlashcardsScreen> createState() => _SrsFlashcardsScreenState();
@@ -42,6 +45,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   bool _isFlipped = false;
   bool _saving = false;
   DateTime? _questionStartedAt;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
 
@@ -70,6 +75,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _learning =
           widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
       final learning = _learning;
+      if (learning != null) {
+        _evidenceAdapter =
+            widget.evidenceAdapter ??
+            CurrentActivityEvidenceAdapter.legacy(learning);
+      }
       _load = learning == null
           ? Future<QuizSession>.error(
               StateError('local learning dependency unavailable'),
@@ -159,14 +169,15 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         final elapsed = DateTime.now().difference(
           _questionStartedAt ?? DateTime.now(),
         );
-        await _learning!.recordAnswer(
+        final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
+          input: CurrentActivityInput.srsRecall,
           sessionId: _session!.id,
           wordId: _currentQuestion.word.id,
-          promptMode: 'srsRecall',
           isCorrect: isCorrect,
           responseTimeMs: elapsed.inMilliseconds,
           attemptNumber: _currentIndex + 1,
         );
+        await pending.record(_learning!);
       }
       if (!mounted) return;
       await _nextCard();
@@ -189,12 +200,14 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _currentIndex++;
         _saving = false;
         _questionStartedAt = DateTime.now();
+        _pendingEvidence = null;
       });
       await _playAudio();
       return;
     }
     if (!_isCompatibilityDeck) {
       await _learning!.finishSession(_session!.id);
+      _pendingEvidence = null;
     }
     if (!mounted) return;
     setState(() => _saving = false);

@@ -5,8 +5,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as identity;
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -400,6 +406,112 @@ void main() {
     await tester.pump();
     expect(gateway.isListening, isTrue);
   });
+
+  testWidgets('retry reuses pending evidence identity', (tester) async {
+    final repository = _RetryLearningRepository();
+    var nextId = 0;
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(),
+      repository: repository,
+      generateId: () => 'shadow-${++nextId}',
+      nowUtc: () => DateTime.utc(2026, 8, 14, 10, 0, nextId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final voice = VoiceUseCases(
+      provider: _FakeVoice(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ShadowingChallengeScreen(
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(_FakeSpeechGateway()),
+          learning: learning,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final listen = find.byKey(const ValueKey('shadowing-listen-button'));
+    await tester.tap(listen);
+    await tester.pumpAndSettle();
+    await tester.tap(listen);
+    await tester.pumpAndSettle();
+
+    expect(repository.commands, hasLength(2));
+    final first = repository.commands.first;
+    final retry = repository.commands.last;
+    expect(retry.id, first.id);
+    expect(retry.occurredAtUtc, first.occurredAtUtc);
+    expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+    expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
+  });
+}
+
+final class _LearningOwnerRepository implements LocalOwnerRepository {
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async =>
+      identity.LocalOwner(
+        id: 'owner-1',
+        createdAtUtc: DateTime.utc(2026, 8, 14),
+      );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _RetryLearningRepository implements LearningRepository {
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+  var _failed = false;
+
+  @override
+  Future<List<QuizWord>> listQuizWords({
+    required String ownerId,
+    String? categoryId,
+    required int limit,
+  }) async => const <QuizWord>[
+    QuizWord(
+      id: 'word-1',
+      categoryId: 'category-1',
+      spelling: 'Practice makes perfect',
+      meaning: 'practice sentence',
+      partOfSpeech: 'phrase',
+    ),
+  ];
+
+  @override
+  Future<void> startSession(LearningSessionDraft session) async {}
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    commands.add(command);
+    if (!_failed) {
+      _failed = true;
+      throw StateError('simulated local failure');
+    }
+    return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) async => LearningSessionSummary(
+    id: sessionId,
+    ownerId: ownerId,
+    activityType: 'quiz',
+    state: 'completed',
+    startedAtUtc: endedAtUtc,
+    endedAtUtc: endedAtUtc,
+    correctCount: 1,
+    wrongCount: 0,
+    score: 1,
+  );
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _FakeSpeechGateway implements SpeechRecognitionGateway {

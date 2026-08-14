@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
@@ -514,6 +515,51 @@ void main() {
       }
     });
   }
+
+  testWidgets('retry reuses pending evidence identity', (tester) async {
+    final repository = _CountingLearningRepository(failFirstRecord: true);
+    var nextId = 0;
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(),
+      repository: repository,
+      generateId: () => 'speech-${++nextId}',
+      nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
+          learning: learning,
+          sessionId: 'session-1',
+          wordId: 'word-1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final listen = find.byKey(const ValueKey('speech-listen-button'));
+    await tester.tap(listen);
+    await tester.pumpAndSettle();
+    await tester.tap(listen);
+    await tester.pumpAndSettle();
+
+    expect(repository.commands, hasLength(2));
+    final first = repository.commands.first;
+    final retry = repository.commands.last;
+    expect(retry.id, first.id);
+    expect(retry.occurredAtUtc, first.occurredAtUtc);
+    expect(retry.responseTimeMs, first.responseTimeMs);
+    expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+    expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
+  });
 }
 
 final class _LearningOwnerRepository implements LocalOwnerRepository {
@@ -533,13 +579,21 @@ final class _LearningOwnerRepository implements LocalOwnerRepository {
 }
 
 final class _CountingLearningRepository implements LearningRepository {
+  _CountingLearningRepository({this.failFirstRecord = false});
+
+  final bool failFirstRecord;
   int recordCalls = 0;
   RecordAnswerCommand? lastCommand;
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     recordCalls += 1;
     lastCommand = command;
+    commands.add(command);
+    if (failFirstRecord && recordCalls == 1) {
+      throw StateError('simulated local failure');
+    }
     return const AnswerRecordResult(
       inserted: true,
       srs: SrsSnapshot(

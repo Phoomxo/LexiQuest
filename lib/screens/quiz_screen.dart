@@ -2,16 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
 
 class QuizScreen extends StatefulWidget {
-  const QuizScreen({super.key, this.categoryId, this.learning});
+  const QuizScreen({
+    super.key,
+    this.categoryId,
+    this.learning,
+    this.evidenceAdapter,
+  });
 
   final String? categoryId;
   final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -26,6 +33,8 @@ class _QuizScreenState extends State<QuizScreen> {
   bool _saving = false;
   String? _selected;
   DateTime? _questionStartedAt;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
 
   @override
   void didChangeDependencies() {
@@ -34,6 +43,11 @@ class _QuizScreenState extends State<QuizScreen> {
     _learning =
         widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
     final learning = _learning;
+    if (learning != null) {
+      _evidenceAdapter =
+          widget.evidenceAdapter ??
+          CurrentActivityEvidenceAdapter.legacy(learning);
+    }
     _load = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
@@ -185,14 +199,15 @@ class _QuizScreenState extends State<QuizScreen> {
       _questionStartedAt ?? DateTime.now(),
     );
     try {
-      await learning.recordAnswer(
+      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
+        input: CurrentActivityInput.meaningMultipleChoice,
         sessionId: session.id,
         wordId: question.word.id,
-        promptMode: 'meaningChoice',
         isCorrect: correct,
         responseTimeMs: elapsed.inMilliseconds,
         attemptNumber: _index + 1,
       );
+      await pending.record(learning);
       if (!mounted) return;
       if (correct) {
         await HapticFeedback.lightImpact();
@@ -220,6 +235,7 @@ class _QuizScreenState extends State<QuizScreen> {
         _answered = false;
         _selected = null;
         _questionStartedAt = DateTime.now();
+        _pendingEvidence = null;
       });
       return;
     }

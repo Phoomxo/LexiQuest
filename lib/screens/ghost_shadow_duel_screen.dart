@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/progress/domain/progress_models.dart';
 import '../runtime/app_dependencies.dart';
@@ -11,10 +12,16 @@ import '../services/ghost_shadow_duel_service.dart';
 typedef GhostProgressLoader = Future<ProgressSnapshot> Function();
 
 class GhostShadowDuelScreen extends StatefulWidget {
-  const GhostShadowDuelScreen({super.key, this.progressLoader, this.learning});
+  const GhostShadowDuelScreen({
+    super.key,
+    this.progressLoader,
+    this.learning,
+    this.evidenceAdapter,
+  });
 
   final GhostProgressLoader? progressLoader;
   final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<GhostShadowDuelScreen> createState() => _GhostShadowDuelScreenState();
@@ -32,6 +39,8 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   bool _finished = false;
   bool _sessionClosed = false;
   final List<String> _log = <String>[];
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
 
   @override
   void didChangeDependencies() {
@@ -39,6 +48,12 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     if (_load != null) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _learning ??= widget.learning ?? dependencies?.learning;
+    final learning = _learning;
+    if (learning != null) {
+      _evidenceAdapter =
+          widget.evidenceAdapter ??
+          CurrentActivityEvidenceAdapter.legacy(learning);
+    }
     final loader = widget.progressLoader ?? dependencies?.progress?.load;
     if (loader == null) {
       _load = Future<_DuelData>.error(
@@ -97,15 +112,16 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     final correct = input == question.word.spelling.trim().toLowerCase();
     setState(() => _saving = true);
     try {
-      await _learning!.recordAnswer(
+      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
+        input: CurrentActivityInput.ghostDuel,
         sessionId: data.session.id,
         wordId: question.word.id,
-        promptMode: 'ghostSpelling',
         isCorrect: correct,
         responseTimeMs: responseMs,
         attemptNumber: _index + 1,
         providerProvenance: 'local:ghost-duel:v1',
       );
+      await pending.record(_learning!);
       final turn = GhostShadowDuelService.evaluateTurn(
         playerResponseTimeMs: responseMs.toDouble(),
         isCorrect: correct,
@@ -128,6 +144,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
           _log.insert(0, '${question.word.spelling}: ผิด · $responseMs ms');
         }
         _index += 1;
+        _pendingEvidence = null;
         _finished =
             _ghostHp == 0 ||
             _playerHp == 0 ||

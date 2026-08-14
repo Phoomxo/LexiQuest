@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -23,6 +24,7 @@ class SpeakToTextScreen extends StatefulWidget {
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
+    this.evidenceAdapter,
   });
 
   final String correctWord;
@@ -32,6 +34,7 @@ class SpeakToTextScreen extends StatefulWidget {
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
+  final CurrentActivityEvidenceAdapter? evidenceAdapter;
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
@@ -51,6 +54,8 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   String? _error;
   TranscriptPronunciationAssessment? _assessment;
   DateTime? _startedAtUtc;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  PendingCurrentActivityEvidence? _pendingEvidence;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -95,6 +100,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
+    final learning = _learning;
+    if (learning != null) {
+      _evidenceAdapter =
+          widget.evidenceAdapter ??
+          CurrentActivityEvidenceAdapter.legacy(learning);
+    }
     if (routeIsCurrent &&
         speech != null &&
         (_speechSession == null || !_speechSession!.isCurrent)) {
@@ -213,16 +224,18 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         ? null
         : DateTime.now().toUtc().difference(_startedAtUtc!).inMilliseconds;
     try {
-      await learning.recordAnswer(
+      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
+        input: CurrentActivityInput.speakToText,
         sessionId: sessionId,
         wordId: wordId,
-        promptMode: 'pronunciationTranscript',
         isCorrect: assessment.isExactMatch,
         responseTimeMs: elapsed,
         attemptNumber: widget.attemptNumber,
         providerProvenance:
             '${assessment.engine}|${assessment.locale}|${assessment.method}',
       );
+      await pending.record(learning);
+      _pendingEvidence = null;
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');

@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
@@ -218,6 +219,54 @@ void main() {
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('retry reuses pending evidence identity', (tester) async {
+    final repository = _RetryLearningRepository();
+    var nextId = 0;
+    final learning = LearningUseCases(
+      owners: _ScenarioOwnerRepository(),
+      repository: repository,
+      generateId: () => 'srs-${++nextId}',
+      nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SrsFlashcardsScreen(voice: voice, learning: learning),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('durable'));
+    await tester.pumpAndSettle();
+
+    final good = find.text('จำได้แล้ว (Good)');
+    await tester.tap(good);
+    await tester.pumpAndSettle();
+    ScaffoldMessenger.of(
+      tester.element(find.byType(SrsFlashcardsScreen)),
+    ).removeCurrentSnackBar();
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(good);
+    await tester.tap(good);
+    await tester.pumpAndSettle();
+
+    expect(repository.commands, hasLength(2));
+    final first = repository.commands.first;
+    final retry = repository.commands.last;
+    expect(retry.id, first.id);
+    expect(retry.occurredAtUtc, first.occurredAtUtc);
+    expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+    expect(
+      retry.evidenceContext.evidenceClass,
+      EvidenceClass.independentRecall,
+    );
+  });
 }
 
 final class _ScenarioOwnerRepository implements LocalOwnerRepository {
@@ -242,6 +291,59 @@ final class _DeferredLearningRepository implements LearningRepository {
     if (!entered.isCompleted) entered.complete();
     return due.future;
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _RetryLearningRepository implements LearningRepository {
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+  var _failed = false;
+
+  @override
+  Future<List<QuizWord>> listDueWords({
+    required String ownerId,
+    required DateTime nowUtc,
+    required int limit,
+  }) async => const <QuizWord>[
+    QuizWord(
+      id: 'word-1',
+      categoryId: 'category-1',
+      spelling: 'durable',
+      meaning: 'lasting',
+      partOfSpeech: 'adjective',
+    ),
+  ];
+
+  @override
+  Future<void> startSession(LearningSessionDraft session) async {}
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    commands.add(command);
+    if (!_failed) {
+      _failed = true;
+      throw StateError('simulated local failure');
+    }
+    return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) async => LearningSessionSummary(
+    id: sessionId,
+    ownerId: ownerId,
+    activityType: 'srsReview',
+    state: 'completed',
+    startedAtUtc: endedAtUtc,
+    endedAtUtc: endedAtUtc,
+    correctCount: 1,
+    wrongCount: 0,
+    score: 1,
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

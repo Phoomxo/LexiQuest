@@ -6,6 +6,9 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 
@@ -207,7 +210,101 @@ void main() {
         );
       },
     );
+
+    testWidgets('retry reuses pending evidence identity', (tester) async {
+      final repository = _RetryLearningRepository();
+      var nextId = 0;
+      final retryLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'associative-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 14, 10, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: AssociativeReadingSessionScreen(
+            cefrLevel: 'A2',
+            targetWords: const ['banana'],
+            targetWordIds: const {'banana': 'word-banana'},
+            passageText: 'The banana is yellow.',
+            learning: retryLearning,
+            associativeLearning: associativeLearning,
+            sessionId: 'session-1',
+          ),
+        ),
+      );
+      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      for (var stage = 2; stage <= 3; stage++) {
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(
+          tester,
+          find.text('Stage $stage: ${_stageName(stage)}'),
+        );
+      }
+      await tester.enterText(find.byType(TextField), 'banana');
+
+      await tester.tap(find.text('Complete & Continue'));
+      await tester.pumpAndSettle();
+      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+      ScaffoldMessenger.of(
+        tester.element(find.byType(AssociativeReadingSessionScreen)),
+      ).removeCurrentSnackBar();
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Complete & Continue'));
+      await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+
+      expect(repository.commands, hasLength(2));
+      final first = repository.commands.first;
+      final retry = repository.commands.last;
+      expect(retry.id, first.id);
+      expect(retry.occurredAtUtc, first.occurredAtUtc);
+      expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+      expect(
+        retry.evidenceContext.evidenceClass,
+        EvidenceClass.independentRecall,
+      );
+      expect(retry.evidenceContext.skillId, 'associative-recall');
+    });
   });
+}
+
+final class _RetryLearningRepository implements LearningRepository {
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+  var _recordFailed = false;
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) async => null;
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) async {
+    return ReadingProgressSnapshot(
+      documentId: command.documentId,
+      documentRevision: command.documentRevision,
+      lastPosition: command.position,
+      isCompleted: command.isCompleted,
+      updatedAtUtc: command.occurredAtUtc,
+    );
+  }
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    commands.add(command);
+    if (!_recordFailed) {
+      _recordFailed = true;
+      throw StateError('simulated local failure');
+    }
+    return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 String _stageName(int stage) => switch (stage) {
