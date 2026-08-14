@@ -791,6 +791,15 @@ void main() {
             },
           ),
           (
+            'null reward item',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [
+                <String, dynamic>{...grant(), 'rewardItemId': null},
+              ],
+            },
+          ),
+          (
             'oversized batch',
             <String, dynamic>{
               'eligible': true,

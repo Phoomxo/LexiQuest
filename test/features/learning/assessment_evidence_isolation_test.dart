@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
@@ -55,8 +56,10 @@ void main() {
       var questCalls = 0;
       var streakCalls = 0;
       var rewardCalls = 0;
+      const rolloutModeProvider = ContextEvidencePolicyRolloutModeProvider();
       final reconciler = LearningSideEffectReconciler(
         database,
+        rolloutModeProvider: rolloutModeProvider,
         questSink: (_) async {
           questCalls++;
           return const LearningProjectionResult.applied(
@@ -76,7 +79,10 @@ void main() {
       scheduler = reconciliation;
       final learning = LearningUseCases(
         owners: const _Owners(),
-        repository: DriftLearningRepository(database),
+        repository: DriftLearningRepository(
+          database,
+          rolloutModeProvider: rolloutModeProvider,
+        ),
         generateId: () => 'unused-generated-id',
         nowUtc: () => _occurredAtUtc,
         buildInfo: const AppBuildInfo(version: '1.0.0', buildId: 'task-7'),
@@ -177,7 +183,10 @@ void main() {
   test(
     'enforced assessment preserves non-empty projection bytes without mutation',
     () async {
-      final repository = DriftLearningRepository(database);
+      final repository = DriftLearningRepository(
+        database,
+        rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
+      );
       await repository.startSession(
         LearningSessionDraft(
           id: _practiceSessionId,

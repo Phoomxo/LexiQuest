@@ -42,7 +42,7 @@ final class LearningSideEffectReconciler {
     EvidenceEligibilityPolicy evidencePolicy =
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
-        const ContextEvidencePolicyRolloutModeProvider(),
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : _events = DriftLearningEventStore(
          database,
          evidencePolicy: evidencePolicy,
@@ -70,13 +70,29 @@ final class LearningSideEffectReconciler {
     LearningProjectionSink? sink,
   ) async {
     if (sink == null) return;
-    final events = await _events.listPendingProjectionEvents(
-      ownerId: ownerId,
-      projection: projection,
-      appliedVersion: appliedVersion,
-      limit: pendingBatchSize,
-    );
+    late final List<PendingLearningProjectionEvent> events;
+    try {
+      events = await _events.listPendingProjectionEvents(
+        ownerId: ownerId,
+        projection: projection,
+        appliedVersion: appliedVersion,
+        limit: pendingBatchSize,
+      );
+    } on StateError {
+      return;
+    }
     for (final pending in events) {
+      late final bool shouldProject;
+      try {
+        shouldProject = await _events.ensureProjectionOutcomeWritable(
+          source: pending.event,
+          projection: projection,
+          appliedVersion: appliedVersion,
+        );
+      } on StateError {
+        break;
+      }
+      if (!shouldProject) continue;
       final resolution = await _events.resolveEvidenceForSource(pending.event);
       final evidence = resolution.evidence;
       if (evidence == null) {
@@ -170,14 +186,30 @@ final class LearningSideEffectReconciler {
   Future<void> _applyRewardPending(String ownerId) async {
     final sink = rewardSink;
     if (sink == null) return;
-    final events = await _events.listPendingProjectionEvents(
-      ownerId: ownerId,
-      projection: 'reward',
-      appliedVersion: appliedVersion,
-      limit: pendingBatchSize,
-      prerequisiteProjection: 'quest',
-    );
+    late final List<PendingLearningProjectionEvent> events;
+    try {
+      events = await _events.listPendingProjectionEvents(
+        ownerId: ownerId,
+        projection: 'reward',
+        appliedVersion: appliedVersion,
+        limit: pendingBatchSize,
+        prerequisiteProjection: 'quest',
+      );
+    } on StateError {
+      return;
+    }
     for (final pending in events) {
+      late final bool shouldProject;
+      try {
+        shouldProject = await _events.ensureProjectionOutcomeWritable(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+        );
+      } on StateError {
+        break;
+      }
+      if (!shouldProject) continue;
       final resolution = await _events.resolveEvidenceForSource(pending.event);
       final evidence = resolution.evidence;
       if (evidence == null) {

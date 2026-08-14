@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
@@ -58,6 +59,25 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test('default repository and rebuilder rollout is fixed Legacy', () {
+    expect(
+      repository.events.rolloutModeProvider,
+      isA<FixedEvidencePolicyRolloutModeProvider>().having(
+        (provider) => provider.mode,
+        'mode',
+        EvidencePolicyRolloutMode.legacy,
+      ),
+    );
+    expect(
+      repository.projections.evidenceDecisions.rolloutModeProvider,
+      isA<FixedEvidencePolicyRolloutModeProvider>().having(
+        (provider) => provider.mode,
+        'mode',
+        EvidencePolicyRolloutMode.legacy,
+      ),
+    );
+  });
 
   test('quiz words come from active local vocabulary for the owner', () async {
     final words = await repository.listQuizWords(

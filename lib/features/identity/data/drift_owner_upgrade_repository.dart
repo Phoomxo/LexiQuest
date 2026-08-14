@@ -36,7 +36,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     this.ownerGateRetryInterval = const Duration(milliseconds: 50),
     this.ownerGateWaitTimeout = const Duration(seconds: 30),
     this.evidencePolicy = const EvidenceEligibilityPolicySet(),
-    this.rolloutModeProvider = const ContextEvidencePolicyRolloutModeProvider(),
+    this.rolloutModeProvider =
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : ownerOperationGate =
            ownerOperationGate ?? DriftOwnerOperationGate(_database);
 

@@ -202,12 +202,12 @@ final class QuestUseCases {
             final definition = catalog.firstWhere(
               (candidate) => candidate.questId == completion.questId,
             );
+            final rewardItemId = definition.reward.rewardItemId;
             return <String, dynamic>{
               'ownerId': completion.ownerId,
               'idempotencyKey': completion.idempotencyKey,
               'xpAmount': definition.reward.xpAmount,
-              if (definition.reward.rewardItemId != null)
-                'rewardItemId': definition.reward.rewardItemId,
+              'rewardItemId': ?rewardItemId,
             };
           })
           .toList(growable: false),
@@ -366,6 +366,7 @@ final class QuestUseCases {
       final idempotencyKey = grant['idempotencyKey'];
       final xpAmount = grant['xpAmount'];
       final rewardItemId = grant['rewardItemId'];
+      final hasRewardItemId = grant.containsKey('rewardItemId');
       if (ownerId is! String || ownerId != event.ownerIdentity) {
         throw StateError('quest reward owner does not match source event');
       }
@@ -379,8 +380,9 @@ final class QuestUseCases {
       if (xpAmount is! int || xpAmount <= 0 || xpAmount > 0x7fffffffffffffff) {
         throw StateError('invalid quest reward XP amount');
       }
-      if (rewardItemId != null &&
-          (rewardItemId is! String ||
+      if (hasRewardItemId &&
+          (rewardItemId == null ||
+              rewardItemId is! String ||
               rewardItemId.trim() != rewardItemId ||
               rewardItemId.isEmpty ||
               rewardItemId.runes.length > 256)) {

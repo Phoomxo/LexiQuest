@@ -11,6 +11,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_re
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -48,6 +49,14 @@ void main() {
   });
 
   test('owner upgrade forwards the identical evidence policy pair', () {
+    expect(
+      repository.rolloutModeProvider,
+      isA<FixedEvidencePolicyRolloutModeProvider>().having(
+        (provider) => provider.mode,
+        'mode',
+        EvidencePolicyRolloutMode.legacy,
+      ),
+    );
     final policy = EvidenceEligibilityPolicySet();
     final rollout = FixedEvidencePolicyRolloutModeProvider.legacy();
     final injected = DriftOwnerUpgradeRepository(

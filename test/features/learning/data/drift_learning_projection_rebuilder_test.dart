@@ -155,6 +155,19 @@ void main() {
   tearDown(() => db.close());
 
   group('DriftLearningProjectionRebuilder', () {
+    test('default rollout is fixed Legacy', () {
+      final rebuilder = DriftLearningProjectionRebuilder(db);
+
+      expect(
+        rebuilder.evidenceDecisions.rolloutModeProvider,
+        isA<FixedEvidencePolicyRolloutModeProvider>().having(
+          (provider) => provider.mode,
+          'mode',
+          EvidencePolicyRolloutMode.legacy,
+        ),
+      );
+    });
+
     test('rebuildWord writes SrsState row from answer history', () async {
       await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
       await _insertAttempt(db, isCorrect: false, seqMs: 1000, attemptNumber: 2);
@@ -204,7 +217,10 @@ void main() {
           evidenceContext: _assessmentEvidence(),
         );
 
-        final rebuilder = DriftLearningProjectionRebuilder(db);
+        final rebuilder = DriftLearningProjectionRebuilder(
+          db,
+          rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
+        );
         final snapshot = await rebuilder.rebuildWord(
           ownerId: 'owner-rebuild',
           wordId: 'word-rebuild',
@@ -229,7 +245,10 @@ void main() {
         evidenceContext: _assessmentEvidence(),
       );
 
-      final rebuilder = DriftLearningProjectionRebuilder(db);
+      final rebuilder = DriftLearningProjectionRebuilder(
+        db,
+        rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
+      );
       expect(
         await rebuilder.rebuildWord(
           ownerId: 'owner-rebuild',

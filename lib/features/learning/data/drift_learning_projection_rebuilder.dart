@@ -13,7 +13,7 @@ final class DriftLearningProjectionRebuilder {
     EvidenceEligibilityPolicy evidencePolicy =
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
-        const ContextEvidencePolicyRolloutModeProvider(),
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : evidenceDecisions = DriftLearningEventStore(
          database,
          evidencePolicy: evidencePolicy,

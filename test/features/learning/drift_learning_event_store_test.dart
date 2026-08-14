@@ -355,6 +355,265 @@ void main() {
       );
     },
   );
+
+  test('default rollout cannot activate embedded Enforced evidence', () async {
+    final at = DateTime.utc(2026, 8, 14, 14);
+    final context = _enforcedEvidence();
+    await _insertAttempt(
+      database,
+      id: 'default-enforced',
+      occurredAtUtc: at,
+      evidenceContext: context,
+    );
+
+    final resolution = await store.resolveEvidenceForSource(
+      _enforcedEvent(
+        sourceEvidenceId: 'default-enforced',
+        occurredAtUtc: at,
+        evidenceContext: context,
+      ),
+    );
+
+    expect(
+      store.rolloutModeProvider,
+      isA<FixedEvidencePolicyRolloutModeProvider>(),
+    );
+    expect(resolution.isResolved, isFalse);
+    expect(resolution.reasonCode, 'decisionSetConflict');
+    expect(
+      await (database.select(database.eventsV2)..where(
+            (row) => row.eventId.equals(
+              'learning-evidence-decisions:default-enforced:v1',
+            ),
+          ))
+          .getSingleOrNull(),
+      isNull,
+    );
+  });
+
+  test(
+    'alternate receipt identity collision cannot advance its cursor',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'receipt-collision',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 15),
+      );
+      const receiptId =
+          'learning-projection:quest:learning-event:receipt-collision:v2';
+      const cursorId = 'learning-projection-cursor:owner-1:quest:v2';
+      final collision = EventEnvelopeV2(
+        eventId: 'alternate-receipt-row',
+        eventType: 'CollisionFixture',
+        eventVersion: 1,
+        occurredAtUtc: source.occurredAtUtc,
+        recordedAtUtc: source.recordedAtUtc,
+        actorIdentity: source.actorIdentity,
+        ownerIdentity: source.ownerIdentity,
+        aggregateType: 'CollisionFixture',
+        aggregateId: source.eventId,
+        idempotencyKey: receiptId,
+        consentContext: source.consentContext,
+        appVersion: source.appVersion,
+        buildId: source.buildId,
+        privacyClassification: source.privacyClassification,
+        payload: const <String, dynamic>{'fixture': true},
+      );
+      await _insertRawEvent(database, collision);
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[],
+          },
+        ),
+        throwsStateError,
+      );
+
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(receiptId))).getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(cursorId))).getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        (await (database.select(database.eventsV2)
+                  ..where((row) => row.eventId.equals('alternate-receipt-row')))
+                .getSingle())
+            .idempotencyKey,
+        receiptId,
+      );
+    },
+  );
+
+  test(
+    'conflicting cursor rolls back a new receipt without mutation',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'cursor-collision',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 16),
+      );
+      const receiptId =
+          'learning-projection:quest:learning-event:cursor-collision:v2';
+      const cursorId = 'learning-projection-cursor:owner-1:quest:v2';
+      final collision = EventEnvelopeV2(
+        eventId: cursorId,
+        eventType: 'LearningProjectionCursor',
+        eventVersion: 1,
+        occurredAtUtc: DateTime.utc(2020),
+        recordedAtUtc: DateTime.utc(2020),
+        actorIdentity: source.actorIdentity,
+        ownerIdentity: source.ownerIdentity,
+        aggregateType: 'LearningProjectionCursor',
+        aggregateId: 'conflicting-source',
+        causationId: 'conflicting-source',
+        idempotencyKey: 'conflicting-cursor-key',
+        consentContext: source.consentContext,
+        appVersion: source.appVersion,
+        buildId: source.buildId,
+        privacyClassification: source.privacyClassification,
+        payload: const <String, dynamic>{
+          'sourceEventId': 'conflicting-source',
+          'projection': 'quest',
+          'appliedVersion': 2,
+        },
+      );
+      await _insertRawEvent(database, collision);
+      final cursorBefore = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(cursorId))).getSingle();
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[],
+          },
+        ),
+        throwsStateError,
+      );
+
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(receiptId))).getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        (await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(cursorId))).getSingle()).toJson(),
+        cursorBefore.toJson(),
+      );
+      expect(
+        (await (database.select(
+              database.eventsV2,
+            )..where((row) => row.eventId.equals(cursorId))).getSingle())
+            .idempotencyKey,
+        'conflicting-cursor-key',
+      );
+    },
+  );
+
+  test(
+    'present optional receipt and Quest grant fields cannot be null',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'null-receipt-fields',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 17),
+      );
+      await store.markProjectionOutcome(
+        source: source,
+        projection: 'streak',
+        appliedVersion: 1,
+        outcome: LearningProjectionOutcome.applied,
+      );
+      const receiptId =
+          'learning-projection:streak:learning-event:null-receipt-fields:v1';
+      final row = await (database.select(
+        database.eventsV2,
+      )..where((candidate) => candidate.eventId.equals(receiptId))).getSingle();
+      final canonicalPayload =
+          jsonDecode(row.payloadJson) as Map<String, dynamic>;
+      for (final field in const <String>[
+        'reasonCode',
+        'bridgedFromVersion',
+        'decision',
+      ]) {
+        final corrupt = Map<String, dynamic>.from(canonicalPayload)
+          ..[field] = null;
+        await database.customUpdate(
+          'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+          variables: <Variable<Object>>[
+            Variable<String>(jsonEncode(corrupt)),
+            const Variable<String>(receiptId),
+          ],
+          updates: {database.eventsV2},
+        );
+        await expectLater(
+          store.readProjectionReceipt(
+            source: source,
+            projection: 'streak',
+            appliedVersion: 1,
+          ),
+          throwsStateError,
+          reason: field,
+        );
+        await database.customUpdate(
+          'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+          variables: <Variable<Object>>[
+            Variable<String>(jsonEncode(canonicalPayload)),
+            const Variable<String>(receiptId),
+          ],
+          updates: {database.eventsV2},
+        );
+      }
+
+      final questSource = _event(
+        sourceEvidenceId: 'null-reward-item',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 18),
+      );
+      await store.markProjectionOutcome(
+        source: questSource,
+        projection: 'quest',
+        appliedVersion: 1,
+        outcome: LearningProjectionOutcome.applied,
+        result: const <String, dynamic>{
+          'eligible': true,
+          'rewardGrants': <Object>[
+            <String, dynamic>{
+              'ownerId': 'owner-1',
+              'idempotencyKey': 'null-reward-item',
+              'xpAmount': 1,
+              'rewardItemId': null,
+            },
+          ],
+        },
+      );
+      await expectLater(
+        store.readProjectionReceipt(
+          source: questSource,
+          projection: 'quest',
+          appliedVersion: 1,
+        ),
+        throwsStateError,
+      );
+    },
+  );
 }
 
 EventEnvelopeV2 _event({
@@ -386,6 +645,64 @@ EvidenceContext _declaredEvidence() => EvidenceContext.legacyCompatibility(
   hintLevel: 0,
   contentRevision: 'legacy-unknown',
   engagementAllowed: true,
+);
+
+EvidenceContext _enforcedEvidence() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'enforced-recall',
+  hintLevel: 0,
+  contentRevision: 'content-v1',
+  rolloutMode: EvidencePolicyRolloutMode.enforced,
+  protocolId: 'protocol-a',
+  protocolVersion: 'protocol-v1',
+  experimentId: 'experiment-a',
+  experimentVersion: 1,
+  assignmentId: 'assignment-a',
+  cohort: 'enforced',
+  researchConsentVersion: 1,
+  engagementAllowed: true,
+);
+
+EventEnvelopeV2 _enforcedEvent({
+  required String sourceEvidenceId,
+  required DateTime occurredAtUtc,
+  required EvidenceContext evidenceContext,
+}) => EventEnvelopeV2(
+  eventId: 'learning-event:$sourceEvidenceId',
+  eventType: 'QuizCompleted',
+  eventVersion: 2,
+  occurredAtUtc: occurredAtUtc,
+  recordedAtUtc: occurredAtUtc,
+  actorIdentity: 'owner-1',
+  ownerIdentity: 'owner-1',
+  aggregateType: 'LearningSession',
+  aggregateId: 'session-1',
+  idempotencyKey: 'learning-attempt:$sourceEvidenceId:v2',
+  consentContext: const ConsentContext(
+    researchConsentVersion: 1,
+    aiConsentGranted: false,
+    voiceConsentGranted: false,
+    socialConsentGranted: false,
+  ),
+  experimentContext: ExperimentContext(
+    experimentId: 'experiment-a',
+    variantId: 'enforced',
+    assignedAtUtc: DateTime.utc(2026, 8, 1),
+  ),
+  contentRevision: evidenceContext.contentRevision,
+  policyVersion: evidenceContext.policyVersion,
+  appVersion: '1.0.0',
+  buildId: 'test',
+  privacyClassification: PrivacyClassification.anonymized,
+  payload: <String, dynamic>{
+    'attemptId': sourceEvidenceId,
+    'wordId': 'word-1',
+    'promptMode': 'meaningChoice',
+    'correct': true,
+    'score': 100,
+    'attemptNumber': 1,
+    'evidenceContext': evidenceContext.toJson(),
+  },
 );
 
 Future<void> _insertAttempt(
@@ -447,3 +764,45 @@ EventEnvelopeV2 _mutateEvent(
   mutate(json);
   return EventEnvelopeV2.fromJson(json);
 }
+
+Future<void> _insertRawEvent(AppDatabase database, EventEnvelopeV2 event) =>
+    database
+        .into(database.eventsV2)
+        .insert(
+          EventsV2Companion.insert(
+            eventId: event.eventId,
+            eventType: event.eventType,
+            eventVersion: event.eventVersion,
+            occurredAtUtc: event.occurredAtUtc,
+            recordedAtUtc: event.recordedAtUtc,
+            actorIdentity: event.actorIdentity,
+            ownerId: event.ownerIdentity,
+            tenantContextJson: Value(
+              event.tenantContext == null
+                  ? null
+                  : jsonEncode(event.tenantContext!.toJson()),
+            ),
+            aggregateType: event.aggregateType,
+            aggregateId: event.aggregateId,
+            correlationId: Value(event.correlationId),
+            causationId: Value(event.causationId),
+            idempotencyKey: event.idempotencyKey,
+            consentContextJson: jsonEncode(event.consentContext.toJson()),
+            experimentContextJson: Value(
+              event.experimentContext == null
+                  ? null
+                  : jsonEncode(event.experimentContext!.toJson()),
+            ),
+            contentRevision: Value(event.contentRevision),
+            policyVersion: Value(event.policyVersion),
+            appVersion: event.appVersion,
+            buildId: event.buildId,
+            providerProvenanceJson: Value(
+              event.providerProvenance == null
+                  ? null
+                  : jsonEncode(event.providerProvenance!.toJson()),
+            ),
+            privacyClassification: event.privacyClassification.name,
+            payloadJson: jsonEncode(event.payload),
+          ),
+        );

@@ -314,6 +314,7 @@ void main() {
       final calls = <String>[];
       final reconciler = LearningSideEffectReconciler(
         database,
+        rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
         questSink: (event) async {
           calls.add(event.eventId);
           return const LearningProjectionResult.applied(
@@ -372,6 +373,7 @@ void main() {
       var calls = 0;
       final reconciler = LearningSideEffectReconciler(
         database,
+        rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
         questSink: (_) async {
           calls++;
           return const LearningProjectionResult.applied();
@@ -394,6 +396,39 @@ void main() {
       expect(payload['reasonCode'], 'contextlessNonLegacyAttempt');
     },
   );
+
+  test('default reconciler cannot activate embedded Enforced mode', () async {
+    await addDeclaredAssessmentEvent(1);
+    var calls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      questSink: (_) async {
+        calls++;
+        return const LearningProjectionResult.applied(
+          payload: <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[],
+          },
+        );
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(calls, 0);
+    final receipt =
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'learning-projection:quest:learning-event:attempt-1:v2',
+              ),
+            ))
+            .getSingle();
+    expect(receipt.eventType, 'LearningProjectionBlocked');
+    expect(
+      (jsonDecode(receipt.payloadJson) as Map<String, dynamic>)['reasonCode'],
+      'decisionSetConflict',
+    );
+  });
 
   test('malformed or cross-owner v1 receipts block before quest sink', () async {
     for (var number = 1; number <= 4; number++) {
@@ -455,6 +490,121 @@ void main() {
       );
     }
   });
+
+  test(
+    'receipt and cursor identity collisions block before repeatable sinks',
+    () async {
+      await addEvent(1);
+      await addEvent(2);
+      const questReceiptId =
+          'learning-projection:quest:learning-event:attempt-1:v2';
+      const questCursorId =
+          'learning-projection-cursor:owner-reconcile:quest:v2';
+      const streakCursorId =
+          'learning-projection-cursor:owner-reconcile:streak:v2';
+      await database
+          .into(database.eventsV2)
+          .insert(
+            EventsV2Companion.insert(
+              eventId: 'alternate-quest-receipt',
+              eventType: 'CollisionFixture',
+              eventVersion: 1,
+              occurredAtUtc: DateTime.utc(2026, 8, 1, 6),
+              recordedAtUtc: DateTime.utc(2026, 8, 1, 6),
+              actorIdentity: 'owner-reconcile',
+              ownerId: 'owner-reconcile',
+              aggregateType: 'CollisionFixture',
+              aggregateId: 'learning-event:attempt-1',
+              idempotencyKey: questReceiptId,
+              consentContextJson: '{}',
+              appVersion: '1.0.0',
+              buildId: 'test-build',
+              privacyClassification: 'anonymized',
+              payloadJson: '{"fixture":true}',
+            ),
+          );
+      await database
+          .into(database.eventsV2)
+          .insert(
+            EventsV2Companion.insert(
+              eventId: streakCursorId,
+              eventType: 'LearningProjectionCursor',
+              eventVersion: 1,
+              occurredAtUtc: DateTime.utc(2020),
+              recordedAtUtc: DateTime.utc(2020),
+              actorIdentity: 'owner-reconcile',
+              ownerId: 'owner-reconcile',
+              aggregateType: 'LearningProjectionCursor',
+              aggregateId: 'conflicting-source',
+              causationId: const Value('conflicting-source'),
+              idempotencyKey: 'conflicting-streak-cursor',
+              consentContextJson: '{}',
+              appVersion: '1.0.0',
+              buildId: 'test-build',
+              privacyClassification: 'anonymized',
+              payloadJson: jsonEncode(<String, dynamic>{
+                'sourceEventId': 'conflicting-source',
+                'projection': 'streak',
+                'appliedVersion': 2,
+              }),
+            ),
+          );
+      final streakCursorBefore = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(streakCursorId))).getSingle();
+      var questCalls = 0;
+      var streakCalls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (_) async {
+          questCalls++;
+          return const LearningProjectionResult.applied(
+            payload: <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': <Object>[],
+            },
+          );
+        },
+        streakSink: (_) async {
+          streakCalls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect((questCalls, streakCalls), (0, 0));
+      expect(
+        await (database.select(database.eventsV2)
+              ..where((row) => row.eventId.equals(questReceiptId)))
+            .getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(questCursorId))).getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        (await database.select(database.eventsV2).get()).where(
+          (row) =>
+              row.eventType == 'LearningProjectionApplied' &&
+              row.idempotencyKey.startsWith('learning-projection:streak:') &&
+              row.idempotencyKey.endsWith(':v2'),
+        ),
+        isEmpty,
+      );
+      expect(
+        (await (database.select(
+              database.eventsV2,
+            )..where((row) => row.eventId.equals(streakCursorId))).getSingle())
+            .toJson(),
+        streakCursorBefore.toJson(),
+      );
+    },
+  );
 
   test(
     'missing quest prerequisite blocks reward cursor before later receipt',
@@ -642,7 +792,11 @@ void main() {
       await addEvent(4, occurredAt: DateTime.utc(2026, 8, 9, 11, 30));
       await reconciler.reconcileOwner('owner-reconcile');
 
-      expect(calls, ['learning-event:attempt-4', 'learning-event:attempt-3']);
+      expect(
+        calls,
+        ['learning-event:attempt-4'],
+        reason: 'an immutable receipt must recover its cursor without a sink',
+      );
     },
   );
 
@@ -714,7 +868,11 @@ void main() {
         database.eventsV2,
       )..where((row) => row.eventType.equals('LaterHistoryNoise'))).go();
       await reconciler.reconcileOwner('owner-reconcile');
-      expect(calls, ['learning-event:attempt-2', 'learning-event:attempt-1']);
+      expect(
+        calls,
+        ['learning-event:attempt-2'],
+        reason: 'cursor rewind must not duplicate an immutable receipt sink',
+      );
     },
   );
 

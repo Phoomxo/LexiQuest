@@ -21,7 +21,7 @@ final class DriftLearningRepository
     EvidenceEligibilityPolicy evidencePolicy =
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
-        const ContextEvidencePolicyRolloutModeProvider(),
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,

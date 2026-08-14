@@ -24,7 +24,7 @@ final class DriftSyncStore implements SyncStore {
     EvidenceEligibilityPolicy evidencePolicy =
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
-        const ContextEvidencePolicyRolloutModeProvider(),
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          evidencePolicy: evidencePolicy,

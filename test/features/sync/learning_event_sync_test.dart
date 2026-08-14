@@ -32,6 +32,14 @@ void main() {
   tearDown(() => database.close());
 
   test('sync store forwards the identical evidence policy pair', () {
+    expect(
+      store.projections.evidenceDecisions.rolloutModeProvider,
+      isA<FixedEvidencePolicyRolloutModeProvider>().having(
+        (provider) => provider.mode,
+        'mode',
+        EvidencePolicyRolloutMode.legacy,
+      ),
+    );
     final policy = EvidenceEligibilityPolicySet();
     final rollout = FixedEvidencePolicyRolloutModeProvider.legacy();
 

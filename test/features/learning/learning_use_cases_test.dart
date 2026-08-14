@@ -9,6 +9,7 @@ import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
@@ -393,9 +394,13 @@ void main() {
       evidence,
       assignedAtUtc: occurredAtUtc.subtract(const Duration(minutes: 1)),
     );
+    const rolloutModeProvider = ContextEvidencePolicyRolloutModeProvider();
     final initialUseCases = LearningUseCases(
       owners: owners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        rolloutModeProvider: rolloutModeProvider,
+      ),
       generateId: () => 'unused',
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
@@ -416,7 +421,10 @@ void main() {
     final throwingProvider = _ThrowingLearningEventContextProvider();
     final throwingReplay = LearningUseCases(
       owners: owners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        rolloutModeProvider: rolloutModeProvider,
+      ),
       generateId: () => 'unused',
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
@@ -448,7 +456,10 @@ void main() {
     final scheduledOwners = <String>[];
     final changedReplay = LearningUseCases(
       owners: owners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        rolloutModeProvider: rolloutModeProvider,
+      ),
       generateId: () => 'unused',
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
@@ -757,6 +768,7 @@ void main() {
       revision: evidence.featureContractRevision,
       semanticHash: evidence.featureContractHash,
     );
+    const rolloutModeProvider = ContextEvidencePolicyRolloutModeProvider();
     final mismatches = <String, LearningEventContext>{
       'schema version': _researchEventContext(
         evidence,
@@ -919,7 +931,10 @@ void main() {
     for (final mismatch in mismatches.entries) {
       final mismatchedUseCases = LearningUseCases(
         owners: owners,
-        repository: DriftLearningRepository(database),
+        repository: DriftLearningRepository(
+          database,
+          rolloutModeProvider: rolloutModeProvider,
+        ),
         generateId: () => 'unused',
         nowUtc: () => now,
         buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
