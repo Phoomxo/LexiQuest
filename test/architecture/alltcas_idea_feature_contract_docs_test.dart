@@ -11,7 +11,7 @@ import '../../tool/feature_contract/generate_feature_map.dart';
 void main() {
   group('AllTCAS feature-map artifacts', () {
     test(
-      'render deterministically with valid ordered JSON and a stable hash',
+      'render deterministically with ordered JSON and complete provenance',
       () {
         final first = buildFeatureMapArtifacts(allTcasIdeaIntegrationCatalog);
         final second = buildFeatureMapArtifacts(allTcasIdeaIntegrationCatalog);
@@ -26,11 +26,25 @@ void main() {
         expect(decoded.keys, <String>[
           'schemaVersion',
           'revision',
+          'baselineCommit',
           'generatorVersion',
           'semanticHash',
           'records',
           'experimentalCandidates',
         ]);
+        expect(decoded['schemaVersion'], featureContractSchemaVersion);
+        expect(decoded['revision'], featureContractRevision);
+        expect(decoded['baselineCommit'], featureContractBaselineCommit);
+        expect(decoded['generatorVersion'], featureContractGeneratorVersion);
+        expect(decoded['semanticHash'], first.semanticHash);
+        for (final provenanceLine in <String>[
+          '- Contract revision: `$featureContractRevision`',
+          '- Baseline commit: `$featureContractBaselineCommit`',
+          '- Generator version: `$featureContractGeneratorVersion`',
+          '- Semantic SHA-256: `${first.semanticHash}`',
+        ]) {
+          expect(first.markdown, contains(provenanceLine));
+        }
         final records = decoded['records'] as List<dynamic>;
         expect(
           records.map((record) => (record as Map<String, dynamic>)['id']),

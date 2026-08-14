@@ -29,7 +29,7 @@ FeatureMapArtifacts buildFeatureMapArtifacts(ProductFeatureCatalog catalog) {
   final candidates = catalog.experimentalCandidates.toList(growable: false)
     ..sort((left, right) => left.id.name.compareTo(right.id.name));
   final normalizedJson =
-      '${const JsonEncoder.withIndent('  ').convert(<String, Object>{'schemaVersion': featureContractSchemaVersion, 'revision': catalog.revision, 'generatorVersion': featureContractGeneratorVersion, 'semanticHash': semanticHash, 'records': records.map(_artifactRecordJson).toList(growable: false), 'experimentalCandidates': candidates.map(_artifactCandidateJson).toList(growable: false)})}\n';
+      '${const JsonEncoder.withIndent('  ').convert(<String, Object>{'schemaVersion': featureContractSchemaVersion, 'revision': catalog.revision, 'baselineCommit': featureContractBaselineCommit, 'generatorVersion': featureContractGeneratorVersion, 'semanticHash': semanticHash, 'records': records.map(_artifactRecordJson).toList(growable: false), 'experimentalCandidates': candidates.map(_artifactCandidateJson).toList(growable: false)})}\n';
 
   return FeatureMapArtifacts(
     markdown: _buildMarkdown(catalog, records, candidates, semanticHash),
@@ -220,6 +220,8 @@ String _buildMarkdown(
     )
     ..writeln()
     ..writeln('- Contract revision: `${catalog.revision}`')
+    ..writeln('- Baseline commit: `$featureContractBaselineCommit`')
+    ..writeln('- Generator version: `$featureContractGeneratorVersion`')
     ..writeln('- Semantic SHA-256: `$semanticHash`')
     ..writeln('- Product features: ${records.length}')
     ..writeln('- Experimental candidates: ${candidates.length}');
