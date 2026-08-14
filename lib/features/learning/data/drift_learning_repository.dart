@@ -97,7 +97,8 @@ final class DriftLearningRepository
         throw StateError('attempt id already exists with different evidence');
       }
       final event = await events.readBySourceEvidenceId(candidate.id);
-      if (event == null || !_validCorrelatedEvent(candidate, event)) {
+      if (event == null ||
+          !await _validPersistedCorrelatedEvent(candidate, event)) {
         throw StateError('committed answer has missing or corrupt event');
       }
       return CommittedAnswerReplay(
@@ -132,7 +133,10 @@ final class DriftLearningRepository
         } else {
           final candidateEvent = command.event!;
           if (storedEvent == null ||
-              !_validCorrelatedEvent(command.candidate, storedEvent)) {
+              !await _validPersistedCorrelatedEvent(
+                command.candidate,
+                storedEvent,
+              )) {
             throw StateError('canonical event cannot be retrofitted on replay');
           }
           if (jsonEncode(storedEvent.toJson()) !=
@@ -565,7 +569,8 @@ final class DriftLearningRepository
       return;
     }
     final event = command.event;
-    if (event == null || !_validCorrelatedEvent(candidate, event)) {
+    if (event == null ||
+        !_validCorrelatedEvent(candidate, event, requireCurrentActor: true)) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }
   }
@@ -576,7 +581,10 @@ final class DriftLearningRepository
   }) {
     final occurredAt = _requiredUtc(candidate.occurredAtUtc, 'occurredAtUtc');
     if ((requireSourceIdentity &&
-            !LearningEvidenceContract.validSourceEvidenceId(candidate.id)) ||
+            (!LearningEvidenceContract.validSourceEvidenceId(candidate.id) ||
+                LearningEvidenceContract.isExactFrozenV13LegacyEvidence(
+                  candidate.evidenceContext,
+                ))) ||
         !LearningEvidenceContract.validAttempt(
           id: candidate.id,
           ownerId: candidate.ownerId,
@@ -600,8 +608,9 @@ final class DriftLearningRepository
 
   bool _validCorrelatedEvent(
     RecordAnswerCandidate candidate,
-    EventEnvelopeV2 event,
-  ) {
+    EventEnvelopeV2 event, {
+    required bool requireCurrentActor,
+  }) {
     final context = candidate.evidenceContext;
     final payload = event.payload;
     const payloadKeys = <String>{
@@ -628,7 +637,7 @@ final class DriftLearningRepository
         event.eventVersion == 2 &&
         event.occurredAtUtc == canonicalEventTime &&
         event.recordedAtUtc == canonicalEventTime &&
-        event.actorIdentity == candidate.ownerId &&
+        (!requireCurrentActor || event.actorIdentity == candidate.ownerId) &&
         event.ownerIdentity == candidate.ownerId &&
         event.aggregateType == 'LearningSession' &&
         event.aggregateId == candidate.sessionId &&
@@ -662,6 +671,24 @@ final class DriftLearningRepository
     } on StateError {
       return false;
     }
+  }
+
+  Future<bool> _validPersistedCorrelatedEvent(
+    RecordAnswerCandidate candidate,
+    EventEnvelopeV2 event,
+  ) async {
+    if (!_validCorrelatedEvent(candidate, event, requireCurrentActor: false)) {
+      return false;
+    }
+    if (event.actorIdentity == candidate.ownerId) return true;
+    // Owner upgrade remaps owner_id but preserves the immutable source actor.
+    // Only the canonical merged-owner lineage authorizes that difference.
+    final historicalActor = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals(event.actorIdentity))).getSingleOrNull();
+    return historicalActor != null &&
+        !historicalActor.isActive &&
+        historicalActor.accountState == 'mergedInto:${candidate.ownerId}';
   }
 
   void _validateReading(ReadingProgressCommand command) {

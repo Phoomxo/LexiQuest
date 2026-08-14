@@ -99,24 +99,45 @@ final class RecordAnswerCandidate {
 }
 
 final class RecordAnswerCommand {
-  const RecordAnswerCommand({
-    required this.id,
-    required this.ownerId,
-    required this.sessionId,
-    required this.wordId,
-    required this.promptMode,
-    required this.isCorrect,
-    required this.responseTimeMs,
-    required this.attemptNumber,
-    required this.occurredAtUtc,
-    required this.evidenceContext,
-    this.providerProvenance,
-    // The public canonical ingress is intentionally non-null while storage is
-    // nullable only for the separately named frozen-v13 legacy ingress.
+  factory RecordAnswerCommand({
+    required String id,
+    required String ownerId,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required DateTime occurredAtUtc,
+    required EvidenceContext evidenceContext,
+    String? providerProvenance,
     required EventEnvelopeV2 event,
-    // ignore: prefer_initializing_formals
-  }) : event = event,
-       isFrozenV13LegacyIngress = false;
+  }) {
+    if (LearningEvidenceContract.isExactFrozenV13LegacyEvidence(
+      evidenceContext,
+    )) {
+      throw ArgumentError.value(
+        evidenceContext,
+        'evidenceContext',
+        'the frozen v13 sentinel is exclusive to legacy ingress',
+      );
+    }
+    return RecordAnswerCommand._(
+      id: id,
+      ownerId: ownerId,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: occurredAtUtc,
+      evidenceContext: evidenceContext,
+      providerProvenance: providerProvenance,
+      event: event,
+      isFrozenV13LegacyIngress: false,
+    );
+  }
 
   factory RecordAnswerCommand.frozenV13LegacyIngress({
     required String id,

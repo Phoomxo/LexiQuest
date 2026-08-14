@@ -14,6 +14,10 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -24,8 +28,210 @@ import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
+  test(
+    'committed learning retry preserves guest actor after account upgrade',
+    () async {
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-learning-owner-upgrade-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}upgrade.sqlite';
+      final nowUtc = DateTime.utc(2026, 8, 14, 9);
+      final occurredAtUtc = nowUtc.add(
+        const Duration(seconds: 2, milliseconds: 123),
+      );
+      const sourceEvidenceId = 'guest-learning-evidence';
+      const accountOwnerId = 'account-learning-owner';
+      const firebaseUid = 'firebase-learning-owner';
+      final evidenceContext = EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'meaning-recall',
+        hintLevel: 0,
+        contentRevision: 'content-r1',
+        engagementAllowed: true,
+      );
+
+      AppDatabase openDatabase() => AppDatabase(NativeDatabase(File(path)));
+      AppDatabase? database;
+      try {
+        database = openDatabase();
+        final guestOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'learning-guest',
+          nowUtc: () => nowUtc,
+        );
+        final guest = await guestOwners.getOrCreateActiveOwner();
+        await database
+            .into(database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: accountOwnerId,
+                firebaseUid: const Value(firebaseUid),
+                accountState: const Value('firebaseBound'),
+                createdAtUtcMs: nowUtc.millisecondsSinceEpoch - 1,
+                isActive: const Value(false),
+              ),
+            );
+        await _seedLearningEvidenceVocabulary(database, guest.id);
+        final firstLearning = LearningUseCases(
+          owners: guestOwners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'learning-session-id',
+          nowUtc: () => nowUtc,
+          buildInfo: const AppBuildInfo(
+            version: '1.0.0',
+            buildId: 'guest-upgrade-test',
+          ),
+        );
+        final quiz = await firstLearning.startQuiz(
+          categoryId: 'learning-category',
+          limit: 1,
+        );
+        expect(
+          (await firstLearning.recordEvidence(
+            sourceEvidenceId: sourceEvidenceId,
+            occurredAtUtc: occurredAtUtc,
+            sessionId: quiz.id,
+            wordId: quiz.questions.single.word.id,
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: 700,
+            attemptNumber: 1,
+            evidenceContext: evidenceContext,
+          )).inserted,
+          isTrue,
+        );
+        final firstEvent = await database.select(database.eventsV2).getSingle();
+        expect(firstEvent.ownerId, guest.id);
+        expect(firstEvent.actorIdentity, guest.id);
+        expect(
+          firstEvent.occurredAtUtc.toUtc(),
+          nowUtc.add(const Duration(seconds: 2)),
+        );
+        expect(
+          (await database.select(database.answerAttempts).getSingle())
+              .occurredAtUtcMs,
+          occurredAtUtc.millisecondsSinceEpoch,
+        );
+
+        var conflictSequence = 0;
+        final upgraded = await UpgradeGuestOwner(
+          DriftOwnerUpgradeRepository(
+            database,
+            nowUtc: () => nowUtc.add(const Duration(minutes: 1)),
+            generateConflictId: () =>
+                'learning-upgrade-conflict-${conflictSequence++}',
+            generateOwnerId: () => 'unexpected-learning-owner',
+            generateOwnerOperationToken: () => 'learning-upgrade-operation',
+            deleteOwnerSecrets: (_) async {},
+          ),
+        )(activeOwnerId: guest.id, firebaseUid: firebaseUid);
+        expect(upgraded.mode, OwnerUpgradeMode.mergedExisting);
+        expect(upgraded.targetOwnerId, accountOwnerId);
+
+        await database.close();
+        database = openDatabase();
+        final storedBeforeReplay = await database
+            .select(database.eventsV2)
+            .getSingle();
+        expect(storedBeforeReplay.ownerId, accountOwnerId);
+        expect(storedBeforeReplay.actorIdentity, guest.id);
+        final unavailableProvider = _UnavailableLearningEventContextProvider();
+        final reopenedOwners = DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner-after-reopen',
+          nowUtc: () => nowUtc.add(const Duration(minutes: 2)),
+        );
+        expect(
+          (await reopenedOwners.getOrCreateActiveOwner()).id,
+          accountOwnerId,
+        );
+        final replayLearning = LearningUseCases(
+          owners: reopenedOwners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'unexpected-learning-id',
+          nowUtc: () => nowUtc.add(const Duration(minutes: 2)),
+          buildInfo: const AppBuildInfo(
+            version: '1.0.0',
+            buildId: 'guest-upgrade-test',
+          ),
+          eventContextProvider: unavailableProvider,
+        );
+
+        final replay = await replayLearning.recordEvidence(
+          sourceEvidenceId: sourceEvidenceId,
+          occurredAtUtc: occurredAtUtc,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 700,
+          attemptNumber: 1,
+          evidenceContext: evidenceContext,
+        );
+        expect(replay.inserted, isFalse);
+        expect(unavailableProvider.calls, 0);
+        expect(
+          (await database.select(database.eventsV2).getSingle()).toJson(),
+          storedBeforeReplay.toJson(),
+        );
+
+        for (final changed in <Future<void> Function()>[
+          () => replayLearning.recordEvidence(
+            sourceEvidenceId: sourceEvidenceId,
+            occurredAtUtc: occurredAtUtc.add(const Duration(milliseconds: 1)),
+            sessionId: quiz.id,
+            wordId: quiz.questions.single.word.id,
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: 700,
+            attemptNumber: 1,
+            evidenceContext: evidenceContext,
+          ),
+          () => replayLearning.recordEvidence(
+            sourceEvidenceId: sourceEvidenceId,
+            occurredAtUtc: occurredAtUtc,
+            sessionId: quiz.id,
+            wordId: quiz.questions.single.word.id,
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: 700,
+            attemptNumber: 1,
+            evidenceContext: EvidenceContext.legacyCompatibility(
+              evidenceClass: EvidenceClass.independentRecall,
+              skillId: 'changed-skill',
+              hintLevel: 0,
+              contentRevision: 'content-r1',
+              engagementAllowed: true,
+            ),
+          ),
+        ]) {
+          await expectLater(changed(), throwsStateError);
+        }
+        expect(unavailableProvider.calls, 0);
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(await database.select(database.eventsV2).get(), hasLength(1));
+        expect(
+          (await database.select(database.eventsV2).getSingle()).toJson(),
+          storedBeforeReplay.toJson(),
+        );
+      } finally {
+        await database?.close();
+        await directory.delete(recursive: true);
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+      }
+    },
+  );
+
   test(
     'complete guest inventory upgrades in order and replays stably after reopen',
     () async {
@@ -763,6 +969,55 @@ void main() {
       }
     },
   );
+}
+
+Future<void> _seedLearningEvidenceVocabulary(
+  AppDatabase database,
+  String ownerId,
+) async {
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: 'learning-category',
+          ownerId: ownerId,
+          name: 'Learning',
+          normalizedName: 'learning',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: 'learning-word',
+          ownerId: ownerId,
+          categoryId: 'learning-category',
+          spelling: 'durable',
+          normalizedSpelling: 'durable',
+          meaning: 'persistent',
+          normalizedMeaning: 'persistent',
+          partOfSpeech: 'adjective',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+}
+
+final class _UnavailableLearningEventContextProvider
+    implements LearningEventContextProvider {
+  int calls = 0;
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async {
+    calls++;
+    throw StateError('learning event context must not resolve during replay');
+  }
 }
 
 Future<void> _expectWithdrawnResearchConsent(

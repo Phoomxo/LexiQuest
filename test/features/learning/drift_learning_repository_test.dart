@@ -159,7 +159,14 @@ void main() {
       occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
       evidenceContext: _legacyEvidence(),
     );
-    final invalidJson = _eventFor(base).toJson()
+    final canonicalEvidence = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'meaning-recall',
+      hintLevel: 0,
+      contentRevision: 'legacy-unknown',
+      engagementAllowed: true,
+    );
+    final invalidJson = _eventForEvidence(base, canonicalEvidence).toJson()
       ..['eventId'] = 'learning-event:different-evidence';
 
     expect(
@@ -174,7 +181,7 @@ void main() {
           responseTimeMs: base.responseTimeMs,
           attemptNumber: base.attemptNumber,
           occurredAtUtc: base.occurredAtUtc,
-          evidenceContext: base.evidenceContext,
+          evidenceContext: canonicalEvidence,
           event: EventEnvelopeV2.fromJson(invalidJson),
         ),
       ),
@@ -559,22 +566,35 @@ void main() {
       expect((await repository.recordAnswer(eventless)).inserted, isTrue);
       expect((await repository.recordAnswer(eventless)).inserted, isFalse);
       expect(await database.select(database.eventsV2).get(), isEmpty);
-
-      final retrofit = RecordAnswerCommand(
-        id: eventless.id,
-        ownerId: eventless.ownerId,
-        sessionId: eventless.sessionId,
-        wordId: eventless.wordId,
-        promptMode: eventless.promptMode,
-        isCorrect: eventless.isCorrect,
-        responseTimeMs: eventless.responseTimeMs,
-        attemptNumber: eventless.attemptNumber,
-        occurredAtUtc: eventless.occurredAtUtc,
-        evidenceContext: eventless.evidenceContext,
-        event: _eventFor(eventless),
+      expect(
+        () => repository.replayCommittedAnswer(eventless.candidate),
+        throwsArgumentError,
       );
-      await expectLater(repository.recordAnswer(retrofit), throwsStateError);
 
+      expect(
+        () => RecordAnswerCommand(
+          id: eventless.id,
+          ownerId: eventless.ownerId,
+          sessionId: eventless.sessionId,
+          wordId: eventless.wordId,
+          promptMode: eventless.promptMode,
+          isCorrect: eventless.isCorrect,
+          responseTimeMs: eventless.responseTimeMs,
+          attemptNumber: eventless.attemptNumber,
+          occurredAtUtc: eventless.occurredAtUtc,
+          evidenceContext: eventless.evidenceContext,
+          event: _eventFor(eventless),
+        ),
+        throwsArgumentError,
+      );
+
+      final canonicalEvidence = EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'canonical-legacy-recall',
+        hintLevel: 0,
+        contentRevision: 'legacy-unknown',
+        engagementAllowed: true,
+      );
       final canonicalSeed = RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'frozen-canonical',
         ownerId: 'owner-1',
@@ -598,8 +618,8 @@ void main() {
         responseTimeMs: canonicalSeed.responseTimeMs,
         attemptNumber: canonicalSeed.attemptNumber,
         occurredAtUtc: canonicalSeed.occurredAtUtc,
-        evidenceContext: canonicalSeed.evidenceContext,
-        event: _eventFor(canonicalSeed),
+        evidenceContext: canonicalEvidence,
+        event: _eventForEvidence(canonicalSeed, canonicalEvidence),
       );
       expect((await repository.recordAnswer(canonical)).inserted, isTrue);
       await expectLater(
@@ -678,6 +698,13 @@ EvidenceContext _legacyEvidence() =>
     LearningEvidenceContract.frozenV13LegacyEvidenceContext();
 
 EventEnvelopeV2 _eventFor(RecordAnswerCommand command) {
+  return _eventForEvidence(command, command.evidenceContext);
+}
+
+EventEnvelopeV2 _eventForEvidence(
+  RecordAnswerCommand command,
+  EvidenceContext evidenceContext,
+) {
   const adapter = EventV1ToV2Adapter(appVersion: '1.0.0', buildId: 'test');
   return adapter.adaptFromCommand(
     sourceEvidenceId: command.id,
@@ -688,9 +715,7 @@ EventEnvelopeV2 _eventFor(RecordAnswerCommand command) {
     isCorrect: command.isCorrect,
     attemptNumber: command.attemptNumber,
     occurredAtUtc: command.occurredAtUtc,
-    evidenceContext: command.evidenceContext,
-    learningEventContext: LearningEventContext.noResearch(
-      command.evidenceContext,
-    ),
+    evidenceContext: evidenceContext,
+    learningEventContext: LearningEventContext.noResearch(evidenceContext),
   );
 }
