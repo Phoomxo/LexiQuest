@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
 import 'package:vocab_learning_app/product/feature_contract/compatibility_profiles.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
@@ -576,6 +578,49 @@ void main() {
         ProjectionDecision.deny,
       );
     });
+
+    test(
+      'keeps product metadata and runtime evidence policy in exact parity',
+      () {
+        expect(
+          EvidenceClass.values.map((value) => value.name),
+          ContractEvidenceClass.values.map((value) => value.name),
+        );
+        expect(
+          LearningProjection.values.map((value) => value.name),
+          ProjectionFamily.values.map((value) => value.name),
+        );
+        expect(
+          ProjectionDisposition.values.map((value) => value.name),
+          ProjectionDecision.values.map((value) => value.name),
+        );
+
+        for (final productEvidenceClass in ContractEvidenceClass.values) {
+          final runtimeEvidenceClass = EvidenceClass.values.byName(
+            productEvidenceClass.name,
+          );
+          final productRow = evidenceCompatibilityMatrix[productEvidenceClass]!;
+          final runtimeRow = evidenceEligibilityV1[runtimeEvidenceClass]!;
+
+          expect(
+            runtimeRow.keys.map((value) => value.name).toSet(),
+            productRow.keys.map((value) => value.name).toSet(),
+            reason: '${productEvidenceClass.name} projection families',
+          );
+          for (final productProjection in ProjectionFamily.values) {
+            final runtimeProjection = LearningProjection.values.byName(
+              productProjection.name,
+            );
+            expect(
+              runtimeRow[runtimeProjection]!.name,
+              productRow[productProjection]!.name,
+              reason:
+                  '${productEvidenceClass.name} x ${productProjection.name}',
+            );
+          }
+        }
+      },
+    );
 
     test('maps every current runtime feature to the exact product IDs', () {
       const expected = <Feature, Set<FeatureContractId>>{
