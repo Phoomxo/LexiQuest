@@ -818,8 +818,10 @@ git commit -m "feat: define versioned learning evidence eligibility"
 - Modify: `test/database/migration_v11_to_v12_test.dart`
 - Modify: `test/database/migration_v9_to_v10_test.dart`
 - Modify: `test/database/migration_v8_to_v9_test.dart`
+- Modify: `test/database/migration_v7_to_v8_test.dart`
 - Modify: `test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart`
 - Modify: `test/features/ai_tutor/drift_ai_usage_repository_test.dart`
+- Modify: `test/features/export/export_use_cases_test.dart`
 - Modify: `test/scenarios/complete_owner_export_delete_test.dart`
 - Modify: `test/scenarios/file_backed_sync_recovery_test.dart`
 - Modify: `test/scenarios/guest_upgrade_restart_test.dart`
@@ -880,7 +882,7 @@ TextColumn get evidenceContextJson => text().withDefault(
 
 The migration JSON keeps every nullable canonical key present as explicit JSON `null` so strict schema-v1 decoding remains stable.
 
-Introduce `AppDatabase.currentSchemaVersion = 13` and make `schemaVersion` return that constant. Replace every test assertion that means "the current schema" with this named constant; keep historical fixture versions literal. Rename misleading "fresh v12" test titles to "fresh current schema preserves the v12 contract." In `onUpgrade`, for `from < 13`, add both columns with `_addColumnIfMissing`. Do not alter existing answer IDs, SRS rows, points, achievements, events, or outbox rows.
+Introduce `AppDatabase.currentSchemaVersion = 13` and make `schemaVersion` return that constant. Replace every test assertion that means "the current schema"—including the v7→v8 and export inventories—with `AppDatabase.currentSchemaVersion`; keep historical fixture setup and historical-version assertions literal. Rename misleading "fresh v12" test titles to "fresh current schema preserves the v12 contract." In `onUpgrade`, for `from < 13`, add both columns with `_addColumnIfMissing`. Do not alter existing answer IDs, SRS rows, points, achievements, events, or outbox rows.
 
 - [ ] **Step 4: Extend the command and replay equality**
 
@@ -909,6 +911,7 @@ dart run build_runner build --delete-conflicting-outputs
 flutter test --no-pub test/database/migration_v12_to_v13_test.dart test/data/local/app_database_migration_test.dart test/data/local/app_database_test.dart
 flutter test --no-pub test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart
 flutter test --no-pub test/database/migration_v11_to_v12_test.dart test/database/migration_v9_to_v10_test.dart test/database/migration_v8_to_v9_test.dart
+flutter test --no-pub test/database/migration_v7_to_v8_test.dart test/features/export/export_use_cases_test.dart
 flutter test --no-pub test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart test/features/ai_tutor/drift_ai_usage_repository_test.dart test/scenarios/complete_owner_export_delete_test.dart
 flutter test --no-pub test/features/sync/learning_event_sync_test.dart test/features/progress/progress_projector_test.dart
 flutter test --no-pub test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart test/features/identity/drift_owner_upgrade_repository_test.dart
@@ -919,7 +922,7 @@ Expected: migration and replay tests pass; old attempts rebuild exactly as befor
 - [ ] **Step 6: Update the schema ledger and commit**
 
 ```powershell
-git add -- lib/data/local/tables/learning_tables.dart lib/data/local/app_database.dart lib/data/local/app_database.g.dart lib/features/learning/domain/learning_models.dart lib/features/learning/domain/learning_evidence_contract.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/data/drift_learning_repository.dart lib/features/sync/data/drift_sync_store.dart lib/features/identity/domain/owner_lifecycle_manifest.dart lib/features/export/application/owner_lifecycle_archive.dart test/database/migration_v12_to_v13_test.dart test/data/local/app_database_migration_test.dart test/data/local/app_database_test.dart test/database/migration_v11_to_v12_test.dart test/database/migration_v9_to_v10_test.dart test/database/migration_v8_to_v9_test.dart test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart test/features/ai_tutor/drift_ai_usage_repository_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/sync/learning_event_sync_test.dart test/features/progress/progress_projector_test.dart test/scenarios/complete_owner_export_delete_test.dart test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart test/features/identity/drift_owner_upgrade_repository_test.dart docs/database/schema_ledger.md
+git add -- lib/data/local/tables/learning_tables.dart lib/data/local/app_database.dart lib/data/local/app_database.g.dart lib/features/learning/domain/learning_models.dart lib/features/learning/domain/learning_evidence_contract.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/data/drift_learning_repository.dart lib/features/sync/data/drift_sync_store.dart lib/features/identity/domain/owner_lifecycle_manifest.dart lib/features/export/application/owner_lifecycle_archive.dart test/database/migration_v12_to_v13_test.dart test/data/local/app_database_migration_test.dart test/data/local/app_database_test.dart test/database/migration_v11_to_v12_test.dart test/database/migration_v9_to_v10_test.dart test/database/migration_v8_to_v9_test.dart test/database/migration_v7_to_v8_test.dart test/features/ai_tutor/secure_ai_tutor_settings_store_test.dart test/features/ai_tutor/drift_ai_usage_repository_test.dart test/features/export/export_use_cases_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/sync/learning_event_sync_test.dart test/features/progress/progress_projector_test.dart test/scenarios/complete_owner_export_delete_test.dart test/scenarios/file_backed_sync_recovery_test.dart test/scenarios/guest_upgrade_restart_test.dart test/features/identity/drift_owner_upgrade_repository_test.dart docs/database/schema_ledger.md
 git diff --cached --check
 git commit -m "feat: persist evidence context in schema v13"
 ```
