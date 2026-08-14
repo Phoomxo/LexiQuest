@@ -1060,7 +1060,11 @@ git commit -m "refactor: reuse one learning evidence identity"
 - Modify: `lib/features/learning/data/drift_learning_repository.dart`
 - Modify: `lib/features/learning/data/drift_learning_projection_rebuilder.dart`
 - Modify: `lib/features/learning/application/learning_side_effect_reconciler.dart`
+- Modify: `lib/features/learning/application/learning_use_cases.dart`
 - Modify: `lib/features/learning/data/drift_learning_event_store.dart`
+- Modify: `lib/features/sync/data/drift_sync_store.dart`
+- Modify: `lib/features/identity/data/drift_owner_upgrade_repository.dart`
+- Modify: `lib/features/quest/application/quest_use_cases.dart`
 - Modify: `lib/features/progress/data/drift_progress_queries.dart`
 - Modify: `lib/runtime/app_bootstrap.dart`
 - Modify: `test/features/learning/data/drift_learning_projection_rebuilder_test.dart`
@@ -1071,6 +1075,10 @@ git commit -m "refactor: reuse one learning evidence identity"
 - Modify: `test/features/quest/quest_learning_integration_test.dart`
 - Modify: `test/features/motivation/streak_learning_integration_test.dart`
 - Modify: `test/features/progress/progress_projector_test.dart`
+- Modify: `test/features/sync/learning_event_sync_test.dart`
+- Modify: `test/features/identity/drift_owner_upgrade_repository_test.dart`
+- Modify: `test/features/quest/quest_use_cases_test.dart`
+- Modify: `test/runtime/app_bootstrap_test.dart`
 - Modify: `test/scenarios/guest_upgrade_restart_test.dart`
 - Modify: `test/scenarios/production_learning_restart_test.dart`
 - Create: `test/features/learning/assessment_evidence_isolation_test.dart`
@@ -1110,21 +1118,33 @@ Expected: failure because the current projection path and rebuilders apply learn
 
 - [ ] **Step 3: Gate synchronous rebuilds**
 
-Persist attempt, event, attempt outbox, and session outcome for all valid evidence. Rebuild SRS and SRS outbox only when `masterySrs == allow`. Rebuild achievements and lifetime XP only when their decisions allow. `rebuildWord` and `rebuildAchievements` must filter stored attempts by decoded context so replay produces the same result.
+Persist attempt, event, attempt outbox, and session outcome for all valid evidence. Gate every synchronous rebuilder from the same stored decision set: invoke the word projection when `masterySrs || xp` is eligible, achievements only when `achievement` is eligible, and the existing reward/economy rebuilder only when `xp || coins` is eligible. Do not modify or duplicate the reward rebuilder. `rebuildWord` and `rebuildAchievements` must filter stored attempts through stored decisions so replay produces the same result; they must not independently re-evaluate mutable configuration.
+
+Add a non-empty mutation-guard Assessment regression: seed pre-existing SRS, XP/points, achievements, and reward/economy state from eligible evidence, snapshot their stored bytes, record declared Enforced Assessment evidence, and assert byte-equivalence afterward. The regression must prove an ineligible Assessment neither deletes nor rewrites existing projections while its canonical attempt/session outcome remains durable.
 
 Make `DriftProgressQueries` an explicit practice/read-model consumer: Assessment attempts/sessions cannot enter practice accuracy, skill, weakness, recommendation, mastery, or latest-learning calculations. Assessment outcome and effort/history are queried through their own readers; do not solve this by deleting the canonical attempt.
 
 - [ ] **Step 4: Gate asynchronous reconciliation**
 
-Before each sink, resolve context with this exact order:
+Centralize event-to-attempt correlation at the existing `DriftLearningEventStore` boundary; repository replay, synchronous consumers, and reconciliation must call that one validator rather than maintain parallel partial validators. Before each sink, resolve context with this exact order:
 
 1. If `payload.evidenceContext` exists, decode it and require its attempt ID/class to match the canonical attempt.
 2. If it is absent, correlate `payload.attemptId` to `AnswerAttempts`; accept only a migrated `legacyInferred/legacy-v1/legacy` context.
 3. If correlation is missing, mismatched, or non-legacy, fail closed by writing a terminal `LearningProjectionBlocked` receipt with a reason code and advance the cursor without invoking a sink.
 
-Cut reconciliation to applied projection version 2 for every source event. Before invoking a v2 sink, look for the deterministic v1 receipt `learning-projection:{projection}:{sourceEventId}:v1`. If it exists, copy its applied/not-applicable outcome into a v2 bridge receipt tagged `bridgedFromVersion: 1`, advance the v2 cursor, and do not invoke the sink. If no v1 receipt exists, evaluate the resolved context: Deny skips; `protocolControlled` requires `engagementAllowed`; Shadow applies the compatibility decision and records the v1 candidate decision/divergence; Enforced applies v1. Quest prerequisite bridging must happen before Reward so its v2 receipt can be joined. This prevents duplicate Quest, Streak, Reward, XP, and Coin effects while allowing pending legacy events to finish exactly once.
+The centralized validator must prove the complete immutable correlation contract: derived event ID and idempotency key, supported envelope version/type, canonical whole-second times, current owner plus an allowed historical actor through canonical owner lifecycle, expected aggregate identity, required-null unsupported metadata, content/policy revisions, exact payload, and declared research consent/experiment/protocol/assignment/feature-contract validation. Contextless acceptance is limited to the exact frozen-v13 `legacyInferred/legacy-v1/legacy` attempt paired with its historical v1 envelope; no other missing context or approximate legacy shape is accepted.
+
+Remove the direct Quest and Streak sinks from `LearningUseCases`. A record operation persists canonical evidence and only schedules durable reconciliation; when no scheduler is injected it persists only, leaving startup replay to the composition root. Migrate the three affected use-case fixtures and four restart callers to scheduler/reconciler wiring so no caller can bypass eligibility, receipt versioning, ordering, or restart recovery.
+
+Cut reconciliation to applied projection version 2 for every source event. Before invoking a v2 sink, look for the deterministic v1 receipt `learning-projection:{projection}:{sourceEventId}:v1`. Harden that read against the correlated source: validate exact receipt ID/idempotency, owner, aggregate/causation, event version/type, canonical times, projection, applied version, outcome, and result. Only `reasonCode`, `bridgedFromVersion`, and `decision` may be absent from a historical v1 payload; malformed, contradictory, cross-owner, or cross-source receipts block terminally. Quest grants used by Reward must be bounded to the same owner and source receipt rather than trusting an unscoped payload.
+
+If a valid v1 receipt exists, copy its applied/not-applicable outcome into a v2 bridge receipt tagged `bridgedFromVersion: 1`, advance the v2 cursor, and do not invoke the sink. If no v1 receipt exists, evaluate the resolved context: Deny skips; `protocolControlled` requires `engagementAllowed`; Shadow applies the compatibility decision and records the v1 candidate decision/divergence; Enforced applies v1. This prevents duplicate Quest, Streak, Reward, XP, and Coin effects while allowing pending legacy events to finish exactly once.
+
+Carry the complete Quest prerequisite state into Reward and evaluate it before reading or bridging Reward v1. A missing Quest receipt remains a chronological gap and stops the Reward prefix. A blocked Quest writes Reward blocked as `questPrerequisiteBlocked` while retaining the upstream stable reason. An invalid Quest receipt writes Reward blocked as `invalidQuestPrerequisiteReceipt`. Quest not-applicable makes Reward not-applicable and may bridge only a matching v1 not-applicable Reward receipt. Only an exact applied Quest receipt can admit an applied Reward v1 bridge or call the Reward sink.
 
 Preserve the existing no-v1 fixture in which a v2 Quest skip advances Reward as not applicable without invoking the Reward sink. Add a separate causal bridge fixture with `quest:v1` skipped plus `reward:v1` skipped; neither sink may run and both v2 receipts must carry `bridgedFromVersion: 1`. A corrupted `reward:v1` applied receipt joined to a non-applied Quest receipt cannot bridge as applied; fail closed with a terminal blocked receipt and a stable reason code.
+
+Make `QuestUseCases.projectEvent` projection-only: it may compute and persist Quest progress but cannot grant XP, Coins, or any reward. `reconcileReward` is the sole production Quest-to-Reward grant path. An optional deprecated `processEvent` compatibility wrapper may remain for bounded tests, but production wiring and `LearningUseCases` must not call it.
 
 Extend `LearningProjectionOutcome` to `applied`, `notApplicable`, and `blocked`. All three write immutable terminal receipts and advance only the matching projection cursor; only `applied` may satisfy Reward's Quest prerequisite. Blocked receipts carry a stable machine reason and never masquerade as an ordinary policy denial.
 
@@ -1138,9 +1158,9 @@ Update existing evidence and restart fixtures that assumed `events_v2` contained
 const evidencePolicy = EvidenceEligibilityPolicySet();
 ```
 
-Inject it and one `EvidencePolicyRolloutModeProvider` into `DriftLearningRepository`, `LearningSideEffectReconciler`, and every evidence-aware rebuilder. The production provider defaults to Legacy. Screens do not instantiate policy objects or choose enforcement directly.
+Declare the production `EvidenceEligibilityPolicySet` and one identical `EvidencePolicyRolloutModeProvider` pair early in `AppBootstrap`, defaulting to Legacy, then inject that same pair into `DriftLearningRepository`, `LearningSideEffectReconciler`, `DriftSyncStore`, `DriftOwnerUpgradeRepository`, and every internal evidence-aware rebuilder they construct. Constructor defaults exist only for explicit test-only Legacy construction. Screens and other callers do not instantiate policy objects or choose enforcement directly.
 
-Do not add an Evidence Gateway enum value or a second registry. Existing activity feature switches remain the invocation rollback boundary; new assessment/activity entry points stay absent or disabled.
+Do not add an Evidence Gateway enum value or a second registry. Existing activity feature switches remain the invocation rollback boundary; new assessment/activity entry points stay absent or disabled. Task 8 activity classification/sync-export expansion, schema/generated database work, Firestore rules, screens, and f32 authority separation remain deferred to their owning work packages.
 
 - [ ] **Step 6: Run focused isolation and integration tests**
 
@@ -1151,6 +1171,10 @@ flutter test --no-pub test/features/quest/quest_learning_integration_test.dart t
 flutter test --no-pub test/features/progress/progress_projector_test.dart
 flutter test --no-pub test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart
 flutter test --no-pub test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart
+flutter test --no-pub test/features/sync/learning_event_sync_test.dart
+flutter test --no-pub test/features/identity/drift_owner_upgrade_repository_test.dart
+flutter test --no-pub test/features/quest/quest_use_cases_test.dart
+flutter test --no-pub test/runtime/app_bootstrap_test.dart
 ```
 
 Expected: all pass; legacy/current learning behavior remains unchanged and assessment effects are isolated.
@@ -1158,7 +1182,8 @@ Expected: all pass; legacy/current learning behavior remains unchanged and asses
 - [ ] **Step 7: Commit the policy cutover**
 
 ```powershell
-git add -- lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/progress/data/drift_progress_queries.dart lib/runtime/app_bootstrap.dart test/features/learning/data/drift_learning_projection_rebuilder_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart test/features/progress/progress_projector_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart test/features/learning/assessment_evidence_isolation_test.dart
+dart format --output=none --set-exit-if-changed lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/sync/data/drift_sync_store.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/quest/application/quest_use_cases.dart lib/features/progress/data/drift_progress_queries.dart lib/runtime/app_bootstrap.dart test/features/learning/data/drift_learning_projection_rebuilder_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart test/features/progress/progress_projector_test.dart test/features/sync/learning_event_sync_test.dart test/features/identity/drift_owner_upgrade_repository_test.dart test/features/quest/quest_use_cases_test.dart test/runtime/app_bootstrap_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart test/features/learning/assessment_evidence_isolation_test.dart
+git add -- lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/sync/data/drift_sync_store.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/quest/application/quest_use_cases.dart lib/features/progress/data/drift_progress_queries.dart lib/runtime/app_bootstrap.dart test/features/learning/data/drift_learning_projection_rebuilder_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart test/features/progress/progress_projector_test.dart test/features/sync/learning_event_sync_test.dart test/features/identity/drift_owner_upgrade_repository_test.dart test/features/quest/quest_use_cases_test.dart test/runtime/app_bootstrap_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart test/features/learning/assessment_evidence_isolation_test.dart
 git diff --cached --check
 git commit -m "feat: enforce evidence eligibility across projections"
 ```
