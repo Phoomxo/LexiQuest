@@ -24,6 +24,9 @@ foreach ($needle in @(
     'test/features/sync',
     'test/features/progress',
     'test/architecture',
+    "Invoke-Gate 'Feature contract tests'",
+    "Invoke-Gate 'Feature contract generated artifacts'",
+    "& dart run 'tool/feature_contract/generate_feature_map.dart' --check",
     'test/screens/accessibility_smoke_test.dart',
     'test/scenarios/runtime_kill_switch_journey_test.dart',
     'test/scenarios/complete_owner_export_delete_test.dart',
@@ -107,6 +110,27 @@ if ($integrationGateStart -lt 0 -or `
     Write-Error (
         'Production field-trial integration journeys must run as a named ' +
         'phase before external emulator and physical-device assertions.'
+    )
+}
+
+$featureContractTestsGateStart = $gate.IndexOf(
+    "Invoke-Gate 'Feature contract tests'",
+    [StringComparison]::Ordinal
+)
+$featureContractArtifactsGateStart = $gate.IndexOf(
+    "Invoke-Gate 'Feature contract generated artifacts'",
+    [StringComparison]::Ordinal
+)
+$productCompletionGateStart = $gate.IndexOf(
+    "Invoke-Gate 'Product completion tests'",
+    [StringComparison]::Ordinal
+)
+if ($featureContractTestsGateStart -lt 0 -or `
+    $featureContractArtifactsGateStart -le $featureContractTestsGateStart -or `
+    $productCompletionGateStart -le $featureContractArtifactsGateStart) {
+    Write-Error (
+        'Feature contract tests and generated artifacts must run as named ' +
+        'gates before the existing product-completion suite.'
     )
 }
 

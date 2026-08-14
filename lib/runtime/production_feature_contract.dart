@@ -1,4 +1,4 @@
-import 'registries/feature_registry.dart';
+import 'registries/feature.dart';
 
 final class ProductionFeatureDelivery {
   const ProductionFeatureDelivery({

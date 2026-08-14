@@ -134,6 +134,14 @@ try {
     Invoke-Gate 'Static analysis' {
         & flutter analyze
     }
+    Invoke-Gate 'Feature contract tests' {
+        & flutter test --no-pub --timeout 90s --reporter compact `
+            'test/architecture/alltcas_idea_feature_contract_test.dart' `
+            'test/architecture/alltcas_idea_feature_contract_docs_test.dart'
+    }
+    Invoke-Gate 'Feature contract generated artifacts' {
+        & dart run 'tool/feature_contract/generate_feature_map.dart' --check
+    }
     Invoke-Gate 'Product completion tests' {
         & flutter test --no-pub --timeout 90s --reporter compact $flutterTests
     }

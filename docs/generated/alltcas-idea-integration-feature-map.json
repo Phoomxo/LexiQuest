@@ -1,0 +1,1402 @@
+{
+  "schemaVersion": 1,
+  "revision": "1.0.0",
+  "generatorVersion": "1.0.0",
+  "semanticHash": "f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0",
+  "records": [
+    {
+      "id": "f01",
+      "ordinal": 1,
+      "name": "Curriculum & Learning Pack Catalog",
+      "purpose": "Discover and filter versioned packs by CEFR, topic, skill, and goal while referencing canonical Vocabulary IDs.",
+      "domain": "learningContentAndPacks",
+      "completionContract": "c1",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [
+        "vocabulary"
+      ],
+      "dependencies": [],
+      "authorityDependencies": [
+        "vocabulary"
+      ],
+      "authorityProfileId": "authority.writer.vocabulary",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/vocabulary"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f02",
+      "ordinal": 2,
+      "name": "Learning Pack Detail",
+      "purpose": "Explain pack level, content, progress, examples, and available activities before a session starts.",
+      "domain": "learningContentAndPacks",
+      "completionContract": "c1",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "neutral",
+      "runtimeFeatures": [
+        "vocabulary"
+      ],
+      "dependencies": [
+        "f01"
+      ],
+      "authorityDependencies": [
+        "vocabulary"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/vocabulary"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f03",
+      "ordinal": 3,
+      "name": "Rich Lexical Card",
+      "purpose": "Present canonical meanings, part of speech, CEFR, IPA, audio, examples, synonyms, and antonyms progressively.",
+      "domain": "learningContentAndPacks",
+      "completionContract": "c1",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "vocabulary"
+      ],
+      "dependencies": [
+        "f01"
+      ],
+      "authorityDependencies": [
+        "vocabulary"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/vocabulary"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f04",
+      "ordinal": 4,
+      "name": "Content Version & Quality Control",
+      "purpose": "Pin revision, provenance, review state, checksum, and publication status for reproducible learning and research.",
+      "domain": "learningContentAndPacks",
+      "completionContract": "c1",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f01"
+      ],
+      "authorityDependencies": [
+        "vocabulary"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.foundation",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f05",
+      "ordinal": 5,
+      "name": "Unified Lesson Shell",
+      "purpose": "Own shared session state, progress, pause/resume, timer, audio actions, completion, and adapter boundaries.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "lexiQuestControl",
+      "coverage": "newCapability",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f04"
+      ],
+      "authorityDependencies": [
+        "history",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f06",
+      "ordinal": 6,
+      "name": "Flashcard Mode",
+      "purpose": "Support exposure and self-rated recall through the existing SRS authority.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "existing",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "srs"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "masterySrs",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.mastery-srs",
+      "evidenceProfileId": "evidence.flashcard-exposure-and-recall",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/srs"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f07",
+      "ordinal": 7,
+      "name": "Meaning Quiz",
+      "purpose": "Measure bidirectional meaning recognition without inventing a second quiz authority.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "existing",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "quiz"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/quiz"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f08",
+      "ordinal": 8,
+      "name": "Definition Quiz",
+      "purpose": "Practice English-definition recognition with explicit evidence calibration.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "quiz"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/quiz"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f09",
+      "ordinal": 9,
+      "name": "Cloze Test",
+      "purpose": "Practice contextual retrieval; selected and typed variants receive different evidence profiles.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "quiz"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.cloze-recognition-and-recall",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/quiz"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f10",
+      "ordinal": 10,
+      "name": "Matching Mode",
+      "purpose": "Train fluent recognition with lower mastery weight than independent recall.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.recognition",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f11",
+      "ordinal": 11,
+      "name": "Typed Recall / Writing",
+      "purpose": "Capture independent spelling and productive recall from meaning, audio, or context.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "quiz"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "masterySrs",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.independent-recall",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/quiz"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f12",
+      "ordinal": 12,
+      "name": "Handwriting Scratchpad",
+      "purpose": "Provide local, ephemeral handwriting and self-checking without OCR or automatic mastery claims.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f13",
+      "ordinal": 13,
+      "name": "LexiQuest Native Modes Integration",
+      "purpose": "Adapt Dictation, Speaking, Shadowing, Reading, Scramble, and Associative Reading to the shared shell and evidence gateway.",
+      "domain": "unifiedLearningExperience",
+      "completionContract": "c2",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "ghostDuel",
+        "objectScanner",
+        "reading",
+        "speechPractice"
+      ],
+      "dependencies": [
+        "f03",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "masterySrs",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.native-modes",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/associative-reading",
+        "drawer/learning/ghost-duel",
+        "drawer/practice/object-scanner",
+        "drawer/practice/shadowing"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f14",
+      "ordinal": 14,
+      "name": "Flashcard-First Recommendation",
+      "purpose": "Recommend preparation before harder recall while preserving learner choice.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "srs"
+      ],
+      "dependencies": [
+        "f06"
+      ],
+      "authorityDependencies": [
+        "masterySrs"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/srs"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f15",
+      "ordinal": 15,
+      "name": "Active-Recall Ladder",
+      "purpose": "Sequence exposure, recognition, matching, cloze, typed recall, dictation, and speaking from evidence.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f06",
+        "f07",
+        "f08",
+        "f09",
+        "f10",
+        "f11",
+        "f13",
+        "f14"
+      ],
+      "authorityDependencies": [
+        "masterySrs",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f16",
+      "ordinal": 16,
+      "name": "Session Configuration",
+      "purpose": "Configure item count, direction, difficulty, hints, time, and pack within protocol limits.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f05"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f17",
+      "ordinal": 17,
+      "name": "Immediate Answer Feedback",
+      "purpose": "Show accessible correct/incorrect feedback without creating an additional scored event.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "existing",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.guided-practice",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f18",
+      "ordinal": 18,
+      "name": "Contrastive Distractor Explanation",
+      "purpose": "Explain the correct answer and the learner's selected distractor as guided feedback.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f17"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.guided-practice",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f19",
+      "ordinal": 19,
+      "name": "Hint, Strategy & Context",
+      "purpose": "Record hint level and provide staged support without counting assisted work as independent recall.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "aiTutor"
+      ],
+      "dependencies": [
+        "f17"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.guided-practice",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "drawer/ai-tutor/chat"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f20",
+      "ordinal": 20,
+      "name": "Bookmark / Save",
+      "purpose": "Preserve learner intent to revisit an item without classifying it as weakness.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "neutral",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f03"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f21",
+      "ordinal": 21,
+      "name": "Flag / Report Content",
+      "purpose": "Submit versioned quality reports for ambiguous or incorrect text, audio, answer, or explanation.",
+      "domain": "recallFeedbackAndControl",
+      "completionContract": "c3",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f04"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f22",
+      "ordinal": 22,
+      "name": "Review Center",
+      "purpose": "Compose saved, incorrect, due-SRS, and reported items while preserving the reason for each queue entry.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [
+        "srs"
+      ],
+      "dependencies": [
+        "f06",
+        "f20",
+        "f21"
+      ],
+      "authorityDependencies": [
+        "masterySrs"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/learn/srs"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f23",
+      "ordinal": 23,
+      "name": "Focus Timer",
+      "purpose": "Create explicit focus intervals with start, pause, resume, and finish states.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "measurement",
+      "runtimeFeatures": [],
+      "dependencies": [],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f24",
+      "ordinal": 24,
+      "name": "Automatic Learning-Time Capture",
+      "purpose": "Measure active effort while excluding idle and background time from learning duration.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "partial",
+      "researchRole": "measurement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f05",
+        "f23"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.response-evidence",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f25",
+      "ordinal": 25,
+      "name": "Learning Calendar & Weekly Analytics",
+      "purpose": "Present effort, accuracy, skill distribution, and trends as separate measures.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "measurement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f24"
+      ],
+      "authorityDependencies": [
+        "history"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.read-model-only",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f26",
+      "ordinal": 26,
+      "name": "Goal / Test Countdown",
+      "purpose": "Track language-test, course, or personal learning deadlines without admission-score logic.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "newCapability",
+      "researchRole": "neutral",
+      "runtimeFeatures": [],
+      "dependencies": [],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f27",
+      "ordinal": 27,
+      "name": "Opt-in Study Reminder",
+      "purpose": "Schedule user-controlled reminders for due review or goals without punitive messaging.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "newCapability",
+      "researchRole": "engagement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f22",
+        "f26"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f28",
+      "ordinal": 28,
+      "name": "Learning Assessment & Progress Comparison",
+      "purpose": "Run versioned pre-learning and post-learning assessment and report their comparison separately from practice.",
+      "domain": "reviewTimeAndAssessment",
+      "completionContract": "c4",
+      "provenance": "lexiQuestControl",
+      "coverage": "newCapability",
+      "researchRole": "measurement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f04",
+        "f05"
+      ],
+      "authorityDependencies": [
+        "assessment",
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.writer.assessment",
+      "evidenceProfileId": "evidence.assessment",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.protocol-assigned",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.protocol",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f29",
+      "ordinal": 29,
+      "name": "Evidence-Based Quest",
+      "purpose": "Advance the existing Quest authority only from evidence allowed by the active policy.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "existing",
+      "researchRole": "engagement",
+      "runtimeFeatures": [
+        "questV2",
+        "shadowRewardV2"
+      ],
+      "dependencies": [
+        "f05"
+      ],
+      "authorityDependencies": [
+        "quest"
+      ],
+      "authorityProfileId": "authority.writer.quest",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "drawer/rewards/quests"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f30",
+      "ordinal": 30,
+      "name": "Gentle Streak",
+      "purpose": "Use the dedicated Streak authority with grace, freeze, and recovery rules that avoid punishment.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "existing",
+      "researchRole": "engagement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f24"
+      ],
+      "authorityDependencies": [
+        "streak"
+      ],
+      "authorityProfileId": "authority.writer.streak",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f31",
+      "ordinal": 31,
+      "name": "Achievement & Milestone",
+      "purpose": "Unlock durable milestones from eligible, idempotent learning evidence.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "alltcasConfirmed",
+      "coverage": "existing",
+      "researchRole": "engagement",
+      "runtimeFeatures": [
+        "achievements"
+      ],
+      "dependencies": [
+        "f29",
+        "f30"
+      ],
+      "authorityDependencies": [
+        "lifetimeXp"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/achievements"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f32",
+      "ordinal": 32,
+      "name": "Avatar Level-Up & Cosmetic Unlock",
+      "purpose": "Connect lifetime progression to cosmetics while keeping XP and spendable Coins separate.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "engagement",
+      "runtimeFeatures": [
+        "shop"
+      ],
+      "dependencies": [
+        "f31"
+      ],
+      "authorityDependencies": [
+        "lifetimeXp",
+        "spendableCoins"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "drawer/rewards/shop"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f33",
+      "ordinal": 33,
+      "name": "Contextual Companion",
+      "purpose": "Use scripted, versioned reactions to session events before considering generative behavior.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "engagement",
+      "runtimeFeatures": [
+        "aiTutor"
+      ],
+      "dependencies": [
+        "f05"
+      ],
+      "authorityDependencies": [
+        "responseEvidence"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "drawer/ai-tutor/chat"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f34",
+      "ordinal": 34,
+      "name": "Achievement Share Card",
+      "purpose": "Generate an opt-in shareable artifact without creating an internal social network.",
+      "domain": "motivationAndEngagement",
+      "completionContract": "c5",
+      "provenance": "alltcasConfirmed",
+      "coverage": "newCapability",
+      "researchRole": "engagement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f31"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f35",
+      "ordinal": 35,
+      "name": "Learning Preference & Goal Quiz",
+      "purpose": "Set editable defaults from goals, available time, and activity preference without fixed learning-style labels.",
+      "domain": "personalizationAndAccessibility",
+      "completionContract": "c6",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "newCapability",
+      "researchRole": "neutral",
+      "runtimeFeatures": [],
+      "dependencies": [],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f36",
+      "ordinal": 36,
+      "name": "Personal Learning Profile",
+      "purpose": "Read separate Mastery, SRS, effort, accuracy, weakness, and engagement projections.",
+      "domain": "personalizationAndAccessibility",
+      "completionContract": "c6",
+      "provenance": "alltcasConfirmed",
+      "coverage": "partial",
+      "researchRole": "measurement",
+      "runtimeFeatures": [
+        "mastery",
+        "weakness"
+      ],
+      "dependencies": [
+        "f06",
+        "f24",
+        "f25"
+      ],
+      "authorityDependencies": [
+        "history",
+        "masterySrs"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.read-model-only",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/mastery",
+        "home/weakness"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f37",
+      "ordinal": 37,
+      "name": "Recommendation Panel",
+      "purpose": "Explain the next suggested activity from canonical projections while allowing learner override.",
+      "domain": "personalizationAndAccessibility",
+      "completionContract": "c6",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "intervention",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f15",
+        "f36"
+      ],
+      "authorityDependencies": [
+        "masterySrs"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.read-model-only",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f38",
+      "ordinal": 38,
+      "name": "Accessibility",
+      "purpose": "Enforce scaling, screen-reader semantics, non-color cues, untimed alternatives, and input/media alternatives.",
+      "domain": "personalizationAndAccessibility",
+      "completionContract": "c6",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f05"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.foundation",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f39",
+      "ordinal": 39,
+      "name": "Motion & Theme Controls",
+      "purpose": "Support Light, Dark, System, and Reduced Motion consistently.",
+      "domain": "personalizationAndAccessibility",
+      "completionContract": "c6",
+      "provenance": "adaptedToLexiQuest",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f38"
+      ],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.foundation",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f40",
+      "ordinal": 40,
+      "name": "Local-First Operation",
+      "purpose": "Commit locally before cloud synchronization and preserve learning through outages and restarts.",
+      "domain": "localReliabilityOfflineAndRollout",
+      "completionContract": "c7",
+      "provenance": "lexiQuestControl",
+      "coverage": "existing",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [
+        "export"
+      ],
+      "dependencies": [
+        "f04"
+      ],
+      "authorityDependencies": [
+        "history"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "drawer/export/center"
+      ],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f41",
+      "ordinal": 41,
+      "name": "Feature Flag & Controlled Rollout",
+      "purpose": "Use the existing runtime registry for Internal → Pilot → Enabled rollout, kill switch, and fail-closed invocation.",
+      "domain": "localReliabilityOfflineAndRollout",
+      "completionContract": "c7",
+      "provenance": "lexiQuestControl",
+      "coverage": "existing",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [],
+      "authorityDependencies": [],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.existing",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.foundation",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f42",
+      "ordinal": 42,
+      "name": "Today Hub",
+      "purpose": "Compose assigned, due, resumable, and recommended work from canonical read models; it owns no progress metric.",
+      "domain": "dailyContinuityAndHistory",
+      "completionContract": "c8",
+      "provenance": "lexiQuestControl",
+      "coverage": "newCapability",
+      "researchRole": "neutral",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f22",
+        "f37"
+      ],
+      "authorityDependencies": [
+        "history",
+        "masterySrs"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.new-capability",
+      "activationProfileId": "activation.read-model-only",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f43",
+      "ordinal": 43,
+      "name": "Learning History",
+      "purpose": "Present immutable session/evidence history; replay creates a new session and never edits the original evidence.",
+      "domain": "dailyContinuityAndHistory",
+      "completionContract": "c8",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "measurement",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f40"
+      ],
+      "authorityDependencies": [
+        "history"
+      ],
+      "authorityProfileId": "authority.read-only",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.read-model-only",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "f44",
+      "ordinal": 44,
+      "name": "Offline Content Manager",
+      "purpose": "Download, verify, pin, repair, and remove content/media versions without deleting learning evidence.",
+      "domain": "localReliabilityOfflineAndRollout",
+      "completionContract": "c7",
+      "provenance": "lexiQuestControl",
+      "coverage": "partial",
+      "researchRole": "infrastructure",
+      "runtimeFeatures": [],
+      "dependencies": [
+        "f04",
+        "f40"
+      ],
+      "authorityDependencies": [
+        "downloadState"
+      ],
+      "authorityProfileId": "authority.writer.download-state",
+      "evidenceProfileId": "evidence.none",
+      "lifecycleProfileId": "lifecycle.partial",
+      "activationProfileId": "activation.always-on-foundation",
+      "rolloutProfileId": "rollout.controlled",
+      "rollbackProfileId": "rollback.metadata-only",
+      "productionEntryIds": [],
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    }
+  ],
+  "experimentalCandidates": [
+    {
+      "id": "expP1",
+      "name": "Protocol Candidate P1",
+      "purpose": "Reserve a protocol-assigned measurement candidate outside the production 8/44 catalog.",
+      "researchRole": "measurement",
+      "dependencies": [
+        "f28",
+        "f41"
+      ],
+      "activationProfileId": "activation.protocol-assigned",
+      "rolloutProfileId": "rollout.experimental",
+      "rollbackProfileId": "rollback.protocol",
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    },
+    {
+      "id": "expP2",
+      "name": "Protocol Candidate P2",
+      "purpose": "Reserve a protocol-assigned intervention candidate outside the production 8/44 catalog.",
+      "researchRole": "intervention",
+      "dependencies": [
+        "f13",
+        "f41"
+      ],
+      "activationProfileId": "activation.protocol-assigned",
+      "rolloutProfileId": "rollout.experimental",
+      "rollbackProfileId": "rollback.protocol",
+      "verificationRefs": [
+        "test/architecture/alltcas_idea_feature_contract_test.dart"
+      ],
+      "introductionRevision": "1.0.0"
+    }
+  ]
+}
