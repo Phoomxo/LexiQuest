@@ -16,7 +16,9 @@ enum LearningProjection {
 
 enum ProjectionDisposition { allow, deny, protocolControlled }
 
-abstract interface class EvidenceEligibilityPolicy {
+sealed class EvidenceEligibilityPolicy {
+  const EvidenceEligibilityPolicy._();
+
   String get version;
 
   ProjectionDisposition disposition(
@@ -25,8 +27,8 @@ abstract interface class EvidenceEligibilityPolicy {
   );
 }
 
-final class EvidenceEligibilityPolicySet implements EvidenceEligibilityPolicy {
-  const EvidenceEligibilityPolicySet();
+final class EvidenceEligibilityPolicySet extends EvidenceEligibilityPolicy {
+  const EvidenceEligibilityPolicySet() : super._();
 
   @override
   String get version => 'policy-set-v1';
@@ -50,8 +52,8 @@ final class EvidenceEligibilityPolicySet implements EvidenceEligibilityPolicy {
   }
 }
 
-final class EvidenceEligibilityPolicyV1 implements EvidenceEligibilityPolicy {
-  const EvidenceEligibilityPolicyV1();
+final class EvidenceEligibilityPolicyV1 extends EvidenceEligibilityPolicy {
+  const EvidenceEligibilityPolicyV1() : super._();
 
   static const String policyVersion = EvidenceContext.currentPolicyVersion;
 
@@ -91,10 +93,12 @@ final class EvidenceProjectionDecision {
   factory EvidenceProjectionDecision.resolve({
     required EvidenceContext context,
     required LearningProjection projection,
-    EvidenceEligibilityPolicy policy = const EvidenceEligibilityPolicySet(),
   }) {
-    final policyDisposition = policy.disposition(context, projection);
     context.validate();
+    final policyDisposition = const EvidenceEligibilityPolicySet().disposition(
+      context,
+      projection,
+    );
 
     return switch (context.rolloutMode) {
       EvidencePolicyRolloutMode.legacy => EvidenceProjectionDecision._(

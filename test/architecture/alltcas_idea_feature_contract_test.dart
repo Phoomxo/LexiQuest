@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
@@ -621,6 +623,43 @@ void main() {
         }
       },
     );
+
+    test('closes raw evidence construction behind validated factories', () {
+      final source = File(
+        'lib/features/learning/domain/evidence_context.dart',
+      ).readAsStringSync();
+
+      expect(source, contains('const EvidenceContext._({'));
+      expect(source, isNot(contains('const EvidenceContext({')));
+      expect(source, contains('factory EvidenceContext.forNewEvidence({'));
+      expect(source, contains('factory EvidenceContext.fromJson('));
+      expect(source, contains('factory EvidenceContext.legacyCompatibility({'));
+    });
+
+    test('closes evidence resolution against injectable policy bypasses', () {
+      final source = File(
+        'lib/features/learning/domain/evidence_eligibility_policy.dart',
+      ).readAsStringSync();
+
+      expect(source, contains('sealed class EvidenceEligibilityPolicy'));
+      expect(
+        source,
+        isNot(contains('abstract interface class EvidenceEligibilityPolicy')),
+      );
+      expect(source, isNot(contains('EvidenceEligibilityPolicy policy')));
+
+      final resolver = source.indexOf(
+        'factory EvidenceProjectionDecision.resolve',
+      );
+      final validation = source.indexOf('context.validate();', resolver);
+      final closedLookup = source.indexOf(
+        'const EvidenceEligibilityPolicySet().disposition',
+        resolver,
+      );
+      expect(resolver, greaterThanOrEqualTo(0));
+      expect(validation, greaterThan(resolver));
+      expect(closedLookup, greaterThan(validation));
+    });
 
     test('maps every current runtime feature to the exact product IDs', () {
       const expected = <Feature, Set<FeatureContractId>>{

@@ -1,7 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
-import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
   group('EvidenceEligibilityPolicyV1', () {
@@ -55,9 +54,9 @@ void main() {
       );
     });
 
-    test('fails closed when called with an unsupported policy version', () {
+    test('v1 rejects a valid context owned by the legacy policy', () {
       const policy = EvidenceEligibilityPolicyV1();
-      final context = _declaredContext(policyVersion: 'unknown-policy');
+      final context = _legacyContext();
 
       expect(
         () => policy.disposition(context, LearningProjection.sessionOutcome),
@@ -77,7 +76,7 @@ void main() {
 
     test('is available only to legacy-inferred evidence', () {
       const policy = EvidenceEligibilityPolicySet();
-      const legacy = _legacyContext;
+      final legacy = _legacyContext();
 
       for (final projection in LearningProjection.values) {
         expect(
@@ -87,31 +86,68 @@ void main() {
         );
       }
 
-      final declaredLegacy = _declaredContext(policyVersion: 'legacy-v1');
+      final declaredLegacy = Map<String, Object?>.of(
+        _declaredContext().toJson(),
+      )..['policyVersion'] = 'legacy-v1';
       expect(
-        () => policy.disposition(
-          declaredLegacy,
-          LearningProjection.sessionOutcome,
-        ),
-        throwsStateError,
+        () => EvidenceContext.fromJson(declaredLegacy),
+        throwsFormatException,
       );
     });
 
-    test('unknown policy versions fail closed without an allow fallback', () {
-      const policy = EvidenceEligibilityPolicySet();
-      final unknown = _declaredContext(policyVersion: 'future-policy');
+    test('unknown serialized policy is rejected before policy lookup', () {
+      final unknown = Map<String, Object?>.of(_declaredContext().toJson())
+        ..['policyVersion'] = 'future-policy';
 
-      for (final projection in LearningProjection.values) {
-        expect(
-          () => policy.disposition(unknown, projection),
-          throwsStateError,
-          reason: '$projection',
-        );
-      }
+      expect(() => EvidenceContext.fromJson(unknown), throwsFormatException);
     });
   });
 
   group('EvidenceProjectionDecision resolver', () {
+    test('resolves every Enforced and Shadow cell from frozen policies', () {
+      for (final evidenceClass in EvidenceClass.values) {
+        for (final projection in LearningProjection.values) {
+          final enforced = EvidenceProjectionDecision.resolve(
+            context: _declaredContext(
+              evidenceClass: evidenceClass,
+              rolloutMode: EvidencePolicyRolloutMode.enforced,
+            ),
+            projection: projection,
+          );
+          expect(
+            enforced.dispositionToApply,
+            _expectedV1[evidenceClass]![projection],
+            reason: 'Enforced $evidenceClass x $projection',
+          );
+          expect(enforced.candidateDispositionToRecord, isNull);
+
+          final shadow = EvidenceProjectionDecision.resolve(
+            context: _declaredContext(
+              evidenceClass: evidenceClass,
+              rolloutMode: EvidencePolicyRolloutMode.shadow,
+            ),
+            projection: projection,
+          );
+          expect(
+            shadow.dispositionToApply,
+            _expectedLegacy[projection],
+            reason: 'Shadow applied $evidenceClass x $projection',
+          );
+          expect(
+            shadow.candidateDispositionToRecord,
+            _expectedV1[evidenceClass]![projection],
+            reason: 'Shadow candidate $evidenceClass x $projection',
+          );
+          expect(
+            shadow.isDivergent,
+            _expectedLegacy[projection] !=
+                _expectedV1[evidenceClass]![projection],
+            reason: 'Shadow divergence $evidenceClass x $projection',
+          );
+        }
+      }
+    });
+
     test('Legacy applies compatibility and has no research candidate', () {
       final context = _declaredContext(
         evidenceClass: EvidenceClass.assessment,
@@ -135,7 +171,7 @@ void main() {
       'legacy-inferred replay applies compatibility and is never research',
       () {
         final decision = EvidenceProjectionDecision.resolve(
-          context: _legacyContext,
+          context: _legacyContext(),
           projection: LearningProjection.xp,
         );
 
@@ -202,32 +238,12 @@ void main() {
       expect(allowed.isEligible, isTrue);
     });
 
-    test('unknown policy and invalid legacy combinations fail closed', () {
-      final unknown = _declaredContext(policyVersion: 'future-policy');
-      final legacyInShadow = EvidenceContext(
-        evidenceClass: EvidenceClass.independentRecall,
-        skillId: 'legacy.practice',
-        hintLevel: 0,
-        policyVersion: 'legacy-v1',
-        contentRevision: 'legacy-content',
-        featureContractRevision: EvidenceContext.legacyFeatureContractRevision,
-        featureContractHash: EvidenceContext.legacyFeatureContractHash,
-        classificationSource: EvidenceClassificationSource.legacyInferred,
-        rolloutMode: EvidencePolicyRolloutMode.shadow,
-      );
+    test('invalid legacy combinations fail before resolver lookup', () {
+      final legacyInShadow = Map<String, Object?>.of(_legacyContext().toJson())
+        ..['rolloutMode'] = 'shadow';
 
       expect(
-        () => EvidenceProjectionDecision.resolve(
-          context: unknown,
-          projection: LearningProjection.sessionOutcome,
-        ),
-        throwsStateError,
-      );
-      expect(
-        () => EvidenceProjectionDecision.resolve(
-          context: legacyInShadow,
-          projection: LearningProjection.sessionOutcome,
-        ),
+        () => EvidenceContext.fromJson(legacyInShadow),
         throwsFormatException,
       );
     });
@@ -349,17 +365,12 @@ const _expectedV1 =
 EvidenceContext _declaredContext({
   EvidenceClass evidenceClass = EvidenceClass.independentRecall,
   EvidencePolicyRolloutMode rolloutMode = EvidencePolicyRolloutMode.enforced,
-  String policyVersion = 'learning-evidence-v1',
   bool engagementAllowed = true,
-}) => EvidenceContext(
+}) => EvidenceContext.forNewEvidence(
   evidenceClass: evidenceClass,
   skillId: 'vocabulary.meaning',
   hintLevel: 0,
-  policyVersion: policyVersion,
   contentRevision: 'content-r1',
-  featureContractRevision: currentFeatureContractIdentity.revision,
-  featureContractHash: currentFeatureContractIdentity.semanticHash,
-  classificationSource: EvidenceClassificationSource.declared,
   rolloutMode: rolloutMode,
   protocolId: 'protocol-1',
   protocolVersion: 'protocol-v1',
@@ -386,15 +397,10 @@ EvidenceContext _declaredContext({
   engagementAllowed: engagementAllowed,
 );
 
-const EvidenceContext _legacyContext = EvidenceContext(
+EvidenceContext _legacyContext() => EvidenceContext.legacyCompatibility(
   evidenceClass: EvidenceClass.independentRecall,
   skillId: 'legacy.practice',
   hintLevel: 0,
-  policyVersion: 'legacy-v1',
   contentRevision: 'legacy-content',
-  featureContractRevision: EvidenceContext.legacyFeatureContractRevision,
-  featureContractHash: EvidenceContext.legacyFeatureContractHash,
-  classificationSource: EvidenceClassificationSource.legacyInferred,
-  rolloutMode: EvidencePolicyRolloutMode.legacy,
   engagementAllowed: false,
 );

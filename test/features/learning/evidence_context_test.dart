@@ -293,24 +293,37 @@ void main() {
       },
     );
 
-    test('allows non-assessment contexts to omit assessment metadata', () {
-      final json = _newAssessmentContext(
-        evidenceClass: EvidenceClass.recognition,
-      ).toJson();
-      final withoutAssessmentMetadata = Map<String, Object?>.of(json)
-        ..['instrumentId'] = null
-        ..['instrumentVersion'] = null
-        ..['formId'] = null
-        ..['formVersion'] = null
-        ..['assessmentItemId'] = null
-        ..['assessmentResponseCode'] = null
-        ..['scoringRuleVersion'] = null;
+    test(
+      'nullable canonical assessment keys remain present with null values',
+      () {
+        final json = _newAssessmentContext(
+          evidenceClass: EvidenceClass.recognition,
+        ).toJson();
+        final withoutAssessmentMetadata = Map<String, Object?>.of(json)
+          ..['instrumentId'] = null
+          ..['instrumentVersion'] = null
+          ..['formId'] = null
+          ..['formVersion'] = null
+          ..['assessmentItemId'] = null
+          ..['assessmentResponseCode'] = null
+          ..['scoringRuleVersion'] = null;
 
-      expect(
-        EvidenceContext.fromJson(withoutAssessmentMetadata).evidenceClass,
-        EvidenceClass.recognition,
-      );
-    });
+        final decoded = EvidenceContext.fromJson(withoutAssessmentMetadata);
+        final roundTrip = decoded.toJson();
+        for (final field in <String>[
+          'instrumentId',
+          'instrumentVersion',
+          'formId',
+          'formVersion',
+          'assessmentItemId',
+          'assessmentResponseCode',
+          'scoringRuleVersion',
+        ]) {
+          expect(roundTrip, containsPair(field, null));
+        }
+        expect(decoded.evidenceClass, EvidenceClass.recognition);
+      },
+    );
 
     test(
       'rejects an uncontrolled response code on non-assessment evidence',
@@ -326,7 +339,7 @@ void main() {
     );
 
     test('accepts only the frozen legacy-inferred compatibility identity', () {
-      final legacy = _legacyContext.toJson();
+      final legacy = _legacyContext().toJson();
 
       expect(EvidenceContext.fromJson(legacy).toJson(), legacy);
 
@@ -355,36 +368,43 @@ void main() {
       expect(() => EvidenceContext.fromJson(invalid), throwsFormatException);
     });
 
-    test('toJson fails closed for an invalid directly constructed value', () {
-      final valid = _newAssessmentContext();
-      final invalid = EvidenceContext(
-        evidenceClass: valid.evidenceClass,
-        skillId: valid.skillId,
-        hintLevel: valid.hintLevel,
-        policyVersion: valid.policyVersion,
-        contentRevision: valid.contentRevision,
-        featureContractRevision: 'unsupported',
-        featureContractHash: 'f' * 64,
-        classificationSource: valid.classificationSource,
-        rolloutMode: valid.rolloutMode,
-        protocolId: valid.protocolId,
-        protocolVersion: valid.protocolVersion,
-        experimentId: valid.experimentId,
-        experimentVersion: valid.experimentVersion,
-        assignmentId: valid.assignmentId,
-        cohort: valid.cohort,
-        researchConsentVersion: valid.researchConsentVersion,
-        instrumentId: valid.instrumentId,
-        instrumentVersion: valid.instrumentVersion,
-        formId: valid.formId,
-        formVersion: valid.formVersion,
-        assessmentItemId: valid.assessmentItemId,
-        assessmentResponseCode: valid.assessmentResponseCode,
-        scoringRuleVersion: valid.scoringRuleVersion,
-        engagementAllowed: valid.engagementAllowed,
+    test('new evidence validates before returning a context', () {
+      expect(
+        () => EvidenceContext.forNewEvidence(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: ' ',
+          hintLevel: 0,
+          contentRevision: 'content-r1',
+          rolloutMode: EvidencePolicyRolloutMode.legacy,
+        ),
+        throwsFormatException,
       );
+    });
 
-      expect(invalid.toJson, throwsFormatException);
+    test('legacy compatibility uses only the frozen identity and policy', () {
+      final denied = _legacyContext(engagementAllowed: false);
+      final allowed = _legacyContext(engagementAllowed: true);
+
+      expect(
+        denied.classificationSource,
+        EvidenceClassificationSource.legacyInferred,
+      );
+      expect(denied.rolloutMode, EvidencePolicyRolloutMode.legacy);
+      expect(denied.policyVersion, EvidenceContext.legacyPolicyVersion);
+      expect(
+        denied.featureContractRevision,
+        EvidenceContext.legacyFeatureContractRevision,
+      );
+      expect(
+        denied.featureContractHash,
+        EvidenceContext.legacyFeatureContractHash,
+      );
+      expect(denied.engagementAllowed, isFalse);
+      expect(allowed.engagementAllowed, isTrue);
+      expect(
+        Map<String, Object?>.of(allowed.toJson())..remove('engagementAllowed'),
+        Map<String, Object?>.of(denied.toJson())..remove('engagementAllowed'),
+      );
     });
   });
 }
@@ -414,15 +434,11 @@ EvidenceContext _newAssessmentContext({
   engagementAllowed: true,
 );
 
-const EvidenceContext _legacyContext = EvidenceContext(
-  evidenceClass: EvidenceClass.independentRecall,
-  skillId: 'legacy.practice',
-  hintLevel: 0,
-  policyVersion: 'legacy-v1',
-  contentRevision: 'legacy-content',
-  featureContractRevision: EvidenceContext.legacyFeatureContractRevision,
-  featureContractHash: EvidenceContext.legacyFeatureContractHash,
-  classificationSource: EvidenceClassificationSource.legacyInferred,
-  rolloutMode: EvidencePolicyRolloutMode.legacy,
-  engagementAllowed: false,
-);
+EvidenceContext _legacyContext({bool engagementAllowed = false}) =>
+    EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'legacy.practice',
+      hintLevel: 0,
+      contentRevision: 'legacy-content',
+      engagementAllowed: engagementAllowed,
+    );

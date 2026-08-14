@@ -15,7 +15,7 @@ enum EvidenceClassificationSource { declared, legacyInferred }
 enum EvidencePolicyRolloutMode { legacy, shadow, enforced }
 
 final class EvidenceContext {
-  const EvidenceContext({
+  const EvidenceContext._({
     required this.evidenceClass,
     required this.skillId,
     required this.hintLevel,
@@ -64,7 +64,7 @@ final class EvidenceContext {
     String? scoringRuleVersion,
     bool engagementAllowed = false,
   }) {
-    final context = EvidenceContext(
+    final context = EvidenceContext._(
       evidenceClass: evidenceClass,
       skillId: skillId,
       hintLevel: hintLevel,
@@ -94,6 +94,43 @@ final class EvidenceContext {
     return context;
   }
 
+  factory EvidenceContext.legacyCompatibility({
+    required EvidenceClass evidenceClass,
+    required String skillId,
+    required int hintLevel,
+    required String contentRevision,
+    required bool engagementAllowed,
+    String? instrumentId,
+    String? instrumentVersion,
+    String? formId,
+    String? formVersion,
+    String? assessmentItemId,
+    String? assessmentResponseCode,
+    String? scoringRuleVersion,
+  }) {
+    final context = EvidenceContext._(
+      evidenceClass: evidenceClass,
+      skillId: skillId,
+      hintLevel: hintLevel,
+      policyVersion: legacyPolicyVersion,
+      contentRevision: contentRevision,
+      featureContractRevision: legacyFeatureContractRevision,
+      featureContractHash: legacyFeatureContractHash,
+      classificationSource: EvidenceClassificationSource.legacyInferred,
+      rolloutMode: EvidencePolicyRolloutMode.legacy,
+      instrumentId: instrumentId,
+      instrumentVersion: instrumentVersion,
+      formId: formId,
+      formVersion: formVersion,
+      assessmentItemId: assessmentItemId,
+      assessmentResponseCode: assessmentResponseCode,
+      scoringRuleVersion: scoringRuleVersion,
+      engagementAllowed: engagementAllowed,
+    );
+    context.validate();
+    return context;
+  }
+
   factory EvidenceContext.fromJson(Map<String, Object?> json) {
     if (json.length != _jsonKeys.length ||
         !json.keys.every(_jsonKeys.contains)) {
@@ -106,7 +143,7 @@ final class EvidenceContext {
       );
     }
 
-    final context = EvidenceContext(
+    final context = EvidenceContext._(
       evidenceClass: _requiredEnum(json, 'evidenceClass', EvidenceClass.values),
       skillId: _requiredString(json, 'skillId'),
       hintLevel: _requiredInt(json, 'hintLevel'),
