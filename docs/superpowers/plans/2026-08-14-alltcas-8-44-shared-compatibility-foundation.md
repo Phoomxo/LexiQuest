@@ -1066,9 +1066,13 @@ git commit -m "refactor: reuse one learning evidence identity"
 - Modify: `test/features/learning/data/drift_learning_projection_rebuilder_test.dart`
 - Modify: `test/features/learning/learning_side_effect_reconciler_test.dart`
 - Modify: `test/features/learning/drift_learning_event_store_test.dart`
+- Modify: `test/features/learning/drift_learning_repository_test.dart`
+- Modify: `test/features/learning/learning_use_cases_test.dart`
 - Modify: `test/features/quest/quest_learning_integration_test.dart`
 - Modify: `test/features/motivation/streak_learning_integration_test.dart`
 - Modify: `test/features/progress/progress_projector_test.dart`
+- Modify: `test/scenarios/guest_upgrade_restart_test.dart`
+- Modify: `test/scenarios/production_learning_restart_test.dart`
 - Create: `test/features/learning/assessment_evidence_isolation_test.dart`
 
 **Interfaces:**
@@ -1120,9 +1124,13 @@ Before each sink, resolve context with this exact order:
 
 Cut reconciliation to applied projection version 2 for every source event. Before invoking a v2 sink, look for the deterministic v1 receipt `learning-projection:{projection}:{sourceEventId}:v1`. If it exists, copy its applied/not-applicable outcome into a v2 bridge receipt tagged `bridgedFromVersion: 1`, advance the v2 cursor, and do not invoke the sink. If no v1 receipt exists, evaluate the resolved context: Deny skips; `protocolControlled` requires `engagementAllowed`; Shadow applies the compatibility decision and records the v1 candidate decision/divergence; Enforced applies v1. Quest prerequisite bridging must happen before Reward so its v2 receipt can be joined. This prevents duplicate Quest, Streak, Reward, XP, and Coin effects while allowing pending legacy events to finish exactly once.
 
+Preserve the existing no-v1 fixture in which a v2 Quest skip advances Reward as not applicable without invoking the Reward sink. Add a separate causal bridge fixture with `quest:v1` skipped plus `reward:v1` skipped; neither sink may run and both v2 receipts must carry `bridgedFromVersion: 1`. A corrupted `reward:v1` applied receipt joined to a non-applied Quest receipt cannot bridge as applied; fail closed with a terminal blocked receipt and a stable reason code.
+
 Extend `LearningProjectionOutcome` to `applied`, `notApplicable`, and `blocked`. All three write immutable terminal receipts and advance only the matching projection cursor; only `applied` may satisfy Reward's Quest prerequisite. Blocked receipts carry a stable machine reason and never masquerade as an ordinary policy denial.
 
 Write the decision-set audit event in the same database transaction as every new canonical attempt/event. For migrated legacy attempts, the bounded reconciler materializes the same deterministic set from the frozen `legacyInferred/legacy-v1/legacy` context before any v2 execution/bridge; it never rewrites the attempt. Synchronous consumers (session, SRS, assessment, effort, pronunciation, achievement, XP, Coins) and asynchronous reconcilers must read the same stored decision set rather than independently re-evaluating mutable configuration. A same-ID/different-decision replay fails closed.
+
+Update existing evidence and restart fixtures that assumed `events_v2` contained only the canonical learning event. Source-event assertions select `learning-event:{sourceEvidenceId}` by deterministic ID. Frozen-v13 eventless ingress emits no canonical learning event but does emit exactly one `learning-evidence-decisions:{sourceEvidenceId}:v1` audit event. Retry and guest-upgrade fixtures preserve both source and decision-set rows without mutation.
 
 - [ ] **Step 5: Wire one policy instance at the composition root**
 
@@ -1141,6 +1149,8 @@ flutter test --no-pub test/features/learning/assessment_evidence_isolation_test.
 flutter test --no-pub test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart
 flutter test --no-pub test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart
 flutter test --no-pub test/features/progress/progress_projector_test.dart
+flutter test --no-pub test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart
+flutter test --no-pub test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart
 ```
 
 Expected: all pass; legacy/current learning behavior remains unchanged and assessment effects are isolated.
@@ -1148,7 +1158,7 @@ Expected: all pass; legacy/current learning behavior remains unchanged and asses
 - [ ] **Step 7: Commit the policy cutover**
 
 ```powershell
-git add -- lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/progress/data/drift_progress_queries.dart lib/runtime/app_bootstrap.dart test/features/learning/data/drift_learning_projection_rebuilder_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart test/features/progress/progress_projector_test.dart test/features/learning/assessment_evidence_isolation_test.dart
+git add -- lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/progress/data/drift_progress_queries.dart lib/runtime/app_bootstrap.dart test/features/learning/data/drift_learning_projection_rebuilder_test.dart test/features/learning/drift_learning_event_store_test.dart test/features/learning/learning_side_effect_reconciler_test.dart test/features/learning/drift_learning_repository_test.dart test/features/learning/learning_use_cases_test.dart test/features/quest/quest_learning_integration_test.dart test/features/motivation/streak_learning_integration_test.dart test/features/progress/progress_projector_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/production_learning_restart_test.dart test/features/learning/assessment_evidence_isolation_test.dart
 git diff --cached --check
 git commit -m "feat: enforce evidence eligibility across projections"
 ```
