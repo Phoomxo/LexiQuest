@@ -108,10 +108,20 @@ final class QuestUseCases {
   ///
   /// Returns all [QuestCompletedEvent]s produced in this call (typically 0 or
   /// 1, but multiple quests may complete from a single event).
+  @Deprecated('Use projectEvent and reconcileReward through durable replay.')
   Future<List<QuestCompletedEvent>> processEvent(
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
-  ) async => (await projectEvent(event, catalog)).completed;
+  ) async {
+    final projection = await projectEvent(event, catalog);
+    for (final completion in projection.completed) {
+      final definition = catalog.firstWhere(
+        (candidate) => candidate.questId == completion.questId,
+      );
+      await _grantReward(definition, completion);
+    }
+    return projection.completed;
+  }
 
   /// Projects one event and reports whether any active quest existed at the
   /// event time. Equality with assignment time is explicitly eligible.
@@ -145,10 +155,13 @@ final class QuestUseCases {
         ),
       );
 
-      final updated = instance.advanceIfMatches(event, def.objectives);
+      final updated = instance.advanceIfMatches(
+        _eventForObjectiveMatching(event),
+        def.objectives,
+      );
       if (identical(updated, instance)) {
         if (instance.isAllObjectivesComplete) {
-          completed.add(await _finalize(instance, def, event, now));
+          completed.add(await _finalize(instance, event, now));
         }
         continue;
       }
@@ -156,13 +169,13 @@ final class QuestUseCases {
       await repository.saveProgress(instance.instanceId, updated.progress);
 
       if (updated.isAllObjectivesComplete) {
-        completed.add(await _finalize(updated, def, event, now));
+        completed.add(await _finalize(updated, event, now));
       }
     }
     for (final instance in completedByEvent) {
       if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
       eligible = true;
-      final def = catalog.firstWhere(
+      catalog.firstWhere(
         (candidate) => candidate.questId == instance.questId,
         orElse: () => throw StateError(
           'QuestUseCases.processEvent: no catalog entry for '
@@ -173,7 +186,6 @@ final class QuestUseCases {
         now: instance.completedAtUtc ?? event.recordedAtUtc,
       );
       _forwardToShadow(completion, event);
-      await _grantReward(def, completion);
       completed.add(completion);
     }
     return QuestProjectionEvaluation(eligible: eligible, completed: completed);
@@ -227,26 +239,16 @@ final class QuestUseCases {
     EventEnvelopeV2 event,
     Map<String, dynamic> questProjection,
   ) async {
+    final grants = _validatedRewardGrants(event, questProjection);
     final sink = rewardSink;
     if (sink == null) return false;
-    final grants = (questProjection['rewardGrants'] as List? ?? const [])
-        .cast<Map<String, dynamic>>();
-    if (grants.length > 64) {
-      throw StateError('quest projection reward grant batch exceeds 64');
-    }
     var reconciled = false;
     for (final grant in grants) {
-      final ownerId = grant['ownerId'] as String;
-      if (ownerId != event.ownerIdentity) {
-        throw StateError('quest reward owner does not match source event');
-      }
-      final xpAmount = grant['xpAmount'] as int;
-      if (xpAmount <= 0) continue;
       await sink(
-        ownerId: ownerId,
-        idempotencyKey: grant['idempotencyKey'] as String,
-        xpAmount: xpAmount,
-        rewardItemId: grant['rewardItemId'] as String?,
+        ownerId: grant.ownerId,
+        idempotencyKey: grant.idempotencyKey,
+        xpAmount: grant.xpAmount,
+        rewardItemId: grant.rewardItemId,
       );
       reconciled = true;
     }
@@ -281,17 +283,119 @@ final class QuestUseCases {
 
   String _nextId() => generateId().trim();
 
+  EventEnvelopeV2 _eventForObjectiveMatching(EventEnvelopeV2 source) {
+    if (source.payload.containsKey('correct') ||
+        (source.eventType != 'QuizCompleted' &&
+            source.eventType != 'QuizAttempted')) {
+      return source;
+    }
+    return EventEnvelopeV2(
+      eventId: source.eventId,
+      eventType: source.eventType,
+      eventVersion: source.eventVersion,
+      occurredAtUtc: source.occurredAtUtc,
+      recordedAtUtc: source.recordedAtUtc,
+      actorIdentity: source.actorIdentity,
+      ownerIdentity: source.ownerIdentity,
+      tenantContext: source.tenantContext,
+      aggregateType: source.aggregateType,
+      aggregateId: source.aggregateId,
+      correlationId: source.correlationId,
+      causationId: source.causationId,
+      idempotencyKey: source.idempotencyKey,
+      consentContext: source.consentContext,
+      experimentContext: source.experimentContext,
+      contentRevision: source.contentRevision,
+      policyVersion: source.policyVersion,
+      appVersion: source.appVersion,
+      buildId: source.buildId,
+      providerProvenance: source.providerProvenance,
+      privacyClassification: source.privacyClassification,
+      payload: <String, dynamic>{
+        ...source.payload,
+        'correct': source.eventType == 'QuizCompleted',
+      },
+    );
+  }
+
   Future<QuestCompletedEvent> _finalize(
     QuestInstance instance,
-    QuestDefinition definition,
     EventEnvelopeV2 source,
     DateTime completedAt,
   ) async {
     await repository.markCompleted(instance.instanceId, completedAt);
     final event = instance.complete(now: completedAt);
     _forwardToShadow(event, source);
-    await _grantReward(definition, event);
     return event;
+  }
+
+  List<_ValidatedQuestRewardGrant> _validatedRewardGrants(
+    EventEnvelopeV2 event,
+    Map<String, dynamic> questProjection,
+  ) {
+    const resultKeys = <String>{'eligible', 'rewardGrants'};
+    if (questProjection.length != resultKeys.length ||
+        !questProjection.keys.every(resultKeys.contains) ||
+        questProjection['eligible'] is! bool ||
+        questProjection['eligible'] != true ||
+        questProjection['rewardGrants'] is! List) {
+      throw StateError('invalid applied quest projection result');
+    }
+    final rawGrants = questProjection['rewardGrants'] as List;
+    if (rawGrants.length > 64) {
+      throw StateError('quest projection reward grant batch exceeds 64');
+    }
+    const requiredKeys = <String>{'ownerId', 'idempotencyKey', 'xpAmount'};
+    const allowedKeys = <String>{
+      'ownerId',
+      'idempotencyKey',
+      'xpAmount',
+      'rewardItemId',
+    };
+    final keys = <String>{};
+    final validated = <_ValidatedQuestRewardGrant>[];
+    for (final raw in rawGrants) {
+      if (raw is! Map) throw StateError('invalid quest reward grant');
+      final grant = raw.cast<Object?, Object?>();
+      if (grant.keys.any((key) => key is! String) ||
+          !requiredKeys.every(grant.containsKey) ||
+          grant.keys.any((key) => !allowedKeys.contains(key))) {
+        throw StateError('invalid quest reward grant shape');
+      }
+      final ownerId = grant['ownerId'];
+      final idempotencyKey = grant['idempotencyKey'];
+      final xpAmount = grant['xpAmount'];
+      final rewardItemId = grant['rewardItemId'];
+      if (ownerId is! String || ownerId != event.ownerIdentity) {
+        throw StateError('quest reward owner does not match source event');
+      }
+      if (idempotencyKey is! String ||
+          idempotencyKey.trim() != idempotencyKey ||
+          idempotencyKey.isEmpty ||
+          idempotencyKey.runes.length > 256 ||
+          !keys.add(idempotencyKey)) {
+        throw StateError('invalid quest reward idempotency key');
+      }
+      if (xpAmount is! int || xpAmount <= 0 || xpAmount > 0x7fffffffffffffff) {
+        throw StateError('invalid quest reward XP amount');
+      }
+      if (rewardItemId != null &&
+          (rewardItemId is! String ||
+              rewardItemId.trim() != rewardItemId ||
+              rewardItemId.isEmpty ||
+              rewardItemId.runes.length > 256)) {
+        throw StateError('invalid quest reward item ID');
+      }
+      validated.add(
+        _ValidatedQuestRewardGrant(
+          ownerId: ownerId,
+          idempotencyKey: idempotencyKey,
+          xpAmount: xpAmount,
+          rewardItemId: rewardItemId as String?,
+        ),
+      );
+    }
+    return validated;
   }
 
   DateTime _now() {
@@ -363,4 +467,18 @@ final class QuestUseCases {
       // Reward grant failure must never break the learning flow.
     }
   }
+}
+
+final class _ValidatedQuestRewardGrant {
+  const _ValidatedQuestRewardGrant({
+    required this.ownerId,
+    required this.idempotencyKey,
+    required this.xpAmount,
+    this.rewardItemId,
+  });
+
+  final String ownerId;
+  final String idempotencyKey;
+  final int xpAmount;
+  final String? rewardItemId;
 }

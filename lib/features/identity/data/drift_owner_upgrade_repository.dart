@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../learning/data/drift_learning_event_store.dart';
+import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
@@ -33,6 +35,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     this.ownerGateHeartbeatInterval = const Duration(minutes: 3),
     this.ownerGateRetryInterval = const Duration(milliseconds: 50),
     this.ownerGateWaitTimeout = const Duration(seconds: 30),
+    this.evidencePolicy = const EvidenceEligibilityPolicySet(),
+    this.rolloutModeProvider = const ContextEvidencePolicyRolloutModeProvider(),
   }) : ownerOperationGate =
            ownerOperationGate ?? DriftOwnerOperationGate(_database);
 
@@ -49,6 +53,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   final Duration ownerGateHeartbeatInterval;
   final Duration ownerGateRetryInterval;
   final Duration ownerGateWaitTimeout;
+  final EvidenceEligibilityPolicy evidencePolicy;
+  final EvidencePolicyRolloutModeProvider rolloutModeProvider;
   Future<void> _writeGate = Future<void>.value();
 
   @override
@@ -159,9 +165,6 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             upgradedAt,
           );
           await _moveOwnerRows(source.id, target.id);
-          await _rebuildLearningProjections(target.id);
-          await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
-
           await _database.customUpdate(
             'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
           );
@@ -186,6 +189,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             ],
             updates: {_database.localOwners},
           );
+          await _rebuildLearningProjections(target.id);
+          await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
           return OwnerUpgradeResult(
             targetOwnerId: target.id,
             mode: OwnerUpgradeMode.mergedExisting,
@@ -1685,7 +1690,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
   }
 
   Future<void> _rebuildLearningProjections(String ownerId) async {
-    final rebuilder = DriftLearningProjectionRebuilder(_database);
+    final rebuilder = DriftLearningProjectionRebuilder(
+      _database,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: rolloutModeProvider,
+    );
     final wordRows = await _database
         .customSelect(
           'SELECT DISTINCT word_id FROM answer_attempts '

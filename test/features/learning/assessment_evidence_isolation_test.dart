@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
@@ -16,6 +17,8 @@ import 'package:vocab_learning_app/features/learning/domain/learning_event_conte
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -170,13 +173,89 @@ void main() {
       }
     },
   );
+
+  test(
+    'enforced assessment preserves non-empty projection bytes without mutation',
+    () async {
+      final repository = DriftLearningRepository(database);
+      await repository.startSession(
+        LearningSessionDraft(
+          id: _practiceSessionId,
+          ownerId: _ownerId,
+          activityType: 'quiz',
+          startedAtUtc: _practiceAtUtc.subtract(const Duration(minutes: 1)),
+          appVersion: '1.0.0',
+          buildId: 'task-7',
+        ),
+      );
+      final practice = LearningUseCases(
+        owners: const _Owners(),
+        repository: repository,
+        generateId: () => 'unused-practice-id',
+        nowUtc: () => _practiceAtUtc,
+        buildInfo: const AppBuildInfo(version: '1.0.0', buildId: 'task-7'),
+      );
+      await practice.recordEvidence(
+        sourceEvidenceId: _practiceEvidenceId,
+        occurredAtUtc: _practiceAtUtc,
+        sessionId: _practiceSessionId,
+        wordId: _wordId,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        evidenceContext: _practiceEvidence(),
+      );
+      await practice.finishSession(_practiceSessionId);
+      await _seedRewardState(database);
+
+      final before = await _projectionBytes(database);
+      expect(before.values, everyElement(isNot('[]')));
+      await _forbidProjectionMutation(database);
+
+      final assessment = LearningUseCases(
+        owners: const _Owners(),
+        repository: repository,
+        generateId: () => 'unused-assessment-id',
+        nowUtc: () => _occurredAtUtc,
+        buildInfo: const AppBuildInfo(version: '1.0.0', buildId: 'task-7'),
+        eventContextProvider: const _GrantedAssessmentContextProvider(),
+      );
+      final result = await assessment.recordEvidence(
+        sourceEvidenceId: _evidenceId,
+        occurredAtUtc: _occurredAtUtc,
+        sessionId: _sessionId,
+        wordId: _wordId,
+        promptMode: 'assessmentResponse',
+        isCorrect: true,
+        responseTimeMs: 700,
+        attemptNumber: 1,
+        evidenceContext: _assessmentEvidence(),
+      );
+
+      expect(result.inserted, isTrue);
+      expect(result.srs, isNull);
+      expect(await _projectionBytes(database), before);
+      expect(await _count(database, 'answer_attempts'), 2);
+      expect(
+        await (database.select(database.learningSessions)
+              ..where((row) => row.id.equals(_sessionId)))
+            .getSingle()
+            .then((row) => (row.correctCount, row.wrongCount)),
+        (1, 0),
+      );
+    },
+  );
 }
 
 const _ownerId = 'owner-assessment';
 const _sessionId = 'session-assessment';
 const _wordId = 'word-assessment';
 const _evidenceId = 'assessment-evidence-1';
+const _practiceSessionId = 'session-practice';
+const _practiceEvidenceId = 'practice-evidence-1';
 final _occurredAtUtc = DateTime.utc(2026, 8, 14, 10, 0, 0, 123);
+final _practiceAtUtc = DateTime.utc(2026, 8, 14, 9, 30, 0, 123);
 
 EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.assessment,
@@ -199,6 +278,14 @@ EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
   assessmentResponseCode: 'correct',
   scoringRuleVersion: 'score-v1',
   engagementAllowed: false,
+);
+
+EvidenceContext _practiceEvidence() => EvidenceContext.legacyCompatibility(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'legacy-current-activity',
+  hintLevel: 0,
+  contentRevision: 'legacy-unknown',
+  engagementAllowed: true,
 );
 
 final class _GrantedAssessmentContextProvider
@@ -305,6 +392,86 @@ Future<int> _count(AppDatabase database, String table) async {
       .customSelect('SELECT COUNT(*) AS n FROM $table')
       .getSingle();
   return row.read<int>('n');
+}
+
+Future<void> _seedRewardState(AppDatabase database) async {
+  const purchaseId = 'reward-purchase-practice';
+  const equipId = 'reward-equip-practice';
+  await database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: purchaseId,
+          ownerId: _ownerId,
+          idempotencyKey: 'purchase-practice',
+          transactionType: 'purchase',
+          amount: 0,
+          itemId: const Value('theme_default'),
+          catalogVersion: RewardCatalog.version,
+          sourceEventId: const Value('learning-event:$_practiceEvidenceId'),
+          occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 1,
+        ),
+      );
+  await database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: equipId,
+          ownerId: _ownerId,
+          idempotencyKey: 'equip-practice',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: const Value('theme_default'),
+          catalogVersion: RewardCatalog.version,
+          sourceEventId: const Value('learning-event:$_practiceEvidenceId'),
+          occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 2,
+        ),
+      );
+  await DriftRewardProjectionRebuilder(database).rebuild(_ownerId);
+}
+
+Future<Map<String, String>> _projectionBytes(AppDatabase database) async {
+  final srs = await database.select(database.srsStates).get();
+  final points = await database.select(database.pointsLedgerEntries).get();
+  final achievements = await database.select(database.achievementUnlocks).get();
+  final transactions = await database.select(database.rewardTransactions).get();
+  final owned = await database.select(database.ownedRewardItems).get();
+  final equipped = await database.select(database.equippedRewardItems).get();
+  return <String, String>{
+    'srs': jsonEncode(srs.map((row) => row.toJson()).toList()),
+    'points': jsonEncode(points.map((row) => row.toJson()).toList()),
+    'achievements': jsonEncode(
+      achievements.map((row) => row.toJson()).toList(),
+    ),
+    'rewardTransactions': jsonEncode(
+      transactions.map((row) => row.toJson()).toList(),
+    ),
+    'ownedRewardItems': jsonEncode(owned.map((row) => row.toJson()).toList()),
+    'equippedRewardItems': jsonEncode(
+      equipped.map((row) => row.toJson()).toList(),
+    ),
+  };
+}
+
+Future<void> _forbidProjectionMutation(AppDatabase database) async {
+  const tables = <String>[
+    'srs_states',
+    'points_ledger_entries',
+    'achievement_unlocks',
+    'reward_transactions',
+    'owned_reward_items',
+    'equipped_reward_items',
+  ];
+  for (final table in tables) {
+    for (final operation in const <String>['INSERT', 'UPDATE', 'DELETE']) {
+      final suffix = operation.toLowerCase();
+      await database.customStatement(
+        'CREATE TEMP TRIGGER guard_${table}_$suffix '
+        'BEFORE $operation ON $table BEGIN '
+        "SELECT RAISE(ABORT, 'assessment mutated $table'); END",
+      );
+    }
+  }
 }
 
 void _expectPracticeSnapshotUnchanged(

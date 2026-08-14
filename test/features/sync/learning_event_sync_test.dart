@@ -5,8 +5,10 @@ import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/srs_operation_identity.dart';
@@ -28,6 +30,29 @@ void main() {
   });
 
   tearDown(() => database.close());
+
+  test('sync store forwards the identical evidence policy pair', () {
+    final policy = EvidenceEligibilityPolicySet();
+    final rollout = FixedEvidencePolicyRolloutModeProvider.legacy();
+
+    final injected = DriftSyncStore(
+      database,
+      evidencePolicy: policy,
+      rolloutModeProvider: rollout,
+    );
+
+    expect(
+      identical(injected.projections.evidenceDecisions.evidencePolicy, policy),
+      isTrue,
+    );
+    expect(
+      identical(
+        injected.projections.evidenceDecisions.rolloutModeProvider,
+        rollout,
+      ),
+      isTrue,
+    );
+  });
 
   test('attempt outbox reconstructs an immutable cloud mutation', () async {
     final learning = DriftLearningRepository(database);

@@ -3,13 +3,11 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
-import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_event_store.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
-import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
@@ -110,7 +108,11 @@ final class DriftLearningRepository
       }
       final event = await events.readBySourceEvidenceId(candidate.id);
       if (event == null ||
-          !await _validPersistedCorrelatedEvent(candidate, event)) {
+          await events.validateSourceForAttempt(
+                attempt: existing,
+                source: event,
+              ) !=
+              null) {
         throw StateError('committed answer has missing or corrupt event');
       }
       final decisionSet = await events.ensureDecisionSetForAttempt(
@@ -155,10 +157,11 @@ final class DriftLearningRepository
         } else {
           final candidateEvent = command.event!;
           if (storedEvent == null ||
-              !await _validPersistedCorrelatedEvent(
-                command.candidate,
-                storedEvent,
-              )) {
+              await events.validateSourceForAttempt(
+                    attempt: existing,
+                    source: storedEvent,
+                  ) !=
+                  null) {
             throw StateError('canonical event cannot be retrofitted on replay');
           }
           if (jsonEncode(storedEvent.toJson()) !=
@@ -241,16 +244,26 @@ final class DriftLearningRepository
         attempt: insertedAttempt,
         sourceEvent: event,
       );
-      final next = await projections.rebuildWord(
-        ownerId: command.ownerId,
-        wordId: command.wordId,
-      );
+      final rebuildWord =
+          decisionSet.allows(LearningProjection.masterySrs) ||
+          decisionSet.allows(LearningProjection.xp);
+      final next = rebuildWord
+          ? await projections.rebuildWord(
+              ownerId: command.ownerId,
+              wordId: command.wordId,
+            )
+          : null;
       await projections.rebuildSession(
         ownerId: command.ownerId,
         sessionId: command.sessionId,
       );
-      await projections.rebuildAchievements(command.ownerId);
-      await rewardProjections.rebuild(command.ownerId);
+      if (decisionSet.allows(LearningProjection.achievement)) {
+        await projections.rebuildAchievements(command.ownerId);
+      }
+      if (decisionSet.allows(LearningProjection.xp) ||
+          decisionSet.allows(LearningProjection.coins)) {
+        await rewardProjections.rebuild(command.ownerId);
+      }
       // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
       // Entity ID is wordId (unique per owner-word pair).
       if (decisionSet.allows(LearningProjection.masterySrs) && next != null) {
@@ -630,7 +643,10 @@ final class DriftLearningRepository
     }
     final event = command.event;
     if (event == null ||
-        !_validCorrelatedEvent(candidate, event, requireCurrentActor: true)) {
+        !events.isExactDeclaredSourceForCandidate(
+          candidate: candidate,
+          source: event,
+        )) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }
   }
@@ -664,91 +680,6 @@ final class DriftLearningRepository
         'invalid answer evidence',
       );
     }
-  }
-
-  bool _validCorrelatedEvent(
-    RecordAnswerCandidate candidate,
-    EventEnvelopeV2 event, {
-    required bool requireCurrentActor,
-  }) {
-    final context = candidate.evidenceContext;
-    final payload = event.payload;
-    const payloadKeys = <String>{
-      'attemptId',
-      'wordId',
-      'promptMode',
-      'correct',
-      'score',
-      'attemptNumber',
-      'evidenceContext',
-    };
-    if (payload.length != payloadKeys.length ||
-        !payload.keys.every(payloadKeys.contains)) {
-      return false;
-    }
-    final canonicalEventTime = LearningEvidenceContract.canonicalEventUtcSecond(
-      candidate.occurredAtUtc,
-    );
-    final envelopeMatches =
-        event.eventId ==
-            LearningEvidenceContract.learningEventId(candidate.id) &&
-        event.eventType ==
-            (candidate.isCorrect ? 'QuizCompleted' : 'QuizAttempted') &&
-        event.eventVersion == 2 &&
-        event.occurredAtUtc == canonicalEventTime &&
-        event.recordedAtUtc == canonicalEventTime &&
-        (!requireCurrentActor || event.actorIdentity == candidate.ownerId) &&
-        event.ownerIdentity == candidate.ownerId &&
-        event.aggregateType == 'LearningSession' &&
-        event.aggregateId == candidate.sessionId &&
-        event.idempotencyKey ==
-            LearningEvidenceContract.learningAttemptIdempotencyKey(
-              candidate.id,
-            ) &&
-        event.policyVersion == context.policyVersion &&
-        event.contentRevision == context.contentRevision &&
-        payload['attemptId'] == candidate.id &&
-        payload['wordId'] == candidate.wordId &&
-        payload['promptMode'] == candidate.promptMode &&
-        payload['correct'] == candidate.isCorrect &&
-        payload['score'] == (candidate.isCorrect ? 100 : 0) &&
-        payload['attemptNumber'] == candidate.attemptNumber &&
-        jsonEncode(payload['evidenceContext']) == jsonEncode(context.toJson());
-    if (!envelopeMatches) return false;
-    try {
-      LearningEventContext.fromEvidenceEnvelope(
-        envelope: event,
-        evidenceContext: context,
-      ).validateAgainst(
-        evidenceContext: context,
-        occurredAtUtc: candidate.occurredAtUtc,
-      );
-      return true;
-    } on ArgumentError {
-      return false;
-    } on FormatException {
-      return false;
-    } on StateError {
-      return false;
-    }
-  }
-
-  Future<bool> _validPersistedCorrelatedEvent(
-    RecordAnswerCandidate candidate,
-    EventEnvelopeV2 event,
-  ) async {
-    if (!_validCorrelatedEvent(candidate, event, requireCurrentActor: false)) {
-      return false;
-    }
-    if (event.actorIdentity == candidate.ownerId) return true;
-    // Owner upgrade remaps owner_id but preserves the immutable source actor.
-    // Only the canonical merged-owner lineage authorizes that difference.
-    final historicalActor = await (database.select(
-      database.localOwners,
-    )..where((row) => row.id.equals(event.actorIdentity))).getSingleOrNull();
-    return historicalActor != null &&
-        !historicalActor.isActive &&
-        historicalActor.accountState == 'mergedInto:${candidate.ownerId}';
   }
 
   void _validateReading(ReadingProgressCommand command) {

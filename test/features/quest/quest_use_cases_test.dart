@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' show Value;
 import 'package:flutter_test/flutter_test.dart';
@@ -539,7 +541,22 @@ void main() {
           recovery.projectionPayload(replay, [def])['rewardGrants'],
           hasLength(1),
         );
-        await recovery.projectEvent(event, [def]);
+        expect(
+          await (database.select(
+            database.pointsLedgerEntries,
+          )..where((row) => row.entryType.equals('questCompletion'))).get(),
+          isEmpty,
+          reason: 'projection alone cannot grant XP',
+        );
+        await recovery.reconcileReward(
+          event,
+          recovery.projectionPayload(replay, [def]),
+        );
+        final secondReplay = await recovery.projectEvent(event, [def]);
+        await recovery.reconcileReward(
+          event,
+          recovery.projectionPayload(secondReplay, [def]),
+        );
         expect(
           await (database.select(
             database.pointsLedgerEntries,
@@ -605,6 +622,13 @@ void main() {
         timezoneId: 'Asia/Bangkok',
         rewardSink: rewardUseCases.rewardSink,
       );
+      await expectLater(
+        rewardUseCases.reconcileReward(
+          event,
+          rewardUseCases.projectionPayload(projection, [def]),
+        ),
+        throwsStateError,
+      );
       await retryOnly.reconcileReward(
         event,
         rewardUseCases.projectionPayload(projection, [def]),
@@ -613,6 +637,185 @@ void main() {
       expect(calls, 2);
       expect(keys.toSet(), hasLength(1));
     });
+
+    test(
+      'projectEvent is projection-only until reconcileReward runs',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 1);
+        final event = _makeEvent();
+        var grants = 0;
+        final projectionOnly = QuestUseCases(
+          repository: repo,
+          owners: _FakeOwners(testOwner),
+          generateId: () => 'projection-only-instance',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+          timezoneId: 'Asia/Bangkok',
+          rewardSink:
+              ({
+                required ownerId,
+                required idempotencyKey,
+                required xpAmount,
+                rewardItemId,
+              }) async {
+                grants++;
+              },
+        );
+        await projectionOnly.startQuest(def);
+
+        final projection = await projectionOnly.projectEvent(event, [def]);
+
+        expect(projection.completed, hasLength(1));
+        expect(grants, 0, reason: 'Quest projection cannot grant rewards');
+        expect(
+          await projectionOnly.reconcileReward(
+            event,
+            projectionOnly.projectionPayload(projection, [def]),
+          ),
+          isTrue,
+        );
+        expect(grants, 1);
+      },
+    );
+
+    test(
+      'reconcileReward fails closed for malformed or unbounded grants',
+      () async {
+        final event = _makeEvent();
+        var grants = 0;
+        final validating = QuestUseCases(
+          repository: repo,
+          owners: _FakeOwners(testOwner),
+          generateId: () => 'unused',
+          nowUtc: () => DateTime.utc(2026, 8, 4, 10),
+          timezoneId: 'Asia/Bangkok',
+          rewardSink:
+              ({
+                required ownerId,
+                required idempotencyKey,
+                required xpAmount,
+                rewardItemId,
+              }) async {
+                grants++;
+              },
+        );
+        Map<String, dynamic> grant({
+          String ownerId = 'owner-uc',
+          String idempotencyKey = 'quest-grant-1',
+          Object xpAmount = 50,
+          Object? rewardItemId,
+        }) => <String, dynamic>{
+          'ownerId': ownerId,
+          'idempotencyKey': idempotencyKey,
+          'xpAmount': xpAmount,
+          if (rewardItemId != null) 'rewardItemId': rewardItemId,
+        };
+
+        final invalid = <(String, Map<String, dynamic>)>[
+          (
+            'applied eligible false',
+            <String, dynamic>{'eligible': false, 'rewardGrants': <Object>[]},
+          ),
+          (
+            'wrong owner',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(ownerId: 'other-owner')],
+            },
+          ),
+          (
+            'malformed result key',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': <Object>[],
+              'extra': true,
+            },
+          ),
+          (
+            'malformed grant key',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [
+                <String, dynamic>{...grant(), 'extra': true},
+              ],
+            },
+          ),
+          (
+            'duplicate idempotency key',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(), grant()],
+            },
+          ),
+          (
+            'oversized idempotency key',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(idempotencyKey: 'x' * 257)],
+            },
+          ),
+          (
+            'zero xp',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(xpAmount: 0)],
+            },
+          ),
+          (
+            'negative xp',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(xpAmount: -1)],
+            },
+          ),
+          (
+            'non-integer xp',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(xpAmount: 1.5)],
+            },
+          ),
+          (
+            'out-of-range xp',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [
+                grant(xpAmount: jsonDecode('9223372036854775808')),
+              ],
+            },
+          ),
+          (
+            'oversized reward item',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(rewardItemId: 'x' * 257)],
+            },
+          ),
+          (
+            'oversized batch',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': List.generate(
+                65,
+                (index) => grant(idempotencyKey: 'quest-grant-$index'),
+              ),
+            },
+          ),
+        ];
+
+        for (final (label, payload) in invalid) {
+          await expectLater(
+            validating.reconcileReward(event, payload),
+            throwsStateError,
+            reason: label,
+          );
+        }
+        expect(
+          grants,
+          0,
+          reason: 'validation must finish before the first sink',
+        );
+      },
+    );
 
     // ── expireStale ──────────────────────────────────────────────────────────
 

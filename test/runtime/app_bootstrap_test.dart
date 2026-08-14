@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -67,6 +68,99 @@ AppDatabase _testDatabase() {
 
 Future<AppEntryStateStore> _createSignedOutEntryState() async =>
     _MemoryAppEntryStateStore();
+
+Future<void> _insertFrozenLearningEvidence(
+  AppDatabase database, {
+  required String ownerId,
+  required String attemptId,
+  required String sessionId,
+  required DateTime occurredAtUtc,
+}) async {
+  final categoryId = 'bootstrap-category:$ownerId';
+  final wordId = 'bootstrap-word:$ownerId';
+  final context = LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Bootstrap replay',
+          normalizedName: 'bootstrap replay',
+          createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: 'bootstrap',
+          normalizedSpelling: 'bootstrap',
+          meaning: 'bootstrap',
+          normalizedMeaning: 'bootstrap',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          appVersion: '1.0.0',
+          buildId: 'bootstrap-test',
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.answerAttempts)
+      .insert(
+        AnswerAttemptsCompanion.insert(
+          id: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          wordId: wordId,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          attemptNumber: 1,
+          occurredAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          evidenceClass: Value(context.evidenceClass.name),
+          evidenceContextJson: Value(jsonEncode(context.toJson())),
+        ),
+      );
+  await database
+      .into(database.eventsV2)
+      .insert(
+        EventsV2Companion.insert(
+          eventId: 'learning-event:$attemptId',
+          eventType: 'QuizCompleted',
+          eventVersion: 1,
+          occurredAtUtc: occurredAtUtc,
+          recordedAtUtc: occurredAtUtc,
+          actorIdentity: ownerId,
+          ownerId: ownerId,
+          aggregateType: 'LearningSession',
+          aggregateId: sessionId,
+          idempotencyKey: 'learning-attempt:$attemptId:v1',
+          consentContextJson: '{}',
+          appVersion: '1.0.0',
+          buildId: 'bootstrap-test',
+          privacyClassification: 'anonymized',
+          payloadJson: jsonEncode(<String, dynamic>{'attemptId': attemptId}),
+        ),
+      );
+}
 
 void main() {
   group('AppBootstrap.initialize', () {
@@ -316,27 +410,13 @@ void main() {
                 createdAtUtcMs: historicalAt.millisecondsSinceEpoch,
               ),
             );
-        await database
-            .into(database.eventsV2)
-            .insert(
-              EventsV2Companion.insert(
-                eventId: 'learning-event:bootstrap-history',
-                eventType: 'QuizCompleted',
-                eventVersion: 1,
-                occurredAtUtc: historicalAt,
-                recordedAtUtc: historicalAt,
-                actorIdentity: ownerId,
-                ownerId: ownerId,
-                aggregateType: 'LearningSession',
-                aggregateId: 'session-history',
-                idempotencyKey: 'learning-attempt:bootstrap-history:v1',
-                consentContextJson: '{}',
-                appVersion: '1.0.0',
-                buildId: 'bootstrap-test',
-                privacyClassification: 'anonymized',
-                payloadJson: '{"correct":true}',
-              ),
-            );
+        await _insertFrozenLearningEvidence(
+          database,
+          ownerId: ownerId,
+          attemptId: 'bootstrap-history',
+          sessionId: 'session-history',
+          occurredAtUtc: historicalAt,
+        );
         final bootstrap = AppBootstrap(
           createDatabase: () => database,
           initializeFirebase: () async {},
@@ -363,7 +443,7 @@ void main() {
                       row.eventType.equals('LearningProjectionSkipped') &
                       row.idempotencyKey.equals(
                         'learning-projection:quest:'
-                        'learning-event:bootstrap-history:v1',
+                        'learning-event:bootstrap-history:v2',
                       ),
                 ))
                 .getSingleOrNull();
@@ -587,28 +667,16 @@ void main() {
           const Duration(minutes: 1),
         );
         for (var index = 1; index <= 5; index++) {
-          final occurredAt = base.add(Duration(milliseconds: index));
-          await database
-              .into(database.eventsV2)
-              .insert(
-                EventsV2Companion.insert(
-                  eventId: 'learning-event:quest-off-$index',
-                  eventType: 'QuizCompleted',
-                  eventVersion: 1,
-                  occurredAtUtc: occurredAt,
-                  recordedAtUtc: occurredAt,
-                  actorIdentity: ownerId,
-                  ownerId: ownerId,
-                  aggregateType: 'LearningSession',
-                  aggregateId: 'session-quest-off',
-                  idempotencyKey: 'learning-attempt:quest-off-$index:v1',
-                  consentContextJson: '{}',
-                  appVersion: '1.0.0',
-                  buildId: 'bootstrap-test',
-                  privacyClassification: 'anonymized',
-                  payloadJson: '{"correct":true}',
-                ),
-              );
+          final occurredAt = LearningEvidenceContract.canonicalEventUtcSecond(
+            base.add(Duration(seconds: index)),
+          );
+          await _insertFrozenLearningEvidence(
+            database,
+            ownerId: ownerId,
+            attemptId: 'quest-off-$index',
+            sessionId: 'session-quest-off',
+            occurredAtUtc: occurredAt,
+          );
         }
 
         dependencies.learningReconciliation!.request(ownerId);
@@ -618,7 +686,7 @@ void main() {
             await (database.select(database.eventsV2)..where(
                   (row) => row.eventId.equals(
                     'learning-projection:quest:'
-                    'learning-event:quest-off-1:v1',
+                    'learning-event:quest-off-1:v2',
                   ),
                 ))
                 .getSingleOrNull();
@@ -641,7 +709,7 @@ void main() {
             await (database.select(database.eventsV2)..where(
                   (row) => row.eventId.equals(
                     'learning-projection:reward:'
-                    'learning-event:quest-off-5:v1',
+                    'learning-event:quest-off-5:v2',
                   ),
                 ))
                 .getSingleOrNull();

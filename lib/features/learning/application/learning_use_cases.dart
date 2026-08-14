@@ -13,20 +13,6 @@ typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
 
-/// Receives a [EventEnvelopeV2] produced from every recorded answer.
-///
-/// Used by callers (e.g. [AppDependencies]) to forward learning events into
-/// the quest pipeline when [Feature.questV2] is enabled.  Errors from the
-/// sink are swallowed — the sink must never break production.
-typedef QuestEventSink = Future<void> Function(EventEnvelopeV2 event);
-
-/// Called after every successful `recordAnswer` so that [StreakUseCases] can
-/// log the learning day and update streak counters.
-///
-/// No argument — the streak use case resolves the owner and the current UTC
-/// time from its own injected dependencies.  Errors are swallowed.
-typedef StreakEventSink = Future<void> Function();
-
 final class LearningUseCases {
   LearningUseCases({
     required this.owners,
@@ -38,8 +24,6 @@ final class LearningUseCases {
     this.shadowOrchestrator,
     EventV1ToV2Adapter? eventAdapter,
     LearningEventContextProvider? eventContextProvider,
-    this.questEventSink,
-    this.streakEventSink,
     this.onSideEffectsPending,
   }) : eventAdapter =
            eventAdapter ??
@@ -66,19 +50,6 @@ final class LearningUseCases {
 
   /// Resolves consent and assignment metadata outside the widget layer.
   final LearningEventContextProvider eventContextProvider;
-
-  /// Quest pipeline hook — when non-null, the V2 event from each answer is
-  /// forwarded to [QuestUseCases.processEvent] (or a compatible consumer).
-  ///
-  /// Wired at the [AppDependencies] composition root when
-  /// `Feature.questV2` is enabled.  Errors are swallowed.
-  final QuestEventSink? questEventSink;
-
-  /// Streak pipeline hook — when non-null, called after every successful
-  /// answer so that [StreakUseCases.recordLearningDay] can update counters.
-  ///
-  /// Wired at the [AppDependencies] composition root.  Errors are swallowed.
-  final StreakEventSink? streakEventSink;
 
   /// Schedules a bounded durable replay batch without delaying this answer.
   final void Function(String ownerId)? onSideEffectsPending;
@@ -274,27 +245,9 @@ final class LearningUseCases {
       }
     }
 
-    // Quest pipeline hook — forward answer event to quest use cases.
-    // Uses the same V2 event produced for shadow mode when available;
-    // builds a fresh event otherwise.  Errors are swallowed.
-    final scheduleReconciliation = onSideEffectsPending;
-    if (scheduleReconciliation != null) {
-      scheduleReconciliation(owner.id);
-    } else {
-      final questSink = questEventSink;
-      if (questSink != null) {
-        try {
-          await questSink(durableEvent);
-        } catch (_) {
-          // Intentionally swallowed — quest hook must never break production.
-        }
-      }
-
-      // Legacy hook retained for tests and non-production compositions.
-      try {
-        await streakEventSink?.call();
-      } catch (_) {}
-    }
+    // Persistence is the durable handoff. Without an injected scheduler,
+    // startup reconciliation owns replay and no side effect runs inline.
+    onSideEffectsPending?.call(owner.id);
 
     return result;
   }

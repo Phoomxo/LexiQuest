@@ -87,7 +87,7 @@ void main() {
     await database.close();
   });
 
-  group('StreakEventSink — D8.1 Streak-Learning integration', () {
+  group('Durable Streak reconciliation — D8.1 integration', () {
     test('recordAnswer triggers streak start on first session', () async {
       final session = await learningUseCases.startQuiz(limit: 10);
       expect(session.questions, isNotEmpty);
@@ -110,14 +110,14 @@ void main() {
       );
     });
 
-    test('streakEventSink null = no crash (streak not wired)', () async {
+    test('no scheduler persists without inline Streak execution', () async {
       final noStreakUseCases = LearningUseCases(
         owners: _FakeOwners(owner),
         repository: DriftLearningRepository(database),
         generateId: () => 'ns-${DateTime.now().microsecondsSinceEpoch}',
         nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
         buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha'),
-        // streakEventSink intentionally absent
+        // Durable startup replay intentionally owns later projection.
       );
       final session = await noStreakUseCases.startQuiz(limit: 10);
       await expectLater(

@@ -176,10 +176,7 @@ Future<void> _insertLearningEvent(
           appVersion: '1.0.0',
           buildId: 'restart-test',
           privacyClassification: 'anonymized',
-          payloadJson: jsonEncode(<String, dynamic>{
-            'attemptId': attemptId,
-            'correct': true,
-          }),
+          payloadJson: jsonEncode(<String, dynamic>{'attemptId': attemptId}),
         ),
       );
 }
@@ -282,6 +279,7 @@ void main() {
       final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
       AppDatabase? first;
       AppDatabase? reopened;
+      LearningReconciliationScheduler? firstReconciliation;
       var now = DateTime.utc(2026, 8, 9, 3);
 
       try {
@@ -325,6 +323,35 @@ void main() {
           nowUtc: () => now,
           timezoneId: 'Asia/Bangkok',
         );
+        firstReconciliation = LearningReconciliationScheduler(
+          LearningSideEffectReconciler(
+            first,
+            questSink: (event) async {
+              final projection = await quest.projectEvent(event, [
+                questDefinition,
+              ]);
+              final payload = quest.projectionPayload(projection, [
+                questDefinition,
+              ]);
+              return projection.eligible
+                  ? LearningProjectionResult.applied(payload: payload)
+                  : LearningProjectionResult.notApplicable(payload: payload);
+            },
+            streakSink: (event) async {
+              await streak.recordLearningDayForOwner(
+                ownerId: event.ownerIdentity,
+                occurredAtUtc: event.occurredAtUtc,
+              );
+              return const LearningProjectionResult.applied();
+            },
+            rewardSink: (event, questResult) async {
+              final applied = await quest.reconcileReward(event, questResult);
+              return applied
+                  ? const LearningProjectionResult.applied()
+                  : const LearningProjectionResult.notApplicable();
+            },
+          ),
+        );
         final learning = LearningUseCases(
           owners: owners,
           repository: DriftLearningRepository(first),
@@ -339,9 +366,7 @@ void main() {
             appVersion: '1.0.0',
             buildId: 'restart-test',
           ),
-          questEventSink: (event) =>
-              quest.processEvent(event, [questDefinition]).then((_) {}),
-          streakEventSink: () => streak.recordLearningDay().then((_) {}),
+          onSideEffectsPending: firstReconciliation.request,
         );
 
         final quiz = await learning.startQuiz(limit: 10);
@@ -363,6 +388,9 @@ void main() {
           responseTimeMs: 700,
           attemptNumber: 2,
         );
+        await firstReconciliation.drain();
+        await firstReconciliation.dispose();
+        firstReconciliation = null;
 
         await first.close();
         first = null;
@@ -437,6 +465,7 @@ void main() {
           'attempt:attempt:journey-wrong:1',
         });
       } finally {
+        await firstReconciliation?.dispose();
         await reopened?.close();
         await first?.close();
         if (await directory.exists()) {
@@ -456,6 +485,7 @@ void main() {
       final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
       AppDatabase? first;
       AppDatabase? reopened;
+      LearningReconciliationScheduler? firstReconciliation;
       final now = DateTime.utc(2026, 8, 9, 4);
 
       try {
@@ -467,6 +497,13 @@ void main() {
           now: () => now,
           suffix: 'failure',
         );
+        firstReconciliation = LearningReconciliationScheduler(
+          LearningSideEffectReconciler(
+            first,
+            questSink: (_) async => throw StateError('quest unavailable'),
+            streakSink: (_) async => throw StateError('streak unavailable'),
+          ),
+        );
         final learning = LearningUseCases(
           owners: owners,
           repository: DriftLearningRepository(first),
@@ -477,8 +514,7 @@ void main() {
             appVersion: '1.0.0',
             buildId: 'restart-test',
           ),
-          questEventSink: (_) async => throw StateError('quest unavailable'),
-          streakEventSink: () async => throw StateError('streak unavailable'),
+          onSideEffectsPending: firstReconciliation.request,
         );
         final quiz = await learning.startQuiz(limit: 10);
 
@@ -490,6 +526,9 @@ void main() {
           responseTimeMs: 400,
           attemptNumber: 1,
         );
+        await firstReconciliation.drain();
+        await firstReconciliation.dispose();
+        firstReconciliation = null;
         await first.close();
         first = null;
 
@@ -524,6 +563,7 @@ void main() {
               'EventEnvelopeV2 replay source',
         );
       } finally {
+        await firstReconciliation?.dispose();
         await reopened?.close();
         await first?.close();
         if (await directory.exists()) {
@@ -543,6 +583,8 @@ void main() {
       final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
       AppDatabase? first;
       AppDatabase? reopened;
+      LearningReconciliationScheduler? firstReconciliation;
+      LearningReconciliationScheduler? reopenedReconciliation;
       final now = DateTime.utc(2026, 8, 9, 5);
       final deliveredEventIds = <String>[];
       final questDefinition = _correctAnswerQuest(
@@ -574,6 +616,23 @@ void main() {
           nowUtc: () => now,
           timezoneId: 'Asia/Bangkok',
         );
+        firstReconciliation = LearningReconciliationScheduler(
+          LearningSideEffectReconciler(
+            first,
+            questSink: (event) async {
+              deliveredEventIds.add(event.eventId);
+              await quest.projectEvent(event, [questDefinition]);
+              throw StateError('quest failed after applying');
+            },
+            streakSink: (event) async {
+              await streak.recordLearningDayForOwner(
+                ownerId: event.ownerIdentity,
+                occurredAtUtc: event.occurredAtUtc,
+              );
+              throw StateError('streak failed after applying');
+            },
+          ),
+        );
         final learning = LearningUseCases(
           owners: owners,
           repository: DriftLearningRepository(first),
@@ -584,15 +643,7 @@ void main() {
             appVersion: '1.0.0',
             buildId: 'restart-test',
           ),
-          questEventSink: (event) async {
-            deliveredEventIds.add(event.eventId);
-            await quest.processEvent(event, [questDefinition]);
-            throw StateError('quest failed after applying');
-          },
-          streakEventSink: () async {
-            await streak.recordLearningDay();
-            throw StateError('streak failed after applying');
-          },
+          onSideEffectsPending: firstReconciliation.request,
         );
         final quiz = await learning.startQuiz(limit: 10);
         await learning.recordAnswer(
@@ -603,6 +654,9 @@ void main() {
           responseTimeMs: 300,
           attemptNumber: 1,
         );
+        await firstReconciliation.drain();
+        await firstReconciliation.dispose();
+        firstReconciliation = null;
         await first.close();
         first = null;
 
@@ -621,6 +675,39 @@ void main() {
           nowUtc: () => now,
           timezoneId: 'Asia/Bangkok',
         );
+        reopenedReconciliation = LearningReconciliationScheduler(
+          LearningSideEffectReconciler(
+            reopened,
+            questSink: (event) async {
+              deliveredEventIds.add(event.eventId);
+              final projection = await reopenedQuest.projectEvent(event, [
+                questDefinition,
+              ]);
+              final payload = reopenedQuest.projectionPayload(projection, [
+                questDefinition,
+              ]);
+              return projection.eligible
+                  ? LearningProjectionResult.applied(payload: payload)
+                  : LearningProjectionResult.notApplicable(payload: payload);
+            },
+            streakSink: (event) async {
+              await reopenedStreak.recordLearningDayForOwner(
+                ownerId: event.ownerIdentity,
+                occurredAtUtc: event.occurredAtUtc,
+              );
+              return const LearningProjectionResult.applied();
+            },
+            rewardSink: (event, questResult) async {
+              final applied = await reopenedQuest.reconcileReward(
+                event,
+                questResult,
+              );
+              return applied
+                  ? const LearningProjectionResult.applied()
+                  : const LearningProjectionResult.notApplicable();
+            },
+          ),
+        );
         final replayLearning = LearningUseCases(
           owners: reopenedOwners,
           repository: DriftLearningRepository(reopened),
@@ -631,12 +718,7 @@ void main() {
             appVersion: '1.0.0',
             buildId: 'restart-test',
           ),
-          questEventSink: (event) async {
-            deliveredEventIds.add(event.eventId);
-            await reopenedQuest.processEvent(event, [questDefinition]);
-          },
-          streakEventSink: () =>
-              reopenedStreak.recordLearningDay().then((_) {}),
+          onSideEffectsPending: reopenedReconciliation.request,
         );
 
         for (var replay = 0; replay < 2; replay++) {
@@ -650,6 +732,7 @@ void main() {
           );
           expect(result.inserted, isFalse);
         }
+        await reopenedReconciliation.drain();
 
         final attempts = await reopened.select(reopened.answerAttempts).get();
         final answerXp = await (reopened.select(
@@ -682,6 +765,8 @@ void main() {
               'source-event de-duplication can prevent duplicate progress',
         );
       } finally {
+        await reopenedReconciliation?.dispose();
+        await firstReconciliation?.dispose();
         await reopened?.close();
         await first?.close();
         if (await directory.exists()) {

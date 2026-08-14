@@ -10,6 +10,9 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
@@ -42,6 +45,24 @@ void main() {
 
   tearDown(() async {
     await database.close();
+  });
+
+  test('owner upgrade forwards the identical evidence policy pair', () {
+    final policy = EvidenceEligibilityPolicySet();
+    final rollout = FixedEvidencePolicyRolloutModeProvider.legacy();
+    final injected = DriftOwnerUpgradeRepository(
+      database,
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+      generateConflictId: () => 'policy-conflict',
+      generateOwnerId: () => 'policy-owner',
+      generateOwnerOperationToken: () => 'policy-operation',
+      deleteOwnerSecrets: (_) async {},
+      evidencePolicy: policy,
+      rolloutModeProvider: rollout,
+    );
+
+    expect(identical(injected.evidencePolicy, policy), isTrue);
+    expect(identical(injected.rolloutModeProvider, rollout), isTrue);
   });
 
   test('migration inventory covers every owner-scoped Drift table', () async {
@@ -767,7 +788,9 @@ void main() {
               event.eventId == 'learning-event:guest-pending') {
             throw StateError('quest projection unavailable');
           }
-          return const LearningProjectionResult.applied();
+          return const LearningProjectionResult.applied(
+            payload: {'eligible': true, 'rewardGrants': <Object>[]},
+          );
         },
         rewardSink: (event, questResult) async {
           rewarded.add(event.eventId);
@@ -1751,27 +1774,98 @@ Future<void> _insertLearningEvent(
   required String ownerId,
   required String eventId,
   required DateTime occurredAt,
-}) => database
-    .into(database.eventsV2)
-    .insert(
-      EventsV2Companion.insert(
-        eventId: eventId,
-        eventType: 'QuizCompleted',
-        eventVersion: 1,
-        occurredAtUtc: occurredAt,
-        recordedAtUtc: occurredAt,
-        actorIdentity: ownerId,
-        ownerId: ownerId,
-        aggregateType: 'LearningSession',
-        aggregateId: 'session:$ownerId',
-        idempotencyKey: 'learning-attempt:$eventId:v1',
-        consentContextJson: '{}',
-        appVersion: '1.0.0',
-        buildId: 'owner-upgrade-test',
-        privacyClassification: 'anonymized',
-        payloadJson: '{"correct":true}',
-      ),
-    );
+}) async {
+  const sourcePrefix = 'learning-event:';
+  if (!eventId.startsWith(sourcePrefix)) {
+    throw ArgumentError.value(eventId, 'eventId', 'invalid learning event ID');
+  }
+  final attemptId = eventId.substring(sourcePrefix.length);
+  final categoryId = 'category:$ownerId';
+  final wordId = 'word:$ownerId';
+  final sessionId = 'session:$ownerId';
+  final context = LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Owner replay',
+          normalizedName: 'owner replay',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: 'replay',
+          normalizedSpelling: 'replay',
+          meaning: 'replay',
+          normalizedMeaning: 'replay',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          appVersion: '1.0.0',
+          buildId: 'owner-upgrade-test',
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.answerAttempts)
+      .insert(
+        AnswerAttemptsCompanion.insert(
+          id: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          wordId: wordId,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          attemptNumber: 1,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          evidenceClass: Value(context.evidenceClass.name),
+          evidenceContextJson: Value(jsonEncode(context.toJson())),
+        ),
+      );
+  await database
+      .into(database.eventsV2)
+      .insert(
+        EventsV2Companion.insert(
+          eventId: eventId,
+          eventType: 'QuizCompleted',
+          eventVersion: 1,
+          occurredAtUtc: occurredAt,
+          recordedAtUtc: occurredAt,
+          actorIdentity: ownerId,
+          ownerId: ownerId,
+          aggregateType: 'LearningSession',
+          aggregateId: sessionId,
+          idempotencyKey: 'learning-attempt:$attemptId:v1',
+          consentContextJson: '{}',
+          appVersion: '1.0.0',
+          buildId: 'owner-upgrade-test',
+          privacyClassification: 'anonymized',
+          payloadJson: jsonEncode(<String, dynamic>{'attemptId': attemptId}),
+        ),
+      );
+}
 
 Future<void> _insertProjectionResult(
   AppDatabase database, {

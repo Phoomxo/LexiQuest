@@ -184,18 +184,6 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    const managedAchievementIds = <String>{
-      'first_answer',
-      'first_correct',
-      'ten_correct',
-    };
-    await (database.delete(database.achievementUnlocks)..where(
-          (row) =>
-              row.ownerId.equals(ownerId) &
-              row.definitionVersion.equals(1) &
-              row.achievementId.isIn(managedAchievementIds),
-        ))
-        .go();
     final eligible = <db.AnswerAttempt>[];
     for (final attempt in attempts) {
       final decisionSet = await evidenceDecisions.ensureDecisionSetForAttempt(
@@ -205,27 +193,37 @@ final class DriftLearningProjectionRebuilder {
         eligible.add(attempt);
       }
     }
-    if (eligible.isEmpty) return;
-    await _insertAchievement(
-      ownerId: ownerId,
-      achievementId: 'first_answer',
-      source: eligible.first,
-    );
+    final desired = <String, db.AnswerAttempt>{};
+    if (eligible.isNotEmpty) desired['first_answer'] = eligible.first;
     final correct = eligible
         .where((attempt) => attempt.isCorrect)
         .toList(growable: false);
     if (correct.isNotEmpty) {
-      await _insertAchievement(
-        ownerId: ownerId,
-        achievementId: 'first_correct',
-        source: correct.first,
-      );
+      desired['first_correct'] = correct.first;
     }
     if (correct.length >= 10) {
+      desired['ten_correct'] = correct[9];
+    }
+    const managedAchievementIds = <String>{
+      'first_answer',
+      'first_correct',
+      'ten_correct',
+    };
+    final obsolete = managedAchievementIds.difference(desired.keys.toSet());
+    if (obsolete.isNotEmpty) {
+      await (database.delete(database.achievementUnlocks)..where(
+            (row) =>
+                row.ownerId.equals(ownerId) &
+                row.definitionVersion.equals(1) &
+                row.achievementId.isIn(obsolete),
+          ))
+          .go();
+    }
+    for (final entry in desired.entries) {
       await _insertAchievement(
         ownerId: ownerId,
-        achievementId: 'ten_correct',
-        source: correct[9],
+        achievementId: entry.key,
+        source: entry.value,
       );
     }
   }
@@ -310,15 +308,13 @@ final class DriftLearningProjectionRebuilder {
             ))
             .getSingleOrNull();
     if (existing != null) {
-      final canonicalSourceIsEarlier =
-          source.occurredAtUtcMs < existing.unlockedAtUtcMs ||
-          (source.occurredAtUtcMs == existing.unlockedAtUtcMs &&
-              source.id.compareTo(existing.sourceEventId) < 0);
-      if (!canonicalSourceIsEarlier) return;
+      if (source.id == existing.sourceEventId &&
+          source.occurredAtUtcMs == existing.unlockedAtUtcMs) {
+        return;
+      }
 
-      // Achievement evidence is append-only, but an older attempt can arrive
-      // after the unlock projection was first materialized. Correct only its
-      // canonical provenance; the unlock identity itself remains unchanged.
+      // Preserve the unlock identity while rebuilding canonical provenance
+      // exclusively from eligible evidence.
       await (database.update(
         database.achievementUnlocks,
       )..where((row) => row.id.equals(existing.id))).write(

@@ -7,6 +7,8 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
+import '../domain/learning_event_context.dart';
+import '../domain/learning_models.dart';
 
 abstract interface class EvidencePolicyRolloutModeProvider {
   Future<EvidencePolicyRolloutMode> resolve({
@@ -143,13 +145,13 @@ final class LearningProjectionReceipt {
 final class PendingLearningProjectionEvent {
   const PendingLearningProjectionEvent({
     required this.event,
-    this.prerequisiteApplied,
-    this.prerequisitePayload = const <String, dynamic>{},
+    this.prerequisiteReceipt,
+    this.prerequisiteInvalid = false,
   });
 
   final EventEnvelopeV2 event;
-  final bool? prerequisiteApplied;
-  final Map<String, dynamic> prerequisitePayload;
+  final LearningProjectionReceipt? prerequisiteReceipt;
+  final bool prerequisiteInvalid;
 }
 
 final class DriftLearningEventStore {
@@ -232,6 +234,21 @@ final class DriftLearningEventStore {
     EventEnvelopeV2? sourceEvent,
   }) async {
     final context = _contextForAttempt(attempt);
+    var validatedSource = sourceEvent;
+    validatedSource ??= await _readSourceEventForAttempt(attempt.id);
+    if (validatedSource == null) {
+      if (!LearningEvidenceContract.isExactFrozenV13LegacyEvidence(context)) {
+        throw StateError('canonical attempt has no correlated source event');
+      }
+    } else {
+      final failure = await validateSourceForAttempt(
+        attempt: attempt,
+        source: validatedSource,
+      );
+      if (failure != null) {
+        throw StateError('invalid correlated source event: $failure');
+      }
+    }
     final expected = _buildDecisionSet(
       sourceEvidenceId: attempt.id,
       context: context,
@@ -261,7 +278,7 @@ final class DriftLearningEventStore {
     }
     final candidate = _decisionSetEvent(
       attempt: attempt,
-      sourceEvent: sourceEvent,
+      sourceEvent: validatedSource,
       decisionSet: expected,
     );
     await database.transaction(() async {
@@ -280,6 +297,73 @@ final class DriftLearningEventStore {
     return expected;
   }
 
+  bool isExactDeclaredSourceForCandidate({
+    required RecordAnswerCandidate candidate,
+    required EventEnvelopeV2 source,
+  }) {
+    if (source.actorIdentity != candidate.ownerId) return false;
+    return _validateDeclaredSource(
+          attemptId: candidate.id,
+          ownerId: candidate.ownerId,
+          sessionId: candidate.sessionId,
+          wordId: candidate.wordId,
+          promptMode: candidate.promptMode,
+          isCorrect: candidate.isCorrect,
+          attemptNumber: candidate.attemptNumber,
+          occurredAtUtcMs: candidate.occurredAtUtc.millisecondsSinceEpoch,
+          evidenceContextJson: jsonEncode(candidate.evidenceContext.toJson()),
+          context: candidate.evidenceContext,
+          source: source,
+        ) ==
+        null;
+  }
+
+  Future<String?> validateSourceForAttempt({
+    required db.AnswerAttempt attempt,
+    required EventEnvelopeV2 source,
+  }) async {
+    late final EvidenceContext context;
+    try {
+      context = _contextForAttempt(attempt);
+    } on FormatException {
+      return 'invalidCanonicalEvidenceContext';
+    } on TypeError {
+      return 'invalidCanonicalEvidenceContext';
+    } on ArgumentError {
+      return 'invalidCanonicalEvidenceContext';
+    } on StateError {
+      return 'invalidCanonicalEvidenceContext';
+    }
+    if (source.ownerIdentity != attempt.ownerId) {
+      return 'attemptOwnerMismatch';
+    }
+    if (!await _isAuthorizedActor(
+      actorIdentity: source.actorIdentity,
+      ownerIdentity: attempt.ownerId,
+    )) {
+      return 'invalidSourceActorLineage';
+    }
+    if (source.payload.containsKey('evidenceContext')) {
+      return _validateDeclaredSource(
+        attemptId: attempt.id,
+        ownerId: attempt.ownerId,
+        sessionId: attempt.sessionId,
+        wordId: attempt.wordId,
+        promptMode: attempt.promptMode,
+        isCorrect: attempt.isCorrect,
+        attemptNumber: attempt.attemptNumber,
+        occurredAtUtcMs: attempt.occurredAtUtcMs,
+        evidenceContextJson: attempt.evidenceContextJson,
+        context: context,
+        source: source,
+      );
+    }
+    if (!LearningEvidenceContract.isExactFrozenV13LegacyEvidence(context)) {
+      return 'contextlessNonLegacyAttempt';
+    }
+    return _validateFrozenLegacySource(attempt: attempt, source: source);
+  }
+
   Future<LearningEvidenceResolution> resolveEvidenceForSource(
     EventEnvelopeV2 source,
   ) async {
@@ -296,61 +380,14 @@ final class DriftLearningEventStore {
         'canonicalAttemptMissing',
       );
     }
-    if (attempt.ownerId != source.ownerIdentity) {
-      return const LearningEvidenceResolution.blocked('attemptOwnerMismatch');
+    final validationFailure = await validateSourceForAttempt(
+      attempt: attempt,
+      source: source,
+    );
+    if (validationFailure != null) {
+      return LearningEvidenceResolution.blocked(validationFailure);
     }
-
-    late final EvidenceContext context;
-    try {
-      context = _contextForAttempt(attempt);
-    } on FormatException {
-      return const LearningEvidenceResolution.blocked(
-        'invalidCanonicalEvidenceContext',
-      );
-    } on TypeError {
-      return const LearningEvidenceResolution.blocked(
-        'invalidCanonicalEvidenceContext',
-      );
-    }
-
-    if (source.payload.containsKey('evidenceContext')) {
-      final payloadContext = source.payload['evidenceContext'];
-      if (payloadContext is! Map) {
-        return const LearningEvidenceResolution.blocked(
-          'invalidPayloadEvidenceContext',
-        );
-      }
-      try {
-        final decoded = EvidenceContext.fromJson(
-          payloadContext.cast<String, Object?>(),
-        );
-        if (decoded.evidenceClass.name != attempt.evidenceClass) {
-          return const LearningEvidenceResolution.blocked(
-            'evidenceClassMismatch',
-          );
-        }
-        if (jsonEncode(decoded.toJson()) != attempt.evidenceContextJson) {
-          return const LearningEvidenceResolution.blocked(
-            'evidenceContextMismatch',
-          );
-        }
-      } on FormatException {
-        return const LearningEvidenceResolution.blocked(
-          'invalidPayloadEvidenceContext',
-        );
-      } on TypeError {
-        return const LearningEvidenceResolution.blocked(
-          'invalidPayloadEvidenceContext',
-        );
-      }
-    } else if (context.classificationSource !=
-            EvidenceClassificationSource.legacyInferred ||
-        context.policyVersion != EvidenceContext.legacyPolicyVersion ||
-        context.rolloutMode != EvidencePolicyRolloutMode.legacy) {
-      return const LearningEvidenceResolution.blocked(
-        'contextlessNonLegacyAttempt',
-      );
-    }
+    final context = _contextForAttempt(attempt);
 
     try {
       final decisionSet = await ensureDecisionSetForAttempt(
@@ -371,6 +408,179 @@ final class DriftLearningEventStore {
     } on StateError {
       return const LearningEvidenceResolution.blocked('decisionSetConflict');
     }
+  }
+
+  Future<EventEnvelopeV2?> _readSourceEventForAttempt(String attemptId) async {
+    final eventId = LearningEvidenceContract.learningEventId(attemptId);
+    final row =
+        await (database.select(database.eventsV2)
+              ..where((candidate) => candidate.eventId.equals(eventId)))
+            .getSingleOrNull();
+    return row == null ? null : _toEvent(row);
+  }
+
+  Future<bool> _isAuthorizedActor({
+    required String actorIdentity,
+    required String ownerIdentity,
+  }) async {
+    if (actorIdentity == ownerIdentity) return true;
+    final historicalActor = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals(actorIdentity))).getSingleOrNull();
+    return historicalActor != null &&
+        !historicalActor.isActive &&
+        historicalActor.accountState == 'mergedInto:$ownerIdentity';
+  }
+
+  String? _validateDeclaredSource({
+    required String attemptId,
+    required String ownerId,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int attemptNumber,
+    required int occurredAtUtcMs,
+    required String evidenceContextJson,
+    required EvidenceContext context,
+    required EventEnvelopeV2 source,
+  }) {
+    const payloadKeys = <String>{
+      'attemptId',
+      'wordId',
+      'promptMode',
+      'correct',
+      'score',
+      'attemptNumber',
+      'evidenceContext',
+    };
+    final payload = source.payload;
+    if (payload.length != payloadKeys.length ||
+        !payload.keys.every(payloadKeys.contains)) {
+      return 'invalidSourceEventCorrelation';
+    }
+    final payloadContext = payload['evidenceContext'];
+    if (payloadContext is! Map) return 'invalidPayloadEvidenceContext';
+    try {
+      final decoded = EvidenceContext.fromJson(
+        payloadContext.cast<String, Object?>(),
+      );
+      if (decoded.evidenceClass.name != context.evidenceClass.name) {
+        return 'evidenceClassMismatch';
+      }
+      if (jsonEncode(decoded.toJson()) != evidenceContextJson ||
+          jsonEncode(payloadContext) != evidenceContextJson) {
+        return 'evidenceContextMismatch';
+      }
+    } on FormatException {
+      return 'invalidPayloadEvidenceContext';
+    } on TypeError {
+      return 'invalidPayloadEvidenceContext';
+    } on ArgumentError {
+      return 'invalidPayloadEvidenceContext';
+    } on StateError {
+      return 'invalidPayloadEvidenceContext';
+    }
+    final at = LearningEvidenceContract.canonicalEventUtcSecond(
+      DateTime.fromMillisecondsSinceEpoch(occurredAtUtcMs, isUtc: true),
+    );
+    if (!_matchesCommonSourceEnvelope(
+          source: source,
+          attemptId: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          isCorrect: isCorrect,
+          at: at,
+        ) ||
+        source.eventVersion != 2 ||
+        source.idempotencyKey !=
+            LearningEvidenceContract.learningAttemptIdempotencyKey(attemptId) ||
+        source.contentRevision != context.contentRevision ||
+        source.policyVersion != context.policyVersion ||
+        payload['attemptId'] != attemptId ||
+        payload['wordId'] != wordId ||
+        payload['promptMode'] != promptMode ||
+        payload['correct'] != isCorrect ||
+        payload['score'] != (isCorrect ? 100 : 0) ||
+        payload['attemptNumber'] != attemptNumber) {
+      return 'invalidSourceEventCorrelation';
+    }
+    try {
+      LearningEventContext.fromEvidenceEnvelope(
+        envelope: source,
+        evidenceContext: context,
+      ).validateAgainst(
+        evidenceContext: context,
+        occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          occurredAtUtcMs,
+          isUtc: true,
+        ),
+      );
+    } on ArgumentError {
+      return 'invalidLearningEventContext';
+    } on FormatException {
+      return 'invalidLearningEventContext';
+    } on StateError {
+      return 'invalidLearningEventContext';
+    }
+    return null;
+  }
+
+  String? _validateFrozenLegacySource({
+    required db.AnswerAttempt attempt,
+    required EventEnvelopeV2 source,
+  }) {
+    final at = LearningEvidenceContract.canonicalEventUtcSecond(
+      DateTime.fromMillisecondsSinceEpoch(attempt.occurredAtUtcMs, isUtc: true),
+    );
+    final payload = source.payload;
+    final consent = source.consentContext;
+    if (!_matchesCommonSourceEnvelope(
+          source: source,
+          attemptId: attempt.id,
+          ownerId: attempt.ownerId,
+          sessionId: attempt.sessionId,
+          isCorrect: attempt.isCorrect,
+          at: at,
+        ) ||
+        source.eventVersion != 1 ||
+        source.idempotencyKey != 'learning-attempt:${attempt.id}:v1' ||
+        source.experimentContext != null ||
+        source.contentRevision != null ||
+        source.policyVersion != null ||
+        consent.researchConsentVersion != 0 ||
+        consent.aiConsentGranted ||
+        consent.voiceConsentGranted ||
+        consent.socialConsentGranted ||
+        payload.length != 1 ||
+        payload.keys.single != 'attemptId' ||
+        payload['attemptId'] != attempt.id) {
+      return 'invalidLegacySourceEventCorrelation';
+    }
+    return null;
+  }
+
+  bool _matchesCommonSourceEnvelope({
+    required EventEnvelopeV2 source,
+    required String attemptId,
+    required String ownerId,
+    required String sessionId,
+    required bool isCorrect,
+    required DateTime at,
+  }) {
+    return source.eventId ==
+            LearningEvidenceContract.learningEventId(attemptId) &&
+        source.eventType == (isCorrect ? 'QuizCompleted' : 'QuizAttempted') &&
+        source.occurredAtUtc == at &&
+        source.recordedAtUtc == at &&
+        source.ownerIdentity == ownerId &&
+        source.tenantContext == null &&
+        source.aggregateType == 'LearningSession' &&
+        source.aggregateId == sessionId &&
+        source.correlationId == null &&
+        source.causationId == null &&
+        source.providerProvenance == null &&
+        source.privacyClassification == PrivacyClassification.anonymized;
   }
 
   EvidenceContext _contextForAttempt(db.AnswerAttempt attempt) {
@@ -633,20 +843,12 @@ final class DriftLearningEventStore {
         $afterCursor
       ORDER BY source.occurred_at_utc ASC, source.event_id ASC
       LIMIT ?''';
-    final prerequisite = prerequisiteProjection;
-    final sql = prerequisite == null
-        ? candidateSql
-        : '''SELECT candidate.event_id, candidate.occurred_at_utc,
-                    prerequisite.event_type AS prerequisite_type,
-                    prerequisite.payload_json AS prerequisite_payload
-             FROM ($candidateSql) candidate
-             LEFT JOIN events_v2 prerequisite
-               ON prerequisite.event_id =
-                 'learning-projection:$prerequisite:' ||
-                 candidate.event_id || ':v$appliedVersion'
-             ORDER BY candidate.occurred_at_utc ASC, candidate.event_id ASC''';
     final idRows = await database
-        .customSelect(sql, variables: variables, readsFrom: {database.eventsV2})
+        .customSelect(
+          candidateSql,
+          variables: variables,
+          readsFrom: {database.eventsV2},
+        )
         .get();
     final ids = idRows.map((row) => row.read<String>('event_id')).toList();
     if (ids.isEmpty) return const [];
@@ -661,32 +863,34 @@ final class DriftLearningEventStore {
     final eventsById = <String, EventEnvelopeV2>{
       for (final row in rows) row.eventId: _toEvent(row),
     };
-    return idRows
-        .map((row) {
-          final eventId = row.read<String>('event_id');
-          if (prerequisite == null) {
-            return PendingLearningProjectionEvent(event: eventsById[eventId]!);
-          }
-          final prerequisiteType = row.readNullable<String>(
-            'prerequisite_type',
-          );
-          final prerequisiteJson = row.readNullable<String>(
-            'prerequisite_payload',
-          );
-          final receiptPayload = prerequisiteJson == null
-              ? const <String, dynamic>{}
-              : jsonDecode(prerequisiteJson) as Map<String, dynamic>;
-          return PendingLearningProjectionEvent(
-            event: eventsById[eventId]!,
-            prerequisiteApplied: prerequisiteType == null
-                ? null
-                : prerequisiteType == 'LearningProjectionApplied',
-            prerequisitePayload:
-                (receiptPayload['result'] as Map?)?.cast<String, dynamic>() ??
-                const <String, dynamic>{},
-          );
-        })
-        .toList(growable: false);
+    final result = <PendingLearningProjectionEvent>[];
+    for (final row in idRows) {
+      final event = eventsById[row.read<String>('event_id')]!;
+      if (prerequisiteProjection == null) {
+        result.add(PendingLearningProjectionEvent(event: event));
+        continue;
+      }
+      try {
+        result.add(
+          PendingLearningProjectionEvent(
+            event: event,
+            prerequisiteReceipt: await readProjectionReceipt(
+              source: event,
+              projection: prerequisiteProjection,
+              appliedVersion: appliedVersion,
+            ),
+          ),
+        );
+      } on StateError {
+        result.add(
+          PendingLearningProjectionEvent(
+            event: event,
+            prerequisiteInvalid: true,
+          ),
+        );
+      }
+    }
+    return List<PendingLearningProjectionEvent>.unmodifiable(result);
   }
 
   Future<void> markProjectionOutcome({
@@ -699,21 +903,11 @@ final class DriftLearningEventStore {
     int? bridgedFromVersion,
     Map<String, dynamic> decision = const <String, dynamic>{},
   }) async {
-    if (outcome == LearningProjectionOutcome.blocked) {
-      if (reasonCode == null ||
-          reasonCode.trim() != reasonCode ||
-          reasonCode.isEmpty) {
-        throw ArgumentError.value(
-          reasonCode,
-          'reasonCode',
-          'blocked receipts require a stable reason code',
-        );
-      }
-    } else if (reasonCode != null) {
+    if (!_validReceiptReason(reasonCode, outcome, allowMissingBlocked: false)) {
       throw ArgumentError.value(
         reasonCode,
         'reasonCode',
-        'only blocked receipts carry a reason code',
+        'receipt outcome requires a bounded stable reason code',
       );
     }
     if (bridgedFromVersion != null &&
@@ -805,12 +999,12 @@ final class DriftLearningEventStore {
   }
 
   Future<LearningProjectionReceipt?> readProjectionReceipt({
-    required String sourceEventId,
+    required EventEnvelopeV2 source,
     required String projection,
     required int appliedVersion,
   }) async {
     final key = _projectionKey(
-      sourceEventId: sourceEventId,
+      sourceEventId: source.eventId,
       projection: projection,
       appliedVersion: appliedVersion,
     );
@@ -824,37 +1018,177 @@ final class DriftLearningEventStore {
       'LearningProjectionBlocked' => LearningProjectionOutcome.blocked,
       _ => throw StateError('invalid learning projection receipt type'),
     };
-    final decoded = jsonDecode(row.payloadJson);
-    if (decoded is! Map) {
+    late final Map<String, dynamic> payload;
+    late final EventEnvelopeV2 receipt;
+    try {
+      final decoded = jsonDecode(row.payloadJson);
+      if (decoded is! Map) {
+        throw const FormatException('receipt payload is not an object');
+      }
+      payload = decoded.cast<String, dynamic>();
+      receipt = _toEvent(row);
+    } on StateError {
+      rethrow;
+    } catch (_) {
       throw StateError('invalid learning projection receipt payload');
     }
-    final payload = decoded.cast<String, dynamic>();
-    if (row.aggregateType != 'LearningProjection' ||
-        row.aggregateId != sourceEventId ||
-        row.idempotencyKey != key ||
+    const requiredKeys = <String>{
+      'sourceEventId',
+      'projection',
+      'appliedVersion',
+      'outcome',
+      'result',
+    };
+    const optionalKeys = <String>{
+      'reasonCode',
+      'bridgedFromVersion',
+      'decision',
+    };
+    if (!payload.keys.toSet().containsAll(requiredKeys) ||
+        !payload.keys.every(
+          (key) => requiredKeys.contains(key) || optionalKeys.contains(key),
+        ) ||
+        receipt.eventId != key ||
+        receipt.idempotencyKey != key ||
+        receipt.eventVersion != 1 ||
+        receipt.occurredAtUtc != source.occurredAtUtc ||
+        receipt.recordedAtUtc != source.recordedAtUtc ||
+        receipt.actorIdentity != source.actorIdentity ||
+        receipt.ownerIdentity != source.ownerIdentity ||
+        receipt.tenantContext != null ||
+        receipt.aggregateType != 'LearningProjection' ||
+        receipt.aggregateId != source.eventId ||
+        receipt.correlationId != null ||
+        receipt.causationId != source.eventId ||
+        jsonEncode(receipt.consentContext.toJson()) !=
+            jsonEncode(source.consentContext.toJson()) ||
+        receipt.experimentContext != null ||
+        receipt.contentRevision != null ||
+        receipt.policyVersion != null ||
+        receipt.appVersion != source.appVersion ||
+        receipt.buildId != source.buildId ||
+        receipt.providerProvenance != null ||
+        receipt.privacyClassification != source.privacyClassification ||
+        payload['sourceEventId'] != source.eventId ||
         payload['projection'] != projection ||
-        (payload['appliedVersion'] != null &&
-            payload['appliedVersion'] != appliedVersion)) {
+        payload['appliedVersion'] != appliedVersion ||
+        payload['outcome'] != outcome.name) {
       throw StateError('invalid learning projection receipt identity');
     }
     final result = payload['result'];
-    if (result != null && result is! Map) {
+    if (result is! Map) {
       throw StateError('invalid learning projection receipt result');
     }
     final reasonCode = payload['reasonCode'];
     final bridgedFromVersion = payload['bridgedFromVersion'];
-    if ((reasonCode != null && reasonCode is! String) ||
-        (bridgedFromVersion != null && bridgedFromVersion is! int)) {
+    final decision = payload['decision'];
+    if (!_validReceiptReason(
+          reasonCode,
+          outcome,
+          allowMissingBlocked: appliedVersion == 1,
+        ) ||
+        (bridgedFromVersion != null &&
+            (bridgedFromVersion is! int ||
+                bridgedFromVersion < 1 ||
+                bridgedFromVersion >= appliedVersion)) ||
+        (decision != null && decision is! Map)) {
       throw StateError('invalid learning projection receipt metadata');
+    }
+    final castResult = result.cast<String, dynamic>();
+    if (projection == 'quest' &&
+        !_validQuestReceiptResult(
+          outcome: outcome,
+          ownerId: source.ownerIdentity,
+          result: castResult,
+        )) {
+      throw StateError('invalid quest projection receipt result');
     }
     return LearningProjectionReceipt(
       outcome: outcome,
-      result: result == null
-          ? const <String, dynamic>{}
-          : result.cast<String, dynamic>(),
+      result: castResult,
       reasonCode: reasonCode as String?,
       bridgedFromVersion: bridgedFromVersion as int?,
     );
+  }
+
+  bool _validReceiptReason(
+    Object? reasonCode,
+    LearningProjectionOutcome outcome, {
+    required bool allowMissingBlocked,
+  }) {
+    if (outcome == LearningProjectionOutcome.blocked) {
+      return (reasonCode == null && allowMissingBlocked) ||
+          reasonCode is String &&
+              reasonCode.runes.length <= 128 &&
+              RegExp(r'^[A-Za-z][A-Za-z0-9._-]*$').hasMatch(reasonCode);
+    }
+    return reasonCode == null;
+  }
+
+  bool _validQuestReceiptResult({
+    required LearningProjectionOutcome outcome,
+    required String ownerId,
+    required Map<String, dynamic> result,
+  }) {
+    if (outcome == LearningProjectionOutcome.blocked) return result.isEmpty;
+    const resultKeys = <String>{'eligible', 'rewardGrants'};
+    if (result.length != resultKeys.length ||
+        !result.keys.every(resultKeys.contains)) {
+      return false;
+    }
+    final eligible = result['eligible'];
+    final grants = result['rewardGrants'];
+    if (eligible is! bool || grants is! List || grants.length > 64) {
+      return false;
+    }
+    if (outcome == LearningProjectionOutcome.applied && !eligible) {
+      return false;
+    }
+    if (outcome == LearningProjectionOutcome.notApplicable &&
+        (eligible || grants.isNotEmpty)) {
+      return false;
+    }
+    final idempotencyKeys = <String>{};
+    for (final rawGrant in grants) {
+      if (rawGrant is! Map) return false;
+      final grant = rawGrant.cast<String, dynamic>();
+      const requiredGrantKeys = <String>{
+        'ownerId',
+        'idempotencyKey',
+        'xpAmount',
+      };
+      const optionalGrantKeys = <String>{'rewardItemId'};
+      if (!grant.keys.toSet().containsAll(requiredGrantKeys) ||
+          !grant.keys.every(
+            (key) =>
+                requiredGrantKeys.contains(key) ||
+                optionalGrantKeys.contains(key),
+          )) {
+        return false;
+      }
+      final grantOwner = grant['ownerId'];
+      final idempotencyKey = grant['idempotencyKey'];
+      final xpAmount = grant['xpAmount'];
+      final rewardItemId = grant['rewardItemId'];
+      if (grantOwner is! String ||
+          grantOwner != ownerId ||
+          idempotencyKey is! String ||
+          idempotencyKey.trim() != idempotencyKey ||
+          idempotencyKey.isEmpty ||
+          idempotencyKey.runes.length > 256 ||
+          !idempotencyKeys.add(idempotencyKey) ||
+          xpAmount is! int ||
+          xpAmount < 1 ||
+          xpAmount > 9223372036854775807 ||
+          (rewardItemId != null &&
+              (rewardItemId is! String ||
+                  rewardItemId.trim() != rewardItemId ||
+                  rewardItemId.isEmpty ||
+                  rewardItemId.runes.length > 256))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   String _projectionKey({

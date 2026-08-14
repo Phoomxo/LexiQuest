@@ -130,7 +130,7 @@ void main() {
     await database.close();
   });
 
-  group('QuestEventSink — D7.1 Quest-Learning integration', () {
+  group('Durable Quest reconciliation — D7.1 integration', () {
     test('correct answer advances matching quest objective', () async {
       // targetCount: 2 so quest advances but does not complete after 1 answer.
       await questUseCases.startQuest(_quizDef(targetCount: 2));
@@ -198,18 +198,18 @@ void main() {
       expect(active, isEmpty, reason: 'completed quest must leave active list');
     });
 
-    test('questEventSink null = no crash (feature flag off)', () async {
-      // Rebuild LearningUseCases without questEventSink.
+    test('no scheduler persists without inline Quest execution', () async {
+      // Rebuild LearningUseCases without a reconciliation scheduler.
       final useCasesNoQuest = LearningUseCases(
         owners: _FakeOwners(owner),
         repository: DriftLearningRepository(database),
         generateId: () => 'nq-${++_seq}',
         nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
         buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
-        // questEventSink intentionally absent
+        // Durable startup replay intentionally owns later projection.
       );
       final session = await useCasesNoQuest.startQuiz(limit: 10);
-      // Must not throw even without questEventSink (feature flag off).
+      // Persistence must not depend on an inline Quest callback.
       await expectLater(
         useCasesNoQuest.recordAnswer(
           sessionId: session.id,

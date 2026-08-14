@@ -203,7 +203,9 @@ void main() {
     expect(attemptOutbox, hasLength(1));
     final reconciler = LearningSideEffectReconciler(
       database,
-      questSink: (_) async => const LearningProjectionResult.applied(),
+      questSink: (_) async => const LearningProjectionResult.applied(
+        payload: {'eligible': true, 'rewardGrants': <Object>[]},
+      ),
       streakSink: (_) async => const LearningProjectionResult.applied(),
       rewardSink: (_, _) async => const LearningProjectionResult.applied(),
     );
@@ -443,7 +445,7 @@ void main() {
         assignmentId: 'changed-assignment',
       ),
     );
-    final replayedEvents = <EventEnvelopeV2>[];
+    final scheduledOwners = <String>[];
     final changedReplay = LearningUseCases(
       owners: owners,
       repository: DriftLearningRepository(database),
@@ -451,7 +453,7 @@ void main() {
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
       eventContextProvider: changedProvider,
-      questEventSink: (event) async => replayedEvents.add(event),
+      onSideEffectsPending: scheduledOwners.add,
     );
     expect(
       (await changedReplay.recordEvidence(
@@ -468,9 +470,19 @@ void main() {
       isFalse,
     );
     expect(changedProvider.calls, 0);
-    expect(replayedEvents, hasLength(1));
-    expect(replayedEvents.single.occurredAtUtc.millisecond, 0);
-    expect(replayedEvents.single.payload['evidenceContext'], evidence.toJson());
+    expect(scheduledOwners, ['local:guest']);
+    final replayedEvent =
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.eventId.equals('learning-event:evidence-provider-replay'),
+            ))
+            .getSingle();
+    expect(replayedEvent.occurredAtUtc.toUtc().millisecond, 0);
+    expect(
+      (jsonDecode(replayedEvent.payloadJson)
+          as Map<String, dynamic>)['evidenceContext'],
+      evidence.toJson(),
+    );
   });
 
   test('committed retry fails closed for a missing or corrupt event', () async {
@@ -492,6 +504,7 @@ void main() {
     );
 
     await record('evidence-missing-event');
+    await record('evidence-corrupt-event');
     await (database.delete(database.eventsV2)..where(
           (row) => row.eventId.equals('learning-event:evidence-missing-event'),
         ))
@@ -505,7 +518,7 @@ void main() {
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
       eventContextProvider: missingProvider,
-      questEventSink: (_) async => missingCallbacks++,
+      onSideEffectsPending: (_) => missingCallbacks++,
     );
     await expectLater(
       missingReplay.recordEvidence(
@@ -524,7 +537,6 @@ void main() {
     expect(missingProvider.calls, 0);
     expect(missingCallbacks, 0);
 
-    await record('evidence-corrupt-event');
     await database.customUpdate(
       'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
       variables: const [
@@ -542,7 +554,7 @@ void main() {
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
       eventContextProvider: corruptProvider,
-      questEventSink: (_) async => corruptCallbacks++,
+      onSideEffectsPending: (_) => corruptCallbacks++,
     );
     await expectLater(
       corruptReplay.recordEvidence(

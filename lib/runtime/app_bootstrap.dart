@@ -313,6 +313,9 @@ final class AppBootstrap {
     await database.customSelect('SELECT 1').getSingle();
     final idGenerator = const Uuid();
     final ownerOperationGate = DriftOwnerOperationGate(database);
+    const evidencePolicy = EvidenceEligibilityPolicySet();
+    const evidenceRolloutModeProvider =
+        FixedEvidencePolicyRolloutModeProvider.legacy();
     final localOwners = DriftLocalOwnerRepository(
       database,
       generateId: idGenerator.v4,
@@ -386,6 +389,8 @@ final class AppBootstrap {
       deleteOwnerSecrets: aiTutorSettings.deleteCredentialForOwner,
       deleteOwnerSecretsFenced: eraseOwnerCredentialsWithLease,
       ownerOperationGate: ownerOperationGate,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: evidenceRolloutModeProvider,
     );
     LearningReconciliationScheduler? ownerLearningReconciliation;
     final upgradeGuestOwner = UpgradeGuestOwner(
@@ -433,7 +438,11 @@ final class AppBootstrap {
       );
       syncEngine = SyncEngine(
         owners: localOwners,
-        store: DriftSyncStore(database),
+        store: DriftSyncStore(
+          database,
+          evidencePolicy: evidencePolicy,
+          rolloutModeProvider: evidenceRolloutModeProvider,
+        ),
         gateway: gateway,
         policyProvider: policy.call,
         ownerGate: ownerOperationGate,
@@ -537,10 +546,6 @@ final class AppBootstrap {
       appVersion: buildInfo.version,
       buildId: buildInfo.buildId,
     );
-    const evidencePolicy = EvidenceEligibilityPolicySet();
-    const evidenceRolloutModeProvider =
-        FixedEvidencePolicyRolloutModeProvider.legacy();
-
     // Seed before scheduling historical replay so pre-assignment evidence is
     // deterministically skipped instead of racing a newly created quest.
     try {

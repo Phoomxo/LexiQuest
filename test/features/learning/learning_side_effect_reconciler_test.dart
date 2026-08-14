@@ -65,7 +65,7 @@ void main() {
 
   tearDown(() => database.close());
 
-  Future<void> addEvent(
+  Future<EventEnvelopeV2> addEvent(
     int number, {
     String owner = 'owner-reconcile',
     DateTime? occurredAt,
@@ -86,25 +86,25 @@ void main() {
           ),
           mode: InsertMode.insertOrIgnore,
         );
-    await DriftLearningEventStore(database).append(
-      EventEnvelopeV2(
-        eventId: 'learning-event:attempt-$number',
-        eventType: 'QuizCompleted',
-        eventVersion: 1,
-        occurredAtUtc: at,
-        recordedAtUtc: at,
-        actorIdentity: owner,
-        ownerIdentity: owner,
-        aggregateType: 'LearningSession',
-        aggregateId: 'session-1',
-        idempotencyKey: 'learning-attempt:attempt-$number:v1',
-        consentContext: const ConsentContext.none(),
-        appVersion: '1.0.0',
-        buildId: 'test-build',
-        privacyClassification: PrivacyClassification.anonymized,
-        payload: {'attemptId': 'attempt-$number'},
-      ),
+    final event = EventEnvelopeV2(
+      eventId: 'learning-event:attempt-$number',
+      eventType: 'QuizCompleted',
+      eventVersion: 1,
+      occurredAtUtc: at,
+      recordedAtUtc: at,
+      actorIdentity: owner,
+      ownerIdentity: owner,
+      aggregateType: 'LearningSession',
+      aggregateId: 'session-1',
+      idempotencyKey: 'learning-attempt:attempt-$number:v1',
+      consentContext: const ConsentContext.none(),
+      appVersion: '1.0.0',
+      buildId: 'test-build',
+      privacyClassification: PrivacyClassification.anonymized,
+      payload: {'attemptId': 'attempt-$number'},
     );
+    await DriftLearningEventStore(database).append(event);
+    return event;
   }
 
   Future<void> addDeclaredAssessmentEvent(int number) async {
@@ -156,6 +156,11 @@ void main() {
         privacyClassification: PrivacyClassification.anonymized,
         payload: {
           'attemptId': 'attempt-$number',
+          'wordId': 'word-1',
+          'promptMode': 'assessmentResponse',
+          'correct': true,
+          'score': 100,
+          'attemptNumber': number,
           'evidenceContext': context.toJson(),
         },
       ),
@@ -166,6 +171,11 @@ void main() {
     required int number,
     required String projection,
     required bool applied,
+    String? ownerId,
+    String? payloadSourceEventId,
+    String? payloadOutcome,
+    Map<String, dynamic>? result,
+    Map<String, dynamic> extraPayload = const <String, dynamic>{},
   }) async {
     final at = DateTime.utc(2026, 8, number, 6);
     final sourceId = 'learning-event:attempt-$number';
@@ -181,8 +191,8 @@ void main() {
             eventVersion: 1,
             occurredAtUtc: at,
             recordedAtUtc: at,
-            actorIdentity: 'owner-reconcile',
-            ownerId: 'owner-reconcile',
+            actorIdentity: ownerId ?? 'owner-reconcile',
+            ownerId: ownerId ?? 'owner-reconcile',
             aggregateType: 'LearningProjection',
             aggregateId: sourceId,
             causationId: Value(sourceId),
@@ -194,13 +204,20 @@ void main() {
             buildId: 'test-build',
             privacyClassification: 'anonymized',
             payloadJson: jsonEncode({
-              'sourceEventId': sourceId,
+              'sourceEventId': payloadSourceEventId ?? sourceId,
               'projection': projection,
               'appliedVersion': 1,
-              'outcome': applied ? 'applied' : 'notApplicable',
-              'result': applied
-                  ? <String, dynamic>{'eligible': true}
-                  : <String, dynamic>{},
+              'outcome':
+                  payloadOutcome ?? (applied ? 'applied' : 'notApplicable'),
+              'result':
+                  result ??
+                  (projection == 'quest'
+                      ? <String, dynamic>{
+                          'eligible': applied,
+                          'rewardGrants': <Object>[],
+                        }
+                      : <String, dynamic>{}),
+              ...extraPayload,
             }),
           ),
         );
@@ -230,7 +247,7 @@ void main() {
       questSink: (_) async {
         if (++questCalls == 1) throw StateError('quest unavailable');
         return const LearningProjectionResult.applied(
-          payload: {'eligible': true},
+          payload: {'eligible': true, 'rewardGrants': <Object>[]},
         );
       },
       rewardSink: (_, questResult) async {
@@ -300,7 +317,10 @@ void main() {
         questSink: (event) async {
           calls.add(event.eventId);
           return const LearningProjectionResult.applied(
-            payload: <String, dynamic>{'eligible': true},
+            payload: <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': <Object>[],
+            },
           );
         },
       );
@@ -375,6 +395,67 @@ void main() {
     },
   );
 
+  test('malformed or cross-owner v1 receipts block before quest sink', () async {
+    for (var number = 1; number <= 4; number++) {
+      await addEvent(number);
+    }
+    await database
+        .into(database.localOwners)
+        .insert(
+          LocalOwnersCompanion.insert(id: 'other-owner', createdAtUtcMs: 2),
+        );
+    await addV1Receipt(
+      number: 1,
+      projection: 'quest',
+      applied: true,
+      payloadSourceEventId: 'learning-event:attempt-other',
+    );
+    await addV1Receipt(
+      number: 2,
+      projection: 'quest',
+      applied: true,
+      ownerId: 'other-owner',
+    );
+    await addV1Receipt(
+      number: 3,
+      projection: 'quest',
+      applied: true,
+      payloadOutcome: 'notApplicable',
+    );
+    await addV1Receipt(
+      number: 4,
+      projection: 'quest',
+      applied: true,
+      extraPayload: const <String, dynamic>{'unexpected': true},
+    );
+    var calls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      questSink: (_) async {
+        calls++;
+        return const LearningProjectionResult.applied();
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(calls, 0);
+    for (var number = 1; number <= 4; number++) {
+      final receipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:quest:learning-event:attempt-$number:v2',
+                ),
+              ))
+              .getSingle();
+      expect(receipt.eventType, 'LearningProjectionBlocked');
+      expect(
+        (jsonDecode(receipt.payloadJson) as Map<String, dynamic>)['reasonCode'],
+        'invalidV1Receipt',
+      );
+    }
+  });
+
   test(
     'missing quest prerequisite blocks reward cursor before later receipt',
     () async {
@@ -428,8 +509,9 @@ void main() {
       var rewardCalls = 0;
       final reconciler = LearningSideEffectReconciler(
         database,
-        questSink: (_) async =>
-            const LearningProjectionResult.applied(payload: {'eligible': true}),
+        questSink: (_) async => const LearningProjectionResult.applied(
+          payload: {'eligible': true, 'rewardGrants': <Object>[]},
+        ),
         rewardSink: (_, _) async {
           if (++rewardCalls == 1) throw StateError('grant failed');
           return const LearningProjectionResult.applied();
@@ -451,7 +533,9 @@ void main() {
       var rewardCalls = 0;
       final reconciler = LearningSideEffectReconciler(
         database,
-        questSink: (_) async => const LearningProjectionResult.applied(),
+        questSink: (_) async => const LearningProjectionResult.applied(
+          payload: {'eligible': true, 'rewardGrants': <Object>[]},
+        ),
         rewardSink: (_, _) async {
           rewardCalls++;
           return const LearningProjectionResult.notApplicable();
@@ -734,7 +818,7 @@ void main() {
       final reconciler = LearningSideEffectReconciler(
         database,
         questSink: (_) async => const LearningProjectionResult.notApplicable(
-          payload: {'eligible': false},
+          payload: {'eligible': false, 'rewardGrants': <Object>[]},
         ),
         rewardSink: (_, _) async {
           rewardCalls++;
@@ -757,6 +841,170 @@ void main() {
       );
     },
   );
+
+  test('invalid Quest prerequisite states block before Reward', () async {
+    final store = DriftLearningEventStore(database);
+    final sources = <EventEnvelopeV2>[];
+    for (var number = 1; number <= 15; number++) {
+      sources.add(await addEvent(number));
+    }
+    await store.markProjectionOutcome(
+      source: sources[0],
+      projection: 'quest',
+      appliedVersion: 2,
+      outcome: LearningProjectionOutcome.blocked,
+      reasonCode: 'upstreamQuestBlocked',
+    );
+    Map<String, dynamic> grant({
+      String ownerId = 'owner-reconcile',
+      String idempotencyKey = 'valid-grant',
+      Object xpAmount = 50,
+      Object? rewardItemId,
+    }) => <String, dynamic>{
+      'ownerId': ownerId,
+      'idempotencyKey': idempotencyKey,
+      'xpAmount': xpAmount,
+      if (rewardItemId != null) 'rewardItemId': rewardItemId,
+    };
+    final invalidAppliedResults = <Map<String, dynamic>>[
+      <String, dynamic>{'eligible': false, 'rewardGrants': <Object>[]},
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(ownerId: 'other-owner')],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[],
+        'unexpected': true,
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[
+          <String, dynamic>{...grant(), 'unexpected': true},
+        ],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(xpAmount: '50')],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[
+          grant(idempotencyKey: 'duplicate-grant'),
+          grant(idempotencyKey: 'duplicate-grant'),
+        ],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(idempotencyKey: 'x' * 257)],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(xpAmount: 0)],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(xpAmount: -1)],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[
+          grant(xpAmount: jsonDecode('9223372036854775808')),
+        ],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[grant(rewardItemId: 'x' * 257)],
+      },
+      <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': List<Object>.generate(
+          65,
+          (index) => grant(idempotencyKey: 'grant-$index'),
+        ),
+      },
+    ];
+    for (var index = 0; index < invalidAppliedResults.length; index++) {
+      await store.markProjectionOutcome(
+        source: sources[index + 1],
+        projection: 'quest',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+        result: invalidAppliedResults[index],
+      );
+    }
+    await store.markProjectionOutcome(
+      source: sources[13],
+      projection: 'quest',
+      appliedVersion: 2,
+      outcome: LearningProjectionOutcome.notApplicable,
+      result: <String, dynamic>{
+        'eligible': false,
+        'rewardGrants': <Object>[grant(idempotencyKey: 'skipped-grant')],
+      },
+    );
+    await store.markProjectionOutcome(
+      source: sources[14],
+      projection: 'quest',
+      appliedVersion: 2,
+      outcome: LearningProjectionOutcome.applied,
+      result: const <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[],
+      },
+    );
+    final wrongSourceId =
+        'learning-projection:quest:learning-event:attempt-15:v2';
+    final wrongSourceRow = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(wrongSourceId))).getSingle();
+    final wrongSourcePayload =
+        jsonDecode(wrongSourceRow.payloadJson) as Map<String, dynamic>;
+    wrongSourcePayload['sourceEventId'] = 'learning-event:attempt-other';
+    await database.customUpdate(
+      'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+      variables: <Variable<Object>>[
+        Variable<String>(jsonEncode(wrongSourcePayload)),
+        Variable<String>(wrongSourceId),
+      ],
+      updates: {database.eventsV2},
+    );
+    var rewardCalls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      rewardSink: (_, _) async {
+        rewardCalls++;
+        return const LearningProjectionResult.applied();
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(rewardCalls, 0);
+    for (var number = 1; number <= 15; number++) {
+      final receipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:reward:learning-event:attempt-$number:v2',
+                ),
+              ))
+              .getSingle();
+      expect(receipt.eventType, 'LearningProjectionBlocked');
+      final payload = jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+      expect(
+        payload['reasonCode'],
+        number == 1
+            ? 'questPrerequisiteBlocked'
+            : 'invalidQuestPrerequisiteReceipt',
+      );
+      if (number == 1) {
+        expect(
+          (payload['result'] as Map<String, dynamic>)['upstreamReasonCode'],
+          'upstreamQuestBlocked',
+        );
+      }
+    }
+  });
 
   test(
     'v1 skipped quest and reward bridge at v2 without invoking sinks',

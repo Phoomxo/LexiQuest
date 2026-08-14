@@ -12,6 +12,8 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 
@@ -74,6 +76,11 @@ Future<void> _insertAttempt(
   required int attemptNumber,
   EvidenceContext? evidenceContext,
 }) async {
+  final occurredAtUtc = DateTime.utc(
+    2026,
+    1,
+    1,
+  ).add(Duration(milliseconds: seqMs));
   await db
       .into(db.answerAttempts)
       .insert(
@@ -85,8 +92,7 @@ Future<void> _insertAttempt(
           promptMode: 'meaningChoice',
           isCorrect: isCorrect,
           attemptNumber: attemptNumber,
-          occurredAtUtcMs:
-              DateTime.utc(2026, 1, 1).millisecondsSinceEpoch + seqMs,
+          occurredAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
           evidenceClass: evidenceContext == null
               ? const Value.absent()
               : Value(evidenceContext.evidenceClass.name),
@@ -95,6 +101,48 @@ Future<void> _insertAttempt(
               : Value(jsonEncode(evidenceContext.toJson())),
         ),
       );
+  final context = evidenceContext;
+  if (context != null) {
+    await DriftLearningEventStore(db).append(
+      EventEnvelopeV2(
+        eventId: 'learning-event:attempt-$seqMs',
+        eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
+        eventVersion: 2,
+        occurredAtUtc: occurredAtUtc,
+        recordedAtUtc: occurredAtUtc,
+        actorIdentity: 'owner-rebuild',
+        ownerIdentity: 'owner-rebuild',
+        aggregateType: 'LearningSession',
+        aggregateId: 'session-rebuild',
+        idempotencyKey: 'learning-attempt:attempt-$seqMs:v2',
+        consentContext: ConsentContext(
+          researchConsentVersion: context.researchConsentVersion!,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: context.experimentId!,
+          variantId: context.cohort!,
+          assignedAtUtc: DateTime.utc(2025, 12, 31),
+        ),
+        contentRevision: context.contentRevision,
+        policyVersion: context.policyVersion,
+        appVersion: '0.0.0',
+        buildId: 'test',
+        privacyClassification: PrivacyClassification.anonymized,
+        payload: <String, dynamic>{
+          'attemptId': 'attempt-$seqMs',
+          'wordId': 'word-rebuild',
+          'promptMode': 'meaningChoice',
+          'correct': isCorrect,
+          'score': isCorrect ? 100 : 0,
+          'attemptNumber': attemptNumber,
+          'evidenceContext': context.toJson(),
+        },
+      ),
+    );
+  }
 }
 
 void main() {

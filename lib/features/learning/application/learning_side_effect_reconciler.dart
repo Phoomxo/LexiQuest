@@ -95,7 +95,7 @@ final class LearningSideEffectReconciler {
       late final LearningProjectionReceipt? v1Receipt;
       try {
         v1Receipt = await _events.readProjectionReceipt(
-          sourceEventId: pending.event.eventId,
+          source: pending.event,
           projection: projection,
           appliedVersion: 1,
         );
@@ -139,7 +139,12 @@ final class LearningSideEffectReconciler {
           projection: projection,
           appliedVersion: appliedVersion,
           outcome: LearningProjectionOutcome.notApplicable,
-          result: const <String, dynamic>{'reasonCode': 'evidenceIneligible'},
+          result: projection == 'quest'
+              ? const <String, dynamic>{
+                  'eligible': false,
+                  'rewardGrants': <Object>[],
+                }
+              : const <String, dynamic>{'reasonCode': 'evidenceIneligible'},
           decision: decisionPayload,
         );
         continue;
@@ -185,17 +190,43 @@ final class LearningSideEffectReconciler {
         );
         continue;
       }
-      if (pending.prerequisiteApplied == null) {
+      final decision = evidence.decisionSet.decisionFor(LearningProjection.xp);
+      final decisionPayload = _decisionPayload(decision);
+      if (pending.prerequisiteInvalid) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.blocked,
+          reasonCode: 'invalidQuestPrerequisiteReceipt',
+          decision: decisionPayload,
+        );
+        continue;
+      }
+      final prerequisite = pending.prerequisiteReceipt;
+      if (prerequisite == null) {
         // The prerequisite projection owns the same contiguous source prefix.
         // Do not let a later joined receipt advance reward beyond a gap.
         break;
       }
-      final decision = evidence.decisionSet.decisionFor(LearningProjection.xp);
-      final decisionPayload = _decisionPayload(decision);
+      if (prerequisite.outcome == LearningProjectionOutcome.blocked) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.blocked,
+          result: <String, dynamic>{
+            'upstreamReasonCode': prerequisite.reasonCode,
+          },
+          reasonCode: 'questPrerequisiteBlocked',
+          decision: decisionPayload,
+        );
+        continue;
+      }
       late final LearningProjectionReceipt? v1Receipt;
       try {
         v1Receipt = await _events.readProjectionReceipt(
-          sourceEventId: pending.event.eventId,
+          source: pending.event,
           projection: 'reward',
           appliedVersion: 1,
         );
@@ -210,6 +241,43 @@ final class LearningSideEffectReconciler {
         );
         continue;
       }
+      if (prerequisite.outcome == LearningProjectionOutcome.notApplicable) {
+        if (v1Receipt == null) {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.notApplicable,
+            result: const <String, dynamic>{
+              'reasonCode': 'questPrerequisiteNotApplied',
+            },
+            decision: decisionPayload,
+          );
+        } else if (v1Receipt.outcome ==
+            LearningProjectionOutcome.notApplicable) {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.notApplicable,
+            result: v1Receipt.result,
+            bridgedFromVersion: 1,
+            decision: decisionPayload,
+          );
+        } else {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.blocked,
+            reasonCode: v1Receipt.outcome == LearningProjectionOutcome.applied
+                ? 'rewardV1AppliedWithoutQuestPrerequisite'
+                : 'invalidV1Receipt',
+            decision: decisionPayload,
+          );
+        }
+        continue;
+      }
       if (v1Receipt != null) {
         if (v1Receipt.outcome == LearningProjectionOutcome.blocked) {
           await _events.markProjectionOutcome(
@@ -218,16 +286,6 @@ final class LearningSideEffectReconciler {
             appliedVersion: appliedVersion,
             outcome: LearningProjectionOutcome.blocked,
             reasonCode: 'invalidV1Receipt',
-            decision: decisionPayload,
-          );
-        } else if (v1Receipt.outcome == LearningProjectionOutcome.applied &&
-            pending.prerequisiteApplied != true) {
-          await _events.markProjectionOutcome(
-            source: pending.event,
-            projection: 'reward',
-            appliedVersion: appliedVersion,
-            outcome: LearningProjectionOutcome.blocked,
-            reasonCode: 'rewardV1AppliedWithoutQuestPrerequisite',
             decision: decisionPayload,
           );
         } else {
@@ -243,24 +301,19 @@ final class LearningSideEffectReconciler {
         }
         continue;
       }
-      if (!evidence.decisionSet.allows(LearningProjection.xp) ||
-          pending.prerequisiteApplied == false) {
+      if (!evidence.decisionSet.allows(LearningProjection.xp)) {
         await _events.markProjectionOutcome(
           source: pending.event,
           projection: 'reward',
           appliedVersion: appliedVersion,
           outcome: LearningProjectionOutcome.notApplicable,
-          result: <String, dynamic>{
-            'reasonCode': evidence.decisionSet.allows(LearningProjection.xp)
-                ? 'questPrerequisiteNotApplied'
-                : 'evidenceIneligible',
-          },
+          result: <String, dynamic>{'reasonCode': 'evidenceIneligible'},
           decision: decisionPayload,
         );
         continue;
       }
       try {
-        final outcome = await sink(pending.event, pending.prerequisitePayload);
+        final outcome = await sink(pending.event, prerequisite.result);
         await _events.markProjectionOutcome(
           source: pending.event,
           projection: 'reward',

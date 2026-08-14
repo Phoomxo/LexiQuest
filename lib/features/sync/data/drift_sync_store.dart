@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
@@ -17,9 +19,18 @@ import '../domain/sync_store.dart';
 import 'drift_owner_operation_gate.dart';
 
 final class DriftSyncStore implements SyncStore {
-  DriftSyncStore(this.database)
-    : projections = DriftLearningProjectionRebuilder(database),
-      rewardProjections = DriftRewardProjectionRebuilder(database);
+  DriftSyncStore(
+    this.database, {
+    EvidenceEligibilityPolicy evidencePolicy =
+        const EvidenceEligibilityPolicySet(),
+    EvidencePolicyRolloutModeProvider rolloutModeProvider =
+        const ContextEvidencePolicyRolloutModeProvider(),
+  }) : projections = DriftLearningProjectionRebuilder(
+         database,
+         evidencePolicy: evidencePolicy,
+         rolloutModeProvider: rolloutModeProvider,
+       ),
+       rewardProjections = DriftRewardProjectionRebuilder(database);
 
   static const int maxClaimLimit = 50;
   static const int maxSendReservations = maxSyncSendReservations;
