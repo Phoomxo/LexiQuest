@@ -1196,42 +1196,67 @@ git commit -m "feat: enforce evidence eligibility across projections"
 
 ### Task 8: Classify Current Activities and Complete Sync/Export Lifecycle
 
-**Files:**
-- Create: `lib/features/learning/application/current_activity_evidence.dart`
+**Audit correction boundary (2026-08-14):** the first implementation of
+Task 8 proved the activity declarations and export shape, but it left a second
+rollout authority in the activity adapter, resolved evidence identity after
+asynchronous providers, allowed production constructor fallbacks, treated the
+AnswerAttempt write version as a batch-wide choice, and synthesized a legacy
+event during sync ingress. Those behaviors are not promotable. Correct them in
+the two bounded commits below. Retain the already accepted export commit
+`22c5a7f` without amendment.
+
+**Files (corrected exact inventory):**
+- Create: `lib/features/learning/domain/evidence_policy_rollout.dart`
+- Modify: `lib/features/learning/data/drift_learning_event_store.dart`
+- Modify: `lib/features/learning/data/drift_learning_repository.dart`
+- Modify: `lib/features/learning/data/drift_learning_projection_rebuilder.dart`
+- Modify: `lib/features/learning/application/learning_side_effect_reconciler.dart`
+- Modify: `lib/features/learning/application/learning_use_cases.dart`
+- Modify: `lib/features/learning/application/current_activity_evidence.dart`
+- Modify: `lib/features/identity/data/drift_owner_upgrade_repository.dart`
+- Modify: `lib/runtime/app_dependencies.dart`
+- Modify: `lib/runtime/app_bootstrap.dart`
+- Modify: `lib/screens/associative_reading_launcher_screen.dart`
 - Modify: `lib/screens/quiz_screen.dart`
 - Modify: `lib/screens/srs_flashcards_screen.dart`
 - Modify: `lib/screens/associative_reading_session_screen.dart`
 - Modify: `lib/screens/ghost_shadow_duel_screen.dart`
 - Modify: `lib/screens/speak_to_text_screen.dart`
 - Modify: `lib/screens/shadowing_challenge_screen.dart`
+- Modify: `lib/features/sync/domain/sync_entity.dart`
+- Modify: `lib/features/sync/data/drift_sync_store.dart`
+- Modify: `lib/features/sync/data/firestore_sync_gateway.dart`
+- Retain: `lib/config/research_runtime_config.dart`
+- Modify: `firestore.rules`
+- Create: `test/features/learning/current_activity_evidence_test.dart`
+- Modify: `test/features/learning/learning_use_cases_test.dart`
+- Modify: `test/features/learning/drift_learning_event_store_test.dart`
+- Modify: `test/runtime/app_bootstrap_test.dart`
+- Modify: `test/architecture/provider_composition_boundary_test.dart`
+- Create: `test/scenarios/current_activity_evidence_bootstrap_test.dart`
+- Modify: `test/screens/associative_reading_launcher_screen_test.dart`
 - Modify: `test/screens/quiz_screen_test.dart`
 - Modify: `test/screens/srs_flashcards_screen_test.dart`
 - Modify: `test/screens/associative_reading_session_screen_test.dart`
 - Modify: `test/screens/ghost_shadow_duel_screen_test.dart`
 - Modify: `test/screens/speak_to_text_screen_voice_test.dart`
 - Modify: `test/screens/shadowing_challenge_screen_test.dart`
-- Modify: `lib/features/sync/domain/sync_entity.dart`
-- Modify: `lib/features/sync/data/drift_sync_store.dart`
-- Modify: `lib/features/sync/data/firestore_sync_gateway.dart`
-- Create: `lib/config/research_runtime_config.dart`
-- Modify: `lib/runtime/app_bootstrap.dart`
-- Modify: `firestore.rules`
+- Modify: `test/scenarios/production_feature_navigation_test.dart`
 - Modify: `test/features/sync/learning_event_sync_test.dart`
 - Modify: `test/features/sync/sync_contract_test.dart`
 - Modify: `test/features/sync/firestore_sync_gateway_test.dart`
-- Create: `test/config/research_runtime_config_test.dart`
-- Modify: `test/runtime/app_bootstrap_test.dart`
+- Retain: `test/config/research_runtime_config_test.dart`
 - Modify: `test/security/firestore-rules.test.cjs`
-- Modify: `lib/features/export/data/drift_export_reader.dart`
-- Modify: `lib/features/export/application/export_use_cases.dart`
-- Modify: `test/features/export/export_use_cases_test.dart`
-- Verify: `test/scenarios/complete_owner_export_delete_test.dart`
+- Retain: `lib/features/export/data/drift_export_reader.dart`
+- Retain: `lib/features/export/application/export_use_cases.dart`
+- Retain: `test/features/export/export_use_cases_test.dart`
+- Verify unchanged lifecycle: `test/scenarios/complete_owner_export_delete_test.dart`
 
 **Interfaces:**
 - Consumes: evidence-aware record API and schema v13.
 - Produces: explicit current-mode classification, attempt sync payload v2, research export schema v2, and unchanged deletion authority.
 
-- [ ] **Step 1: Add failing adapter/call-site tests**
+- [ ] **Step 1: Add failing authority, composition, pending-command, and session tests**
 
 Require these default declarations:
 
@@ -1244,28 +1269,125 @@ Require these default declarations:
 | Speak-to-text / shadowing | `pronunciation` |
 | Reading exposure without recall | `exposure` |
 
-Each retry test must reuse the same `sourceEvidenceId`, `occurredAtUtc`, and context after a simulated local failure.
+Tests must prove all of the following before implementation:
+
+- `EvidencePolicyRolloutModeProvider` has one domain definition and the exact
+  same instance reaches the repository, event store, side-effect reconciler,
+  projection rebuilder, owner-upgrade repository, sync store, and current-
+  activity adapter. `CurrentActivityRolloutProvider` is not an authority.
+- A Legacy bootstrap with no injected research-state provider composes one
+  baseline object that serves both activity snapshot resolution and
+  `LearningEventContextProvider`. Shadow or Enforced without an explicit
+  provider fails immediately after research configuration loads and before
+  entry-state or database construction. A valid injected read-only provider
+  composes successfully.
+- Capture is synchronous: `sourceEvidenceId`, `occurredAtUtc`, input/activity,
+  session and word IDs, prompt and response semantics, attempt number, hint
+  level, and provider provenance are frozen before either rollout or research
+  state is awaited. A delayed provider cannot move occurrence identity/time.
+- A pending command owns its `LearningUseCases`, memoizes its first successful
+  context, shares one in-flight record future across concurrent callers, and
+  requires an explicit retry after failure. A local-write retry reuses the
+  same ID, occurrence, context, and response semantics.
+- Every screen locks response controls while resolution/write is in flight and
+  derives success/failure UI from the pending command rather than mutable
+  widget state. Speech uses an utterance epoch plus first-final-result guard.
+  Associative Stage 6 freezes the complete batch before its first write and
+  idempotently retries only the incomplete portion after partial success.
+- The associative launcher creates the canonical learning session through
+  `LearningUseCases`, passes that returned session ID to the session screen,
+  and finishes it only after Stage 6 succeeds.
+
+- [ ] **Step 2: Converge rollout and research-state authority at bootstrap**
+
+Move `EvidencePolicyRolloutModeProvider`, its fixed test implementation, and
+the context-backed implementation into
+`features/learning/domain/evidence_policy_rollout.dart`. Temporarily re-export
+that domain file from `drift_learning_event_store.dart` so bounded legacy test
+imports remain source compatible; the event store no longer defines the
+authority. Remove production `.legacy()` default parameters from the
+repository, event store, reconciler, rebuilder, owner-upgrade repository, sync
+store, and adapter composition. Tests that intentionally exercise Legacy pass
+an explicit fixed provider.
+
+Create exactly one rollout provider after strict research configuration loads
+and pass the identical instance through every consumer above. Remove
+`CurrentActivityRolloutProvider` and its fixed implementation. The current-
+activity adapter consumes the canonical rollout provider; a widget never
+chooses rollout or instantiates a fallback policy.
+
+Inject one read-only canonical research-state provider whose implementation
+serves both current-activity snapshot resolution and
+`LearningEventContextProvider`. Product activation, research consent,
+experiment assignment, and rollout mode remain four independent inputs; the
+provider cannot infer one from another or mutate any of them. In Legacy, the
+absence of an injected provider creates one shared baseline object for both
+interfaces. In Shadow or Enforced, absence of an explicit provider throws
+immediately after `ResearchRuntimeConfig` load, before `_createEntryState()` or
+`createDatabase()`. A valid injected provider is used unchanged by the adapter
+and `LearningUseCases`.
+
+The shared snapshot supplies consent/assignment/protocol metadata and
+`engagementAllowed`. Legacy emits the frozen compatibility context from the
+typed activity declaration. Shadow and Enforced emit declared context from the
+same immutable snapshot. Only Ghost Duel may accept a protocol-owned evidence-
+class override, and only with a complete non-Legacy protocol snapshot.
+
+Expose the composed adapter as
+`AppDependenciesScope.of(context).currentActivityEvidence`. Each of the six
+screens resolves an explicitly injected adapter seam first, then the scoped
+adapter. Having `LearningUseCases` without an adapter is a composition error,
+not permission to construct a Legacy adapter locally.
+
+- [ ] **Step 3: Make pending evidence and associative sessions atomic at the application boundary**
+
+Add resolver-based recording to `LearningUseCases`: it resolves the active
+owner exactly once, passes that owner to the research snapshot resolver, then
+uses the same owner for replay/write. The resolver receives the already frozen
+occurrence and response command. No activity adapter or research provider
+performs a second active-owner lookup.
+
+Make current-activity capture synchronous and make the returned pending
+command own `LearningUseCases`. It freezes identity/time and every response
+semantic before starting asynchronous policy/research resolution. Cache a
+successfully resolved context for all later write attempts; coalesce concurrent
+record calls onto one future; after any failure, keep controls locked until the
+caller explicitly chooses retry or cancel. Response controls remain locked
+while that pending command exists; the dedicated retry/cancel controls own the
+transition. Retry never regenerates ID/time or reads mutable UI response state.
+
+Apply that state machine to all six screens. Speak-to-text accepts only the
+first final transcript for the current utterance epoch and ignores stale or
+duplicate callbacks. Associative Stage 6 creates the whole pending batch before
+writing item one, remembers committed items, and retries the same remaining
+commands after a partial failure. The launcher starts the canonical
+associative-reading session through `LearningUseCases`, passes its session ID,
+and calls canonical finish only after Stage 6 completes successfully.
+
+Do not modify `lib/screens/choose_mode_screen.dart` or
+`lib/screens/main_navigation_screen.dart`, and do not add a Speak-to-text route.
+`production_feature_navigation_test.dart` is verification that the existing
+navigation surface remains unchanged.
+
+- [ ] **Step 4: Verify and commit provider/pending/screens/session correction**
+
+Run these exact command groups:
 
 ```powershell
-flutter test --no-pub test/screens/quiz_screen_test.dart --plain-name "retry reuses pending evidence identity"
+flutter test --no-pub test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart
+flutter test --no-pub test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
 ```
 
-Expected: failure because the screen still calls the compatibility wrapper and regenerates evidence identity.
-
-- [ ] **Step 2: Update call sites through adapters, not policy duplication**
-
-Create focused factories in `current_activity_evidence.dart`; screens choose only an activity/input declaration and receive a validated `EvidenceContext`. Migrate all six screens from the compatibility `recordAnswer` wrapper to `recordEvidence`. The injected rollout/research-context providers—not widgets—supply policy mode, consent/assignment metadata, and `engagementAllowed`. Production defaults to Legacy, which emits the compatibility context while retaining the typed semantic declaration. Shadow emits declared context but keeps compatibility side effects and records comparison; Enforced emits declared context and applies v1. Each screen stores the pending source ID, UTC occurrence time, and context until local commit succeeds. Do not paste policy decisions into widgets and do not generate a new identity on retry. This task does not promote production beyond Legacy.
-
-- [ ] **Step 3: Verify and commit explicit activity classification**
+Then preserve the exact first correction boundary:
 
 ```powershell
-flutter test --no-pub test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart
-git add -- lib/features/learning/application/current_activity_evidence.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart
+dart format --output=none --set-exit-if-changed lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
+git add -- lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
 git diff --cached --check
-git commit -m "feat: classify current learning evidence"
+git commit -m "fix: close current evidence rollout boundary"
 ```
 
-- [ ] **Step 4: Write failing sync v2 tests and rules tests**
+- [ ] **Step 5: Write failing row-specific sync v2 and rules tests**
 
 Attempt payload v2 adds:
 
@@ -1295,35 +1417,75 @@ Attempt payload v2 adds:
 }
 ```
 
-New clients read AnswerAttempt payload v1 as `legacyInferred`; new clients emit AnswerAttempt v2 only after rules accept both exact schemas. Rules reject unknown keys, invalid enum values, mismatched top-level/nested classes, or oversized JSON fields.
+Tests must cover a mixed outbound batch containing both a migrated
+`legacyInferred` attempt and declared evidence. The former is payload v1 and
+the latter v2 regardless of row order. They also reject legacy-inferred v2 at
+Drift merge/existing-row validation, gateway preflight and decode before any
+transaction opens, and Firestore rules. A v1 ingress test proves no synthetic
+legacy learning event is created.
 
-- [ ] **Step 5: Implement sync v2 and exact rules validation**
+- [ ] **Step 6: Enforce row-specific sync versions and exact rules**
 
-Replace the single global payload-version assumption with an exhaustive per-`SyncCollection` policy. `answerAttempts` can read versions 1/2; every existing non-attempt collection remains version 1. An injected `SyncPayloadRollout` selects AnswerAttempt writes and defaults to v1 until the updated rules are actually deployed; internal tests exercise v2. Later `experimentAssignments` and `assessmentRuns` start at version 1. Tests must assert every collection's supported versions and production-default write version so adding one cannot silently bump all others. Preserve immutable comparison of the complete evidence context, including feature-contract revision/hash. Deploy rules before changing the AnswerAttempt write rollout on research devices.
+Keep the exhaustive per-`SyncCollection` read policy: `answerAttempts` reads
+versions 1/2 and every existing non-attempt collection remains v1. The runtime
+write configuration is a deployment ceiling, not a batch-wide AnswerAttempt
+version. Select the payload version from each canonical row:
 
-Apply that policy inside `FirestoreSyncGateway`, not only the Drift codec: reject an unsupported mutation version before opening a transaction, decode entity versions against the requested collection, and validate acknowledgement `entityType`/schema version against that collection. Add gateway tests proving AnswerAttempt v1/v2 acceptance, v2 rejection for every legacy-v1-only collection, and no Firestore write on preflight rejection. Task 11 and Task 12 extend the same exhaustive test when their collections are introduced.
+- `legacyInferred` evidence always emits payload v1, including when the
+  configured deployment can write v2;
+- payload v2 requires `classificationSource == declared` and the complete
+  canonical evidence context;
+- declared evidence is never down-converted to v1; an unsafe v1 deployment
+  fails closed; and
+- a mixed batch preserves the row-specific v1/v2 choice.
 
-Add a separate, non-secret `ResearchRuntimeConfig` for evidence rollout, AnswerAttempt write version, and Firestore-rules revision. Do not put this safety configuration through the existing tolerant `_loadConfig()` path, which intentionally converts Voice/AI endpoint errors to `null`. Inject a `ResearchRuntimeConfigLoader` into `AppBootstrap`; the general constructor defaults it to an explicit Legacy/v1 safe value so existing tests and non-production composition remain source compatible, while `production()` explicitly loads `LEXIQUEST_EVIDENCE_ROLLOUT`, `LEXIQUEST_ANSWER_ATTEMPT_WRITE_VERSION`, and `LEXIQUEST_FIRESTORE_RULES_REVISION` before composing repositories. Any production parse/invariant error propagates from `initialize()`. Define one reviewed constant (for example `answerAttemptV2RulesRevision = 'answer-attempt-v2-r1'`) beside the sync policy. Shadow or Enforced is invalid unless AnswerAttempt write version is 2 and the configured rules revision equals that reviewed constant. Legacy defaults to AnswerAttempt v1 and the legacy rules sentinel; malformed values or an unsafe combination fail startup closed. Never silently down-convert declared evidence to payload v1. Unit tests cover environment/value parsing, production defaults, every invalid combination, propagation through bootstrap, and a valid explicitly configured research combination.
+Apply the declared-only v2 invariant in every ingress boundary. Drift merge
+and existing-row replay reject a legacy-inferred v2 payload. The Firestore
+gateway rejects it during preflight/decode before opening a transaction and
+still validates collection, entity type, and acknowledgement version. Rules
+require exact v1/v2 key sets, class equality, bounded identifiers, and declared
+classification for v2. Version-1 legacy ingress materializes only the frozen
+v13 compatibility context; it does not synthesize a legacy learning event.
 
-- [ ] **Step 6: Add research export v2 fields**
+Retain the strict, non-secret `ResearchRuntimeConfig` and reviewed rules
+revision. Production remains Legacy/v1 until deployment evidence permits v2.
+Product activation, consent, assignment, and rollout remain separate from the
+sync payload decision.
 
-Export `evidenceClass`, `skillId`, `hintLevel`, `policyVersion`, `contentRevision`, `featureContractRevision`, `featureContractHash`, `classificationSource`, `rolloutMode`, `protocolId`, `protocolVersion`, `experimentId`, `experimentVersion`, `assignmentId`, `cohort`, `researchConsentVersion`, `instrumentId`, `instrumentVersion`, `formId`, `formVersion`, `assessmentItemId`, `assessmentResponseCode`, and `scoringRuleVersion`. Do not export raw provider secrets. Withdrawal/delete continue using the existing `answer_attempts` lifecycle row; no new table is added in this task.
+- [ ] **Step 7: Verify and commit row-specific sync/rules correction**
 
-- [ ] **Step 7: Verify lifecycle and commit in two reviewable commits**
+Run the remaining exact command groups:
 
 ```powershell
 flutter test --no-pub test/features/sync/learning_event_sync_test.dart test/features/sync/sync_contract_test.dart test/features/sync/firestore_sync_gateway_test.dart
-flutter test --no-pub test/config/research_runtime_config_test.dart test/runtime/app_bootstrap_test.dart
 npm run test:rules
-git add -- lib/features/sync/domain/sync_entity.dart lib/features/sync/data/drift_sync_store.dart lib/features/sync/data/firestore_sync_gateway.dart lib/config/research_runtime_config.dart lib/runtime/app_bootstrap.dart firestore.rules test/features/sync/learning_event_sync_test.dart test/features/sync/sync_contract_test.dart test/features/sync/firestore_sync_gateway_test.dart test/config/research_runtime_config_test.dart test/runtime/app_bootstrap_test.dart test/security/firestore-rules.test.cjs
-git diff --cached --check
-git commit -m "feat: sync evidence context with payload v2"
-
-flutter test --no-pub test/features/export/export_use_cases_test.dart test/scenarios/complete_owner_export_delete_test.dart
-git add -- lib/features/export/data/drift_export_reader.dart lib/features/export/application/export_use_cases.dart test/features/export/export_use_cases_test.dart
-git diff --cached --check
-git commit -m "feat: export versioned learning evidence"
 ```
+
+Then preserve the exact second correction boundary:
+
+```powershell
+dart format --output=none --set-exit-if-changed lib/features/sync/domain/sync_entity.dart lib/features/sync/data/drift_sync_store.dart lib/features/sync/data/firestore_sync_gateway.dart test/features/sync/learning_event_sync_test.dart test/features/sync/sync_contract_test.dart test/features/sync/firestore_sync_gateway_test.dart
+git add -- lib/features/sync/domain/sync_entity.dart lib/features/sync/data/drift_sync_store.dart lib/features/sync/data/firestore_sync_gateway.dart firestore.rules test/features/sync/learning_event_sync_test.dart test/features/sync/sync_contract_test.dart test/features/sync/firestore_sync_gateway_test.dart test/security/firestore-rules.test.cjs
+git diff --cached --check
+git commit -m "fix: enforce row-specific evidence sync versions"
+```
+
+- [ ] **Step 8: Retain research export v2 and unchanged lifecycle**
+
+Export `evidenceClass`, `skillId`, `hintLevel`, `policyVersion`, `contentRevision`, `featureContractRevision`, `featureContractHash`, `classificationSource`, `rolloutMode`, `protocolId`, `protocolVersion`, `experimentId`, `experimentVersion`, `assignmentId`, `cohort`, `researchConsentVersion`, `instrumentId`, `instrumentVersion`, `formId`, `formVersion`, `assessmentItemId`, `assessmentResponseCode`, and `scoringRuleVersion`. Do not export raw provider secrets. Withdrawal/delete continue using the existing `answer_attempts` lifecycle row; no new table is added in this task.
+
+The export implementation and lifecycle verification remain in accepted commit
+`22c5a7f` (`feat: export versioned learning evidence`). Do not amend or duplicate
+that commit while closing the two audit corrections above.
+
+**Explicit deferral ledger:**
+- Process-death pending-command recovery remains deferred; this task guarantees
+  stable identity only for retries within the current process.
+- The Speak-to-text route remains absent; this task changes no route surface.
+- The persisted canonical research-state provider belongs to Task 11; Task 8
+  supplies only the injected read-only provider seam and Legacy baseline.
+- Ghost Duel session-close retry remains deferred; answer evidence retry is in
+  scope, but durable recovery of a failed session-close write is not.
 
 ---
 
