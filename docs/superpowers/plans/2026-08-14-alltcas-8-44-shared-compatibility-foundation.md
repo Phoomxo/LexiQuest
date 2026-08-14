@@ -858,10 +858,19 @@ TextColumn get evidenceContextJson => text().withDefault(
      '"featureContractRevision":"legacy-unversioned",'
      '"featureContractHash":"0000000000000000000000000000000000000000000000000000000000000000",'
      '"classificationSource":"legacyInferred","rolloutMode":"legacy",'
+     '"protocolId":null,"protocolVersion":null,'
+     '"experimentId":null,"experimentVersion":null,'
+     '"assignmentId":null,"cohort":null,"researchConsentVersion":null,'
+     '"instrumentId":null,"instrumentVersion":null,'
+     '"formId":null,"formVersion":null,'
+     '"assessmentItemId":null,"assessmentResponseCode":null,'
+     '"scoringRuleVersion":null,'
     '"engagementAllowed":true}',
   ),
 )();
 ```
+
+The migration JSON keeps every nullable canonical key present as explicit JSON `null` so strict schema-v1 decoding remains stable.
 
 Introduce `AppDatabase.currentSchemaVersion = 13` and make `schemaVersion` return that constant. Replace every test assertion that means "the current schema" with this named constant; keep historical fixture versions literal. Rename misleading "fresh v12" test titles to "fresh current schema preserves the v12 contract." In `onUpgrade`, for `from < 13`, add both columns with `_addColumnIfMissing`. Do not alter existing answer IDs, SRS rows, points, achievements, events, or outbox rows.
 
@@ -872,17 +881,11 @@ Add required `EvidenceContext evidenceContext` to `RecordAnswerCommand`. Insert 
 For existing production callers during this task, pass one explicit compatibility context:
 
 ```dart
-const EvidenceContext(
+EvidenceContext.legacyCompatibility(
   evidenceClass: EvidenceClass.independentRecall,
   skillId: 'legacy-current-activity',
   hintLevel: 0,
-  policyVersion: 'legacy-v1',
   contentRevision: 'legacy-unknown',
-  featureContractRevision: 'legacy-unversioned',
-  featureContractHash:
-      '0000000000000000000000000000000000000000000000000000000000000000',
-  classificationSource: EvidenceClassificationSource.legacyInferred,
-  rolloutMode: EvidencePolicyRolloutMode.legacy,
   engagementAllowed: true,
 )
 ```
