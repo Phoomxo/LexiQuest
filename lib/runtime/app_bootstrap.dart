@@ -47,6 +47,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/domain/learning_event_context.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -589,6 +590,7 @@ final class AppBootstrap {
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
       eventAdapter: eventAdapter,
+      eventContextProvider: const BaselineLearningEventContextProvider(),
       onSideEffectsPending: learningReconciliation.request,
     );
     final exports = ExportUseCases(

@@ -4,6 +4,7 @@ import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/evidence_context.dart';
+import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 
@@ -34,11 +35,19 @@ final class LearningUseCases {
     required this.buildInfo,
     this.onLocalMutation,
     this.shadowOrchestrator,
-    this.eventAdapter,
+    EventV1ToV2Adapter? eventAdapter,
+    LearningEventContextProvider? eventContextProvider,
     this.questEventSink,
     this.streakEventSink,
     this.onSideEffectsPending,
-  });
+  }) : eventAdapter =
+           eventAdapter ??
+           EventV1ToV2Adapter(
+             appVersion: buildInfo.version,
+             buildId: buildInfo.buildId,
+           ),
+       eventContextProvider =
+           eventContextProvider ?? const BaselineLearningEventContextProvider();
 
   final LocalOwnerRepository owners;
   final LearningRepository repository;
@@ -51,9 +60,11 @@ final class LearningUseCases {
   /// the V2 reward eligibility pipeline in dry-run mode.  Null = disabled.
   final ShadowRewardOrchestrator? shadowOrchestrator;
 
-  /// Required when [shadowOrchestrator] is non-null; adapts V1 commands to
-  /// [EventEnvelopeV2] for shadow processing.
-  final EventV1ToV2Adapter? eventAdapter;
+  /// Adapts canonical evidence commands to immutable V2 events.
+  final EventV1ToV2Adapter eventAdapter;
+
+  /// Resolves consent and assignment metadata outside the widget layer.
+  final LearningEventContextProvider eventContextProvider;
 
   /// Quest pipeline hook — when non-null, the V2 event from each answer is
   /// forwarded to [QuestUseCases.processEvent] (or a compatible consumer).
@@ -168,38 +179,49 @@ final class LearningUseCases {
     );
   }
 
-  Future<AnswerRecordResult> recordAnswer({
+  Future<AnswerRecordResult> recordEvidence({
+    required String sourceEvidenceId,
+    required DateTime occurredAtUtc,
     required String sessionId,
     required String wordId,
     required String promptMode,
     required bool isCorrect,
     required int? responseTimeMs,
     required int attemptNumber,
+    required EvidenceContext evidenceContext,
     String? providerProvenance,
   }) async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final attemptId = 'attempt:${_nextId()}';
+    final canonicalEvidenceId = _stableEvidenceId(sourceEvidenceId);
+    final canonicalOccurredAtUtc = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+    evidenceContext.validate();
     final canonicalSessionId = _requiredId(sessionId, 'sessionId');
     final canonicalWordId = _requiredId(wordId, 'wordId');
     final canonicalPromptMode = _requiredId(promptMode, 'promptMode');
-    final occurredAtUtc = _now();
-    final durableEvent = eventAdapter?.adaptFromCommand(
-      sourceEventId: attemptId,
+    final owner = await owners.getOrCreateActiveOwner();
+    final learningEventContext = await eventContextProvider.resolve(
+      ownerId: owner.id,
+      evidenceContext: evidenceContext,
+      occurredAtUtc: canonicalOccurredAtUtc,
+    );
+    learningEventContext.validateAgainst(
+      evidenceContext: evidenceContext,
+      occurredAtUtc: canonicalOccurredAtUtc,
+    );
+    final durableEvent = eventAdapter.adaptFromCommand(
+      sourceEvidenceId: canonicalEvidenceId,
       ownerId: owner.id,
       sessionId: canonicalSessionId,
       wordId: canonicalWordId,
       promptMode: canonicalPromptMode,
       isCorrect: isCorrect,
-      responseTimeMs: responseTimeMs,
       attemptNumber: attemptNumber,
-      occurredAtUtc: occurredAtUtc,
-      providerProvenance: providerProvenance,
-      appVersion: buildInfo.version,
-      buildId: buildInfo.buildId,
+      occurredAtUtc: canonicalOccurredAtUtc,
+      evidenceContext: evidenceContext,
+      learningEventContext: learningEventContext,
     );
     final result = await repository.recordAnswer(
       RecordAnswerCommand(
-        id: attemptId,
+        id: canonicalEvidenceId,
         ownerId: owner.id,
         sessionId: canonicalSessionId,
         wordId: canonicalWordId,
@@ -207,14 +229,8 @@ final class LearningUseCases {
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        occurredAtUtc: occurredAtUtc,
-        evidenceContext: EvidenceContext.legacyCompatibility(
-          evidenceClass: EvidenceClass.independentRecall,
-          skillId: 'legacy-current-activity',
-          hintLevel: 0,
-          contentRevision: 'legacy-unknown',
-          engagementAllowed: true,
-        ),
+        occurredAtUtc: canonicalOccurredAtUtc,
+        evidenceContext: evidenceContext,
         providerProvenance: providerProvenance,
         event: durableEvent,
       ),
@@ -224,7 +240,7 @@ final class LearningUseCases {
     // Shadow V2 reward pipeline — runs after production succeeds.
     // Errors are swallowed: shadow mode must never break production.
     final shadow = shadowOrchestrator;
-    if (shadow != null && durableEvent != null) {
+    if (shadow != null) {
       try {
         await shadow.processShadow(durableEvent);
       } catch (_) {
@@ -240,7 +256,7 @@ final class LearningUseCases {
       scheduleReconciliation(owner.id);
     } else {
       final questSink = questEventSink;
-      if (questSink != null && durableEvent != null) {
+      if (questSink != null) {
         try {
           await questSink(durableEvent);
         } catch (_) {
@@ -255,6 +271,40 @@ final class LearningUseCases {
     }
 
     return result;
+  }
+
+  /// Temporary compatibility entry point while production screens migrate to
+  /// caller-owned evidence identity in Foundation Task 8.
+  @Deprecated('Use recordEvidence with a retained caller-owned identity.')
+  Future<AnswerRecordResult> recordAnswer({
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    String? providerProvenance,
+  }) {
+    final sourceEvidenceId = 'attempt:${_nextId()}';
+    final occurredAtUtc = _now();
+    return recordEvidence(
+      sourceEvidenceId: sourceEvidenceId,
+      occurredAtUtc: occurredAtUtc,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      evidenceContext: EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'legacy-current-activity',
+        hintLevel: 0,
+        contentRevision: 'legacy-unknown',
+        engagementAllowed: true,
+      ),
+      providerProvenance: providerProvenance,
+    );
   }
 
   Future<LearningSessionSummary> finishSession(String sessionId) async {
@@ -356,6 +406,24 @@ final class LearningUseCases {
     final value = nowUtc();
     if (!value.isUtc) {
       throw ArgumentError.value(value, 'nowUtc', 'must be UTC');
+    }
+    return value;
+  }
+
+  DateTime _requiredUtc(DateTime value, String field) {
+    if (!value.isUtc) {
+      throw ArgumentError.value(value, field, 'must be UTC');
+    }
+    return value;
+  }
+
+  String _stableEvidenceId(String value) {
+    if (value.trim() != value || value.isEmpty || value.runes.length > 256) {
+      throw ArgumentError.value(
+        value,
+        'sourceEvidenceId',
+        'invalid stable identifier',
+      );
     }
     return value;
   }

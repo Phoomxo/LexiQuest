@@ -7,6 +7,7 @@ import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_event_store.dart';
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/learning_evidence_contract.dart';
+import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
@@ -473,19 +474,80 @@ final class DriftLearningRepository implements LearningRepository {
   void _validateAnswer(RecordAnswerCommand command) {
     final occurredAt = _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
     if (!LearningEvidenceContract.validAttempt(
-      id: command.id,
-      ownerId: command.ownerId,
-      sessionId: command.sessionId,
-      wordId: command.wordId,
-      promptMode: command.promptMode,
-      responseTimeMs: command.responseTimeMs,
-      attemptNumber: command.attemptNumber,
-      occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
-      providerProvenance: command.providerProvenance,
-      evidenceClass: command.evidenceContext.evidenceClass.name,
-      evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
-    )) {
+          id: command.id,
+          ownerId: command.ownerId,
+          sessionId: command.sessionId,
+          wordId: command.wordId,
+          promptMode: command.promptMode,
+          responseTimeMs: command.responseTimeMs,
+          attemptNumber: command.attemptNumber,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          providerProvenance: command.providerProvenance,
+          evidenceClass: command.evidenceContext.evidenceClass.name,
+          evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
+        ) ||
+        !_validCorrelatedEvent(command)) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
+    }
+  }
+
+  bool _validCorrelatedEvent(RecordAnswerCommand command) {
+    final event = command.event;
+    // Retained for bounded legacy/sync ingress. Production recordEvidence
+    // always supplies the correlated V2 event.
+    if (event == null) return true;
+    final context = command.evidenceContext;
+    final payload = event.payload;
+    const payloadKeys = <String>{
+      'attemptId',
+      'wordId',
+      'promptMode',
+      'correct',
+      'score',
+      'attemptNumber',
+      'evidenceContext',
+    };
+    if (payload.length != payloadKeys.length ||
+        !payload.keys.every(payloadKeys.contains)) {
+      return false;
+    }
+    final envelopeMatches =
+        event.eventId == 'learning-event:${command.id}' &&
+        event.eventType ==
+            (command.isCorrect ? 'QuizCompleted' : 'QuizAttempted') &&
+        event.eventVersion == 2 &&
+        event.occurredAtUtc == command.occurredAtUtc &&
+        event.recordedAtUtc == command.occurredAtUtc &&
+        event.actorIdentity == command.ownerId &&
+        event.ownerIdentity == command.ownerId &&
+        event.aggregateType == 'LearningSession' &&
+        event.aggregateId == command.sessionId &&
+        event.idempotencyKey == 'learning-attempt:${command.id}:v2' &&
+        event.policyVersion == context.policyVersion &&
+        event.contentRevision == context.contentRevision &&
+        payload['attemptId'] == command.id &&
+        payload['wordId'] == command.wordId &&
+        payload['promptMode'] == command.promptMode &&
+        payload['correct'] == command.isCorrect &&
+        payload['score'] == (command.isCorrect ? 100 : 0) &&
+        payload['attemptNumber'] == command.attemptNumber &&
+        jsonEncode(payload['evidenceContext']) == jsonEncode(context.toJson());
+    if (!envelopeMatches) return false;
+    try {
+      LearningEventContext.fromEvidenceEnvelope(
+        envelope: event,
+        evidenceContext: context,
+      ).validateAgainst(
+        evidenceContext: context,
+        occurredAtUtc: command.occurredAtUtc,
+      );
+      return true;
+    } on ArgumentError {
+      return false;
+    } on FormatException {
+      return false;
+    } on StateError {
+      return false;
     }
   }
 

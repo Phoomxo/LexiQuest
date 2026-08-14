@@ -3,15 +3,20 @@ import 'dart:convert';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
   late AppDatabase database;
   late LearningUseCases useCases;
+  late DriftLocalOwnerRepository owners;
   late DateTime now;
   late int nextId;
 
@@ -19,7 +24,7 @@ void main() {
     database = AppDatabase(NativeDatabase.memory());
     now = DateTime.utc(2026, 7, 30, 9);
     nextId = 0;
-    final owners = DriftLocalOwnerRepository(
+    owners = DriftLocalOwnerRepository(
       database,
       generateId: () => 'guest',
       nowUtc: () => now,
@@ -66,6 +71,7 @@ void main() {
       generateId: () => '${++nextId}',
       nowUtc: () => now,
       buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: const BaselineLearningEventContextProvider(),
     );
   });
 
@@ -133,6 +139,417 @@ void main() {
     },
   );
 
+  test('recordEvidence reuses one source identity across retry', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    final occurredAtUtc = now.add(const Duration(seconds: 2));
+    final evidenceContext = _legacyEvidence();
+
+    final first = await useCases.recordEvidence(
+      sourceEvidenceId: 'evidence-1',
+      occurredAtUtc: occurredAtUtc,
+      sessionId: quiz.id,
+      wordId: quiz.questions.single.word.id,
+      promptMode: 'meaningChoice',
+      isCorrect: true,
+      responseTimeMs: 2000,
+      attemptNumber: 1,
+      evidenceContext: evidenceContext,
+    );
+    final retry = await useCases.recordEvidence(
+      sourceEvidenceId: 'evidence-1',
+      occurredAtUtc: occurredAtUtc,
+      sessionId: quiz.id,
+      wordId: quiz.questions.single.word.id,
+      promptMode: 'meaningChoice',
+      isCorrect: true,
+      responseTimeMs: 2000,
+      attemptNumber: 1,
+      evidenceContext: evidenceContext,
+    );
+
+    expect(first.inserted, isTrue);
+    expect(retry.inserted, isFalse);
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    final learningEvents = (await database.select(database.eventsV2).get())
+        .where((row) => row.eventId == 'learning-event:evidence-1')
+        .toList(growable: false);
+    expect(learningEvents, hasLength(1));
+    expect(learningEvents.single.eventVersion, 2);
+    expect(
+      learningEvents.single.idempotencyKey,
+      'learning-attempt:evidence-1:v2',
+    );
+    final attemptOutbox =
+        (await database.select(database.outboxOperations).get())
+            .where(
+              (row) =>
+                  row.entityType == 'attempt' && row.entityId == 'evidence-1',
+            )
+            .toList(growable: false);
+    expect(attemptOutbox, hasLength(1));
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      questSink: (_) async => const LearningProjectionResult.applied(),
+      streakSink: (_) async => const LearningProjectionResult.applied(),
+      rewardSink: (_, _) async => const LearningProjectionResult.applied(),
+    );
+    await reconciler.reconcileOwner(learningEvents.single.ownerId);
+    await reconciler.reconcileOwner(learningEvents.single.ownerId);
+    final receiptIds = (await database.select(database.eventsV2).get())
+        .where((row) => row.eventId.startsWith('learning-projection:'))
+        .map((row) => row.eventId)
+        .toList(growable: false);
+    expect(receiptIds, hasLength(3));
+    expect(receiptIds.toSet(), hasLength(receiptIds.length));
+
+    await expectLater(
+      useCases.recordEvidence(
+        sourceEvidenceId: 'evidence-1',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: false,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidenceContext,
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      useCases.recordEvidence(
+        sourceEvidenceId: 'evidence-1',
+        occurredAtUtc: occurredAtUtc.add(const Duration(milliseconds: 1)),
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidenceContext,
+      ),
+      throwsStateError,
+    );
+    await expectLater(
+      useCases.recordEvidence(
+        sourceEvidenceId: 'evidence-1',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: _legacyEvidence(skillId: 'changed-skill'),
+      ),
+      throwsStateError,
+    );
+  });
+
+  test('recordEvidence rejects an unstable caller-owned identity', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    for (final sourceEvidenceId in <String>[
+      ' evidence-1',
+      'evidence-1 ',
+      '',
+      'x' * 257,
+    ]) {
+      await expectLater(
+        useCases.recordEvidence(
+          sourceEvidenceId: sourceEvidenceId,
+          occurredAtUtc: now,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2000,
+          attemptNumber: 1,
+          evidenceContext: _legacyEvidence(),
+        ),
+        throwsArgumentError,
+        reason: 'source identity must be canonical: "$sourceEvidenceId"',
+      );
+    }
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+  });
+
+  test('recordEvidence rejects a non-UTC occurrence time', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+
+    await expectLater(
+      useCases.recordEvidence(
+        sourceEvidenceId: 'evidence-local-time',
+        occurredAtUtc: DateTime(2026, 8, 14, 9),
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: _legacyEvidence(),
+      ),
+      throwsArgumentError,
+    );
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+  });
+
+  test(
+    'baseline event context is no-research for Legacy and otherwise fails closed',
+    () async {
+      const provider = BaselineLearningEventContextProvider();
+      for (final evidenceClass in EvidenceClass.values.where(
+        (value) => value != EvidenceClass.assessment,
+      )) {
+        final evidence = EvidenceContext.legacyCompatibility(
+          evidenceClass: evidenceClass,
+          skillId: 'legacy-${evidenceClass.name}',
+          hintLevel: 0,
+          contentRevision: 'legacy-unknown',
+          engagementAllowed: true,
+        );
+
+        final eventContext = await provider.resolve(
+          ownerId: 'guest',
+          evidenceContext: evidence,
+          occurredAtUtc: now,
+        );
+
+        expect(eventContext.consentContext.researchConsentVersion, 0);
+        expect(eventContext.experimentContext, isNull);
+        expect(eventContext.protocolId, isNull);
+        expect(eventContext.protocolVersion, isNull);
+        expect(eventContext.experimentVersion, isNull);
+        expect(eventContext.assignmentId, isNull);
+        expect(
+          eventContext.featureContractIdentity,
+          FeatureContractIdentity(
+            revision: evidence.featureContractRevision,
+            semanticHash: evidence.featureContractHash,
+          ),
+        );
+      }
+
+      for (final evidence in <EvidenceContext>[
+        _declaredEvidence(EvidencePolicyRolloutMode.shadow),
+        _declaredEvidence(EvidencePolicyRolloutMode.enforced),
+        _declaredEvidence(
+          EvidencePolicyRolloutMode.legacy,
+          evidenceClass: EvidenceClass.assessment,
+        ),
+      ]) {
+        await expectLater(
+          provider.resolve(
+            ownerId: 'guest',
+            evidenceContext: evidence,
+            occurredAtUtc: now,
+          ),
+          throwsStateError,
+          reason: '${evidence.rolloutMode.name}/${evidence.evidenceClass.name}',
+        );
+      }
+    },
+  );
+
+  test('recordEvidence rejects every declared provider mismatch', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    final occurredAtUtc = now.add(const Duration(seconds: 2));
+    final evidence = _declaredEvidence(EvidencePolicyRolloutMode.shadow);
+    final assignedAtUtc = occurredAtUtc.subtract(const Duration(minutes: 1));
+    final validIdentity = FeatureContractIdentity(
+      revision: evidence.featureContractRevision,
+      semanticHash: evidence.featureContractHash,
+    );
+    final mismatches = <String, LearningEventContext>{
+      'schema version': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        schemaVersion: 2,
+      ),
+      'zero consent': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        researchConsentVersion: 0,
+      ),
+      'different consent': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        researchConsentVersion: 2,
+      ),
+      'missing experiment': LearningEventContext(
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: null,
+        protocolId: evidence.protocolId,
+        protocolVersion: evidence.protocolVersion,
+        experimentVersion: evidence.experimentVersion,
+        assignmentId: evidence.assignmentId,
+        featureContractIdentity: validIdentity,
+      ),
+      'experiment id': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        experimentId: 'other-experiment',
+      ),
+      'experiment variant': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        variantId: 'other-cohort',
+      ),
+      'non-UTC assignment time': _researchEventContext(
+        evidence,
+        assignedAtUtc: DateTime(2026, 8, 14, 8, 59),
+      ),
+      'future assignment time': _researchEventContext(
+        evidence,
+        assignedAtUtc: occurredAtUtc.add(const Duration(milliseconds: 1)),
+      ),
+      'missing protocol id': LearningEventContext(
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: evidence.experimentId!,
+          variantId: evidence.cohort!,
+          assignedAtUtc: assignedAtUtc,
+        ),
+        protocolId: null,
+        protocolVersion: evidence.protocolVersion,
+        experimentVersion: evidence.experimentVersion,
+        assignmentId: evidence.assignmentId,
+        featureContractIdentity: validIdentity,
+      ),
+      'protocol id': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        protocolId: 'other-protocol',
+      ),
+      'missing protocol version': LearningEventContext(
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: evidence.experimentId!,
+          variantId: evidence.cohort!,
+          assignedAtUtc: assignedAtUtc,
+        ),
+        protocolId: evidence.protocolId,
+        protocolVersion: null,
+        experimentVersion: evidence.experimentVersion,
+        assignmentId: evidence.assignmentId,
+        featureContractIdentity: validIdentity,
+      ),
+      'protocol version': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        protocolVersion: 'other-protocol',
+      ),
+      'missing experiment version': LearningEventContext(
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: evidence.experimentId!,
+          variantId: evidence.cohort!,
+          assignedAtUtc: assignedAtUtc,
+        ),
+        protocolId: evidence.protocolId,
+        protocolVersion: evidence.protocolVersion,
+        experimentVersion: null,
+        assignmentId: evidence.assignmentId,
+        featureContractIdentity: validIdentity,
+      ),
+      'experiment version': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        experimentVersion: 2,
+      ),
+      'missing assignment id': LearningEventContext(
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: evidence.experimentId!,
+          variantId: evidence.cohort!,
+          assignedAtUtc: assignedAtUtc,
+        ),
+        protocolId: evidence.protocolId,
+        protocolVersion: evidence.protocolVersion,
+        experimentVersion: evidence.experimentVersion,
+        assignmentId: null,
+        featureContractIdentity: validIdentity,
+      ),
+      'assignment id': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        assignmentId: 'other-assignment',
+      ),
+      'contract revision': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        featureContractIdentity: FeatureContractIdentity(
+          revision: 'other-revision',
+          semanticHash: evidence.featureContractHash,
+        ),
+      ),
+      'contract hash': _researchEventContext(
+        evidence,
+        assignedAtUtc: assignedAtUtc,
+        featureContractIdentity: FeatureContractIdentity(
+          revision: evidence.featureContractRevision,
+          semanticHash: 'f' * 64,
+        ),
+      ),
+    };
+
+    var index = 0;
+    for (final mismatch in mismatches.entries) {
+      final mismatchedUseCases = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'unused',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+        eventContextProvider: _FixedLearningEventContextProvider(
+          mismatch.value,
+        ),
+      );
+      await expectLater(
+        mismatchedUseCases.recordEvidence(
+          sourceEvidenceId: 'mismatch-${++index}',
+          occurredAtUtc: occurredAtUtc,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2000,
+          attemptNumber: 1,
+          evidenceContext: evidence,
+        ),
+        throwsStateError,
+        reason: mismatch.key,
+      );
+    }
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+    expect(await database.select(database.eventsV2).get(), isEmpty);
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
+  });
+
   test('empty local vocabulary returns an explicit empty quiz', () async {
     final quiz = await useCases.startQuiz(categoryId: 'missing', limit: 10);
 
@@ -179,4 +596,105 @@ void main() {
     expect(saved.lastPosition, 4);
     expect(restored, saved);
   });
+}
+
+EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
+  return EvidenceContext.legacyCompatibility(
+    evidenceClass: EvidenceClass.independentRecall,
+    skillId: skillId,
+    hintLevel: 0,
+    contentRevision: 'legacy-unknown',
+    engagementAllowed: true,
+  );
+}
+
+EvidenceContext _declaredEvidence(
+  EvidencePolicyRolloutMode rolloutMode, {
+  EvidenceClass evidenceClass = EvidenceClass.independentRecall,
+}) {
+  return EvidenceContext.forNewEvidence(
+    evidenceClass: evidenceClass,
+    skillId: evidenceClass == EvidenceClass.assessment
+        ? 'assessment-meaning'
+        : 'meaning-recall',
+    hintLevel: 0,
+    contentRevision: 'content-r1',
+    rolloutMode: rolloutMode,
+    protocolId: 'protocol-1',
+    protocolVersion: 'protocol-v1',
+    experimentId: 'experiment-1',
+    experimentVersion: 1,
+    assignmentId: 'assignment-1',
+    cohort: 'variant-a',
+    researchConsentVersion: 1,
+    instrumentId: evidenceClass == EvidenceClass.assessment
+        ? 'instrument-1'
+        : null,
+    instrumentVersion: evidenceClass == EvidenceClass.assessment ? '1' : null,
+    formId: evidenceClass == EvidenceClass.assessment ? 'form-1' : null,
+    formVersion: evidenceClass == EvidenceClass.assessment ? '1' : null,
+    assessmentItemId: evidenceClass == EvidenceClass.assessment
+        ? 'item-1'
+        : null,
+    assessmentResponseCode: evidenceClass == EvidenceClass.assessment
+        ? 'correct'
+        : null,
+    scoringRuleVersion: evidenceClass == EvidenceClass.assessment
+        ? 'score-v1'
+        : null,
+    engagementAllowed: true,
+  );
+}
+
+LearningEventContext _researchEventContext(
+  EvidenceContext evidence, {
+  required DateTime assignedAtUtc,
+  int schemaVersion = LearningEventContext.currentSchemaVersion,
+  int researchConsentVersion = 1,
+  String? experimentId,
+  String? variantId,
+  String? protocolId,
+  String? protocolVersion,
+  int? experimentVersion,
+  String? assignmentId,
+  FeatureContractIdentity? featureContractIdentity,
+}) {
+  return LearningEventContext(
+    schemaVersion: schemaVersion,
+    consentContext: ConsentContext(
+      researchConsentVersion: researchConsentVersion,
+      aiConsentGranted: false,
+      voiceConsentGranted: false,
+      socialConsentGranted: false,
+    ),
+    experimentContext: ExperimentContext(
+      experimentId: experimentId ?? evidence.experimentId!,
+      variantId: variantId ?? evidence.cohort!,
+      assignedAtUtc: assignedAtUtc,
+    ),
+    protocolId: protocolId ?? evidence.protocolId,
+    protocolVersion: protocolVersion ?? evidence.protocolVersion,
+    experimentVersion: experimentVersion ?? evidence.experimentVersion,
+    assignmentId: assignmentId ?? evidence.assignmentId,
+    featureContractIdentity:
+        featureContractIdentity ??
+        FeatureContractIdentity(
+          revision: evidence.featureContractRevision,
+          semanticHash: evidence.featureContractHash,
+        ),
+  );
+}
+
+final class _FixedLearningEventContextProvider
+    implements LearningEventContextProvider {
+  const _FixedLearningEventContextProvider(this.context);
+
+  final LearningEventContext context;
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async => context;
 }

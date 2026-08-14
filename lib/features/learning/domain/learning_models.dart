@@ -125,7 +125,7 @@ final class AnswerRecordResult {
   const AnswerRecordResult({required this.inserted, required this.srs});
 
   final bool inserted;
-  final SrsSnapshot srs;
+  final SrsSnapshot? srs;
 }
 
 final class LearningSessionSummary {

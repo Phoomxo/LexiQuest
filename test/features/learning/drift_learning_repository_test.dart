@@ -4,8 +4,11 @@ import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 void main() {
@@ -96,7 +99,8 @@ void main() {
 
     expect(first.inserted, isTrue);
     expect(replay.inserted, isFalse);
-    expect(replay.srs.intervalDays, 1);
+    expect(replay.srs, isA<SrsSnapshot>());
+    expect(replay.srs!.intervalDays, 1);
     final attempts = await database.select(database.answerAttempts).get();
     expect(attempts, hasLength(1));
     final storedAttempt = attempts.single;
@@ -129,6 +133,55 @@ void main() {
     )..where((row) => row.id.equals('session-1'))).getSingle();
     expect(storedSession.correctCount, 1);
     expect(storedSession.wrongCount, 0);
+  });
+
+  test('answer rejects an event not correlated to its evidence id', () async {
+    await repository.startSession(
+      LearningSessionDraft(
+        id: 'session-event-correlation',
+        ownerId: 'owner-1',
+        activityType: 'quiz',
+        startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+        appVersion: '1.0.0',
+        buildId: 'test',
+      ),
+    );
+    final base = RecordAnswerCommand(
+      id: 'attempt-event-correlation',
+      ownerId: 'owner-1',
+      sessionId: 'session-event-correlation',
+      wordId: 'word-1',
+      promptMode: 'meaningChoice',
+      isCorrect: true,
+      responseTimeMs: 420,
+      attemptNumber: 1,
+      occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+      evidenceContext: _legacyEvidence(),
+    );
+    final invalidJson = _eventFor(base).toJson()
+      ..['eventId'] = 'learning-event:different-evidence';
+
+    expect(
+      () => repository.recordAnswer(
+        RecordAnswerCommand(
+          id: base.id,
+          ownerId: base.ownerId,
+          sessionId: base.sessionId,
+          wordId: base.wordId,
+          promptMode: base.promptMode,
+          isCorrect: base.isCorrect,
+          responseTimeMs: base.responseTimeMs,
+          attemptNumber: base.attemptNumber,
+          occurredAtUtc: base.occurredAtUtc,
+          evidenceContext: base.evidenceContext,
+          event: EventEnvelopeV2.fromJson(invalidJson),
+        ),
+      ),
+      throwsArgumentError,
+    );
+    expect(await database.select(database.answerAttempts).get(), isEmpty);
+    expect(await database.select(database.eventsV2).get(), isEmpty);
+    expect(await database.select(database.outboxOperations).get(), isEmpty);
   });
 
   test('finishing session stores auditable score and counts', () async {
@@ -214,9 +267,10 @@ void main() {
         ),
       );
 
-      expect(result.srs.lastReviewAtUtc, later);
-      expect(result.srs.repetitions, 1);
-      expect(result.srs.lapses, 1);
+      expect(result.srs, isA<SrsSnapshot>());
+      expect(result.srs!.lastReviewAtUtc, later);
+      expect(result.srs!.repetitions, 1);
+      expect(result.srs!.lapses, 1);
       final firstAnswer = await (database.select(
         database.achievementUnlocks,
       )..where((row) => row.achievementId.equals('first_answer'))).getSingle();
@@ -509,6 +563,13 @@ void main() {
     )..where((row) => row.entityType.equals('readingEvent'))).get();
     expect(readingOutbox, hasLength(3));
   });
+
+  test('answer result can represent evidence without an SRS projection', () {
+    const result = AnswerRecordResult(inserted: true, srs: null);
+
+    expect(result.inserted, isTrue);
+    expect(result.srs, equals(null));
+  });
 }
 
 EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
@@ -518,5 +579,23 @@ EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
     hintLevel: 0,
     contentRevision: 'legacy-unknown',
     engagementAllowed: true,
+  );
+}
+
+EventEnvelopeV2 _eventFor(RecordAnswerCommand command) {
+  const adapter = EventV1ToV2Adapter(appVersion: '1.0.0', buildId: 'test');
+  return adapter.adaptFromCommand(
+    sourceEvidenceId: command.id,
+    ownerId: command.ownerId,
+    sessionId: command.sessionId,
+    wordId: command.wordId,
+    promptMode: command.promptMode,
+    isCorrect: command.isCorrect,
+    attemptNumber: command.attemptNumber,
+    occurredAtUtc: command.occurredAtUtc,
+    evidenceContext: command.evidenceContext,
+    learningEventContext: LearningEventContext.noResearch(
+      command.evidenceContext,
+    ),
   );
 }

@@ -10,6 +10,8 @@
 library;
 
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/learning/learning_event.dart';
 
 /// Adapts a legacy [LearningEvent] (schema version 1) to [EventEnvelopeV2].
@@ -104,56 +106,59 @@ final class EventV1ToV2Adapter {
       'v1_${v1.pseudonymousUserId}_${v1.occurredAtUtc.millisecondsSinceEpoch}';
 
   /// Convenience method that builds an [EventEnvelopeV2] directly from the
-  /// raw parameters of [LearningUseCases.recordAnswer], bypassing the
+  /// raw parameters of `LearningUseCases.recordEvidence`, bypassing the
   /// intermediate [LearningEvent] DTO.
   ///
-  /// Used exclusively by the shadow reward orchestrator hook so that the
-  /// shadow path does not need to reconstruct a [LearningEvent] externally.
+  /// Used by the canonical learning evidence path so persistence and every
+  /// downstream projection share the caller-owned evidence identity.
   EventEnvelopeV2 adaptFromCommand({
-    required String sourceEventId,
+    required String sourceEvidenceId,
     required String ownerId,
     required String sessionId,
     required String wordId,
     required String promptMode,
     required bool isCorrect,
-    required int? responseTimeMs,
     required int attemptNumber,
     required DateTime occurredAtUtc,
-    required String appVersion,
-    required String buildId,
-    String? providerProvenance,
+    required EvidenceContext evidenceContext,
+    required LearningEventContext learningEventContext,
   }) {
-    final now = occurredAtUtc.isUtc ? occurredAtUtc : occurredAtUtc.toUtc();
-    final eventId = 'learning-event:$sourceEventId';
-    final idemKey = 'learning-attempt:$sourceEventId:v1';
+    if (!occurredAtUtc.isUtc) {
+      throw ArgumentError.value(occurredAtUtc, 'occurredAtUtc', 'must be UTC');
+    }
+    learningEventContext.validateAgainst(
+      evidenceContext: evidenceContext,
+      occurredAtUtc: occurredAtUtc,
+    );
+    final eventId = 'learning-event:$sourceEvidenceId';
+    final idemKey = 'learning-attempt:$sourceEvidenceId:v2';
 
     return EventEnvelopeV2(
       eventId: eventId,
       eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
-      eventVersion: 1,
-      occurredAtUtc: now,
-      recordedAtUtc: now,
+      eventVersion: 2,
+      occurredAtUtc: occurredAtUtc,
+      recordedAtUtc: occurredAtUtc,
       actorIdentity: ownerId,
       ownerIdentity: ownerId,
       aggregateType: 'LearningSession',
       aggregateId: sessionId,
       idempotencyKey: idemKey,
-      consentContext: consentContext,
+      consentContext: learningEventContext.consentContext,
+      experimentContext: learningEventContext.experimentContext,
+      contentRevision: evidenceContext.contentRevision,
+      policyVersion: evidenceContext.policyVersion,
       appVersion: appVersion,
       buildId: buildId,
       privacyClassification: PrivacyClassification.anonymized,
       payload: {
-        'attemptId': sourceEventId,
+        'attemptId': sourceEvidenceId,
         'wordId': wordId,
         'promptMode': promptMode,
         'correct': isCorrect,
         'score': isCorrect ? 100 : 0,
-        // ignore: use_null_aware_elements, map key is non-null literal
-        if (responseTimeMs != null) 'responseTimeMs': responseTimeMs,
         'attemptNumber': attemptNumber,
-        // ignore: use_null_aware_elements, map key is non-null literal
-        if (providerProvenance != null)
-          'providerProvenance': providerProvenance,
+        'evidenceContext': evidenceContext.toJson(),
       },
     );
   }
