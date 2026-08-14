@@ -16,6 +16,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_re
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -68,6 +69,7 @@ void main() {
     expect(text, contains('attempt-1'));
     expect(text, contains('doc-1@1'));
     expect(artifact.recordCount, 3);
+    expect(artifact.schemaVersion, 1);
   });
 
   test('CSV and Anki neutralize spreadsheet formulas', () async {
@@ -101,6 +103,38 @@ void main() {
   });
 
   test('research JSON parses independently and reports exact counts', () async {
+    final evidenceContext = EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.assessment,
+      skillId: 'assessment-vocabulary-recall',
+      hintLevel: 0,
+      contentRevision: 'research-pack-v2',
+      rolloutMode: EvidencePolicyRolloutMode.shadow,
+      protocolId: 'evidence-pilot',
+      protocolVersion: '1.0.0',
+      experimentId: 'evidence-eligibility',
+      experimentVersion: 1,
+      assignmentId: 'assignment-1',
+      cohort: 'shadow',
+      researchConsentVersion: 1,
+      instrumentId: 'vocabulary-outcome',
+      instrumentVersion: '2.0.0',
+      formId: 'post-form-a',
+      formVersion: '1.0.0',
+      assessmentItemId: 'item-1',
+      assessmentResponseCode: 'correct',
+      scoringRuleVersion: 'binary-v1',
+    );
+    await database.customUpdate(
+      'UPDATE answer_attempts SET evidence_class = ?, '
+      'evidence_context_json = ? WHERE id = ?',
+      variables: [
+        Variable<String>(evidenceContext.evidenceClass.name),
+        Variable<String>(jsonEncode(evidenceContext.toJson())),
+        const Variable<String>('attempt-1'),
+      ],
+      updates: {database.answerAttempts},
+    );
+
     final artifact = await exports.prepare(
       format: ExportFormat.researchJson,
       selection: _all,
@@ -110,9 +144,77 @@ void main() {
         jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
 
     expect(parsed['sampleSize'], 3);
-    expect(parsed['schemaVersion'], 1);
+    expect(parsed['schemaVersion'], 2);
+    expect(artifact.schemaVersion, 2);
     expect(parsed['timeZone'], 'UTC');
-    expect((parsed['attempts'] as List).single['evidenceId'], 'attempt-1');
+    final attempt =
+        (parsed['attempts'] as List<dynamic>).single as Map<String, dynamic>;
+    expect(attempt.keys.toSet(), {
+      'evidenceId',
+      'sessionId',
+      'wordId',
+      'spelling',
+      'promptMode',
+      'isCorrect',
+      'responseTimeMs',
+      'occurredAtUtc',
+      'evidenceClass',
+      'skillId',
+      'hintLevel',
+      'policyVersion',
+      'contentRevision',
+      'featureContractRevision',
+      'featureContractHash',
+      'classificationSource',
+      'rolloutMode',
+      'protocolId',
+      'protocolVersion',
+      'experimentId',
+      'experimentVersion',
+      'assignmentId',
+      'cohort',
+      'researchConsentVersion',
+      'instrumentId',
+      'instrumentVersion',
+      'formId',
+      'formVersion',
+      'assessmentItemId',
+      'assessmentResponseCode',
+      'scoringRuleVersion',
+    });
+    expect(attempt, containsPair('evidenceId', 'attempt-1'));
+    expect(attempt, containsPair('evidenceClass', 'assessment'));
+    expect(attempt, containsPair('skillId', 'assessment-vocabulary-recall'));
+    expect(attempt, containsPair('hintLevel', 0));
+    expect(attempt, containsPair('policyVersion', 'learning-evidence-v1'));
+    expect(attempt, containsPair('contentRevision', 'research-pack-v2'));
+    expect(
+      attempt,
+      containsPair(
+        'featureContractRevision',
+        evidenceContext.featureContractRevision,
+      ),
+    );
+    expect(
+      attempt,
+      containsPair('featureContractHash', evidenceContext.featureContractHash),
+    );
+    expect(attempt, containsPair('classificationSource', 'declared'));
+    expect(attempt, containsPair('rolloutMode', 'shadow'));
+    expect(attempt, containsPair('protocolId', 'evidence-pilot'));
+    expect(attempt, containsPair('protocolVersion', '1.0.0'));
+    expect(attempt, containsPair('experimentId', 'evidence-eligibility'));
+    expect(attempt, containsPair('experimentVersion', 1));
+    expect(attempt, containsPair('assignmentId', 'assignment-1'));
+    expect(attempt, containsPair('cohort', 'shadow'));
+    expect(attempt, containsPair('researchConsentVersion', 1));
+    expect(attempt, containsPair('instrumentId', 'vocabulary-outcome'));
+    expect(attempt, containsPair('instrumentVersion', '2.0.0'));
+    expect(attempt, containsPair('formId', 'post-form-a'));
+    expect(attempt, containsPair('formVersion', '1.0.0'));
+    expect(attempt, containsPair('assessmentItemId', 'item-1'));
+    expect(attempt, containsPair('assessmentResponseCode', 'correct'));
+    expect(attempt, containsPair('scoringRuleVersion', 'binary-v1'));
   });
 
   test('every artifact omits raw provider provenance secrets', () async {

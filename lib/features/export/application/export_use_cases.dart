@@ -15,6 +15,9 @@ typedef ExportUtcNow = DateTime Function();
 typedef ExportFontLoader = Future<ByteData> Function();
 
 final class ExportUseCases {
+  static const int _personalExportSchemaVersion = 1;
+  static const int _researchExportSchemaVersion = 2;
+
   const ExportUseCases({
     required this.reader,
     required this.store,
@@ -54,6 +57,9 @@ final class ExportUseCases {
       throw const ExportException(ExportFailureCode.noData);
     }
     final generatedAt = _now();
+    final schemaVersion = format == ExportFormat.researchJson
+        ? _researchExportSchemaVersion
+        : _personalExportSchemaVersion;
     final bytes = switch (format) {
       ExportFormat.csv => _csv(data, generatedAt),
       ExportFormat.anki => _anki(data),
@@ -78,7 +84,7 @@ final class ExportUseCases {
       },
       bytes: bytes,
       recordCount: data.recordCount,
-      schemaVersion: 1,
+      schemaVersion: schemaVersion,
       algorithmVersion: 1,
       generatedAtUtc: generatedAt,
       timeZone: 'UTC',
@@ -89,6 +95,7 @@ final class ExportUseCases {
         'Firebase authentication token',
         'direct personal identifiers',
         'raw microphone audio',
+        'raw provider provenance',
       ],
     );
   }
@@ -218,7 +225,7 @@ final class ExportUseCases {
 
   Uint8List _researchJson(ExportDataSet data, DateTime generatedAt) {
     final payload = <String, Object?>{
-      'schemaVersion': 1,
+      'schemaVersion': _researchExportSchemaVersion,
       'algorithmVersion': 1,
       'generatedAtUtc': generatedAt.toIso8601String(),
       'timeZone': 'UTC',
@@ -227,6 +234,7 @@ final class ExportUseCases {
         'secrets',
         'direct personal identifiers',
         'raw audio',
+        'raw provider provenance',
       ],
       'vocabulary': [
         for (final row in data.vocabulary)
@@ -251,6 +259,33 @@ final class ExportUseCases {
             'isCorrect': row.isCorrect,
             'responseTimeMs': row.responseTimeMs,
             'occurredAtUtc': row.occurredAtUtc.toIso8601String(),
+            'evidenceClass': row.evidenceContext.evidenceClass.name,
+            'skillId': row.evidenceContext.skillId,
+            'hintLevel': row.evidenceContext.hintLevel,
+            'policyVersion': row.evidenceContext.policyVersion,
+            'contentRevision': row.evidenceContext.contentRevision,
+            'featureContractRevision':
+                row.evidenceContext.featureContractRevision,
+            'featureContractHash': row.evidenceContext.featureContractHash,
+            'classificationSource':
+                row.evidenceContext.classificationSource.name,
+            'rolloutMode': row.evidenceContext.rolloutMode.name,
+            'protocolId': row.evidenceContext.protocolId,
+            'protocolVersion': row.evidenceContext.protocolVersion,
+            'experimentId': row.evidenceContext.experimentId,
+            'experimentVersion': row.evidenceContext.experimentVersion,
+            'assignmentId': row.evidenceContext.assignmentId,
+            'cohort': row.evidenceContext.cohort,
+            'researchConsentVersion':
+                row.evidenceContext.researchConsentVersion,
+            'instrumentId': row.evidenceContext.instrumentId,
+            'instrumentVersion': row.evidenceContext.instrumentVersion,
+            'formId': row.evidenceContext.formId,
+            'formVersion': row.evidenceContext.formVersion,
+            'assessmentItemId': row.evidenceContext.assessmentItemId,
+            'assessmentResponseCode':
+                row.evidenceContext.assessmentResponseCode,
+            'scoringRuleVersion': row.evidenceContext.scoringRuleVersion,
           },
       ],
       'reading': [

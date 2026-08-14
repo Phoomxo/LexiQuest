@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../domain/export_contracts.dart';
 
 final class ExportVocabularyRow {
@@ -33,6 +37,7 @@ final class ExportAttemptRow {
     required this.isCorrect,
     required this.responseTimeMs,
     required this.occurredAtUtc,
+    required this.evidenceContext,
     this.providerProvenance,
   });
 
@@ -44,6 +49,7 @@ final class ExportAttemptRow {
   final bool isCorrect;
   final int? responseTimeMs;
   final DateTime occurredAtUtc;
+  final EvidenceContext evidenceContext;
 
   /// Retained only for source compatibility. Raw provenance is never loaded
   /// by the production reader or emitted by an export artifact.
@@ -162,7 +168,8 @@ final class DriftExportReader {
                 '''
                 SELECT a.id, a.session_id, a.word_id, w.spelling,
                        a.prompt_mode, a.is_correct, a.response_time_ms,
-                       a.occurred_at_utc_ms
+                       a.occurred_at_utc_ms, a.evidence_class,
+                       a.evidence_context_json
                 FROM answer_attempts a
                 INNER JOIN vocabulary_words w
                   ON w.id = a.word_id AND w.owner_id = a.owner_id
@@ -211,6 +218,7 @@ final class DriftExportReader {
                 row.read<int>('occurred_at_utc_ms'),
                 isUtc: true,
               ),
+              evidenceContext: _readEvidenceContext(row),
             ),
           )
           .toList(growable: false),
@@ -228,6 +236,20 @@ final class DriftExportReader {
             ),
           )
           .toList(growable: false),
+    );
+  }
+
+  EvidenceContext _readEvidenceContext(QueryRow row) {
+    final evidenceClass = row.read<String>('evidence_class');
+    final evidenceContextJson = row.read<String>('evidence_context_json');
+    if (!LearningEvidenceContract.validEvidenceMetadata(
+      evidenceClass: evidenceClass,
+      evidenceContextJson: evidenceContextJson,
+    )) {
+      throw const ExportException(ExportFailureCode.unavailable);
+    }
+    return EvidenceContext.fromJson(
+      (jsonDecode(evidenceContextJson) as Map).cast<String, Object?>(),
     );
   }
 }
