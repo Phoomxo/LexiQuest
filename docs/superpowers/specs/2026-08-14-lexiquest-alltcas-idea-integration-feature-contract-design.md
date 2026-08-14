@@ -4,7 +4,7 @@
 
 **Date:** 2026-08-14
 
-**Authoritative baseline:** `codex/runtime-convergence` @ `61a4fec`
+**Authoritative baseline:** `feature/alltcas-8-44-integration` @ `61a4fec`
 
 **Scope:** 8 domains, 44 product/research capabilities, 2 experimental candidates, and Layer 0 Compatibility & Safety Backbone
 
@@ -88,7 +88,7 @@ main-catalog rollout state.
 ## 3. Verified Baseline and Constraints
 
 The implementation design must start from the clean, newer worktree
-`codex/runtime-convergence` @ `61a4fec`, not the older root checkout at
+`feature/alltcas-8-44-integration` @ `61a4fec`, not the older root checkout at
 `f43aa0f`.
 
 Verified baseline authorities include:
@@ -266,7 +266,7 @@ Legend:
 - `A`: confirmed or directly adapted from the reference product
 - `A→L`: reference-product mechanic adapted to LexiQuest's learning/research use
 - `L`: LexiQuest-specific integration or safety capability
-- Coverage is measured against `codex/runtime-convergence` @ `61a4fec`
+- Coverage is measured against `feature/alltcas-8-44-integration` @ `61a4fec`
 
 ### Domain 1 — Learning Content & Packs / C1
 

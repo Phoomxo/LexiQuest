@@ -10,7 +10,7 @@
 
 ## Global Constraints
 
-- Execute in `C:\Users\Phet\Documents\LexiQuest\.worktrees\p0-integration` on `codex/runtime-convergence`, starting from design commit `c4ec20d` or a verified descendant.
+- Execute in `C:\Users\Phet\Documents\LexiQuest\.worktrees\p0-integration` on `feature/alltcas-8-44-integration`, starting from design commit `c4ec20d` or a verified descendant.
 - The main product scope remains exactly 8 domains and 44 capabilities; `expP1` and `expP2` remain outside the main count.
 - Do not add TCAS/university scoring, online rooms/chat/friends, subscription/payment/entitlements, OCR handwriting, a public leaderboard, or a generic calculator.
 - Do not create a third runtime feature registry, a second Vocabulary authority, a second Streak writer, a second scored-answer store, a Today Hub table, or a Learning History table.
@@ -68,7 +68,7 @@ git rev-parse --short HEAD
 git status --short
 ```
 
-Expected: branch `codex/runtime-convergence`; HEAD is `c4ec20d` or a reviewed descendant; status is empty.
+Expected: branch `feature/alltcas-8-44-integration`; HEAD is `c4ec20d` or a reviewed descendant; status is empty.
 
 - [ ] **Step 2: Verify the design artifact is present in history**
 
