@@ -92,7 +92,7 @@ Expected: each command exits 0. Run them separately; do not combine them into on
 
 ```powershell
 Select-String -Path lib/data/local/app_database.dart -Pattern 'schemaVersion => 12'
-(Select-String -Path lib/features/identity/domain/owner_lifecycle_manifest.dart -Pattern 'OwnerLifecycleTableDescriptor\(').Count
+(Select-String -Path lib/features/identity/domain/owner_lifecycle_manifest.dart -Pattern '^  OwnerLifecycleTableDescriptor\(').Count
 ```
 
 Expected: schema v12 and 31 descriptors. If the descendant baseline intentionally changed either value, reconcile this plan and the design spec before Task 1 rather than guessing.
@@ -249,7 +249,8 @@ enum ProjectionFamily {
   sessionOutcome,
   masterySrs,
   assessmentOutcome,
-  effortHistory,
+  activeLearningEffort,
+  history,
   pronunciation,
   quest,
   streak,
@@ -438,15 +439,15 @@ Define exactly one writer profile for Vocabulary, Response Evidence, Mastery/SRS
 
 Use this exact v1 matrix (`A` Allow, `D` Deny, `P` ProtocolControlled):
 
-| Evidence class | Session | Mastery/SRS | Assessment | Effort | Pronunciation | Quest | Streak | Achievement | XP | Coins |
-|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
-| Assessment | A | D | A | A | D | D | D | D | D | D |
-| Independent Recall | A | A | D | A | D | P | P | P | P | P |
-| Recognition | A | D | D | A | D | P | P | P | P | P |
-| Guided Practice | A | D | D | A | D | D | D | D | D | D |
-| Pronunciation | A | D | D | A | A | D | D | D | D | D |
-| Exposure | A | D | D | A | D | D | D | D | D | D |
-| Recreational | A | D | D | A | D | D | D | D | D | D |
+| Evidence class | Session | Mastery/SRS | Assessment | Active Learning Effort | History | Pronunciation | Quest | Streak | Achievement | XP | Coins |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|
+| Assessment | A | D | A | A | A | D | D | D | D | D | D |
+| Independent Recall | A | A | D | A | A | D | P | P | P | P | P |
+| Recognition | A | D | D | A | A | D | P | P | P | P | P |
+| Guided Practice | A | D | D | A | A | D | D | D | D | D | D |
+| Pronunciation | A | D | D | A | A | A | D | D | D | D | D |
+| Exposure | A | D | D | A | A | D | D | D | D | D | D |
+| Recreational | A | D | D | D | A | D | D | D | D | D | D |
 
 Recognition remains excluded from binary SRS v1 because the current algorithm has no calibrated lower-weight update. A later weighted policy requires a new policy version rather than silently treating recognition as independent recall.
 
@@ -457,7 +458,8 @@ const <ProjectionFamily, ProjectionDecision>{
   ProjectionFamily.sessionOutcome: ProjectionDecision.allow,
   ProjectionFamily.masterySrs: ProjectionDecision.deny,
   ProjectionFamily.assessmentOutcome: ProjectionDecision.allow,
-  ProjectionFamily.effortHistory: ProjectionDecision.allow,
+  ProjectionFamily.activeLearningEffort: ProjectionDecision.allow,
+  ProjectionFamily.history: ProjectionDecision.allow,
   ProjectionFamily.pronunciation: ProjectionDecision.deny,
   ProjectionFamily.quest: ProjectionDecision.deny,
   ProjectionFamily.streak: ProjectionDecision.deny,
@@ -611,7 +613,7 @@ git commit -m "build: enforce generated feature contract drift"
 - Consumes: Task 2 evidence profile semantics.
 - Produces: runtime `EvidenceContext`, `EvidenceEligibilityPolicy`, and exact parity tests between product metadata and runtime policy. No schema or behavior change.
 
-- [ ] **Step 1: Write failing 7×10 matrix and serialization tests**
+- [ ] **Step 1: Write failing 7×11 matrix and serialization tests**
 
 ```dart
 enum EvidenceClass {
@@ -628,7 +630,8 @@ enum LearningProjection {
   sessionOutcome,
   masterySrs,
   assessmentOutcome,
-  effortHistory,
+  activeLearningEffort,
+  history,
   pronunciation,
   quest,
   streak,
@@ -774,7 +777,7 @@ final class EvidenceEligibilityPolicyV1 implements EvidenceEligibilityPolicy {
 }
 ```
 
-Make `evidenceEligibilityV1` exhaustive and fail construction tests if a row or column is missing. Define `legacyEvidenceEligibilityV1` as this exact compatibility row: Allow `sessionOutcome`, `masterySrs`, `effortHistory`, `quest`, `streak`, `achievement`, `xp`, and `coins`; Deny `assessmentOutcome` and `pronunciation`. It is valid only with `classificationSource == legacyInferred`; it never contributes to a new research outcome/export cohort, and a declared context using `legacy-v1` fails closed. Unknown policies always fail closed.
+Make `evidenceEligibilityV1` exhaustive across all 11 projection families and fail construction tests if a row or column is missing. Define `legacyEvidenceEligibilityV1` as this exact compatibility row: Allow `sessionOutcome`, `masterySrs`, `activeLearningEffort`, `history`, `quest`, `streak`, `achievement`, `xp`, and `coins`; Deny `assessmentOutcome` and `pronunciation`. It is valid only with `classificationSource == legacyInferred`; it never contributes to a new research outcome/export cohort, and a declared context using `legacy-v1` fails closed. Unknown policies always fail closed.
 
 Add a pure `EvidenceProjectionDecision` resolver. In Legacy mode it uses the compatibility row. In Shadow mode it returns both the compatibility decision to apply and the v1 candidate decision to record, without changing a sink. In Enforced mode it applies the v1 decision. Shadow evidence is excluded from efficacy outcomes but retained for projection comparison.
 
@@ -1041,7 +1044,7 @@ Also snapshot the practice Progress read model and assert its accuracy, weakness
 
 Add two cutover fixtures: (a) a pre-v13 source event whose payload has only `attemptId`, correlated to a migrated `legacyInferred/legacy-v1` attempt; and (b) one owner containing an already-applied v1 event, a pending v1 event, and a new declared event.
 
-For every source evidence ID, assert one deterministic `LearningEvidenceDecisionSet` audit event at `learning-evidence-decisions:{sourceEvidenceId}:v1` contains exactly ten entries—one per `LearningProjection`—with rollout mode, effective decision, candidate v1 decision, policy version, and divergence. This event is not a new score authority and cannot invoke sinks; it makes Shadow comparison and forbidden-side-effect audits reproducible without a tenfold event-row expansion.
+For every source evidence ID, assert one deterministic `LearningEvidenceDecisionSet` audit event at `learning-evidence-decisions:{sourceEvidenceId}:v1` contains exactly eleven entries—one per `LearningProjection`—with rollout mode, effective decision, candidate v1 decision, policy version, and divergence. This event is not a new score authority and cannot invoke sinks; it makes Shadow comparison and forbidden-side-effect audits reproducible without an elevenfold event-row expansion.
 
 - [ ] **Step 2: Observe forbidden side effects before the fix**
 
@@ -1623,11 +1626,11 @@ Consent withdrawal immediately prevents new runs/responses and blocks unsent ass
 
 ```powershell
 dart run build_runner build --delete-conflicting-outputs
-flutter test --no-pub test/database/migration_v13_to_v14_test.dart test/database/migration_v14_to_v15_test.dart test/features/assessment/drift_assessment_repository_test.dart test/features/assessment/assessment_use_cases_test.dart
+flutter test --no-pub test/database/migration_v13_to_v14_test.dart test/database/migration_v14_to_v15_test.dart test/features/assessment/drift_assessment_repository_test.dart test/features/assessment/assessment_use_cases_test.dart test/runtime/app_bootstrap_test.dart
 flutter test --no-pub test/features/assessment/assessment_isolation_test.dart test/features/assessment/assessment_comparison_test.dart test/features/sync/assessment_run_sync_test.dart test/features/sync/firestore_sync_gateway_test.dart
 flutter test --no-pub test/features/identity/drift_owner_upgrade_repository_test.dart test/features/export/export_use_cases_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/complete_owner_export_delete_test.dart
 npm run test:rules
-git add -- lib/data/local/tables/research_tables.dart lib/data/local/app_database.dart lib/data/local/app_database.g.dart lib/features/assessment/domain/assessment_models.dart lib/features/assessment/domain/assessment_repository.dart lib/features/assessment/domain/assessment_instrument_catalog.dart lib/features/assessment/data/drift_assessment_repository.dart lib/features/assessment/application/assessment_use_cases.dart lib/features/assessment/application/assessment_comparison.dart lib/features/identity/domain/owner_lifecycle_manifest.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/export/application/owner_lifecycle_archive.dart lib/features/export/data/drift_export_reader.dart lib/features/export/application/export_use_cases.dart lib/runtime/app_bootstrap.dart lib/runtime/app_dependencies.dart lib/features/sync/domain/sync_entity.dart lib/features/sync/data/drift_sync_store.dart lib/features/sync/data/firestore_sync_gateway.dart firestore.rules test/database/migration_v13_to_v14_test.dart test/database/migration_v14_to_v15_test.dart test/features/assessment/drift_assessment_repository_test.dart test/features/assessment/assessment_use_cases_test.dart test/features/assessment/assessment_isolation_test.dart test/features/assessment/assessment_comparison_test.dart test/features/sync/assessment_run_sync_test.dart test/features/sync/firestore_sync_gateway_test.dart test/security/firestore-rules.test.cjs test/features/identity/drift_owner_upgrade_repository_test.dart test/features/export/export_use_cases_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/complete_owner_export_delete_test.dart docs/database/schema_ledger.md
+git add -- lib/data/local/tables/research_tables.dart lib/data/local/app_database.dart lib/data/local/app_database.g.dart lib/features/assessment/domain/assessment_models.dart lib/features/assessment/domain/assessment_repository.dart lib/features/assessment/domain/assessment_instrument_catalog.dart lib/features/assessment/data/drift_assessment_repository.dart lib/features/assessment/application/assessment_use_cases.dart lib/features/assessment/application/assessment_comparison.dart lib/features/identity/domain/owner_lifecycle_manifest.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/export/application/owner_lifecycle_archive.dart lib/features/export/data/drift_export_reader.dart lib/features/export/application/export_use_cases.dart lib/runtime/app_bootstrap.dart lib/runtime/app_dependencies.dart lib/features/sync/domain/sync_entity.dart lib/features/sync/data/drift_sync_store.dart lib/features/sync/data/firestore_sync_gateway.dart firestore.rules test/database/migration_v13_to_v14_test.dart test/database/migration_v14_to_v15_test.dart test/features/assessment/drift_assessment_repository_test.dart test/features/assessment/assessment_use_cases_test.dart test/features/assessment/assessment_isolation_test.dart test/features/assessment/assessment_comparison_test.dart test/features/sync/assessment_run_sync_test.dart test/features/sync/firestore_sync_gateway_test.dart test/security/firestore-rules.test.cjs test/features/identity/drift_owner_upgrade_repository_test.dart test/features/export/export_use_cases_test.dart test/runtime/app_bootstrap_test.dart test/scenarios/guest_upgrade_restart_test.dart test/scenarios/complete_owner_export_delete_test.dart docs/database/schema_ledger.md
 git diff --cached --check
 git commit -m "feat: add isolated assessment runs in schema v15"
 ```

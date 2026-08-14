@@ -121,6 +121,8 @@ abstract interface class ContentManifestRepository {
 }
 ```
 
+The `LearningPackRepository` above is the final post-f02 interface. To keep each capability commit compiling, f01 initially creates that same interface and its `DriftLearningPackRepository` implementation with only `list(LearningPackFilter)`. After f02 creates `LearningPackDetail`, f02 extends the same interface and Drift implementation with `getVersion`; it must not create a second repository authority.
+
 ### f01 — Curriculum & Learning Pack Catalog
 
 - **Source/Coverage:** `A / Partial`
@@ -138,11 +140,11 @@ abstract interface class ContentManifestRepository {
 - **Source/Coverage:** `A / Partial`
 - **ทำอะไร/หน้าที่:** แสดงระดับ เนื้อหา ตัวอย่าง progress และ activity ที่พร้อมใช้ก่อนเริ่ม session
 - **Authority/Dependencies:** `f01`, `f04`, Progress queries และ `ProductionFeatureContract`; progress เป็น derived read model
-- **Files:** Create `lib/features/learning_packs/domain/learning_pack_detail.dart`, `lib/features/learning_packs/application/learning_pack_detail_use_cases.dart`, `lib/screens/learning_pack_detail_screen.dart`, `test/features/learning_packs/learning_pack_detail_test.dart`, `test/screens/learning_pack_detail_screen_test.dart`; Modify `lib/screens/learning_pack_catalog_screen.dart`, `test/screens/learning_pack_catalog_screen_test.dart`
+- **Files:** Create `lib/features/learning_packs/domain/learning_pack_detail.dart`, `lib/features/learning_packs/application/learning_pack_detail_use_cases.dart`, `lib/screens/learning_pack_detail_screen.dart`, `test/features/learning_packs/learning_pack_detail_test.dart`, `test/screens/learning_pack_detail_screen_test.dart`; Modify `lib/features/learning_packs/domain/learning_pack_repository.dart`, `lib/features/learning_packs/data/drift_learning_pack_repository.dart`, `lib/screens/learning_pack_catalog_screen.dart`, `test/screens/learning_pack_catalog_screen_test.dart`
 - [ ] **RED:** ทดสอบ pack revision mismatch, unavailable activity และ progress ที่คำนวณจาก canonical sessions
 - [ ] **GREEN:** implement `getVersion(packId, revision)` และ typed activity availability โดยไม่สร้าง progress column ใน pack; catalog เปิด detail ด้วย pinned `(packId, revision)` เท่านั้น
 - [ ] **VERIFY:** `flutter test --no-pub test/features/learning_packs/learning_pack_detail_test.dart test/screens/learning_pack_detail_screen_test.dart test/screens/learning_pack_catalog_screen_test.dart`
-- [ ] **COMMIT:** `Invoke-NativeStep { git diff --cached --quiet }`; `Invoke-NativeStep { git add -- lib/features/learning_packs/domain/learning_pack_detail.dart lib/features/learning_packs/application/learning_pack_detail_use_cases.dart lib/screens/learning_pack_detail_screen.dart test/features/learning_packs/learning_pack_detail_test.dart test/screens/learning_pack_detail_screen_test.dart lib/screens/learning_pack_catalog_screen.dart test/screens/learning_pack_catalog_screen_test.dart }`; `Invoke-NativeStep { git diff --cached --check }`; `Invoke-NativeStep { git diff --cached --name-only }`; `Invoke-NativeStep { git commit -m "feat(content): add learning pack detail" }`
+- [ ] **COMMIT:** `Invoke-NativeStep { git diff --cached --quiet }`; `Invoke-NativeStep { git add -- lib/features/learning_packs/domain/learning_pack_detail.dart lib/features/learning_packs/application/learning_pack_detail_use_cases.dart lib/screens/learning_pack_detail_screen.dart test/features/learning_packs/learning_pack_detail_test.dart test/screens/learning_pack_detail_screen_test.dart lib/features/learning_packs/domain/learning_pack_repository.dart lib/features/learning_packs/data/drift_learning_pack_repository.dart lib/screens/learning_pack_catalog_screen.dart test/screens/learning_pack_catalog_screen_test.dart }`; `Invoke-NativeStep { git diff --cached --check }`; `Invoke-NativeStep { git diff --cached --name-only }`; `Invoke-NativeStep { git commit -m "feat(content): add learning pack detail" }`
 - **Exit/Rollback:** pack ที่ manifest ไม่ผ่านต้องแสดง unavailable แบบ typed; rollback ปิด route โดยไม่แก้ evidence
 
 ### f03 — Rich Lexical Card
