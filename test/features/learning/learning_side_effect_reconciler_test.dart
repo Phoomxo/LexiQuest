@@ -607,6 +607,72 @@ void main() {
   );
 
   test(
+    'invalid source advances with a canonical cursor before valid evidence',
+    () async {
+      await addEvent(1);
+      await addEvent(2);
+      await database.customUpdate(
+        'UPDATE events_v2 SET privacy_classification = ? WHERE event_id = ?',
+        variables: const <Variable<Object>>[
+          Variable<String>('ownerOnly'),
+          Variable<String>('learning-event:attempt-1'),
+        ],
+        updates: {database.eventsV2},
+      );
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        pendingBatchSize: 1,
+        streakSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, isEmpty);
+      final blocked =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:streak:learning-event:attempt-1:v2',
+                ),
+              ))
+              .getSingle();
+      expect(blocked.eventType, 'LearningProjectionBlocked');
+      expect(
+        (jsonDecode(blocked.payloadJson) as Map<String, dynamic>)['reasonCode'],
+        'invalidLegacySourceEventCorrelation',
+      );
+      final cursor =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection-cursor:owner-reconcile:streak:v2',
+                ),
+              ))
+              .getSingle();
+      expect(cursor.aggregateId, 'learning-event:attempt-1');
+      expect(cursor.actorIdentity, 'owner-reconcile');
+      expect(cursor.privacyClassification, 'anonymized');
+      expect(
+        cursor.consentContextJson,
+        jsonEncode(const ConsentContext.none().toJson()),
+      );
+      expect(cursor.experimentContextJson, isNull);
+      expect(cursor.contentRevision, isNull);
+      expect(cursor.policyVersion, isNull);
+      expect(cursor.providerProvenanceJson, isNull);
+      expect(cursor.appVersion, 'learning-projection-cursor-v1');
+      expect(cursor.buildId, 'learning-projection-cursor-v1');
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, ['learning-event:attempt-2']);
+      expect(await applied('streak'), {'learning-event:attempt-2'});
+    },
+  );
+
+  test(
     'missing quest prerequisite blocks reward cursor before later receipt',
     () async {
       await addEvent(1);
@@ -1088,7 +1154,10 @@ void main() {
         projection: 'quest',
         appliedVersion: 2,
         outcome: LearningProjectionOutcome.applied,
-        result: invalidAppliedResults[index],
+        result: const <String, dynamic>{
+          'eligible': true,
+          'rewardGrants': <Object>[],
+        },
       );
     }
     await store.markProjectionOutcome(
@@ -1096,9 +1165,9 @@ void main() {
       projection: 'quest',
       appliedVersion: 2,
       outcome: LearningProjectionOutcome.notApplicable,
-      result: <String, dynamic>{
+      result: const <String, dynamic>{
         'eligible': false,
-        'rewardGrants': <Object>[grant(idempotencyKey: 'skipped-grant')],
+        'rewardGrants': <Object>[],
       },
     );
     await store.markProjectionOutcome(
@@ -1110,6 +1179,42 @@ void main() {
         'eligible': true,
         'rewardGrants': <Object>[],
       },
+    );
+    for (var index = 0; index < invalidAppliedResults.length; index++) {
+      final receiptId =
+          'learning-projection:quest:learning-event:attempt-${index + 2}:v2';
+      final row = await (database.select(
+        database.eventsV2,
+      )..where((candidate) => candidate.eventId.equals(receiptId))).getSingle();
+      final payload = jsonDecode(row.payloadJson) as Map<String, dynamic>
+        ..['result'] = invalidAppliedResults[index];
+      await database.customUpdate(
+        'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+        variables: <Variable<Object>>[
+          Variable<String>(jsonEncode(payload)),
+          Variable<String>(receiptId),
+        ],
+        updates: {database.eventsV2},
+      );
+    }
+    const skippedReceiptId =
+        'learning-projection:quest:learning-event:attempt-14:v2';
+    final skippedRow = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(skippedReceiptId))).getSingle();
+    final skippedPayload =
+        jsonDecode(skippedRow.payloadJson) as Map<String, dynamic>
+          ..['result'] = <String, dynamic>{
+            'eligible': false,
+            'rewardGrants': <Object>[grant(idempotencyKey: 'skipped-grant')],
+          };
+    await database.customUpdate(
+      'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+      variables: <Variable<Object>>[
+        Variable<String>(jsonEncode(skippedPayload)),
+        const Variable<String>(skippedReceiptId),
+      ],
+      updates: {database.eventsV2},
     );
     final wrongSourceId =
         'learning-projection:quest:learning-event:attempt-15:v2';

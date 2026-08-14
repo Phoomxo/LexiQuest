@@ -101,6 +101,7 @@ final class LearningEvidenceDecisionSet {
     'evidenceClass': context.evidenceClass.name,
     'policyVersion': context.policyVersion,
     'rolloutMode': context.rolloutMode.name,
+    'evidenceContext': context.toJson(),
     'decisions': decisions.map((decision) => decision.toJson()).toList(),
   };
 }
@@ -163,6 +164,10 @@ final class DriftLearningEventStore {
   });
 
   static const int appliedProjectionVersion = 2;
+  static const String _projectionCursorAppVersion =
+      'learning-projection-cursor-v1';
+  static const String _projectionCursorBuildId =
+      'learning-projection-cursor-v1';
   static const List<String> _projectionNames = ['quest', 'streak', 'reward'];
 
   final db.AppDatabase database;
@@ -255,16 +260,17 @@ final class DriftLearningEventStore {
       context: context,
       rolloutMode: context.rolloutMode,
     );
+    final candidate = _decisionSetEvent(
+      attempt: attempt,
+      sourceEvent: validatedSource,
+      decisionSet: expected,
+    );
     final eventId = _decisionSetEventId(attempt.id);
     final existing = await (database.select(
       database.eventsV2,
     )..where((row) => row.eventId.equals(eventId))).getSingleOrNull();
     if (existing != null) {
-      _validateStoredDecisionSet(
-        row: existing,
-        attempt: attempt,
-        expected: expected,
-      );
+      _validateStoredDecisionSet(row: existing, expected: candidate);
       return expected;
     }
 
@@ -277,11 +283,6 @@ final class DriftLearningEventStore {
         'evidence rollout ${context.rolloutMode.name} is not configured',
       );
     }
-    final candidate = _decisionSetEvent(
-      attempt: attempt,
-      sourceEvent: validatedSource,
-      decisionSet: expected,
-    );
     await database.transaction(() async {
       await database
           .into(database.eventsV2)
@@ -289,11 +290,7 @@ final class DriftLearningEventStore {
       final stored = await (database.select(
         database.eventsV2,
       )..where((row) => row.eventId.equals(eventId))).getSingle();
-      _validateStoredDecisionSet(
-        row: stored,
-        attempt: attempt,
-        expected: expected,
-      );
+      _validateStoredDecisionSet(row: stored, expected: candidate);
     });
     return expected;
   }
@@ -680,22 +677,10 @@ final class DriftLearningEventStore {
 
   void _validateStoredDecisionSet({
     required db.EventsV2Data row,
-    required db.AnswerAttempt attempt,
-    required LearningEvidenceDecisionSet expected,
+    required EventEnvelopeV2 expected,
   }) {
-    if (row.eventId != _decisionSetEventId(attempt.id) ||
-        row.eventType != 'LearningEvidenceDecisionSet' ||
-        row.eventVersion != 1 ||
-        row.ownerId != attempt.ownerId ||
-        row.aggregateType != 'LearningEvidenceDecisionSet' ||
-        row.aggregateId != attempt.id ||
-        row.idempotencyKey != row.eventId) {
+    if (!_isExactStoredEvent(row, expected)) {
       throw StateError('learning evidence decision-set identity conflict');
-    }
-    final payload = jsonDecode(row.payloadJson);
-    if (payload is! Map ||
-        jsonEncode(payload) != jsonEncode(expected.toPayload())) {
-      throw StateError('learning evidence decision-set content conflict');
     }
   }
 
@@ -883,11 +868,6 @@ final class DriftLearningEventStore {
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    final cursorKey = _cursorKey(
-      ownerId: source.ownerIdentity,
-      projection: projection,
-      appliedVersion: appliedVersion,
-    );
     return database.transaction(() async {
       final receiptRows = await _rowsForBothIdentities(
         key: receiptKey,
@@ -909,13 +889,7 @@ final class DriftLearningEventStore {
         );
         return false;
       }
-      final cursorRows = await _rowsForBothIdentities(
-        key: cursorKey,
-        ownerId: source.ownerIdentity,
-      );
-      _requireCanonicalCursorRows(
-        rows: cursorRows,
-        key: cursorKey,
+      await _readProjectionCursor(
         ownerId: source.ownerIdentity,
         projection: projection,
         appliedVersion: appliedVersion,
@@ -1238,13 +1212,7 @@ final class DriftLearningEventStore {
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    final rows = await _rowsForBothIdentities(
-      key: key,
-      ownerId: source.ownerIdentity,
-    );
-    _requireCanonicalCursorRows(
-      rows: rows,
-      key: key,
+    await _readProjectionCursor(
       ownerId: source.ownerIdentity,
       projection: projection,
       appliedVersion: appliedVersion,
@@ -1252,6 +1220,11 @@ final class DriftLearningEventStore {
     await database
         .into(database.eventsV2)
         .insertOnConflictUpdate(_companion(cursor));
+    await _readProjectionCursor(
+      ownerId: source.ownerIdentity,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
     _requireExactStoredEvent(
       rows: await _rowsForBothIdentities(
         key: key,
@@ -1272,17 +1245,17 @@ final class DriftLearningEventStore {
     eventType: 'LearningProjectionCursor',
     eventVersion: 1,
     occurredAtUtc: source.occurredAtUtc,
-    recordedAtUtc: source.recordedAtUtc,
-    actorIdentity: source.actorIdentity,
+    recordedAtUtc: source.occurredAtUtc,
+    actorIdentity: source.ownerIdentity,
     ownerIdentity: source.ownerIdentity,
     aggregateType: 'LearningProjectionCursor',
     aggregateId: source.eventId,
     causationId: source.eventId,
     idempotencyKey: key,
-    consentContext: source.consentContext,
-    appVersion: source.appVersion,
-    buildId: source.buildId,
-    privacyClassification: source.privacyClassification,
+    consentContext: const ConsentContext.none(),
+    appVersion: _projectionCursorAppVersion,
+    buildId: _projectionCursorBuildId,
+    privacyClassification: PrivacyClassification.anonymized,
     payload: <String, dynamic>{
       'sourceEventId': source.eventId,
       'projection': projection,
@@ -1319,7 +1292,53 @@ final class DriftLearningEventStore {
       projection: projection,
       appliedVersion: appliedVersion,
     );
-    return rows.isEmpty ? null : rows.single;
+    if (rows.isEmpty) return null;
+    await _requireProjectionCursorProvenance(
+      cursorRow: rows.single,
+      ownerId: ownerId,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    return rows.single;
+  }
+
+  Future<void> _requireProjectionCursorProvenance({
+    required db.EventsV2Data cursorRow,
+    required String ownerId,
+    required String projection,
+    required int appliedVersion,
+  }) async {
+    late final EventEnvelopeV2 cursor;
+    late final EventEnvelopeV2 source;
+    try {
+      cursor = _toEvent(cursorRow);
+      final sourceRow =
+          await (database.select(database.eventsV2)
+                ..where((row) => row.eventId.equals(cursor.aggregateId)))
+              .getSingleOrNull();
+      if (sourceRow == null) {
+        throw StateError('learning projection cursor source is missing');
+      }
+      source = _toEvent(sourceRow);
+    } on StateError {
+      rethrow;
+    } catch (_) {
+      throw StateError('invalid learning projection cursor source');
+    }
+    if (source.eventId != cursor.aggregateId ||
+        source.ownerIdentity != ownerId ||
+        source.occurredAtUtc != cursor.occurredAtUtc ||
+        !source.idempotencyKey.startsWith('learning-attempt:')) {
+      throw StateError('invalid learning projection cursor provenance');
+    }
+    final receipt = await readProjectionReceipt(
+      source: source,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    if (receipt == null) {
+      throw StateError('learning projection cursor receipt is missing');
+    }
   }
 
   void _requireCanonicalCursorRows({
@@ -1366,6 +1385,7 @@ final class DriftLearningEventStore {
             event.occurredAtUtc,
           ) &&
           event.ownerIdentity == ownerId &&
+          event.actorIdentity == ownerId &&
           event.tenantContext == null &&
           event.aggregateType == 'LearningProjectionCursor' &&
           event.aggregateId == payload['sourceEventId'] &&
@@ -1375,6 +1395,10 @@ final class DriftLearningEventStore {
           event.contentRevision == null &&
           event.policyVersion == null &&
           event.providerProvenance == null &&
+          jsonEncode(event.consentContext.toJson()) ==
+              jsonEncode(const ConsentContext.none().toJson()) &&
+          event.appVersion == _projectionCursorAppVersion &&
+          event.buildId == _projectionCursorBuildId &&
           event.privacyClassification == PrivacyClassification.anonymized &&
           payload.length == payloadKeys.length &&
           payload.keys.every(payloadKeys.contains) &&

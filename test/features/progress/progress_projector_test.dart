@@ -135,67 +135,130 @@ void main() {
     expect(result.recommendations.single.sampleSize, 1);
   });
 
-  test('assessment evidence is absent from the practice read model', () async {
-    final assessment = _assessmentEvidence();
-    await database
-        .into(database.learningSessions)
-        .insert(
-          LearningSessionsCompanion.insert(
-            id: 'session-assessment',
-            ownerId: 'owner-1',
-            activityType: 'assessment',
-            state: 'completed',
-            startedAtUtcMs: DateTime.utc(2026, 7, 30, 9).millisecondsSinceEpoch,
-            endedAtUtcMs: Value(
-              DateTime.utc(2026, 7, 30, 10).millisecondsSinceEpoch,
+  test(
+    'assessment and recreational history are absent from every practice field',
+    () async {
+      final assessment = _assessmentEvidence();
+      final recreational = _recreationalEvidence();
+      await database
+          .into(database.learningSessions)
+          .insert(
+            LearningSessionsCompanion.insert(
+              id: 'session-assessment',
+              ownerId: 'owner-1',
+              activityType: 'assessment',
+              state: 'completed',
+              startedAtUtcMs: DateTime.utc(
+                2026,
+                7,
+                30,
+                9,
+              ).millisecondsSinceEpoch,
+              endedAtUtcMs: Value(
+                DateTime.utc(2026, 7, 30, 10).millisecondsSinceEpoch,
+              ),
+              correctCount: const Value(1),
+              score: const Value(100),
+              appVersion: 'test',
+              buildId: 'test',
             ),
-            correctCount: const Value(1),
-            score: const Value(100),
-            appVersion: 'test',
-            buildId: 'test',
-          ),
-        );
-    await database
-        .into(database.answerAttempts)
-        .insert(
-          AnswerAttemptsCompanion.insert(
-            id: 'attempt-assessment',
-            ownerId: 'owner-1',
-            sessionId: 'session-assessment',
-            wordId: 'word-1',
-            promptMode: 'assessmentResponse',
-            isCorrect: true,
-            responseTimeMs: const Value(300),
-            attemptNumber: 1,
-            occurredAtUtcMs: DateTime.utc(
-              2026,
-              7,
-              30,
-              9,
-              30,
-            ).millisecondsSinceEpoch,
-            evidenceClass: Value(assessment.evidenceClass.name),
-            evidenceContextJson: Value(jsonEncode(assessment.toJson())),
-          ),
-        );
+          );
+      await database
+          .into(database.learningSessions)
+          .insert(
+            LearningSessionsCompanion.insert(
+              id: 'session-recreational',
+              ownerId: 'owner-1',
+              activityType: 'game',
+              state: 'completed',
+              startedAtUtcMs: DateTime.utc(
+                2026,
+                7,
+                29,
+                9,
+              ).millisecondsSinceEpoch,
+              endedAtUtcMs: Value(
+                DateTime.utc(2026, 7, 29, 10).millisecondsSinceEpoch,
+              ),
+              correctCount: const Value(0),
+              score: const Value(0),
+              appVersion: 'test',
+              buildId: 'test',
+            ),
+          );
+      await database
+          .into(database.answerAttempts)
+          .insert(
+            AnswerAttemptsCompanion.insert(
+              id: 'attempt-assessment',
+              ownerId: 'owner-1',
+              sessionId: 'session-assessment',
+              wordId: 'word-1',
+              promptMode: 'assessmentResponse',
+              isCorrect: true,
+              responseTimeMs: const Value(300),
+              attemptNumber: 1,
+              occurredAtUtcMs: DateTime.utc(
+                2026,
+                7,
+                30,
+                9,
+                30,
+              ).millisecondsSinceEpoch,
+              evidenceClass: Value(assessment.evidenceClass.name),
+              evidenceContextJson: Value(jsonEncode(assessment.toJson())),
+            ),
+          );
+      await database
+          .into(database.answerAttempts)
+          .insert(
+            AnswerAttemptsCompanion.insert(
+              id: 'attempt-recreational',
+              ownerId: 'owner-1',
+              sessionId: 'session-recreational',
+              wordId: 'word-1',
+              promptMode: 'meaningChoice',
+              isCorrect: false,
+              responseTimeMs: const Value(900),
+              attemptNumber: 1,
+              occurredAtUtcMs: DateTime.utc(
+                2026,
+                7,
+                29,
+                9,
+                30,
+              ).millisecondsSinceEpoch,
+              evidenceClass: Value(recreational.evidenceClass.name),
+              evidenceContextJson: Value(jsonEncode(recreational.toJson())),
+            ),
+          );
 
-    final result = await progress.load(
-      ownerId: 'owner-1',
-      nowUtc: DateTime.utc(2026, 7, 30, 12),
-    );
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+      );
 
-    expect(result.sampleSize, 0);
-    expect(result.correctCount, 0);
-    expect(result.wrongCount, 0);
-    expect(result.accuracy, isNull);
-    expect(result.completedSessions, 0);
-    expect(result.streakDays, 0);
-    expect(result.skills.every((skill) => skill.sampleSize == 0), isTrue);
-    expect(result.weaknesses, isEmpty);
-    expect(result.recommendations, isEmpty);
-    expect(result.averageResponseTimeMs, isNull);
-    expect(result.latestEvidenceAtUtc, isNull);
-  });
+      expect(result.sampleSize, 0);
+      expect(result.correctCount, 0);
+      expect(result.wrongCount, 0);
+      expect(result.accuracy, isNull);
+      expect(result.completedSessions, 0);
+      expect(result.streakDays, 0);
+      expect(result.skills.every((skill) => skill.sampleSize == 0), isTrue);
+      expect(result.weaknesses, isEmpty);
+      expect(result.recommendations, isEmpty);
+      expect(result.averageResponseTimeMs, isNull);
+      expect(result.latestEvidenceAtUtc, isNull);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(2),
+      );
+      expect(
+        await database.select(database.learningSessions).get(),
+        hasLength(2),
+      );
+    },
+  );
 }
 
 EvidenceContext _frozenV13LegacyEvidence() =>
@@ -222,4 +285,13 @@ EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
   assessmentResponseCode: 'correct',
   scoringRuleVersion: 'score-v1',
   engagementAllowed: false,
+);
+
+EvidenceContext _recreationalEvidence() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.recreational,
+  skillId: 'game-history',
+  hintLevel: 0,
+  contentRevision: 'game-content-v1',
+  rolloutMode: EvidencePolicyRolloutMode.legacy,
+  engagementAllowed: true,
 );

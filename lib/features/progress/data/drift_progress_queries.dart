@@ -158,7 +158,7 @@ final class DriftProgressQueries {
       LEFT JOIN srs_states s
         ON s.word_id = a.word_id AND s.owner_id = a.owner_id
       WHERE a.owner_id = ? AND w.is_deleted = 0
-        AND a.evidence_class != 'assessment'
+        AND a.evidence_class NOT IN ('assessment', 'recreational')
         AND json_extract(a.evidence_context_json, '\$.evidenceClass') =
             a.evidence_class
       GROUP BY a.word_id, w.spelling, w.meaning, s.due_at_utc_ms
@@ -233,7 +233,8 @@ final class DriftProgressQueries {
         attempt.evidenceContextJson != jsonEncode(context.toJson())) {
       throw const FormatException('attempt evidence metadata mismatch');
     }
-    return context.evidenceClass != EvidenceClass.assessment;
+    return context.evidenceClass != EvidenceClass.assessment &&
+        context.evidenceClass != EvidenceClass.recreational;
   }
 
   int _streakDays(Iterable<int> timestamps, DateTime nowUtc) {

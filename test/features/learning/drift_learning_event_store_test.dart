@@ -193,6 +193,243 @@ void main() {
   });
 
   test(
+    'decision set replay validates the full immutable expected envelope',
+    () async {
+      final at = DateTime.utc(2026, 8, 14, 10);
+      final context = _enforcedEvidence();
+      final enforcedStore = DriftLearningEventStore(
+        database,
+        rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
+      );
+      await _insertAttempt(
+        database,
+        id: 'decision-envelope',
+        occurredAtUtc: at,
+        evidenceContext: context,
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'other-owner',
+              createdAtUtcMs: 2,
+              isActive: const Value(false),
+            ),
+          );
+      final attempt = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals('decision-envelope'))).getSingle();
+      final source = _enforcedEvent(
+        sourceEvidenceId: 'decision-envelope',
+        occurredAtUtc: at,
+        evidenceContext: context,
+      );
+      await enforcedStore.ensureDecisionSetForAttempt(
+        attempt: attempt,
+        sourceEvent: source,
+      );
+      const decisionId = 'learning-evidence-decisions:decision-envelope:v1';
+      final canonical = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(decisionId))).getSingle();
+      final canonicalPayload =
+          jsonDecode(canonical.payloadJson) as Map<String, dynamic>;
+      expect(
+        canonicalPayload['evidenceContext'],
+        isA<Map>(),
+        reason: 'protocol and assignment identity must be immutable evidence',
+      );
+      String mutatePayload(void Function(Map<String, dynamic>) mutate) {
+        final payload =
+            jsonDecode(canonical.payloadJson) as Map<String, dynamic>;
+        mutate(payload);
+        return jsonEncode(payload);
+      }
+
+      final changedExperiment =
+          jsonDecode(canonical.experimentContextJson!) as Map<String, dynamic>
+            ..['variantId'] = 'forged';
+      final corruptions = <(String, EventsV2Data Function(EventsV2Data))>[
+        (
+          'occurred time',
+          (row) => row.copyWith(
+            occurredAtUtc: row.occurredAtUtc.add(const Duration(seconds: 1)),
+          ),
+        ),
+        (
+          'recorded time',
+          (row) => row.copyWith(
+            recordedAtUtc: row.recordedAtUtc.add(const Duration(seconds: 1)),
+          ),
+        ),
+        ('actor lineage', (row) => row.copyWith(actorIdentity: 'other-owner')),
+        ('owner', (row) => row.copyWith(ownerId: 'other-owner')),
+        (
+          'tenant null rule',
+          (row) => row.copyWith(
+            tenantContextJson: const Value(
+              '{"tenantId":"tenant-1","role":"student"}',
+            ),
+          ),
+        ),
+        (
+          'aggregate type',
+          (row) => row.copyWith(aggregateType: 'OtherAggregate'),
+        ),
+        ('aggregate id', (row) => row.copyWith(aggregateId: 'other-attempt')),
+        (
+          'correlation null rule',
+          (row) =>
+              row.copyWith(correlationId: const Value('forged-correlation')),
+        ),
+        (
+          'causation',
+          (row) => row.copyWith(
+            causationId: const Value('learning-event:other-attempt'),
+          ),
+        ),
+        (
+          'idempotency',
+          (row) => row.copyWith(idempotencyKey: 'forged-idempotency'),
+        ),
+        (
+          'consent',
+          (row) => row.copyWith(
+            consentContextJson: jsonEncode(
+              const ConsentContext.none().toJson(),
+            ),
+          ),
+        ),
+        (
+          'experiment',
+          (row) => row.copyWith(
+            experimentContextJson: Value(jsonEncode(changedExperiment)),
+          ),
+        ),
+        (
+          'content revision',
+          (row) => row.copyWith(contentRevision: const Value('forged-content')),
+        ),
+        (
+          'policy version',
+          (row) => row.copyWith(policyVersion: const Value('forged-policy')),
+        ),
+        ('app version', (row) => row.copyWith(appVersion: 'forged-app')),
+        ('build id', (row) => row.copyWith(buildId: 'forged-build')),
+        (
+          'provider null rule',
+          (row) => row.copyWith(
+            providerProvenanceJson: const Value(
+              '{"providerId":"provider-1","modelVersion":"model-1"}',
+            ),
+          ),
+        ),
+        ('privacy', (row) => row.copyWith(privacyClassification: 'ownerOnly')),
+        ('event version', (row) => row.copyWith(eventVersion: 2)),
+        ('event type', (row) => row.copyWith(eventType: 'ForgedDecision')),
+        (
+          'protocol',
+          (row) => row.copyWith(
+            payloadJson: mutatePayload(
+              (payload) => (payload['evidenceContext'] as Map)['protocolId'] =
+                  'forged-protocol',
+            ),
+          ),
+        ),
+        (
+          'assignment',
+          (row) => row.copyWith(
+            payloadJson: mutatePayload(
+              (payload) => (payload['evidenceContext'] as Map)['assignmentId'] =
+                  'forged-assignment',
+            ),
+          ),
+        ),
+        (
+          'decision payload',
+          (row) => row.copyWith(
+            payloadJson: mutatePayload(
+              (payload) =>
+                  ((payload['decisions'] as List).first
+                          as Map<String, dynamic>)['effectiveDecision'] =
+                      'deny',
+            ),
+          ),
+        ),
+      ];
+      for (final (label, mutate) in corruptions) {
+        await (database.delete(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(decisionId))).go();
+        await database.into(database.eventsV2).insert(mutate(canonical));
+        await expectLater(
+          enforcedStore.ensureDecisionSetForAttempt(
+            attempt: attempt,
+            sourceEvent: source,
+          ),
+          throwsStateError,
+          reason: label,
+        );
+      }
+    },
+  );
+
+  test(
+    'upgraded owner replays a decision set authored by its merged guest',
+    () async {
+      final at = DateTime.utc(2026, 8, 14, 10, 30);
+      final context = _declaredEvidence();
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: 'merged-guest',
+              accountState: const Value('mergedInto:owner-1'),
+              createdAtUtcMs: 0,
+              isActive: const Value(false),
+            ),
+          );
+      await _insertAttempt(
+        database,
+        id: 'upgraded-decision',
+        occurredAtUtc: at,
+        evidenceContext: context,
+      );
+      final attempt = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals('upgraded-decision'))).getSingle();
+      final source = _mutateEvent(
+        _event(
+          sourceEvidenceId: 'upgraded-decision',
+          occurredAtUtc: at,
+          evidenceContext: context,
+        ),
+        (json) => json['actorIdentity'] = 'merged-guest',
+      );
+
+      await store.ensureDecisionSetForAttempt(
+        attempt: attempt,
+        sourceEvent: source,
+      );
+      final replayed = await store.ensureDecisionSetForAttempt(
+        attempt: attempt,
+        sourceEvent: source,
+      );
+
+      expect(replayed.sourceEvidenceId, 'upgraded-decision');
+      final stored =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-evidence-decisions:upgraded-decision:v1',
+                ),
+              ))
+              .getSingle();
+      expect(stored.actorIdentity, 'merged-guest');
+      expect(stored.ownerId, 'owner-1');
+    },
+  );
+
+  test(
     'declared v2 correlation rejects every non-canonical envelope shape',
     () async {
       final occurredAtUtc = DateTime.utc(2026, 8, 14, 11, 0, 0, 123);
@@ -530,12 +767,103 @@ void main() {
   );
 
   test(
+    'cursor discovery rejects dangling future and receiptless provenance',
+    () async {
+      final first = _event(
+        sourceEvidenceId: 'cursor-source-1',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 19),
+      );
+      final second = _event(
+        sourceEvidenceId: 'cursor-source-2',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 20),
+      );
+      await store.append(first);
+      await store.append(second);
+
+      await store.markProjectionOutcome(
+        source: first,
+        projection: 'quest',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+        result: const <String, dynamic>{
+          'eligible': true,
+          'rewardGrants': <Object>[],
+        },
+      );
+      const questCursorId = 'learning-projection-cursor:owner-1:quest:v2';
+      final forgedAt = first.occurredAtUtc.add(const Duration(days: 30));
+      await database.customUpdate(
+        '''UPDATE events_v2
+           SET occurred_at_utc = ?, recorded_at_utc = ?
+           WHERE event_id = ?''',
+        variables: <Variable<Object>>[
+          Variable<DateTime>(forgedAt),
+          Variable<DateTime>(forgedAt),
+          const Variable<String>(questCursorId),
+        ],
+        updates: {database.eventsV2},
+      );
+      await expectLater(
+        store.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'quest',
+          appliedVersion: 2,
+          limit: 50,
+        ),
+        throwsStateError,
+        reason: 'a forged future cursor must not skip valid pending evidence',
+      );
+      await (database.delete(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(questCursorId))).go();
+
+      final receiptless = _projectionCursor(
+        sourceEventId: second.eventId,
+        projection: 'streak',
+        occurredAtUtc: second.occurredAtUtc,
+      );
+      await _insertRawEvent(database, receiptless);
+      await expectLater(
+        store.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'streak',
+          appliedVersion: 2,
+          limit: 50,
+        ),
+        throwsStateError,
+        reason: 'a cursor without its matching terminal receipt is invalid',
+      );
+      await (database.delete(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(receiptless.eventId))).go();
+
+      final dangling = _projectionCursor(
+        sourceEventId: 'learning-event:missing-source',
+        projection: 'reward',
+        occurredAtUtc: DateTime.utc(2030),
+      );
+      await _insertRawEvent(database, dangling);
+      await expectLater(
+        store.listPendingProjectionEvents(
+          ownerId: 'owner-1',
+          projection: 'reward',
+          appliedVersion: 2,
+          limit: 50,
+        ),
+        throwsStateError,
+        reason: 'a dangling cursor source cannot establish ordering',
+      );
+    },
+  );
+
+  test(
     'present optional receipt and Quest grant fields cannot be null',
     () async {
       final source = _event(
         sourceEvidenceId: 'null-receipt-fields',
         occurredAtUtc: DateTime.utc(2026, 8, 14, 17),
       );
+      await store.append(source);
       await store.markProjectionOutcome(
         source: source,
         projection: 'streak',
@@ -587,6 +915,7 @@ void main() {
         sourceEvidenceId: 'null-reward-item',
         occurredAtUtc: DateTime.utc(2026, 8, 14, 18),
       );
+      await store.append(questSource);
       await store.markProjectionOutcome(
         source: questSource,
         projection: 'quest',
@@ -599,10 +928,29 @@ void main() {
               'ownerId': 'owner-1',
               'idempotencyKey': 'null-reward-item',
               'xpAmount': 1,
-              'rewardItemId': null,
             },
           ],
         },
+      );
+      const questReceiptId =
+          'learning-projection:quest:learning-event:null-reward-item:v1';
+      final questReceipt = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(questReceiptId))).getSingle();
+      final questPayload =
+          jsonDecode(questReceipt.payloadJson) as Map<String, dynamic>;
+      (((questPayload['result'] as Map<String, dynamic>)['rewardGrants']
+                      as List)
+                  .single
+              as Map<String, dynamic>)['rewardItemId'] =
+          null;
+      await database.customUpdate(
+        'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+        variables: <Variable<Object>>[
+          Variable<String>(jsonEncode(questPayload)),
+          const Variable<String>(questReceiptId),
+        ],
+        updates: {database.eventsV2},
       );
       await expectLater(
         store.readProjectionReceipt(
@@ -763,6 +1111,36 @@ EventEnvelopeV2 _mutateEvent(
       .cast<String, dynamic>();
   mutate(json);
   return EventEnvelopeV2.fromJson(json);
+}
+
+EventEnvelopeV2 _projectionCursor({
+  required String sourceEventId,
+  required String projection,
+  required DateTime occurredAtUtc,
+}) {
+  final key = 'learning-projection-cursor:owner-1:$projection:v2';
+  return EventEnvelopeV2(
+    eventId: key,
+    eventType: 'LearningProjectionCursor',
+    eventVersion: 1,
+    occurredAtUtc: occurredAtUtc,
+    recordedAtUtc: occurredAtUtc,
+    actorIdentity: 'owner-1',
+    ownerIdentity: 'owner-1',
+    aggregateType: 'LearningProjectionCursor',
+    aggregateId: sourceEventId,
+    causationId: sourceEventId,
+    idempotencyKey: key,
+    consentContext: const ConsentContext.none(),
+    appVersion: 'learning-projection-cursor-v1',
+    buildId: 'learning-projection-cursor-v1',
+    privacyClassification: PrivacyClassification.anonymized,
+    payload: <String, dynamic>{
+      'sourceEventId': sourceEventId,
+      'projection': projection,
+      'appliedVersion': 2,
+    },
+  );
 }
 
 Future<void> _insertRawEvent(AppDatabase database, EventEnvelopeV2 event) =>
