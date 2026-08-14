@@ -1,20 +1,27 @@
 import '../../../data/local/app_database.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../data/drift_learning_event_store.dart';
-
-enum LearningProjectionOutcome { applied, notApplicable }
+import '../domain/evidence_eligibility_policy.dart';
 
 final class LearningProjectionResult {
   const LearningProjectionResult.applied({
     this.payload = const <String, dynamic>{},
-  }) : outcome = LearningProjectionOutcome.applied;
+  }) : outcome = LearningProjectionOutcome.applied,
+       reasonCode = null;
 
   const LearningProjectionResult.notApplicable({
     this.payload = const <String, dynamic>{},
-  }) : outcome = LearningProjectionOutcome.notApplicable;
+  }) : outcome = LearningProjectionOutcome.notApplicable,
+       reasonCode = null;
+
+  const LearningProjectionResult.blocked({
+    required this.reasonCode,
+    this.payload = const <String, dynamic>{},
+  }) : outcome = LearningProjectionOutcome.blocked;
 
   final LearningProjectionOutcome outcome;
   final Map<String, dynamic> payload;
+  final String? reasonCode;
 }
 
 typedef LearningProjectionSink =
@@ -32,7 +39,15 @@ final class LearningSideEffectReconciler {
     this.streakSink,
     this.rewardSink,
     this.pendingBatchSize = 50,
-  }) : _events = DriftLearningEventStore(database);
+    EvidenceEligibilityPolicy evidencePolicy =
+        const EvidenceEligibilityPolicySet(),
+    EvidencePolicyRolloutModeProvider rolloutModeProvider =
+        const ContextEvidencePolicyRolloutModeProvider(),
+  }) : _events = DriftLearningEventStore(
+         database,
+         evidencePolicy: evidencePolicy,
+         rolloutModeProvider: rolloutModeProvider,
+       );
 
   static const int appliedVersion =
       DriftLearningEventStore.appliedProjectionVersion;
@@ -62,14 +77,83 @@ final class LearningSideEffectReconciler {
       limit: pendingBatchSize,
     );
     for (final pending in events) {
+      final resolution = await _events.resolveEvidenceForSource(pending.event);
+      final evidence = resolution.evidence;
+      if (evidence == null) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: projection,
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.blocked,
+          reasonCode: resolution.reasonCode!,
+        );
+        continue;
+      }
+      final policyProjection = _policyProjection(projection);
+      final decision = evidence.decisionSet.decisionFor(policyProjection);
+      final decisionPayload = _decisionPayload(decision);
+      late final LearningProjectionReceipt? v1Receipt;
+      try {
+        v1Receipt = await _events.readProjectionReceipt(
+          sourceEventId: pending.event.eventId,
+          projection: projection,
+          appliedVersion: 1,
+        );
+      } on StateError {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: projection,
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.blocked,
+          reasonCode: 'invalidV1Receipt',
+          decision: decisionPayload,
+        );
+        continue;
+      }
+      if (v1Receipt != null) {
+        if (v1Receipt.outcome == LearningProjectionOutcome.blocked) {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: projection,
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.blocked,
+            reasonCode: 'invalidV1Receipt',
+            decision: decisionPayload,
+          );
+        } else {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: projection,
+            appliedVersion: appliedVersion,
+            outcome: v1Receipt.outcome,
+            result: v1Receipt.result,
+            bridgedFromVersion: 1,
+            decision: decisionPayload,
+          );
+        }
+        continue;
+      }
+      if (!evidence.decisionSet.allows(policyProjection)) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: projection,
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.notApplicable,
+          result: const <String, dynamic>{'reasonCode': 'evidenceIneligible'},
+          decision: decisionPayload,
+        );
+        continue;
+      }
       try {
         final outcome = await sink(pending.event);
         await _events.markProjectionOutcome(
           source: pending.event,
           projection: projection,
           appliedVersion: appliedVersion,
-          applied: outcome.outcome == LearningProjectionOutcome.applied,
+          outcome: outcome.outcome,
           result: outcome.payload,
+          reasonCode: outcome.reasonCode,
+          decision: decisionPayload,
         );
       } catch (_) {
         // Preserve chronological ordering: the next event cannot overtake it.
@@ -89,27 +173,120 @@ final class LearningSideEffectReconciler {
       prerequisiteProjection: 'quest',
     );
     for (final pending in events) {
+      final resolution = await _events.resolveEvidenceForSource(pending.event);
+      final evidence = resolution.evidence;
+      if (evidence == null) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.blocked,
+          reasonCode: resolution.reasonCode!,
+        );
+        continue;
+      }
       if (pending.prerequisiteApplied == null) {
         // The prerequisite projection owns the same contiguous source prefix.
         // Do not let a later joined receipt advance reward beyond a gap.
         break;
       }
+      final decision = evidence.decisionSet.decisionFor(LearningProjection.xp);
+      final decisionPayload = _decisionPayload(decision);
+      late final LearningProjectionReceipt? v1Receipt;
       try {
-        final outcome = pending.prerequisiteApplied == true
-            ? await sink(pending.event, pending.prerequisitePayload)
-            : const LearningProjectionResult.notApplicable();
+        v1Receipt = await _events.readProjectionReceipt(
+          sourceEventId: pending.event.eventId,
+          projection: 'reward',
+          appliedVersion: 1,
+        );
+      } on StateError {
         await _events.markProjectionOutcome(
           source: pending.event,
           projection: 'reward',
           appliedVersion: appliedVersion,
-          applied: outcome.outcome == LearningProjectionOutcome.applied,
+          outcome: LearningProjectionOutcome.blocked,
+          reasonCode: 'invalidV1Receipt',
+          decision: decisionPayload,
+        );
+        continue;
+      }
+      if (v1Receipt != null) {
+        if (v1Receipt.outcome == LearningProjectionOutcome.blocked) {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.blocked,
+            reasonCode: 'invalidV1Receipt',
+            decision: decisionPayload,
+          );
+        } else if (v1Receipt.outcome == LearningProjectionOutcome.applied &&
+            pending.prerequisiteApplied != true) {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: LearningProjectionOutcome.blocked,
+            reasonCode: 'rewardV1AppliedWithoutQuestPrerequisite',
+            decision: decisionPayload,
+          );
+        } else {
+          await _events.markProjectionOutcome(
+            source: pending.event,
+            projection: 'reward',
+            appliedVersion: appliedVersion,
+            outcome: v1Receipt.outcome,
+            result: v1Receipt.result,
+            bridgedFromVersion: 1,
+            decision: decisionPayload,
+          );
+        }
+        continue;
+      }
+      if (!evidence.decisionSet.allows(LearningProjection.xp) ||
+          pending.prerequisiteApplied == false) {
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          outcome: LearningProjectionOutcome.notApplicable,
+          result: <String, dynamic>{
+            'reasonCode': evidence.decisionSet.allows(LearningProjection.xp)
+                ? 'questPrerequisiteNotApplied'
+                : 'evidenceIneligible',
+          },
+          decision: decisionPayload,
+        );
+        continue;
+      }
+      try {
+        final outcome = await sink(pending.event, pending.prerequisitePayload);
+        await _events.markProjectionOutcome(
+          source: pending.event,
+          projection: 'reward',
+          appliedVersion: appliedVersion,
+          outcome: outcome.outcome,
           result: outcome.payload,
+          reasonCode: outcome.reasonCode,
+          decision: decisionPayload,
         );
       } catch (_) {
         break;
       }
     }
   }
+
+  LearningProjection _policyProjection(String projection) =>
+      switch (projection) {
+        'quest' => LearningProjection.quest,
+        'streak' => LearningProjection.streak,
+        'reward' => LearningProjection.xp,
+        _ => throw StateError('unsupported learning projection $projection'),
+      };
+
+  Map<String, dynamic> _decisionPayload(
+    LearningEvidenceProjectionDecisionRecord decision,
+  ) => decision.toJson().cast<String, dynamic>();
 }
 
 /// Coalesces fixed reconciliation batches without blocking answer/startup paths.

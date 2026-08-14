@@ -46,6 +46,9 @@ void main() {
         const Duration(seconds: 2, milliseconds: 123),
       );
       const sourceEvidenceId = 'guest-learning-evidence';
+      const learningEventId = 'learning-event:$sourceEvidenceId';
+      const decisionEventId =
+          'learning-evidence-decisions:$sourceEvidenceId:v1';
       const accountOwnerId = 'account-learning-owner';
       const firebaseUid = 'firebase-learning-owner';
       final evidenceContext = EvidenceContext.legacyCompatibility(
@@ -106,7 +109,9 @@ void main() {
           )).inserted,
           isTrue,
         );
-        final firstEvent = await database.select(database.eventsV2).getSingle();
+        final firstEvent = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(learningEventId))).getSingle();
         expect(firstEvent.ownerId, guest.id);
         expect(firstEvent.actorIdentity, guest.id);
         expect(
@@ -136,9 +141,12 @@ void main() {
 
         await database.close();
         database = openDatabase();
-        final storedBeforeReplay = await database
-            .select(database.eventsV2)
-            .getSingle();
+        final storedBeforeReplay = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(learningEventId))).getSingle();
+        final decisionBeforeReplay = await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(decisionEventId))).getSingle();
         expect(storedBeforeReplay.ownerId, accountOwnerId);
         expect(storedBeforeReplay.actorIdentity, guest.id);
         final unavailableProvider = _UnavailableLearningEventContextProvider();
@@ -177,7 +185,10 @@ void main() {
         expect(replay.inserted, isFalse);
         expect(unavailableProvider.calls, 0);
         expect(
-          (await database.select(database.eventsV2).getSingle()).toJson(),
+          (await (database.select(database.eventsV2)
+                    ..where((row) => row.eventId.equals(learningEventId)))
+                  .getSingle())
+              .toJson(),
           storedBeforeReplay.toJson(),
         );
 
@@ -218,10 +229,24 @@ void main() {
           await database.select(database.answerAttempts).get(),
           hasLength(1),
         );
-        expect(await database.select(database.eventsV2).get(), hasLength(1));
+        final storedAfterReplay = await database
+            .select(database.eventsV2)
+            .get();
         expect(
-          (await database.select(database.eventsV2).getSingle()).toJson(),
+          storedAfterReplay.map((event) => event.eventId).toSet(),
+          <String>{learningEventId, decisionEventId},
+        );
+        expect(
+          storedAfterReplay
+              .singleWhere((event) => event.eventId == learningEventId)
+              .toJson(),
           storedBeforeReplay.toJson(),
+        );
+        expect(
+          storedAfterReplay
+              .singleWhere((event) => event.eventId == decisionEventId)
+              .toJson(),
+          decisionBeforeReplay.toJson(),
         );
       } finally {
         await database?.close();

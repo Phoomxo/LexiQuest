@@ -4,7 +4,141 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../events/domain/event_envelope_v2.dart';
+import '../domain/evidence_context.dart';
+import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
+
+abstract interface class EvidencePolicyRolloutModeProvider {
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+  });
+}
+
+final class ContextEvidencePolicyRolloutModeProvider
+    implements EvidencePolicyRolloutModeProvider {
+  const ContextEvidencePolicyRolloutModeProvider();
+
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+  }) async => evidenceContext.rolloutMode;
+}
+
+final class FixedEvidencePolicyRolloutModeProvider
+    implements EvidencePolicyRolloutModeProvider {
+  const FixedEvidencePolicyRolloutModeProvider(this.mode);
+
+  const FixedEvidencePolicyRolloutModeProvider.legacy()
+    : mode = EvidencePolicyRolloutMode.legacy;
+
+  final EvidencePolicyRolloutMode mode;
+
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+  }) async => mode;
+}
+
+enum LearningProjectionOutcome { applied, notApplicable, blocked }
+
+final class LearningEvidenceProjectionDecisionRecord {
+  const LearningEvidenceProjectionDecisionRecord({
+    required this.projection,
+    required this.rolloutMode,
+    required this.effectiveDecision,
+    required this.candidateV1Decision,
+    required this.policyVersion,
+    required this.divergence,
+  });
+
+  final LearningProjection projection;
+  final EvidencePolicyRolloutMode rolloutMode;
+  final ProjectionDisposition effectiveDecision;
+  final ProjectionDisposition? candidateV1Decision;
+  final String policyVersion;
+  final bool divergence;
+
+  Map<String, Object?> toJson() => <String, Object?>{
+    'projection': projection.name,
+    'rolloutMode': rolloutMode.name,
+    'effectiveDecision': effectiveDecision.name,
+    'candidateV1Decision': candidateV1Decision?.name,
+    'policyVersion': policyVersion,
+    'divergence': divergence,
+  };
+}
+
+final class LearningEvidenceDecisionSet {
+  const LearningEvidenceDecisionSet({
+    required this.sourceEvidenceId,
+    required this.context,
+    required this.decisions,
+  });
+
+  final String sourceEvidenceId;
+  final EvidenceContext context;
+  final List<LearningEvidenceProjectionDecisionRecord> decisions;
+
+  LearningEvidenceProjectionDecisionRecord decisionFor(
+    LearningProjection projection,
+  ) => decisions.singleWhere((decision) => decision.projection == projection);
+
+  bool allows(LearningProjection projection) {
+    return switch (decisionFor(projection).effectiveDecision) {
+      ProjectionDisposition.allow => true,
+      ProjectionDisposition.deny => false,
+      ProjectionDisposition.protocolControlled => context.engagementAllowed,
+    };
+  }
+
+  Map<String, Object?> toPayload() => <String, Object?>{
+    'sourceEvidenceId': sourceEvidenceId,
+    'evidenceClass': context.evidenceClass.name,
+    'policyVersion': context.policyVersion,
+    'rolloutMode': context.rolloutMode.name,
+    'decisions': decisions.map((decision) => decision.toJson()).toList(),
+  };
+}
+
+final class ResolvedLearningEvidence {
+  const ResolvedLearningEvidence({
+    required this.attempt,
+    required this.context,
+    required this.decisionSet,
+  });
+
+  final db.AnswerAttempt attempt;
+  final EvidenceContext context;
+  final LearningEvidenceDecisionSet decisionSet;
+}
+
+final class LearningEvidenceResolution {
+  const LearningEvidenceResolution.resolved(this.evidence) : reasonCode = null;
+
+  const LearningEvidenceResolution.blocked(this.reasonCode) : evidence = null;
+
+  final ResolvedLearningEvidence? evidence;
+  final String? reasonCode;
+
+  bool get isResolved => evidence != null;
+}
+
+final class LearningProjectionReceipt {
+  const LearningProjectionReceipt({
+    required this.outcome,
+    required this.result,
+    this.reasonCode,
+    this.bridgedFromVersion,
+  });
+
+  final LearningProjectionOutcome outcome;
+  final Map<String, dynamic> result;
+  final String? reasonCode;
+  final int? bridgedFromVersion;
+}
 
 final class PendingLearningProjectionEvent {
   const PendingLearningProjectionEvent({
@@ -19,12 +153,18 @@ final class PendingLearningProjectionEvent {
 }
 
 final class DriftLearningEventStore {
-  const DriftLearningEventStore(this.database);
+  const DriftLearningEventStore(
+    this.database, {
+    this.evidencePolicy = const EvidenceEligibilityPolicySet(),
+    this.rolloutModeProvider = const ContextEvidencePolicyRolloutModeProvider(),
+  });
 
-  static const int appliedProjectionVersion = 1;
+  static const int appliedProjectionVersion = 2;
   static const List<String> _projectionNames = ['quest', 'streak', 'reward'];
 
   final db.AppDatabase database;
+  final EvidenceEligibilityPolicy evidencePolicy;
+  final EvidencePolicyRolloutModeProvider rolloutModeProvider;
 
   static List<String> projectionCursorIds({
     required String ownerId,
@@ -85,6 +225,279 @@ final class DriftLearningEventStore {
     }
     _requireCanonicalEventTime(event, stateError: true);
     return event;
+  }
+
+  Future<LearningEvidenceDecisionSet> ensureDecisionSetForAttempt({
+    required db.AnswerAttempt attempt,
+    EventEnvelopeV2? sourceEvent,
+  }) async {
+    final context = _contextForAttempt(attempt);
+    final expected = _buildDecisionSet(
+      sourceEvidenceId: attempt.id,
+      context: context,
+      rolloutMode: context.rolloutMode,
+    );
+    final eventId = _decisionSetEventId(attempt.id);
+    final existing = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(eventId))).getSingleOrNull();
+    if (existing != null) {
+      _validateStoredDecisionSet(
+        row: existing,
+        attempt: attempt,
+        expected: expected,
+      );
+      return expected;
+    }
+
+    final configuredMode = await rolloutModeProvider.resolve(
+      ownerId: attempt.ownerId,
+      evidenceContext: context,
+    );
+    if (configuredMode != context.rolloutMode) {
+      throw StateError(
+        'evidence rollout ${context.rolloutMode.name} is not configured',
+      );
+    }
+    final candidate = _decisionSetEvent(
+      attempt: attempt,
+      sourceEvent: sourceEvent,
+      decisionSet: expected,
+    );
+    await database.transaction(() async {
+      await database
+          .into(database.eventsV2)
+          .insert(_companion(candidate), mode: InsertMode.insertOrIgnore);
+      final stored = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(eventId))).getSingle();
+      _validateStoredDecisionSet(
+        row: stored,
+        attempt: attempt,
+        expected: expected,
+      );
+    });
+    return expected;
+  }
+
+  Future<LearningEvidenceResolution> resolveEvidenceForSource(
+    EventEnvelopeV2 source,
+  ) async {
+    final attemptId = source.payload['attemptId'];
+    if (attemptId is! String ||
+        !LearningEvidenceContract.validIdentifier(attemptId)) {
+      return const LearningEvidenceResolution.blocked('invalidAttemptId');
+    }
+    final attempt = await (database.select(
+      database.answerAttempts,
+    )..where((row) => row.id.equals(attemptId))).getSingleOrNull();
+    if (attempt == null) {
+      return const LearningEvidenceResolution.blocked(
+        'canonicalAttemptMissing',
+      );
+    }
+    if (attempt.ownerId != source.ownerIdentity) {
+      return const LearningEvidenceResolution.blocked('attemptOwnerMismatch');
+    }
+
+    late final EvidenceContext context;
+    try {
+      context = _contextForAttempt(attempt);
+    } on FormatException {
+      return const LearningEvidenceResolution.blocked(
+        'invalidCanonicalEvidenceContext',
+      );
+    } on TypeError {
+      return const LearningEvidenceResolution.blocked(
+        'invalidCanonicalEvidenceContext',
+      );
+    }
+
+    if (source.payload.containsKey('evidenceContext')) {
+      final payloadContext = source.payload['evidenceContext'];
+      if (payloadContext is! Map) {
+        return const LearningEvidenceResolution.blocked(
+          'invalidPayloadEvidenceContext',
+        );
+      }
+      try {
+        final decoded = EvidenceContext.fromJson(
+          payloadContext.cast<String, Object?>(),
+        );
+        if (decoded.evidenceClass.name != attempt.evidenceClass) {
+          return const LearningEvidenceResolution.blocked(
+            'evidenceClassMismatch',
+          );
+        }
+        if (jsonEncode(decoded.toJson()) != attempt.evidenceContextJson) {
+          return const LearningEvidenceResolution.blocked(
+            'evidenceContextMismatch',
+          );
+        }
+      } on FormatException {
+        return const LearningEvidenceResolution.blocked(
+          'invalidPayloadEvidenceContext',
+        );
+      } on TypeError {
+        return const LearningEvidenceResolution.blocked(
+          'invalidPayloadEvidenceContext',
+        );
+      }
+    } else if (context.classificationSource !=
+            EvidenceClassificationSource.legacyInferred ||
+        context.policyVersion != EvidenceContext.legacyPolicyVersion ||
+        context.rolloutMode != EvidencePolicyRolloutMode.legacy) {
+      return const LearningEvidenceResolution.blocked(
+        'contextlessNonLegacyAttempt',
+      );
+    }
+
+    try {
+      final decisionSet = await ensureDecisionSetForAttempt(
+        attempt: attempt,
+        sourceEvent: source,
+      );
+      return LearningEvidenceResolution.resolved(
+        ResolvedLearningEvidence(
+          attempt: attempt,
+          context: context,
+          decisionSet: decisionSet,
+        ),
+      );
+    } on ArgumentError {
+      return const LearningEvidenceResolution.blocked('decisionSetConflict');
+    } on FormatException {
+      return const LearningEvidenceResolution.blocked('decisionSetConflict');
+    } on StateError {
+      return const LearningEvidenceResolution.blocked('decisionSetConflict');
+    }
+  }
+
+  EvidenceContext _contextForAttempt(db.AnswerAttempt attempt) {
+    final decoded = jsonDecode(attempt.evidenceContextJson);
+    if (decoded is! Map) {
+      throw const FormatException('attempt evidence context must be an object');
+    }
+    final context = EvidenceContext.fromJson(decoded.cast<String, Object?>());
+    if (attempt.evidenceClass != context.evidenceClass.name ||
+        attempt.evidenceContextJson != jsonEncode(context.toJson())) {
+      throw const FormatException('attempt evidence metadata mismatch');
+    }
+    return context;
+  }
+
+  LearningEvidenceDecisionSet _buildDecisionSet({
+    required String sourceEvidenceId,
+    required EvidenceContext context,
+    required EvidencePolicyRolloutMode rolloutMode,
+  }) {
+    context.validate();
+    if (rolloutMode != context.rolloutMode) {
+      throw StateError('decision-set rollout does not match evidence');
+    }
+    final decisions = LearningProjection.values
+        .map((projection) {
+          final candidate = evidencePolicy.disposition(context, projection);
+          final effective = switch (rolloutMode) {
+            EvidencePolicyRolloutMode.legacy =>
+              legacyEvidenceEligibilityV1[projection]!,
+            EvidencePolicyRolloutMode.shadow =>
+              legacyEvidenceEligibilityV1[projection]!,
+            EvidencePolicyRolloutMode.enforced => candidate,
+          };
+          final candidateToRecord =
+              rolloutMode == EvidencePolicyRolloutMode.shadow
+              ? candidate
+              : null;
+          return LearningEvidenceProjectionDecisionRecord(
+            projection: projection,
+            rolloutMode: rolloutMode,
+            effectiveDecision: effective,
+            candidateV1Decision: candidateToRecord,
+            policyVersion: context.policyVersion,
+            divergence:
+                candidateToRecord != null && candidateToRecord != effective,
+          );
+        })
+        .toList(growable: false);
+    if (decisions.length != LearningProjection.values.length) {
+      throw StateError('incomplete learning evidence decision set');
+    }
+    return LearningEvidenceDecisionSet(
+      sourceEvidenceId: sourceEvidenceId,
+      context: context,
+      decisions: List<LearningEvidenceProjectionDecisionRecord>.unmodifiable(
+        decisions,
+      ),
+    );
+  }
+
+  EventEnvelopeV2 _decisionSetEvent({
+    required db.AnswerAttempt attempt,
+    required EventEnvelopeV2? sourceEvent,
+    required LearningEvidenceDecisionSet decisionSet,
+  }) {
+    final eventId = _decisionSetEventId(attempt.id);
+    final at = LearningEvidenceContract.canonicalEventUtcSecond(
+      DateTime.fromMillisecondsSinceEpoch(attempt.occurredAtUtcMs, isUtc: true),
+    );
+    return EventEnvelopeV2(
+      eventId: eventId,
+      eventType: 'LearningEvidenceDecisionSet',
+      eventVersion: 1,
+      occurredAtUtc: at,
+      recordedAtUtc: at,
+      actorIdentity: sourceEvent?.actorIdentity ?? attempt.ownerId,
+      ownerIdentity: attempt.ownerId,
+      aggregateType: 'LearningEvidenceDecisionSet',
+      aggregateId: attempt.id,
+      causationId: sourceEvent?.eventId,
+      idempotencyKey: eventId,
+      consentContext:
+          sourceEvent?.consentContext ?? const ConsentContext.none(),
+      experimentContext: sourceEvent?.experimentContext,
+      contentRevision: decisionSet.context.contentRevision,
+      policyVersion: decisionSet.context.policyVersion,
+      appVersion: sourceEvent?.appVersion ?? 'legacy-unversioned',
+      buildId: sourceEvent?.buildId ?? 'legacy-unversioned',
+      privacyClassification:
+          sourceEvent?.privacyClassification ??
+          PrivacyClassification.anonymized,
+      payload: decisionSet.toPayload().cast<String, dynamic>(),
+    );
+  }
+
+  void _validateStoredDecisionSet({
+    required db.EventsV2Data row,
+    required db.AnswerAttempt attempt,
+    required LearningEvidenceDecisionSet expected,
+  }) {
+    if (row.eventId != _decisionSetEventId(attempt.id) ||
+        row.eventType != 'LearningEvidenceDecisionSet' ||
+        row.eventVersion != 1 ||
+        row.ownerId != attempt.ownerId ||
+        row.aggregateType != 'LearningEvidenceDecisionSet' ||
+        row.aggregateId != attempt.id ||
+        row.idempotencyKey != row.eventId) {
+      throw StateError('learning evidence decision-set identity conflict');
+    }
+    final payload = jsonDecode(row.payloadJson);
+    if (payload is! Map ||
+        jsonEncode(payload) != jsonEncode(expected.toPayload())) {
+      throw StateError('learning evidence decision-set content conflict');
+    }
+  }
+
+  String _decisionSetEventId(String sourceEvidenceId) {
+    final eventId = 'learning-evidence-decisions:$sourceEvidenceId:v1';
+    if (!LearningEvidenceContract.validIdentifier(eventId)) {
+      throw ArgumentError.value(
+        sourceEvidenceId,
+        'sourceEvidenceId',
+        'decision-set identifier exceeds the canonical budget',
+      );
+    }
+    return eventId;
   }
 
   Future<void> _rewindCursorsPastLateSource(EventEnvelopeV2 event) async {
@@ -280,9 +693,37 @@ final class DriftLearningEventStore {
     required EventEnvelopeV2 source,
     required String projection,
     required int appliedVersion,
-    required bool applied,
+    required LearningProjectionOutcome outcome,
     Map<String, dynamic> result = const <String, dynamic>{},
+    String? reasonCode,
+    int? bridgedFromVersion,
+    Map<String, dynamic> decision = const <String, dynamic>{},
   }) async {
+    if (outcome == LearningProjectionOutcome.blocked) {
+      if (reasonCode == null ||
+          reasonCode.trim() != reasonCode ||
+          reasonCode.isEmpty) {
+        throw ArgumentError.value(
+          reasonCode,
+          'reasonCode',
+          'blocked receipts require a stable reason code',
+        );
+      }
+    } else if (reasonCode != null) {
+      throw ArgumentError.value(
+        reasonCode,
+        'reasonCode',
+        'only blocked receipts carry a reason code',
+      );
+    }
+    if (bridgedFromVersion != null &&
+        (bridgedFromVersion < 1 || bridgedFromVersion >= appliedVersion)) {
+      throw ArgumentError.value(
+        bridgedFromVersion,
+        'bridgedFromVersion',
+        'must identify an earlier positive projection version',
+      );
+    }
     final key = _projectionKey(
       sourceEventId: source.eventId,
       projection: projection,
@@ -290,9 +731,11 @@ final class DriftLearningEventStore {
     );
     final receipt = EventEnvelopeV2(
       eventId: key,
-      eventType: applied
-          ? 'LearningProjectionApplied'
-          : 'LearningProjectionSkipped',
+      eventType: switch (outcome) {
+        LearningProjectionOutcome.applied => 'LearningProjectionApplied',
+        LearningProjectionOutcome.notApplicable => 'LearningProjectionSkipped',
+        LearningProjectionOutcome.blocked => 'LearningProjectionBlocked',
+      },
       eventVersion: 1,
       occurredAtUtc: source.occurredAtUtc,
       recordedAtUtc: source.recordedAtUtc,
@@ -310,7 +753,10 @@ final class DriftLearningEventStore {
         'sourceEventId': source.eventId,
         'projection': projection,
         'appliedVersion': appliedVersion,
-        'outcome': applied ? 'applied' : 'notApplicable',
+        'outcome': outcome.name,
+        'reasonCode': ?reasonCode,
+        'bridgedFromVersion': ?bridgedFromVersion,
+        if (decision.isNotEmpty) 'decision': decision,
         'result': result,
       },
     );
@@ -342,13 +788,73 @@ final class DriftLearningEventStore {
       },
     );
     await database.transaction(() async {
-      await database
-          .into(database.eventsV2)
-          .insert(_companion(receipt), mode: InsertMode.insertOrIgnore);
+      final existing = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(key))).getSingleOrNull();
+      if (existing == null) {
+        await database
+            .into(database.eventsV2)
+            .insert(_companion(receipt), mode: InsertMode.insertOrIgnore);
+      } else if (!_sameEvent(existing, receipt)) {
+        throw StateError('learning projection receipt is immutable');
+      }
       await database
           .into(database.eventsV2)
           .insertOnConflictUpdate(_companion(cursor));
     });
+  }
+
+  Future<LearningProjectionReceipt?> readProjectionReceipt({
+    required String sourceEventId,
+    required String projection,
+    required int appliedVersion,
+  }) async {
+    final key = _projectionKey(
+      sourceEventId: sourceEventId,
+      projection: projection,
+      appliedVersion: appliedVersion,
+    );
+    final row = await (database.select(
+      database.eventsV2,
+    )..where((candidate) => candidate.eventId.equals(key))).getSingleOrNull();
+    if (row == null) return null;
+    final outcome = switch (row.eventType) {
+      'LearningProjectionApplied' => LearningProjectionOutcome.applied,
+      'LearningProjectionSkipped' => LearningProjectionOutcome.notApplicable,
+      'LearningProjectionBlocked' => LearningProjectionOutcome.blocked,
+      _ => throw StateError('invalid learning projection receipt type'),
+    };
+    final decoded = jsonDecode(row.payloadJson);
+    if (decoded is! Map) {
+      throw StateError('invalid learning projection receipt payload');
+    }
+    final payload = decoded.cast<String, dynamic>();
+    if (row.aggregateType != 'LearningProjection' ||
+        row.aggregateId != sourceEventId ||
+        row.idempotencyKey != key ||
+        payload['projection'] != projection ||
+        (payload['appliedVersion'] != null &&
+            payload['appliedVersion'] != appliedVersion)) {
+      throw StateError('invalid learning projection receipt identity');
+    }
+    final result = payload['result'];
+    if (result != null && result is! Map) {
+      throw StateError('invalid learning projection receipt result');
+    }
+    final reasonCode = payload['reasonCode'];
+    final bridgedFromVersion = payload['bridgedFromVersion'];
+    if ((reasonCode != null && reasonCode is! String) ||
+        (bridgedFromVersion != null && bridgedFromVersion is! int)) {
+      throw StateError('invalid learning projection receipt metadata');
+    }
+    return LearningProjectionReceipt(
+      outcome: outcome,
+      result: result == null
+          ? const <String, dynamic>{}
+          : result.cast<String, dynamic>(),
+      reasonCode: reasonCode as String?,
+      bridgedFromVersion: bridgedFromVersion as int?,
+    );
   }
 
   String _projectionKey({

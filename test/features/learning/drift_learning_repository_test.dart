@@ -565,7 +565,19 @@ void main() {
       );
       expect((await repository.recordAnswer(eventless)).inserted, isTrue);
       expect((await repository.recordAnswer(eventless)).inserted, isFalse);
-      expect(await database.select(database.eventsV2).get(), isEmpty);
+      final decisionEvents = await database.select(database.eventsV2).get();
+      expect(decisionEvents, hasLength(1));
+      expect(
+        decisionEvents.single.eventId,
+        'learning-evidence-decisions:frozen-eventless:v1',
+      );
+      expect(decisionEvents.single.eventType, 'LearningEvidenceDecisionSet');
+      expect(
+        decisionEvents.any(
+          (event) => event.eventId == 'learning-event:frozen-eventless',
+        ),
+        isFalse,
+      );
       expect(
         () => repository.replayCommittedAnswer(eventless.candidate),
         throwsArgumentError,

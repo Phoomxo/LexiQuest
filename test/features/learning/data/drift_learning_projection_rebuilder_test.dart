@@ -6,10 +6,14 @@
 /// Run: flutter test test/features/learning/data/drift_learning_projection_rebuilder_test.dart
 library;
 
+import 'dart:convert';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_projection_rebuilder.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 
 AppDatabase _openMemory() => AppDatabase(NativeDatabase.memory());
 
@@ -68,6 +72,7 @@ Future<void> _insertAttempt(
   required bool isCorrect,
   required int seqMs,
   required int attemptNumber,
+  EvidenceContext? evidenceContext,
 }) async {
   await db
       .into(db.answerAttempts)
@@ -82,6 +87,12 @@ Future<void> _insertAttempt(
           attemptNumber: attemptNumber,
           occurredAtUtcMs:
               DateTime.utc(2026, 1, 1).millisecondsSinceEpoch + seqMs,
+          evidenceClass: evidenceContext == null
+              ? const Value.absent()
+              : Value(evidenceContext.evidenceClass.name),
+          evidenceContextJson: evidenceContext == null
+              ? const Value.absent()
+              : Value(jsonEncode(evidenceContext.toJson())),
         ),
       );
 }
@@ -107,7 +118,7 @@ void main() {
         wordId: 'word-rebuild',
       );
 
-      expect(snapshot.intervalDays, greaterThanOrEqualTo(1));
+      expect(snapshot?.intervalDays, greaterThanOrEqualTo(1));
 
       final srsRows = await (db.select(
         db.srsStates,
@@ -131,6 +142,57 @@ void main() {
       )..where((row) => row.ownerId.equals('owner-rebuild'))).get();
       expect(entries.length, 2); // 2 correct answers → 2 XP entries
       expect(entries.every((e) => e.amount > 0), isTrue);
+    });
+
+    test(
+      'rebuildWord excludes assessment from SRS and lifetime XP replay',
+      () async {
+        await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+        await _insertAttempt(
+          db,
+          isCorrect: true,
+          seqMs: 1000,
+          attemptNumber: 2,
+          evidenceContext: _assessmentEvidence(),
+        );
+
+        final rebuilder = DriftLearningProjectionRebuilder(db);
+        final snapshot = await rebuilder.rebuildWord(
+          ownerId: 'owner-rebuild',
+          wordId: 'word-rebuild',
+        );
+
+        expect(snapshot?.repetitions, 1);
+        final entries = await (db.select(
+          db.pointsLedgerEntries,
+        )..where((row) => row.ownerId.equals('owner-rebuild'))).get();
+        expect(entries.map((entry) => entry.sourceEventId), <String?>{
+          'attempt-0',
+        });
+      },
+    );
+
+    test('assessment-only rebuild leaves mastery and XP empty', () async {
+      await _insertAttempt(
+        db,
+        isCorrect: true,
+        seqMs: 0,
+        attemptNumber: 1,
+        evidenceContext: _assessmentEvidence(),
+      );
+
+      final rebuilder = DriftLearningProjectionRebuilder(db);
+      expect(
+        await rebuilder.rebuildWord(
+          ownerId: 'owner-rebuild',
+          wordId: 'word-rebuild',
+        ),
+        isNull,
+      );
+      expect(await db.select(db.srsStates).get(), isEmpty);
+      expect(await db.select(db.pointsLedgerEntries).get(), isEmpty);
+      await rebuilder.rebuildAchievements('owner-rebuild');
+      expect(await db.select(db.achievementUnlocks).get(), isEmpty);
     });
 
     test('rebuildWord throws StateError when no attempts exist', () async {
@@ -174,3 +236,26 @@ void main() {
     );
   });
 }
+
+EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.assessment,
+  skillId: 'assessment-skill',
+  hintLevel: 0,
+  contentRevision: 'assessment-content-v1',
+  rolloutMode: EvidencePolicyRolloutMode.enforced,
+  protocolId: 'protocol-a',
+  protocolVersion: 'protocol-v1',
+  experimentId: 'experiment-a',
+  experimentVersion: 1,
+  assignmentId: 'assignment-a',
+  cohort: 'assessment',
+  researchConsentVersion: 1,
+  instrumentId: 'instrument-a',
+  instrumentVersion: 'instrument-v1',
+  formId: 'form-a',
+  formVersion: 'form-v1',
+  assessmentItemId: 'item-a',
+  assessmentResponseCode: 'correct',
+  scoringRuleVersion: 'score-v1',
+  engagementAllowed: false,
+);

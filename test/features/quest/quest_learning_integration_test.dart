@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_ad
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
@@ -56,6 +57,7 @@ void main() {
   late LearningUseCases learningUseCases;
   late QuestUseCases questUseCases;
   late DriftQuestRepository questRepo;
+  late LearningReconciliationScheduler learningReconciliation;
   late LocalOwner owner;
   int idCount = 0;
 
@@ -96,8 +98,19 @@ void main() {
 
     final adapter = EventV1ToV2Adapter(appVersion: '1.0', buildId: 'sha-test');
 
-    // Wire QuestEventSink: forward V2 events to questUseCases.processEvent.
     final catalog = [_quizDef()];
+    learningReconciliation = LearningReconciliationScheduler(
+      LearningSideEffectReconciler(
+        database,
+        questSink: (EventEnvelopeV2 event) async {
+          final projection = await questUseCases.projectEvent(event, catalog);
+          final payload = questUseCases.projectionPayload(projection, catalog);
+          return projection.eligible
+              ? LearningProjectionResult.applied(payload: payload)
+              : LearningProjectionResult.notApplicable(payload: payload);
+        },
+      ),
+    );
     learningUseCases = LearningUseCases(
       owners: _FakeOwners(owner),
       repository: DriftLearningRepository(database),
@@ -105,15 +118,17 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
       buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
       eventAdapter: adapter,
-      questEventSink: (EventEnvelopeV2 event) =>
-          questUseCases.processEvent(event, catalog).then((_) {}),
+      onSideEffectsPending: learningReconciliation.request,
     );
 
     // Start learning session.
     await learningUseCases.startQuiz(limit: 10);
   });
 
-  tearDown(() async => database.close());
+  tearDown(() async {
+    await learningReconciliation.dispose();
+    await database.close();
+  });
 
   group('QuestEventSink — D7.1 Quest-Learning integration', () {
     test('correct answer advances matching quest objective', () async {
@@ -130,6 +145,7 @@ void main() {
         responseTimeMs: 300,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
 
       // Quest still active; counter advanced to 1/2.
       final active = await questUseCases.getActiveInstances();
@@ -153,6 +169,7 @@ void main() {
         responseTimeMs: 500,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
 
       final active = await questUseCases.getActiveInstances();
       expect(active, hasLength(1));
@@ -175,6 +192,7 @@ void main() {
         responseTimeMs: 300,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
 
       final active = await questUseCases.getActiveInstances();
       expect(active, isEmpty, reason: 'completed quest must leave active list');

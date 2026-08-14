@@ -46,7 +46,9 @@ import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
+import '../features/learning/data/drift_learning_event_store.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/domain/evidence_eligibility_policy.dart';
 import '../features/learning/domain/learning_event_context.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -535,6 +537,9 @@ final class AppBootstrap {
       appVersion: buildInfo.version,
       buildId: buildInfo.buildId,
     );
+    const evidencePolicy = EvidenceEligibilityPolicySet();
+    const evidenceRolloutModeProvider =
+        FixedEvidencePolicyRolloutModeProvider.legacy();
 
     // Seed before scheduling historical replay so pre-assignment evidence is
     // deterministically skipped instead of racing a newly created quest.
@@ -572,6 +577,8 @@ final class AppBootstrap {
             ? const LearningProjectionResult.applied()
             : const LearningProjectionResult.notApplicable();
       },
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: evidenceRolloutModeProvider,
     );
     final learningReconciliation = LearningReconciliationScheduler(
       learningReconciler,
@@ -584,7 +591,11 @@ final class AppBootstrap {
 
     final learning = LearningUseCases(
       owners: localOwners,
-      repository: DriftLearningRepository(database),
+      repository: DriftLearningRepository(
+        database,
+        evidencePolicy: evidencePolicy,
+        rolloutModeProvider: evidenceRolloutModeProvider,
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       buildInfo: const AppBuildInfo.fromEnvironment(),

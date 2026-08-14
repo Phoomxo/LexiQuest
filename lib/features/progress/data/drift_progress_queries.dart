@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../../learning/domain/evidence_context.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -15,11 +18,14 @@ final class DriftProgressQueries {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
-    final attempts =
+    final storedAttempts =
         await (database.select(database.answerAttempts)
               ..where((row) => row.ownerId.equals(ownerId))
               ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]))
             .get();
+    final attempts = storedAttempts
+        .where(_isPracticeAttempt)
+        .toList(growable: false);
     final correctCount = attempts.where((row) => row.isCorrect).length;
     final wrongCount = attempts.length - correctCount;
     final responseTimes = attempts
@@ -33,15 +39,19 @@ final class DriftProgressQueries {
               ..where(database.pointsLedgerEntries.ownerId.equals(ownerId)))
             .getSingle();
     final totalXp = pointsRow.read(pointsExpression) ?? 0;
-    final completedCount = database.learningSessions.id.count();
-    final completedRow =
-        await (database.selectOnly(database.learningSessions)
-              ..addColumns([completedCount])
-              ..where(
-                database.learningSessions.ownerId.equals(ownerId) &
-                    database.learningSessions.state.equals('completed'),
-              ))
-            .getSingle();
+    final practiceSessionIds = attempts
+        .map((attempt) => attempt.sessionId)
+        .toSet();
+    final completedRows =
+        await (database.select(database.learningSessions)..where(
+              (session) =>
+                  session.ownerId.equals(ownerId) &
+                  session.state.equals('completed'),
+            ))
+            .get();
+    final completedSessions = completedRows
+        .where((session) => practiceSessionIds.contains(session.id))
+        .length;
     final dueCountExpression = database.srsStates.id.count();
     final dueRow =
         await (database.selectOnly(database.srsStates)
@@ -82,7 +92,7 @@ final class DriftProgressQueries {
       wrongCount: wrongCount,
       accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
       totalXp: totalXp,
-      completedSessions: completedRow.read(completedCount) ?? 0,
+      completedSessions: completedSessions,
       streakDays: _streakDays(
         attempts.map((row) => row.occurredAtUtcMs),
         nowUtc,
@@ -148,6 +158,9 @@ final class DriftProgressQueries {
       LEFT JOIN srs_states s
         ON s.word_id = a.word_id AND s.owner_id = a.owner_id
       WHERE a.owner_id = ? AND w.is_deleted = 0
+        AND a.evidence_class != 'assessment'
+        AND json_extract(a.evidence_context_json, '\$.evidenceClass') =
+            a.evidence_class
       GROUP BY a.word_id, w.spelling, w.meaning, s.due_at_utc_ms
       HAVING SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) > 0
       ORDER BY
@@ -208,6 +221,19 @@ final class DriftProgressQueries {
           );
         })
         .toList(growable: false);
+  }
+
+  bool _isPracticeAttempt(AnswerAttempt attempt) {
+    final decoded = jsonDecode(attempt.evidenceContextJson);
+    if (decoded is! Map) {
+      throw const FormatException('attempt evidence context must be an object');
+    }
+    final context = EvidenceContext.fromJson(decoded.cast<String, Object?>());
+    if (attempt.evidenceClass != context.evidenceClass.name ||
+        attempt.evidenceContextJson != jsonEncode(context.toJson())) {
+      throw const FormatException('attempt evidence metadata mismatch');
+    }
+    return context.evidenceClass != EvidenceClass.assessment;
   }
 
   int _streakDays(Iterable<int> timestamps, DateTime nowUtc) {

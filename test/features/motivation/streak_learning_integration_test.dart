@@ -4,6 +4,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
@@ -26,6 +27,7 @@ void main() {
   late db.AppDatabase database;
   late StreakUseCases streakUseCases;
   late LearningUseCases learningUseCases;
+  late LearningReconciliationScheduler learningReconciliation;
   late LocalOwner owner;
 
   setUp(() async {
@@ -57,6 +59,18 @@ void main() {
       nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
       timezoneId: 'Asia/Bangkok',
     );
+    learningReconciliation = LearningReconciliationScheduler(
+      LearningSideEffectReconciler(
+        database,
+        streakSink: (event) async {
+          await streakUseCases.recordLearningDayForOwner(
+            ownerId: event.ownerIdentity,
+            occurredAtUtc: event.occurredAtUtc,
+          );
+          return const LearningProjectionResult.applied();
+        },
+      ),
+    );
 
     learningUseCases = LearningUseCases(
       owners: _FakeOwners(owner),
@@ -64,11 +78,14 @@ void main() {
       generateId: () => 'id-${DateTime.now().microsecondsSinceEpoch}',
       nowUtc: () => DateTime.utc(2026, 8, 4, 10, 0),
       buildInfo: const AppBuildInfo(version: '1.0', buildId: 'sha-test'),
-      streakEventSink: () => streakUseCases.recordLearningDay().then((_) {}),
+      onSideEffectsPending: learningReconciliation.request,
     );
   });
 
-  tearDown(() async => database.close());
+  tearDown(() async {
+    await learningReconciliation.dispose();
+    await database.close();
+  });
 
   group('StreakEventSink — D8.1 Streak-Learning integration', () {
     test('recordAnswer triggers streak start on first session', () async {
@@ -83,6 +100,7 @@ void main() {
         responseTimeMs: 300,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
 
       final state = await streakUseCases.getCurrentStreak();
       expect(
@@ -125,6 +143,7 @@ void main() {
         responseTimeMs: 500,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
 
       final days = await DriftStreakRepository(
         database,
@@ -148,6 +167,7 @@ void main() {
         responseTimeMs: 300,
         attemptNumber: 1,
       );
+      await learningReconciliation.drain();
       // Second answer same UTC day — must be idempotent.
       await learningUseCases.recordAnswer(
         sessionId: session.id,
@@ -157,6 +177,7 @@ void main() {
         responseTimeMs: 400,
         attemptNumber: 2,
       );
+      await learningReconciliation.drain();
 
       final state = await streakUseCases.getCurrentStreak();
       expect(

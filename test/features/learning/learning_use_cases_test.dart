@@ -347,9 +347,12 @@ void main() {
         final attempt = await reopenedDatabase
             .select(reopenedDatabase.answerAttempts)
             .getSingle();
-        final event = await reopenedDatabase
-            .select(reopenedDatabase.eventsV2)
-            .getSingle();
+        final event =
+            await (reopenedDatabase.select(reopenedDatabase.eventsV2)..where(
+                  (row) =>
+                      row.eventId.equals('learning-event:evidence-file-reopen'),
+                ))
+                .getSingle();
         expect(attempt.occurredAtUtcMs, occurredAtUtc.millisecondsSinceEpoch);
         expect(event.occurredAtUtc.toUtc(), DateTime.utc(2026, 8, 14, 9, 0, 2));
 

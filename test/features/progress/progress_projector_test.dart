@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -131,7 +134,92 @@ void main() {
     expect(result.weaknesses.single.incorrectCount, 1);
     expect(result.recommendations.single.sampleSize, 1);
   });
+
+  test('assessment evidence is absent from the practice read model', () async {
+    final assessment = _assessmentEvidence();
+    await database
+        .into(database.learningSessions)
+        .insert(
+          LearningSessionsCompanion.insert(
+            id: 'session-assessment',
+            ownerId: 'owner-1',
+            activityType: 'assessment',
+            state: 'completed',
+            startedAtUtcMs: DateTime.utc(2026, 7, 30, 9).millisecondsSinceEpoch,
+            endedAtUtcMs: Value(
+              DateTime.utc(2026, 7, 30, 10).millisecondsSinceEpoch,
+            ),
+            correctCount: const Value(1),
+            score: const Value(100),
+            appVersion: 'test',
+            buildId: 'test',
+          ),
+        );
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'attempt-assessment',
+            ownerId: 'owner-1',
+            sessionId: 'session-assessment',
+            wordId: 'word-1',
+            promptMode: 'assessmentResponse',
+            isCorrect: true,
+            responseTimeMs: const Value(300),
+            attemptNumber: 1,
+            occurredAtUtcMs: DateTime.utc(
+              2026,
+              7,
+              30,
+              9,
+              30,
+            ).millisecondsSinceEpoch,
+            evidenceClass: Value(assessment.evidenceClass.name),
+            evidenceContextJson: Value(jsonEncode(assessment.toJson())),
+          ),
+        );
+
+    final result = await progress.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 7, 30, 12),
+    );
+
+    expect(result.sampleSize, 0);
+    expect(result.correctCount, 0);
+    expect(result.wrongCount, 0);
+    expect(result.accuracy, isNull);
+    expect(result.completedSessions, 0);
+    expect(result.streakDays, 0);
+    expect(result.skills.every((skill) => skill.sampleSize == 0), isTrue);
+    expect(result.weaknesses, isEmpty);
+    expect(result.recommendations, isEmpty);
+    expect(result.averageResponseTimeMs, isNull);
+    expect(result.latestEvidenceAtUtc, isNull);
+  });
 }
 
 EvidenceContext _frozenV13LegacyEvidence() =>
     LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+
+EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.assessment,
+  skillId: 'assessment-skill',
+  hintLevel: 0,
+  contentRevision: 'assessment-content-v1',
+  rolloutMode: EvidencePolicyRolloutMode.enforced,
+  protocolId: 'protocol-a',
+  protocolVersion: 'protocol-v1',
+  experimentId: 'experiment-a',
+  experimentVersion: 1,
+  assignmentId: 'assignment-a',
+  cohort: 'assessment',
+  researchConsentVersion: 1,
+  instrumentId: 'instrument-a',
+  instrumentVersion: 'instrument-v1',
+  formId: 'form-a',
+  formVersion: 'form-v1',
+  assessmentItemId: 'item-a',
+  assessmentResponseCode: 'correct',
+  scoringRuleVersion: 'score-v1',
+  engagementAllowed: false,
+);

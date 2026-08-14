@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart' show Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -18,6 +20,47 @@ void main() {
     await database
         .into(database.localOwners)
         .insert(LocalOwnersCompanion.insert(id: 'owner-1', createdAtUtcMs: 1));
+    await database
+        .into(database.learningSessions)
+        .insert(
+          LearningSessionsCompanion.insert(
+            id: 'session-1',
+            ownerId: 'owner-1',
+            activityType: 'quiz',
+            state: 'active',
+            startedAtUtcMs: 1,
+            appVersion: '1.0.0',
+            buildId: 'test',
+          ),
+        );
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-1',
+            ownerId: 'owner-1',
+            name: 'Test',
+            normalizedName: 'test',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-1',
+            ownerId: 'owner-1',
+            categoryId: 'category-1',
+            spelling: 'test',
+            normalizedSpelling: 'test',
+            meaning: 'test',
+            normalizedMeaning: 'test',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
   });
 
   tearDown(() => database.close());
@@ -75,6 +118,76 @@ void main() {
 
     await expectLater(
       store.readBySourceEvidenceId('evidence-corrupt'),
+      throwsStateError,
+    );
+  });
+
+  test('decision set replay rejects a same-ID decision mutation', () async {
+    final at = DateTime.utc(2026, 8, 14, 9);
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'evidence-decisions',
+            ownerId: 'owner-1',
+            sessionId: 'session-1',
+            wordId: 'word-1',
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            attemptNumber: 1,
+            occurredAtUtcMs: at.millisecondsSinceEpoch,
+          ),
+        );
+    final attempt = await (database.select(
+      database.answerAttempts,
+    )..where((row) => row.id.equals('evidence-decisions'))).getSingle();
+    final source = EventEnvelopeV2(
+      eventId: 'learning-event:evidence-decisions',
+      eventType: 'QuizCompleted',
+      eventVersion: 1,
+      occurredAtUtc: at,
+      recordedAtUtc: at,
+      actorIdentity: 'owner-1',
+      ownerIdentity: 'owner-1',
+      aggregateType: 'LearningSession',
+      aggregateId: 'session-1',
+      idempotencyKey: 'learning-attempt:evidence-decisions:v1',
+      consentContext: const ConsentContext.none(),
+      appVersion: '1.0.0',
+      buildId: 'test',
+      privacyClassification: PrivacyClassification.anonymized,
+      payload: const <String, dynamic>{'attemptId': 'evidence-decisions'},
+    );
+
+    final decisionSet = await store.ensureDecisionSetForAttempt(
+      attempt: attempt,
+      sourceEvent: source,
+    );
+    expect(decisionSet.decisions, hasLength(11));
+    final row =
+        await (database.select(database.eventsV2)..where(
+              (candidate) => candidate.eventId.equals(
+                'learning-evidence-decisions:evidence-decisions:v1',
+              ),
+            ))
+            .getSingle();
+    final payload = jsonDecode(row.payloadJson) as Map<String, dynamic>;
+    final decisions = (payload['decisions'] as List)
+        .cast<Map<String, dynamic>>();
+    decisions.first['effectiveDecision'] = 'deny';
+    await database.customUpdate(
+      'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+      variables: <Variable<Object>>[
+        Variable<String>(jsonEncode(payload)),
+        const Variable<String>(
+          'learning-evidence-decisions:evidence-decisions:v1',
+        ),
+      ],
+      updates: {database.eventsV2},
+    );
+
+    await expectLater(
+      store.ensureDecisionSetForAttempt(attempt: attempt, sourceEvent: source),
       throwsStateError,
     );
   });

@@ -1,13 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Variable;
+import 'package:drift/drift.dart' show InsertMode, Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 
 void main() {
   late AppDatabase database;
@@ -19,6 +20,47 @@ void main() {
         .insert(
           LocalOwnersCompanion.insert(id: 'owner-reconcile', createdAtUtcMs: 1),
         );
+    await database
+        .into(database.learningSessions)
+        .insert(
+          LearningSessionsCompanion.insert(
+            id: 'session-1',
+            ownerId: 'owner-reconcile',
+            activityType: 'quiz',
+            state: 'active',
+            startedAtUtcMs: 1,
+            appVersion: '1.0.0',
+            buildId: 'test-build',
+          ),
+        );
+    await database
+        .into(database.vocabularyCategories)
+        .insert(
+          VocabularyCategoriesCompanion.insert(
+            id: 'category-1',
+            ownerId: 'owner-reconcile',
+            name: 'Test',
+            normalizedName: 'test',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
+    await database
+        .into(database.vocabularyWords)
+        .insert(
+          VocabularyWordsCompanion.insert(
+            id: 'word-1',
+            ownerId: 'owner-reconcile',
+            categoryId: 'category-1',
+            spelling: 'test',
+            normalizedSpelling: 'test',
+            meaning: 'test',
+            normalizedMeaning: 'test',
+            partOfSpeech: 'noun',
+            createdAtUtcMs: 1,
+            updatedAtUtcMs: 1,
+          ),
+        );
   });
 
   tearDown(() => database.close());
@@ -29,6 +71,21 @@ void main() {
     DateTime? occurredAt,
   }) async {
     final at = occurredAt ?? DateTime.utc(2026, 8, number, 6);
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'attempt-$number',
+            ownerId: owner,
+            sessionId: 'session-1',
+            wordId: 'word-1',
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            attemptNumber: number,
+            occurredAtUtcMs: at.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
     await DriftLearningEventStore(database).append(
       EventEnvelopeV2(
         eventId: 'learning-event:attempt-$number',
@@ -45,9 +102,108 @@ void main() {
         appVersion: '1.0.0',
         buildId: 'test-build',
         privacyClassification: PrivacyClassification.anonymized,
-        payload: const {'correct': true},
+        payload: {'attemptId': 'attempt-$number'},
       ),
     );
+  }
+
+  Future<void> addDeclaredAssessmentEvent(int number) async {
+    final at = DateTime.utc(2026, 8, number, 7);
+    final context = _declaredAssessmentContext();
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'attempt-$number',
+            ownerId: 'owner-reconcile',
+            sessionId: 'session-1',
+            wordId: 'word-1',
+            promptMode: 'assessmentResponse',
+            isCorrect: true,
+            attemptNumber: number,
+            occurredAtUtcMs: at.millisecondsSinceEpoch,
+            evidenceClass: Value(context.evidenceClass.name),
+            evidenceContextJson: Value(jsonEncode(context.toJson())),
+          ),
+        );
+    await DriftLearningEventStore(database).append(
+      EventEnvelopeV2(
+        eventId: 'learning-event:attempt-$number',
+        eventType: 'QuizCompleted',
+        eventVersion: 2,
+        occurredAtUtc: at,
+        recordedAtUtc: at,
+        actorIdentity: 'owner-reconcile',
+        ownerIdentity: 'owner-reconcile',
+        aggregateType: 'LearningSession',
+        aggregateId: 'session-1',
+        idempotencyKey: 'learning-attempt:attempt-$number:v2',
+        consentContext: const ConsentContext(
+          researchConsentVersion: 1,
+          aiConsentGranted: false,
+          voiceConsentGranted: false,
+          socialConsentGranted: false,
+        ),
+        experimentContext: ExperimentContext(
+          experimentId: 'experiment-a',
+          variantId: 'assessment',
+          assignedAtUtc: DateTime.utc(2026, 8, 1),
+        ),
+        contentRevision: context.contentRevision,
+        policyVersion: context.policyVersion,
+        appVersion: '1.0.0',
+        buildId: 'test-build',
+        privacyClassification: PrivacyClassification.anonymized,
+        payload: {
+          'attemptId': 'attempt-$number',
+          'evidenceContext': context.toJson(),
+        },
+      ),
+    );
+  }
+
+  Future<void> addV1Receipt({
+    required int number,
+    required String projection,
+    required bool applied,
+  }) async {
+    final at = DateTime.utc(2026, 8, number, 6);
+    final sourceId = 'learning-event:attempt-$number';
+    final receiptId = 'learning-projection:$projection:$sourceId:v1';
+    await database
+        .into(database.eventsV2)
+        .insert(
+          EventsV2Companion.insert(
+            eventId: receiptId,
+            eventType: applied
+                ? 'LearningProjectionApplied'
+                : 'LearningProjectionSkipped',
+            eventVersion: 1,
+            occurredAtUtc: at,
+            recordedAtUtc: at,
+            actorIdentity: 'owner-reconcile',
+            ownerId: 'owner-reconcile',
+            aggregateType: 'LearningProjection',
+            aggregateId: sourceId,
+            causationId: Value(sourceId),
+            idempotencyKey: receiptId,
+            consentContextJson: jsonEncode(
+              const ConsentContext.none().toJson(),
+            ),
+            appVersion: '1.0.0',
+            buildId: 'test-build',
+            privacyClassification: 'anonymized',
+            payloadJson: jsonEncode({
+              'sourceEventId': sourceId,
+              'projection': projection,
+              'appliedVersion': 1,
+              'outcome': applied ? 'applied' : 'notApplicable',
+              'result': applied
+                  ? <String, dynamic>{'eligible': true}
+                  : <String, dynamic>{},
+            }),
+          ),
+        );
   }
 
   Future<Set<String>> applied(String projection) async {
@@ -92,6 +248,132 @@ void main() {
     expect((questCalls, rewardCalls), (2, 1));
     expect(await applied('reward'), {'learning-event:attempt-1'});
   });
+
+  test(
+    'pre-v13 attempt-only payload materializes decisions before v2 apply',
+    () async {
+      await addEvent(1);
+      var calls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        streakSink: (_) async {
+          calls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, 1);
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'learning-evidence-decisions:attempt-1:v1',
+              ),
+            ))
+            .getSingle(),
+        isNotNull,
+      );
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'learning-projection:streak:learning-event:attempt-1:v2',
+              ),
+            ))
+            .getSingle()
+            .then((row) => row.eventType),
+        'LearningProjectionApplied',
+      );
+    },
+  );
+
+  test(
+    'mixed v1 pending and declared events bridge exactly once at v2',
+    () async {
+      await addEvent(1);
+      await addEvent(2);
+      await addDeclaredAssessmentEvent(3);
+      await addV1Receipt(number: 1, projection: 'quest', applied: true);
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (event) async {
+          calls.add(event.eventId);
+          return const LearningProjectionResult.applied(
+            payload: <String, dynamic>{'eligible': true},
+          );
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, <String>['learning-event:attempt-2']);
+      final receipts =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.isIn(<String>[
+                  'learning-projection:quest:learning-event:attempt-1:v2',
+                  'learning-projection:quest:learning-event:attempt-2:v2',
+                  'learning-projection:quest:learning-event:attempt-3:v2',
+                ]),
+              ))
+              .get();
+      expect(receipts, hasLength(3));
+      final byId = {for (final receipt in receipts) receipt.eventId: receipt};
+      final bridged =
+          jsonDecode(
+                byId['learning-projection:quest:learning-event:attempt-1:v2']!
+                    .payloadJson,
+              )
+              as Map<String, dynamic>;
+      expect(bridged['bridgedFromVersion'], 1);
+      expect(
+        byId['learning-projection:quest:learning-event:attempt-3:v2']!
+            .eventType,
+        'LearningProjectionSkipped',
+      );
+    },
+  );
+
+  test(
+    'contextless declared event blocks terminally without invoking sink',
+    () async {
+      await addDeclaredAssessmentEvent(1);
+      await database.customUpdate(
+        'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+        variables: <Variable<Object>>[
+          Variable<String>(
+            jsonEncode(<String, dynamic>{'attemptId': 'attempt-1'}),
+          ),
+          const Variable<String>('learning-event:attempt-1'),
+        ],
+        updates: {database.eventsV2},
+      );
+      var calls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (_) async {
+          calls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, 0);
+      final receipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:quest:learning-event:attempt-1:v2',
+                ),
+              ))
+              .getSingle();
+      expect(receipt.eventType, 'LearningProjectionBlocked');
+      final payload = jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+      expect(payload['outcome'], 'blocked');
+      expect(payload['reasonCode'], 'contextlessNonLegacyAttempt');
+    },
+  );
 
   test(
     'missing quest prerequisite blocks reward cursor before later receipt',
@@ -324,9 +606,9 @@ void main() {
         appliedVersion: LearningSideEffectReconciler.appliedVersion,
       );
       expect(cursorIds, [
-        'learning-projection-cursor:owner-reconcile:quest:v1',
-        'learning-projection-cursor:owner-reconcile:streak:v1',
-        'learning-projection-cursor:owner-reconcile:reward:v1',
+        'learning-projection-cursor:owner-reconcile:quest:v2',
+        'learning-projection-cursor:owner-reconcile:streak:v2',
+        'learning-projection-cursor:owner-reconcile:reward:v2',
       ]);
       final placeholders = List.filled(cursorIds.length, '?').join(', ');
       final plan = await database
@@ -466,7 +748,7 @@ void main() {
             "SELECT event_type FROM events_v2 WHERE aggregate_id = "
             "'learning-event:attempt-1' AND json_extract(payload_json, "
             "'\$.projection') = 'reward' AND aggregate_type = "
-            "'LearningProjection'",
+            "'LearningProjection' AND event_id LIKE '%:v2'",
           )
           .get();
       expect(
@@ -475,4 +757,109 @@ void main() {
       );
     },
   );
+
+  test(
+    'v1 skipped quest and reward bridge at v2 without invoking sinks',
+    () async {
+      await addEvent(1);
+      await addV1Receipt(number: 1, projection: 'quest', applied: false);
+      await addV1Receipt(number: 1, projection: 'reward', applied: false);
+      var questCalls = 0;
+      var rewardCalls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        questSink: (_) async {
+          questCalls++;
+          return const LearningProjectionResult.applied();
+        },
+        rewardSink: (_, _) async {
+          rewardCalls++;
+          return const LearningProjectionResult.applied();
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect((questCalls, rewardCalls), (0, 0));
+      final questReceipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:quest:learning-event:attempt-1:v2',
+                ),
+              ))
+              .getSingle();
+      final rewardReceipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:reward:learning-event:attempt-1:v2',
+                ),
+              ))
+              .getSingle();
+      expect(questReceipt.eventType, 'LearningProjectionSkipped');
+      expect(rewardReceipt.eventType, 'LearningProjectionSkipped');
+      for (final receipt in <EventsV2Data>[questReceipt, rewardReceipt]) {
+        final payload = jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+        expect(payload['bridgedFromVersion'], 1);
+      }
+    },
+  );
+
+  test('v1 applied reward with skipped quest fails closed at v2', () async {
+    await addEvent(1);
+    await addV1Receipt(number: 1, projection: 'quest', applied: false);
+    await addV1Receipt(number: 1, projection: 'reward', applied: true);
+    var questCalls = 0;
+    var rewardCalls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      questSink: (_) async {
+        questCalls++;
+        return const LearningProjectionResult.applied();
+      },
+      rewardSink: (_, _) async {
+        rewardCalls++;
+        return const LearningProjectionResult.applied();
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect((questCalls, rewardCalls), (0, 0));
+    final rewardReceipt =
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'learning-projection:reward:learning-event:attempt-1:v2',
+              ),
+            ))
+            .getSingle();
+    expect(rewardReceipt.eventType, 'LearningProjectionBlocked');
+    final payload =
+        jsonDecode(rewardReceipt.payloadJson) as Map<String, dynamic>;
+    expect(payload['outcome'], 'blocked');
+    expect(payload['reasonCode'], 'rewardV1AppliedWithoutQuestPrerequisite');
+    expect(payload.containsKey('bridgedFromVersion'), isFalse);
+  });
 }
+
+EvidenceContext _declaredAssessmentContext() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.assessment,
+  skillId: 'assessment-skill',
+  hintLevel: 0,
+  contentRevision: 'assessment-content-v1',
+  rolloutMode: EvidencePolicyRolloutMode.enforced,
+  protocolId: 'protocol-a',
+  protocolVersion: 'protocol-v1',
+  experimentId: 'experiment-a',
+  experimentVersion: 1,
+  assignmentId: 'assignment-a',
+  cohort: 'assessment',
+  researchConsentVersion: 1,
+  instrumentId: 'instrument-a',
+  instrumentVersion: 'instrument-v1',
+  formId: 'form-a',
+  formVersion: 'form-v1',
+  assessmentItemId: 'item-a',
+  assessmentResponseCode: 'correct',
+  scoringRuleVersion: 'score-v1',
+  engagementAllowed: false,
+);

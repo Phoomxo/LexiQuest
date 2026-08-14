@@ -1,19 +1,30 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import 'drift_learning_event_store.dart';
+import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/srs_policy.dart';
 
 final class DriftLearningProjectionRebuilder {
-  const DriftLearningProjectionRebuilder(
+  DriftLearningProjectionRebuilder(
     this.database, {
     this.srsPolicy = const BinarySm2SrsPolicy(),
-  });
+    EvidenceEligibilityPolicy evidencePolicy =
+        const EvidenceEligibilityPolicySet(),
+    EvidencePolicyRolloutModeProvider rolloutModeProvider =
+        const ContextEvidencePolicyRolloutModeProvider(),
+  }) : evidenceDecisions = DriftLearningEventStore(
+         database,
+         evidencePolicy: evidencePolicy,
+         rolloutModeProvider: rolloutModeProvider,
+       );
 
   final db.AppDatabase database;
   final SrsPolicy srsPolicy;
+  final DriftLearningEventStore evidenceDecisions;
 
-  Future<SrsSnapshot> rebuildWord({
+  Future<SrsSnapshot?> rebuildWord({
     required String ownerId,
     required String wordId,
   }) async {
@@ -32,29 +43,63 @@ final class DriftLearningProjectionRebuilder {
       throw StateError('cannot rebuild SRS without answer evidence');
     }
 
-    SrsSnapshot? state;
+    final decisions = <String, LearningEvidenceDecisionSet>{};
     for (final attempt in attempts) {
+      decisions[attempt.id] = await evidenceDecisions
+          .ensureDecisionSetForAttempt(attempt: attempt);
+    }
+    final masteryAttempts = attempts
+        .where(
+          (attempt) =>
+              decisions[attempt.id]!.allows(LearningProjection.masterySrs),
+        )
+        .toList(growable: false);
+    final xpAttempts = attempts
+        .where(
+          (attempt) => decisions[attempt.id]!.allows(LearningProjection.xp),
+        )
+        .toList(growable: false);
+
+    final attemptIds = attempts.map((attempt) => attempt.id).toList();
+    await (database.delete(database.pointsLedgerEntries)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entryType.equals('quizCorrect') &
+              row.sourceEventId.isIn(attemptIds),
+        ))
+        .go();
+    for (final attempt in xpAttempts.where((attempt) => attempt.isCorrect)) {
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
+            db.PointsLedgerEntriesCompanion.insert(
+              id: 'points:${attempt.id}',
+              ownerId: ownerId,
+              idempotencyKey: 'correct-answer:${attempt.id}',
+              entryType: 'quizCorrect',
+              amount: 1,
+              sourceEventId: Value(attempt.id),
+              occurredAtUtcMs: attempt.occurredAtUtcMs,
+            ),
+            mode: InsertMode.insertOrIgnore,
+          );
+    }
+
+    if (masteryAttempts.isEmpty) {
+      await (database.delete(database.srsStates)..where(
+            (row) => row.ownerId.equals(ownerId) & row.wordId.equals(wordId),
+          ))
+          .go();
+      return null;
+    }
+
+    SrsSnapshot? state;
+    for (final attempt in masteryAttempts) {
       state = srsPolicy.review(
         previous: state,
         isCorrect: attempt.isCorrect,
         nowUtc: _utc(attempt.occurredAtUtcMs),
       );
-      if (attempt.isCorrect) {
-        await database
-            .into(database.pointsLedgerEntries)
-            .insert(
-              db.PointsLedgerEntriesCompanion.insert(
-                id: 'points:${attempt.id}',
-                ownerId: ownerId,
-                idempotencyKey: 'correct-answer:${attempt.id}',
-                entryType: 'quizCorrect',
-                amount: 1,
-                sourceEventId: Value(attempt.id),
-                occurredAtUtcMs: attempt.occurredAtUtcMs,
-              ),
-              mode: InsertMode.insertOrIgnore,
-            );
-      }
     }
 
     final next = state!;
@@ -102,11 +147,20 @@ final class DriftLearningProjectionRebuilder {
                   row.ownerId.equals(ownerId) & row.sessionId.equals(sessionId),
             ))
             .get();
-    final correct = attempts.where((attempt) => attempt.isCorrect).length;
-    final wrong = attempts.length - correct;
-    final score = attempts.isEmpty
+    final eligible = <db.AnswerAttempt>[];
+    for (final attempt in attempts) {
+      final decisionSet = await evidenceDecisions.ensureDecisionSetForAttempt(
+        attempt: attempt,
+      );
+      if (decisionSet.allows(LearningProjection.sessionOutcome)) {
+        eligible.add(attempt);
+      }
+    }
+    final correct = eligible.where((attempt) => attempt.isCorrect).length;
+    final wrong = eligible.length - correct;
+    final score = eligible.isEmpty
         ? 0
-        : ((correct * 100) / attempts.length).round();
+        : ((correct * 100) / eligible.length).round();
     await (database.update(database.learningSessions)..where(
           (row) => row.id.equals(sessionId) & row.ownerId.equals(ownerId),
         ))
@@ -130,13 +184,34 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    if (attempts.isEmpty) return;
+    const managedAchievementIds = <String>{
+      'first_answer',
+      'first_correct',
+      'ten_correct',
+    };
+    await (database.delete(database.achievementUnlocks)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.definitionVersion.equals(1) &
+              row.achievementId.isIn(managedAchievementIds),
+        ))
+        .go();
+    final eligible = <db.AnswerAttempt>[];
+    for (final attempt in attempts) {
+      final decisionSet = await evidenceDecisions.ensureDecisionSetForAttempt(
+        attempt: attempt,
+      );
+      if (decisionSet.allows(LearningProjection.achievement)) {
+        eligible.add(attempt);
+      }
+    }
+    if (eligible.isEmpty) return;
     await _insertAchievement(
       ownerId: ownerId,
       achievementId: 'first_answer',
-      source: attempts.first,
+      source: eligible.first,
     );
-    final correct = attempts
+    final correct = eligible
         .where((attempt) => attempt.isCorrect)
         .toList(growable: false);
     if (correct.isNotEmpty) {
@@ -154,6 +229,10 @@ final class DriftLearningProjectionRebuilder {
       );
     }
   }
+
+  Future<LearningEvidenceDecisionSet> decisionSetForAttempt(
+    db.AnswerAttempt attempt,
+  ) => evidenceDecisions.ensureDecisionSetForAttempt(attempt: attempt);
 
   Future<ReadingProgressSnapshot> rebuildReading({
     required String ownerId,

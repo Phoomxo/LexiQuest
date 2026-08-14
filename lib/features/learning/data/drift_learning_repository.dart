@@ -7,6 +7,7 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_event_store.dart';
 import 'drift_learning_projection_rebuilder.dart';
+import '../domain/evidence_eligibility_policy.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
@@ -19,16 +20,27 @@ final class DriftLearningRepository
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
+    EvidenceEligibilityPolicy evidencePolicy =
+        const EvidenceEligibilityPolicySet(),
+    EvidencePolicyRolloutModeProvider rolloutModeProvider =
+        const ContextEvidencePolicyRolloutModeProvider(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,
+         evidencePolicy: evidencePolicy,
+         rolloutModeProvider: rolloutModeProvider,
        ),
-       rewardProjections = DriftRewardProjectionRebuilder(database);
+       rewardProjections = DriftRewardProjectionRebuilder(database),
+       events = DriftLearningEventStore(
+         database,
+         evidencePolicy: evidencePolicy,
+         rolloutModeProvider: rolloutModeProvider,
+       );
 
   final db.AppDatabase database;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
-  late final DriftLearningEventStore events = DriftLearningEventStore(database);
+  final DriftLearningEventStore events;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -101,13 +113,19 @@ final class DriftLearningRepository
           !await _validPersistedCorrelatedEvent(candidate, event)) {
         throw StateError('committed answer has missing or corrupt event');
       }
+      final decisionSet = await events.ensureDecisionSetForAttempt(
+        attempt: existing,
+        sourceEvent: event,
+      );
       return CommittedAnswerReplay(
         result: AnswerRecordResult(
           inserted: false,
-          srs: await _readSrsSnapshot(
-            ownerId: candidate.ownerId,
-            wordId: candidate.wordId,
-          ),
+          srs: decisionSet.allows(LearningProjection.masterySrs)
+              ? await _readSrsSnapshot(
+                  ownerId: candidate.ownerId,
+                  wordId: candidate.wordId,
+                )
+              : null,
         ),
         event: event,
       );
@@ -126,10 +144,14 @@ final class DriftLearningRepository
           throw StateError('attempt id already exists with different evidence');
         }
         final storedEvent = await events.readBySourceEvidenceId(command.id);
+        late final LearningEvidenceDecisionSet decisionSet;
         if (command.isFrozenV13LegacyIngress) {
           if (storedEvent != null) {
             throw StateError('canonical event cannot be omitted during replay');
           }
+          decisionSet = await events.ensureDecisionSetForAttempt(
+            attempt: existing,
+          );
         } else {
           final candidateEvent = command.event!;
           if (storedEvent == null ||
@@ -145,13 +167,19 @@ final class DriftLearningRepository
               'learning event identity already exists with different evidence',
             );
           }
+          decisionSet = await events.ensureDecisionSetForAttempt(
+            attempt: existing,
+            sourceEvent: storedEvent,
+          );
         }
         return AnswerRecordResult(
           inserted: false,
-          srs: await _readSrsSnapshot(
-            ownerId: command.ownerId,
-            wordId: command.wordId,
-          ),
+          srs: decisionSet.allows(LearningProjection.masterySrs)
+              ? await _readSrsSnapshot(
+                  ownerId: command.ownerId,
+                  wordId: command.wordId,
+                )
+              : null,
         );
       }
 
@@ -198,6 +226,21 @@ final class DriftLearningRepository
               ),
             ),
           );
+      await _appendImmutableOutbox(
+        ownerId: command.ownerId,
+        entityType: 'attempt',
+        entityId: command.id,
+        occurredAtUtc: command.occurredAtUtc,
+      );
+      final event = command.event;
+      if (event != null) await events.append(event);
+      final insertedAttempt = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals(command.id))).getSingle();
+      final decisionSet = await events.ensureDecisionSetForAttempt(
+        attempt: insertedAttempt,
+        sourceEvent: event,
+      );
       final next = await projections.rebuildWord(
         ownerId: command.ownerId,
         wordId: command.wordId,
@@ -208,23 +251,20 @@ final class DriftLearningRepository
       );
       await projections.rebuildAchievements(command.ownerId);
       await rewardProjections.rebuild(command.ownerId);
-      await _appendImmutableOutbox(
-        ownerId: command.ownerId,
-        entityType: 'attempt',
-        entityId: command.id,
-        occurredAtUtc: command.occurredAtUtc,
-      );
       // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
       // Entity ID is wordId (unique per owner-word pair).
-      await _appendSrsOutbox(
-        ownerId: command.ownerId,
-        wordId: command.wordId,
-        answerAttemptId: command.id,
-        occurredAtUtc: command.occurredAtUtc,
+      if (decisionSet.allows(LearningProjection.masterySrs) && next != null) {
+        await _appendSrsOutbox(
+          ownerId: command.ownerId,
+          wordId: command.wordId,
+          answerAttemptId: command.id,
+          occurredAtUtc: command.occurredAtUtc,
+        );
+      }
+      return AnswerRecordResult(
+        inserted: true,
+        srs: decisionSet.allows(LearningProjection.masterySrs) ? next : null,
       );
-      final event = command.event;
-      if (event != null) await events.append(event);
-      return AnswerRecordResult(inserted: true, srs: next);
     });
   }
 
@@ -256,19 +296,35 @@ final class DriftLearningRepository
             score: Value(score),
           ),
         );
-        await _unlockAchievement(
-          ownerId: ownerId,
-          achievementId: 'first_session',
-          sourceEventId: sessionId,
-          unlockedAtUtc: endedAtUtc,
-        );
-        if (total > 0 && row.wrongCount == 0) {
+        final sessionAttempts =
+            await (database.select(database.answerAttempts)..where(
+                  (attempt) =>
+                      attempt.ownerId.equals(ownerId) &
+                      attempt.sessionId.equals(sessionId),
+                ))
+                .get();
+        final achievementAttempts = <db.AnswerAttempt>[];
+        for (final attempt in sessionAttempts) {
+          final decisionSet = await projections.decisionSetForAttempt(attempt);
+          if (decisionSet.allows(LearningProjection.achievement)) {
+            achievementAttempts.add(attempt);
+          }
+        }
+        if (achievementAttempts.isNotEmpty) {
           await _unlockAchievement(
             ownerId: ownerId,
-            achievementId: 'perfect_session',
+            achievementId: 'first_session',
             sourceEventId: sessionId,
             unlockedAtUtc: endedAtUtc,
           );
+          if (achievementAttempts.every((attempt) => attempt.isCorrect)) {
+            await _unlockAchievement(
+              ownerId: ownerId,
+              achievementId: 'perfect_session',
+              sourceEventId: sessionId,
+              unlockedAtUtc: endedAtUtc,
+            );
+          }
         }
       }
       return LearningSessionSummary(
@@ -457,14 +513,18 @@ final class DriftLearningRepository
     required String answerAttemptId,
     required DateTime occurredAtUtc,
   }) async {
-    final attemptCount = database.answerAttempts.id.count();
-    final revisionQuery = database.selectOnly(database.answerAttempts)
-      ..addColumns([attemptCount])
-      ..where(
-        database.answerAttempts.ownerId.equals(ownerId) &
-            database.answerAttempts.wordId.equals(wordId),
-      );
-    final revision = (await revisionQuery.getSingle()).read(attemptCount) ?? 0;
+    final attempts =
+        await (database.select(database.answerAttempts)..where(
+              (attempt) =>
+                  attempt.ownerId.equals(ownerId) &
+                  attempt.wordId.equals(wordId),
+            ))
+            .get();
+    var revision = 0;
+    for (final attempt in attempts) {
+      final decisionSet = await projections.decisionSetForAttempt(attempt);
+      if (decisionSet.allows(LearningProjection.masterySrs)) revision++;
+    }
     if (revision < 1) {
       throw StateError('SRS revision requires durable answer evidence');
     }

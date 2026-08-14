@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart';
@@ -12,6 +13,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
@@ -90,27 +92,97 @@ Future<void> _insertLearningEvent(
   required String ownerId,
   required int number,
   required DateTime occurredAt,
-}) => database
-    .into(database.eventsV2)
-    .insert(
-      EventsV2Companion.insert(
-        eventId: 'learning-event:real-$number',
-        eventType: 'QuizCompleted',
-        eventVersion: 1,
-        occurredAtUtc: occurredAt,
-        recordedAtUtc: occurredAt,
-        actorIdentity: ownerId,
-        ownerId: ownerId,
-        aggregateType: 'LearningSession',
-        aggregateId: 'session-real',
-        idempotencyKey: 'learning-attempt:real-$number:v1',
-        consentContextJson: '{}',
-        appVersion: '1.0.0',
-        buildId: 'restart-test',
-        privacyClassification: 'anonymized',
-        payloadJson: '{"correct":true}',
-      ),
-    );
+}) async {
+  final attemptId = 'real-$number';
+  final categoryId = 'category-real-$ownerId';
+  final wordId = 'word-real-$ownerId';
+  const sessionId = 'session-real';
+  final context = LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Legacy replay',
+          normalizedName: 'legacy replay',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: 'legacy',
+          normalizedSpelling: 'legacy',
+          meaning: 'replay',
+          normalizedMeaning: 'replay',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          appVersion: '1.0.0',
+          buildId: 'restart-test',
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.answerAttempts)
+      .insert(
+        AnswerAttemptsCompanion.insert(
+          id: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          wordId: wordId,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          attemptNumber: number,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          evidenceClass: Value(context.evidenceClass.name),
+          evidenceContextJson: Value(jsonEncode(context.toJson())),
+        ),
+      );
+  await database
+      .into(database.eventsV2)
+      .insert(
+        EventsV2Companion.insert(
+          eventId: 'learning-event:$attemptId',
+          eventType: 'QuizCompleted',
+          eventVersion: 1,
+          occurredAtUtc: occurredAt,
+          recordedAtUtc: occurredAt,
+          actorIdentity: ownerId,
+          ownerId: ownerId,
+          aggregateType: 'LearningSession',
+          aggregateId: sessionId,
+          idempotencyKey: 'learning-attempt:$attemptId:v1',
+          consentContextJson: '{}',
+          appVersion: '1.0.0',
+          buildId: 'restart-test',
+          privacyClassification: 'anonymized',
+          payloadJson: jsonEncode(<String, dynamic>{
+            'attemptId': attemptId,
+            'correct': true,
+          }),
+        ),
+      );
+}
 
 Future<int> _appliedReceiptCount(
   AppDatabase database,
@@ -427,9 +499,15 @@ void main() {
         final attemptOutbox = await (reopened.select(
           reopened.outboxOperations,
         )..where((row) => row.entityType.equals('attempt'))).get();
-        final replayEvents = await (reopened.select(
-          reopened.eventsV2,
-        )..where((row) => row.ownerId.equals(_ownerId))).get();
+        final replayEvents =
+            await (reopened.select(reopened.eventsV2)..where(
+                  (row) =>
+                      row.ownerId.equals(_ownerId) &
+                      row.eventId.equals(
+                        'learning-event:attempt:failure-answer',
+                      ),
+                ))
+                .get();
 
         expect(attempts, hasLength(1));
         expect(attempts.single.id, 'attempt:failure-answer');
