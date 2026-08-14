@@ -495,6 +495,7 @@ git commit -m "feat: add typed 8-44 product feature contract"
 - Create: `test/architecture/alltcas_idea_feature_contract_docs_test.dart`
 - Generate: `docs/generated/alltcas-idea-integration-feature-map.md`
 - Generate: `docs/generated/alltcas-idea-integration-feature-map.json`
+- Modify: `lib/runtime/production_feature_contract.dart`
 - Modify: `tool/cli/tests/verify-product-completion.tests.ps1`
 - Modify: `tool/cli/verify-product-completion.ps1`
 
@@ -546,6 +547,8 @@ Expected: compile failure because the generator does not exist.
 
 Use `dart:convert` and `package:crypto/crypto.dart` in the reusable digest module; use `dart:io` only in the CLI generator. Insert JSON keys in fixed order; sort sets by serialized identifier; exclude revision, generator presentation metadata, and hash from the semantic hash input. Before overwriting an existing JSON artifact, compare its stored revision/hash with the new values: same revision plus changed semantic hash exits 1 without writes; changed revision plus unchanged hash emits a warning and may write. `--check` performs no writes and exits 1 on byte drift; `--write` writes UTF-8 LF output only.
 
+Import `registries/feature.dart` directly from `lib/runtime/production_feature_contract.dart` so the catalog remains reachable by the pure-Dart generator without transitively loading Flutter's `dart:ui` dependency.
+
 - [ ] **Step 4: Generate and re-check artifacts**
 
 ```powershell
@@ -593,7 +596,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File tool/cli/tests/verify-produc
 dart run tool/feature_contract/generate_feature_map.dart --check
 flutter test --no-pub test/architecture/alltcas_idea_feature_contract_models_test.dart test/architecture/alltcas_idea_feature_contract_test.dart test/architecture/alltcas_idea_feature_contract_docs_test.dart
 dart format --output=none --set-exit-if-changed lib/runtime/registries/feature.dart lib/runtime/registries/feature_registry.dart lib/product/feature_contract tool/feature_contract test/architecture/alltcas_idea_feature_contract_models_test.dart test/architecture/alltcas_idea_feature_contract_test.dart test/architecture/alltcas_idea_feature_contract_docs_test.dart
-git add -- lib/product/feature_contract/feature_contract_digest.dart tool/feature_contract/generate_feature_map.dart test/architecture/alltcas_idea_feature_contract_docs_test.dart docs/generated/alltcas-idea-integration-feature-map.md docs/generated/alltcas-idea-integration-feature-map.json tool/cli/tests/verify-product-completion.tests.ps1 tool/cli/verify-product-completion.ps1
+git add -- lib/runtime/production_feature_contract.dart lib/product/feature_contract/feature_contract_digest.dart tool/feature_contract/generate_feature_map.dart test/architecture/alltcas_idea_feature_contract_docs_test.dart docs/generated/alltcas-idea-integration-feature-map.md docs/generated/alltcas-idea-integration-feature-map.json tool/cli/tests/verify-product-completion.tests.ps1 tool/cli/verify-product-completion.ps1
 git diff --cached --check
 git commit -m "build: enforce generated feature contract drift"
 ```
