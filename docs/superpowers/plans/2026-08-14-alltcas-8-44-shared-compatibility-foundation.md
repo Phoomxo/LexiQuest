@@ -1199,11 +1199,11 @@ git commit -m "feat: enforce evidence eligibility across projections"
 **Audit correction boundary (2026-08-14):** the first implementation of
 Task 8 proved the activity declarations and export shape, but it left a second
 rollout authority in the activity adapter, resolved evidence identity after
-asynchronous providers, allowed production constructor fallbacks, treated the
-AnswerAttempt write version as a batch-wide choice, and synthesized a legacy
-event during sync ingress. Those behaviors are not promotable. Correct them in
-the two bounded commits below. Retain the already accepted export commit
-`22c5a7f` without amendment.
+asynchronous providers, let screens create a separate Legacy fallback, treated
+the AnswerAttempt write version as a batch-wide choice, and synthesized a
+legacy event during sync ingress. Those behaviors are not promotable. Correct
+them in the two bounded commits below. Retain the already accepted export
+commit `22c5a7f` without amendment.
 
 **Files (corrected exact inventory):**
 - Create: `lib/features/learning/domain/evidence_policy_rollout.dart`
@@ -1271,10 +1271,12 @@ Require these default declarations:
 
 Tests must prove all of the following before implementation:
 
-- `EvidencePolicyRolloutModeProvider` has one domain definition and the exact
-  same instance reaches the repository, event store, side-effect reconciler,
-  projection rebuilder, owner-upgrade repository, sync store, and current-
-  activity adapter. `CurrentActivityRolloutProvider` is not an authority.
+- `EvidencePolicyRolloutModeProvider` has one domain definition and production
+  `AppBootstrap` passes the exact same instance to the repository, event store,
+  side-effect reconciler, projection rebuilder, owner-upgrade repository, sync
+  store, and current-activity adapter. `CurrentActivityRolloutProvider` is not
+  an authority. Direct test/nonproduction composition may retain an explicit
+  safe fixed-Legacy constructor default.
 - A Legacy bootstrap with no injected research-state provider composes one
   baseline object that serves both activity snapshot resolution and
   `LearningEventContextProvider`. Shadow or Enforced without an explicit
@@ -1292,7 +1294,8 @@ Tests must prove all of the following before implementation:
 - Every screen locks response controls while resolution/write is in flight and
   derives success/failure UI from the pending command rather than mutable
   widget state. Speech uses an utterance epoch plus first-final-result guard.
-  Associative Stage 6 freezes the complete batch before its first write and
+  Associative Stage 3 synchronously freezes and creates the complete active-
+  recall evidence batch before any provider resolution or write, then
   idempotently retries only the incomplete portion after partial success.
 - The associative launcher creates the canonical learning session through
   `LearningUseCases`, passes that returned session ID to the session screen,
@@ -1305,16 +1308,17 @@ the context-backed implementation into
 `features/learning/domain/evidence_policy_rollout.dart`. Temporarily re-export
 that domain file from `drift_learning_event_store.dart` so bounded legacy test
 imports remain source compatible; the event store no longer defines the
-authority. Remove production `.legacy()` default parameters from the
-repository, event store, reconciler, rebuilder, owner-upgrade repository, sync
-store, and adapter composition. Tests that intentionally exercise Legacy pass
-an explicit fixed provider.
+authority. Retain safe fixed-Legacy constructor defaults for direct test and
+nonproduction composition. They are not production authority, and this task
+does not require mechanical edits to every unrelated constructor caller.
 
 Create exactly one rollout provider after strict research configuration loads
-and pass the identical instance through every consumer above. Remove
-`CurrentActivityRolloutProvider` and its fixed implementation. The current-
-activity adapter consumes the canonical rollout provider; a widget never
-chooses rollout or instantiates a fallback policy.
+and make `AppBootstrap` pass that identical instance through every consumer
+above. Remove `CurrentActivityRolloutProvider` and its fixed implementation.
+The current-activity adapter consumes the canonical rollout provider; screens
+never call a `.legacy()` adapter/factory or instantiate a fallback policy. A
+safe fixed-Legacy default may remain reachable only through direct test or
+nonproduction construction.
 
 Inject one read-only canonical research-state provider whose implementation
 serves both current-activity snapshot resolution and
@@ -1351,18 +1355,19 @@ Make current-activity capture synchronous and make the returned pending
 command own `LearningUseCases`. It freezes identity/time and every response
 semantic before starting asynchronous policy/research resolution. Cache a
 successfully resolved context for all later write attempts; coalesce concurrent
-record calls onto one future; after any failure, keep controls locked until the
-caller explicitly chooses retry or cancel. Response controls remain locked
-while that pending command exists; the dedicated retry/cancel controls own the
-transition. Retry never regenerates ID/time or reads mutable UI response state.
+record calls onto one future; after any failure, keep response controls locked
+and expose only an explicit retry for that same pending command. There is no
+selective cancel or discard transition. Retry never regenerates ID/time or
+reads mutable UI response state.
 
 Apply that state machine to all six screens. Speak-to-text accepts only the
 first final transcript for the current utterance epoch and ignores stale or
-duplicate callbacks. Associative Stage 6 creates the whole pending batch before
-writing item one, remembers committed items, and retries the same remaining
-commands after a partial failure. The launcher starts the canonical
-associative-reading session through `LearningUseCases`, passes its session ID,
-and calls canonical finish only after Stage 6 completes successfully.
+duplicate callbacks. Associative Stage 3 synchronously freezes and creates the
+whole active-recall pending batch before provider resolution, remembers
+committed items, and retries the same remaining commands after a partial
+failure. The launcher starts the canonical associative-reading session through
+`LearningUseCases` and passes its session ID. Stage 6 only marks that canonical
+session successfully complete after every required evidence write succeeds.
 
 Do not modify `lib/screens/choose_mode_screen.dart` or
 `lib/screens/main_navigation_screen.dart`, and do not add a Speak-to-text route.
@@ -1381,8 +1386,8 @@ flutter test --no-pub test/screens/quiz_screen_test.dart test/screens/srs_flashc
 Then preserve the exact first correction boundary:
 
 ```powershell
-dart format --output=none --set-exit-if-changed lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
-git add -- lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
+dart format --output=none --set-exit-if-changed lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/sync/data/drift_sync_store.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
+git add -- lib/features/learning/domain/evidence_policy_rollout.dart lib/features/learning/data/drift_learning_event_store.dart lib/features/learning/data/drift_learning_repository.dart lib/features/learning/data/drift_learning_projection_rebuilder.dart lib/features/learning/application/learning_side_effect_reconciler.dart lib/features/learning/application/learning_use_cases.dart lib/features/learning/application/current_activity_evidence.dart lib/features/identity/data/drift_owner_upgrade_repository.dart lib/features/sync/data/drift_sync_store.dart lib/runtime/app_dependencies.dart lib/runtime/app_bootstrap.dart lib/screens/associative_reading_launcher_screen.dart lib/screens/quiz_screen.dart lib/screens/srs_flashcards_screen.dart lib/screens/associative_reading_session_screen.dart lib/screens/ghost_shadow_duel_screen.dart lib/screens/speak_to_text_screen.dart lib/screens/shadowing_challenge_screen.dart test/features/learning/current_activity_evidence_test.dart test/features/learning/learning_use_cases_test.dart test/features/learning/drift_learning_event_store_test.dart test/runtime/app_bootstrap_test.dart test/architecture/provider_composition_boundary_test.dart test/scenarios/current_activity_evidence_bootstrap_test.dart test/screens/associative_reading_launcher_screen_test.dart test/screens/quiz_screen_test.dart test/screens/srs_flashcards_screen_test.dart test/screens/associative_reading_session_screen_test.dart test/screens/ghost_shadow_duel_screen_test.dart test/screens/speak_to_text_screen_voice_test.dart test/screens/shadowing_challenge_screen_test.dart test/scenarios/production_feature_navigation_test.dart
 git diff --cached --check
 git commit -m "fix: close current evidence rollout boundary"
 ```
@@ -1479,8 +1484,9 @@ The export implementation and lifecycle verification remain in accepted commit
 that commit while closing the two audit corrections above.
 
 **Explicit deferral ledger:**
-- Process-death pending-command recovery remains deferred; this task guarantees
-  stable identity only for retries within the current process.
+- Durable pending-command recovery across navigation/route disposal and process
+  death remains deferred; Task 8 guarantees in-memory retry only while the
+  owning screen state survives.
 - The Speak-to-text route remains absent; this task changes no route surface.
 - The persisted canonical research-state provider belongs to Task 11; Task 8
   supplies only the injected read-only provider seam and Legacy baseline.
