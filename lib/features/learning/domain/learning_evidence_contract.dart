@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'evidence_context.dart';
+
 abstract final class LearningEvidenceContract {
   static const int maxIdentifierLength = 256;
   static const int maxPromptModeLength = 60;
@@ -23,6 +27,8 @@ abstract final class LearningEvidenceContract {
     required int attemptNumber,
     required int occurredAtUtcMs,
     required String? providerProvenance,
+    required String evidenceClass,
+    required String evidenceContextJson,
   }) {
     return validIdentifier(id) &&
         validIdentifier(ownerId) &&
@@ -35,7 +41,41 @@ abstract final class LearningEvidenceContract {
         attemptNumber <= maxAttemptNumber &&
         occurredAtUtcMs >= 0 &&
         (providerProvenance == null ||
-            (providerProvenance.runes.length <= maxProviderProvenanceLength));
+            (providerProvenance.runes.length <= maxProviderProvenanceLength)) &&
+        validEvidenceMetadata(
+          evidenceClass: evidenceClass,
+          evidenceContextJson: evidenceContextJson,
+        );
+  }
+
+  static bool validEvidenceMetadata({
+    required String evidenceClass,
+    required String evidenceContextJson,
+  }) {
+    try {
+      final decoded = jsonDecode(evidenceContextJson);
+      if (decoded is! Map) return false;
+      final context = EvidenceContext.fromJson(decoded.cast<String, Object?>());
+      return evidenceClass == context.evidenceClass.name &&
+          evidenceContextJson == jsonEncode(context.toJson());
+    } on FormatException {
+      return false;
+    } on TypeError {
+      return false;
+    }
+  }
+
+  static bool sameEvidenceMetadata({
+    required String evidenceClass,
+    required String evidenceContextJson,
+    required EvidenceContext expectedContext,
+  }) {
+    return validEvidenceMetadata(
+          evidenceClass: evidenceClass,
+          evidenceContextJson: evidenceContextJson,
+        ) &&
+        evidenceClass == expectedContext.evidenceClass.name &&
+        evidenceContextJson == jsonEncode(expectedContext.toJson());
   }
 
   static bool validReading({

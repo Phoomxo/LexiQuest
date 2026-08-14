@@ -1,4 +1,5 @@
 import '../../events/domain/event_envelope_v2.dart';
+import 'evidence_context.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -79,6 +80,7 @@ final class RecordAnswerCommand {
     required this.responseTimeMs,
     required this.attemptNumber,
     required this.occurredAtUtc,
+    required this.evidenceContext,
     this.providerProvenance,
     this.event,
   });
@@ -92,6 +94,7 @@ final class RecordAnswerCommand {
   final int? responseTimeMs;
   final int attemptNumber;
   final DateTime occurredAtUtc;
+  final EvidenceContext evidenceContext;
   final String? providerProvenance;
   final EventEnvelopeV2? event;
 }

@@ -26,13 +26,13 @@ void main() {
         .map((row) => row.read<int>('count'))
         .getSingle();
 
-    expect(version, 12);
+    expect(version, AppDatabase.currentSchemaVersion);
     expect(columns, contains('owner_id'));
     expect(ownerCount, 1);
     expect(usageCount, 0);
   });
 
-  test('fresh v12 AI usage has owner foreign key and time index', () async {
+  test('fresh current schema preserves the v12 AI usage contract', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
@@ -47,7 +47,7 @@ void main() {
         .map((row) => row.read<String>('name'))
         .get();
 
-    expect(database.schemaVersion, 12);
+    expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
     expect(
       foreignKeys.any(
         (row) =>

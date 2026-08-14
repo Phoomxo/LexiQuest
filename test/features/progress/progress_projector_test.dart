@@ -2,6 +2,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 
@@ -92,6 +93,7 @@ void main() {
         responseTimeMs: 500,
         attemptNumber: 1,
         occurredAtUtc: DateTime.utc(2026, 7, 29, 10),
+        evidenceContext: _legacyEvidence(),
       ),
     );
     await learning.recordAnswer(
@@ -105,6 +107,7 @@ void main() {
         responseTimeMs: 400,
         attemptNumber: 2,
         occurredAtUtc: DateTime.utc(2026, 7, 30, 10),
+        evidenceContext: _legacyEvidence(),
       ),
     );
     await learning.finishSession(
@@ -128,3 +131,11 @@ void main() {
     expect(result.recommendations.single.sampleSize, 1);
   });
 }
+
+EvidenceContext _legacyEvidence() => EvidenceContext.legacyCompatibility(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'legacy-current-activity',
+  hintLevel: 0,
+  contentRevision: 'legacy-unknown',
+  engagementAllowed: true,
+);

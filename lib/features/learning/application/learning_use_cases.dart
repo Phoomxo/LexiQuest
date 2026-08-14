@@ -3,6 +3,7 @@ import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
+import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 
@@ -207,6 +208,13 @@ final class LearningUseCases {
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
         occurredAtUtc: occurredAtUtc,
+        evidenceContext: EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'legacy-current-activity',
+          hintLevel: 0,
+          contentRevision: 'legacy-unknown',
+          engagementAllowed: true,
+        ),
         providerProvenance: providerProvenance,
         event: durableEvent,
       ),

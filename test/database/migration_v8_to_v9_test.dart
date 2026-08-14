@@ -35,13 +35,13 @@ void main() {
       expect(tables, hasLength(1));
     });
 
-    test('fresh database reports schema version 10', () async {
+    test('fresh current schema preserves the v9 streak contract', () async {
       await db.customSelect('SELECT 1').get();
       final version = await db
           .customSelect('PRAGMA user_version')
           .map((r) => r.read<int>('user_version'))
           .getSingle();
-      expect(version, 12); // schema v12 is current
+      expect(version, AppDatabase.currentSchemaVersion);
     });
 
     test('can insert and retrieve streak_states row', () async {

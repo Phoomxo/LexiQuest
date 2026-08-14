@@ -232,6 +232,8 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
       'responseTimeMs',
       'attemptNumber',
       'occurredAtUtc',
+      'evidenceClass',
+      'evidenceContext',
     ],
   ),
   OwnerLifecycleTableDescriptor(

@@ -10,6 +10,8 @@ import '../../../runtime/runtime_flag_namespaces.dart';
 import '../../ai_tutor/domain/ai_tutor_contracts.dart';
 import '../../device_model/domain/model_lifecycle.dart';
 import '../../identity/domain/owner_lifecycle_manifest.dart';
+import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 
 final class OwnerLifecycleArchiveArtifact {
   const OwnerLifecycleArchiveArtifact({
@@ -337,7 +339,8 @@ final class OwnerLifecycleArchiveExporter {
     final rows = await database
         .customSelect(
           'SELECT prompt_mode, is_correct, response_time_ms, attempt_number, '
-          'occurred_at_utc_ms FROM answer_attempts WHERE owner_id = ? '
+          'occurred_at_utc_ms, evidence_class, evidence_context_json '
+          'FROM answer_attempts WHERE owner_id = ? '
           'ORDER BY occurred_at_utc_ms, id',
           variables: [Variable<String>(ownerId)],
           readsFrom: {database.answerAttempts},
@@ -352,8 +355,28 @@ final class OwnerLifecycleArchiveExporter {
           'responseTimeMs': row.readNullable<int>('response_time_ms'),
           'attemptNumber': row.read<int>('attempt_number'),
           'occurredAtUtc': _iso(row.read<int>('occurred_at_utc_ms')),
+          'evidenceClass': row.read<String>('evidence_class'),
+          'evidenceContext': _validatedEvidenceContext(
+            evidenceClass: row.read<String>('evidence_class'),
+            evidenceContextJson: row.read<String>('evidence_context_json'),
+          ),
         },
     ];
+  }
+
+  Map<String, Object?> _validatedEvidenceContext({
+    required String evidenceClass,
+    required String evidenceContextJson,
+  }) {
+    if (!LearningEvidenceContract.validEvidenceMetadata(
+      evidenceClass: evidenceClass,
+      evidenceContextJson: evidenceContextJson,
+    )) {
+      throw StateError('Answer attempt has invalid evidence metadata.');
+    }
+    return EvidenceContext.fromJson(
+      (jsonDecode(evidenceContextJson) as Map).cast<String, Object?>(),
+    ).toJson();
   }
 
   Future<List<Map<String, Object?>>> _srsStates(String ownerId) async {

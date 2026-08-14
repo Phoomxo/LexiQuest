@@ -38,14 +38,17 @@ void main() {
       },
     );
 
-    test('fresh database reports schema version 10', () async {
-      await db.customSelect('SELECT 1').get();
-      final version = await db
-          .customSelect('PRAGMA user_version')
-          .map((r) => r.read<int>('user_version'))
-          .getSingle();
-      expect(version, 12);
-    });
+    test(
+      'fresh current schema preserves the v10 association contract',
+      () async {
+        await db.customSelect('SELECT 1').get();
+        final version = await db
+            .customSelect('PRAGMA user_version')
+            .map((r) => r.read<int>('user_version'))
+            .getSingle();
+        expect(version, AppDatabase.currentSchemaVersion);
+      },
+    );
 
     test('can insert and retrieve an association_records row', () async {
       final now = DateTime.now().toUtc();

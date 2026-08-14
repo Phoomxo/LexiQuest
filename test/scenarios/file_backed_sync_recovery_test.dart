@@ -279,8 +279,12 @@ Future<void> _seedRestartInventory(AppDatabase database) async {
     "'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES ('attempt:local', 'owner-a', "
-    "'session:local', 'word:local', 'meaning', 1, 100, 1, 2, NULL)",
+    'INSERT INTO answer_attempts '
+    '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+    'response_time_ms, attempt_number, occurred_at_utc_ms, '
+    'provider_provenance) VALUES '
+    "('attempt:local', 'owner-a', 'session:local', 'word:local', 'meaning', "
+    '1, 100, 1, 2, NULL)',
   );
   await database.customInsert(
     "INSERT INTO srs_states VALUES ('srs:local', 'owner-a', 'word:local', "

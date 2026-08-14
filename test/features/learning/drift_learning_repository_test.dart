@@ -1,7 +1,11 @@
+import 'dart:convert';
+
+import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
 void main() {
@@ -84,6 +88,7 @@ void main() {
       responseTimeMs: 420,
       attemptNumber: 1,
       occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+      evidenceContext: _legacyEvidence(),
     );
 
     final first = await repository.recordAnswer(command);
@@ -92,7 +97,20 @@ void main() {
     expect(first.inserted, isTrue);
     expect(replay.inserted, isFalse);
     expect(replay.srs.intervalDays, 1);
-    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    final attempts = await database.select(database.answerAttempts).get();
+    expect(attempts, hasLength(1));
+    final storedAttempt = attempts.single;
+    expect(
+      storedAttempt.evidenceClass,
+      command.evidenceContext.evidenceClass.name,
+    );
+    expect(
+      EvidenceContext.fromJson(
+        (jsonDecode(storedAttempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      ).toJson(),
+      command.evidenceContext.toJson(),
+    );
     expect(
       await database.select(database.pointsLedgerEntries).get(),
       hasLength(1),
@@ -135,6 +153,7 @@ void main() {
         responseTimeMs: 800,
         attemptNumber: 1,
         occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+        evidenceContext: _legacyEvidence(),
       ),
     );
 
@@ -176,6 +195,7 @@ void main() {
           responseTimeMs: 200,
           attemptNumber: 2,
           occurredAtUtc: later,
+          evidenceContext: _legacyEvidence(),
         ),
       );
 
@@ -190,6 +210,7 @@ void main() {
           responseTimeMs: 300,
           attemptNumber: 1,
           occurredAtUtc: earlier,
+          evidenceContext: _legacyEvidence(),
         ),
       );
 
@@ -226,6 +247,7 @@ void main() {
       attemptNumber: 1,
       occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
       providerProvenance: 'device-stt',
+      evidenceContext: _legacyEvidence(),
     );
     await repository.recordAnswer(command);
 
@@ -242,11 +264,109 @@ void main() {
           attemptNumber: command.attemptNumber,
           occurredAtUtc: command.occurredAtUtc,
           providerProvenance: 'cloud-stt',
+          evidenceContext: command.evidenceContext,
         ),
       ),
       throwsStateError,
     );
   });
+
+  test(
+    'attempt replay rejects changes to every serialized evidence field',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-evidence-replay',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      final command = RecordAnswerCommand(
+        id: 'attempt-evidence-replay',
+        ownerId: 'owner-1',
+        sessionId: 'session-evidence-replay',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+        evidenceContext: _legacyEvidence(),
+      );
+      await repository.recordAnswer(command);
+
+      final canonical = command.evidenceContext.toJson();
+      final mutations = <String, Object?>{
+        'schemaVersion': 2,
+        'evidenceClass': EvidenceClass.recognition.name,
+        'skillId': 'changed-skill',
+        'hintLevel': 1,
+        'policyVersion': 'changed-policy',
+        'contentRevision': 'changed-content',
+        'featureContractRevision': 'changed-contract',
+        'featureContractHash': '1' * 64,
+        'classificationSource': EvidenceClassificationSource.declared.name,
+        'rolloutMode': EvidencePolicyRolloutMode.shadow.name,
+        'protocolId': 'protocol',
+        'protocolVersion': 'protocol-version',
+        'experimentId': 'experiment',
+        'experimentVersion': 1,
+        'assignmentId': 'assignment',
+        'cohort': 'cohort',
+        'researchConsentVersion': 1,
+        'instrumentId': 'instrument',
+        'instrumentVersion': 'instrument-version',
+        'formId': 'form',
+        'formVersion': 'form-version',
+        'assessmentItemId': 'assessment-item',
+        'assessmentResponseCode': 'correct',
+        'scoringRuleVersion': 'scoring-rule',
+        'engagementAllowed': false,
+      };
+      expect(mutations.keys.toSet(), canonical.keys.toSet());
+
+      for (final mutation in mutations.entries) {
+        final changed = Map<String, Object?>.from(canonical)
+          ..[mutation.key] = mutation.value;
+        await database.customUpdate(
+          'UPDATE answer_attempts SET evidence_context_json = ? WHERE id = ?',
+          variables: [
+            Variable<String>(jsonEncode(changed)),
+            const Variable<String>('attempt-evidence-replay'),
+          ],
+          updates: {database.answerAttempts},
+        );
+
+        await expectLater(
+          repository.recordAnswer(command),
+          throwsStateError,
+          reason: 'changed ${mutation.key} must invalidate immutable replay',
+        );
+
+        await database.customUpdate(
+          'UPDATE answer_attempts SET evidence_context_json = ? WHERE id = ?',
+          variables: [
+            Variable<String>(jsonEncode(canonical)),
+            const Variable<String>('attempt-evidence-replay'),
+          ],
+          updates: {database.answerAttempts},
+        );
+      }
+
+      await database.customUpdate(
+        'UPDATE answer_attempts SET evidence_class = ? WHERE id = ?',
+        variables: const [
+          Variable<String>('recognition'),
+          Variable<String>('attempt-evidence-replay'),
+        ],
+        updates: {database.answerAttempts},
+      );
+      await expectLater(repository.recordAnswer(command), throwsStateError);
+    },
+  );
 
   test(
     'invalid cloud-contract evidence is rejected before local commit',
@@ -271,6 +391,7 @@ void main() {
         responseTimeMs: 400,
         attemptNumber: 1,
         occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+        evidenceContext: _legacyEvidence(),
       );
 
       for (final invalid in [
@@ -284,6 +405,7 @@ void main() {
           responseTimeMs: base.responseTimeMs,
           attemptNumber: base.attemptNumber,
           occurredAtUtc: base.occurredAtUtc,
+          evidenceContext: base.evidenceContext,
         ),
         RecordAnswerCommand(
           id: base.id,
@@ -295,6 +417,7 @@ void main() {
           responseTimeMs: 2147483648,
           attemptNumber: base.attemptNumber,
           occurredAtUtc: base.occurredAtUtc,
+          evidenceContext: base.evidenceContext,
         ),
         RecordAnswerCommand(
           id: base.id,
@@ -306,6 +429,7 @@ void main() {
           responseTimeMs: base.responseTimeMs,
           attemptNumber: 1000001,
           occurredAtUtc: base.occurredAtUtc,
+          evidenceContext: base.evidenceContext,
         ),
         RecordAnswerCommand(
           id: base.id,
@@ -318,6 +442,7 @@ void main() {
           attemptNumber: base.attemptNumber,
           occurredAtUtc: base.occurredAtUtc,
           providerProvenance: 'p' * 121,
+          evidenceContext: base.evidenceContext,
         ),
       ]) {
         expect(() => repository.recordAnswer(invalid), throwsArgumentError);
@@ -384,4 +509,14 @@ void main() {
     )..where((row) => row.entityType.equals('readingEvent'))).get();
     expect(readingOutbox, hasLength(3));
   });
+}
+
+EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
+  return EvidenceContext.legacyCompatibility(
+    evidenceClass: EvidenceClass.independentRecall,
+    skillId: skillId,
+    hintLevel: 0,
+    contentRevision: 'legacy-unknown',
+    engagementAllowed: true,
+  );
 }

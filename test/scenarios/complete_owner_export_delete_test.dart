@@ -15,18 +15,19 @@ import 'package:vocab_learning_app/features/export/application/owner_lifecycle_a
 import 'package:vocab_learning_app/features/gemini/data/secure_gemini_settings_store.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/runtime/download_counter.dart';
 
 void main() {
   test(
-    'schema 12 lifecycle manifest, export, and deletion cover 31 tables',
+    'current schema lifecycle manifest, export, and deletion cover 31 tables',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       await database.customSelect('SELECT 1').getSingle();
 
-      const exactSchema12Tables = <String>{
+      const exactCurrentSchemaTables = <String>{
         'local_owners',
         'research_consents',
         'vocabulary_categories',
@@ -66,11 +67,11 @@ void main() {
           .map((entry) => entry.tableName)
           .toSet();
 
-      expect(database.schemaVersion, 12);
-      expect(liveTables, exactSchema12Tables);
-      expect(manifestTables, exactSchema12Tables);
-      expect(ownerLifecycleExportTableNames, exactSchema12Tables);
-      expect(ownerLifecycleDeletionTableNames, exactSchema12Tables);
+      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
+      expect(liveTables, exactCurrentSchemaTables);
+      expect(manifestTables, exactCurrentSchemaTables);
+      expect(ownerLifecycleExportTableNames, exactCurrentSchemaTables);
+      expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
         hasLength(31),
@@ -373,6 +374,48 @@ void main() {
     expect(window['versionWindowSemantics'], 'boundedTrackedVersionWindow');
   });
 
+  test('archive rejects mismatched or noncanonical attempt evidence', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await _seedCompleteOwnerA(database);
+    final exporter = OwnerLifecycleArchiveExporter(
+      database: database,
+      nowUtc: () => DateTime.utc(2026, 8, 11, 12),
+    );
+
+    await database.customUpdate(
+      'UPDATE answer_attempts SET evidence_class = ? WHERE id = ?',
+      variables: const [
+        Variable<String>('recognition'),
+        Variable<String>('a:attempt'),
+      ],
+      updates: {database.answerAttempts},
+    );
+    await expectLater(exporter.prepareActive(), throwsStateError);
+
+    final canonical = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'legacy-unspecified',
+      hintLevel: 0,
+      contentRevision: 'legacy-unknown',
+      engagementAllowed: true,
+    ).toJson();
+    final reversed = Map<String, Object?>.fromEntries(
+      canonical.entries.toList(growable: false).reversed,
+    );
+    await database.customUpdate(
+      'UPDATE answer_attempts SET evidence_class = ?, '
+      'evidence_context_json = ? WHERE id = ?',
+      variables: [
+        const Variable<String>('independentRecall'),
+        Variable<String>(jsonEncode(reversed)),
+        const Variable<String>('a:attempt'),
+      ],
+      updates: {database.answerAttempts},
+    );
+    await expectLater(exporter.prepareActive(), throwsStateError);
+  });
+
   test(
     'manifest deletion removes one complete owner and preserves foreign and global rows',
     () async {
@@ -460,7 +503,10 @@ void main() {
       final archiveEnvelope = jsonDecode(archiveText) as Map<String, dynamic>;
       expect(archiveEnvelope['contentSha256'], firstArchive.contentSha256);
       final archiveContent = archiveEnvelope['content'] as Map<String, dynamic>;
-      expect(archiveContent['databaseSchemaVersion'], 12);
+      expect(
+        archiveContent['databaseSchemaVersion'],
+        AppDatabase.currentSchemaVersion,
+      );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
       expect(archiveTables, hasLength(31));
@@ -492,6 +538,7 @@ void main() {
       }
       for (final alias in const [
         'vocabularyImports',
+        'answerAttempts',
         'srsStates',
         'streakState',
         'learningDays',
@@ -514,6 +561,29 @@ void main() {
           reason: '$alias must materialize its complete personal allowlist',
         );
       }
+      final answerAttempts = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'answerAttempts');
+      final answerEvidence = (answerAttempts['records'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .last;
+      expect(
+        answerEvidence['evidenceClass'],
+        EvidenceClass.independentRecall.name,
+      );
+      final evidenceContext = EvidenceContext.fromJson(
+        (answerEvidence['evidenceContext'] as Map).cast<String, Object?>(),
+      );
+      expect(
+        evidenceContext.toJson(),
+        EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'legacy-unspecified',
+          hintLevel: 0,
+          contentRevision: 'legacy-unknown',
+          engagementAllowed: true,
+        ).toJson(),
+      );
       expect(
         (archiveTables.cast<Map<String, dynamic>>().singleWhere(
                   (entry) => entry['alias'] == 'pointsLedger',
@@ -745,7 +815,10 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     "'1', '1')",
   );
   await database.customInsert(
-    "INSERT INTO answer_attempts VALUES "
+    'INSERT INTO answer_attempts '
+    '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+    'response_time_ms, attempt_number, occurred_at_utc_ms, '
+    'provider_provenance) VALUES '
     "('a:attempt', 'owner-a', 'a:session', 'a:word', 'meaning', 1, 100, "
     "1, 15, 'provider-key-SENTINEL-A')",
   );

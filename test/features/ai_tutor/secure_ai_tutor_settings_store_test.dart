@@ -396,7 +396,7 @@ void main() {
             ],
           )
           .join('|');
-      expect(database.schemaVersion, 12);
+      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       expect(serialized, isNot(contains('first-secret')));
       expect(serialized, isNot(contains('second-secret')));
       expect(serialized, isNot(contains('model-a')));
@@ -639,7 +639,7 @@ void main() {
       1,
     );
     expect(values.values.join(), isNot(contains('orphan-secret')));
-    expect(database.schemaVersion, 12);
+    expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
   });
 }
 

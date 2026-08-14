@@ -1,9 +1,12 @@
+import 'dart:convert';
+
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
@@ -107,9 +110,25 @@ void main() {
       expect(summary.correctCount, 1);
       expect(summary.wrongCount, 0);
       expect(summary.score, 100);
+      final attempts = await database.select(database.answerAttempts).get();
+      expect(attempts, hasLength(1));
+      final evidence = EvidenceContext.fromJson(
+        (jsonDecode(attempts.single.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
       expect(
-        await database.select(database.answerAttempts).get(),
-        hasLength(1),
+        attempts.single.evidenceClass,
+        EvidenceClass.independentRecall.name,
+      );
+      expect(
+        evidence.toJson(),
+        EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'legacy-current-activity',
+          hintLevel: 0,
+          contentRevision: 'legacy-unknown',
+          engagementAllowed: true,
+        ).toJson(),
       );
     },
   );

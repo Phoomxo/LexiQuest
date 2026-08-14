@@ -157,7 +157,7 @@ void main() {
         database,
         activeOwnerId: () async => activeOwner,
       );
-      expect(database.schemaVersion, 12);
+      expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       expect(
         await repository.recoverPendingStartedBefore(
           DateTime.utc(2026, 8, 1, 11),

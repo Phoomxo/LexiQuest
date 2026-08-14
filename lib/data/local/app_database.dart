@@ -53,12 +53,14 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
+  static const int currentSchemaVersion = 13;
+
   AppDatabase(super.executor);
 
   AppDatabase.production() : super(driftDatabase(name: 'lexiquest'));
 
   @override
-  int get schemaVersion => 12;
+  int get schemaVersion => currentSchemaVersion;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -172,6 +174,20 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 12) {
         await _migrateAiUsageToOwnerScope(migrator);
+      }
+      if (from < 13) {
+        await _addColumnIfMissing(
+          migrator,
+          'answer_attempts',
+          answerAttempts,
+          answerAttempts.evidenceClass,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'answer_attempts',
+          answerAttempts,
+          answerAttempts.evidenceContextJson,
+        );
       }
     },
     beforeOpen: (details) async {

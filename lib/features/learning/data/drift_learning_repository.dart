@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
@@ -141,6 +143,10 @@ final class DriftLearningRepository implements LearningRepository {
               attemptNumber: command.attemptNumber,
               occurredAtUtcMs: command.occurredAtUtc.millisecondsSinceEpoch,
               providerProvenance: Value(command.providerProvenance),
+              evidenceClass: Value(command.evidenceContext.evidenceClass.name),
+              evidenceContextJson: Value(
+                jsonEncode(command.evidenceContext.toJson()),
+              ),
             ),
           );
       final next = await projections.rebuildWord(
@@ -437,7 +443,12 @@ final class DriftLearningRepository implements LearningRepository {
         row.responseTimeMs == command.responseTimeMs &&
         row.attemptNumber == command.attemptNumber &&
         row.occurredAtUtcMs == command.occurredAtUtc.millisecondsSinceEpoch &&
-        row.providerProvenance == command.providerProvenance;
+        row.providerProvenance == command.providerProvenance &&
+        LearningEvidenceContract.sameEvidenceMetadata(
+          evidenceClass: row.evidenceClass,
+          evidenceContextJson: row.evidenceContextJson,
+          expectedContext: command.evidenceContext,
+        );
   }
 
   bool _sameReadingEvent(db.ReadingEvent row, ReadingProgressCommand command) {
@@ -471,6 +482,8 @@ final class DriftLearningRepository implements LearningRepository {
       attemptNumber: command.attemptNumber,
       occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
       providerProvenance: command.providerProvenance,
+      evidenceClass: command.evidenceContext.evidenceClass.name,
+      evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
     )) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }

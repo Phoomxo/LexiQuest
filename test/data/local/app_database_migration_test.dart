@@ -4,17 +4,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
-  test('new databases use schema version twelve with product tables', () async {
+  test('new databases use the current schema with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
-    expect(database.schemaVersion, 12);
+    expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
 
     final categoryColumns = await _columnNames(
       database,
       'vocabulary_categories',
     );
     final wordColumns = await _columnNames(database, 'vocabulary_words');
+    final attemptColumns = await _columnNames(database, 'answer_attempts');
     final outboxColumns = await _columnNames(database, 'outbox_operations');
     final conflictColumns = await _columnNames(database, 'sync_conflicts');
     final tables = await database
@@ -37,6 +38,10 @@ void main() {
         'last_acknowledged_at_utc_ms',
         'server_updated_at_utc_ms',
       ]),
+    );
+    expect(
+      attemptColumns,
+      containsAll(<String>['evidence_class', 'evidence_context_json']),
     );
     expect(
       outboxColumns,
@@ -124,7 +129,7 @@ void main() {
           )
           .getSingle();
 
-      expect(version, 12); // schema v12 owner-scoped AI usage
+      expect(version, AppDatabase.currentSchemaVersion);
       expect(category.read<String>('name'), 'Travel');
       expect(category.read<int>('cloud_revision'), 0);
       expect(word.read<String>('spelling'), 'station');
@@ -202,7 +207,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((row) => row.read<int>('user_version'))
             .getSingle(),
-        12, // schema v12 owner-scoped AI usage
+        AppDatabase.currentSchemaVersion,
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
@@ -229,7 +234,7 @@ void main() {
             .customSelect('PRAGMA user_version')
             .map((value) => value.read<int>('user_version'))
             .getSingle(),
-        12, // schema v12 owner-scoped AI usage
+        AppDatabase.currentSchemaVersion,
       );
       expect(row.read<String>('id'), 'vision@1');
       expect(row.read<String>('state'), 'downloading');

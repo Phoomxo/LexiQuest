@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
@@ -5,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/srs_operation_identity.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -49,6 +51,7 @@ void main() {
         responseTimeMs: 250,
         attemptNumber: 1,
         occurredAtUtc: now,
+        evidenceContext: _legacyEvidence(),
       ),
     );
     expect(
@@ -120,9 +123,25 @@ void main() {
         page: page,
       );
 
+      final attempts = await database.select(database.answerAttempts).get();
+      expect(attempts, hasLength(1));
+      final evidence = EvidenceContext.fromJson(
+        (jsonDecode(attempts.single.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
       expect(
-        await database.select(database.answerAttempts).get(),
-        hasLength(1),
+        attempts.single.evidenceClass,
+        EvidenceClass.independentRecall.name,
+      );
+      expect(
+        evidence.toJson(),
+        EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'legacy-unspecified',
+          hintLevel: 0,
+          contentRevision: 'legacy-unknown',
+          engagementAllowed: true,
+        ).toJson(),
       );
       expect(await database.select(database.srsStates).get(), hasLength(1));
       expect(
@@ -377,6 +396,7 @@ void main() {
         responseTimeMs: 250,
         attemptNumber: 1,
         occurredAtUtc: now,
+        evidenceContext: _legacyEvidence(),
       ),
     );
     expect(
@@ -1215,9 +1235,18 @@ Future<void> _recordSrsReview(
       responseTimeMs: 250,
       attemptNumber: attemptNumber,
       occurredAtUtc: occurredAtUtc,
+      evidenceContext: _legacyEvidence(),
     ),
   );
 }
+
+EvidenceContext _legacyEvidence() => EvidenceContext.legacyCompatibility(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'legacy-current-activity',
+  hintLevel: 0,
+  contentRevision: 'legacy-unknown',
+  engagementAllowed: true,
+);
 
 Future<void> _seedSrsDeviceAtRevisionFive(
   AppDatabase database, {

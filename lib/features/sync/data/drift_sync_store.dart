@@ -5,6 +5,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
+import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
@@ -1571,6 +1572,14 @@ final class DriftSyncStore implements SyncStore {
     final attemptNumber = _requiredInt(payload, 'attemptNumber');
     final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
     final providerProvenance = _optionalString(payload, 'providerProvenance');
+    final evidenceContext = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'legacy-unspecified',
+      hintLevel: 0,
+      contentRevision: 'legacy-unknown',
+      engagementAllowed: true,
+    );
+    final evidenceContextJson = jsonEncode(evidenceContext.toJson());
     if (!LearningEvidenceContract.validAttempt(
       id: entity.entityId,
       ownerId: ownerId,
@@ -1581,6 +1590,8 @@ final class DriftSyncStore implements SyncStore {
       attemptNumber: attemptNumber,
       occurredAtUtcMs: occurredAtUtcMs,
       providerProvenance: providerProvenance,
+      evidenceClass: evidenceContext.evidenceClass.name,
+      evidenceContextJson: evidenceContextJson,
     )) {
       throw const InvalidSyncPayloadFailure();
     }
@@ -1627,6 +1638,8 @@ final class DriftSyncStore implements SyncStore {
             attemptNumber: attemptNumber,
             occurredAtUtcMs: occurredAtUtcMs,
             providerProvenance: Value(providerProvenance),
+            evidenceClass: Value(evidenceContext.evidenceClass.name),
+            evidenceContextJson: Value(evidenceContextJson),
           ),
         );
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);

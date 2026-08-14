@@ -152,6 +152,21 @@ Added `owner_id` to `ai_usage_events`, changed its primary key to
 proven. All other tables and owner data are preserved. This migration is
 forward-only; reopening the database with a v11 APK is unsupported.
 
+### v13 — Answer Evidence Metadata
+**Reserved:** 2026-08-14
+**Implemented:** 2026-08-14
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added `evidence_class` and `evidence_context_json` to the existing canonical
+`answer_attempts` table. Historical attempts receive the frozen schema-v1
+legacy context with explicit nullable keys and `engagementAllowed: true`.
+No table or competing evidence authority was added.
+
+**Migration safety:** non-destructive column additions preserve attempt IDs,
+SRS, points, achievements, events, and outbox rows. This migration is
+forward-only; rollback disables new invocation and continues reading v13.
+
 ---
 
 ## Conflict Register
@@ -168,6 +183,7 @@ forward-only; reopening the database with a v11 APK is unsupported.
 |------|--------|--------|
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-08-09 | Recorded implemented v11 and owner-scoped AI usage migration v12; deployment evidence remains pending. | LexiQuest integration |
+| 2026-08-14 | Reserved and implemented v13 evidence metadata on canonical answer attempts. | LexiQuest integration |
 
 ---
 

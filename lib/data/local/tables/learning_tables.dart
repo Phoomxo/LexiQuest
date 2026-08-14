@@ -32,6 +32,25 @@ class AnswerAttempts extends Table {
   IntColumn get attemptNumber => integer()();
   IntColumn get occurredAtUtcMs => integer()();
   TextColumn get providerProvenance => text().nullable()();
+  TextColumn get evidenceClass =>
+      text().withDefault(const Constant('independentRecall'))();
+  TextColumn get evidenceContextJson => text().withDefault(
+    const Constant(
+      '{"schemaVersion":1,"evidenceClass":"independentRecall",'
+      '"skillId":"legacy-unspecified","hintLevel":0,'
+      '"policyVersion":"legacy-v1","contentRevision":"legacy-unknown",'
+      '"featureContractRevision":"legacy-unversioned",'
+      '"featureContractHash":"0000000000000000000000000000000000000000000000000000000000000000",'
+      '"classificationSource":"legacyInferred","rolloutMode":"legacy",'
+      '"protocolId":null,"protocolVersion":null,'
+      '"experimentId":null,"experimentVersion":null,'
+      '"assignmentId":null,"cohort":null,"researchConsentVersion":null,'
+      '"instrumentId":null,"instrumentVersion":null,'
+      '"formId":null,"formVersion":null,'
+      '"assessmentItemId":null,"assessmentResponseCode":null,'
+      '"scoringRuleVersion":null,"engagementAllowed":true}',
+    ),
+  )();
 
   @override
   Set<Column<Object>> get primaryKey => {id};

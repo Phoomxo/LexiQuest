@@ -4743,6 +4743,44 @@ class $AnswerAttemptsTable extends AnswerAttempts
         type: DriftSqlType.string,
         requiredDuringInsert: false,
       );
+  static const VerificationMeta _evidenceClassMeta = const VerificationMeta(
+    'evidenceClass',
+  );
+  @override
+  late final GeneratedColumn<String> evidenceClass = GeneratedColumn<String>(
+    'evidence_class',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('independentRecall'),
+  );
+  static const VerificationMeta _evidenceContextJsonMeta =
+      const VerificationMeta('evidenceContextJson');
+  @override
+  late final GeneratedColumn<String>
+  evidenceContextJson = GeneratedColumn<String>(
+    'evidence_context_json',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(
+      '{"schemaVersion":1,"evidenceClass":"independentRecall",'
+      '"skillId":"legacy-unspecified","hintLevel":0,'
+      '"policyVersion":"legacy-v1","contentRevision":"legacy-unknown",'
+      '"featureContractRevision":"legacy-unversioned",'
+      '"featureContractHash":"0000000000000000000000000000000000000000000000000000000000000000",'
+      '"classificationSource":"legacyInferred","rolloutMode":"legacy",'
+      '"protocolId":null,"protocolVersion":null,'
+      '"experimentId":null,"experimentVersion":null,'
+      '"assignmentId":null,"cohort":null,"researchConsentVersion":null,'
+      '"instrumentId":null,"instrumentVersion":null,'
+      '"formId":null,"formVersion":null,'
+      '"assessmentItemId":null,"assessmentResponseCode":null,'
+      '"scoringRuleVersion":null,"engagementAllowed":true}',
+    ),
+  );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -4755,6 +4793,8 @@ class $AnswerAttemptsTable extends AnswerAttempts
     attemptNumber,
     occurredAtUtcMs,
     providerProvenance,
+    evidenceClass,
+    evidenceContextJson,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -4853,6 +4893,24 @@ class $AnswerAttemptsTable extends AnswerAttempts
         ),
       );
     }
+    if (data.containsKey('evidence_class')) {
+      context.handle(
+        _evidenceClassMeta,
+        evidenceClass.isAcceptableOrUnknown(
+          data['evidence_class']!,
+          _evidenceClassMeta,
+        ),
+      );
+    }
+    if (data.containsKey('evidence_context_json')) {
+      context.handle(
+        _evidenceContextJsonMeta,
+        evidenceContextJson.isAcceptableOrUnknown(
+          data['evidence_context_json']!,
+          _evidenceContextJsonMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -4902,6 +4960,14 @@ class $AnswerAttemptsTable extends AnswerAttempts
         DriftSqlType.string,
         data['${effectivePrefix}provider_provenance'],
       ),
+      evidenceClass: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_class'],
+      )!,
+      evidenceContextJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}evidence_context_json'],
+      )!,
     );
   }
 
@@ -4922,6 +4988,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
   final int attemptNumber;
   final int occurredAtUtcMs;
   final String? providerProvenance;
+  final String evidenceClass;
+  final String evidenceContextJson;
   const AnswerAttempt({
     required this.id,
     required this.ownerId,
@@ -4933,6 +5001,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     required this.attemptNumber,
     required this.occurredAtUtcMs,
     this.providerProvenance,
+    required this.evidenceClass,
+    required this.evidenceContextJson,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -4951,6 +5021,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     if (!nullToAbsent || providerProvenance != null) {
       map['provider_provenance'] = Variable<String>(providerProvenance);
     }
+    map['evidence_class'] = Variable<String>(evidenceClass);
+    map['evidence_context_json'] = Variable<String>(evidenceContextJson);
     return map;
   }
 
@@ -4970,6 +5042,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: providerProvenance == null && nullToAbsent
           ? const Value.absent()
           : Value(providerProvenance),
+      evidenceClass: Value(evidenceClass),
+      evidenceContextJson: Value(evidenceContextJson),
     );
   }
 
@@ -4991,6 +5065,10 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: serializer.fromJson<String?>(
         json['providerProvenance'],
       ),
+      evidenceClass: serializer.fromJson<String>(json['evidenceClass']),
+      evidenceContextJson: serializer.fromJson<String>(
+        json['evidenceContextJson'],
+      ),
     );
   }
   @override
@@ -5007,6 +5085,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       'attemptNumber': serializer.toJson<int>(attemptNumber),
       'occurredAtUtcMs': serializer.toJson<int>(occurredAtUtcMs),
       'providerProvenance': serializer.toJson<String?>(providerProvenance),
+      'evidenceClass': serializer.toJson<String>(evidenceClass),
+      'evidenceContextJson': serializer.toJson<String>(evidenceContextJson),
     };
   }
 
@@ -5021,6 +5101,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     int? attemptNumber,
     int? occurredAtUtcMs,
     Value<String?> providerProvenance = const Value.absent(),
+    String? evidenceClass,
+    String? evidenceContextJson,
   }) => AnswerAttempt(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -5036,6 +5118,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     providerProvenance: providerProvenance.present
         ? providerProvenance.value
         : this.providerProvenance,
+    evidenceClass: evidenceClass ?? this.evidenceClass,
+    evidenceContextJson: evidenceContextJson ?? this.evidenceContextJson,
   );
   AnswerAttempt copyWithCompanion(AnswerAttemptsCompanion data) {
     return AnswerAttempt(
@@ -5059,6 +5143,12 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
       providerProvenance: data.providerProvenance.present
           ? data.providerProvenance.value
           : this.providerProvenance,
+      evidenceClass: data.evidenceClass.present
+          ? data.evidenceClass.value
+          : this.evidenceClass,
+      evidenceContextJson: data.evidenceContextJson.present
+          ? data.evidenceContextJson.value
+          : this.evidenceContextJson,
     );
   }
 
@@ -5074,7 +5164,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           ..write('responseTimeMs: $responseTimeMs, ')
           ..write('attemptNumber: $attemptNumber, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
-          ..write('providerProvenance: $providerProvenance')
+          ..write('providerProvenance: $providerProvenance, ')
+          ..write('evidenceClass: $evidenceClass, ')
+          ..write('evidenceContextJson: $evidenceContextJson')
           ..write(')'))
         .toString();
   }
@@ -5091,6 +5183,8 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
     attemptNumber,
     occurredAtUtcMs,
     providerProvenance,
+    evidenceClass,
+    evidenceContextJson,
   );
   @override
   bool operator ==(Object other) =>
@@ -5105,7 +5199,9 @@ class AnswerAttempt extends DataClass implements Insertable<AnswerAttempt> {
           other.responseTimeMs == this.responseTimeMs &&
           other.attemptNumber == this.attemptNumber &&
           other.occurredAtUtcMs == this.occurredAtUtcMs &&
-          other.providerProvenance == this.providerProvenance);
+          other.providerProvenance == this.providerProvenance &&
+          other.evidenceClass == this.evidenceClass &&
+          other.evidenceContextJson == this.evidenceContextJson);
 }
 
 class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
@@ -5119,6 +5215,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
   final Value<int> attemptNumber;
   final Value<int> occurredAtUtcMs;
   final Value<String?> providerProvenance;
+  final Value<String> evidenceClass;
+  final Value<String> evidenceContextJson;
   final Value<int> rowid;
   const AnswerAttemptsCompanion({
     this.id = const Value.absent(),
@@ -5131,6 +5229,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     this.attemptNumber = const Value.absent(),
     this.occurredAtUtcMs = const Value.absent(),
     this.providerProvenance = const Value.absent(),
+    this.evidenceClass = const Value.absent(),
+    this.evidenceContextJson = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   AnswerAttemptsCompanion.insert({
@@ -5144,6 +5244,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     required int attemptNumber,
     required int occurredAtUtcMs,
     this.providerProvenance = const Value.absent(),
+    this.evidenceClass = const Value.absent(),
+    this.evidenceContextJson = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -5164,6 +5266,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Expression<int>? attemptNumber,
     Expression<int>? occurredAtUtcMs,
     Expression<String>? providerProvenance,
+    Expression<String>? evidenceClass,
+    Expression<String>? evidenceContextJson,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -5177,6 +5281,9 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       if (attemptNumber != null) 'attempt_number': attemptNumber,
       if (occurredAtUtcMs != null) 'occurred_at_utc_ms': occurredAtUtcMs,
       if (providerProvenance != null) 'provider_provenance': providerProvenance,
+      if (evidenceClass != null) 'evidence_class': evidenceClass,
+      if (evidenceContextJson != null)
+        'evidence_context_json': evidenceContextJson,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -5192,6 +5299,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     Value<int>? attemptNumber,
     Value<int>? occurredAtUtcMs,
     Value<String?>? providerProvenance,
+    Value<String>? evidenceClass,
+    Value<String>? evidenceContextJson,
     Value<int>? rowid,
   }) {
     return AnswerAttemptsCompanion(
@@ -5205,6 +5314,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
       attemptNumber: attemptNumber ?? this.attemptNumber,
       occurredAtUtcMs: occurredAtUtcMs ?? this.occurredAtUtcMs,
       providerProvenance: providerProvenance ?? this.providerProvenance,
+      evidenceClass: evidenceClass ?? this.evidenceClass,
+      evidenceContextJson: evidenceContextJson ?? this.evidenceContextJson,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -5242,6 +5353,14 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
     if (providerProvenance.present) {
       map['provider_provenance'] = Variable<String>(providerProvenance.value);
     }
+    if (evidenceClass.present) {
+      map['evidence_class'] = Variable<String>(evidenceClass.value);
+    }
+    if (evidenceContextJson.present) {
+      map['evidence_context_json'] = Variable<String>(
+        evidenceContextJson.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -5261,6 +5380,8 @@ class AnswerAttemptsCompanion extends UpdateCompanion<AnswerAttempt> {
           ..write('attemptNumber: $attemptNumber, ')
           ..write('occurredAtUtcMs: $occurredAtUtcMs, ')
           ..write('providerProvenance: $providerProvenance, ')
+          ..write('evidenceClass: $evidenceClass, ')
+          ..write('evidenceContextJson: $evidenceContextJson, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -25661,6 +25782,8 @@ typedef $$AnswerAttemptsTableCreateCompanionBuilder =
       required int attemptNumber,
       required int occurredAtUtcMs,
       Value<String?> providerProvenance,
+      Value<String> evidenceClass,
+      Value<String> evidenceContextJson,
       Value<int> rowid,
     });
 typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
@@ -25675,6 +25798,8 @@ typedef $$AnswerAttemptsTableUpdateCompanionBuilder =
       Value<int> attemptNumber,
       Value<int> occurredAtUtcMs,
       Value<String?> providerProvenance,
+      Value<String> evidenceClass,
+      Value<String> evidenceContextJson,
       Value<int> rowid,
     });
 
@@ -25781,6 +25906,16 @@ class $$AnswerAttemptsTableFilterComposer
 
   ColumnFilters<String> get providerProvenance => $composableBuilder(
     column: $table.providerProvenance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidenceClass => $composableBuilder(
+    column: $table.evidenceClass,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get evidenceContextJson => $composableBuilder(
+    column: $table.evidenceContextJson,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -25898,6 +26033,16 @@ class $$AnswerAttemptsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get evidenceClass => $composableBuilder(
+    column: $table.evidenceClass,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get evidenceContextJson => $composableBuilder(
+    column: $table.evidenceContextJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -26005,6 +26150,16 @@ class $$AnswerAttemptsTableAnnotationComposer
 
   GeneratedColumn<String> get providerProvenance => $composableBuilder(
     column: $table.providerProvenance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evidenceClass => $composableBuilder(
+    column: $table.evidenceClass,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get evidenceContextJson => $composableBuilder(
+    column: $table.evidenceContextJson,
     builder: (column) => column,
   );
 
@@ -26118,6 +26273,8 @@ class $$AnswerAttemptsTableTableManager
                 Value<int> attemptNumber = const Value.absent(),
                 Value<int> occurredAtUtcMs = const Value.absent(),
                 Value<String?> providerProvenance = const Value.absent(),
+                Value<String> evidenceClass = const Value.absent(),
+                Value<String> evidenceContextJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion(
                 id: id,
@@ -26130,6 +26287,8 @@ class $$AnswerAttemptsTableTableManager
                 attemptNumber: attemptNumber,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerProvenance: providerProvenance,
+                evidenceClass: evidenceClass,
+                evidenceContextJson: evidenceContextJson,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -26144,6 +26303,8 @@ class $$AnswerAttemptsTableTableManager
                 required int attemptNumber,
                 required int occurredAtUtcMs,
                 Value<String?> providerProvenance = const Value.absent(),
+                Value<String> evidenceClass = const Value.absent(),
+                Value<String> evidenceContextJson = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => AnswerAttemptsCompanion.insert(
                 id: id,
@@ -26156,6 +26317,8 @@ class $$AnswerAttemptsTableTableManager
                 attemptNumber: attemptNumber,
                 occurredAtUtcMs: occurredAtUtcMs,
                 providerProvenance: providerProvenance,
+                evidenceClass: evidenceClass,
+                evidenceContextJson: evidenceContextJson,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
