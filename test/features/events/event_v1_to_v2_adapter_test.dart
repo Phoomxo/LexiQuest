@@ -102,6 +102,7 @@ void main() {
     test('serializes complete evidence and matching research context', () {
       final evidence = _declaredEvidence();
       final eventContext = _eventContext(evidence);
+      final exactOccurredAtUtc = DateTime.utc(2026, 8, 14, 9, 0, 0, 123);
       final event = _adapter.adaptFromCommand(
         sourceEvidenceId: 'evidence-1',
         ownerId: 'owner-1',
@@ -110,7 +111,7 @@ void main() {
         promptMode: 'meaningChoice',
         isCorrect: true,
         attemptNumber: 2,
-        occurredAtUtc: DateTime.utc(2026, 8, 14, 9),
+        occurredAtUtc: exactOccurredAtUtc,
         evidenceContext: evidence,
         learningEventContext: eventContext,
       );
@@ -119,6 +120,8 @@ void main() {
       expect(event.eventVersion, 2);
       expect(event.idempotencyKey, 'learning-attempt:evidence-1:v2');
       expect(event.eventType, 'QuizCompleted');
+      expect(event.occurredAtUtc, DateTime.utc(2026, 8, 14, 9));
+      expect(event.recordedAtUtc, DateTime.utc(2026, 8, 14, 9));
       expect(event.policyVersion, evidence.policyVersion);
       expect(event.contentRevision, evidence.contentRevision);
       expect(event.consentContext.researchConsentVersion, 2);

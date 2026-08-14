@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_ad
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 
@@ -81,7 +82,7 @@ void main() {
     await repository.startSession(
       session.copyWith(startedAtUtc: DateTime.utc(2026, 7, 30, 10)),
     );
-    final command = RecordAnswerCommand(
+    final command = RecordAnswerCommand.frozenV13LegacyIngress(
       id: 'attempt-1',
       ownerId: 'owner-1',
       sessionId: 'session-1',
@@ -146,7 +147,7 @@ void main() {
         buildId: 'test',
       ),
     );
-    final base = RecordAnswerCommand(
+    final base = RecordAnswerCommand.frozenV13LegacyIngress(
       id: 'attempt-event-correlation',
       ownerId: 'owner-1',
       sessionId: 'session-event-correlation',
@@ -196,7 +197,7 @@ void main() {
       ),
     );
     await repository.recordAnswer(
-      RecordAnswerCommand(
+      RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'attempt-1',
         ownerId: 'owner-1',
         sessionId: 'session-1',
@@ -238,7 +239,7 @@ void main() {
       final later = DateTime.utc(2026, 7, 30, 10);
       final earlier = DateTime.utc(2026, 7, 30, 9, 30);
       await repository.recordAnswer(
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: 'attempt-later',
           ownerId: 'owner-1',
           sessionId: 'session-order',
@@ -253,7 +254,7 @@ void main() {
       );
 
       final result = await repository.recordAnswer(
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: 'attempt-earlier',
           ownerId: 'owner-1',
           sessionId: 'session-order',
@@ -290,7 +291,7 @@ void main() {
         buildId: 'test',
       ),
     );
-    final command = RecordAnswerCommand(
+    final command = RecordAnswerCommand.frozenV13LegacyIngress(
       id: 'attempt-provenance',
       ownerId: 'owner-1',
       sessionId: 'session-provenance',
@@ -307,7 +308,7 @@ void main() {
 
     await expectLater(
       repository.recordAnswer(
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: command.id,
           ownerId: command.ownerId,
           sessionId: command.sessionId,
@@ -338,7 +339,7 @@ void main() {
           buildId: 'test',
         ),
       );
-      final command = RecordAnswerCommand(
+      final command = RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'attempt-evidence-replay',
         ownerId: 'owner-1',
         sessionId: 'session-evidence-replay',
@@ -435,7 +436,7 @@ void main() {
           buildId: 'test',
         ),
       );
-      final base = RecordAnswerCommand(
+      final base = RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'attempt-limits',
         ownerId: 'owner-1',
         sessionId: 'session-limits',
@@ -449,7 +450,7 @@ void main() {
       );
 
       for (final invalid in [
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: base.id,
           ownerId: base.ownerId,
           sessionId: base.sessionId,
@@ -461,7 +462,7 @@ void main() {
           occurredAtUtc: base.occurredAtUtc,
           evidenceContext: base.evidenceContext,
         ),
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: base.id,
           ownerId: base.ownerId,
           sessionId: base.sessionId,
@@ -473,7 +474,7 @@ void main() {
           occurredAtUtc: base.occurredAtUtc,
           evidenceContext: base.evidenceContext,
         ),
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: base.id,
           ownerId: base.ownerId,
           sessionId: base.sessionId,
@@ -485,7 +486,7 @@ void main() {
           occurredAtUtc: base.occurredAtUtc,
           evidenceContext: base.evidenceContext,
         ),
-        RecordAnswerCommand(
+        RecordAnswerCommand.frozenV13LegacyIngress(
           id: base.id,
           ownerId: base.ownerId,
           sessionId: base.sessionId,
@@ -504,6 +505,107 @@ void main() {
 
       expect(await database.select(database.answerAttempts).get(), isEmpty);
       expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
+
+  test(
+    'only the exact frozen-v13 factory admits eventless answer evidence',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-frozen-v13',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      expect(
+        () => RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'declared-eventless',
+          ownerId: 'owner-1',
+          sessionId: 'session-frozen-v13',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 400,
+          attemptNumber: 1,
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+          evidenceContext: EvidenceContext.forNewEvidence(
+            evidenceClass: EvidenceClass.independentRecall,
+            skillId: 'meaning-recall',
+            hintLevel: 0,
+            contentRevision: 'content-r1',
+            rolloutMode: EvidencePolicyRolloutMode.legacy,
+          ),
+        ),
+        throwsArgumentError,
+      );
+
+      final eventless = RecordAnswerCommand.frozenV13LegacyIngress(
+        id: 'frozen-eventless',
+        ownerId: 'owner-1',
+        sessionId: 'session-frozen-v13',
+        wordId: 'word-1',
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 400,
+        attemptNumber: 1,
+        occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1, 0, 123),
+        evidenceContext:
+            LearningEvidenceContract.frozenV13LegacyEvidenceContext(),
+      );
+      expect((await repository.recordAnswer(eventless)).inserted, isTrue);
+      expect((await repository.recordAnswer(eventless)).inserted, isFalse);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+
+      final retrofit = RecordAnswerCommand(
+        id: eventless.id,
+        ownerId: eventless.ownerId,
+        sessionId: eventless.sessionId,
+        wordId: eventless.wordId,
+        promptMode: eventless.promptMode,
+        isCorrect: eventless.isCorrect,
+        responseTimeMs: eventless.responseTimeMs,
+        attemptNumber: eventless.attemptNumber,
+        occurredAtUtc: eventless.occurredAtUtc,
+        evidenceContext: eventless.evidenceContext,
+        event: _eventFor(eventless),
+      );
+      await expectLater(repository.recordAnswer(retrofit), throwsStateError);
+
+      final canonicalSeed = RecordAnswerCommand.frozenV13LegacyIngress(
+        id: 'frozen-canonical',
+        ownerId: 'owner-1',
+        sessionId: 'session-frozen-v13',
+        wordId: 'word-2',
+        promptMode: 'meaningChoice',
+        isCorrect: false,
+        responseTimeMs: 450,
+        attemptNumber: 2,
+        occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 2, 0, 123),
+        evidenceContext:
+            LearningEvidenceContract.frozenV13LegacyEvidenceContext(),
+      );
+      final canonical = RecordAnswerCommand(
+        id: canonicalSeed.id,
+        ownerId: canonicalSeed.ownerId,
+        sessionId: canonicalSeed.sessionId,
+        wordId: canonicalSeed.wordId,
+        promptMode: canonicalSeed.promptMode,
+        isCorrect: canonicalSeed.isCorrect,
+        responseTimeMs: canonicalSeed.responseTimeMs,
+        attemptNumber: canonicalSeed.attemptNumber,
+        occurredAtUtc: canonicalSeed.occurredAtUtc,
+        evidenceContext: canonicalSeed.evidenceContext,
+        event: _eventFor(canonicalSeed),
+      );
+      expect((await repository.recordAnswer(canonical)).inserted, isTrue);
+      await expectLater(
+        repository.recordAnswer(canonicalSeed),
+        throwsStateError,
+      );
     },
   );
 
@@ -572,15 +674,8 @@ void main() {
   });
 }
 
-EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
-  return EvidenceContext.legacyCompatibility(
-    evidenceClass: EvidenceClass.independentRecall,
-    skillId: skillId,
-    hintLevel: 0,
-    contentRevision: 'legacy-unknown',
-    engagementAllowed: true,
-  );
-}
+EvidenceContext _legacyEvidence() =>
+    LearningEvidenceContract.frozenV13LegacyEvidenceContext();
 
 EventEnvelopeV2 _eventFor(RecordAnswerCommand command) {
   const adapter = EventV1ToV2Adapter(appVersion: '1.0.0', buildId: 'test');

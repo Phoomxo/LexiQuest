@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
 import '../../events/domain/event_envelope_v2.dart';
+import '../domain/learning_evidence_contract.dart';
 
 final class PendingLearningProjectionEvent {
   const PendingLearningProjectionEvent({
@@ -36,6 +37,7 @@ final class DriftLearningEventStore {
       .toList(growable: false);
 
   Future<void> append(EventEnvelopeV2 event) async {
+    _requireCanonicalEventTime(event);
     final existing =
         await (database.select(database.eventsV2)..where(
               (row) =>
@@ -59,6 +61,30 @@ final class DriftLearningEventStore {
           .insert(_companion(event), mode: InsertMode.insertOrIgnore);
       await _rewindCursorsPastLateSource(event);
     });
+  }
+
+  Future<EventEnvelopeV2?> readBySourceEvidenceId(
+    String sourceEvidenceId,
+  ) async {
+    final eventId = LearningEvidenceContract.learningEventId(sourceEvidenceId);
+    final expectedIdempotencyKey =
+        LearningEvidenceContract.learningAttemptIdempotencyKey(
+          sourceEvidenceId,
+        );
+    final row =
+        await (database.select(database.eventsV2)
+              ..where((candidate) => candidate.eventId.equals(eventId)))
+            .getSingleOrNull();
+    if (row == null) return null;
+    final event = _toEvent(row);
+    if (event.eventId != eventId ||
+        event.eventVersion != 2 ||
+        event.idempotencyKey != expectedIdempotencyKey ||
+        event.payload['attemptId'] != sourceEvidenceId) {
+      throw StateError('stored learning event has corrupt source identity');
+    }
+    _requireCanonicalEventTime(event, stateError: true);
+    return event;
   }
 
   Future<void> _rewindCursorsPastLateSource(EventEnvelopeV2 event) async {
@@ -329,7 +355,11 @@ final class DriftLearningEventStore {
     required String sourceEventId,
     required String projection,
     required int appliedVersion,
-  }) => 'learning-projection:$projection:$sourceEventId:v$appliedVersion';
+  }) => LearningEvidenceContract.learningProjectionReceiptId(
+    projection: projection,
+    sourceEventId: sourceEventId,
+    appliedVersion: appliedVersion,
+  );
 
   String _cursorKey({
     required String ownerId,
@@ -429,5 +459,25 @@ final class DriftLearningEventStore {
 
   bool _sameEvent(db.EventsV2Data row, EventEnvelopeV2 event) {
     return jsonEncode(_toEvent(row).toJson()) == jsonEncode(event.toJson());
+  }
+
+  void _requireCanonicalEventTime(
+    EventEnvelopeV2 event, {
+    bool stateError = false,
+  }) {
+    final valid =
+        LearningEvidenceContract.isCanonicalEventUtcSecond(
+          event.occurredAtUtc,
+        ) &&
+        LearningEvidenceContract.isCanonicalEventUtcSecond(event.recordedAtUtc);
+    if (valid) return;
+    if (stateError) {
+      throw StateError('stored learning event has non-canonical timestamp');
+    }
+    throw ArgumentError.value(
+      event,
+      'event',
+      'learning event timestamps must be UTC whole seconds',
+    );
   }
 }

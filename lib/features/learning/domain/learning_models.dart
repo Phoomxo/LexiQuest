@@ -1,5 +1,6 @@
 import '../../events/domain/event_envelope_v2.dart';
 import 'evidence_context.dart';
+import 'learning_evidence_contract.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -69,6 +70,34 @@ final class LearningSessionDraft {
   }
 }
 
+final class RecordAnswerCandidate {
+  const RecordAnswerCandidate({
+    required this.id,
+    required this.ownerId,
+    required this.sessionId,
+    required this.wordId,
+    required this.promptMode,
+    required this.isCorrect,
+    required this.responseTimeMs,
+    required this.attemptNumber,
+    required this.occurredAtUtc,
+    required this.evidenceContext,
+    this.providerProvenance,
+  });
+
+  final String id;
+  final String ownerId;
+  final String sessionId;
+  final String wordId;
+  final String promptMode;
+  final bool isCorrect;
+  final int? responseTimeMs;
+  final int attemptNumber;
+  final DateTime occurredAtUtc;
+  final EvidenceContext evidenceContext;
+  final String? providerProvenance;
+}
+
 final class RecordAnswerCommand {
   const RecordAnswerCommand({
     required this.id,
@@ -82,7 +111,66 @@ final class RecordAnswerCommand {
     required this.occurredAtUtc,
     required this.evidenceContext,
     this.providerProvenance,
-    this.event,
+    // The public canonical ingress is intentionally non-null while storage is
+    // nullable only for the separately named frozen-v13 legacy ingress.
+    required EventEnvelopeV2 event,
+    // ignore: prefer_initializing_formals
+  }) : event = event,
+       isFrozenV13LegacyIngress = false;
+
+  factory RecordAnswerCommand.frozenV13LegacyIngress({
+    required String id,
+    required String ownerId,
+    required String sessionId,
+    required String wordId,
+    required String promptMode,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required DateTime occurredAtUtc,
+    required EvidenceContext evidenceContext,
+    String? providerProvenance,
+  }) {
+    if (!LearningEvidenceContract.isExactFrozenV13LegacyEvidence(
+      evidenceContext,
+    )) {
+      throw ArgumentError.value(
+        evidenceContext,
+        'evidenceContext',
+        'must equal the frozen v13 legacy evidence sentinel',
+      );
+    }
+    return RecordAnswerCommand._(
+      id: id,
+      ownerId: ownerId,
+      sessionId: sessionId,
+      wordId: wordId,
+      promptMode: promptMode,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      occurredAtUtc: occurredAtUtc,
+      evidenceContext: evidenceContext,
+      providerProvenance: providerProvenance,
+      event: null,
+      isFrozenV13LegacyIngress: true,
+    );
+  }
+
+  const RecordAnswerCommand._({
+    required this.id,
+    required this.ownerId,
+    required this.sessionId,
+    required this.wordId,
+    required this.promptMode,
+    required this.isCorrect,
+    required this.responseTimeMs,
+    required this.attemptNumber,
+    required this.occurredAtUtc,
+    required this.evidenceContext,
+    required this.providerProvenance,
+    required this.event,
+    required this.isFrozenV13LegacyIngress,
   });
 
   final String id;
@@ -97,6 +185,21 @@ final class RecordAnswerCommand {
   final EvidenceContext evidenceContext;
   final String? providerProvenance;
   final EventEnvelopeV2? event;
+  final bool isFrozenV13LegacyIngress;
+
+  RecordAnswerCandidate get candidate => RecordAnswerCandidate(
+    id: id,
+    ownerId: ownerId,
+    sessionId: sessionId,
+    wordId: wordId,
+    promptMode: promptMode,
+    isCorrect: isCorrect,
+    responseTimeMs: responseTimeMs,
+    attemptNumber: attemptNumber,
+    occurredAtUtc: occurredAtUtc,
+    evidenceContext: evidenceContext,
+    providerProvenance: providerProvenance,
+  );
 }
 
 final class SrsSnapshot {
@@ -126,6 +229,13 @@ final class AnswerRecordResult {
 
   final bool inserted;
   final SrsSnapshot? srs;
+}
+
+final class CommittedAnswerReplay {
+  const CommittedAnswerReplay({required this.result, required this.event});
+
+  final AnswerRecordResult result;
+  final EventEnvelopeV2 event;
 }
 
 final class LearningSessionSummary {

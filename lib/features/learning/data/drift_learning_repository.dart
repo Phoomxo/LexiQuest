@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import 'drift_learning_event_store.dart';
 import 'drift_learning_projection_rebuilder.dart';
@@ -13,7 +14,8 @@ import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 
-final class DriftLearningRepository implements LearningRepository {
+final class DriftLearningRepository
+    implements LearningRepository, LearningEvidenceReplayRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -82,6 +84,36 @@ final class DriftLearningRepository implements LearningRepository {
   }
 
   @override
+  Future<CommittedAnswerReplay?> replayCommittedAnswer(
+    RecordAnswerCandidate candidate,
+  ) {
+    _validateCandidate(candidate, requireSourceIdentity: true);
+    return database.transaction(() async {
+      final existing = await (database.select(
+        database.answerAttempts,
+      )..where((row) => row.id.equals(candidate.id))).getSingleOrNull();
+      if (existing == null) return null;
+      if (!_sameAttempt(existing, candidate)) {
+        throw StateError('attempt id already exists with different evidence');
+      }
+      final event = await events.readBySourceEvidenceId(candidate.id);
+      if (event == null || !_validCorrelatedEvent(candidate, event)) {
+        throw StateError('committed answer has missing or corrupt event');
+      }
+      return CommittedAnswerReplay(
+        result: AnswerRecordResult(
+          inserted: false,
+          srs: await _readSrsSnapshot(
+            ownerId: candidate.ownerId,
+            wordId: candidate.wordId,
+          ),
+        ),
+        event: event,
+      );
+    });
+  }
+
+  @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) {
     _validateAnswer(command);
     return database.transaction(() async {
@@ -89,22 +121,34 @@ final class DriftLearningRepository implements LearningRepository {
         database.answerAttempts,
       )..where((row) => row.id.equals(command.id))).getSingleOrNull();
       if (existing != null) {
-        if (!_sameAttempt(existing, command)) {
+        if (!_sameAttempt(existing, command.candidate)) {
           throw StateError('attempt id already exists with different evidence');
         }
-        final srs = await projections.rebuildWord(
-          ownerId: command.ownerId,
-          wordId: command.wordId,
+        final storedEvent = await events.readBySourceEvidenceId(command.id);
+        if (command.isFrozenV13LegacyIngress) {
+          if (storedEvent != null) {
+            throw StateError('canonical event cannot be omitted during replay');
+          }
+        } else {
+          final candidateEvent = command.event!;
+          if (storedEvent == null ||
+              !_validCorrelatedEvent(command.candidate, storedEvent)) {
+            throw StateError('canonical event cannot be retrofitted on replay');
+          }
+          if (jsonEncode(storedEvent.toJson()) !=
+              jsonEncode(candidateEvent.toJson())) {
+            throw StateError(
+              'learning event identity already exists with different evidence',
+            );
+          }
+        }
+        return AnswerRecordResult(
+          inserted: false,
+          srs: await _readSrsSnapshot(
+            ownerId: command.ownerId,
+            wordId: command.wordId,
+          ),
         );
-        await projections.rebuildSession(
-          ownerId: command.ownerId,
-          sessionId: command.sessionId,
-        );
-        await projections.rebuildAchievements(command.ownerId);
-        await rewardProjections.rebuild(command.ownerId);
-        final event = command.event;
-        if (event != null) await events.append(event);
-        return AnswerRecordResult(inserted: false, srs: srs);
       }
 
       final session =
@@ -385,7 +429,13 @@ final class DriftLearningRepository implements LearningRepository {
         .into(database.outboxOperations)
         .insert(
           db.OutboxOperationsCompanion.insert(
-            operationId: '$entityType:$entityId:1',
+            operationId:
+                entityType == 'attempt' &&
+                    LearningEvidenceContract.validSourceEvidenceId(entityId)
+                ? LearningEvidenceContract.answerAttemptOutboxOperationId(
+                    entityId,
+                  )
+                : '$entityType:$entityId:1',
             ownerId: ownerId,
             entityType: entityType,
             entityId: entityId,
@@ -435,20 +485,44 @@ final class DriftLearningRepository implements LearningRepository {
         );
   }
 
-  bool _sameAttempt(db.AnswerAttempt row, RecordAnswerCommand command) {
-    return row.ownerId == command.ownerId &&
-        row.sessionId == command.sessionId &&
-        row.wordId == command.wordId &&
-        row.promptMode == command.promptMode &&
-        row.isCorrect == command.isCorrect &&
-        row.responseTimeMs == command.responseTimeMs &&
-        row.attemptNumber == command.attemptNumber &&
-        row.occurredAtUtcMs == command.occurredAtUtc.millisecondsSinceEpoch &&
-        row.providerProvenance == command.providerProvenance &&
+  Future<SrsSnapshot?> _readSrsSnapshot({
+    required String ownerId,
+    required String wordId,
+  }) async {
+    final row =
+        await (database.select(database.srsStates)..where(
+              (candidate) =>
+                  candidate.ownerId.equals(ownerId) &
+                  candidate.wordId.equals(wordId),
+            ))
+            .getSingleOrNull();
+    if (row == null) return null;
+    return SrsSnapshot(
+      intervalDays: row.intervalDays,
+      repetitions: row.repetitions,
+      lapses: row.lapses,
+      stability: row.stability,
+      difficulty: row.difficulty,
+      lastReviewAtUtc: _fromEpoch(row.lastReviewAtUtcMs),
+      dueAtUtc: _fromEpoch(row.dueAtUtcMs),
+      algorithmVersion: row.algorithmVersion,
+    );
+  }
+
+  bool _sameAttempt(db.AnswerAttempt row, RecordAnswerCandidate candidate) {
+    return row.ownerId == candidate.ownerId &&
+        row.sessionId == candidate.sessionId &&
+        row.wordId == candidate.wordId &&
+        row.promptMode == candidate.promptMode &&
+        row.isCorrect == candidate.isCorrect &&
+        row.responseTimeMs == candidate.responseTimeMs &&
+        row.attemptNumber == candidate.attemptNumber &&
+        row.occurredAtUtcMs == candidate.occurredAtUtc.millisecondsSinceEpoch &&
+        row.providerProvenance == candidate.providerProvenance &&
         LearningEvidenceContract.sameEvidenceMetadata(
           evidenceClass: row.evidenceClass,
           evidenceContextJson: row.evidenceContextJson,
-          expectedContext: command.evidenceContext,
+          expectedContext: candidate.evidenceContext,
         );
   }
 
@@ -472,31 +546,63 @@ final class DriftLearningRepository implements LearningRepository {
   }
 
   void _validateAnswer(RecordAnswerCommand command) {
-    final occurredAt = _requiredUtc(command.occurredAtUtc, 'occurredAtUtc');
-    if (!LearningEvidenceContract.validAttempt(
-          id: command.id,
-          ownerId: command.ownerId,
-          sessionId: command.sessionId,
-          wordId: command.wordId,
-          promptMode: command.promptMode,
-          responseTimeMs: command.responseTimeMs,
-          attemptNumber: command.attemptNumber,
-          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
-          providerProvenance: command.providerProvenance,
-          evidenceClass: command.evidenceContext.evidenceClass.name,
-          evidenceContextJson: jsonEncode(command.evidenceContext.toJson()),
-        ) ||
-        !_validCorrelatedEvent(command)) {
+    final candidate = command.candidate;
+    _validateCandidate(
+      candidate,
+      requireSourceIdentity: !command.isFrozenV13LegacyIngress,
+    );
+    if (command.isFrozenV13LegacyIngress) {
+      if (command.event != null ||
+          !LearningEvidenceContract.isExactFrozenV13LegacyEvidence(
+            command.evidenceContext,
+          )) {
+        throw ArgumentError.value(
+          command,
+          'command',
+          'invalid frozen-v13 legacy ingress',
+        );
+      }
+      return;
+    }
+    final event = command.event;
+    if (event == null || !_validCorrelatedEvent(candidate, event)) {
       throw ArgumentError.value(command, 'command', 'invalid answer evidence');
     }
   }
 
-  bool _validCorrelatedEvent(RecordAnswerCommand command) {
-    final event = command.event;
-    // Retained for bounded legacy/sync ingress. Production recordEvidence
-    // always supplies the correlated V2 event.
-    if (event == null) return true;
-    final context = command.evidenceContext;
+  void _validateCandidate(
+    RecordAnswerCandidate candidate, {
+    required bool requireSourceIdentity,
+  }) {
+    final occurredAt = _requiredUtc(candidate.occurredAtUtc, 'occurredAtUtc');
+    if ((requireSourceIdentity &&
+            !LearningEvidenceContract.validSourceEvidenceId(candidate.id)) ||
+        !LearningEvidenceContract.validAttempt(
+          id: candidate.id,
+          ownerId: candidate.ownerId,
+          sessionId: candidate.sessionId,
+          wordId: candidate.wordId,
+          promptMode: candidate.promptMode,
+          responseTimeMs: candidate.responseTimeMs,
+          attemptNumber: candidate.attemptNumber,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          providerProvenance: candidate.providerProvenance,
+          evidenceClass: candidate.evidenceContext.evidenceClass.name,
+          evidenceContextJson: jsonEncode(candidate.evidenceContext.toJson()),
+        )) {
+      throw ArgumentError.value(
+        candidate,
+        'candidate',
+        'invalid answer evidence',
+      );
+    }
+  }
+
+  bool _validCorrelatedEvent(
+    RecordAnswerCandidate candidate,
+    EventEnvelopeV2 event,
+  ) {
+    final context = candidate.evidenceContext;
     final payload = event.payload;
     const payloadKeys = <String>{
       'attemptId',
@@ -511,26 +617,33 @@ final class DriftLearningRepository implements LearningRepository {
         !payload.keys.every(payloadKeys.contains)) {
       return false;
     }
+    final canonicalEventTime = LearningEvidenceContract.canonicalEventUtcSecond(
+      candidate.occurredAtUtc,
+    );
     final envelopeMatches =
-        event.eventId == 'learning-event:${command.id}' &&
+        event.eventId ==
+            LearningEvidenceContract.learningEventId(candidate.id) &&
         event.eventType ==
-            (command.isCorrect ? 'QuizCompleted' : 'QuizAttempted') &&
+            (candidate.isCorrect ? 'QuizCompleted' : 'QuizAttempted') &&
         event.eventVersion == 2 &&
-        event.occurredAtUtc == command.occurredAtUtc &&
-        event.recordedAtUtc == command.occurredAtUtc &&
-        event.actorIdentity == command.ownerId &&
-        event.ownerIdentity == command.ownerId &&
+        event.occurredAtUtc == canonicalEventTime &&
+        event.recordedAtUtc == canonicalEventTime &&
+        event.actorIdentity == candidate.ownerId &&
+        event.ownerIdentity == candidate.ownerId &&
         event.aggregateType == 'LearningSession' &&
-        event.aggregateId == command.sessionId &&
-        event.idempotencyKey == 'learning-attempt:${command.id}:v2' &&
+        event.aggregateId == candidate.sessionId &&
+        event.idempotencyKey ==
+            LearningEvidenceContract.learningAttemptIdempotencyKey(
+              candidate.id,
+            ) &&
         event.policyVersion == context.policyVersion &&
         event.contentRevision == context.contentRevision &&
-        payload['attemptId'] == command.id &&
-        payload['wordId'] == command.wordId &&
-        payload['promptMode'] == command.promptMode &&
-        payload['correct'] == command.isCorrect &&
-        payload['score'] == (command.isCorrect ? 100 : 0) &&
-        payload['attemptNumber'] == command.attemptNumber &&
+        payload['attemptId'] == candidate.id &&
+        payload['wordId'] == candidate.wordId &&
+        payload['promptMode'] == candidate.promptMode &&
+        payload['correct'] == candidate.isCorrect &&
+        payload['score'] == (candidate.isCorrect ? 100 : 0) &&
+        payload['attemptNumber'] == candidate.attemptNumber &&
         jsonEncode(payload['evidenceContext']) == jsonEncode(context.toJson());
     if (!envelopeMatches) return false;
     try {
@@ -539,7 +652,7 @@ final class DriftLearningRepository implements LearningRepository {
         evidenceContext: context,
       ).validateAgainst(
         evidenceContext: context,
-        occurredAtUtc: command.occurredAtUtc,
+        occurredAtUtc: candidate.occurredAtUtc,
       );
       return true;
     } on ArgumentError {

@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:drift/drift.dart' show Variable, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -9,6 +11,7 @@ import 'package:vocab_learning_app/features/learning/application/learning_side_e
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -141,7 +144,9 @@ void main() {
 
   test('recordEvidence reuses one source identity across retry', () async {
     final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
-    final occurredAtUtc = now.add(const Duration(seconds: 2));
+    final occurredAtUtc = now.add(
+      const Duration(seconds: 2, milliseconds: 123),
+    );
     final evidenceContext = _legacyEvidence();
 
     final first = await useCases.recordEvidence(
@@ -175,6 +180,15 @@ void main() {
         .toList(growable: false);
     expect(learningEvents, hasLength(1));
     expect(learningEvents.single.eventVersion, 2);
+    expect(
+      learningEvents.single.occurredAtUtc.toUtc(),
+      now.add(const Duration(seconds: 2)),
+    );
+    expect(
+      (await database.select(database.answerAttempts).getSingle())
+          .occurredAtUtcMs,
+      occurredAtUtc.millisecondsSinceEpoch,
+    );
     expect(
       learningEvents.single.idempotencyKey,
       'learning-attempt:evidence-1:v2',
@@ -246,13 +260,312 @@ void main() {
     );
   });
 
+  test(
+    'recordEvidence reuses exact-ms evidence after a file-backed reopen',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-evidence-replay-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}learning.sqlite';
+      final previousWarningSetting =
+          driftRuntimeOptions.dontWarnAboutMultipleDatabases;
+      driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+      final firstDatabase = AppDatabase(NativeDatabase(File(path)));
+      AppDatabase? reopenedDatabase;
+      var firstDatabaseClosed = false;
+      final occurredAtUtc = DateTime.utc(2026, 8, 14, 9, 0, 2, 123);
+      try {
+        final firstOwners = DriftLocalOwnerRepository(
+          firstDatabase,
+          generateId: () => 'file-guest',
+          nowUtc: () => now,
+        );
+        final owner = await firstOwners.getOrCreateActiveOwner();
+        await _seedVocabulary(firstDatabase, owner.id);
+        var fileId = 0;
+        final firstUseCases = LearningUseCases(
+          owners: firstOwners,
+          repository: DriftLearningRepository(firstDatabase),
+          generateId: () => 'file-${++fileId}',
+          nowUtc: () => now,
+          buildInfo: const AppBuildInfo(
+            version: '1.2.3',
+            buildId: 'test-build',
+          ),
+        );
+        final quiz = await firstUseCases.startQuiz(
+          categoryId: 'category-file',
+          limit: 1,
+        );
+        await firstUseCases.recordEvidence(
+          sourceEvidenceId: 'evidence-file-reopen',
+          occurredAtUtc: occurredAtUtc,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2000,
+          attemptNumber: 1,
+          evidenceContext: _legacyEvidence(),
+        );
+        await firstDatabase.close();
+        firstDatabaseClosed = true;
+
+        reopenedDatabase = AppDatabase(NativeDatabase(File(path)));
+        final reopenedOwners = DriftLocalOwnerRepository(
+          reopenedDatabase,
+          generateId: () => 'unused-owner',
+          nowUtc: () => now,
+        );
+        final throwingProvider = _ThrowingLearningEventContextProvider();
+        final reopenedUseCases = LearningUseCases(
+          owners: reopenedOwners,
+          repository: DriftLearningRepository(reopenedDatabase),
+          generateId: () => 'unused-id',
+          nowUtc: () => now,
+          buildInfo: const AppBuildInfo(
+            version: '1.2.3',
+            buildId: 'test-build',
+          ),
+          eventContextProvider: throwingProvider,
+        );
+
+        final replay = await reopenedUseCases.recordEvidence(
+          sourceEvidenceId: 'evidence-file-reopen',
+          occurredAtUtc: occurredAtUtc,
+          sessionId: quiz.id,
+          wordId: quiz.questions.single.word.id,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 2000,
+          attemptNumber: 1,
+          evidenceContext: _legacyEvidence(),
+        );
+
+        expect(replay.inserted, isFalse);
+        expect(throwingProvider.calls, 0);
+        final attempt = await reopenedDatabase
+            .select(reopenedDatabase.answerAttempts)
+            .getSingle();
+        final event = await reopenedDatabase
+            .select(reopenedDatabase.eventsV2)
+            .getSingle();
+        expect(attempt.occurredAtUtcMs, occurredAtUtc.millisecondsSinceEpoch);
+        expect(event.occurredAtUtc.toUtc(), DateTime.utc(2026, 8, 14, 9, 0, 2));
+
+        await expectLater(
+          reopenedUseCases.recordEvidence(
+            sourceEvidenceId: 'evidence-file-reopen',
+            occurredAtUtc: occurredAtUtc.add(const Duration(milliseconds: 1)),
+            sessionId: quiz.id,
+            wordId: quiz.questions.single.word.id,
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: 2000,
+            attemptNumber: 1,
+            evidenceContext: _legacyEvidence(),
+          ),
+          throwsStateError,
+        );
+        expect(throwingProvider.calls, 0);
+      } finally {
+        if (!firstDatabaseClosed) await firstDatabase.close();
+        await reopenedDatabase?.close();
+        await directory.delete(recursive: true);
+        driftRuntimeOptions.dontWarnAboutMultipleDatabases =
+            previousWarningSetting;
+      }
+    },
+  );
+
+  test('committed retry bypasses a provider that throws or changes', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    final occurredAtUtc = now.add(
+      const Duration(seconds: 2, milliseconds: 123),
+    );
+    final evidence = _declaredEvidence(EvidencePolicyRolloutMode.shadow);
+    final validContext = _researchEventContext(
+      evidence,
+      assignedAtUtc: occurredAtUtc.subtract(const Duration(minutes: 1)),
+    );
+    final initialUseCases = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: _FixedLearningEventContextProvider(validContext),
+    );
+    await initialUseCases.recordEvidence(
+      sourceEvidenceId: 'evidence-provider-replay',
+      occurredAtUtc: occurredAtUtc,
+      sessionId: quiz.id,
+      wordId: quiz.questions.single.word.id,
+      promptMode: 'meaningChoice',
+      isCorrect: true,
+      responseTimeMs: 2000,
+      attemptNumber: 1,
+      evidenceContext: evidence,
+    );
+
+    final throwingProvider = _ThrowingLearningEventContextProvider();
+    final throwingReplay = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: throwingProvider,
+    );
+    expect(
+      (await throwingReplay.recordEvidence(
+        sourceEvidenceId: 'evidence-provider-replay',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidence,
+      )).inserted,
+      isFalse,
+    );
+    expect(throwingProvider.calls, 0);
+
+    final changedProvider = _CountingLearningEventContextProvider(
+      _researchEventContext(
+        evidence,
+        assignedAtUtc: occurredAtUtc.subtract(const Duration(minutes: 1)),
+        assignmentId: 'changed-assignment',
+      ),
+    );
+    final replayedEvents = <EventEnvelopeV2>[];
+    final changedReplay = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: changedProvider,
+      questEventSink: (event) async => replayedEvents.add(event),
+    );
+    expect(
+      (await changedReplay.recordEvidence(
+        sourceEvidenceId: 'evidence-provider-replay',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidence,
+      )).inserted,
+      isFalse,
+    );
+    expect(changedProvider.calls, 0);
+    expect(replayedEvents, hasLength(1));
+    expect(replayedEvents.single.occurredAtUtc.millisecond, 0);
+    expect(replayedEvents.single.payload['evidenceContext'], evidence.toJson());
+  });
+
+  test('committed retry fails closed for a missing or corrupt event', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    final occurredAtUtc = now.add(
+      const Duration(seconds: 2, milliseconds: 123),
+    );
+
+    Future<void> record(String id) => useCases.recordEvidence(
+      sourceEvidenceId: id,
+      occurredAtUtc: occurredAtUtc,
+      sessionId: quiz.id,
+      wordId: quiz.questions.single.word.id,
+      promptMode: 'meaningChoice',
+      isCorrect: true,
+      responseTimeMs: 2000,
+      attemptNumber: 1,
+      evidenceContext: _legacyEvidence(),
+    );
+
+    await record('evidence-missing-event');
+    await (database.delete(database.eventsV2)..where(
+          (row) => row.eventId.equals('learning-event:evidence-missing-event'),
+        ))
+        .go();
+    final missingProvider = _ThrowingLearningEventContextProvider();
+    var missingCallbacks = 0;
+    final missingReplay = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: missingProvider,
+      questEventSink: (_) async => missingCallbacks++,
+    );
+    await expectLater(
+      missingReplay.recordEvidence(
+        sourceEvidenceId: 'evidence-missing-event',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: _legacyEvidence(),
+      ),
+      throwsStateError,
+    );
+    expect(missingProvider.calls, 0);
+    expect(missingCallbacks, 0);
+
+    await record('evidence-corrupt-event');
+    await database.customUpdate(
+      'UPDATE events_v2 SET payload_json = ? WHERE event_id = ?',
+      variables: const [
+        Variable<String>('{}'),
+        Variable<String>('learning-event:evidence-corrupt-event'),
+      ],
+      updates: {database.eventsV2},
+    );
+    final corruptProvider = _ThrowingLearningEventContextProvider();
+    var corruptCallbacks = 0;
+    final corruptReplay = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: corruptProvider,
+      questEventSink: (_) async => corruptCallbacks++,
+    );
+    await expectLater(
+      corruptReplay.recordEvidence(
+        sourceEvidenceId: 'evidence-corrupt-event',
+        occurredAtUtc: occurredAtUtc,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: _legacyEvidence(),
+      ),
+      throwsStateError,
+    );
+    expect(corruptProvider.calls, 0);
+    expect(corruptCallbacks, 0);
+  });
+
   test('recordEvidence rejects an unstable caller-owned identity', () async {
     final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
     for (final sourceEvidenceId in <String>[
       ' evidence-1',
       'evidence-1 ',
       '',
-      'x' * 257,
+      'x' * 198,
     ]) {
       await expectLater(
         useCases.recordEvidence(
@@ -271,6 +584,76 @@ void main() {
       );
     }
     expect(await database.select(database.answerAttempts).get(), isEmpty);
+  });
+
+  test('source evidence identity reserves every derived ID budget', () async {
+    final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+    final accepted = List<String>.filled(197, '🧠').join();
+    final rejected = '$accepted🧠';
+    final evidence = _legacyEvidence();
+    final provider = _CountingLearningEventContextProvider(
+      LearningEventContext.noResearch(evidence),
+    );
+    final boundedUseCases = LearningUseCases(
+      owners: owners,
+      repository: DriftLearningRepository(database),
+      generateId: () => 'unused',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      eventContextProvider: provider,
+    );
+
+    expect(
+      (await boundedUseCases.recordEvidence(
+        sourceEvidenceId: accepted,
+        occurredAtUtc: now,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidence,
+      )).inserted,
+      isTrue,
+    );
+    expect(provider.calls, 1);
+
+    await expectLater(
+      boundedUseCases.recordEvidence(
+        sourceEvidenceId: rejected,
+        occurredAtUtc: now,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 2000,
+        attemptNumber: 1,
+        evidenceContext: evidence,
+      ),
+      throwsArgumentError,
+    );
+    expect(provider.calls, 1, reason: '198 scalars fail before provider use');
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+
+    final eventId = LearningEvidenceContract.learningEventId(accepted);
+    final derivedIds = <String>[
+      eventId,
+      LearningEvidenceContract.learningAttemptIdempotencyKey(accepted),
+      LearningEvidenceContract.answerAttemptOutboxOperationId(accepted),
+      LearningEvidenceContract.learningProjectionReceiptId(
+        projection: 'activeLearningEffort',
+        sourceEventId: eventId,
+        appliedVersion: 2,
+      ),
+    ];
+    expect(accepted.runes.length, 197);
+    expect(rejected.runes.length, 198);
+    expect(
+      derivedIds.map((id) => id.runes.length),
+      everyElement(lessThanOrEqualTo(256)),
+    );
+    expect(derivedIds.last.runes.length, 256);
   });
 
   test('recordEvidence rejects a non-UTC occurrence time', () async {
@@ -598,6 +981,37 @@ void main() {
   });
 }
 
+Future<void> _seedVocabulary(AppDatabase database, String ownerId) async {
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: 'category-file',
+          ownerId: ownerId,
+          name: 'File-backed',
+          normalizedName: 'file-backed',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: 'word-file',
+          ownerId: ownerId,
+          categoryId: 'category-file',
+          spelling: 'durable',
+          normalizedSpelling: 'durable',
+          meaning: 'persistent',
+          normalizedMeaning: 'persistent',
+          partOfSpeech: 'adjective',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+}
+
 EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
   return EvidenceContext.legacyCompatibility(
     evidenceClass: EvidenceClass.independentRecall,
@@ -697,4 +1111,37 @@ final class _FixedLearningEventContextProvider
     required EvidenceContext evidenceContext,
     required DateTime occurredAtUtc,
   }) async => context;
+}
+
+final class _CountingLearningEventContextProvider
+    implements LearningEventContextProvider {
+  _CountingLearningEventContextProvider(this.context);
+
+  final LearningEventContext context;
+  int calls = 0;
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async {
+    calls++;
+    return context;
+  }
+}
+
+final class _ThrowingLearningEventContextProvider
+    implements LearningEventContextProvider {
+  int calls = 0;
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async {
+    calls++;
+    throw StateError('provider must not resolve committed evidence');
+  }
 }

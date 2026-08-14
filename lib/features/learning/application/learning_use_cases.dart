@@ -4,6 +4,7 @@ import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/evidence_context.dart';
+import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
@@ -198,43 +199,68 @@ final class LearningUseCases {
     final canonicalWordId = _requiredId(wordId, 'wordId');
     final canonicalPromptMode = _requiredId(promptMode, 'promptMode');
     final owner = await owners.getOrCreateActiveOwner();
-    final learningEventContext = await eventContextProvider.resolve(
-      ownerId: owner.id,
-      evidenceContext: evidenceContext,
-      occurredAtUtc: canonicalOccurredAtUtc,
-    );
-    learningEventContext.validateAgainst(
-      evidenceContext: evidenceContext,
-      occurredAtUtc: canonicalOccurredAtUtc,
-    );
-    final durableEvent = eventAdapter.adaptFromCommand(
-      sourceEvidenceId: canonicalEvidenceId,
+    final candidate = RecordAnswerCandidate(
+      id: canonicalEvidenceId,
       ownerId: owner.id,
       sessionId: canonicalSessionId,
       wordId: canonicalWordId,
       promptMode: canonicalPromptMode,
       isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
       attemptNumber: attemptNumber,
       occurredAtUtc: canonicalOccurredAtUtc,
       evidenceContext: evidenceContext,
-      learningEventContext: learningEventContext,
+      providerProvenance: providerProvenance,
     );
-    final result = await repository.recordAnswer(
-      RecordAnswerCommand(
-        id: canonicalEvidenceId,
+    final replayRepository = repository;
+    final replay = replayRepository is LearningEvidenceReplayRepository
+        ? await (replayRepository as LearningEvidenceReplayRepository)
+              .replayCommittedAnswer(candidate)
+        : null;
+    late final EventEnvelopeV2 durableEvent;
+    late final AnswerRecordResult result;
+    if (replay != null) {
+      durableEvent = replay.event;
+      result = replay.result;
+    } else {
+      final learningEventContext = await eventContextProvider.resolve(
+        ownerId: owner.id,
+        occurredAtUtc: canonicalOccurredAtUtc,
+        evidenceContext: evidenceContext,
+      );
+      learningEventContext.validateAgainst(
+        evidenceContext: evidenceContext,
+        occurredAtUtc: canonicalOccurredAtUtc,
+      );
+      durableEvent = eventAdapter.adaptFromCommand(
+        sourceEvidenceId: canonicalEvidenceId,
         ownerId: owner.id,
         sessionId: canonicalSessionId,
         wordId: canonicalWordId,
         promptMode: canonicalPromptMode,
         isCorrect: isCorrect,
-        responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
         occurredAtUtc: canonicalOccurredAtUtc,
         evidenceContext: evidenceContext,
-        providerProvenance: providerProvenance,
-        event: durableEvent,
-      ),
-    );
+        learningEventContext: learningEventContext,
+      );
+      result = await repository.recordAnswer(
+        RecordAnswerCommand(
+          id: canonicalEvidenceId,
+          ownerId: owner.id,
+          sessionId: canonicalSessionId,
+          wordId: canonicalWordId,
+          promptMode: canonicalPromptMode,
+          isCorrect: isCorrect,
+          responseTimeMs: responseTimeMs,
+          attemptNumber: attemptNumber,
+          occurredAtUtc: canonicalOccurredAtUtc,
+          evidenceContext: evidenceContext,
+          providerProvenance: providerProvenance,
+          event: durableEvent,
+        ),
+      );
+    }
     onLocalMutation?.call();
 
     // Shadow V2 reward pipeline — runs after production succeeds.
@@ -418,7 +444,7 @@ final class LearningUseCases {
   }
 
   String _stableEvidenceId(String value) {
-    if (value.trim() != value || value.isEmpty || value.runes.length > 256) {
+    if (!LearningEvidenceContract.validSourceEvidenceId(value)) {
       throw ArgumentError.value(
         value,
         'sourceEvidenceId',

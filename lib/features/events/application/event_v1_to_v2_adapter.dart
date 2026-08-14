@@ -11,6 +11,7 @@ library;
 
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/learning/learning_event.dart';
 
@@ -130,15 +131,20 @@ final class EventV1ToV2Adapter {
       evidenceContext: evidenceContext,
       occurredAtUtc: occurredAtUtc,
     );
-    final eventId = 'learning-event:$sourceEvidenceId';
-    final idemKey = 'learning-attempt:$sourceEvidenceId:v2';
+    final eventOccurredAtUtc = LearningEvidenceContract.canonicalEventUtcSecond(
+      occurredAtUtc,
+    );
+    final eventId = LearningEvidenceContract.learningEventId(sourceEvidenceId);
+    final idemKey = LearningEvidenceContract.learningAttemptIdempotencyKey(
+      sourceEvidenceId,
+    );
 
     return EventEnvelopeV2(
       eventId: eventId,
       eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
       eventVersion: 2,
-      occurredAtUtc: occurredAtUtc,
-      recordedAtUtc: occurredAtUtc,
+      occurredAtUtc: eventOccurredAtUtc,
+      recordedAtUtc: eventOccurredAtUtc,
       actorIdentity: ownerId,
       ownerIdentity: ownerId,
       aggregateType: 'LearningSession',

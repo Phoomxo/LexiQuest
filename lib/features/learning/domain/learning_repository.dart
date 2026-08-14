@@ -1,5 +1,11 @@
 import 'learning_models.dart';
 
+abstract interface class LearningEvidenceReplayRepository {
+  Future<CommittedAnswerReplay?> replayCommittedAnswer(
+    RecordAnswerCandidate candidate,
+  );
+}
+
 abstract interface class LearningRepository {
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,

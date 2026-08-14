@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/srs_operation_identity.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -41,7 +42,7 @@ void main() {
       ),
     );
     await learning.recordAnswer(
-      RecordAnswerCommand(
+      RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'attempt-1',
         ownerId: 'owner-1',
         sessionId: 'session-1',
@@ -51,7 +52,7 @@ void main() {
         responseTimeMs: 250,
         attemptNumber: 1,
         occurredAtUtc: now,
-        evidenceContext: _legacyEvidence(),
+        evidenceContext: _frozenV13LegacyEvidence(),
       ),
     );
     expect(
@@ -386,7 +387,7 @@ void main() {
       ),
     );
     await learning.recordAnswer(
-      RecordAnswerCommand(
+      RecordAnswerCommand.frozenV13LegacyIngress(
         id: 'attempt-ack',
         ownerId: 'owner-1',
         sessionId: 'session-ack',
@@ -396,7 +397,7 @@ void main() {
         responseTimeMs: 250,
         attemptNumber: 1,
         occurredAtUtc: now,
-        evidenceContext: _legacyEvidence(),
+        evidenceContext: _frozenV13LegacyEvidence(),
       ),
     );
     expect(
@@ -1225,7 +1226,7 @@ Future<void> _recordSrsReview(
   required DateTime occurredAtUtc,
 }) {
   return learning.recordAnswer(
-    RecordAnswerCommand(
+    RecordAnswerCommand.frozenV13LegacyIngress(
       id: id,
       ownerId: 'owner-1',
       sessionId: 'session-srs',
@@ -1235,18 +1236,13 @@ Future<void> _recordSrsReview(
       responseTimeMs: 250,
       attemptNumber: attemptNumber,
       occurredAtUtc: occurredAtUtc,
-      evidenceContext: _legacyEvidence(),
+      evidenceContext: _frozenV13LegacyEvidence(),
     ),
   );
 }
 
-EvidenceContext _legacyEvidence() => EvidenceContext.legacyCompatibility(
-  evidenceClass: EvidenceClass.independentRecall,
-  skillId: 'legacy-current-activity',
-  hintLevel: 0,
-  contentRevision: 'legacy-unknown',
-  engagementAllowed: true,
-);
+EvidenceContext _frozenV13LegacyEvidence() =>
+    LearningEvidenceContract.frozenV13LegacyEvidenceContext();
 
 Future<void> _seedSrsDeviceAtRevisionFive(
   AppDatabase database, {
