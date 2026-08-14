@@ -6,58 +6,10 @@
 /// migrated.
 library;
 
+export 'feature.dart';
+
 import 'package:flutter/foundation.dart';
-
-/// Feature capabilities exposed to learners in the field.
-///
-/// Mirrors [FieldFeature] during the transition period; values are kept in
-/// sync until [FieldFeatureRegistry] is retired.
-enum Feature {
-  vocabulary,
-  quiz,
-  srs,
-  reading,
-  mastery,
-  weakness,
-  ghostDuel,
-  achievements,
-  shop,
-  objectScanner,
-  speechPractice,
-  aiTutor,
-  export,
-
-  /// V2 shadow mode — runs the V2 reward pipeline in dry-run mode alongside
-  /// production.  Disabled by default; enable in debug builds only.
-  shadowRewardV2,
-
-  /// Learner-facing Quest Status invocation. Durable quest projection remains
-  /// composed regardless of this state. Production default: limited.
-  questV2,
-}
-
-/// Availability state of a [Feature].
-enum FeatureState {
-  /// Fully available to the learner.
-  enabled,
-
-  /// Available with restrictions (e.g. quota, degraded quality).
-  limited,
-
-  /// Not available and not shown in the UI.
-  hidden,
-
-  /// Explicitly disabled by a kill switch. Entry surfaces hide it; a retained
-  /// or direct route renders the shared typed unavailable experience.
-  disabled,
-
-  /// Emergency shut-off — learner invocation and feature-owned live side
-  /// effects are blocked. Takes precedence over every other UI state.
-  ///
-  /// `questV2` is an invocation switch: its durable background projection,
-  /// receipt, and reconciliation pipeline remains composed under emergency-off.
-  emergencyOff,
-}
+import 'feature.dart';
 
 /// Read-only contract for querying [Feature] availability.
 abstract interface class FeatureRegistry {
