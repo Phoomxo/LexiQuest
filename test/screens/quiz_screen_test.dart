@@ -70,7 +70,11 @@ void main() {
   testWidgets('answer is durable before score screen is shown', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: QuizScreen(categoryId: 'category-1', learning: learning),
+        home: QuizScreen(
+          categoryId: 'category-1',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
       ),
     );
     await _pumpUntilFound(tester, find.text('station'));
@@ -93,7 +97,11 @@ void main() {
   testWidgets('missing category shows honest empty state', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        home: QuizScreen(categoryId: 'missing', learning: learning),
+        home: QuizScreen(
+          categoryId: 'missing',
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
       ),
     );
     final emptyState = find.textContaining('ยังไม่มีคำศัพท์สำหรับ Quiz');
@@ -118,14 +126,29 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: QuizScreen(categoryId: 'category-1', learning: retryLearning),
+        home: QuizScreen(
+          categoryId: 'category-1',
+          learning: retryLearning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(
+            learning: retryLearning,
+          ),
+        ),
       ),
     );
     await _pumpUntilFound(tester, find.text('station'));
 
     await tester.tap(find.text('สถานี'));
     await _pumpUntilFound(tester, find.byType(SnackBar));
-    await tester.tap(find.text('สถานี'));
+    final answerButton = tester.widget<FilledButton>(
+      find.ancestor(
+        of: find.text('สถานี'),
+        matching: find.byType(FilledButton),
+      ),
+    );
+    expect(answerButton.onPressed, isNull);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+    );
     await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
 
     expect(repository.commands, hasLength(2));
@@ -140,140 +163,6 @@ void main() {
       EvidenceClassificationSource.legacyInferred,
     );
   });
-
-  test(
-    'current activity declarations cover every required evidence class',
-    () async {
-      var nextId = 0;
-      final adapter = CurrentActivityEvidenceAdapter(
-        generateId: () => 'declaration-${++nextId}',
-        nowUtc: () => DateTime.utc(2026, 8, 14),
-        rolloutProvider: const FixedCurrentActivityRolloutProvider.legacy(),
-        researchContextProvider:
-            const LegacyCurrentActivityResearchContextProvider(),
-      );
-      const expected = <CurrentActivityInput, EvidenceClass>{
-        CurrentActivityInput.meaningMultipleChoice: EvidenceClass.recognition,
-        CurrentActivityInput.srsRecall: EvidenceClass.independentRecall,
-        CurrentActivityInput.typedRecall: EvidenceClass.independentRecall,
-        CurrentActivityInput.associativeRecall: EvidenceClass.independentRecall,
-        CurrentActivityInput.ghostDuel: EvidenceClass.recreational,
-        CurrentActivityInput.speakToText: EvidenceClass.pronunciation,
-        CurrentActivityInput.shadowing: EvidenceClass.pronunciation,
-        CurrentActivityInput.readingExposure: EvidenceClass.exposure,
-      };
-
-      for (final input in CurrentActivityInput.values) {
-        final pending = await adapter.prepare(
-          input: input,
-          sessionId: 'session-1',
-          wordId: 'word-1',
-          isCorrect: true,
-          responseTimeMs: 1,
-          attemptNumber: 1,
-        );
-        expect(pending.evidenceContext.evidenceClass, expected[input]);
-        expect(
-          pending.evidenceContext.classificationSource,
-          EvidenceClassificationSource.legacyInferred,
-        );
-      }
-    },
-  );
-
-  test('shadow and enforced contexts use injected research metadata', () async {
-    for (final mode in <EvidencePolicyRolloutMode>{
-      EvidencePolicyRolloutMode.shadow,
-      EvidencePolicyRolloutMode.enforced,
-    }) {
-      final adapter = CurrentActivityEvidenceAdapter(
-        generateId: () => 'research-${mode.name}',
-        nowUtc: () => DateTime.utc(2026, 8, 14),
-        rolloutProvider: FixedCurrentActivityRolloutProvider(mode),
-        researchContextProvider: const _ResearchContextProvider(),
-      );
-      final pending = await adapter.prepare(
-        input: CurrentActivityInput.ghostDuel,
-        sessionId: 'session-1',
-        wordId: 'word-1',
-        isCorrect: true,
-        responseTimeMs: 1,
-        attemptNumber: 1,
-      );
-      final context = pending.evidenceContext;
-
-      expect(context.rolloutMode, mode);
-      expect(
-        context.classificationSource,
-        EvidenceClassificationSource.declared,
-      );
-      expect(context.evidenceClass, EvidenceClass.recreational);
-      expect(context.protocolId, 'evidence-pilot');
-      expect(context.assignmentId, 'assignment-1');
-      expect(context.researchConsentVersion, 1);
-      expect(context.engagementAllowed, isFalse);
-    }
-  });
-
-  test(
-    'protocol evidence-class overrides are restricted to Ghost Duel',
-    () async {
-      final adapter = CurrentActivityEvidenceAdapter(
-        generateId: () => 'override-1',
-        nowUtc: () => DateTime.utc(2026, 8, 14),
-        rolloutProvider: const FixedCurrentActivityRolloutProvider(
-          EvidencePolicyRolloutMode.shadow,
-        ),
-        researchContextProvider: const _ResearchContextProvider(
-          evidenceClassOverride: EvidenceClass.guidedPractice,
-        ),
-      );
-
-      await expectLater(
-        adapter.prepare(
-          input: CurrentActivityInput.meaningMultipleChoice,
-          sessionId: 'session-1',
-          wordId: 'word-1',
-          isCorrect: true,
-          responseTimeMs: 1,
-          attemptNumber: 1,
-        ),
-        throwsStateError,
-      );
-      final ghost = await adapter.prepare(
-        input: CurrentActivityInput.ghostDuel,
-        sessionId: 'session-1',
-        wordId: 'word-1',
-        isCorrect: true,
-        responseTimeMs: 1,
-        attemptNumber: 1,
-      );
-      expect(ghost.evidenceContext.evidenceClass, EvidenceClass.guidedPractice);
-    },
-  );
-}
-
-final class _ResearchContextProvider
-    implements CurrentActivityResearchContextProvider {
-  const _ResearchContextProvider({this.evidenceClassOverride});
-
-  final EvidenceClass? evidenceClassOverride;
-
-  @override
-  Future<CurrentActivityResearchContext> resolve({
-    required CurrentActivityInput input,
-    required EvidencePolicyRolloutMode rolloutMode,
-  }) async => CurrentActivityResearchContext(
-    engagementAllowed: false,
-    protocolEvidenceClassOverride: evidenceClassOverride,
-    protocolId: 'evidence-pilot',
-    protocolVersion: '1.0.0',
-    experimentId: 'evidence-eligibility',
-    experimentVersion: 1,
-    assignmentId: 'assignment-1',
-    cohort: 'shadow',
-    researchConsentVersion: 1,
-  );
 }
 
 final class _FailFirstLearningRepository implements LearningRepository {

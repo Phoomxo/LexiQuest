@@ -7,6 +7,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as identity;
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
@@ -1009,6 +1012,75 @@ void main() {
     expect(saved.lastPosition, 4);
     expect(restored, saved);
   });
+
+  test('associative reading starts one canonical learning session', () async {
+    final sessionId = await useCases.startAssociativeReadingSession();
+
+    expect(sessionId, 'session:1');
+    final stored = await database.select(database.learningSessions).getSingle();
+    expect(stored.id, sessionId);
+    expect(stored.activityType, 'associativeReading');
+    expect(stored.state, 'active');
+  });
+
+  test(
+    'resolver-based recording binds one active owner to snapshot and write',
+    () async {
+      final countingOwners = _CountingLocalOwnerRepository(owners);
+      final resolverUseCases = LearningUseCases(
+        owners: countingOwners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'unused',
+        nowUtc: () => now,
+        buildInfo: const AppBuildInfo(version: '1.2.3', buildId: 'test-build'),
+      );
+      final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
+      final occurrence = now.add(const Duration(seconds: 4));
+      final frozen = FrozenLearningEvidenceCommand(
+        sourceEvidenceId: 'attempt:resolver-1',
+        occurredAtUtc: occurrence,
+        sessionId: quiz.id,
+        wordId: quiz.questions.single.word.id,
+        promptMode: 'meaningChoice',
+        isCorrect: true,
+        responseTimeMs: 4000,
+        attemptNumber: 1,
+        providerProvenance: 'local:test:v1',
+      );
+      String? resolverOwner;
+      FrozenLearningEvidenceCommand? resolverCommand;
+
+      final resolved = await resolverUseCases.resolveEvidenceForRecording(
+        command: frozen,
+        resolveContexts: ({required ownerId, required command}) async {
+          resolverOwner = ownerId;
+          resolverCommand = command;
+          final evidence = EvidenceContext.legacyCompatibility(
+            evidenceClass: EvidenceClass.recognition,
+            skillId: 'meaning-recall',
+            hintLevel: 0,
+            contentRevision: 'built-in-v1',
+            engagementAllowed: true,
+          );
+          return ResolvedLearningEvidenceContexts(
+            evidenceContext: evidence,
+            eventContext: LearningEventContext.noResearch(evidence),
+          );
+        },
+      );
+      await resolverUseCases.recordResolvedEvidence(resolved);
+
+      expect(countingOwners.calls, 1);
+      expect(resolverOwner, 'local:guest');
+      expect(identical(resolverCommand, resolved.command), isTrue);
+      final attempt = await database
+          .select(database.answerAttempts)
+          .getSingle();
+      expect(attempt.ownerId, resolverOwner);
+      expect(attempt.id, frozen.sourceEvidenceId);
+      expect(attempt.occurredAtUtcMs, occurrence.millisecondsSinceEpoch);
+    },
+  );
 }
 
 Future<void> _seedVocabulary(AppDatabase database, String ownerId) async {
@@ -1174,4 +1246,23 @@ final class _ThrowingLearningEventContextProvider
     calls++;
     throw StateError('provider must not resolve committed evidence');
   }
+}
+
+final class _CountingLocalOwnerRepository implements LocalOwnerRepository {
+  _CountingLocalOwnerRepository(this.delegate);
+
+  final LocalOwnerRepository delegate;
+  int calls = 0;
+
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() {
+    calls += 1;
+    return delegate.getOrCreateActiveOwner();
+  }
+
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) => delegate.bindFirebaseUid(ownerId, firebaseUid);
 }

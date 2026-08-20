@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -172,6 +173,7 @@ void main() {
           ),
           speechPractice: SpeechPracticeUseCases(_FakeSpeechGateway()),
           learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
         ),
       ),
     );
@@ -236,7 +238,12 @@ void main() {
     );
 
     await tester.pumpWidget(
-      MaterialApp(home: ShadowingChallengeScreen(learning: learning)),
+      MaterialApp(
+        home: ShadowingChallengeScreen(
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
+      ),
     );
     await tester.pumpAndSettle();
 
@@ -429,6 +436,7 @@ void main() {
           voice: voice,
           speechPractice: SpeechPracticeUseCases(_FakeSpeechGateway()),
           learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
         ),
       ),
     );
@@ -436,7 +444,10 @@ void main() {
     final listen = find.byKey(const ValueKey('shadowing-listen-button'));
     await tester.tap(listen);
     await tester.pumpAndSettle();
-    await tester.tap(listen);
+    expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+    );
     await tester.pumpAndSettle();
 
     expect(repository.commands, hasLength(2));

@@ -40,17 +40,20 @@ class _QuizScreenState extends State<QuizScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_load != null) return;
-    _learning =
-        widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _learning = widget.learning ?? dependencies?.learning;
     final learning = _learning;
     if (learning != null) {
       _evidenceAdapter =
-          widget.evidenceAdapter ??
-          CurrentActivityEvidenceAdapter.legacy(learning);
+          widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     }
     _load = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
+          )
+        : _evidenceAdapter == null
+        ? Future<QuizSession>.error(
+            StateError('current activity evidence dependency unavailable'),
           )
         : learning.startQuiz(categoryId: widget.categoryId);
     _load!.then((session) {
@@ -99,6 +102,7 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
+    final responseLocked = _pendingEvidence?.isResponseLocked ?? false;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -128,7 +132,7 @@ class _QuizScreenState extends State<QuizScreen> {
               (option) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: FilledButton.tonal(
-                  onPressed: _answered || _saving
+                  onPressed: _answered || _saving || responseLocked
                       ? null
                       : () => _record(question, option),
                   style: FilledButton.styleFrom(
@@ -141,6 +145,12 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             const Spacer(),
             if (_saving) const LinearProgressIndicator(),
+            if (_pendingEvidence?.requiresRetry ?? false)
+              FilledButton(
+                key: const ValueKey<String>('current-evidence-retry'),
+                onPressed: _saving ? null : _retryEvidence,
+                child: const Text('Retry saved answer'),
+              ),
             if (_answered)
               FilledButton(
                 onPressed: _saving ? null : _next,
@@ -187,29 +197,47 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _record(QuizQuestion question, String option) async {
-    final learning = _learning;
     final session = _session;
-    if (learning == null || session == null) return;
+    if (session == null || _pendingEvidence != null) return;
     final correct = option == question.correctAnswer;
+    final elapsed = DateTime.now().difference(
+      _questionStartedAt ?? DateTime.now(),
+    );
+    final pending = _evidenceAdapter!.capture(
+      input: CurrentActivityInput.meaningMultipleChoice,
+      sessionId: session.id,
+      wordId: question.word.id,
+      isCorrect: correct,
+      responseTimeMs: elapsed.inMilliseconds,
+      attemptNumber: _index + 1,
+    );
+    _pendingEvidence = pending;
     setState(() {
       _saving = true;
       _selected = option;
     });
-    final elapsed = DateTime.now().difference(
-      _questionStartedAt ?? DateTime.now(),
-    );
+    await _commitPending(pending, retry: false);
+  }
+
+  Future<void> _retryEvidence() async {
+    final pending = _pendingEvidence;
+    if (pending == null || !pending.requiresRetry || _saving) return;
+    setState(() => _saving = true);
+    await _commitPending(pending, retry: true);
+  }
+
+  Future<void> _commitPending(
+    PendingCurrentActivityEvidence pending, {
+    required bool retry,
+  }) async {
     try {
-      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
-        input: CurrentActivityInput.meaningMultipleChoice,
-        sessionId: session.id,
-        wordId: question.word.id,
-        isCorrect: correct,
-        responseTimeMs: elapsed.inMilliseconds,
-        attemptNumber: _index + 1,
-      );
-      await pending.record(learning);
+      if (retry) {
+        await pending.retry();
+      } else {
+        await pending.record();
+      }
       if (!mounted) return;
-      if (correct) {
+      if (pending.isCorrect) {
         await HapticFeedback.lightImpact();
       } else {
         await HapticFeedback.vibrate();

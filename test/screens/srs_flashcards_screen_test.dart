@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -134,7 +135,11 @@ void main() {
     try {
       await tester.pumpWidget(
         MaterialApp(
-          home: SrsFlashcardsScreen(voice: voice, learning: learning),
+          home: SrsFlashcardsScreen(
+            voice: voice,
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
         ),
       );
       await tester.runAsync(
@@ -238,7 +243,11 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        home: SrsFlashcardsScreen(voice: voice, learning: learning),
+        home: SrsFlashcardsScreen(
+          voice: voice,
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -252,8 +261,12 @@ void main() {
       tester.element(find.byType(SrsFlashcardsScreen)),
     ).removeCurrentSnackBar();
     await tester.pumpAndSettle();
-    await tester.ensureVisible(good);
-    await tester.tap(good);
+    expect(good, findsNothing);
+    final retryButton = find.byKey(
+      const ValueKey<String>('current-evidence-retry'),
+    );
+    await tester.ensureVisible(retryButton);
+    await tester.tap(retryButton);
     await tester.pumpAndSettle();
 
     expect(repository.commands, hasLength(2));

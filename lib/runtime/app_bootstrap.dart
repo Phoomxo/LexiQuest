@@ -44,13 +44,14 @@ import '../features/export/domain/export_contracts.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
-import '../features/learning/data/drift_learning_event_store.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
-import '../features/learning/domain/learning_event_context.dart';
+import '../features/learning/domain/evidence_policy_rollout.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -246,6 +247,7 @@ final class AppBootstrap {
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
+    this.researchStateProvider,
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -283,6 +285,7 @@ final class AppBootstrap {
   final RuntimeInitializer initializeSupabase;
   final AppConfigLoader loadConfig;
   final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
+  final CurrentActivityResearchStateProvider? researchStateProvider;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final AppEntryStateStoreFactory createEntryStateStore;
@@ -316,6 +319,19 @@ final class AppBootstrap {
 
   Future<AppDependencies> _compose(ResourceDisposerStack resources) async {
     final researchRuntimeConfig = loadResearchRuntimeConfig();
+    final evidenceRolloutModeProvider = FixedEvidencePolicyRolloutModeProvider(
+      researchRuntimeConfig.evidenceRollout,
+    );
+    final currentResearchStateProvider =
+        researchStateProvider ??
+        switch (researchRuntimeConfig.evidenceRollout) {
+          EvidencePolicyRolloutMode.legacy =>
+            const BaselineCurrentActivityResearchStateProvider(),
+          EvidencePolicyRolloutMode.shadow ||
+          EvidencePolicyRolloutMode.enforced => throw StateError(
+            'research state provider is required outside Legacy',
+          ),
+        };
     final entryState = await _createEntryState();
     final database = createDatabase();
     resources.own(database.close);
@@ -323,9 +339,6 @@ final class AppBootstrap {
     final idGenerator = const Uuid();
     final ownerOperationGate = DriftOwnerOperationGate(database);
     const evidencePolicy = EvidenceEligibilityPolicySet();
-    final evidenceRolloutModeProvider = FixedEvidencePolicyRolloutModeProvider(
-      researchRuntimeConfig.evidenceRollout,
-    );
     final localOwners = DriftLocalOwnerRepository(
       database,
       generateId: idGenerator.v4,
@@ -617,8 +630,13 @@ final class AppBootstrap {
       buildInfo: const AppBuildInfo.fromEnvironment(),
       onLocalMutation: notifyLocalMutation,
       eventAdapter: eventAdapter,
-      eventContextProvider: const BaselineLearningEventContextProvider(),
+      eventContextProvider: currentResearchStateProvider,
       onSideEffectsPending: learningReconciliation.request,
+    );
+    final currentActivityEvidence = CurrentActivityEvidenceAdapter(
+      learning: learning,
+      rolloutModeProvider: evidenceRolloutModeProvider,
+      researchStateProvider: currentResearchStateProvider,
     );
     final exports = ExportUseCases(
       reader: DriftExportReader(database),
@@ -786,6 +804,7 @@ final class AppBootstrap {
       syncEngine: syncEngine,
       syncTrigger: syncTrigger,
       learning: learning,
+      currentActivityEvidence: currentActivityEvidence,
       learningReconciliation: learningReconciliation,
       progress: progress,
       rewards: rewards,

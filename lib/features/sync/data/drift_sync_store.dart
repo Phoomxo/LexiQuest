@@ -11,6 +11,7 @@ import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
+import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/learning_event_context.dart';
 import '../../learning/domain/srs_operation_identity.dart';

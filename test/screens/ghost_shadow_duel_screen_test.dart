@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -44,6 +45,7 @@ void main() {
         home: GhostShadowDuelScreen(
           progressLoader: () async => _duelProgress,
           learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
         ),
       ),
     );
@@ -55,7 +57,10 @@ void main() {
       tester.element(find.byType(GhostShadowDuelScreen)),
     ).removeCurrentSnackBar();
     await tester.pumpAndSettle();
-    await tester.tap(find.text('ตอบ'));
+    expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+    );
     await tester.pumpAndSettle();
 
     expect(repository.commands, hasLength(2));

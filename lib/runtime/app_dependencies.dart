@@ -9,6 +9,7 @@ import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -53,6 +54,7 @@ final class AppDependencies {
     this.syncEngine,
     this.syncTrigger,
     this.learning,
+    this.currentActivityEvidence,
     this.learningReconciliation,
     this.progress,
     this.rewards,
@@ -89,6 +91,7 @@ final class AppDependencies {
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
   final LearningUseCases? learning;
+  final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;

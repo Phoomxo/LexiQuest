@@ -6,43 +6,12 @@ import '../../../data/local/app_database.dart' as db;
 import '../../events/domain/event_envelope_v2.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_eligibility_policy.dart';
+import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 
-abstract interface class EvidencePolicyRolloutModeProvider {
-  Future<EvidencePolicyRolloutMode> resolve({
-    required String ownerId,
-    required EvidenceContext evidenceContext,
-  });
-}
-
-final class ContextEvidencePolicyRolloutModeProvider
-    implements EvidencePolicyRolloutModeProvider {
-  const ContextEvidencePolicyRolloutModeProvider();
-
-  @override
-  Future<EvidencePolicyRolloutMode> resolve({
-    required String ownerId,
-    required EvidenceContext evidenceContext,
-  }) async => evidenceContext.rolloutMode;
-}
-
-final class FixedEvidencePolicyRolloutModeProvider
-    implements EvidencePolicyRolloutModeProvider {
-  const FixedEvidencePolicyRolloutModeProvider(this.mode);
-
-  const FixedEvidencePolicyRolloutModeProvider.legacy()
-    : mode = EvidencePolicyRolloutMode.legacy;
-
-  final EvidencePolicyRolloutMode mode;
-
-  @override
-  Future<EvidencePolicyRolloutMode> resolve({
-    required String ownerId,
-    required EvidenceContext evidenceContext,
-  }) async => mode;
-}
+export '../domain/evidence_policy_rollout.dart';
 
 enum LearningProjectionOutcome { applied, notApplicable, blocked }
 

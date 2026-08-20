@@ -61,7 +61,11 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
       _AssociativeReadingSessionScreenState();
 }
 
-enum AssociativeReadingUnavailableReason { learning, associativeLearning }
+enum AssociativeReadingUnavailableReason {
+  learning,
+  currentActivityEvidence,
+  associativeLearning,
+}
 
 class AssociativeReadingUnavailable extends StatelessWidget {
   const AssociativeReadingUnavailable({super.key, required this.reason});
@@ -112,6 +116,7 @@ class _AssociativeReadingSessionScreenState
   late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
   late List<PendingCurrentActivityEvidence?> _pendingRecallEvidence;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  bool _recallBatchFrozen = false;
 
   // Stage 4 — per-word association cue controllers.
   late List<TextEditingController> _cueControllers;
@@ -161,8 +166,13 @@ class _AssociativeReadingSessionScreenState
       return;
     }
     _evidenceAdapter =
-        widget.evidenceAdapter ??
-        CurrentActivityEvidenceAdapter.legacy(learning);
+        widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
+    if (_evidenceAdapter == null) {
+      _unavailableReason =
+          AssociativeReadingUnavailableReason.currentActivityEvidence;
+      _loading = false;
+      return;
+    }
     if (_associativeLearning == null) {
       _unavailableReason =
           AssociativeReadingUnavailableReason.associativeLearning;
@@ -248,12 +258,25 @@ class _AssociativeReadingSessionScreenState
       setState(() => _saving = false);
       return;
     }
-    if (_currentStage == 3) {
-      for (var i = 0; i < _pendingRecallEvidence.length; i++) {
-        _pendingRecallEvidence[i] = null;
-      }
-    }
     if (finishing) {
+      final sessionId = widget.sessionId;
+      if (sessionId != null) {
+        try {
+          await _learning!.finishSession(sessionId);
+        } catch (_) {
+          if (!mounted) return;
+          setState(() => _saving = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text(
+                'Could not finish the learning session. Try again.',
+              ),
+            ),
+          );
+          return;
+        }
+      }
+      if (!mounted) return;
       setState(() {
         _saving = false;
         _completed = true;
@@ -270,41 +293,63 @@ class _AssociativeReadingSessionScreenState
   // ── Stage 3: Active Recall ─────────────────────────────────────────────────
 
   Future<bool> _submitRecallAnswers() async {
-    final learning = _learning;
     final sessionId = widget.sessionId;
     final wordIds = widget.targetWordIds;
-    if (learning == null || sessionId == null || wordIds == null) return true;
+    if (_learning == null || sessionId == null || wordIds == null) return true;
 
-    final results = <bool?>[];
+    if (!_recallBatchFrozen) {
+      _freezeRecallBatch(sessionId: sessionId, wordIds: wordIds);
+    }
+
     var allSaved = true;
-    for (var i = 0; i < widget.targetWords.length; i++) {
-      final word = widget.targetWords[i];
-      final wordId = wordIds[word];
-      if (wordId == null) {
-        results.add(null);
-        continue;
-      }
-      final typed = _recallControllers[i].text.trim().toLowerCase();
-      final expected = word.trim().toLowerCase();
-      final isCorrect = typed == expected;
-      results.add(isCorrect);
+    for (final pending in _pendingRecallEvidence) {
+      if (pending == null || pending.isCommitted) continue;
       try {
-        final pending = _pendingRecallEvidence[i] ??= await _evidenceAdapter!
-            .prepare(
-              input: CurrentActivityInput.associativeRecall,
-              sessionId: sessionId,
-              wordId: wordId,
-              isCorrect: isCorrect,
-              responseTimeMs: null,
-              attemptNumber: i + 1,
-            );
-        await pending.record(learning);
+        if (pending.requiresRetry) {
+          await pending.retry();
+        } else {
+          await pending.record();
+        }
       } catch (_) {
         allSaved = false;
       }
     }
-    if (mounted) setState(() => _recallResults = results);
     return allSaved;
+  }
+
+  /// Reads every controller and creates every pending command before the
+  /// first provider resolution or local write begins.
+  void _freezeRecallBatch({
+    required String sessionId,
+    required Map<String, String> wordIds,
+  }) {
+    final pending = <PendingCurrentActivityEvidence?>[];
+    final results = <bool?>[];
+    for (var i = 0; i < widget.targetWords.length; i++) {
+      final word = widget.targetWords[i];
+      final wordId = wordIds[word];
+      if (wordId == null) {
+        pending.add(null);
+        results.add(null);
+        continue;
+      }
+      final typed = _recallControllers[i].text.trim().toLowerCase();
+      final isCorrect = typed == word.trim().toLowerCase();
+      results.add(isCorrect);
+      pending.add(
+        _evidenceAdapter!.capture(
+          input: CurrentActivityInput.associativeRecall,
+          sessionId: sessionId,
+          wordId: wordId,
+          isCorrect: isCorrect,
+          responseTimeMs: null,
+          attemptNumber: i + 1,
+        ),
+      );
+    }
+    _pendingRecallEvidence = List.unmodifiable(pending);
+    _recallResults = List.unmodifiable(results);
+    _recallBatchFrozen = true;
   }
 
   // ── Stage 4: Memory Association ────────────────────────────────────────────
@@ -440,12 +485,22 @@ class _AssociativeReadingSessionScreenState
                   if (_saving) const LinearProgressIndicator(),
                   const SizedBox(height: 12),
                   FilledButton(
+                    key:
+                        _pendingRecallEvidence.any(
+                          (pending) => pending?.requiresRetry ?? false,
+                        )
+                        ? const ValueKey<String>('current-evidence-retry')
+                        : null,
                     onPressed: _saving || _completed ? null : _nextStage,
                     style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52),
                     ),
                     child: Text(
-                      _currentStage < 6
+                      _pendingRecallEvidence.any(
+                            (pending) => pending?.requiresRetry ?? false,
+                          )
+                          ? 'Retry Evidence'
+                          : _currentStage < 6
                           ? 'Complete & Continue'
                           : 'Finish Session',
                     ),
@@ -498,6 +553,7 @@ class _AssociativeReadingSessionScreenState
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextField(
                   controller: _recallControllers[i],
+                  enabled: !_saving && !_recallBatchFrozen,
                   decoration: InputDecoration(
                     labelText: 'Word ${i + 1}',
                     hintText: 'Type from memory',
@@ -557,6 +613,7 @@ class _AssociativeReadingSessionScreenState
                     const SizedBox(height: 6),
                     TextField(
                       controller: _cueControllers[i],
+                      enabled: !_saving,
                       decoration: const InputDecoration(
                         hintText: 'Keyword, story, or image...',
                         border: OutlineInputBorder(),
@@ -578,6 +635,7 @@ class _AssociativeReadingSessionScreenState
             const Text('Use one target word in a new sentence.'),
             const SizedBox(height: 12),
             TextField(
+              enabled: !_saving,
               decoration: const InputDecoration(
                 hintText: 'Enter a new sentence',
                 border: OutlineInputBorder(),

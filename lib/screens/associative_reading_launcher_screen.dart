@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
+import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
@@ -43,6 +44,8 @@ class _AssociativeReadingLauncherScreenState
   AssociativeReadingLauncherUnavailableReason? _unavailableReason;
   LearningUseCases? _learning;
   AssociativeLearningPort? _associativeLearning;
+  CurrentActivityEvidenceAdapter? _currentActivityEvidence;
+  bool _starting = false;
 
   @override
   void didChangeDependencies() {
@@ -53,6 +56,7 @@ class _AssociativeReadingLauncherScreenState
     final dependencies = AppDependenciesScope.maybeOf(context);
     final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
     _learning = widget.learning ?? dependencies?.learning;
+    _currentActivityEvidence = dependencies?.currentActivityEvidence;
     _associativeLearning =
         widget.associativeLearning ?? dependencies?.associativeLearning;
 
@@ -174,11 +178,11 @@ class _AssociativeReadingLauncherScreenState
               ),
             ),
             FilledButton(
-              onPressed: () => _start(words),
+              onPressed: _starting ? null : () => _start(words),
               style: FilledButton.styleFrom(
                 minimumSize: const Size.fromHeight(52),
               ),
-              child: const Text('Start reading'),
+              child: Text(_starting ? 'Starting...' : 'Start reading'),
             ),
           ],
         ),
@@ -186,7 +190,8 @@ class _AssociativeReadingLauncherScreenState
     );
   }
 
-  Future<void> _start(List<VocabularyWord> words) {
+  Future<void> _start(List<VocabularyWord> words) async {
+    if (_starting) return;
     final learning = _learning!;
     final associativeLearning = _associativeLearning!;
     final wordIds = <String, String>{
@@ -210,24 +215,40 @@ class _AssociativeReadingLauncherScreenState
     final documentRevision =
         int.parse(documentDigest.substring(0, 13), radix: 16) + 1;
 
-    return AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'learning/associative-reading/session',
-        builder: (_) => AssociativeReadingSessionScreen(
-          cefrLevel: cefrLevel,
-          targetWords: words
-              .map((word) => word.spelling)
-              .toList(growable: false),
-          targetWordIds: Map.unmodifiable(wordIds),
-          passageText: passage,
-          documentId: 'associative-reading:$documentDigest',
-          documentRevision: documentRevision,
-          learning: learning,
-          associativeLearning: associativeLearning,
+    setState(() => _starting = true);
+    try {
+      final sessionId = await learning.startAssociativeReadingSession();
+      if (!mounted) return;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/associative-reading/session',
+          builder: (_) => AssociativeReadingSessionScreen(
+            cefrLevel: cefrLevel,
+            targetWords: words
+                .map((word) => word.spelling)
+                .toList(growable: false),
+            targetWordIds: Map.unmodifiable(wordIds),
+            passageText: passage,
+            documentId: 'associative-reading:$documentDigest',
+            documentRevision: documentRevision,
+            learning: learning,
+            associativeLearning: associativeLearning,
+            sessionId: sessionId,
+            evidenceAdapter: _currentActivityEvidence,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not start associative reading. Try again.'),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _starting = false);
+    }
   }
 }
 

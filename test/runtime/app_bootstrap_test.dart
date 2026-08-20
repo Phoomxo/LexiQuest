@@ -11,9 +11,13 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -25,6 +29,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -200,9 +205,41 @@ void main() {
     );
 
     test(
+      'Shadow without an injected research state fails before entry and DB',
+      () async {
+        var databaseCalls = 0;
+        var entryStateCalls = 0;
+        final bootstrap = AppBootstrap(
+          createDatabase: () {
+            databaseCalls += 1;
+            return _testDatabase();
+          },
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
+            evidenceRollout: 'shadow',
+            answerAttemptWriteVersion: '2',
+            firestoreRulesRevision: answerAttemptV2RulesRevision,
+          ),
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: () async {
+            entryStateCalls += 1;
+            return _MemoryAppEntryStateStore();
+          },
+        );
+
+        await expectLater(bootstrap.initialize(), throwsStateError);
+        expect(databaseCalls, 0);
+        expect(entryStateCalls, 0);
+      },
+    );
+
+    test(
       'valid research configuration reaches policy and sync composition',
       () async {
         final gateway = _BootstrapSyncGateway();
+        final researchState = _BootstrapResearchStateProvider();
         final bootstrap = AppBootstrap(
           createDatabase: _testDatabase,
           initializeFirebase: () async {},
@@ -216,6 +253,7 @@ void main() {
           guestSessionService: _StubGuestSessionService(),
           createEntryStateStore: _createSignedOutEntryState,
           syncGatewayFactory: () => gateway,
+          researchStateProvider: researchState,
         );
 
         final dependencies = await bootstrap.initialize();
@@ -232,6 +270,17 @@ void main() {
             'mode',
             EvidencePolicyRolloutMode.shadow,
           ),
+        );
+        expect(
+          identical(dependencies.learning!.eventContextProvider, researchState),
+          isTrue,
+        );
+        expect(
+          identical(
+            dependencies.currentActivityEvidence!.researchStateProvider,
+            researchState,
+          ),
+          isTrue,
         );
       },
     );
@@ -259,6 +308,36 @@ void main() {
           'mode',
           EvidencePolicyRolloutMode.legacy,
         ),
+      );
+      final adapter = dependencies.currentActivityEvidence!;
+      final repository =
+          dependencies.learning!.repository as DriftLearningRepository;
+      final rollout = adapter.rolloutModeProvider;
+      expect(identical(repository.events.rolloutModeProvider, rollout), isTrue);
+      expect(
+        identical(
+          repository.projections.evidenceDecisions.rolloutModeProvider,
+          rollout,
+        ),
+        isTrue,
+      );
+      expect(
+        identical(
+          store.projections.evidenceDecisions.rolloutModeProvider,
+          rollout,
+        ),
+        isTrue,
+      );
+      expect(
+        identical(
+          dependencies.learning!.eventContextProvider,
+          adapter.researchStateProvider,
+        ),
+        isTrue,
+      );
+      expect(
+        adapter.researchStateProvider,
+        isA<BaselineCurrentActivityResearchStateProvider>(),
       );
     });
 
@@ -1391,6 +1470,61 @@ final class _BootstrapAccountGateway implements AccountGateway {
 
   @override
   Future<void> sendVerification() async {}
+}
+
+final class _BootstrapResearchStateProvider
+    implements CurrentActivityResearchStateProvider {
+  @override
+  Future<CurrentActivityResearchSnapshot> resolveActivity({
+    required String ownerId,
+    required CurrentActivityInput input,
+    required DateTime occurredAtUtc,
+    required EvidencePolicyRolloutMode rolloutMode,
+  }) async => CurrentActivityResearchSnapshot(
+    engagementAllowed: true,
+    consentContext: const ConsentContext(
+      researchConsentVersion: 1,
+      aiConsentGranted: false,
+      voiceConsentGranted: false,
+      socialConsentGranted: false,
+    ),
+    experimentContext: ExperimentContext(
+      experimentId: 'bootstrap-experiment',
+      variantId: 'shadow',
+      assignedAtUtc: occurredAtUtc.subtract(const Duration(minutes: 1)),
+    ),
+    protocolId: 'bootstrap-protocol',
+    protocolVersion: '1.0.0',
+    experimentVersion: 1,
+    assignmentId: 'bootstrap-assignment',
+  );
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async => LearningEventContext(
+    consentContext: const ConsentContext(
+      researchConsentVersion: 1,
+      aiConsentGranted: false,
+      voiceConsentGranted: false,
+      socialConsentGranted: false,
+    ),
+    experimentContext: ExperimentContext(
+      experimentId: evidenceContext.experimentId!,
+      variantId: evidenceContext.cohort!,
+      assignedAtUtc: occurredAtUtc.subtract(const Duration(minutes: 1)),
+    ),
+    protocolId: evidenceContext.protocolId,
+    protocolVersion: evidenceContext.protocolVersion,
+    experimentVersion: evidenceContext.experimentVersion,
+    assignmentId: evidenceContext.assignmentId,
+    featureContractIdentity: FeatureContractIdentity(
+      revision: evidenceContext.featureContractRevision,
+      semanticHash: evidenceContext.featureContractHash,
+    ),
+  );
 }
 
 final class _BootstrapSyncGateway implements SyncGateway {

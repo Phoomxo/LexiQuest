@@ -7,6 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:crypto/crypto.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -59,6 +60,9 @@ void main() {
       localOwners: owners,
       vocabulary: vocabulary,
       learning: learning,
+      currentActivityEvidence: CurrentActivityEvidenceAdapter(
+        learning: learning,
+      ),
       associativeLearning: associativeLearning,
     );
   }
@@ -318,6 +322,13 @@ void main() {
         expect(session.cefrLevel, testCase.expectedCefr);
         expect(session.documentId, 'associative-reading:$digest');
         expect(session.documentRevision, expectedRevision);
+        expect(session.sessionId, isA<String>());
+        final storedSession = await database
+            .select(database.learningSessions)
+            .getSingle();
+        expect(storedSession.id, session.sessionId);
+        expect(storedSession.activityType, 'associativeReading');
+        expect(storedSession.state, 'active');
       } finally {
         await closeHarness(tester);
       }

@@ -4,9 +4,14 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
-import 'drift_learning_event_store.dart';
+import 'drift_learning_event_store.dart'
+    hide
+        ContextEvidencePolicyRolloutModeProvider,
+        EvidencePolicyRolloutModeProvider,
+        FixedEvidencePolicyRolloutModeProvider;
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/evidence_eligibility_policy.dart';
+import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';

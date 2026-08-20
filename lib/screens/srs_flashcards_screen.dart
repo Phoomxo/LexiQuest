@@ -66,23 +66,26 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _voice = widget.voice ?? AppDependenciesScope.maybeOf(context)?.voice;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    _voice = widget.voice ?? dependencies?.voice;
     refreshRouteVoiceSession();
     if (_load != null) return;
     if (_isCompatibilityDeck) {
       _load = Future.value(_compatibilitySession(widget.wordList!));
     } else {
-      _learning =
-          widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning;
+      _learning = widget.learning ?? dependencies?.learning;
       final learning = _learning;
       if (learning != null) {
         _evidenceAdapter =
-            widget.evidenceAdapter ??
-            CurrentActivityEvidenceAdapter.legacy(learning);
+            widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
       }
       _load = learning == null
           ? Future<QuizSession>.error(
               StateError('local learning dependency unavailable'),
+            )
+          : _evidenceAdapter == null
+          ? Future<QuizSession>.error(
+              StateError('current activity evidence dependency unavailable'),
             )
           : learning.startDueReview();
     }
@@ -159,6 +162,23 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Future<void> _rateItem(bool isCorrect) async {
     if (_saving) return;
+    PendingCurrentActivityEvidence? pending;
+    if (!_isCompatibilityDeck) {
+      final existing = _pendingEvidence;
+      if (existing != null) return;
+      final elapsed = DateTime.now().difference(
+        _questionStartedAt ?? DateTime.now(),
+      );
+      pending = _evidenceAdapter!.capture(
+        input: CurrentActivityInput.srsRecall,
+        sessionId: _session!.id,
+        wordId: _currentQuestion.word.id,
+        isCorrect: isCorrect,
+        responseTimeMs: elapsed.inMilliseconds,
+        attemptNumber: _currentIndex + 1,
+      );
+      _pendingEvidence = pending;
+    }
     setState(() => _saving = true);
     try {
       if (_isCompatibilityDeck) {
@@ -166,19 +186,27 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         // SharedPreferences-backed SRS recording is deprecated; no-op here.
         // SRS state for real words is tracked via LearningUseCases + Drift.
       } else {
-        final elapsed = DateTime.now().difference(
-          _questionStartedAt ?? DateTime.now(),
-        );
-        final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
-          input: CurrentActivityInput.srsRecall,
-          sessionId: _session!.id,
-          wordId: _currentQuestion.word.id,
-          isCorrect: isCorrect,
-          responseTimeMs: elapsed.inMilliseconds,
-          attemptNumber: _currentIndex + 1,
-        );
-        await pending.record(_learning!);
+        await pending!.record();
       }
+      if (!mounted) return;
+      await _nextCard();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _retryEvidence() async {
+    final pending = _pendingEvidence;
+    if (pending == null || !pending.requiresRetry || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await pending.retry();
       if (!mounted) return;
       await _nextCard();
     } catch (_) {
@@ -248,6 +276,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Widget _buildCard() {
     final word = _currentQuestion.word;
+    final responseLocked = _pendingEvidence?.isResponseLocked ?? false;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -259,7 +288,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           const SizedBox(height: 12),
           Expanded(
             child: GestureDetector(
-              onTap: _saving ? null : _flipCard,
+              onTap: _saving || responseLocked ? null : _flipCard,
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -292,6 +321,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           const SizedBox(height: 20),
           if (_saving)
             const LinearProgressIndicator()
+          else if (_pendingEvidence?.requiresRetry ?? false)
+            FilledButton(
+              key: const ValueKey<String>('current-evidence-retry'),
+              onPressed: _retryEvidence,
+              child: const Text('Retry saved review'),
+            )
           else if (_isFlipped)
             Row(
               children: [

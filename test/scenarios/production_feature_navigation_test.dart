@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart'
     hide LocalOwner, QuestDefinition, QuestInstance;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
@@ -411,6 +412,13 @@ AppDependencies _dependencies(
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
   final owners = _OwnerRepository();
+  final learning = LearningUseCases(
+    owners: owners,
+    repository: _LearningRepositoryFake(),
+    generateId: () => 'navigation-id',
+    nowUtc: () => DateTime.utc(2026, 8, 11),
+    buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+  );
   return AppDependencies(
     initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
@@ -423,13 +431,8 @@ AppDependencies _dependencies(
     guestSessionService: _GuestSessionService(),
     features: features,
     localOwners: owners,
-    learning: LearningUseCases(
-      owners: owners,
-      repository: _LearningRepositoryFake(),
-      generateId: () => 'navigation-id',
-      nowUtc: () => DateTime.utc(2026, 8, 11),
-      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
-    ),
+    learning: learning,
+    currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
     progress: ProgressUseCases(
       owners: owners,
       queries: DriftProgressQueries(database),

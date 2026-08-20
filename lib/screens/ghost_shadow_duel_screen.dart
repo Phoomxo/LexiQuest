@@ -51,13 +51,18 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     final learning = _learning;
     if (learning != null) {
       _evidenceAdapter =
-          widget.evidenceAdapter ??
-          CurrentActivityEvidenceAdapter.legacy(learning);
+          widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     }
     final loader = widget.progressLoader ?? dependencies?.progress?.load;
     if (loader == null) {
       _load = Future<_DuelData>.error(
         StateError('learning evidence dependency unavailable'),
+      );
+      return;
+    }
+    if (learning != null && _evidenceAdapter == null) {
+      _load = Future<_DuelData>.error(
+        StateError('current activity evidence dependency unavailable'),
       );
       return;
     }
@@ -104,27 +109,49 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   }
 
   Future<void> _submit(_DuelData data) async {
-    if (_saving || _finished) return;
+    if (_saving || _finished || _pendingEvidence != null) return;
     final input = _answer.text.trim().toLowerCase();
     if (input.isEmpty) return;
     final question = data.session.questions[_index];
     final responseMs = _stopwatch.elapsedMilliseconds;
     final correct = input == question.word.spelling.trim().toLowerCase();
+    final pending = _evidenceAdapter!.capture(
+      input: CurrentActivityInput.ghostDuel,
+      sessionId: data.session.id,
+      wordId: question.word.id,
+      isCorrect: correct,
+      responseTimeMs: responseMs,
+      attemptNumber: _index + 1,
+      providerProvenance: 'local:ghost-duel:v1',
+    );
+    _pendingEvidence = pending;
     setState(() => _saving = true);
+    await _commitPending(data, question, pending, retry: false);
+  }
+
+  Future<void> _retryEvidence(_DuelData data) async {
+    final pending = _pendingEvidence;
+    if (pending == null || !pending.requiresRetry || _saving) return;
+    final question = data.session.questions[_index];
+    setState(() => _saving = true);
+    await _commitPending(data, question, pending, retry: true);
+  }
+
+  Future<void> _commitPending(
+    _DuelData data,
+    QuizQuestion question,
+    PendingCurrentActivityEvidence pending, {
+    required bool retry,
+  }) async {
     try {
-      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
-        input: CurrentActivityInput.ghostDuel,
-        sessionId: data.session.id,
-        wordId: question.word.id,
-        isCorrect: correct,
-        responseTimeMs: responseMs,
-        attemptNumber: _index + 1,
-        providerProvenance: 'local:ghost-duel:v1',
-      );
-      await pending.record(_learning!);
+      if (retry) {
+        await pending.retry();
+      } else {
+        await pending.record();
+      }
       final turn = GhostShadowDuelService.evaluateTurn(
-        playerResponseTimeMs: responseMs.toDouble(),
-        isCorrect: correct,
+        playerResponseTimeMs: (pending.responseTimeMs ?? 0).toDouble(),
+        isCorrect: pending.isCorrect,
         snapshot: data.snapshot,
       );
       if (!mounted) return;
@@ -137,11 +164,14 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
           );
           _log.insert(
             0,
-            '${question.word.spelling}: ถูก · $responseMs ms · ${turn.damageDealt} damage',
+            '${question.word.spelling}: ถูก · ${pending.responseTimeMs} ms · ${turn.damageDealt} damage',
           );
         } else {
           _playerHp = (_playerHp - 15).clamp(0, 100);
-          _log.insert(0, '${question.word.spelling}: ผิด · $responseMs ms');
+          _log.insert(
+            0,
+            '${question.word.spelling}: ผิด · ${pending.responseTimeMs} ms',
+          );
         }
         _index += 1;
         _pendingEvidence = null;
@@ -247,7 +277,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                 const SizedBox(height: 12),
                 TextField(
                   controller: _answer,
-                  enabled: !_saving,
+                  enabled: !_saving && _pendingEvidence == null,
                   textInputAction: TextInputAction.done,
                   decoration: const InputDecoration(
                     labelText: 'พิมพ์คำศัพท์ภาษาอังกฤษ',
@@ -258,8 +288,21 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                 SizedBox(
                   height: 48,
                   child: FilledButton(
-                    onPressed: _saving ? null : () => _submit(data),
-                    child: Text(_saving ? 'กำลังบันทึก' : 'ตอบ'),
+                    key: _pendingEvidence?.requiresRetry ?? false
+                        ? const ValueKey<String>('current-evidence-retry')
+                        : null,
+                    onPressed: _saving
+                        ? null
+                        : _pendingEvidence?.requiresRetry ?? false
+                        ? () => _retryEvidence(data)
+                        : () => _submit(data),
+                    child: Text(
+                      _saving
+                          ? 'กำลังบันทึก'
+                          : _pendingEvidence?.requiresRetry ?? false
+                          ? 'ลองบันทึกคำตอบอีกครั้ง'
+                          : 'ตอบ',
+                    ),
                   ),
                 ),
               ] else

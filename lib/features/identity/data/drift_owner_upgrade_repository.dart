@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
+import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';

@@ -108,4 +108,98 @@ void main() {
     expect(dependencies, contains('required this.quest'));
     expect(dependencies, contains('final QuestUseCases quest;'));
   });
+
+  test(
+    'current evidence rollout has one domain authority and one composition root',
+    () {
+      const authorityPath =
+          'lib/features/learning/domain/evidence_policy_rollout.dart';
+      final authority = _read(authorityPath);
+      final eventStore = _read(
+        'lib/features/learning/data/drift_learning_event_store.dart',
+      );
+      final activity = _read(
+        'lib/features/learning/application/current_activity_evidence.dart',
+      );
+      final bootstrap = _read('lib/runtime/app_bootstrap.dart');
+      final dependencies = _read('lib/runtime/app_dependencies.dart');
+
+      expect(
+        authority,
+        contains('abstract interface class EvidencePolicyRolloutModeProvider'),
+      );
+      expect(
+        eventStore,
+        contains("export '../domain/evidence_policy_rollout.dart';"),
+      );
+      expect(
+        eventStore,
+        isNot(
+          contains(
+            'abstract interface class EvidencePolicyRolloutModeProvider',
+          ),
+        ),
+      );
+      expect(activity, isNot(contains('CurrentActivityRolloutProvider')));
+      expect(activity, contains('EvidencePolicyRolloutModeProvider'));
+      expect(bootstrap, contains('final evidenceRolloutModeProvider ='));
+      expect(
+        RegExp(
+          r'rolloutModeProvider:\s*evidenceRolloutModeProvider',
+        ).allMatches(bootstrap).length,
+        5,
+      );
+      expect(
+        dependencies,
+        contains(
+          'final CurrentActivityEvidenceAdapter? currentActivityEvidence;',
+        ),
+      );
+
+      const productionConsumers = <String>[
+        'lib/features/learning/data/drift_learning_event_store.dart',
+        'lib/features/learning/data/drift_learning_repository.dart',
+        'lib/features/learning/data/drift_learning_projection_rebuilder.dart',
+        'lib/features/learning/application/learning_side_effect_reconciler.dart',
+        'lib/features/identity/data/drift_owner_upgrade_repository.dart',
+        'lib/features/sync/data/drift_sync_store.dart',
+        'lib/features/learning/application/current_activity_evidence.dart',
+        'lib/runtime/app_bootstrap.dart',
+      ];
+      for (final path in productionConsumers) {
+        expect(
+          _read(path),
+          contains('evidence_policy_rollout.dart'),
+          reason: '$path must import the canonical domain authority',
+        );
+      }
+    },
+  );
+
+  test(
+    'learning screens resolve the composed adapter and never create Legacy',
+    () {
+      const screens = <String>[
+        'lib/screens/quiz_screen.dart',
+        'lib/screens/srs_flashcards_screen.dart',
+        'lib/screens/associative_reading_session_screen.dart',
+        'lib/screens/ghost_shadow_duel_screen.dart',
+        'lib/screens/speak_to_text_screen.dart',
+        'lib/screens/shadowing_challenge_screen.dart',
+      ];
+      for (final path in screens) {
+        final source = _read(path);
+        expect(
+          source,
+          contains('currentActivityEvidence'),
+          reason: '$path must resolve the bootstrap-owned adapter',
+        );
+        expect(
+          source,
+          isNot(contains('CurrentActivityEvidenceAdapter.legacy(')),
+          reason: '$path must not create a separate Legacy authority',
+        );
+      }
+    },
+  );
 }

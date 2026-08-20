@@ -1,7 +1,12 @@
 import '../../../data/local/app_database.dart';
 import '../../events/domain/event_envelope_v2.dart';
-import '../data/drift_learning_event_store.dart';
+import '../data/drift_learning_event_store.dart'
+    hide
+        ContextEvidencePolicyRolloutModeProvider,
+        EvidencePolicyRolloutModeProvider,
+        FixedEvidencePolicyRolloutModeProvider;
 import '../domain/evidence_eligibility_policy.dart';
+import '../domain/evidence_policy_rollout.dart';
 
 final class LearningProjectionResult {
   const LearningProjectionResult.applied({

@@ -1,8 +1,13 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
-import 'drift_learning_event_store.dart';
+import 'drift_learning_event_store.dart'
+    hide
+        ContextEvidencePolicyRolloutModeProvider,
+        EvidencePolicyRolloutModeProvider,
+        FixedEvidencePolicyRolloutModeProvider;
 import '../domain/evidence_eligibility_policy.dart';
+import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_models.dart';
 import '../domain/srs_policy.dart';
 

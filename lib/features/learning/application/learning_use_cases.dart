@@ -13,6 +13,60 @@ typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
 
+/// Immutable response semantics captured by the UI before any provider wait.
+final class FrozenLearningEvidenceCommand {
+  const FrozenLearningEvidenceCommand({
+    required this.sourceEvidenceId,
+    required this.occurredAtUtc,
+    required this.sessionId,
+    required this.wordId,
+    required this.promptMode,
+    required this.isCorrect,
+    required this.responseTimeMs,
+    required this.attemptNumber,
+    required this.providerProvenance,
+  });
+
+  final String sourceEvidenceId;
+  final DateTime occurredAtUtc;
+  final String sessionId;
+  final String wordId;
+  final String promptMode;
+  final bool isCorrect;
+  final int? responseTimeMs;
+  final int attemptNumber;
+  final String? providerProvenance;
+}
+
+final class ResolvedLearningEvidenceContexts {
+  const ResolvedLearningEvidenceContexts({
+    required this.evidenceContext,
+    required this.eventContext,
+  });
+
+  final EvidenceContext evidenceContext;
+  final LearningEventContext eventContext;
+}
+
+typedef LearningEvidenceContextsResolver =
+    Future<ResolvedLearningEvidenceContexts> Function({
+      required String ownerId,
+      required FrozenLearningEvidenceCommand command,
+    });
+
+/// Owner-bound evidence ready for replay/write without another owner lookup.
+final class ResolvedLearningEvidenceRecord {
+  const ResolvedLearningEvidenceRecord({
+    required this.ownerId,
+    required this.command,
+    required this.contexts,
+  });
+
+  final String ownerId;
+  final FrozenLearningEvidenceCommand command;
+  final ResolvedLearningEvidenceContexts contexts;
+}
+
 final class LearningUseCases {
   LearningUseCases({
     required this.owners,
@@ -151,6 +205,68 @@ final class LearningUseCases {
     );
   }
 
+  Future<String> startAssociativeReadingSession() async {
+    final owner = await owners.getOrCreateActiveOwner();
+    final startedAtUtc = _now();
+    final sessionId = 'session:${_nextId()}';
+    await repository.startSession(
+      LearningSessionDraft(
+        id: sessionId,
+        ownerId: owner.id,
+        activityType: 'associativeReading',
+        startedAtUtc: startedAtUtc,
+        appVersion: buildInfo.version,
+        buildId: buildInfo.buildId,
+      ),
+    );
+    return sessionId;
+  }
+
+  /// Resolves the active owner once, then gives that exact owner and the
+  /// already-frozen response command to the context resolver.
+  Future<ResolvedLearningEvidenceRecord> resolveEvidenceForRecording({
+    required FrozenLearningEvidenceCommand command,
+    required LearningEvidenceContextsResolver resolveContexts,
+  }) async {
+    final canonical = _canonicalEvidenceCommand(command);
+    final owner = await owners.getOrCreateActiveOwner();
+    final ownerId = _requiredId(owner.id, 'ownerId');
+    final contexts = await resolveContexts(
+      ownerId: ownerId,
+      command: canonical,
+    );
+    contexts.evidenceContext.validate();
+    contexts.eventContext.validateAgainst(
+      evidenceContext: contexts.evidenceContext,
+      occurredAtUtc: canonical.occurredAtUtc,
+    );
+    return ResolvedLearningEvidenceRecord(
+      ownerId: ownerId,
+      command: canonical,
+      contexts: contexts,
+    );
+  }
+
+  /// Replays/writes an owner-bound record without re-reading active-owner
+  /// state. This keeps provider snapshot and canonical write on one owner.
+  Future<AnswerRecordResult> recordResolvedEvidence(
+    ResolvedLearningEvidenceRecord resolved,
+  ) {
+    final ownerId = _requiredId(resolved.ownerId, 'ownerId');
+    final command = _canonicalEvidenceCommand(resolved.command);
+    resolved.contexts.evidenceContext.validate();
+    resolved.contexts.eventContext.validateAgainst(
+      evidenceContext: resolved.contexts.evidenceContext,
+      occurredAtUtc: command.occurredAtUtc,
+    );
+    return _recordCanonicalEvidence(
+      ownerId: ownerId,
+      command: command,
+      evidenceContext: resolved.contexts.evidenceContext,
+      resolvedEventContext: resolved.contexts.eventContext,
+    );
+  }
+
   Future<AnswerRecordResult> recordEvidence({
     required String sourceEvidenceId,
     required DateTime occurredAtUtc,
@@ -163,25 +279,46 @@ final class LearningUseCases {
     required EvidenceContext evidenceContext,
     String? providerProvenance,
   }) async {
-    final canonicalEvidenceId = _stableEvidenceId(sourceEvidenceId);
-    final canonicalOccurredAtUtc = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+    final command = _canonicalEvidenceCommand(
+      FrozenLearningEvidenceCommand(
+        sourceEvidenceId: sourceEvidenceId,
+        occurredAtUtc: occurredAtUtc,
+        sessionId: sessionId,
+        wordId: wordId,
+        promptMode: promptMode,
+        isCorrect: isCorrect,
+        responseTimeMs: responseTimeMs,
+        attemptNumber: attemptNumber,
+        providerProvenance: providerProvenance,
+      ),
+    );
     evidenceContext.validate();
-    final canonicalSessionId = _requiredId(sessionId, 'sessionId');
-    final canonicalWordId = _requiredId(wordId, 'wordId');
-    final canonicalPromptMode = _requiredId(promptMode, 'promptMode');
     final owner = await owners.getOrCreateActiveOwner();
-    final candidate = RecordAnswerCandidate(
-      id: canonicalEvidenceId,
-      ownerId: owner.id,
-      sessionId: canonicalSessionId,
-      wordId: canonicalWordId,
-      promptMode: canonicalPromptMode,
-      isCorrect: isCorrect,
-      responseTimeMs: responseTimeMs,
-      attemptNumber: attemptNumber,
-      occurredAtUtc: canonicalOccurredAtUtc,
+    return _recordCanonicalEvidence(
+      ownerId: _requiredId(owner.id, 'ownerId'),
+      command: command,
       evidenceContext: evidenceContext,
-      providerProvenance: providerProvenance,
+    );
+  }
+
+  Future<AnswerRecordResult> _recordCanonicalEvidence({
+    required String ownerId,
+    required FrozenLearningEvidenceCommand command,
+    required EvidenceContext evidenceContext,
+    LearningEventContext? resolvedEventContext,
+  }) async {
+    final candidate = RecordAnswerCandidate(
+      id: command.sourceEvidenceId,
+      ownerId: ownerId,
+      sessionId: command.sessionId,
+      wordId: command.wordId,
+      promptMode: command.promptMode,
+      isCorrect: command.isCorrect,
+      responseTimeMs: command.responseTimeMs,
+      attemptNumber: command.attemptNumber,
+      occurredAtUtc: command.occurredAtUtc,
+      evidenceContext: evidenceContext,
+      providerProvenance: command.providerProvenance,
     );
     final replayRepository = repository;
     final replay = replayRepository is LearningEvidenceReplayRepository
@@ -194,40 +331,42 @@ final class LearningUseCases {
       durableEvent = replay.event;
       result = replay.result;
     } else {
-      final learningEventContext = await eventContextProvider.resolve(
-        ownerId: owner.id,
-        occurredAtUtc: canonicalOccurredAtUtc,
-        evidenceContext: evidenceContext,
-      );
+      final learningEventContext =
+          resolvedEventContext ??
+          await eventContextProvider.resolve(
+            ownerId: ownerId,
+            occurredAtUtc: command.occurredAtUtc,
+            evidenceContext: evidenceContext,
+          );
       learningEventContext.validateAgainst(
         evidenceContext: evidenceContext,
-        occurredAtUtc: canonicalOccurredAtUtc,
+        occurredAtUtc: command.occurredAtUtc,
       );
       durableEvent = eventAdapter.adaptFromCommand(
-        sourceEvidenceId: canonicalEvidenceId,
-        ownerId: owner.id,
-        sessionId: canonicalSessionId,
-        wordId: canonicalWordId,
-        promptMode: canonicalPromptMode,
-        isCorrect: isCorrect,
-        attemptNumber: attemptNumber,
-        occurredAtUtc: canonicalOccurredAtUtc,
+        sourceEvidenceId: command.sourceEvidenceId,
+        ownerId: ownerId,
+        sessionId: command.sessionId,
+        wordId: command.wordId,
+        promptMode: command.promptMode,
+        isCorrect: command.isCorrect,
+        attemptNumber: command.attemptNumber,
+        occurredAtUtc: command.occurredAtUtc,
         evidenceContext: evidenceContext,
         learningEventContext: learningEventContext,
       );
       result = await repository.recordAnswer(
         RecordAnswerCommand(
-          id: canonicalEvidenceId,
-          ownerId: owner.id,
-          sessionId: canonicalSessionId,
-          wordId: canonicalWordId,
-          promptMode: canonicalPromptMode,
-          isCorrect: isCorrect,
-          responseTimeMs: responseTimeMs,
-          attemptNumber: attemptNumber,
-          occurredAtUtc: canonicalOccurredAtUtc,
+          id: command.sourceEvidenceId,
+          ownerId: ownerId,
+          sessionId: command.sessionId,
+          wordId: command.wordId,
+          promptMode: command.promptMode,
+          isCorrect: command.isCorrect,
+          responseTimeMs: command.responseTimeMs,
+          attemptNumber: command.attemptNumber,
+          occurredAtUtc: command.occurredAtUtc,
           evidenceContext: evidenceContext,
-          providerProvenance: providerProvenance,
+          providerProvenance: command.providerProvenance,
           event: durableEvent,
         ),
       );
@@ -247,7 +386,7 @@ final class LearningUseCases {
 
     // Persistence is the durable handoff. Without an injected scheduler,
     // startup reconciliation owns replay and no side effect runs inline.
-    onSideEffectsPending?.call(owner.id);
+    onSideEffectsPending?.call(ownerId);
 
     return result;
   }
@@ -394,6 +533,22 @@ final class LearningUseCases {
       throw ArgumentError.value(value, field, 'must be UTC');
     }
     return value;
+  }
+
+  FrozenLearningEvidenceCommand _canonicalEvidenceCommand(
+    FrozenLearningEvidenceCommand command,
+  ) {
+    return FrozenLearningEvidenceCommand(
+      sourceEvidenceId: _stableEvidenceId(command.sourceEvidenceId),
+      occurredAtUtc: _requiredUtc(command.occurredAtUtc, 'occurredAtUtc'),
+      sessionId: _requiredId(command.sessionId, 'sessionId'),
+      wordId: _requiredId(command.wordId, 'wordId'),
+      promptMode: _requiredId(command.promptMode, 'promptMode'),
+      isCorrect: command.isCorrect,
+      responseTimeMs: command.responseTimeMs,
+      attemptNumber: command.attemptNumber,
+      providerProvenance: command.providerProvenance,
+    );
   }
 
   String _stableEvidenceId(String value) {

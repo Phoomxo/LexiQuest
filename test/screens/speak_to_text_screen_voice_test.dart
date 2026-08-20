@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -495,6 +496,7 @@ void main() {
             ),
             speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
             learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
             sessionId: idCase.sessionId,
             wordId: idCase.wordId,
           ),
@@ -539,6 +541,7 @@ void main() {
           voice: voice,
           speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
           learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
           sessionId: 'session-1',
           wordId: 'word-1',
         ),
@@ -548,7 +551,10 @@ void main() {
     final listen = find.byKey(const ValueKey('speech-listen-button'));
     await tester.tap(listen);
     await tester.pumpAndSettle();
-    await tester.tap(listen);
+    expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+    );
     await tester.pumpAndSettle();
 
     expect(repository.commands, hasLength(2));
@@ -559,6 +565,45 @@ void main() {
     expect(retry.responseTimeMs, first.responseTimeMs);
     expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
     expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
+  });
+
+  testWidgets('one utterance epoch accepts only its first final transcript', (
+    tester,
+  ) async {
+    final repository = _CountingLearningRepository();
+    final learning = LearningUseCases(
+      owners: _LearningOwnerRepository(),
+      repository: repository,
+      generateId: () => 'speech-first-final',
+      nowUtc: () => DateTime.utc(2026, 8, 11),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+    final voice = VoiceUseCases(
+      provider: FakeVoiceProvider(),
+      disposeProvider: () async {},
+    );
+    addTearDown(voice.dispose);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: SpeakToTextScreen(
+          correctWord: 'cat',
+          voice: voice,
+          speechPractice: SpeechPracticeUseCases(
+            _EvidenceSpeechGateway(duplicateFinal: true),
+          ),
+          learning: learning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          sessionId: 'session-1',
+          wordId: 'word-1',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+    await tester.pumpAndSettle();
+
+    expect(repository.commands, hasLength(1));
   });
 }
 
@@ -661,6 +706,10 @@ final class _CountingLearningRepository implements LearningRepository {
 }
 
 final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
+  _EvidenceSpeechGateway({this.duplicateFinal = false});
+
+  final bool duplicateFinal;
+
   @override
   bool isListening = false;
 
@@ -685,15 +734,15 @@ final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
     required SpeechEventCallback onEvent,
   }) async {
     isListening = true;
-    onEvent(
-      SpeechRecognitionEvent(
-        transcript: 'cat',
-        isFinal: true,
-        recognizedAtUtc: DateTime.utc(2026, 8, 11),
-        engine: 'device-stt',
-        locale: locale,
-      ),
+    final event = SpeechRecognitionEvent(
+      transcript: 'cat',
+      isFinal: true,
+      recognizedAtUtc: DateTime.utc(2026, 8, 11),
+      engine: 'device-stt',
+      locale: locale,
     );
+    onEvent(event);
+    if (duplicateFinal) onEvent(event);
     isListening = false;
   }
 

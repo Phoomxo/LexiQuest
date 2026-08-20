@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -49,6 +50,7 @@ void main() {
       AssociativeLearningPort? port,
       LearningUseCases? learningUseCases,
     }) {
+      final resolvedLearning = learningUseCases ?? learning;
       return MaterialApp(
         home: AssociativeReadingSessionScreen(
           cefrLevel: 'B2',
@@ -56,7 +58,10 @@ void main() {
           targetWordIds: targetWordIds,
           passageText:
               'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
-          learning: learningUseCases ?? learning,
+          learning: resolvedLearning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(
+            learning: resolvedLearning,
+          ),
           associativeLearning: port ?? associativeLearning,
         ),
       );
@@ -196,6 +201,9 @@ void main() {
               targetWords: const ['banana'],
               passageText: 'The banana is yellow.',
               learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
             ),
           ),
         );
@@ -229,6 +237,9 @@ void main() {
             targetWordIds: const {'banana': 'word-banana'},
             passageText: 'The banana is yellow.',
             learning: retryLearning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(
+              learning: retryLearning,
+            ),
             associativeLearning: associativeLearning,
             sessionId: 'session-1',
           ),
@@ -251,7 +262,9 @@ void main() {
         tester.element(find.byType(AssociativeReadingSessionScreen)),
       ).removeCurrentSnackBar();
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Complete & Continue'));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('current-evidence-retry')),
+      );
       await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
 
       expect(repository.commands, hasLength(2));
@@ -266,6 +279,91 @@ void main() {
       );
       expect(retry.evidenceContext.skillId, 'associative-recall');
     });
+
+    testWidgets(
+      'Stage 3 freezes the whole batch and retries only incomplete evidence',
+      (tester) async {
+        final repository = _PartialBatchLearningRepository();
+        var nextId = 0;
+        final batchLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'batch-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 14, 11, 0, nextId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        );
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: 'A2',
+              targetWords: const ['banana', 'apple'],
+              targetWordIds: const {
+                'banana': 'word-banana',
+                'apple': 'word-apple',
+              },
+              passageText: 'Banana and apple.',
+              learning: batchLearning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: batchLearning,
+              ),
+              associativeLearning: associativeLearning,
+              sessionId: 'session-1',
+            ),
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 3; stage++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+        await tester.enterText(find.byType(TextField).at(0), 'banana');
+        await tester.enterText(find.byType(TextField).at(1), 'wrong');
+
+        await tester.tap(find.text('Complete & Continue'));
+        await tester.pumpAndSettle();
+        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(
+          tester
+              .widgetList<TextField>(find.byType(TextField))
+              .every((field) => field.enabled == false),
+          isTrue,
+        );
+        final fields = tester
+            .widgetList<TextField>(find.byType(TextField))
+            .toList();
+        fields[0].controller!.text = 'mutated-after-capture';
+        fields[1].controller!.text = 'apple';
+        ScaffoldMessenger.of(
+          tester.element(find.byType(AssociativeReadingSessionScreen)),
+        ).removeCurrentSnackBar();
+        await tester.pumpAndSettle();
+
+        await tester.tap(
+          find.byKey(const ValueKey<String>('current-evidence-retry')),
+        );
+        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+
+        expect(repository.commands, hasLength(3));
+        final banana = repository.commands.where(
+          (command) => command.wordId == 'word-banana',
+        );
+        final apple = repository.commands
+            .where((command) => command.wordId == 'word-apple')
+            .toList();
+        expect(banana, hasLength(1));
+        expect(apple, hasLength(2));
+        expect(apple.last.id, apple.first.id);
+        expect(apple.last.occurredAtUtc, apple.first.occurredAtUtc);
+        expect(apple.last.isCorrect, isFalse);
+        expect(
+          apple.last.evidenceContext.toJson(),
+          apple.first.evidenceContext.toJson(),
+        );
+      },
+    );
   });
 }
 
@@ -299,6 +397,42 @@ final class _RetryLearningRepository implements LearningRepository {
     if (!_recordFailed) {
       _recordFailed = true;
       throw StateError('simulated local failure');
+    }
+    return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _PartialBatchLearningRepository implements LearningRepository {
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+  bool _appleFailed = false;
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) async => null;
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) async => ReadingProgressSnapshot(
+    documentId: command.documentId,
+    documentRevision: command.documentRevision,
+    lastPosition: command.position,
+    isCompleted: command.isCompleted,
+    updatedAtUtc: command.occurredAtUtc,
+  );
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    commands.add(command);
+    if (command.wordId == 'word-apple' && !_appleFailed) {
+      _appleFailed = true;
+      throw StateError('simulated second-item failure');
     }
     return const AnswerRecordResult(inserted: true, srs: null);
   }

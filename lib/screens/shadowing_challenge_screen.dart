@@ -48,6 +48,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   bool _evidenceSaved = false;
   bool _listenPending = false;
   int _listenEpoch = 0;
+  int? _acceptedFinalEpoch;
   bool _listening = false;
   String _transcript = '';
   String? _error;
@@ -107,8 +108,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final learning = _learning;
     if (learning != null) {
       _evidenceAdapter =
-          widget.evidenceAdapter ??
-          CurrentActivityEvidenceAdapter.legacy(learning);
+          widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
+      if (_evidenceAdapter == null) {
+        throw StateError('current activity evidence dependency unavailable');
+      }
     }
     if (routeIsCurrent &&
         speech != null &&
@@ -172,7 +175,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_listenPending) return;
+    if (_listenPending || _pendingEvidence != null) return;
     if (_listening) {
       _listenEpoch += 1;
       _listenPending = false;
@@ -193,6 +196,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     }
     final activeSession = session;
     final epoch = ++_listenEpoch;
+    _acceptedFinalEpoch = null;
     _listenPending = true;
     setState(() {
       _error = null;
@@ -204,6 +208,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         locale: 'en-US',
         onEvent: (event) {
           if (!mounted || epoch != _listenEpoch) return;
+          if (event.isFinal) {
+            if (_acceptedFinalEpoch == epoch) return;
+            _acceptedFinalEpoch = epoch;
+          }
           final reference = _referenceSentence;
           if (reference == null) return;
           final assessment = speech.assess(target: reference, event: event);
@@ -258,20 +266,42 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     _evidenceSaved = true;
+    final pending = _pendingEvidence ??= _evidenceAdapter!.capture(
+      input: CurrentActivityInput.shadowing,
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: assessment.similarityPercent >= 80,
+      responseTimeMs: null,
+      attemptNumber: 1,
+      providerProvenance:
+          '${event.engine}|${event.locale}|${assessment.method}',
+    );
+    if (mounted) setState(() {});
     try {
-      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
-        input: CurrentActivityInput.shadowing,
-        sessionId: sessionId,
-        wordId: wordId,
-        isCorrect: assessment.similarityPercent >= 80,
-        responseTimeMs: null,
-        attemptNumber: 1,
-        providerProvenance:
-            '${event.engine}|${event.locale}|${assessment.method}',
-      );
-      await pending.record(learning);
+      await pending.record();
       await learning.finishSession(sessionId);
       _pendingEvidence = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      _evidenceSaved = false;
+      if (mounted) {
+        setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
+      }
+    }
+  }
+
+  Future<void> _retryEvidence() async {
+    final pending = _pendingEvidence;
+    final learning = _learning;
+    final sessionId = _sessionId;
+    if (pending == null || learning == null || sessionId == null) return;
+    setState(() => _error = null);
+    try {
+      if (pending.requiresRetry) await pending.retry();
+      await learning.finishSession(sessionId);
+      _evidenceSaved = true;
+      _pendingEvidence = null;
+      if (mounted) setState(() {});
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
@@ -346,12 +376,23 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
             const SizedBox(height: 12),
             FilledButton.icon(
               key: const ValueKey<String>('shadowing-listen-button'),
-              onPressed: reference == null || _listenPending
+              onPressed:
+                  reference == null ||
+                      _listenPending ||
+                      _pendingEvidence != null
                   ? null
                   : _toggleListening,
               icon: Icon(_listening ? Icons.stop : Icons.mic),
               label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
             ),
+            if (_pendingEvidence?.requiresRetry ?? false) ...[
+              const SizedBox(height: 12),
+              FilledButton(
+                key: const ValueKey<String>('current-evidence-retry'),
+                onPressed: _retryEvidence,
+                child: const Text('Retry saved pronunciation'),
+              ),
+            ],
             if (_transcript.isNotEmpty) ...[
               const SizedBox(height: 20),
               Card(

@@ -49,6 +49,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   bool _initialPlaybackScheduled = false;
   bool _listenPending = false;
   int _listenEpoch = 0;
+  int? _acceptedFinalEpoch;
   bool _listening = false;
   String _transcript = '';
   String? _error;
@@ -103,8 +104,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final learning = _learning;
     if (learning != null) {
       _evidenceAdapter =
-          widget.evidenceAdapter ??
-          CurrentActivityEvidenceAdapter.legacy(learning);
+          widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
+      if (_evidenceAdapter == null) {
+        throw StateError('current activity evidence dependency unavailable');
+      }
     }
     if (routeIsCurrent &&
         speech != null &&
@@ -144,7 +147,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _startListening() async {
-    if (_listenPending) return;
+    if (_listenPending || _pendingEvidence != null) return;
     final speech = _speech;
     var session = _speechSession;
     if (speech == null) {
@@ -158,6 +161,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     }
     final activeSession = session;
     final epoch = ++_listenEpoch;
+    _acceptedFinalEpoch = null;
     _listenPending = true;
     setState(() {
       _error = null;
@@ -201,6 +205,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
 
   void _onSpeechEvent(SpeechRecognitionEvent event, int epoch) {
     if (!mounted || epoch != _listenEpoch) return;
+    if (event.isFinal) {
+      if (_acceptedFinalEpoch == epoch) return;
+      _acceptedFinalEpoch = epoch;
+    }
     final assessment = _speech!.assess(
       target: widget.correctWord,
       event: event,
@@ -223,19 +231,36 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final elapsed = _startedAtUtc == null
         ? null
         : DateTime.now().toUtc().difference(_startedAtUtc!).inMilliseconds;
+    final pending = _pendingEvidence ??= _evidenceAdapter!.capture(
+      input: CurrentActivityInput.speakToText,
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: assessment.isExactMatch,
+      responseTimeMs: elapsed,
+      attemptNumber: widget.attemptNumber,
+      providerProvenance:
+          '${assessment.engine}|${assessment.locale}|${assessment.method}',
+    );
+    if (mounted) setState(() {});
     try {
-      final pending = _pendingEvidence ??= await _evidenceAdapter!.prepare(
-        input: CurrentActivityInput.speakToText,
-        sessionId: sessionId,
-        wordId: wordId,
-        isCorrect: assessment.isExactMatch,
-        responseTimeMs: elapsed,
-        attemptNumber: widget.attemptNumber,
-        providerProvenance:
-            '${assessment.engine}|${assessment.locale}|${assessment.method}',
-      );
-      await pending.record(learning);
+      await pending.record();
       _pendingEvidence = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+      }
+    }
+  }
+
+  Future<void> _retryEvidence() async {
+    final pending = _pendingEvidence;
+    if (pending == null || !pending.requiresRetry) return;
+    setState(() => _error = null);
+    try {
+      await pending.retry();
+      _pendingEvidence = null;
+      if (mounted) setState(() {});
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');
@@ -367,12 +392,20 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
             const SizedBox(height: 24),
             FilledButton.icon(
               key: const ValueKey<String>('speech-listen-button'),
-              onPressed: _listenPending
+              onPressed: _listenPending || _pendingEvidence != null
                   ? null
                   : (_listening ? _stopListening : _startListening),
               icon: Icon(_listening ? Icons.stop : Icons.mic),
               label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
             ),
+            if (_pendingEvidence?.requiresRetry ?? false) ...[
+              const SizedBox(height: 12),
+              FilledButton(
+                key: const ValueKey<String>('current-evidence-retry'),
+                onPressed: _retryEvidence,
+                child: const Text('Retry saved pronunciation'),
+              ),
+            ],
             const SizedBox(height: 12),
             OutlinedButton(
               onPressed: assessment?.isExactMatch == true
