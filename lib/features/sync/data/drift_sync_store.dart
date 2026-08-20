@@ -723,6 +723,9 @@ final class DriftSyncStore implements SyncStore {
         'must identify the claimed entity',
       );
     }
+    if (cloudEntity.collection == SyncCollection.attempts) {
+      _attemptEvidenceContext(cloudEntity);
+    }
 
     return database.transaction(() async {
       final fenced = await database.customUpdate(
@@ -877,6 +880,13 @@ final class DriftSyncStore implements SyncStore {
       'ownerGateToken',
     );
     _requireUtc(effectiveNowUtc, 'nowUtc');
+    if (collection == SyncCollection.attempts) {
+      for (final entity in page.changes) {
+        if (entity.collection == SyncCollection.attempts) {
+          _attemptEvidenceContext(entity);
+        }
+      }
+    }
     if (standaloneToken != null &&
         !await DriftOwnerOperationGate(database).tryAcquire(
           token: standaloneToken,
@@ -1176,8 +1186,9 @@ final class DriftSyncStore implements SyncStore {
         if (attempt == null) {
           throw StateError('outbox attempt was not found');
         }
-        final payloadVersion = payloadRollout.writeVersionFor(
-          SyncCollection.attempts,
+        final payloadVersion = _attemptPayloadVersionFor(
+          attempt,
+          payloadRollout,
         );
         return PushMutation(
           operationId: operation.operationId,
@@ -1426,9 +1437,7 @@ final class DriftSyncStore implements SyncStore {
                 .getSingle();
         return _attemptPayload(
           attempt,
-          payloadVersion: payloadRollout.writeVersionFor(
-            SyncCollection.attempts,
-          ),
+          payloadVersion: _attemptPayloadVersionFor(attempt, payloadRollout),
         );
       case 'readingEvent':
         final event =
@@ -1560,6 +1569,7 @@ final class DriftSyncStore implements SyncStore {
 
   Future<void> _applyAttempt(String ownerId, SyncEntity entity) async {
     _requireImmutableEntity(entity, SyncCollection.attempts);
+    final evidenceContext = _attemptEvidenceContext(entity);
     final existing =
         await (database.select(database.answerAttempts)..where(
               (row) =>
@@ -1592,7 +1602,6 @@ final class DriftSyncStore implements SyncStore {
     final attemptNumber = _requiredInt(payload, 'attemptNumber');
     final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
     final providerProvenance = _optionalString(payload, 'providerProvenance');
-    final evidenceContext = _attemptEvidenceContext(entity);
     final evidenceContextJson = jsonEncode(evidenceContext.toJson());
     if (!LearningEvidenceContract.validAttempt(
       id: entity.entityId,
@@ -2207,13 +2216,38 @@ Map<String, Object?> _attemptPayload(
           EvidenceClassificationSource.legacyInferred) {
         throw const InvalidSyncPayloadFailure();
       }
-      return payload;
+      break;
     case 2:
+      if (context.classificationSource !=
+          EvidenceClassificationSource.declared) {
+        throw const InvalidSyncPayloadFailure();
+      }
       payload['evidenceClass'] = context.evidenceClass.name;
       payload['evidenceContext'] = context.toJson();
-      return payload;
+      break;
     default:
       throw const UnsupportedSyncSchemaFailure();
+  }
+  AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+    payloadVersion: payloadVersion,
+    payload: payload,
+  );
+  return payload;
+}
+
+int _attemptPayloadVersionFor(
+  db.AnswerAttempt attempt,
+  SyncPayloadRollout payloadRollout,
+) {
+  final context = _storedAttemptEvidenceContext(attempt);
+  switch (context.classificationSource) {
+    case EvidenceClassificationSource.legacyInferred:
+      return 1;
+    case EvidenceClassificationSource.declared:
+      if (payloadRollout.writeVersionFor(SyncCollection.attempts) < 2) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return 2;
   }
 }
 
@@ -2232,64 +2266,11 @@ EvidenceContext _storedAttemptEvidenceContext(db.AnswerAttempt attempt) {
 }
 
 EvidenceContext _attemptEvidenceContext(SyncEntity entity) {
-  switch (entity.payloadVersion) {
-    case 1:
-      if (!_hasExactKeys(entity.payload, _attemptPayloadV1Keys)) {
-        throw const InvalidSyncPayloadFailure();
-      }
-      return EvidenceContext.legacyCompatibility(
-        evidenceClass: EvidenceClass.independentRecall,
-        skillId: 'legacy-unspecified',
-        hintLevel: 0,
-        contentRevision: 'legacy-unknown',
-        engagementAllowed: true,
-      );
-    case 2:
-      if (!_hasExactKeys(entity.payload, _attemptPayloadV2Keys)) {
-        throw const InvalidSyncPayloadFailure();
-      }
-      final topLevelClass = entity.payload['evidenceClass'];
-      final serializedContext = entity.payload['evidenceContext'];
-      if (topLevelClass is! String || serializedContext is! Map) {
-        throw const InvalidSyncPayloadFailure();
-      }
-      try {
-        final context = EvidenceContext.fromJson(
-          serializedContext.cast<String, Object?>(),
-        );
-        if (topLevelClass != context.evidenceClass.name) {
-          throw const InvalidSyncPayloadFailure();
-        }
-        return context;
-      } on SyncFailure {
-        rethrow;
-      } catch (_) {
-        throw const InvalidSyncPayloadFailure();
-      }
-    default:
-      throw const UnsupportedSyncSchemaFailure();
-  }
+  return AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+    payloadVersion: entity.payloadVersion,
+    payload: entity.payload,
+  );
 }
-
-const Set<String> _attemptPayloadV1Keys = <String>{
-  'sessionId',
-  'wordId',
-  'promptMode',
-  'isCorrect',
-  'responseTimeMs',
-  'attemptNumber',
-  'occurredAtUtcMs',
-  'providerProvenance',
-};
-
-const Set<String> _attemptPayloadV2Keys = <String>{
-  ..._attemptPayloadV1Keys,
-  'evidenceClass',
-  'evidenceContext',
-};
-
-bool _hasExactKeys(Map<String, Object?> payload, Set<String> expected) =>
-    payload.length == expected.length && payload.keys.every(expected.contains);
 
 EventEnvelopeV2 _syncedAttemptSourceEvent({
   required String attemptId,

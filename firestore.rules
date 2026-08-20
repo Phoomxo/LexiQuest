@@ -289,8 +289,8 @@ service cloud.firestore {
               : (request.resource.data.schemaVersion == 2
                  && payload.keys().hasOnly(v2Keys)
                  && payload.keys().size() == 10
-                 && payload.evidenceClass is string
                  && fieldEvidenceContextOk(payload.evidenceContext)
+                 && payload.evidenceContext.classificationSource == 'declared'
                  && payload.evidenceClass
                       == payload.evidenceContext.evidenceClass))
         && payload.sessionId is string

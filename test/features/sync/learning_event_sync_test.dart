@@ -161,6 +161,99 @@ void main() {
     },
   );
 
+  test(
+    'mixed attempt batch chooses row-specific versions regardless of order',
+    () async {
+      final fixtures =
+          <({String id, EvidenceContext context, DateTime occurredAt})>[
+            (
+              id: 'attempt-legacy-first',
+              context: _frozenV13LegacyEvidence(),
+              occurredAt: now,
+            ),
+            (
+              id: 'attempt-declared-after',
+              context: _declaredEvidence(),
+              occurredAt: now.add(const Duration(milliseconds: 1)),
+            ),
+            (
+              id: 'attempt-declared-first',
+              context: _declaredEvidence(),
+              occurredAt: now.add(const Duration(milliseconds: 2)),
+            ),
+            (
+              id: 'attempt-legacy-after',
+              context: _frozenV13LegacyEvidence(),
+              occurredAt: now.add(const Duration(milliseconds: 3)),
+            ),
+          ];
+      for (final fixture in fixtures) {
+        await _insertAttemptForSync(
+          database,
+          id: fixture.id,
+          sessionId: 'session-${fixture.id}',
+          occurredAt: fixture.occurredAt,
+          evidenceContext: fixture.context,
+        );
+      }
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'attempt-mixed-v2-gate',
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+
+      final claims =
+          await DriftSyncStore(
+            database,
+            payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+          ).claimPending(
+            ownerId: 'owner-1',
+            firebaseUid: 'firebase-1',
+            limit: 10,
+            leaseToken: 'attempt-mixed-v2-lease',
+            ownerGateToken: 'attempt-mixed-v2-gate',
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: now,
+          );
+      final mutations = <String, PushMutation>{
+        for (final claim in claims)
+          if (claim.mutation.collection == SyncCollection.attempts)
+            claim.mutation.entityId: claim.mutation,
+      };
+
+      expect(mutations.keys, <String>[
+        'attempt-legacy-first',
+        'attempt-declared-after',
+        'attempt-declared-first',
+        'attempt-legacy-after',
+      ]);
+      expect(
+        mutations.map((id, mutation) => MapEntry(id, mutation.payloadVersion)),
+        <String, int>{
+          'attempt-legacy-first': 1,
+          'attempt-declared-after': 2,
+          'attempt-declared-first': 2,
+          'attempt-legacy-after': 1,
+        },
+      );
+      for (final id in const <String>[
+        'attempt-legacy-first',
+        'attempt-legacy-after',
+      ]) {
+        expect(mutations[id]!.payload, isNot(contains('evidenceContext')));
+      }
+      for (final id in const <String>[
+        'attempt-declared-after',
+        'attempt-declared-first',
+      ]) {
+        expect(mutations[id]!.payload['evidenceContext'], isA<Map>());
+      }
+    },
+  );
+
   test('payload v1 refuses to down-convert declared evidence', () async {
     await _insertAttemptForSync(
       database,
@@ -190,6 +283,9 @@ void main() {
       ),
       throwsA(isA<InvalidSyncPayloadFailure>()),
     );
+    final outbox = await database.select(database.outboxOperations).getSingle();
+    expect(outbox.state, 'pending');
+    expect(outbox.leaseToken, isNull);
   });
 
   test(
@@ -259,6 +355,15 @@ void main() {
         await database.select(database.pointsLedgerEntries).get(),
         hasLength(1),
       );
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                LearningEvidenceContract.learningEventId('attempt-remote'),
+              ),
+            ))
+            .get(),
+        isEmpty,
+      );
     },
   );
 
@@ -302,6 +407,46 @@ void main() {
         ).toJson(),
         context.toJson(),
       );
+    },
+  );
+
+  test(
+    'pulled legacy-inferred v2 rejects the existing-row replay before cursor advancement',
+    () async {
+      final context = _frozenV13LegacyEvidence();
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-existing-legacy-v2',
+        sessionId: 'session-existing-legacy-v2',
+        occurredAt: now,
+        evidenceContext: context,
+      );
+      final entity = _attemptEntity(
+        id: 'attempt-existing-legacy-v2',
+        sessionId: 'session-existing-legacy-v2',
+        occurredAt: now,
+        payloadVersion: 2,
+        evidenceContext: context,
+      );
+
+      await expectLater(
+        store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.attempts,
+          page: _page(entity),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+
+      expect(
+        await store.readCheckpoint('owner-1', SyncCollection.attempts),
+        isNull,
+      );
+      final outbox = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      expect(outbox.state, 'pending');
+      expect(await database.select(database.eventsV2).get(), isEmpty);
     },
   );
 

@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
@@ -121,12 +123,61 @@ void main() {
             'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
             'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
             'lastOperationId': 'operation-$version',
-            'payload': const <String, Object?>{'attemptNumber': 1},
+            'payload': version == 1
+                ? _attemptPayloadV1()
+                : _attemptPayloadV2(_declaredEvidenceContext()),
           },
         );
 
         expect(entity.payloadVersion, version);
       }
+    });
+
+    test('rejects legacy-inferred attempt v2 during inbound decode', () {
+      expect(
+        () => FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.attempts,
+          documentId: 'attempt-legacy-v2',
+          data: <String, Object?>{
+            'schemaVersion': 2,
+            'entityId': 'attempt-legacy-v2',
+            'revision': 1,
+            'isDeleted': false,
+            'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+            'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+            'lastOperationId': 'operation-legacy-v2',
+            'payload': _attemptPayloadV2(
+              LearningEvidenceContract.frozenV13LegacyEvidenceContext(),
+            ),
+          },
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+    });
+
+    test('rejects legacy-inferred attempt v2 before encoding a write', () {
+      final legacyMutation = PushMutation(
+        operationId: 'operation-legacy-v2',
+        firebaseUid: 'firebase-user-1',
+        collection: SyncCollection.attempts,
+        entityId: 'attempt-legacy-v2',
+        operationKind: SyncOperationKind.upsert,
+        payloadVersion: 2,
+        baseRevision: 0,
+        localRevision: 1,
+        clientUpdatedAtUtc: clientUpdatedAt,
+        payload: _attemptPayloadV2(
+          LearningEvidenceContract.frozenV13LegacyEvidenceContext(),
+        ),
+      );
+
+      expect(
+        () => FirestoreSyncCodec.encodeEntity(
+          legacyMutation,
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
     });
 
     test('rejects payload v2 for every legacy-v1-only collection', () {
@@ -211,24 +262,54 @@ void main() {
   });
 
   group('FirestoreSyncPreflight', () {
-    test('admits attempts v1/v2 and starts the transaction once', () async {
-      const preflight = FirestoreSyncPreflight();
-      var transactions = 0;
+    test(
+      'admits canonical attempt v1/v2 and starts each transaction once',
+      () async {
+        const dynamic preflight = FirestoreSyncPreflight();
+        var transactions = 0;
 
-      for (final version in const <int>[1, 2]) {
-        final result = await preflight.beforeTransaction(
-          collection: SyncCollection.attempts,
-          payloadVersion: version,
-          beginTransaction: () async {
-            transactions += 1;
-            return version;
-          },
+        for (final version in const <int>[1, 2]) {
+          final result = await preflight.beforeTransaction<int>(
+            collection: SyncCollection.attempts,
+            payloadVersion: version,
+            payload: version == 1
+                ? _attemptPayloadV1()
+                : _attemptPayloadV2(_declaredEvidenceContext()),
+            beginTransaction: () async {
+              transactions += 1;
+              return version;
+            },
+          );
+          expect(result, version);
+        }
+
+        expect(transactions, 2);
+      },
+    );
+
+    test(
+      'rejects legacy-inferred attempt v2 before starting a transaction',
+      () async {
+        const dynamic preflight = FirestoreSyncPreflight();
+        var transactions = 0;
+
+        await expectLater(
+          preflight.beforeTransaction<void>(
+            collection: SyncCollection.attempts,
+            payloadVersion: 2,
+            payload: _attemptPayloadV2(
+              LearningEvidenceContract.frozenV13LegacyEvidenceContext(),
+            ),
+            beginTransaction: () async {
+              transactions += 1;
+            },
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
         );
-        expect(result, version);
-      }
 
-      expect(transactions, 2);
-    });
+        expect(transactions, 0);
+      },
+    );
 
     test(
       'rejects legacy collection v2 without starting a transaction',
@@ -292,3 +373,37 @@ void main() {
     );
   });
 }
+
+Map<String, Object?> _attemptPayloadV1() => <String, Object?>{
+  'sessionId': 'session-1',
+  'wordId': 'word-1',
+  'promptMode': 'meaningChoice',
+  'isCorrect': true,
+  'responseTimeMs': 320,
+  'attemptNumber': 1,
+  'occurredAtUtcMs': 2000,
+  'providerProvenance': null,
+};
+
+Map<String, Object?> _attemptPayloadV2(EvidenceContext context) =>
+    <String, Object?>{
+      ..._attemptPayloadV1(),
+      'evidenceClass': context.evidenceClass.name,
+      'evidenceContext': context.toJson(),
+    };
+
+EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
+  evidenceClass: EvidenceClass.independentRecall,
+  skillId: 'meaning-recall',
+  hintLevel: 0,
+  contentRevision: 'built-in-v1',
+  rolloutMode: EvidencePolicyRolloutMode.shadow,
+  protocolId: 'evidence-pilot',
+  protocolVersion: '1.0.0',
+  experimentId: 'evidence-eligibility',
+  experimentVersion: 1,
+  assignmentId: 'assignment-1',
+  cohort: 'shadow',
+  researchConsentVersion: 1,
+  engagementAllowed: true,
+);

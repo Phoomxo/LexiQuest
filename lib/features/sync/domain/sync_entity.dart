@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
@@ -82,6 +84,100 @@ final class SyncPayloadRollout {
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
     SyncCollection.achievementUnlocks => collection.defaultWritePayloadVersion,
+  };
+}
+
+abstract final class AnswerAttemptSyncPayloadContract {
+  static EvidenceContext requireEvidenceContext({
+    required int payloadVersion,
+    required Map<String, Object?> payload,
+  }) {
+    try {
+      final expectedKeys = switch (payloadVersion) {
+        1 => _payloadV1Keys,
+        2 => _payloadV2Keys,
+        _ => throw const UnsupportedSyncSchemaFailure(),
+      };
+      if (payload.length != expectedKeys.length ||
+          !payload.keys.every(expectedKeys.contains) ||
+          !_validCommonFields(payload)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      if (payloadVersion == 1) {
+        return LearningEvidenceContract.frozenV13LegacyEvidenceContext();
+      }
+
+      final topLevelClass = payload['evidenceClass'];
+      final serializedContext = payload['evidenceContext'];
+      if (topLevelClass is! String || serializedContext is! Map) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final context = EvidenceContext.fromJson(
+        serializedContext.cast<String, Object?>(),
+      );
+      if (context.classificationSource !=
+              EvidenceClassificationSource.declared ||
+          topLevelClass != context.evidenceClass.name) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return context;
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static bool _validCommonFields(Map<String, Object?> payload) {
+    final sessionId = payload['sessionId'];
+    final wordId = payload['wordId'];
+    final promptMode = payload['promptMode'];
+    final isCorrect = payload['isCorrect'];
+    final responseTimeMs = payload['responseTimeMs'];
+    final attemptNumber = payload['attemptNumber'];
+    final occurredAtUtcMs = payload['occurredAtUtcMs'];
+    final providerProvenance = payload['providerProvenance'];
+    return sessionId is String &&
+        LearningEvidenceContract.validIdentifier(sessionId) &&
+        wordId is String &&
+        LearningEvidenceContract.validIdentifier(wordId) &&
+        promptMode is String &&
+        LearningEvidenceContract.validText(
+          promptMode,
+          maxLength: LearningEvidenceContract.maxPromptModeLength,
+        ) &&
+        isCorrect is bool &&
+        (responseTimeMs == null ||
+            (responseTimeMs is int &&
+                responseTimeMs >= 0 &&
+                responseTimeMs <=
+                    LearningEvidenceContract.maxResponseTimeMs)) &&
+        attemptNumber is int &&
+        attemptNumber > 0 &&
+        attemptNumber <= LearningEvidenceContract.maxAttemptNumber &&
+        occurredAtUtcMs is int &&
+        occurredAtUtcMs >= 0 &&
+        (providerProvenance == null ||
+            (providerProvenance is String &&
+                providerProvenance.runes.length <=
+                    LearningEvidenceContract.maxProviderProvenanceLength));
+  }
+
+  static const Set<String> _payloadV1Keys = <String>{
+    'sessionId',
+    'wordId',
+    'promptMode',
+    'isCorrect',
+    'responseTimeMs',
+    'attemptNumber',
+    'occurredAtUtcMs',
+    'providerProvenance',
+  };
+
+  static const Set<String> _payloadV2Keys = <String>{
+    ..._payloadV1Keys,
+    'evidenceClass',
+    'evidenceContext',
   };
 }
 

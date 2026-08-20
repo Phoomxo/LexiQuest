@@ -50,6 +50,7 @@ final class FirestoreSyncGateway implements SyncGateway {
           .beforeTransaction<_TransactionPushResult>(
             collection: mutation.collection,
             payloadVersion: mutation.payloadVersion,
+            payload: mutation.payload,
             beginTransaction: () => _firestore
                 .runTransaction<_TransactionPushResult>((transaction) async {
                   final operationSnapshot = await transaction.get(operation);
@@ -216,9 +217,20 @@ final class FirestoreSyncPreflight {
   Future<T> beforeTransaction<T>({
     required SyncCollection collection,
     required int payloadVersion,
+    Map<String, Object?>? payload,
     required Future<T> Function() beginTransaction,
   }) async {
     collection.requireSupportedPayloadVersion(payloadVersion);
+    if (collection == SyncCollection.attempts) {
+      final attemptPayload = payload;
+      if (attemptPayload == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+        payloadVersion: payloadVersion,
+        payload: attemptPayload,
+      );
+    }
     return beginTransaction();
   }
 }
@@ -229,30 +241,37 @@ final class FirestoreSyncCodec {
   static Map<String, Object?> encodeEntity(
     PushMutation mutation, {
     required Object serverTimestamp,
-  }) => <String, Object?>{
-    'schemaVersion': mutation.payloadVersion,
-    'entityId': mutation.entityId,
-    'payload': mutation.payload,
-    'revision': mutation.localRevision,
-    'isDeleted': mutation.operationKind == SyncOperationKind.delete,
-    'clientUpdatedAtUtcMs': mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
-    'serverUpdatedAt': serverTimestamp,
-    'lastOperationId': mutation.operationId,
-  };
+  }) {
+    _requireValidAttemptPayload(mutation);
+    return <String, Object?>{
+      'schemaVersion': mutation.payloadVersion,
+      'entityId': mutation.entityId,
+      'payload': mutation.payload,
+      'revision': mutation.localRevision,
+      'isDeleted': mutation.operationKind == SyncOperationKind.delete,
+      'clientUpdatedAtUtcMs':
+          mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      'serverUpdatedAt': serverTimestamp,
+      'lastOperationId': mutation.operationId,
+    };
+  }
 
   static Map<String, Object?> encodeOperation(
     PushMutation mutation, {
     required Object acknowledgedAt,
-  }) => <String, Object?>{
-    'schemaVersion': mutation.payloadVersion,
-    'operationId': mutation.operationId,
-    'entityType': mutation.collection.entityType,
-    'entityId': mutation.entityId,
-    'operationKind': mutation.operationKind.name,
-    'baseRevision': mutation.baseRevision,
-    'resultingRevision': mutation.localRevision,
-    'acknowledgedAt': acknowledgedAt,
-  };
+  }) {
+    _requireValidAttemptPayload(mutation);
+    return <String, Object?>{
+      'schemaVersion': mutation.payloadVersion,
+      'operationId': mutation.operationId,
+      'entityType': mutation.collection.entityType,
+      'entityId': mutation.entityId,
+      'operationKind': mutation.operationKind.name,
+      'baseRevision': mutation.baseRevision,
+      'resultingRevision': mutation.localRevision,
+      'acknowledgedAt': acknowledgedAt,
+    };
+  }
 
   static SyncEntity decodeEntity({
     required SyncCollection collection,
@@ -272,6 +291,13 @@ final class FirestoreSyncCodec {
       throw const InvalidSyncPayloadFailure();
     }
     try {
+      final canonicalPayload = Map<String, Object?>.from(payload);
+      if (collection == SyncCollection.attempts) {
+        AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+          payloadVersion: schemaVersion,
+          payload: canonicalPayload,
+        );
+      }
       return SyncEntity(
         collection: collection,
         entityId: entityId,
@@ -283,7 +309,7 @@ final class FirestoreSyncCodec {
           isUtc: true,
         ),
         serverUpdatedAtUtc: timestamp.toDate().toUtc(),
-        payload: Map<String, Object?>.from(payload),
+        payload: canonicalPayload,
       );
     } on SyncFailure {
       rethrow;
@@ -312,6 +338,14 @@ final class FirestoreSyncCodec {
       operationId: expectedOperationId,
       resultingRevision: _requiredInt(data, 'resultingRevision'),
       acknowledgedAtUtc: timestamp.toDate().toUtc(),
+    );
+  }
+
+  static void _requireValidAttemptPayload(PushMutation mutation) {
+    if (mutation.collection != SyncCollection.attempts) return;
+    AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+      payloadVersion: mutation.payloadVersion,
+      payload: mutation.payload,
     );
   }
 }

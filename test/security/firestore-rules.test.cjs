@@ -225,6 +225,26 @@ function fieldEvidenceContext(overrides = {}) {
   };
 }
 
+function fieldLegacyEvidenceContext() {
+  return fieldEvidenceContext({
+    skillId: 'legacy-unspecified',
+    policyVersion: 'legacy-v1',
+    contentRevision: 'legacy-unknown',
+    featureContractRevision: 'legacy-unversioned',
+    featureContractHash:
+      '0000000000000000000000000000000000000000000000000000000000000000',
+    classificationSource: 'legacyInferred',
+    rolloutMode: 'legacy',
+    protocolId: null,
+    protocolVersion: null,
+    experimentId: null,
+    experimentVersion: null,
+    assignmentId: null,
+    cohort: null,
+    researchConsentVersion: null,
+  });
+}
+
 function fieldAttemptV2Payload(context = fieldEvidenceContext()) {
   return {
     sessionId: 'session-1',
@@ -604,6 +624,18 @@ describe('field sync ownership and atomic revision contract', () => {
         operationId: 'attempt-v2-operation',
         schemaVersion: 2,
         payload: fieldAttemptV2Payload(),
+      }),
+    );
+  });
+
+  it('rejects an otherwise-valid legacy-inferred AnswerAttempt v2', async () => {
+    const db = authDb();
+    await assertFails(
+      writeFieldLearningEvent(db, {
+        entityId: 'attempt-legacy-inferred-v2',
+        operationId: 'attempt-legacy-inferred-v2-operation',
+        schemaVersion: 2,
+        payload: fieldAttemptV2Payload(fieldLegacyEvidenceContext()),
       }),
     );
   });
