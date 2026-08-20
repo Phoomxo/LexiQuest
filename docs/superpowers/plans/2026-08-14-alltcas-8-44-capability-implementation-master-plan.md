@@ -51,6 +51,202 @@ Typed dependency graph ด้านล่างเป็นแหล่งจร
 | G3 Pilot | content/rules revision ตรง, consent/assignment จริง, data-quality monitor ผ่าน และ rollback ซ้อมแล้ว |
 | G4 Broader release | ผล pilot ผ่านเกณฑ์ที่อนุมัติ, ไม่มี schema/rules drift และ owner lifecycle ครบ |
 
+## Pre-Implementation System Flows
+
+ส่วนนี้ล็อก flow ที่ใช้ร่วมกันทั้งระบบก่อนกลับไปทำ source work ต่อจาก
+Foundation Task 8 ทุก flow เป็น orchestration เหนือ authority ที่มีอยู่และห้าม
+สร้าง writer, aggregate หรือ runtime registry คู่ขนาน
+
+### Flow A — Contract, activation, and research-state separation
+
+```mermaid
+flowchart LR
+    CAT["Typed Product Contract<br/>f01-f44"] --> GEN["Deterministic Markdown/JSON"]
+    CAT --> CHECK["Contract and drift gates"]
+    CAT -. "typed mapping only" .-> DELIVERY["ProductionFeatureContract"]
+    CAT -. "typed mapping only" .-> FLAGS["FeatureRegistry"]
+    CONSENT["Consent authority"] --> RESEARCH["Research-context provider"]
+    ASSIGN["Experiment assignment authority"] --> RESEARCH
+    FLAGS --> ENTRY["Production route and dependency composition"]
+    DELIVERY --> ENTRY
+    RESEARCH --> ENTRY
+    ENTRY --> ACTIVITY["Learner activity adapter"]
+```
+
+Rules:
+
+- การเพิ่ม catalog record ไม่เปิด route, ไม่ compose dependency และไม่ assign
+  participant
+- runtime availability, consent, assignment และ product coverage เป็น state
+  อิสระที่ต้อง join แบบ fail-closed ตอน invocation
+- feature ที่ implement แล้วเริ่มที่ `implementedOff`; research state ที่ไม่ครบ
+  ห้ามสร้าง context ปลอมหรือ fallback ใน widget
+
+### Flow B — End-to-end learner loop
+
+```mermaid
+flowchart LR
+    HUB["Today Hub<br/>read model"] --> DISCOVER["Pack catalog/detail"]
+    DISCOVER --> SHELL["Unified Lesson Shell"]
+    SHELL --> MODE["Typed activity mode"]
+    MODE --> FEEDBACK["Immediate feedback / hint policy"]
+    FEEDBACK --> REVIEW["Review Center / SRS"]
+    REVIEW --> HISTORY["Learning History<br/>read model"]
+    HISTORY --> RECOMMEND["Explainable recommendation"]
+    RECOMMEND --> HUB
+    ASSESS["Pre/Post assessment"] -. "outcome only" .-> HISTORY
+```
+
+Rules:
+
+- Today Hub, History, Review และ Recommendation อ่านจาก canonical authorities;
+  ไม่เป็น progress/evidence authority ใหม่
+- assessment แยกจาก lesson/reward loop และไม่สอนคำตอบ ไม่เพิ่ม Mastery, Quest,
+  XP, Coins หรือ Streak
+- replay จาก History เริ่ม session/evidence ใหม่; ห้ามแก้ evidence เดิมย้อนหลัง
+
+### Flow C — Canonical evidence transaction and projections
+
+```mermaid
+flowchart LR
+    UI["Screen selects activity declaration"] --> CTX["Canonical session + research context"]
+    CTX --> PENDING["Immutable pending command<br/>one evidence identity"]
+    PENDING --> GATEWAY["Evidence Gateway"]
+    GATEWAY --> ATTEMPT["AnswerAttempts<br/>score truth"]
+    GATEWAY --> EVENT["EventsV2<br/>immutable downstream event"]
+    GATEWAY --> OUTBOX["Local outbox"]
+    ATTEMPT --> POLICY["Versioned eligibility decision"]
+    EVENT --> POLICY
+    POLICY --> MASTERY["Mastery / SRS"]
+    POLICY --> ASSESSMENT["Assessment"]
+    POLICY --> EFFORT["Active learning effort"]
+    POLICY --> HISTORY["History"]
+    POLICY --> MOTIVATION["Quest / XP / Coins / Streak"]
+    POLICY --> AUDIT["Decision audit + receipts/cursors"]
+```
+
+Invariants:
+
+- attempt, event, outbox, receipt และ reconciliation ใช้ source identity เดียวกัน
+- identical retry ต้อง idempotent; same identity กับ payload ต่างกันต้อง fail
+- `legacyInferred` ใช้ payload v1 เท่านั้น; declared evidence ใช้ payload v2 และ
+  ห้าม down-convert
+- `recreational` เข้า game History ได้เท่านั้น ไม่นับ active learning effort;
+  `assessment` เข้า Outcome เท่านั้น; assisted/exposure ห้ามยกระดับ independent
+  retention
+- screen ห้ามเขียน projection หรือ motivational side effect โดยตรง
+
+### Flow D — Educational-research lifecycle
+
+```mermaid
+flowchart LR
+    ENROLL["Enrollment"] --> CONSENT["Versioned consent snapshot"]
+    CONSENT --> ASSIGN["Stable experiment assignment"]
+    ASSIGN --> PRE["Pinned pre-assessment form"]
+    PRE --> LEARN["Versioned learning intervention"]
+    LEARN --> POST["Pinned post-assessment form"]
+    POST --> OVERVIEW["Progress comparison / export"]
+    WITHDRAW["Withdrawal"] --> STOP["Stop restricted collection/export"]
+    CONSENT --> WITHDRAW
+```
+
+Export ต้องคงสี่แกนอิสระ: Outcome, Learning, Effort และ Engagement พร้อม build,
+schema, content, policy, protocol, assignment, form/instrument และ contract
+versions ที่ reconstruct ได้ ห้ามรวมเป็นคะแนนเดียว
+
+### Flow E — Local-first, offline content, and sync
+
+```mermaid
+flowchart LR
+    MANIFEST["Signed/checksummed content manifest"] --> DOWNLOAD["Offline Content Manager"]
+    DOWNLOAD --> CACHE["Quarantinable local artifact store"]
+    CACHE --> SESSION["Pinned offline session"]
+    SESSION --> LOCAL["Atomic local evidence write"]
+    LOCAL --> OUTBOX["Durable outbox"]
+    OUTBOX --> PREFLIGHT["Payload/rules revision preflight"]
+    PREFLIGHT --> CLOUD["Remote owner-scoped collections"]
+    CLOUD --> RECEIPT["Receipt/cursor"]
+    RECEIPT --> REPLAY["Idempotent projection reconciliation"]
+    PREFLIGHT -->|"reject"| RETRY["Bounded retry / visible degraded state"]
+```
+
+Corrupt content ต้อง quarantine/redownload โดยรักษา pinned revision และ evidence
+เดิมไว้ Sync ต้องตรวจ exact schema ต่อ collection ก่อนเขียน และ activation ของ
+payload v2 เกิดหลัง rules/config พร้อมเท่านั้น
+
+### Flow F — Owner lifecycle and deletion
+
+```mermaid
+flowchart LR
+    GUEST["Guest owner"] --> DATA["Owner-scoped local rows + outbox"]
+    DATA --> UPGRADE["Canonical owner upgrade transaction"]
+    UPGRADE --> ACCOUNT["Account owner"]
+    ACCOUNT --> EXPORT["Owner export"]
+    ACCOUNT --> WITHDRAW["Consent withdrawal"]
+    ACCOUNT --> DELETE["Manifest-driven delete"]
+    DELETE --> VERIFY["Exact-set lifecycle verification"]
+```
+
+Owner upgrade เปลี่ยน owner identity ผ่าน authority เดิมโดยรักษา evidence/event
+identity และ historical actor provenance ห้าม rewrite immutable events ตารางใหม่
+ทุกตารางต้องอยู่ใน `ownerLifecycleManifest` หรือประกาศ device-local/non-owner
+อย่างชัดเจน
+
+### Flow G — Schema, rollout, and forward-only rollback
+
+```mermaid
+flowchart LR
+    V13["v13 Evidence metadata"] --> V14["v14 Assignment + consent"]
+    V14 --> V15["v15 Assessment runs"]
+    V15 --> V16["v16 Packs / manifests / downloads"]
+    V16 --> V17["v17 Saved / report"]
+    V17 --> V18["v18 Active time"]
+    V18 --> V19["v19 Goal / reminder"]
+    V19 --> V20["v20 Preferences"]
+```
+
+```text
+captured -> contracted -> implementedOff -> shadow -> internal -> pilot
+         -> research -> broaderRelease -> retired
+```
+
+Promotion ต้องผ่าน completion contract, lifecycle, rollback, accessibility,
+offline/restart และ research activation decision ของ node นั้น การ rollback ใช้
+`disabled`/`emergencyOff` และ forward repair เท่านั้น; ห้าม downgrade schema,
+ลบ evidence, ลบ outbox หรือเปลี่ยน participant assignment อัตโนมัติ
+
+### Flow H — Execution, reporting, and final verification
+
+```mermaid
+flowchart LR
+    RESUME["Close interrupted Foundation Task 8"] --> FOUNDATION["Foundation Tasks 9-13"]
+    FOUNDATION --> F40["f40 Local-first"]
+    F40 --> F41["f41 Controlled rollout"]
+    F41 --> READY["Resolve typed DAG ready set"]
+    READY --> NODE["RED -> GREEN -> VERIFY -> REVIEW -> COMMIT"]
+    NODE --> LEDGER["Update capability/verification ledger"]
+    LEDGER -->|"more ready nodes"| READY
+    LEDGER --> C42["f42 Today Hub final composite"]
+    C42 --> TESTPLAN["Generate final machine-verifiable Test Plan"]
+    TESTPLAN --> EXECUTE["Controller executes full plan"]
+    EXECUTE --> FINAL["Whole-branch review + clean worktree"]
+```
+
+Execution rules:
+
+1. ปิดและ commit interrupted Task 8 correction ก่อนเริ่มงานใหม่
+2. ทำ Foundation 9–13 ตามลำดับและรายงานเมื่อปิด Foundation แต่ละหัวข้อเท่านั้น
+3. หลัง G0 ผ่าน เลือก capability จาก typed ready set ไม่ทำตามเลข f01–f44 ตรง ๆ
+4. รายงาน learner-facing work เมื่อ completion contract C1–C8 ของแต่ละโดเมนปิด
+   แล้วเท่านั้น; ระหว่าง RED/GREEN/VERIFY ไม่ส่ง process report
+5. ทุก work package ใช้ TDD, exact staging, focused verification และ review gate
+6. หลังพัฒนาครบ ให้สร้าง Test Plan จาก contract/ledger ณ HEAD แล้ว controller
+   รันด้วยตนเอง: contract/generator drift, unit/widget/integration, migration ทุก
+   transition, full upgrade, Firestore rules, backend, lifecycle, offline/restart,
+   feature-off/emergency-off, export/withdraw/delete, build และ manual bounded
+   smoke journeys
+7. ห้าม push หรือ merge จนกว่า owner จะอนุมัติแยกต่างหาก
+
 **Typed dependency graph ที่แผนนี้กำหนด**
 
 ตารางนี้เป็น implementation-order contract ที่ต้องย้ายเข้า typed catalog และผ่าน dependency-resolution/acyclic tests; Layer 0 เป็น implicit prerequisite ของทุกแถว หัวข้อโดเมนจัดเพื่อความเข้าใจขอบเขต ไม่ใช่คำสั่งให้ทำ f01→f44 ตรง ๆ—ผู้ดำเนินงานต้องเลือกเฉพาะแถวที่ dependencies ผ่านแล้ว
