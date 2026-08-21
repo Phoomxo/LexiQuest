@@ -47,8 +47,14 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   DateTime? _questionStartedAt;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
+  bool _completionCommitted = false;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
+  bool get _persistenceLocked =>
+      _pendingEvidence != null || _pendingSessionClose != null;
+  bool get _actionLocked =>
+      _saving || _persistenceLocked || _completionCommitted;
 
   @override
   void initState() {
@@ -132,6 +138,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   QuizQuestion get _currentQuestion => _session!.questions[_currentIndex];
 
   Future<void> _playAudio() async {
+    if (_actionLocked) return;
     final word = _currentQuestion.word.spelling;
     if (word.isEmpty) return;
     try {
@@ -152,6 +159,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   void _flipCard() {
+    if (_actionLocked) return;
     if (_isFlipped) {
       _controller.reverse();
     } else {
@@ -161,7 +169,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   }
 
   Future<void> _rateItem(bool isCorrect) async {
-    if (_saving) return;
+    if (_actionLocked) return;
     PendingCurrentActivityEvidence? pending;
     if (!_isCompatibilityDeck) {
       final existing = _pendingEvidence;
@@ -220,6 +228,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     }
   }
 
+  Future<void> _retrySessionClose() async {
+    final pending = _pendingSessionClose;
+    if (pending == null || !pending.requiresRetry || _saving) return;
+    setState(() => _saving = true);
+    try {
+      await pending.retry();
+      _pendingSessionClose = null;
+      await _completeReview();
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
   Future<void> _nextCard() async {
     if (_currentIndex < _session!.questions.length - 1) {
       if (_isFlipped) _controller.reverse();
@@ -234,15 +255,46 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       return;
     }
     if (!_isCompatibilityDeck) {
-      await _learning!.finishSession(_session!.id);
-      _pendingEvidence = null;
+      await _finishFinalSession();
+      return;
     }
+    await _completeReview();
+  }
+
+  Future<void> _finishFinalSession() async {
+    try {
+      final pending = _pendingSessionClose ??= _learning!.captureSessionClose(
+        sessionId: _session!.id,
+      );
+      _pendingEvidence = null;
+      await pending.finish();
+      _pendingSessionClose = null;
+      await _completeReview();
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _completeReview() async {
     if (!mounted) return;
-    setState(() => _saving = false);
+    setState(() {
+      _completionCommitted = true;
+      _saving = false;
+    });
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว')),
     );
     Navigator.of(context).pop();
+  }
+
+  void _showSaveFailure() {
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง')),
+    );
   }
 
   @override
@@ -253,30 +305,33 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ทบทวน SRS')),
-      body: FutureBuilder<QuizSession>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const _SrsMessage('เปิดข้อมูลทบทวนในเครื่องไม่สำเร็จ');
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.data!.isEmpty) {
-            return const _SrsMessage('ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน');
-          }
-          _session ??= snapshot.data;
-          return _buildCard();
-        },
+    return PopScope(
+      canPop: !_persistenceLocked,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ทบทวน SRS')),
+        body: FutureBuilder<QuizSession>(
+          future: _load,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const _SrsMessage('เปิดข้อมูลทบทวนในเครื่องไม่สำเร็จ');
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            if (snapshot.data!.isEmpty) {
+              return const _SrsMessage('ยังไม่มีคำศัพท์ที่ถึงกำหนดทบทวน');
+            }
+            _session ??= snapshot.data;
+            return _buildCard();
+          },
+        ),
       ),
     );
   }
 
   Widget _buildCard() {
     final word = _currentQuestion.word;
-    final responseLocked = _pendingEvidence?.isResponseLocked ?? false;
+    final actionLocked = _actionLocked;
     return Padding(
       padding: const EdgeInsets.all(24),
       child: Column(
@@ -288,7 +343,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           const SizedBox(height: 12),
           Expanded(
             child: GestureDetector(
-              onTap: _saving || responseLocked ? null : _flipCard,
+              onTap: actionLocked ? null : _flipCard,
               child: AnimatedBuilder(
                 animation: _animation,
                 builder: (context, child) {
@@ -327,6 +382,14 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               onPressed: _retryEvidence,
               child: const Text('Retry saved review'),
             )
+          else if (_pendingSessionClose?.requiresRetry ?? false)
+            FilledButton(
+              key: const ValueKey<String>('current-evidence-retry'),
+              onPressed: _retrySessionClose,
+              child: const Text('Retry session completion'),
+            )
+          else if (_completionCommitted)
+            const SizedBox.shrink()
           else if (_isFlipped)
             Row(
               children: [
@@ -359,7 +422,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         Text(word.spelling, style: Theme.of(context).textTheme.headlineLarge),
         const SizedBox(height: 16),
         IconButton(
-          onPressed: _playAudio,
+          onPressed: _actionLocked ? null : _playAudio,
           icon: const Icon(Icons.volume_up_outlined),
           iconSize: 40,
           tooltip: 'ฟังเสียง',

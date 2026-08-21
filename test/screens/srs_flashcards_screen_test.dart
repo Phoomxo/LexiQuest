@@ -280,6 +280,362 @@ void main() {
       EvidenceClass.independentRecall,
     );
   });
+
+  testWidgets(
+    'final-card close failure keeps one answer and a route-safe close retry',
+    (tester) async {
+      final firstFinishRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+      });
+      final repository = _RetryLearningRepository(
+        failAnswerOnce: false,
+        failFinishOnce: true,
+        firstFinishRelease: firstFinishRelease,
+      );
+      var nextId = 0;
+      var clockTick = 0;
+      final learning = LearningUseCases(
+        owners: _ScenarioOwnerRepository(),
+        repository: repository,
+        generateId: () => 'srs-close-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 11, 0, clockTick++),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                key: const ValueKey<String>('open-srs-route'),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SrsFlashcardsScreen(
+                        voice: voice,
+                        learning: learning,
+                        evidenceAdapter: CurrentActivityEvidenceAdapter(
+                          learning: learning,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Open SRS review'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('open-srs-route')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('durable'));
+      await tester.pumpAndSettle();
+
+      final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
+      final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
+      await tester.tap(good);
+      for (var pump = 0; pump < 20 && repository.finishCalls.isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.pump();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(1));
+      expect(find.byType(SrsFlashcardsScreen), findsOneWidget);
+      expect(find.text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว'), findsNothing);
+      expect(good, findsNothing);
+      expect(find.text('จำไม่ได้ (Again)'), findsNothing);
+
+      firstFinishRelease.complete();
+      await tester.pumpAndSettle();
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      expect(
+        retry,
+        findsOneWidget,
+        reason: 'a committed final answer still needs session-close retry',
+      );
+      expect(find.text('ทบทวนคำศัพท์ที่ถึงกำหนดครบแล้ว'), findsNothing);
+      expect(good, findsNothing);
+      expect(find.text('จำไม่ได้ (Again)'), findsNothing);
+
+      staleGoodHandler();
+      await tester.pumpAndSettle();
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(1));
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(SrsFlashcardsScreen),
+        findsOneWidget,
+        reason: 'back must preserve the retry-required final session close',
+      );
+
+      final retryHandler = tester.widget<FilledButton>(retry).onPressed;
+      expect(retryHandler, isNotNull);
+      retryHandler!();
+      await tester.pumpAndSettle();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(2));
+      expect(repository.finishCalls.last, repository.finishCalls.first);
+      expect(find.byType(SrsFlashcardsScreen), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('open-srs-route')),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'a successful final close stays terminal through the navigation frame',
+    (tester) async {
+      final firstFinishRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+      });
+      final repository = _RetryLearningRepository(
+        failAnswerOnce: false,
+        failFinishOnce: true,
+        firstFinishRelease: firstFinishRelease,
+      );
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: _ScenarioOwnerRepository(),
+        repository: repository,
+        generateId: () => 'srs-terminal-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 12, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: PopScope(
+            canPop: false,
+            child: SrsFlashcardsScreen(
+              voice: voice,
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('durable'));
+      await tester.pumpAndSettle();
+
+      final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
+      final again = find.widgetWithText(OutlinedButton, 'จำไม่ได้ (Again)');
+      final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
+      final staleAgainHandler = tester.widget<OutlinedButton>(again).onPressed!;
+      await tester.tap(good);
+      for (var pump = 0; pump < 20 && repository.finishCalls.isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      firstFinishRelease.complete();
+      await tester.pumpAndSettle();
+
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      final retryHandler = tester.widget<FilledButton>(retry).onPressed;
+      expect(retryHandler, isNotNull);
+      retryHandler!();
+      for (
+        var pump = 0;
+        pump < 20 && repository.finishCalls.length < 2;
+        pump++
+      ) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      // Cross the production end-of-frame handoff without settling the
+      // vetoed completion navigation.
+      await tester.pump();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(2));
+      expect(find.byType(SrsFlashcardsScreen), findsOneWidget);
+      expect(good, findsNothing);
+      expect(again, findsNothing);
+
+      staleGoodHandler();
+      staleAgainHandler();
+      for (
+        var pump = 0;
+        pump < 20 &&
+            repository.commands.length == 1 &&
+            repository.finishCalls.length == 2;
+        pump++
+      ) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.pump(const Duration(milliseconds: 1));
+
+      expect(
+        repository.commands,
+        hasLength(1),
+        reason: 'a terminal final card must reject retained rate callbacks',
+      );
+      expect(repository.finishCalls, hasLength(2));
+      expect(good, findsNothing);
+      expect(again, findsNothing);
+    },
+  );
+
+  testWidgets(
+    'stale flip and audio handlers stay locked through evidence and close',
+    (tester) async {
+      final firstAnswerRelease = Completer<void>();
+      final firstFinishRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstAnswerRelease.isCompleted) firstAnswerRelease.complete();
+        if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+      });
+      final repository = _RetryLearningRepository(
+        failAnswerOnce: true,
+        failFinishOnce: true,
+        firstAnswerRelease: firstAnswerRelease,
+        firstFinishRelease: firstFinishRelease,
+      );
+      var nextId = 0;
+      final provider = FakeVoiceProvider();
+      final voice = VoiceUseCases(
+        provider: provider,
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      final learning = LearningUseCases(
+        owners: _ScenarioOwnerRepository(),
+        repository: repository,
+        generateId: () => 'srs-lock-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 13, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            voice: voice,
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final audio = find.widgetWithIcon(IconButton, Icons.volume_up_outlined);
+      final card = find
+          .ancestor(
+            of: find.text('durable'),
+            matching: find.byType(GestureDetector),
+          )
+          .first;
+      final staleAudioHandler = tester.widget<IconButton>(audio).onPressed!;
+      final staleFlipHandler = tester.widget<GestureDetector>(card).onTap!;
+      final initialAudioCalls = provider.spokenRequests.length;
+
+      staleFlipHandler();
+      await tester.pumpAndSettle();
+      final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
+      final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
+      staleFlipHandler();
+      await tester.pumpAndSettle();
+      expect(find.text('lasting'), findsNothing);
+      expect(audio, findsOneWidget);
+
+      staleGoodHandler();
+      for (var pump = 0; pump < 20 && repository.commands.isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.pump();
+      expect(repository.commands, hasLength(1));
+      expect(
+        tester.widget<IconButton>(audio).onPressed,
+        isNull,
+        reason: 'visible audio must disable while evidence is pending',
+      );
+      staleFlipHandler();
+      staleAudioHandler();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('lasting'), findsNothing);
+      expect(provider.spokenRequests, hasLength(initialAudioCalls));
+
+      firstAnswerRelease.complete();
+      await tester.pumpAndSettle();
+      var retry = find.byKey(const ValueKey<String>('current-evidence-retry'));
+      expect(retry, findsOneWidget);
+      expect(
+        find.text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsOneWidget,
+      );
+      expect(tester.widget<IconButton>(audio).onPressed, isNull);
+      staleFlipHandler();
+      staleAudioHandler();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(retry, findsOneWidget);
+      expect(find.text('lasting'), findsNothing);
+      expect(provider.spokenRequests, hasLength(initialAudioCalls));
+      expect(
+        find.text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsOneWidget,
+      );
+
+      ScaffoldMessenger.of(
+        tester.element(find.byType(SrsFlashcardsScreen)),
+      ).removeCurrentSnackBar();
+      await tester.pumpAndSettle();
+      final evidenceRetryHandler = tester.widget<FilledButton>(retry).onPressed;
+      expect(evidenceRetryHandler, isNotNull);
+      evidenceRetryHandler!();
+      for (var pump = 0; pump < 20 && repository.finishCalls.isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.pump();
+      expect(repository.commands, hasLength(2));
+      expect(repository.finishCalls, hasLength(1));
+      expect(tester.widget<IconButton>(audio).onPressed, isNull);
+      staleFlipHandler();
+      staleAudioHandler();
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.text('lasting'), findsNothing);
+      expect(provider.spokenRequests, hasLength(initialAudioCalls));
+
+      firstFinishRelease.complete();
+      await tester.pumpAndSettle();
+      retry = find.byKey(const ValueKey<String>('current-evidence-retry'));
+      expect(retry, findsOneWidget);
+      expect(tester.widget<IconButton>(audio).onPressed, isNull);
+      staleFlipHandler();
+      staleAudioHandler();
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(repository.commands, hasLength(2));
+      expect(repository.finishCalls, hasLength(1));
+      expect(retry, findsOneWidget);
+      expect(find.text('lasting'), findsNothing);
+      expect(provider.spokenRequests, hasLength(initialAudioCalls));
+      expect(
+        find.text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 final class _ScenarioOwnerRepository implements LocalOwnerRepository {
@@ -310,8 +666,21 @@ final class _DeferredLearningRepository implements LearningRepository {
 }
 
 final class _RetryLearningRepository implements LearningRepository {
+  _RetryLearningRepository({
+    this.failAnswerOnce = true,
+    this.failFinishOnce = false,
+    this.firstAnswerRelease,
+    this.firstFinishRelease,
+  });
+
+  final bool failAnswerOnce;
+  final bool failFinishOnce;
+  final Completer<void>? firstAnswerRelease;
+  final Completer<void>? firstFinishRelease;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
-  var _failed = false;
+  final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
+  finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
+  var _answerFailed = false;
 
   @override
   Future<List<QuizWord>> listDueWords({
@@ -334,8 +703,9 @@ final class _RetryLearningRepository implements LearningRepository {
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
-    if (!_failed) {
-      _failed = true;
+    if (commands.length == 1) await firstAnswerRelease?.future;
+    if (failAnswerOnce && !_answerFailed) {
+      _answerFailed = true;
       throw StateError('simulated local failure');
     }
     return const AnswerRecordResult(inserted: true, srs: null);
@@ -346,17 +716,28 @@ final class _RetryLearningRepository implements LearningRepository {
     required String ownerId,
     required String sessionId,
     required DateTime endedAtUtc,
-  }) async => LearningSessionSummary(
-    id: sessionId,
-    ownerId: ownerId,
-    activityType: 'srsReview',
-    state: 'completed',
-    startedAtUtc: endedAtUtc,
-    endedAtUtc: endedAtUtc,
-    correctCount: 1,
-    wrongCount: 0,
-    score: 1,
-  );
+  }) async {
+    finishCalls.add((
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    ));
+    if (failFinishOnce && finishCalls.length == 1) {
+      await firstFinishRelease?.future;
+      throw StateError('simulated session-close failure');
+    }
+    return LearningSessionSummary(
+      id: sessionId,
+      ownerId: ownerId,
+      activityType: 'srsReview',
+      state: 'completed',
+      startedAtUtc: endedAtUtc,
+      endedAtUtc: endedAtUtc,
+      correctCount: 1,
+      wrongCount: 0,
+      score: 1,
+    );
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
