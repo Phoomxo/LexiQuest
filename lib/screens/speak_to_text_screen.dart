@@ -204,11 +204,10 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   void _onSpeechEvent(SpeechRecognitionEvent event, int epoch) {
-    if (!mounted || epoch != _listenEpoch) return;
-    if (event.isFinal) {
-      if (_acceptedFinalEpoch == epoch) return;
-      _acceptedFinalEpoch = epoch;
+    if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+      return;
     }
+    if (event.isFinal) _acceptedFinalEpoch = epoch;
     final assessment = _speech!.assess(
       target: widget.correctWord,
       event: event,
@@ -320,112 +319,120 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       );
     }
     final assessment = _assessment;
-    return Scaffold(
-      appBar: AppBar(title: const Text('ฝึกออกเสียง')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(24),
-          children: [
-            Text('พูดคำว่า', style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Semantics(
-              button: true,
-              label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
-              child: InkWell(
-                onTap: _speakWord,
-                borderRadius: BorderRadius.circular(12),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          widget.correctWord,
-                          style: Theme.of(context).textTheme.headlineMedium,
+    final evidenceLocked = _pendingEvidence != null;
+    return PopScope(
+      canPop: !evidenceLocked,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ฝึกออกเสียง')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(24),
+            children: [
+              Text('พูดคำว่า', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              Semantics(
+                button: true,
+                label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
+                child: InkWell(
+                  onTap: _speakWord,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            widget.correctWord,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                         ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.volume_up),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        _transcript.isEmpty
+                            ? 'ระบบจะแสดงข้อความที่ได้ยินที่นี่'
+                            : _transcript,
+                        key: const ValueKey<String>('speech-transcript'),
                       ),
-                      const SizedBox(width: 8),
-                      const Icon(Icons.volume_up),
+                      if (assessment != null) ...[
+                        const SizedBox(height: 12),
+                        Text(
+                          'ความเหมือนของข้อความ: '
+                          '${assessment.similarityPercent}%',
+                        ),
+                        Text(
+                          'วิธีวัด: ${assessment.method}',
+                          style: Theme.of(context).textTheme.bodySmall,
+                        ),
+                        const Text(
+                          'ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้',
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _transcript.isEmpty
-                          ? 'ระบบจะแสดงข้อความที่ได้ยินที่นี่'
-                          : _transcript,
-                      key: const ValueKey<String>('speech-transcript'),
-                    ),
-                    if (assessment != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        'ความเหมือนของข้อความ: '
-                        '${assessment.similarityPercent}%',
-                      ),
-                      Text(
-                        'วิธีวัด: ${assessment.method}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                      const Text('ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้'),
-                    ],
-                  ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  key: const ValueKey<String>('speech-error'),
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
+              const SizedBox(height: 24),
+              FilledButton.icon(
+                key: const ValueKey<String>('speech-listen-button'),
+                onPressed: _listenPending || _pendingEvidence != null
+                    ? null
+                    : (_listening ? _stopListening : _startListening),
+                icon: Icon(_listening ? Icons.stop : Icons.mic),
+                label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
+              ),
+              if (_pendingEvidence?.requiresRetry ?? false) ...[
+                const SizedBox(height: 12),
+                FilledButton(
+                  key: const ValueKey<String>('current-evidence-retry'),
+                  onPressed: _retryEvidence,
+                  child: const Text('Retry saved pronunciation'),
+                ),
+              ],
+              const SizedBox(height: 12),
+              OutlinedButton(
+                onPressed: evidenceLocked
+                    ? null
+                    : assessment?.isExactMatch == true
+                    ? () => AppNavigator.pushPage<void>(
+                        context,
+                        AppPage<void>(
+                          name: 'learning/word-scramble',
+                          builder: (_) =>
+                              WordScrambleScreen(word: widget.correctWord),
+                        ),
+                        replace: true,
+                      )
+                    : () => Navigator.maybePop(context),
+                child: Text(
+                  assessment?.isExactMatch == true
+                      ? 'ไปเกมเรียงคำ'
+                      : 'กลับไปแบบทดสอบ',
                 ),
               ),
-            ),
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                key: const ValueKey<String>('speech-error'),
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
             ],
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              key: const ValueKey<String>('speech-listen-button'),
-              onPressed: _listenPending || _pendingEvidence != null
-                  ? null
-                  : (_listening ? _stopListening : _startListening),
-              icon: Icon(_listening ? Icons.stop : Icons.mic),
-              label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
-            ),
-            if (_pendingEvidence?.requiresRetry ?? false) ...[
-              const SizedBox(height: 12),
-              FilledButton(
-                key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: _retryEvidence,
-                child: const Text('Retry saved pronunciation'),
-              ),
-            ],
-            const SizedBox(height: 12),
-            OutlinedButton(
-              onPressed: assessment?.isExactMatch == true
-                  ? () => AppNavigator.pushPage<void>(
-                      context,
-                      AppPage<void>(
-                        name: 'learning/word-scramble',
-                        builder: (_) =>
-                            WordScrambleScreen(word: widget.correctWord),
-                      ),
-                      replace: true,
-                    )
-                  : () => Navigator.maybePop(context),
-              child: Text(
-                assessment?.isExactMatch == true
-                    ? 'ไปเกมเรียงคำ'
-                    : 'กลับไปแบบทดสอบ',
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );

@@ -518,54 +518,245 @@ void main() {
     });
   }
 
-  testWidgets('retry reuses pending evidence identity', (tester) async {
-    final repository = _CountingLearningRepository(failFirstRecord: true);
-    var nextId = 0;
-    final learning = LearningUseCases(
-      owners: _LearningOwnerRepository(),
-      repository: repository,
-      generateId: () => 'speech-${++nextId}',
-      nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
-      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
-    );
-    final voice = VoiceUseCases(
-      provider: FakeVoiceProvider(),
-      disposeProvider: () async {},
-    );
-    addTearDown(voice.dispose);
+  testWidgets(
+    'correct speech stays locked through failure and retries one response',
+    (tester) async {
+      final firstRecordRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstRecordRelease.isCompleted) firstRecordRelease.complete();
+      });
+      final repository = _CountingLearningRepository(
+        failFirstRecord: true,
+        firstRecordRelease: firstRecordRelease,
+      );
+      final speechGateway = _EvidenceSpeechGateway();
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'speech-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SpeakToTextScreen(
-          correctWord: 'cat',
-          voice: voice,
-          speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
-          learning: learning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-          sessionId: 'session-1',
-          wordId: 'word-1',
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpeakToTextScreen(
+            correctWord: 'cat',
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(speechGateway),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            sessionId: 'session-1',
+            wordId: 'word-1',
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    final listen = find.byKey(const ValueKey('speech-listen-button'));
-    await tester.tap(listen);
-    await tester.pumpAndSettle();
-    expect(tester.widget<FilledButton>(listen).onPressed, isNull);
-    await tester.tap(
-      find.byKey(const ValueKey<String>('current-evidence-retry')),
-    );
-    await tester.pumpAndSettle();
+      );
+      await tester.pumpAndSettle();
+      final listen = find.byKey(const ValueKey('speech-listen-button'));
+      await tester.tap(listen);
+      await tester.pumpAndSettle();
+      final action = find.byType(OutlinedButton);
+      final pendingAdvanceWasLocked =
+          tester.widget<OutlinedButton>(action).onPressed == null;
+      final pendingListenWasLocked =
+          tester.widget<FilledButton>(listen).onPressed == null;
 
-    expect(repository.commands, hasLength(2));
-    final first = repository.commands.first;
-    final retry = repository.commands.last;
-    expect(retry.id, first.id);
-    expect(retry.occurredAtUtc, first.occurredAtUtc);
-    expect(retry.responseTimeMs, first.responseTimeMs);
-    expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
-    expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
-  });
+      speechGateway.emitPartial('dog');
+      await tester.pump();
+      final pendingTranscriptAfterStaleCallback = tester
+          .widget<Text>(find.byKey(const ValueKey<String>('speech-transcript')))
+          .data;
+      final pendingStaleNavigationStayedLocked =
+          tester.widget<OutlinedButton>(action).onPressed == null;
+      final commandsWhilePending = repository.commands.length;
+
+      firstRecordRelease.complete();
+      await tester.pumpAndSettle();
+      final retryButton = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      final retryWasShown = retryButton.evaluate().length == 1;
+      final failedAdvanceStayedLocked =
+          tester.widget<OutlinedButton>(action).onPressed == null;
+
+      speechGateway.emitFinal('bird');
+      speechGateway.emitPartial('fox');
+      await tester.pump();
+      final failedTranscriptAfterStaleCallbacks = tester
+          .widget<Text>(find.byKey(const ValueKey<String>('speech-transcript')))
+          .data;
+      final failedStaleNavigationStayedLocked =
+          tester.widget<OutlinedButton>(action).onPressed == null;
+      final commandsBeforeRetry = repository.commands.length;
+
+      await tester.tap(retryButton);
+      await tester.pumpAndSettle();
+      final committedAdvanceIsEnabled =
+          tester.widget<OutlinedButton>(action).onPressed != null;
+      final committedActionIsSuccess = find
+          .widgetWithText(OutlinedButton, 'ไปเกมเรียงคำ')
+          .evaluate()
+          .isNotEmpty;
+
+      expect(pendingAdvanceWasLocked, isTrue);
+      expect(pendingListenWasLocked, isTrue);
+      expect(pendingStaleNavigationStayedLocked, isTrue);
+      expect(pendingTranscriptAfterStaleCallback, 'cat');
+      expect(commandsWhilePending, 1);
+      expect(retryWasShown, isTrue);
+      expect(failedAdvanceStayedLocked, isTrue);
+      expect(failedStaleNavigationStayedLocked, isTrue);
+      expect(failedTranscriptAfterStaleCallbacks, 'cat');
+      expect(commandsBeforeRetry, 1);
+      expect(repository.commands, hasLength(2));
+      expect(repository.successfulRecordCalls, 1);
+      expect(committedAdvanceIsEnabled, isTrue);
+      expect(committedActionIsSuccess, isTrue);
+      final first = repository.commands.first;
+      final retry = repository.commands.last;
+      expect(retry.id, first.id);
+      expect(retry.occurredAtUtc, first.occurredAtUtc);
+      expect(retry.responseTimeMs, first.responseTimeMs);
+      expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+      expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
+    },
+  );
+
+  for (final resultCase in <({String name, String correctWord})>[
+    (name: 'correct', correctWord: 'cat'),
+    (name: 'incorrect', correctWord: 'dog'),
+  ]) {
+    testWidgets(
+      '${resultCase.name} evidence blocks result and system back until retry',
+      (tester) async {
+        final firstRecordRelease = Completer<void>();
+        addTearDown(() {
+          if (!firstRecordRelease.isCompleted) firstRecordRelease.complete();
+        });
+        final repository = _CountingLearningRepository(
+          failFirstRecord: true,
+          firstRecordRelease: firstRecordRelease,
+        );
+        var nextId = 0;
+        final learning = LearningUseCases(
+          owners: _LearningOwnerRepository(),
+          repository: repository,
+          generateId: () => 'speech-route-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 11, 11, 0, nextId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        );
+        final voice = VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: FilledButton(
+                  key: const ValueKey<String>('open-speech-route'),
+                  onPressed: () => Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => SpeakToTextScreen(
+                        correctWord: resultCase.correctWord,
+                        voice: voice,
+                        speechPractice: SpeechPracticeUseCases(
+                          _EvidenceSpeechGateway(),
+                        ),
+                        learning: learning,
+                        evidenceAdapter: CurrentActivityEvidenceAdapter(
+                          learning: learning,
+                        ),
+                        sessionId: 'session-1',
+                        wordId: 'word-1',
+                      ),
+                    ),
+                  ),
+                  child: const Text('Open speech practice'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('open-speech-route')),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('speech-listen-button')),
+        );
+        await tester.pump();
+
+        final resultAction = find.byType(OutlinedButton);
+        expect(
+          tester.widget<OutlinedButton>(resultAction).onPressed,
+          isNull,
+          reason: 'pending canonical evidence must lock the result action',
+        );
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(SpeakToTextScreen),
+          findsOneWidget,
+          reason: 'pending canonical evidence must block system back',
+        );
+
+        firstRecordRelease.complete();
+        await tester.pumpAndSettle();
+        final retry = find.byKey(
+          const ValueKey<String>('current-evidence-retry'),
+        );
+        expect(retry, findsOneWidget);
+        expect(
+          tester.widget<OutlinedButton>(resultAction).onPressed,
+          isNull,
+          reason: 'failed canonical evidence must lock the result action',
+        );
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(
+          find.byType(SpeakToTextScreen),
+          findsOneWidget,
+          reason: 'failed canonical evidence must preserve its retry route',
+        );
+
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+
+        expect(repository.commands, hasLength(2));
+        expect(repository.successfulRecordCalls, 1);
+        final first = repository.commands.first;
+        final retried = repository.commands.last;
+        expect(retried.id, first.id);
+        expect(retried.occurredAtUtc, first.occurredAtUtc);
+        expect(retried.responseTimeMs, first.responseTimeMs);
+        expect(
+          retried.evidenceContext.toJson(),
+          first.evidenceContext.toJson(),
+        );
+        expect(
+          tester.widget<OutlinedButton>(resultAction).onPressed,
+          isNotNull,
+        );
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(SpeakToTextScreen), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('open-speech-route')),
+          findsOneWidget,
+        );
+      },
+    );
+  }
 
   testWidgets('one utterance epoch accepts only its first final transcript', (
     tester,
@@ -624,10 +815,15 @@ final class _LearningOwnerRepository implements LocalOwnerRepository {
 }
 
 final class _CountingLearningRepository implements LearningRepository {
-  _CountingLearningRepository({this.failFirstRecord = false});
+  _CountingLearningRepository({
+    this.failFirstRecord = false,
+    this.firstRecordRelease,
+  });
 
   final bool failFirstRecord;
+  final Completer<void>? firstRecordRelease;
   int recordCalls = 0;
+  int successfulRecordCalls = 0;
   RecordAnswerCommand? lastCommand;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
 
@@ -636,9 +832,11 @@ final class _CountingLearningRepository implements LearningRepository {
     recordCalls += 1;
     lastCommand = command;
     commands.add(command);
-    if (failFirstRecord && recordCalls == 1) {
-      throw StateError('simulated local failure');
+    if (recordCalls == 1) {
+      await firstRecordRelease?.future;
+      if (failFirstRecord) throw StateError('simulated local failure');
     }
+    successfulRecordCalls += 1;
     return const AnswerRecordResult(
       inserted: true,
       srs: SrsSnapshot(
@@ -709,6 +907,8 @@ final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
   _EvidenceSpeechGateway({this.duplicateFinal = false});
 
   final bool duplicateFinal;
+  SpeechEventCallback? _onEvent;
+  String? _locale;
 
   @override
   bool isListening = false;
@@ -734,16 +934,32 @@ final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
     required SpeechEventCallback onEvent,
   }) async {
     isListening = true;
-    final event = SpeechRecognitionEvent(
-      transcript: 'cat',
-      isFinal: true,
-      recognizedAtUtc: DateTime.utc(2026, 8, 11),
-      engine: 'device-stt',
-      locale: locale,
-    );
-    onEvent(event);
-    if (duplicateFinal) onEvent(event);
+    _onEvent = onEvent;
+    _locale = locale;
+    emitFinal('cat');
+    if (duplicateFinal) emitFinal('cat');
     isListening = false;
+  }
+
+  void emitFinal(String transcript) => _emit(transcript, isFinal: true);
+
+  void emitPartial(String transcript) => _emit(transcript, isFinal: false);
+
+  void _emit(String transcript, {required bool isFinal}) {
+    final onEvent = _onEvent;
+    final locale = _locale;
+    if (onEvent == null || locale == null) {
+      throw StateError('speech recognition has not started');
+    }
+    onEvent(
+      SpeechRecognitionEvent(
+        transcript: transcript,
+        isFinal: isFinal,
+        recognizedAtUtc: DateTime.utc(2026, 8, 11),
+        engine: 'device-stt',
+        locale: locale,
+      ),
+    );
   }
 
   @override
