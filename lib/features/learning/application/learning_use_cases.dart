@@ -91,10 +91,10 @@ enum PendingLearningSessionCloseStatus {
 /// changing its session identity or completion time.
 final class PendingLearningSessionClose {
   PendingLearningSessionClose._({
-    required LearningUseCases learning,
+    required this._learning,
     required this.sessionId,
     required this.completedAtUtc,
-  }) : _learning = learning;
+  });
 
   final LearningUseCases _learning;
   final String sessionId;
