@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -49,6 +51,8 @@ void main() {
       Map<String, String>? targetWordIds,
       AssociativeLearningPort? port,
       LearningUseCases? learningUseCases,
+      CurrentActivityEvidenceAdapter? evidenceAdapter,
+      String? sessionId,
     }) {
       final resolvedLearning = learningUseCases ?? learning;
       return MaterialApp(
@@ -59,10 +63,11 @@ void main() {
           passageText:
               'Life is filled with ephemeral moments that require a resilient spirit to appreciate.',
           learning: resolvedLearning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(
-            learning: resolvedLearning,
-          ),
+          evidenceAdapter:
+              evidenceAdapter ??
+              CurrentActivityEvidenceAdapter(learning: resolvedLearning),
           associativeLearning: port ?? associativeLearning,
+          sessionId: sessionId,
         ),
       );
     }
@@ -364,7 +369,345 @@ void main() {
         );
       },
     );
+
+    final invalidMappings = <({String name, Map<String, String>? wordIds})>[
+      (name: 'missing map', wordIds: null),
+      (name: 'missing target', wordIds: const {'banana': 'word-banana'}),
+      (
+        name: 'blank ID',
+        wordIds: const {'banana': 'word-banana', 'apple': '   '},
+      ),
+      (
+        name: 'duplicate trimmed IDs',
+        wordIds: const {'banana': 'word-shared', 'apple': ' word-shared '},
+      ),
+    ];
+    for (final invalid in invalidMappings) {
+      testWidgets('Stage 3 rejects ${invalid.name} before capturing evidence', (
+        tester,
+      ) async {
+        final repository = _OrderedCompletionLearningRepository();
+        var learningId = 0;
+        var evidenceIdCalls = 0;
+        final contractLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'reading-contract-${++learningId}',
+          nowUtc: () => DateTime.utc(2026, 8, 14, 12, 0, learningId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'associative-mapping-contract',
+          ),
+        );
+        final evidenceAdapter = CurrentActivityEvidenceAdapter(
+          learning: contractLearning,
+          generateId: () {
+            evidenceIdCalls++;
+            return 'mapping-evidence-$evidenceIdCalls';
+          },
+        );
+        await tester.pumpWidget(
+          session(
+            targetWords: const ['banana', 'apple'],
+            targetWordIds: invalid.wordIds,
+            learningUseCases: contractLearning,
+            evidenceAdapter: evidenceAdapter,
+            sessionId: 'mapping-session',
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 3; stage++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+        await tester.enterText(find.byType(TextField).at(0), 'banana');
+        await tester.enterText(find.byType(TextField).at(1), 'apple');
+        final progressBeforeSubmit = repository.progressCommands.length;
+
+        await tester.tap(find.text('Complete & Continue'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(evidenceIdCalls, 0);
+        expect(repository.answerCommands, isEmpty);
+        expect(repository.progressCommands, hasLength(progressBeforeSubmit));
+        expect(
+          tester
+              .widgetList<TextField>(find.byType(TextField))
+              .every((field) => field.enabled == true),
+          isTrue,
+        );
+        expect(
+          find.text(
+            'Active recall word mapping is invalid. '
+            'Restart this reading activity.',
+          ),
+          findsOneWidget,
+        );
+      });
+    }
+
+    testWidgets(
+      'Stage 6 orders close before one retryable completion progress write',
+      (tester) async {
+        final firstFinishRelease = Completer<void>();
+        addTearDown(() {
+          if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+        });
+        final repository = _OrderedCompletionLearningRepository(
+          failFinishOnce: true,
+          failCompletedProgressOnce: true,
+          firstFinishRelease: firstFinishRelease,
+        );
+        var nextId = 0;
+        final orderedLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'ordered-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 14, 13, 0, nextId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'associative-completion-contract',
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: FilledButton(
+                  key: const ValueKey<String>('open-associative-route'),
+                  onPressed: () {
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AssociativeReadingSessionScreen(
+                          cefrLevel: 'A2',
+                          targetWords: const ['banana'],
+                          targetWordIds: const {'banana': 'word-banana'},
+                          passageText: 'The banana is yellow.',
+                          documentId: 'document-1',
+                          documentRevision: 7,
+                          learning: orderedLearning,
+                          evidenceAdapter: CurrentActivityEvidenceAdapter(
+                            learning: orderedLearning,
+                          ),
+                          associativeLearning: associativeLearning,
+                          sessionId: 'session-1',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open associative reading'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('open-associative-route')),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 2: Cue Fading'));
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 3: Active Recall'));
+        await tester.enterText(find.byType(TextField), 'banana');
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        await tester.enterText(find.byType(TextField), 'yellow fruit');
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+        await tester.enterText(find.byType(TextField), 'I ate a banana.');
+        await tester.tap(find.text('Complete & Continue'));
+        await pumpUntilFound(tester, find.text('Stage 6: Finish'));
+
+        final finish = find.widgetWithText(FilledButton, 'Finish Session');
+        final staleFinishHandler = tester
+            .widget<FilledButton>(finish)
+            .onPressed!;
+        await tester.tap(finish);
+        for (
+          var pump = 0;
+          pump < 20 && repository.finishCalls.isEmpty;
+          pump++
+        ) {
+          await tester.pump(const Duration(milliseconds: 1));
+        }
+        await tester.pump();
+
+        expect(repository.completedProgressCommands, isEmpty);
+        expect(repository.finishCalls, hasLength(1));
+        expect(repository.answerCommands, hasLength(1));
+        expect(tester.widget<FilledButton>(finish).onPressed, isNull);
+        staleFinishHandler();
+        await tester.pump(const Duration(milliseconds: 1));
+        expect(repository.finishCalls, hasLength(1));
+        expect(repository.completedProgressCommands, isEmpty);
+
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+        expect(
+          find.byType(AssociativeReadingSessionScreen),
+          findsOneWidget,
+          reason: 'pending session close must veto route back',
+        );
+
+        firstFinishRelease.complete();
+        await tester.pumpAndSettle();
+        var retry = find.byKey(
+          const ValueKey<String>('current-session-close-retry'),
+        );
+        expect(retry, findsOneWidget);
+        expect(repository.completedProgressCommands, isEmpty);
+        staleFinishHandler();
+        await tester.pump();
+        expect(repository.finishCalls, hasLength(1));
+        expect(repository.answerCommands, hasLength(1));
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(AssociativeReadingSessionScreen), findsOneWidget);
+
+        final closeRetryHandler = tester.widget<FilledButton>(retry).onPressed;
+        expect(closeRetryHandler, isNotNull);
+        closeRetryHandler!();
+        await tester.pumpAndSettle();
+
+        expect(repository.finishCalls, hasLength(2));
+        expect(repository.finishCalls.last, repository.finishCalls.first);
+        expect(repository.answerCommands, hasLength(1));
+        final failedCompletion = repository.completedProgressCommands;
+        expect(failedCompletion, hasLength(1));
+        retry = find.byKey(
+          const ValueKey<String>('current-reading-progress-retry'),
+        );
+        expect(retry, findsOneWidget);
+        staleFinishHandler();
+        await tester.pump();
+        expect(repository.finishCalls, hasLength(2));
+        expect(repository.completedProgressCommands, hasLength(1));
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(AssociativeReadingSessionScreen), findsOneWidget);
+
+        final progressRetryHandler = tester
+            .widget<FilledButton>(retry)
+            .onPressed;
+        expect(progressRetryHandler, isNotNull);
+        progressRetryHandler!();
+        await tester.pumpAndSettle();
+
+        expect(repository.finishCalls, hasLength(2));
+        expect(repository.answerCommands, hasLength(1));
+        expect(repository.completedProgressCommands, hasLength(2));
+        final firstProgress = repository.completedProgressCommands.first;
+        final retriedProgress = repository.completedProgressCommands.last;
+        expect(retriedProgress.eventId, firstProgress.eventId);
+        expect(retriedProgress.ownerId, firstProgress.ownerId);
+        expect(retriedProgress.documentId, firstProgress.documentId);
+        expect(
+          retriedProgress.documentRevision,
+          firstProgress.documentRevision,
+        );
+        expect(retriedProgress.position, firstProgress.position);
+        expect(retriedProgress.isCompleted, isTrue);
+        expect(retriedProgress.occurredAtUtc, firstProgress.occurredAtUtc);
+        expect(find.byType(AssociativeReadingSessionScreen), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('open-associative-route')),
+          findsOneWidget,
+        );
+      },
+    );
   });
+}
+
+final class _OrderedCompletionLearningRepository implements LearningRepository {
+  _OrderedCompletionLearningRepository({
+    this.failFinishOnce = false,
+    this.failCompletedProgressOnce = false,
+    this.firstFinishRelease,
+  });
+
+  final bool failFinishOnce;
+  final bool failCompletedProgressOnce;
+  final Completer<void>? firstFinishRelease;
+  final List<RecordAnswerCommand> answerCommands = <RecordAnswerCommand>[];
+  final List<ReadingProgressCommand> progressCommands =
+      <ReadingProgressCommand>[];
+  final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
+  finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
+  var _completedProgressFailed = false;
+
+  Iterable<ReadingProgressCommand> get completedProgressCommands =>
+      progressCommands.where((command) => command.isCompleted);
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) async => null;
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) async {
+    progressCommands.add(command);
+    if (command.isCompleted &&
+        failCompletedProgressOnce &&
+        !_completedProgressFailed) {
+      _completedProgressFailed = true;
+      throw StateError('simulated completion progress failure');
+    }
+    return ReadingProgressSnapshot(
+      documentId: command.documentId,
+      documentRevision: command.documentRevision,
+      lastPosition: command.position,
+      isCompleted: command.isCompleted,
+      updatedAtUtc: command.occurredAtUtc,
+    );
+  }
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    answerCommands.add(command);
+    return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) async {
+    finishCalls.add((
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    ));
+    if (failFinishOnce && finishCalls.length == 1) {
+      await firstFinishRelease?.future;
+      throw StateError('simulated session-close failure');
+    }
+    return LearningSessionSummary(
+      id: sessionId,
+      ownerId: ownerId,
+      activityType: 'associativeReading',
+      state: 'completed',
+      startedAtUtc: endedAtUtc,
+      endedAtUtc: endedAtUtc,
+      correctCount: 1,
+      wrongCount: 0,
+      score: 1,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _RetryLearningRepository implements LearningRepository {

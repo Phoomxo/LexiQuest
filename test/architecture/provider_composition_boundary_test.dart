@@ -314,6 +314,7 @@ void main() {
       'OwnerBoundLearningEvidenceBasis',
       'ResolvedLearningEvidenceRecord',
       'PendingLearningSessionClose',
+      'PendingReadingProgress',
     ];
 
     for (final type in capabilityTypes) {

@@ -47,7 +47,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   final AssociativeLearningPort? associativeLearning;
 
   /// Map from word display name → Drift vocabulary word ID.
-  /// Required for Stage 3 SRS recording; Stage 3 is skipped when null.
+  /// A canonical session requires one nonblank unique ID per target word.
   final Map<String, String>? targetWordIds;
 
   /// Learning session ID for recording answers in Stage 3.
@@ -110,6 +110,12 @@ class _AssociativeReadingSessionScreenState
   bool _loading = true;
   bool _saving = false;
   bool _completed = false;
+  PendingLearningSessionClose? _pendingSessionClose;
+  PendingReadingProgress? _pendingCompletionProgress;
+
+  bool get _completionLocked =>
+      _pendingSessionClose != null || _pendingCompletionProgress != null;
+  bool get _actionLocked => _saving || _completionLocked || _completed;
 
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
@@ -117,6 +123,7 @@ class _AssociativeReadingSessionScreenState
   late List<PendingCurrentActivityEvidence?> _pendingRecallEvidence;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   bool _recallBatchFrozen = false;
+  bool _recallMappingInvalid = false;
 
   // Stage 4 — per-word association cue controllers.
   late List<TextEditingController> _cueControllers;
@@ -199,7 +206,7 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_unavailableReason != null) return;
+    if (_unavailableReason != null || _completionLocked || _completed) return;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       unawaited(_checkpoint(isCompleted: false, showFailure: false));
@@ -221,18 +228,24 @@ class _AssociativeReadingSessionScreenState
   // ── Navigation ─────────────────────────────────────────────────────────────
 
   Future<void> _nextStage() async {
-    if (_saving) return;
+    if (_actionLocked) return;
     setState(() => _saving = true);
 
     // Stage-specific side effects before advancing.
     if (_currentStage == 3) {
+      _recallMappingInvalid = false;
       final answersSaved = await _submitRecallAnswers();
       if (!mounted) return;
       if (!answersSaved) {
         setState(() => _saving = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Could not save recall evidence. Try again.'),
+          SnackBar(
+            content: Text(
+              _recallMappingInvalid
+                  ? 'Active recall word mapping is invalid. '
+                        'Restart this reading activity.'
+                  : 'Could not save recall evidence. Try again.',
+            ),
           ),
         );
         return;
@@ -246,42 +259,20 @@ class _AssociativeReadingSessionScreenState
       }
     }
 
-    final finishing = _currentStage == 6;
-    final nextStage = finishing ? 6 : _currentStage + 1;
+    if (_currentStage == 6) {
+      await _finishCompletion();
+      return;
+    }
+
+    final nextStage = _currentStage + 1;
     final saved = await _checkpoint(
       position: nextStage,
-      isCompleted: finishing,
+      isCompleted: false,
       showFailure: true,
     );
     if (!mounted) return;
     if (!saved) {
       setState(() => _saving = false);
-      return;
-    }
-    if (finishing) {
-      final sessionId = widget.sessionId;
-      if (sessionId != null) {
-        try {
-          await _learning!.finishSession(sessionId);
-        } catch (_) {
-          if (!mounted) return;
-          setState(() => _saving = false);
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'Could not finish the learning session. Try again.',
-              ),
-            ),
-          );
-          return;
-        }
-      }
-      if (!mounted) return;
-      setState(() {
-        _saving = false;
-        _completed = true;
-      });
-      Navigator.of(context).pop();
       return;
     }
     setState(() {
@@ -290,15 +281,104 @@ class _AssociativeReadingSessionScreenState
     });
   }
 
+  Future<void> _finishCompletion() async {
+    final sessionId = widget.sessionId;
+    if (sessionId != null) {
+      final close = _pendingSessionClose ??= _learning!.captureSessionClose(
+        sessionId: sessionId,
+      );
+      try {
+        await close.finish();
+        _pendingSessionClose = null;
+      } catch (_) {
+        _showCompletionFailure(
+          'Could not finish the learning session. Try again.',
+        );
+        return;
+      }
+    }
+    await _saveCompletionProgress();
+  }
+
+  Future<void> _retrySessionClose() async {
+    final close = _pendingSessionClose;
+    if (_saving || _completed || close == null || !close.requiresRetry) return;
+    setState(() => _saving = true);
+    try {
+      await close.retry();
+      _pendingSessionClose = null;
+      await _saveCompletionProgress();
+    } catch (_) {
+      _showCompletionFailure(
+        'Could not finish the learning session. Try again.',
+      );
+    }
+  }
+
+  Future<void> _saveCompletionProgress() async {
+    final progress = _pendingCompletionProgress ??= _learning!
+        .captureReadingProgress(
+          documentId: _documentId,
+          documentRevision: widget.documentRevision,
+          position: 6,
+          isCompleted: true,
+        );
+    try {
+      await progress.save();
+      _pendingCompletionProgress = null;
+      await _completeAndPop();
+    } catch (_) {
+      _showCompletionFailure('บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
+  }
+
+  Future<void> _retryCompletionProgress() async {
+    final progress = _pendingCompletionProgress;
+    if (_saving || _completed || progress == null || !progress.requiresRetry) {
+      return;
+    }
+    setState(() => _saving = true);
+    try {
+      await progress.retry();
+      _pendingCompletionProgress = null;
+      await _completeAndPop();
+    } catch (_) {
+      _showCompletionFailure('บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง');
+    }
+  }
+
+  Future<void> _completeAndPop() async {
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      _completed = true;
+    });
+    await WidgetsBinding.instance.endOfFrame;
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  void _showCompletionFailure(String message) {
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
   // ── Stage 3: Active Recall ─────────────────────────────────────────────────
 
   Future<bool> _submitRecallAnswers() async {
     final sessionId = widget.sessionId;
     final wordIds = widget.targetWordIds;
-    if (_learning == null || sessionId == null || wordIds == null) return true;
+    if (_learning == null || sessionId == null) return true;
 
     if (!_recallBatchFrozen) {
-      _freezeRecallBatch(sessionId: sessionId, wordIds: wordIds);
+      final validatedWordIds = _validateRecallWordIds(wordIds);
+      if (validatedWordIds == null) {
+        _recallMappingInvalid = true;
+        return false;
+      }
+      _freezeRecallBatch(sessionId: sessionId, wordIds: validatedWordIds);
     }
 
     var allSaved = true;
@@ -321,18 +401,13 @@ class _AssociativeReadingSessionScreenState
   /// first provider resolution or local write begins.
   void _freezeRecallBatch({
     required String sessionId,
-    required Map<String, String> wordIds,
+    required List<String> wordIds,
   }) {
     final pending = <PendingCurrentActivityEvidence?>[];
     final results = <bool?>[];
     for (var i = 0; i < widget.targetWords.length; i++) {
       final word = widget.targetWords[i];
-      final wordId = wordIds[word];
-      if (wordId == null) {
-        pending.add(null);
-        results.add(null);
-        continue;
-      }
+      final wordId = wordIds[i];
       final typed = _recallControllers[i].text.trim().toLowerCase();
       final isCorrect = typed == word.trim().toLowerCase();
       results.add(isCorrect);
@@ -350,6 +425,19 @@ class _AssociativeReadingSessionScreenState
     _pendingRecallEvidence = List.unmodifiable(pending);
     _recallResults = List.unmodifiable(results);
     _recallBatchFrozen = true;
+  }
+
+  List<String>? _validateRecallWordIds(Map<String, String>? wordIds) {
+    if (wordIds == null) return null;
+    final validated = <String>[];
+    final seen = <String>{};
+    for (final word in widget.targetWords) {
+      if (!wordIds.containsKey(word)) return null;
+      final wordId = wordIds[word]!.trim();
+      if (wordId.isEmpty || !seen.add(wordId)) return null;
+      validated.add(wordId);
+    }
+    return List<String>.unmodifiable(validated);
   }
 
   // ── Stage 4: Memory Association ────────────────────────────────────────────
@@ -463,51 +551,76 @@ class _AssociativeReadingSessionScreenState
     if (unavailableReason != null) {
       return AssociativeReadingUnavailable(reason: unavailableReason);
     }
-    return Scaffold(
-      appBar: AppBar(title: Text('Associative Reading (${widget.cefrLevel})')),
-      body: _loading
-          ? const Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  LinearProgressIndicator(value: _currentStage / 6),
-                  const SizedBox(height: 12),
-                  Text(
-                    _stageTitles[_currentStage - 1],
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  const SizedBox(height: 16),
-                  Expanded(
-                    child: SingleChildScrollView(child: _buildStageContent()),
-                  ),
-                  if (_saving) const LinearProgressIndicator(),
-                  const SizedBox(height: 12),
-                  FilledButton(
-                    key:
-                        _pendingRecallEvidence.any(
-                          (pending) => pending?.requiresRetry ?? false,
-                        )
-                        ? const ValueKey<String>('current-evidence-retry')
-                        : null,
-                    onPressed: _saving || _completed ? null : _nextStage,
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
+    final recallRetry = _pendingRecallEvidence.any(
+      (pending) => pending?.requiresRetry ?? false,
+    );
+    final closeRetry = _pendingSessionClose?.requiresRetry ?? false;
+    final progressRetry = _pendingCompletionProgress?.requiresRetry ?? false;
+    return PopScope(
+      canPop: !_completionLocked,
+      child: Scaffold(
+        appBar: AppBar(
+          title: Text('Associative Reading (${widget.cefrLevel})'),
+        ),
+        body: _loading
+            ? const Center(child: CircularProgressIndicator())
+            : Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    LinearProgressIndicator(value: _currentStage / 6),
+                    const SizedBox(height: 12),
+                    Text(
+                      _stageTitles[_currentStage - 1],
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    child: Text(
-                      _pendingRecallEvidence.any(
-                            (pending) => pending?.requiresRetry ?? false,
-                          )
-                          ? 'Retry Evidence'
-                          : _currentStage < 6
-                          ? 'Complete & Continue'
-                          : 'Finish Session',
+                    const SizedBox(height: 16),
+                    Expanded(
+                      child: SingleChildScrollView(child: _buildStageContent()),
                     ),
-                  ),
-                ],
+                    if (_saving) const LinearProgressIndicator(),
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      key: closeRetry
+                          ? const ValueKey<String>(
+                              'current-session-close-retry',
+                            )
+                          : progressRetry
+                          ? const ValueKey<String>(
+                              'current-reading-progress-retry',
+                            )
+                          : recallRetry
+                          ? const ValueKey<String>('current-evidence-retry')
+                          : null,
+                      onPressed: _saving || _completed
+                          ? null
+                          : closeRetry
+                          ? _retrySessionClose
+                          : progressRetry
+                          ? _retryCompletionProgress
+                          : _completionLocked
+                          ? null
+                          : _nextStage,
+                      style: FilledButton.styleFrom(
+                        minimumSize: const Size.fromHeight(52),
+                      ),
+                      child: Text(
+                        closeRetry
+                            ? 'Retry Session Completion'
+                            : progressRetry
+                            ? 'Retry Reading Completion'
+                            : recallRetry
+                            ? 'Retry Evidence'
+                            : _currentStage < 6
+                            ? 'Complete & Continue'
+                            : 'Finish Session',
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 

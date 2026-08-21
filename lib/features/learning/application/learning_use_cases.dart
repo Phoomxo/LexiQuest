@@ -183,6 +183,122 @@ final class PendingLearningSessionClose {
   }
 }
 
+enum PendingReadingProgressStatus {
+  captured,
+  bindingOwner,
+  writing,
+  retryRequired,
+  committed,
+}
+
+/// One frozen reading-progress mutation whose owner and command identity are
+/// bound once and reused by every explicit retry.
+final class PendingReadingProgress {
+  PendingReadingProgress._({
+    required this._learning,
+    required this.eventId,
+    required this.documentId,
+    required this.documentRevision,
+    required this.position,
+    required this.isCompleted,
+    required this.occurredAtUtc,
+  });
+
+  final LearningUseCases _learning;
+  final String eventId;
+  final String documentId;
+  final int documentRevision;
+  final int position;
+  final bool isCompleted;
+  final DateTime occurredAtUtc;
+
+  PendingReadingProgressStatus _status = PendingReadingProgressStatus.captured;
+  String? _ownerId;
+  Future<String>? _ownerBindingInFlight;
+  ReadingProgressCommand? _command;
+  Future<ReadingProgressSnapshot>? _saveInFlight;
+  ReadingProgressSnapshot? _result;
+
+  PendingReadingProgressStatus get status => _status;
+  bool get requiresRetry =>
+      _status == PendingReadingProgressStatus.retryRequired;
+  bool get isCommitted => _status == PendingReadingProgressStatus.committed;
+  bool get isInFlight => _saveInFlight != null;
+
+  Future<ReadingProgressSnapshot> save() {
+    final inFlight = _saveInFlight;
+    if (inFlight != null) return inFlight;
+    if (requiresRetry) {
+      return Future<ReadingProgressSnapshot>.error(
+        StateError('explicit retry is required for pending reading progress'),
+      );
+    }
+    final result = _result;
+    if (result != null) return Future<ReadingProgressSnapshot>.value(result);
+    return _startSave();
+  }
+
+  Future<ReadingProgressSnapshot> retry() {
+    final inFlight = _saveInFlight;
+    if (inFlight != null) return inFlight;
+    if (!requiresRetry) {
+      return Future<ReadingProgressSnapshot>.error(
+        StateError('pending reading progress is not awaiting retry'),
+      );
+    }
+    return _startSave();
+  }
+
+  Future<ReadingProgressSnapshot> _startSave() {
+    final future = _executeSave();
+    _saveInFlight = future;
+    return future;
+  }
+
+  Future<ReadingProgressSnapshot> _executeSave() async {
+    try {
+      _status = PendingReadingProgressStatus.bindingOwner;
+      final ownerId = await _bindOwnerOnce();
+      final command = _command ??= ReadingProgressCommand(
+        eventId: eventId,
+        ownerId: ownerId,
+        documentId: documentId,
+        documentRevision: documentRevision,
+        position: position,
+        isCompleted: isCompleted,
+        occurredAtUtc: occurredAtUtc,
+      );
+      _status = PendingReadingProgressStatus.writing;
+      final result = await _learning._saveCapturedReadingProgress(command);
+      _result = result;
+      _status = PendingReadingProgressStatus.committed;
+      return result;
+    } catch (_) {
+      _status = PendingReadingProgressStatus.retryRequired;
+      rethrow;
+    } finally {
+      _saveInFlight = null;
+    }
+  }
+
+  Future<String> _bindOwnerOnce() {
+    final ownerId = _ownerId;
+    if (ownerId != null) return Future<String>.value(ownerId);
+    return _ownerBindingInFlight ??= _bindOwnerAndMemoize();
+  }
+
+  Future<String> _bindOwnerAndMemoize() async {
+    try {
+      final owner = await _learning.owners.getOrCreateActiveOwner();
+      final ownerId = _learning._requiredId(owner.id, 'ownerId');
+      _ownerId = ownerId;
+      return ownerId;
+    } finally {
+      _ownerBindingInFlight = null;
+    }
+  }
+}
+
 final class LearningUseCases {
   LearningUseCases({
     required this.owners,
@@ -629,19 +745,36 @@ final class LearningUseCases {
     required int documentRevision,
     required int position,
     required bool isCompleted,
-  }) async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final result = await repository.saveReadingProgress(
-      ReadingProgressCommand(
-        eventId: 'reading-event:${_nextId()}',
-        ownerId: owner.id,
-        documentId: _requiredId(documentId, 'documentId'),
-        documentRevision: documentRevision,
-        position: position,
-        isCompleted: isCompleted,
-        occurredAtUtc: _now(),
-      ),
+  }) {
+    return captureReadingProgress(
+      documentId: documentId,
+      documentRevision: documentRevision,
+      position: position,
+      isCompleted: isCompleted,
+    ).save();
+  }
+
+  PendingReadingProgress captureReadingProgress({
+    required String documentId,
+    required int documentRevision,
+    required int position,
+    required bool isCompleted,
+  }) {
+    return PendingReadingProgress._(
+      learning: this,
+      eventId: 'reading-event:${_nextId()}',
+      documentId: _requiredId(documentId, 'documentId'),
+      documentRevision: documentRevision,
+      position: position,
+      isCompleted: isCompleted,
+      occurredAtUtc: _now(),
     );
+  }
+
+  Future<ReadingProgressSnapshot> _saveCapturedReadingProgress(
+    ReadingProgressCommand command,
+  ) async {
+    final result = await repository.saveReadingProgress(command);
     onLocalMutation?.call();
     return result;
   }
