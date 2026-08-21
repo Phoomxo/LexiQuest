@@ -41,7 +41,7 @@ final class FrozenLearningEvidenceCommand {
 /// Canonical response semantics bound to the active owner before any
 /// asynchronous policy or research-state resolution begins.
 final class OwnerBoundLearningEvidenceBasis {
-  const OwnerBoundLearningEvidenceBasis({
+  const OwnerBoundLearningEvidenceBasis._({
     required this.ownerId,
     required this.command,
   });
@@ -68,7 +68,7 @@ typedef LearningEvidenceContextsResolver =
 
 /// Owner-bound evidence ready for replay/write without another owner lookup.
 final class ResolvedLearningEvidenceRecord {
-  const ResolvedLearningEvidenceRecord({
+  const ResolvedLearningEvidenceRecord._({
     required this.ownerId,
     required this.command,
     required this.contexts,
@@ -253,7 +253,7 @@ final class LearningUseCases {
   }) async {
     final canonical = _canonicalEvidenceCommand(command);
     final owner = await owners.getOrCreateActiveOwner();
-    return OwnerBoundLearningEvidenceBasis(
+    return OwnerBoundLearningEvidenceBasis._(
       ownerId: _requiredId(owner.id, 'ownerId'),
       command: canonical,
     );
@@ -276,7 +276,7 @@ final class LearningUseCases {
       evidenceContext: contexts.evidenceContext,
       occurredAtUtc: canonical.occurredAtUtc,
     );
-    return ResolvedLearningEvidenceRecord(
+    return ResolvedLearningEvidenceRecord._(
       ownerId: ownerId,
       command: canonical,
       contexts: contexts,

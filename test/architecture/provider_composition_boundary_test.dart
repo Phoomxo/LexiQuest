@@ -305,4 +305,33 @@ void main() {
       }
     },
   );
+
+  test('only LearningUseCases can mint owner-bound evidence capabilities', () {
+    final production = _productionDartSources();
+    const authorityPath =
+        'lib/features/learning/application/learning_use_cases.dart';
+    const capabilityTypes = <String>[
+      'OwnerBoundLearningEvidenceBasis',
+      'ResolvedLearningEvidenceRecord',
+    ];
+
+    for (final type in capabilityTypes) {
+      expect(
+        _matchCounts(production, RegExp('\\bfinal\\s+class\\s+$type\\b')),
+        const <String, int>{authorityPath: 1},
+        reason: '$type must have exactly one canonical definition',
+      );
+      expect(
+        _matchCounts(production, RegExp('\\b$type\\s*\\(')),
+        isEmpty,
+        reason: '$type must not expose a public constructor',
+      );
+      expect(
+        _matchCounts(production, RegExp('\\b$type\\._\\s*\\(')),
+        const <String, int>{authorityPath: 2},
+        reason:
+            '$type must be declared and minted only inside LearningUseCases',
+      );
+    }
+  });
 }
