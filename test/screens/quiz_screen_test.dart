@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
@@ -93,6 +96,69 @@ void main() {
         .getSingle();
     expect(session.state, 'completed');
   });
+
+  testWidgets(
+    'post-commit haptic failure keeps answer locked and navigation available',
+    (tester) async {
+      final hapticAttempted = Completer<void>();
+      var hapticCalls = 0;
+      final messenger = tester.binding.defaultBinaryMessenger;
+      messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+        if (call.method == 'HapticFeedback.vibrate') {
+          hapticCalls += 1;
+          if (!hapticAttempted.isCompleted) hapticAttempted.complete();
+          throw PlatformException(code: 'haptic-unavailable');
+        }
+        return null;
+      });
+      addTearDown(
+        () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+
+      await tester.tap(find.text('สถานี'));
+      await tester.runAsync(() async {
+        await hapticAttempted.future;
+        await Future<void>.delayed(Duration.zero);
+      });
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+
+      expect(hapticCalls, 1);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(find.text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง'), findsNothing);
+      expect(find.text('ดูผลการเรียน'), findsOneWidget);
+      final answerButton = tester.widget<FilledButton>(
+        find.ancestor(
+          of: find.text('สถานี'),
+          matching: find.byType(FilledButton),
+        ),
+      );
+      expect(answerButton.onPressed, isNull);
+
+      await tester.tap(find.text('ดูผลการเรียน'));
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+
+      expect(find.byType(ScoreScreen), findsOneWidget);
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+    },
+  );
 
   testWidgets('missing category shows honest empty state', (tester) async {
     await tester.pumpWidget(

@@ -236,22 +236,27 @@ class _QuizScreenState extends State<QuizScreen> {
       } else {
         await pending.record();
       }
-      if (!mounted) return;
-      if (pending.isCorrect) {
-        await HapticFeedback.lightImpact();
-      } else {
-        await HapticFeedback.vibrate();
-      }
-      setState(() {
-        _answered = true;
-        _saving = false;
-      });
     } catch (_) {
       if (!mounted) return;
       setState(() => _saving = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
       );
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _answered = true;
+      _saving = false;
+    });
+    try {
+      if (pending.isCorrect) {
+        await HapticFeedback.lightImpact();
+      } else {
+        await HapticFeedback.vibrate();
+      }
+    } catch (_) {
+      // Evidence is already durable; ornamental feedback is best-effort.
     }
   }
 
