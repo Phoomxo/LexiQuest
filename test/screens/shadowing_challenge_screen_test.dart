@@ -458,6 +458,141 @@ void main() {
     expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
     expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
   });
+
+  testWidgets(
+    'session-close failure keeps one evidence write and a route-safe retry',
+    (tester) async {
+      final firstFinishRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+      });
+      final repository = _RetryLearningRepository(
+        failAnswerOnce: false,
+        failFinishOnce: true,
+        firstFinishRelease: firstFinishRelease,
+      );
+      var nextId = 0;
+      var clockTick = 0;
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-close-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 14, 11, 0, clockTick++),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      final speechGateway = _FakeSpeechGateway();
+      addTearDown(voice.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                key: const ValueKey<String>('open-shadowing-route'),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => ShadowingChallengeScreen(
+                        voice: voice,
+                        speechPractice: SpeechPracticeUseCases(speechGateway),
+                        learning: learning,
+                        evidenceAdapter: CurrentActivityEvidenceAdapter(
+                          learning: learning,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Open shadowing'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('open-shadowing-route')),
+      );
+      await tester.pumpAndSettle();
+
+      final listen = find.byKey(
+        const ValueKey<String>('shadowing-listen-button'),
+      );
+      final playReference = find.byKey(
+        const ValueKey<String>('shadowing-play-reference'),
+      );
+      final staleListenHandler = tester.widget<FilledButton>(listen).onPressed!;
+      await tester.tap(listen);
+      await tester.pumpAndSettle();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(1));
+      expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+      expect(
+        tester.widget<OutlinedButton>(playReference).onPressed,
+        isNull,
+        reason: 'reference playback must lock while session close is pending',
+      );
+      staleListenHandler();
+      await tester.pump();
+      expect(
+        speechGateway.startCalls,
+        1,
+        reason: 'a stale listen callback must honor the persistence lock',
+      );
+
+      firstFinishRelease.complete();
+      await tester.pumpAndSettle();
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      expect(
+        retry,
+        findsOneWidget,
+        reason: 'committed evidence with a failed session close needs retry',
+      );
+      expect(
+        tester.widget<OutlinedButton>(playReference).onPressed,
+        isNull,
+        reason: 'reference playback must lock while close retry is required',
+      );
+      expect(find.text('บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ'), findsOneWidget);
+      staleListenHandler();
+      await tester.pump();
+      expect(speechGateway.startCalls, 1);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(ShadowingChallengeScreen),
+        findsOneWidget,
+        reason: 'back must not discard a retry-required session close',
+      );
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(1));
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(2));
+      expect(repository.finishCalls.last, repository.finishCalls.first);
+      expect(retry, findsNothing);
+      expect(tester.widget<FilledButton>(listen).onPressed, isNotNull);
+      expect(tester.widget<OutlinedButton>(playReference).onPressed, isNotNull);
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(find.byType(ShadowingChallengeScreen), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('open-shadowing-route')),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 final class _LearningOwnerRepository implements LocalOwnerRepository {
@@ -473,8 +608,19 @@ final class _LearningOwnerRepository implements LocalOwnerRepository {
 }
 
 final class _RetryLearningRepository implements LearningRepository {
+  _RetryLearningRepository({
+    this.failAnswerOnce = true,
+    this.failFinishOnce = false,
+    this.firstFinishRelease,
+  });
+
+  final bool failAnswerOnce;
+  final bool failFinishOnce;
+  final Completer<void>? firstFinishRelease;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
-  var _failed = false;
+  final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
+  finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
+  var _answerFailed = false;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -497,8 +643,8 @@ final class _RetryLearningRepository implements LearningRepository {
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
-    if (!_failed) {
-      _failed = true;
+    if (failAnswerOnce && !_answerFailed) {
+      _answerFailed = true;
       throw StateError('simulated local failure');
     }
     return const AnswerRecordResult(inserted: true, srs: null);
@@ -509,17 +655,28 @@ final class _RetryLearningRepository implements LearningRepository {
     required String ownerId,
     required String sessionId,
     required DateTime endedAtUtc,
-  }) async => LearningSessionSummary(
-    id: sessionId,
-    ownerId: ownerId,
-    activityType: 'quiz',
-    state: 'completed',
-    startedAtUtc: endedAtUtc,
-    endedAtUtc: endedAtUtc,
-    correctCount: 1,
-    wrongCount: 0,
-    score: 1,
-  );
+  }) async {
+    finishCalls.add((
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    ));
+    if (failFinishOnce && finishCalls.length == 1) {
+      await firstFinishRelease?.future;
+      throw StateError('simulated session-close failure');
+    }
+    return LearningSessionSummary(
+      id: sessionId,
+      ownerId: ownerId,
+      activityType: 'quiz',
+      state: 'completed',
+      startedAtUtc: endedAtUtc,
+      endedAtUtc: endedAtUtc,
+      correctCount: 1,
+      wrongCount: 0,
+      score: 1,
+    );
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -530,6 +687,7 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 
   final bool emitFinal;
   final Object? cancelError;
+  int startCalls = 0;
   int cancelCalls = 0;
   @override
   bool isListening = false;
@@ -557,6 +715,7 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
     required String locale,
     required SpeechEventCallback onEvent,
   }) async {
+    startCalls += 1;
     isListening = true;
     if (!emitFinal) return;
     onEvent(

@@ -55,6 +55,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   TranscriptPronunciationAssessment? _assessment;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
+
+  bool get _persistenceLocked =>
+      _pendingEvidence != null || _pendingSessionClose != null;
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
@@ -154,6 +158,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _playReference() async {
+    if (_persistenceLocked) return;
     final reference = _referenceSentence;
     final session = routeVoiceSession;
     if (reference == null || session == null) return;
@@ -175,7 +180,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_listenPending || _pendingEvidence != null) return;
+    if (_listenPending || _persistenceLocked) return;
     if (_listening) {
       _listenEpoch += 1;
       _listenPending = false;
@@ -279,15 +284,14 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     if (mounted) setState(() {});
     try {
       await pending.record();
-      await learning.finishSession(sessionId);
-      _pendingEvidence = null;
-      if (mounted) setState(() {});
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
         setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
       }
+      return;
     }
+    await _beginSessionClose(learning: learning, sessionId: sessionId);
   }
 
   Future<void> _retryEvidence() async {
@@ -297,15 +301,49 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     if (pending == null || learning == null || sessionId == null) return;
     setState(() => _error = null);
     try {
-      if (pending.requiresRetry) await pending.retry();
-      await learning.finishSession(sessionId);
+      await pending.retry();
       _evidenceSaved = true;
-      _pendingEvidence = null;
-      if (mounted) setState(() {});
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
         setState(() => _error = 'วิเคราะห์เสียงได้แต่บันทึกประวัติไม่สำเร็จ');
+      }
+      return;
+    }
+    await _beginSessionClose(learning: learning, sessionId: sessionId);
+  }
+
+  Future<void> _beginSessionClose({
+    required LearningUseCases learning,
+    required String sessionId,
+  }) async {
+    try {
+      final pending = _pendingSessionClose ??= learning.captureSessionClose(
+        sessionId: sessionId,
+      );
+      _pendingEvidence = null;
+      if (mounted) setState(() {});
+      await pending.finish();
+      _pendingSessionClose = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ');
+      }
+    }
+  }
+
+  Future<void> _retrySessionClose() async {
+    final pending = _pendingSessionClose;
+    if (pending == null || !pending.requiresRetry) return;
+    setState(() => _error = null);
+    try {
+      await pending.retry();
+      _pendingSessionClose = null;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ');
       }
     }
   }
@@ -356,85 +394,101 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     }
     final assessment = _assessment;
     final reference = _referenceSentence;
-    return Scaffold(
-      appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
-          children: [
-            if (reference == null && _error == null)
-              const Center(child: CircularProgressIndicator())
-            else if (reference != null)
-              Text(reference, style: Theme.of(context).textTheme.headlineSmall),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              key: const ValueKey<String>('shadowing-play-reference'),
-              onPressed: reference == null ? null : _playReference,
-              icon: const Icon(Icons.volume_up_outlined),
-              label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
-            ),
-            const SizedBox(height: 12),
-            FilledButton.icon(
-              key: const ValueKey<String>('shadowing-listen-button'),
-              onPressed:
-                  reference == null ||
-                      _listenPending ||
-                      _pendingEvidence != null
-                  ? null
-                  : _toggleListening,
-              icon: Icon(_listening ? Icons.stop : Icons.mic),
-              label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
-            ),
-            if (_pendingEvidence?.requiresRetry ?? false) ...[
-              const SizedBox(height: 12),
-              FilledButton(
-                key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: _retryEvidence,
-                child: const Text('Retry saved pronunciation'),
+    final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
+    final sessionCloseRetryRequired =
+        _pendingSessionClose?.requiresRetry ?? false;
+    final persistenceLocked = _persistenceLocked;
+    return PopScope(
+      canPop: !persistenceLocked,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.all(20),
+            children: [
+              if (reference == null && _error == null)
+                const Center(child: CircularProgressIndicator())
+              else if (reference != null)
+                Text(
+                  reference,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
+              const SizedBox(height: 16),
+              OutlinedButton.icon(
+                key: const ValueKey<String>('shadowing-play-reference'),
+                onPressed: reference == null || persistenceLocked
+                    ? null
+                    : _playReference,
+                icon: const Icon(Icons.volume_up_outlined),
+                label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
               ),
-            ],
-            if (_transcript.isNotEmpty) ...[
-              const SizedBox(height: 20),
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('ข้อความที่ได้ยิน: $_transcript'),
-                      if (assessment != null) ...[
-                        const SizedBox(height: 8),
-                        Text(
-                          'ความเหมือนของข้อความ: '
-                          '${assessment.similarityPercent}%',
-                        ),
-                        const Text(
-                          'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
-                        ),
-                        Text(
-                          'เอนจิน: ${assessment.engine} '
-                          '(${assessment.locale})',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const SizedBox(height: 8),
-                        const Text(
-                          'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
-                          'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
-                        ),
-                      ],
-                    ],
+              const SizedBox(height: 12),
+              FilledButton.icon(
+                key: const ValueKey<String>('shadowing-listen-button'),
+                onPressed:
+                    reference == null || _listenPending || persistenceLocked
+                    ? null
+                    : _toggleListening,
+                icon: Icon(_listening ? Icons.stop : Icons.mic),
+                label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
+              ),
+              if (evidenceRetryRequired || sessionCloseRetryRequired) ...[
+                const SizedBox(height: 12),
+                FilledButton(
+                  key: const ValueKey<String>('current-evidence-retry'),
+                  onPressed: evidenceRetryRequired
+                      ? _retryEvidence
+                      : _retrySessionClose,
+                  child: Text(
+                    evidenceRetryRequired
+                        ? 'Retry saved pronunciation'
+                        : 'Retry session completion',
                   ),
                 ),
-              ),
+              ],
+              if (_transcript.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('ข้อความที่ได้ยิน: $_transcript'),
+                        if (assessment != null) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            'ความเหมือนของข้อความ: '
+                            '${assessment.similarityPercent}%',
+                          ),
+                          const Text(
+                            'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
+                          ),
+                          Text(
+                            'เอนจิน: ${assessment.engine} '
+                            '(${assessment.locale})',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const SizedBox(height: 8),
+                          const Text(
+                            'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
+                            'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+              if (_error != null) ...[
+                const SizedBox(height: 12),
+                Text(
+                  _error!,
+                  style: TextStyle(color: Theme.of(context).colorScheme.error),
+                ),
+              ],
             ],
-            if (_error != null) ...[
-              const SizedBox(height: 12),
-              Text(
-                _error!,
-                style: TextStyle(color: Theme.of(context).colorScheme.error),
-              ),
-            ],
-          ],
+          ),
         ),
       ),
     );

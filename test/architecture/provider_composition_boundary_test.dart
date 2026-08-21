@@ -306,13 +306,14 @@ void main() {
     },
   );
 
-  test('only LearningUseCases can mint owner-bound evidence capabilities', () {
+  test('only LearningUseCases can mint owner-bound learning capabilities', () {
     final production = _productionDartSources();
     const authorityPath =
         'lib/features/learning/application/learning_use_cases.dart';
     const capabilityTypes = <String>[
       'OwnerBoundLearningEvidenceBasis',
       'ResolvedLearningEvidenceRecord',
+      'PendingLearningSessionClose',
     ];
 
     for (final type in capabilityTypes) {

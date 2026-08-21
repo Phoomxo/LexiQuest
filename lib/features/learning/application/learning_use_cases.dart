@@ -79,6 +79,110 @@ final class ResolvedLearningEvidenceRecord {
   final ResolvedLearningEvidenceContexts contexts;
 }
 
+enum PendingLearningSessionCloseStatus {
+  captured,
+  bindingOwner,
+  writing,
+  retryRequired,
+  committed,
+}
+
+/// One frozen, owner-bound-once session close that can be retried without
+/// changing its session identity or completion time.
+final class PendingLearningSessionClose {
+  PendingLearningSessionClose._({
+    required LearningUseCases learning,
+    required this.sessionId,
+    required this.completedAtUtc,
+  }) : _learning = learning;
+
+  final LearningUseCases _learning;
+  final String sessionId;
+  final DateTime completedAtUtc;
+
+  PendingLearningSessionCloseStatus _status =
+      PendingLearningSessionCloseStatus.captured;
+  String? _ownerId;
+  Future<String>? _ownerBindingInFlight;
+  Future<LearningSessionSummary>? _finishInFlight;
+  LearningSessionSummary? _result;
+
+  PendingLearningSessionCloseStatus get status => _status;
+  bool get requiresRetry =>
+      _status == PendingLearningSessionCloseStatus.retryRequired;
+  bool get isCommitted =>
+      _status == PendingLearningSessionCloseStatus.committed;
+  bool get isInFlight => _finishInFlight != null;
+
+  Future<LearningSessionSummary> finish() {
+    final inFlight = _finishInFlight;
+    if (inFlight != null) return inFlight;
+    if (requiresRetry) {
+      return Future<LearningSessionSummary>.error(
+        StateError('explicit retry is required for pending session close'),
+      );
+    }
+    final result = _result;
+    if (result != null) return Future<LearningSessionSummary>.value(result);
+    return _startFinish();
+  }
+
+  Future<LearningSessionSummary> retry() {
+    final inFlight = _finishInFlight;
+    if (inFlight != null) return inFlight;
+    if (!requiresRetry) {
+      return Future<LearningSessionSummary>.error(
+        StateError('pending session close is not awaiting retry'),
+      );
+    }
+    return _startFinish();
+  }
+
+  Future<LearningSessionSummary> _startFinish() {
+    final future = _executeFinish();
+    _finishInFlight = future;
+    return future;
+  }
+
+  Future<LearningSessionSummary> _executeFinish() async {
+    try {
+      _status = PendingLearningSessionCloseStatus.bindingOwner;
+      final ownerId = await _bindOwnerOnce();
+      _status = PendingLearningSessionCloseStatus.writing;
+      final result = await _learning._finishCapturedSessionClose(
+        ownerId: ownerId,
+        sessionId: sessionId,
+        completedAtUtc: completedAtUtc,
+      );
+      _result = result;
+      _status = PendingLearningSessionCloseStatus.committed;
+      return result;
+    } catch (_) {
+      _status = PendingLearningSessionCloseStatus.retryRequired;
+      rethrow;
+    } finally {
+      _finishInFlight = null;
+    }
+  }
+
+  Future<String> _bindOwnerOnce() {
+    final ownerId = _ownerId;
+    if (ownerId != null) return Future<String>.value(ownerId);
+    return _ownerBindingInFlight ??= _bindOwnerAndMemoize();
+  }
+
+  Future<String> _bindOwnerAndMemoize() async {
+    try {
+      final owner = await _learning.owners.getOrCreateActiveOwner();
+      final ownerId = _learning._requiredId(owner.id, 'ownerId');
+      _ownerId = ownerId;
+      return ownerId;
+    } finally {
+      _ownerBindingInFlight = null;
+    }
+  }
+}
+
 final class LearningUseCases {
   LearningUseCases({
     required this.owners,
@@ -461,12 +565,27 @@ final class LearningUseCases {
     );
   }
 
-  Future<LearningSessionSummary> finishSession(String sessionId) async {
-    final owner = await owners.getOrCreateActiveOwner();
-    final result = await repository.finishSession(
-      ownerId: owner.id,
+  PendingLearningSessionClose captureSessionClose({required String sessionId}) {
+    return PendingLearningSessionClose._(
+      learning: this,
       sessionId: _requiredId(sessionId, 'sessionId'),
-      endedAtUtc: _now(),
+      completedAtUtc: _now(),
+    );
+  }
+
+  Future<LearningSessionSummary> finishSession(String sessionId) {
+    return captureSessionClose(sessionId: sessionId).finish();
+  }
+
+  Future<LearningSessionSummary> _finishCapturedSessionClose({
+    required String ownerId,
+    required String sessionId,
+    required DateTime completedAtUtc,
+  }) async {
+    final result = await repository.finishSession(
+      ownerId: _requiredId(ownerId, 'ownerId'),
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      endedAtUtc: _requiredUtc(completedAtUtc, 'completedAtUtc'),
     );
     onLocalMutation?.call();
     return result;
