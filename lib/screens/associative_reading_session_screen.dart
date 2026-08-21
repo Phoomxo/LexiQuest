@@ -112,10 +112,30 @@ class _AssociativeReadingSessionScreenState
   bool _completed = false;
   PendingLearningSessionClose? _pendingSessionClose;
   PendingReadingProgress? _pendingCompletionProgress;
+  PendingReadingProgress? _pendingCheckpointProgress;
+  int? _pendingCheckpointPosition;
+  bool _pendingCheckpointAdvancesStage = false;
+  _PendingAssociationBatch? _pendingAssociationBatch;
 
   bool get _completionLocked =>
       _pendingSessionClose != null || _pendingCompletionProgress != null;
-  bool get _actionLocked => _saving || _completionLocked || _completed;
+  bool get _checkpointLocked => _pendingCheckpointProgress != null;
+  bool get _associationLocked => _pendingAssociationBatch != null;
+  bool get _recallEvidenceLocked => _pendingRecallEvidence.any(
+    (pending) => pending != null && !pending.isCommitted,
+  );
+  bool get _persistenceLocked =>
+      _saving ||
+      _completionLocked ||
+      _checkpointLocked ||
+      _associationLocked ||
+      _recallEvidenceLocked;
+  bool get _actionLocked =>
+      _saving ||
+      _completionLocked ||
+      _checkpointLocked ||
+      _associationLocked ||
+      _completed;
 
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
@@ -206,10 +226,16 @@ class _AssociativeReadingSessionScreenState
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_unavailableReason != null || _completionLocked || _completed) return;
+    if (_unavailableReason != null || _persistenceLocked || _completed) return;
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
-      unawaited(_checkpoint(isCompleted: false, showFailure: false));
+      unawaited(
+        _checkpoint(
+          isCompleted: false,
+          showFailure: false,
+          advancesStage: false,
+        ),
+      );
     }
   }
 
@@ -264,11 +290,15 @@ class _AssociativeReadingSessionScreenState
       return;
     }
 
-    final nextStage = _currentStage + 1;
+    await _advanceToStage(_currentStage + 1);
+  }
+
+  Future<void> _advanceToStage(int nextStage) async {
     final saved = await _checkpoint(
       position: nextStage,
       isCompleted: false,
       showFailure: true,
+      advancesStage: true,
     );
     if (!mounted) return;
     if (!saved) {
@@ -279,6 +309,21 @@ class _AssociativeReadingSessionScreenState
       _currentStage = nextStage;
       _saving = false;
     });
+  }
+
+  Future<void> _retryAssociationBatch() async {
+    final pending = _pendingAssociationBatch;
+    if (_saving || _completed || pending == null || !pending.requiresRetry) {
+      return;
+    }
+    setState(() => _saving = true);
+    final saved = await _saveAssociations();
+    if (!mounted) return;
+    if (!saved) {
+      setState(() => _saving = false);
+      return;
+    }
+    await _advanceToStage(_currentStage + 1);
   }
 
   Future<void> _finishCompletion() async {
@@ -446,60 +491,29 @@ class _AssociativeReadingSessionScreenState
     final learning = _learning;
     final associativeLearning = _associativeLearning;
     if (learning == null || associativeLearning == null) return false;
+    final draft = _pendingAssociationBatch == null
+        ? _captureAssociationDraft()
+        : null;
 
     try {
-      final ownerId = (await learning.owners.getOrCreateActiveOwner()).id;
-      final now = DateTime.now().toUtc();
-      for (var i = 0; i < widget.targetWords.length; i++) {
-        final displayWord = widget.targetWords[i];
-        final wordKey = widget.targetWordIds?[displayWord] ?? displayWord;
-        final cue = _cueControllers[i].text.trim();
-        if (cue.isEmpty) {
-          final existing = await associativeLearning.getMemoryState(
-            ownerId,
-            wordKey,
-          );
-          final associations = await associativeLearning.getAssociationsForWord(
-            ownerId,
-            wordKey,
-          );
-          if (associations.isEmpty || existing == null) {
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text(
-                    'Create a memory cue for every target word before continuing.',
-                  ),
-                ),
-              );
-            }
-            return false;
-          }
-          continue;
-        }
-        final association = AssociationRecord(
-          associationId: 'assoc:$wordKey:${now.millisecondsSinceEpoch}:$i',
-          ownerId: ownerId,
-          wordKey: wordKey,
-          type: 'keyword',
-          content: cue,
-          createdAtUtc: now,
+      var pending = _pendingAssociationBatch;
+      if (pending == null) {
+        pending = await _bindAssociationBatch(
+          learning: learning,
+          associativeLearning: associativeLearning,
+          draft: draft!,
         );
-        final initialState = AssociativeMemoryState(
-          ownerId: ownerId,
-          wordKey: wordKey,
-          stability: 1,
-          difficulty: 5,
-          cueDependency: 1,
-          lapseCount: 0,
-          lastReviewedAtUtc: now,
-          nextDueAtUtc: now.add(const Duration(days: 1)),
-          algorithmVersion: 'associative-v1',
-        );
-        await associativeLearning.saveAssociationAndMemoryState(
-          association,
-          initialState,
-        );
+        if (pending == null) return false;
+        _pendingAssociationBatch = pending;
+        if (mounted) setState(() {});
+      }
+      if (pending.requiresRetry) {
+        await pending.retry();
+      } else {
+        await pending.save();
+      }
+      if (identical(_pendingAssociationBatch, pending)) {
+        _pendingAssociationBatch = null;
       }
       return true;
     } catch (_) {
@@ -514,33 +528,172 @@ class _AssociativeReadingSessionScreenState
     }
   }
 
+  _AssociationBatchDraft _captureAssociationDraft() {
+    final targetWords = List<String>.of(widget.targetWords);
+    final targetWordIds = widget.targetWordIds == null
+        ? null
+        : Map<String, String>.of(widget.targetWordIds!);
+    if (_cueControllers.length != targetWords.length) {
+      throw StateError('association controller count does not match targets');
+    }
+    return _AssociationBatchDraft(
+      capturedAtUtc: DateTime.now().toUtc(),
+      entries: List<_AssociationDraftEntry>.generate(targetWords.length, (
+        index,
+      ) {
+        final displayWord = targetWords[index];
+        return _AssociationDraftEntry(
+          ordinal: index,
+          wordKey: targetWordIds?[displayWord] ?? displayWord,
+          cue: _cueControllers[index].text.trim(),
+        );
+      }),
+    );
+  }
+
+  Future<_PendingAssociationBatch?> _bindAssociationBatch({
+    required LearningUseCases learning,
+    required AssociativeLearningPort associativeLearning,
+    required _AssociationBatchDraft draft,
+  }) async {
+    final ownerId = (await learning.owners.getOrCreateActiveOwner()).id;
+    final writes = <_AssociationWrite>[];
+    for (final entry in draft.entries) {
+      if (entry.cue.isEmpty) {
+        final existing = await associativeLearning.getMemoryState(
+          ownerId,
+          entry.wordKey,
+        );
+        final associations = await associativeLearning.getAssociationsForWord(
+          ownerId,
+          entry.wordKey,
+        );
+        if (associations.isEmpty || existing == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Create a memory cue for every target word before continuing.',
+                ),
+              ),
+            );
+          }
+          return null;
+        }
+        continue;
+      }
+      writes.add(
+        _AssociationWrite(
+          association: AssociationRecord(
+            associationId:
+                'assoc:${entry.wordKey}:'
+                '${draft.capturedAtUtc.millisecondsSinceEpoch}:'
+                '${entry.ordinal}',
+            ownerId: ownerId,
+            wordKey: entry.wordKey,
+            type: 'keyword',
+            content: entry.cue,
+            createdAtUtc: draft.capturedAtUtc,
+          ),
+          initialState: AssociativeMemoryState(
+            ownerId: ownerId,
+            wordKey: entry.wordKey,
+            stability: 1,
+            difficulty: 5,
+            cueDependency: 1,
+            lapseCount: 0,
+            lastReviewedAtUtc: draft.capturedAtUtc,
+            nextDueAtUtc: draft.capturedAtUtc.add(const Duration(days: 1)),
+            algorithmVersion: 'associative-v1',
+          ),
+        ),
+      );
+    }
+    return _PendingAssociationBatch(associativeLearning, writes: writes);
+  }
+
   // ── Checkpoint ─────────────────────────────────────────────────────────────
 
   Future<bool> _checkpoint({
     int? position,
     required bool isCompleted,
     required bool showFailure,
+    required bool advancesStage,
   }) async {
     final learning = _learning;
     if (learning == null) return true;
+    if (_pendingCheckpointProgress != null) return false;
+    final checkpointPosition = position ?? _currentStage;
+    final pending = learning.captureReadingProgress(
+      documentId: _documentId,
+      documentRevision: widget.documentRevision,
+      position: checkpointPosition,
+      isCompleted: isCompleted,
+    );
+    _pendingCheckpointProgress = pending;
+    _pendingCheckpointPosition = checkpointPosition;
+    _pendingCheckpointAdvancesStage = advancesStage;
+    if (mounted) setState(() {});
     try {
-      await learning.saveReadingProgress(
-        documentId: _documentId,
-        documentRevision: widget.documentRevision,
-        position: position ?? _currentStage,
-        isCompleted: isCompleted,
-      );
+      await pending.save();
+      if (identical(_pendingCheckpointProgress, pending)) {
+        if (mounted) {
+          setState(_clearPendingCheckpoint);
+        } else {
+          _clearPendingCheckpoint();
+        }
+      }
       return true;
     } catch (_) {
-      if (showFailure && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง'),
-          ),
-        );
+      if (mounted) {
+        setState(() {});
+        if (showFailure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง'),
+            ),
+          );
+        }
       }
       return false;
     }
+  }
+
+  Future<void> _retryCheckpoint() async {
+    final pending = _pendingCheckpointProgress;
+    if (_saving || _completed || pending == null || !pending.requiresRetry) {
+      return;
+    }
+    final checkpointPosition = _pendingCheckpointPosition;
+    final advancesStage = _pendingCheckpointAdvancesStage;
+    setState(() => _saving = true);
+    try {
+      await pending.retry();
+      if (!mounted) return;
+      setState(() {
+        if (identical(_pendingCheckpointProgress, pending)) {
+          _clearPendingCheckpoint();
+        }
+        if (advancesStage && checkpointPosition != null) {
+          _currentStage = checkpointPosition;
+        }
+        _saving = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('บันทึกตำแหน่งอ่านไม่สำเร็จ กรุณาลองอีกครั้ง'),
+        ),
+      );
+    }
+  }
+
+  void _clearPendingCheckpoint() {
+    _pendingCheckpointProgress = null;
+    _pendingCheckpointPosition = null;
+    _pendingCheckpointAdvancesStage = false;
   }
 
   // ── Build ──────────────────────────────────────────────────────────────────
@@ -556,8 +709,10 @@ class _AssociativeReadingSessionScreenState
     );
     final closeRetry = _pendingSessionClose?.requiresRetry ?? false;
     final progressRetry = _pendingCompletionProgress?.requiresRetry ?? false;
+    final checkpointRetry = _pendingCheckpointProgress?.requiresRetry ?? false;
+    final associationRetry = _pendingAssociationBatch?.requiresRetry ?? false;
     return PopScope(
-      canPop: !_completionLocked,
+      canPop: !_persistenceLocked,
       child: Scaffold(
         appBar: AppBar(
           title: Text('Associative Reading (${widget.cefrLevel})'),
@@ -590,6 +745,12 @@ class _AssociativeReadingSessionScreenState
                           ? const ValueKey<String>(
                               'current-reading-progress-retry',
                             )
+                          : checkpointRetry
+                          ? const ValueKey<String>(
+                              'current-reading-checkpoint-retry',
+                            )
+                          : associationRetry
+                          ? const ValueKey<String>('current-association-retry')
                           : recallRetry
                           ? const ValueKey<String>('current-evidence-retry')
                           : null,
@@ -599,7 +760,15 @@ class _AssociativeReadingSessionScreenState
                           ? _retrySessionClose
                           : progressRetry
                           ? _retryCompletionProgress
+                          : checkpointRetry
+                          ? _retryCheckpoint
+                          : associationRetry
+                          ? _retryAssociationBatch
                           : _completionLocked
+                          ? null
+                          : _checkpointLocked
+                          ? null
+                          : _associationLocked
                           ? null
                           : _nextStage,
                       style: FilledButton.styleFrom(
@@ -610,6 +779,10 @@ class _AssociativeReadingSessionScreenState
                             ? 'Retry Session Completion'
                             : progressRetry
                             ? 'Retry Reading Completion'
+                            : checkpointRetry
+                            ? 'Retry Reading Checkpoint'
+                            : associationRetry
+                            ? 'Retry Memory Associations'
                             : recallRetry
                             ? 'Retry Evidence'
                             : _currentStage < 6
@@ -726,7 +899,8 @@ class _AssociativeReadingSessionScreenState
                     const SizedBox(height: 6),
                     TextField(
                       controller: _cueControllers[i],
-                      enabled: !_saving,
+                      enabled:
+                          !_saving && !_associationLocked && !_checkpointLocked,
                       decoration: const InputDecoration(
                         hintText: 'Keyword, story, or image...',
                         border: OutlineInputBorder(),
@@ -748,7 +922,7 @@ class _AssociativeReadingSessionScreenState
             const Text('Use one target word in a new sentence.'),
             const SizedBox(height: 12),
             TextField(
-              enabled: !_saving,
+              enabled: !_saving && !_checkpointLocked,
               decoration: const InputDecoration(
                 hintText: 'Enter a new sentence',
                 border: OutlineInputBorder(),
@@ -778,6 +952,116 @@ class _AssociativeReadingSessionScreenState
               const Text('Tap Finish Session to save completion.'),
           ],
         );
+    }
+  }
+}
+
+enum _PendingAssociationBatchStatus {
+  captured,
+  writing,
+  retryRequired,
+  committed,
+}
+
+final class _AssociationDraftEntry {
+  const _AssociationDraftEntry({
+    required this.ordinal,
+    required this.wordKey,
+    required this.cue,
+  });
+
+  final int ordinal;
+  final String wordKey;
+  final String cue;
+}
+
+final class _AssociationBatchDraft {
+  _AssociationBatchDraft({
+    required this.capturedAtUtc,
+    required List<_AssociationDraftEntry> entries,
+  }) : entries = List<_AssociationDraftEntry>.unmodifiable(entries);
+
+  final DateTime capturedAtUtc;
+  final List<_AssociationDraftEntry> entries;
+}
+
+final class _AssociationWrite {
+  const _AssociationWrite({
+    required this.association,
+    required this.initialState,
+  });
+
+  final AssociationRecord association;
+  final AssociativeMemoryState initialState;
+}
+
+/// One immutable Stage 4 batch. Successful prefixes are never replayed, while
+/// a write that may have committed before throwing is retried with the same ID
+/// and timestamp so both production and in-memory adapters remain idempotent.
+final class _PendingAssociationBatch {
+  _PendingAssociationBatch(
+    this._associativeLearning, {
+    required List<_AssociationWrite> writes,
+  }) : _writes = List<_AssociationWrite>.unmodifiable(writes);
+
+  final AssociativeLearningPort _associativeLearning;
+  final List<_AssociationWrite> _writes;
+  _PendingAssociationBatchStatus _status =
+      _PendingAssociationBatchStatus.captured;
+  Future<void>? _saveInFlight;
+  var _nextWrite = 0;
+
+  bool get requiresRetry =>
+      _status == _PendingAssociationBatchStatus.retryRequired;
+
+  Future<void> save() {
+    final inFlight = _saveInFlight;
+    if (inFlight != null) return inFlight;
+    if (requiresRetry) {
+      return Future<void>.error(
+        StateError('explicit retry is required for association batch'),
+      );
+    }
+    if (_status == _PendingAssociationBatchStatus.committed) {
+      return Future<void>.value();
+    }
+    return _startSave();
+  }
+
+  Future<void> retry() {
+    final inFlight = _saveInFlight;
+    if (inFlight != null) return inFlight;
+    if (!requiresRetry) {
+      return Future<void>.error(
+        StateError('association batch is not awaiting retry'),
+      );
+    }
+    return _startSave();
+  }
+
+  Future<void> _startSave() {
+    final future = _executeSave();
+    _saveInFlight = future;
+    return future;
+  }
+
+  Future<void> _executeSave() async {
+    try {
+      _status = _PendingAssociationBatchStatus.writing;
+      while (_nextWrite < _writes.length) {
+        final write = _writes[_nextWrite];
+        await _associativeLearning.saveAssociationAndMemoryState(
+          write.association,
+          write.initialState,
+        );
+        _nextWrite++;
+      }
+      _status = _PendingAssociationBatchStatus.committed;
+    } catch (_) {
+      _status = _PendingAssociationBatchStatus.retryRequired;
+      rethrow;
+    } finally {
+      _saveInFlight = null;
     }
   }
 }

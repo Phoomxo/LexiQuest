@@ -35,6 +35,19 @@ class _QuizScreenState extends State<QuizScreen> {
   DateTime? _questionStartedAt;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
+  bool _completionCommitted = false;
+
+  bool get _evidencePersistenceLocked {
+    final pending = _pendingEvidence;
+    return pending != null && !pending.isCommitted;
+  }
+
+  bool get _persistenceLocked =>
+      _evidencePersistenceLocked ||
+      _pendingSessionClose != null ||
+      _completionCommitted;
+  bool get _actionLocked => _saving || _persistenceLocked;
 
   @override
   void didChangeDependencies() {
@@ -65,10 +78,11 @@ class _QuizScreenState extends State<QuizScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final persistenceLocked = _persistenceLocked;
     return PopScope(
-      canPop: _session == null || _index == 0,
+      canPop: !persistenceLocked && (_session == null || _index == 0),
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop) return;
+        if (didPop || persistenceLocked) return;
         _confirmExit(context);
       },
       child: Scaffold(
@@ -102,7 +116,10 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Widget _buildQuestion(QuizSession session) {
     final question = session.questions[_index];
-    final responseLocked = _pendingEvidence?.isResponseLocked ?? false;
+    final actionLocked = _actionLocked;
+    final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
+    final sessionCloseRetryRequired =
+        _pendingSessionClose?.requiresRetry ?? false;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -132,7 +149,7 @@ class _QuizScreenState extends State<QuizScreen> {
               (option) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: FilledButton.tonal(
-                  onPressed: _answered || _saving || responseLocked
+                  onPressed: _answered || actionLocked
                       ? null
                       : () => _record(question, option),
                   style: FilledButton.styleFrom(
@@ -145,15 +162,21 @@ class _QuizScreenState extends State<QuizScreen> {
             ),
             const Spacer(),
             if (_saving) const LinearProgressIndicator(),
-            if (_pendingEvidence?.requiresRetry ?? false)
+            if (evidenceRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
                 onPressed: _saving ? null : _retryEvidence,
                 child: const Text('Retry saved answer'),
-              ),
-            if (_answered)
+              )
+            else if (sessionCloseRetryRequired)
               FilledButton(
-                onPressed: _saving ? null : _next,
+                key: const ValueKey<String>('current-evidence-retry'),
+                onPressed: _saving ? null : _retrySessionClose,
+                child: const Text('Retry session completion'),
+              ),
+            if (_answered && _pendingSessionClose == null)
+              FilledButton(
+                onPressed: actionLocked ? null : _next,
                 child: Text(
                   _index == session.questions.length - 1
                       ? 'ดูผลการเรียน'
@@ -167,6 +190,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _confirmExit(BuildContext context) async {
+    if (_persistenceLocked) return;
     final shouldExit = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -184,7 +208,7 @@ class _QuizScreenState extends State<QuizScreen> {
         ],
       ),
     );
-    if (shouldExit == true && context.mounted) {
+    if (shouldExit == true && context.mounted && !_persistenceLocked) {
       Navigator.pop(context);
     }
   }
@@ -261,6 +285,7 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _next() async {
+    if (_actionLocked) return;
     final session = _session!;
     if (_index < session.questions.length - 1) {
       setState(() {
@@ -274,27 +299,58 @@ class _QuizScreenState extends State<QuizScreen> {
     }
     setState(() => _saving = true);
     try {
-      final summary = await _learning!.finishSession(session.id);
-      if (!mounted) return;
-      await AppNavigator.pushPage<void>(
-        context,
-        AppPage<void>(
-          name: 'learning/score',
-          builder: (_) => ScoreScreen(
-            correctAnswers: summary.correctCount,
-            wrongAnswers: summary.wrongCount,
-            score: summary.score,
-          ),
-        ),
-        replace: true,
+      final pending = _pendingSessionClose ??= _learning!.captureSessionClose(
+        sessionId: session.id,
       );
+      final summary = await pending.finish();
+      await _showScore(summary);
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
-      );
+      _showSessionCloseFailure();
     }
+  }
+
+  Future<void> _retrySessionClose() async {
+    final pending = _pendingSessionClose;
+    if (pending == null || !pending.requiresRetry || _saving) return;
+    setState(() => _saving = true);
+    try {
+      final summary = await pending.retry();
+      await _showScore(summary);
+    } catch (_) {
+      _showSessionCloseFailure();
+    }
+  }
+
+  Future<void> _showScore(LearningSessionSummary summary) async {
+    if (!mounted) return;
+    setState(() {
+      _pendingEvidence = null;
+      _pendingSessionClose = null;
+      _completionCommitted = true;
+      _saving = false;
+    });
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'learning/score',
+        builder: (_) => ScoreScreen(
+          correctAnswers: summary.correctCount,
+          wrongAnswers: summary.wrongCount,
+          score: summary.score,
+        ),
+      ),
+      replace: true,
+    );
+  }
+
+  void _showSessionCloseFailure() {
+    if (!mounted) return;
+    setState(() => _saving = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
+    );
   }
 }
 

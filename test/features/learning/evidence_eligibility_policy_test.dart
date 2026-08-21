@@ -128,9 +128,12 @@ void main() {
             ),
             projection: projection,
           );
+          final expectedShadow = evidenceClass == EvidenceClass.recreational
+              ? _expectedV1[evidenceClass]![projection]
+              : _expectedLegacy[projection];
           expect(
             shadow.dispositionToApply,
-            _expectedLegacy[projection],
+            expectedShadow,
             reason: 'Shadow applied $evidenceClass x $projection',
           );
           expect(
@@ -140,8 +143,7 @@ void main() {
           );
           expect(
             shadow.isDivergent,
-            _expectedLegacy[projection] !=
-                _expectedV1[evidenceClass]![projection],
+            expectedShadow != _expectedV1[evidenceClass]![projection],
             reason: 'Shadow divergence $evidenceClass x $projection',
           );
         }
@@ -200,6 +202,48 @@ void main() {
       expect(decision.isDivergent, isTrue);
       expect(decision.isEligible, isTrue);
     });
+
+    test(
+      'recreational evidence keeps its game-history safety floor in Legacy and Shadow',
+      () {
+        final contexts = <EvidenceContext>[
+          _legacyContext(evidenceClass: EvidenceClass.recreational),
+          _declaredContext(
+            evidenceClass: EvidenceClass.recreational,
+            rolloutMode: EvidencePolicyRolloutMode.shadow,
+          ),
+        ];
+
+        for (final context in contexts) {
+          for (final projection in LearningProjection.values) {
+            final decision = EvidenceProjectionDecision.resolve(
+              context: context,
+              projection: projection,
+            );
+            final expected =
+                _expectedV1[EvidenceClass.recreational]![projection]!;
+            expect(
+              const EvidenceEligibilityPolicySet().disposition(
+                context,
+                projection,
+              ),
+              expected,
+              reason: '${context.rolloutMode.name} policy $projection',
+            );
+            expect(
+              decision.dispositionToApply,
+              expected,
+              reason: '${context.rolloutMode.name} $projection',
+            );
+            expect(
+              decision.isEligible,
+              expected == ProjectionDisposition.allow,
+              reason: '${context.rolloutMode.name} $projection',
+            );
+          }
+        }
+      },
+    );
 
     test('Enforced applies v1 and permits efficacy outcomes', () {
       final context = _declaredContext(
@@ -397,8 +441,10 @@ EvidenceContext _declaredContext({
   engagementAllowed: engagementAllowed,
 );
 
-EvidenceContext _legacyContext() => EvidenceContext.legacyCompatibility(
-  evidenceClass: EvidenceClass.independentRecall,
+EvidenceContext _legacyContext({
+  EvidenceClass evidenceClass = EvidenceClass.independentRecall,
+}) => EvidenceContext.legacyCompatibility(
+  evidenceClass: evidenceClass,
   skillId: 'legacy.practice',
   hintLevel: 0,
   contentRevision: 'legacy-content',

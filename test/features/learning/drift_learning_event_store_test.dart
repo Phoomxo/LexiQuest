@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_ad
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 
 void main() {
@@ -191,6 +192,73 @@ void main() {
       throwsStateError,
     );
   });
+
+  test(
+    'Ghost recreational evidence stays game-history-only in Legacy and Shadow stores',
+    () async {
+      final contexts = <EvidenceContext>[
+        _recreationalEvidence(EvidencePolicyRolloutMode.legacy),
+        _recreationalEvidence(EvidencePolicyRolloutMode.shadow),
+      ];
+
+      for (final context in contexts) {
+        final id = 'ghost-${context.rolloutMode.name}';
+        final occurredAtUtc = DateTime.utc(
+          2026,
+          8,
+          14,
+          context.rolloutMode == EvidencePolicyRolloutMode.legacy ? 9 : 10,
+        );
+        await _insertAttempt(
+          database,
+          id: id,
+          occurredAtUtc: occurredAtUtc,
+          evidenceContext: context,
+        );
+        final attempt = await (database.select(
+          database.answerAttempts,
+        )..where((row) => row.id.equals(id))).getSingle();
+        final source = context.rolloutMode == EvidencePolicyRolloutMode.legacy
+            ? _event(
+                sourceEvidenceId: id,
+                occurredAtUtc: occurredAtUtc,
+                evidenceContext: context,
+              )
+            : _enforcedEvent(
+                sourceEvidenceId: id,
+                occurredAtUtc: occurredAtUtc,
+                evidenceContext: context,
+              );
+        final modeStore = DriftLearningEventStore(
+          database,
+          rolloutModeProvider:
+              context.rolloutMode == EvidencePolicyRolloutMode.legacy
+              ? const FixedEvidencePolicyRolloutModeProvider.legacy()
+              : const ContextEvidencePolicyRolloutModeProvider(),
+        );
+
+        final decisions = await modeStore.ensureDecisionSetForAttempt(
+          attempt: attempt,
+          sourceEvent: source,
+        );
+
+        for (final projection in LearningProjection.values) {
+          final expected =
+              evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
+          expect(
+            decisions.decisionFor(projection).effectiveDecision,
+            expected,
+            reason: '${context.rolloutMode.name} $projection',
+          );
+          expect(
+            decisions.allows(projection),
+            expected == ProjectionDisposition.allow,
+            reason: '${context.rolloutMode.name} $projection',
+          );
+        }
+      }
+    },
+  );
 
   test(
     'decision set replay validates the full immutable expected envelope',
@@ -1010,6 +1078,33 @@ EvidenceContext _enforcedEvidence() => EvidenceContext.forNewEvidence(
   researchConsentVersion: 1,
   engagementAllowed: true,
 );
+
+EvidenceContext _recreationalEvidence(EvidencePolicyRolloutMode rolloutMode) {
+  if (rolloutMode == EvidencePolicyRolloutMode.legacy) {
+    return EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.recreational,
+      skillId: 'ghost-duel',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+  }
+  return EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.recreational,
+    skillId: 'ghost-duel',
+    hintLevel: 0,
+    contentRevision: 'built-in-v1',
+    rolloutMode: rolloutMode,
+    protocolId: 'protocol-a',
+    protocolVersion: 'protocol-v1',
+    experimentId: 'experiment-a',
+    experimentVersion: 1,
+    assignmentId: 'assignment-a',
+    cohort: 'enforced',
+    researchConsentVersion: 1,
+    engagementAllowed: true,
+  );
+}
 
 EventEnvelopeV2 _enforcedEvent({
   required String sourceEvidenceId,

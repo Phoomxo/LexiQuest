@@ -192,7 +192,7 @@ void main() {
     },
   );
 
-  test('invalid acknowledgement cannot clear its outbox operation', () async {
+  test('invalid push payload cannot clear its outbox operation', () async {
     await _seedCategoryOperation(database);
     gateway.pushFailure = const InvalidSyncPayloadFailure();
 
@@ -208,6 +208,26 @@ void main() {
     expect(operation.acknowledgedAtUtcMs, isNull);
     expect(gateway.appliedOperationIds, isEmpty);
   });
+
+  test(
+    'mismatched acknowledgement cannot clear its outbox operation',
+    () async {
+      await _seedCategoryOperation(database);
+      gateway.onPush = (mutation) async => PushAcknowledged(
+        operationId: 'mismatched:${mutation.operationId}',
+        resultingRevision: mutation.localRevision,
+        acknowledgedAtUtc: nowUtc,
+      );
+
+      await expectLater(engine().run(), throwsA(isA<ArgumentError>()));
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+
+      expect(operation.state, isNot('acknowledged'));
+      expect(operation.acknowledgedAtUtcMs, isNull);
+    },
+  );
 
   test('push conflict records evidence and selects cloud state', () async {
     await _seedCategoryOperation(database);

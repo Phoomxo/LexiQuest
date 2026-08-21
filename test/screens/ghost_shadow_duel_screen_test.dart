@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
@@ -72,6 +74,100 @@ void main() {
     expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
     expect(retry.evidenceContext.evidenceClass, EvidenceClass.recreational);
   });
+
+  testWidgets(
+    'system back cannot discard in-flight or retry-required Ghost evidence',
+    (tester) async {
+      final firstAnswerRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstAnswerRelease.isCompleted) firstAnswerRelease.complete();
+      });
+      final repository = _RetryLearningRepository(
+        firstAnswerRelease: firstAnswerRelease,
+      );
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: _OwnerRepository(),
+        repository: repository,
+        generateId: () => 'ghost-route-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 14, 11, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                key: const ValueKey<String>('open-ghost-route'),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => GhostShadowDuelScreen(
+                        progressLoader: () async => _duelProgress,
+                        learning: learning,
+                        evidenceAdapter: CurrentActivityEvidenceAdapter(
+                          learning: learning,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Open Ghost Duel'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('open-ghost-route')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'durable');
+      await tester.tap(find.text('ตอบ'));
+      await tester.pump();
+
+      expect(repository.commands, hasLength(1));
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(GhostShadowDuelScreen),
+        findsOneWidget,
+        reason: 'an in-flight immutable command must retain its owning route',
+      );
+
+      firstAnswerRelease.complete();
+      await tester.pumpAndSettle();
+      ScaffoldMessenger.of(
+        tester.element(find.byType(GhostShadowDuelScreen)),
+      ).removeCurrentSnackBar();
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('current-evidence-retry')),
+        findsOneWidget,
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(
+        find.byType(GhostShadowDuelScreen),
+        findsOneWidget,
+        reason: 'a retry-required immutable command must retain its route',
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('current-evidence-retry')),
+      );
+      await tester.pumpAndSettle();
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(repository.commands, hasLength(2));
+      expect(find.byType(GhostShadowDuelScreen), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('open-ghost-route')),
+        findsOneWidget,
+      );
+    },
+  );
 }
 
 final class _OwnerRepository implements LocalOwnerRepository {
@@ -84,6 +180,9 @@ final class _OwnerRepository implements LocalOwnerRepository {
 }
 
 final class _RetryLearningRepository implements LearningRepository {
+  _RetryLearningRepository({this.firstAnswerRelease});
+
+  final Completer<void>? firstAnswerRelease;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
   var _failed = false;
 
@@ -110,6 +209,7 @@ final class _RetryLearningRepository implements LearningRepository {
     commands.add(command);
     if (!_failed) {
       _failed = true;
+      await firstAnswerRelease?.future;
       throw StateError('simulated local failure');
     }
     return const AnswerRecordResult(inserted: true, srs: null);

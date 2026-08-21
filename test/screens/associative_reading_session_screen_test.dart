@@ -3,8 +3,11 @@ import 'dart:async';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide AssociationRecord, AssociativeMemoryState, LocalOwner;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -622,6 +625,318 @@ void main() {
         );
       },
     );
+
+    testWidgets(
+      'stage checkpoint freezes identity, blocks exit, and excludes lifecycle duplicates',
+      (tester) async {
+        final firstProgressRelease = Completer<void>();
+        addTearDown(() {
+          if (!firstProgressRelease.isCompleted) {
+            firstProgressRelease.complete();
+          }
+        });
+        final repository = _OrderedCompletionLearningRepository(
+          failIncompleteProgressOnce: true,
+          firstIncompleteProgressRelease: firstProgressRelease,
+        );
+        var nextId = 0;
+        final checkpointLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'checkpoint-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 15, 9, 0, nextId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'associative-checkpoint-contract',
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: FilledButton(
+                  key: const ValueKey<String>('open-checkpoint-route'),
+                  onPressed: () {
+                    Navigator.of(context).push<void>(
+                      MaterialPageRoute<void>(
+                        builder: (_) => AssociativeReadingSessionScreen(
+                          cefrLevel: 'A2',
+                          targetWords: const ['banana'],
+                          targetWordIds: const {'banana': 'word-banana'},
+                          passageText: 'The banana is yellow.',
+                          documentId: 'checkpoint-document',
+                          documentRevision: 3,
+                          learning: checkpointLearning,
+                          evidenceAdapter: CurrentActivityEvidenceAdapter(
+                            learning: checkpointLearning,
+                          ),
+                          associativeLearning: associativeLearning,
+                          sessionId: 'checkpoint-session',
+                        ),
+                      ),
+                    );
+                  },
+                  child: const Text('Open checkpoint reading'),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('open-checkpoint-route')),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+
+        final continueButton = find.widgetWithText(
+          FilledButton,
+          'Complete & Continue',
+        );
+        final staleContinueHandler = tester
+            .widget<FilledButton>(continueButton)
+            .onPressed!;
+        await tester.tap(continueButton);
+        for (
+          var pump = 0;
+          pump < 20 && repository.progressCommands.isEmpty;
+          pump++
+        ) {
+          await tester.pump(const Duration(milliseconds: 1));
+        }
+
+        staleContinueHandler();
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await tester.pump();
+        await tester.binding.handlePopRoute();
+        await tester.pump();
+
+        expect(repository.progressCommands, hasLength(1));
+        expect(
+          find.byType(AssociativeReadingSessionScreen),
+          findsOneWidget,
+          reason: 'an in-flight checkpoint must veto route disposal',
+        );
+
+        firstProgressRelease.complete();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        final retry = find.byKey(
+          const ValueKey<String>('current-reading-checkpoint-retry'),
+        );
+        expect(retry, findsOneWidget);
+
+        await tester.binding.handlePopRoute();
+        await tester.pumpAndSettle();
+        expect(find.byType(AssociativeReadingSessionScreen), findsOneWidget);
+
+        final retryHandler = tester.widget<FilledButton>(retry).onPressed;
+        expect(retryHandler, isNotNull);
+        retryHandler!();
+        await pumpUntilFound(tester, find.text('Stage 2: Cue Fading'));
+
+        expect(repository.progressCommands, hasLength(2));
+        final first = repository.progressCommands.first;
+        final retried = repository.progressCommands.last;
+        expect(retried.eventId, first.eventId);
+        expect(retried.ownerId, first.ownerId);
+        expect(retried.documentId, first.documentId);
+        expect(retried.documentRevision, first.documentRevision);
+        expect(retried.position, first.position);
+        expect(retried.isCompleted, first.isCompleted);
+        expect(retried.occurredAtUtc, first.occurredAtUtc);
+      },
+    );
+
+    testWidgets(
+      'Stage 4 freezes a multiword batch and retries only the failed write',
+      (tester) async {
+        final port = _PartialAssociationPort();
+        await tester.pumpWidget(
+          session(
+            targetWords: const ['banana', 'apple'],
+            targetWordIds: const {
+              'banana': 'word-banana',
+              'apple': 'word-apple',
+            },
+            port: port,
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 4; stage++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+
+        await tester.enterText(find.byType(TextField).at(0), 'yellow fruit');
+        await tester.enterText(find.byType(TextField).at(1), 'red fruit');
+        await tester.tap(find.text('Complete & Continue'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Stage 4: Memory Association'), findsOneWidget);
+        expect(port.calls, hasLength(2));
+        expect(
+          tester
+              .widgetList<TextField>(find.byType(TextField))
+              .every((field) => field.enabled == false),
+          isTrue,
+          reason: 'frozen association inputs must not diverge before retry',
+        );
+        expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isFalse);
+        final retry = find.byKey(
+          const ValueKey<String>('current-association-retry'),
+        );
+        expect(retry, findsOneWidget);
+
+        tester
+                .widgetList<TextField>(find.byType(TextField))
+                .first
+                .controller!
+                .text =
+            'mutated after capture';
+        final retryHandler = tester.widget<FilledButton>(retry).onPressed;
+        expect(retryHandler, isNotNull);
+        retryHandler!();
+        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+
+        expect(port.calls, hasLength(3));
+        final bananaCalls = port.calls
+            .where((record) => record.wordKey == 'word-banana')
+            .toList(growable: false);
+        final appleCalls = port.calls
+            .where((record) => record.wordKey == 'word-apple')
+            .toList(growable: false);
+        expect(bananaCalls, hasLength(1));
+        expect(appleCalls, hasLength(2));
+        expect(appleCalls.last.associationId, appleCalls.first.associationId);
+        expect(appleCalls.last.createdAtUtc, appleCalls.first.createdAtUtc);
+        expect(appleCalls.last.content, 'red fruit');
+        expect(
+          (await port.getAssociationsForWord(
+            'local:reading-owner',
+            'word-banana',
+          )).single.content,
+          'yellow fruit',
+        );
+        expect(
+          (await port.getAssociationsForWord(
+            'local:reading-owner',
+            'word-apple',
+          )).single.content,
+          'red fruit',
+        );
+      },
+    );
+
+    testWidgets(
+      'Stage 4 snapshots cues and word mappings before owner resolution',
+      (tester) async {
+        final gatedOwners = _SwitchableOwnerRepository(owners);
+        var nextId = 0;
+        final gatedLearning = LearningUseCases(
+          owners: gatedOwners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'association-snapshot-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 16, 9, 0, nextId),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'association-snapshot-contract',
+          ),
+        );
+        final port = _RecordingAssociationPort();
+        const originalIds = {'banana': 'word-banana', 'apple': 'word-apple'};
+
+        await tester.pumpWidget(
+          session(
+            targetWords: const ['banana', 'apple'],
+            targetWordIds: originalIds,
+            port: port,
+            learningUseCases: gatedLearning,
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 4; stage++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+
+        await tester.enterText(find.byType(TextField).at(0), 'yellow fruit');
+        await tester.enterText(find.byType(TextField).at(1), 'red fruit');
+        gatedOwners.blockNextOwnerResolution();
+        await tester.tap(find.text('Complete & Continue'));
+        await tester.pump();
+        await tester.runAsync(() => gatedOwners.didBlock);
+
+        tester
+                .widgetList<TextField>(find.byType(TextField))
+                .first
+                .controller!
+                .text =
+            'mutated while owner was resolving';
+        await tester.pumpWidget(
+          session(
+            targetWords: const ['banana', 'apple'],
+            targetWordIds: const {
+              'banana': 'changed-banana',
+              'apple': 'changed-apple',
+            },
+            port: port,
+            learningUseCases: gatedLearning,
+          ),
+        );
+        gatedOwners.release();
+        await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+
+        expect(port.calls.map((record) => record.wordKey), <String>[
+          'word-banana',
+          'word-apple',
+        ]);
+        expect(port.calls.map((record) => record.content), <String>[
+          'yellow fruit',
+          'red fruit',
+        ]);
+        expect(
+          port.calls.map((record) => record.createdAtUtc).toSet(),
+          hasLength(1),
+        );
+      },
+    );
+
+    testWidgets('Stage 5 locks its draft while checkpoint retry is pending', (
+      tester,
+    ) async {
+      final repository = _StageFiveCheckpointRepository();
+      var nextId = 0;
+      final checkpointLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'stage-five-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 16, 10, 0, nextId),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'stage-five-checkpoint-contract',
+        ),
+      );
+      await tester.pumpWidget(session(learningUseCases: checkpointLearning));
+      await pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
+
+      await tester.enterText(find.byType(TextField), 'A resilient response.');
+      await tester.tap(find.text('Complete & Continue'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.byKey(const ValueKey<String>('current-reading-checkpoint-retry')),
+        findsOneWidget,
+      );
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+    });
   });
 }
 
@@ -629,18 +944,23 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
   _OrderedCompletionLearningRepository({
     this.failFinishOnce = false,
     this.failCompletedProgressOnce = false,
+    this.failIncompleteProgressOnce = false,
     this.firstFinishRelease,
+    this.firstIncompleteProgressRelease,
   });
 
   final bool failFinishOnce;
   final bool failCompletedProgressOnce;
+  final bool failIncompleteProgressOnce;
   final Completer<void>? firstFinishRelease;
+  final Completer<void>? firstIncompleteProgressRelease;
   final List<RecordAnswerCommand> answerCommands = <RecordAnswerCommand>[];
   final List<ReadingProgressCommand> progressCommands =
       <ReadingProgressCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
   finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
   var _completedProgressFailed = false;
+  var _incompleteProgressFailed = false;
 
   Iterable<ReadingProgressCommand> get completedProgressCommands =>
       progressCommands.where((command) => command.isCompleted);
@@ -657,6 +977,13 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
     ReadingProgressCommand command,
   ) async {
     progressCommands.add(command);
+    if (!command.isCompleted &&
+        failIncompleteProgressOnce &&
+        !_incompleteProgressFailed) {
+      _incompleteProgressFailed = true;
+      await firstIncompleteProgressRelease?.future;
+      throw StateError('simulated stage checkpoint failure');
+    }
     if (command.isCompleted &&
         failCompletedProgressOnce &&
         !_completedProgressFailed) {
@@ -778,6 +1105,134 @@ final class _PartialBatchLearningRepository implements LearningRepository {
       throw StateError('simulated second-item failure');
     }
     return const AnswerRecordResult(inserted: true, srs: null);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _PartialAssociationPort implements AssociativeLearningPort {
+  final InMemoryAssociativeLearningAdapter _delegate =
+      InMemoryAssociativeLearningAdapter();
+  final List<AssociationRecord> calls = <AssociationRecord>[];
+  var _failedApple = false;
+
+  @override
+  Future<void> saveAssociationAndMemoryState(
+    AssociationRecord record,
+    AssociativeMemoryState initialState,
+  ) async {
+    calls.add(record);
+    if (record.wordKey == 'word-apple' && !_failedApple) {
+      _failedApple = true;
+      throw StateError('simulated second association failure');
+    }
+    await _delegate.saveAssociationAndMemoryState(record, initialState);
+  }
+
+  @override
+  Future<List<AssociationRecord>> getAssociationsForWord(
+    String ownerId,
+    String wordKey,
+  ) => _delegate.getAssociationsForWord(ownerId, wordKey);
+
+  @override
+  Future<AssociativeMemoryState?> getMemoryState(
+    String ownerId,
+    String wordKey,
+  ) => _delegate.getMemoryState(ownerId, wordKey);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _RecordingAssociationPort implements AssociativeLearningPort {
+  final InMemoryAssociativeLearningAdapter _delegate =
+      InMemoryAssociativeLearningAdapter();
+  final List<AssociationRecord> calls = <AssociationRecord>[];
+
+  @override
+  Future<void> saveAssociationAndMemoryState(
+    AssociationRecord record,
+    AssociativeMemoryState initialState,
+  ) async {
+    calls.add(record);
+    await _delegate.saveAssociationAndMemoryState(record, initialState);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _SwitchableOwnerRepository implements LocalOwnerRepository {
+  _SwitchableOwnerRepository(this._delegate);
+
+  final LocalOwnerRepository _delegate;
+  Completer<void>? _blocked;
+  Completer<void>? _release;
+
+  void blockNextOwnerResolution() {
+    _blocked = Completer<void>();
+    _release = Completer<void>();
+  }
+
+  Future<void> get didBlock => _blocked!.future;
+
+  void release() => _release!.complete();
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    final blocked = _blocked;
+    final release = _release;
+    if (blocked != null && release != null && !blocked.isCompleted) {
+      blocked.complete();
+      await release.future;
+      if (identical(_blocked, blocked)) {
+        _blocked = null;
+        _release = null;
+      }
+    }
+    return _delegate.getOrCreateActiveOwner();
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      _delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
+final class _StageFiveCheckpointRepository implements LearningRepository {
+  final List<ReadingProgressCommand> commands = <ReadingProgressCommand>[];
+  var _failed = false;
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) async => ReadingProgressSnapshot(
+    documentId: documentId,
+    documentRevision: documentRevision,
+    lastPosition: 5,
+    isCompleted: false,
+    updatedAtUtc: DateTime.utc(2026, 8, 16, 9),
+  );
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) async {
+    commands.add(command);
+    if (!_failed) {
+      _failed = true;
+      throw StateError('simulated Stage 5 checkpoint failure');
+    }
+    return ReadingProgressSnapshot(
+      documentId: command.documentId,
+      documentRevision: command.documentRevision,
+      lastPosition: command.position,
+      isCompleted: command.isCompleted,
+      updatedAtUtc: command.occurredAtUtc,
+    );
   }
 
   @override

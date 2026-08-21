@@ -44,7 +44,9 @@ final class EvidenceEligibilityPolicySet extends EvidenceEligibilityPolicy {
       EvidenceContext.legacyPolicyVersion
           when context.classificationSource ==
               EvidenceClassificationSource.legacyInferred =>
-        _legacyDisposition(projection),
+        context.evidenceClass == EvidenceClass.recreational
+            ? evidenceEligibilityV1[EvidenceClass.recreational]![projection]!
+            : _legacyDisposition(projection),
       _ => throw StateError(
         'Unsupported evidence policy ${context.policyVersion}.',
       ),
@@ -99,12 +101,17 @@ final class EvidenceProjectionDecision {
       context,
       projection,
     );
+    final effectiveDisposition = effectiveProjectionDisposition(
+      context: context,
+      projection: projection,
+      policyDisposition: policyDisposition,
+    );
 
     return switch (context.rolloutMode) {
       EvidencePolicyRolloutMode.legacy => EvidenceProjectionDecision._(
         context: context,
         projection: projection,
-        dispositionToApply: _legacyDisposition(projection),
+        dispositionToApply: effectiveDisposition,
         candidateDispositionToRecord: null,
         contributesToEfficacyOutcomes: false,
         retainedForProjectionComparison: false,
@@ -112,7 +119,7 @@ final class EvidenceProjectionDecision {
       EvidencePolicyRolloutMode.shadow => EvidenceProjectionDecision._(
         context: context,
         projection: projection,
-        dispositionToApply: _legacyDisposition(projection),
+        dispositionToApply: effectiveDisposition,
         candidateDispositionToRecord: policyDisposition,
         contributesToEfficacyOutcomes: false,
         retainedForProjectionComparison: true,
@@ -120,7 +127,7 @@ final class EvidenceProjectionDecision {
       EvidencePolicyRolloutMode.enforced => EvidenceProjectionDecision._(
         context: context,
         projection: projection,
-        dispositionToApply: policyDisposition,
+        dispositionToApply: effectiveDisposition,
         candidateDispositionToRecord: null,
         contributesToEfficacyOutcomes:
             context.classificationSource ==
@@ -151,6 +158,25 @@ final class EvidenceProjectionDecision {
     ProjectionDisposition.allow => true,
     ProjectionDisposition.deny => false,
     ProjectionDisposition.protocolControlled => context.engagementAllowed,
+  };
+}
+
+/// Resolves the production disposition while preserving the recreational
+/// safety floor across rollout modes. Recreational events are game history,
+/// never learning-effort or reward evidence, so Legacy and Shadow cannot widen
+/// their eligibility through the class-agnostic compatibility row.
+ProjectionDisposition effectiveProjectionDisposition({
+  required EvidenceContext context,
+  required LearningProjection projection,
+  required ProjectionDisposition policyDisposition,
+}) {
+  if (context.evidenceClass == EvidenceClass.recreational) {
+    return evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
+  }
+  return switch (context.rolloutMode) {
+    EvidencePolicyRolloutMode.legacy => _legacyDisposition(projection),
+    EvidencePolicyRolloutMode.shadow => _legacyDisposition(projection),
+    EvidencePolicyRolloutMode.enforced => policyDisposition,
   };
 }
 

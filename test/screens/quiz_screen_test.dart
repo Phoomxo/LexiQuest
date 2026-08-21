@@ -229,14 +229,225 @@ void main() {
       EvidenceClassificationSource.legacyInferred,
     );
   });
+
+  testWidgets('back cannot discard an in-flight or retryable answer', (
+    tester,
+  ) async {
+    final firstAnswerRelease = Completer<void>();
+    addTearDown(() {
+      if (!firstAnswerRelease.isCompleted) firstAnswerRelease.complete();
+    });
+    final repository = _FailFirstLearningRepository(
+      DriftLearningRepository(database),
+      firstAnswerRelease: firstAnswerRelease,
+    );
+    var retryId = 0;
+    final retryLearning = LearningUseCases(
+      owners: owners,
+      repository: repository,
+      generateId: () => 'route-lock-${++retryId}',
+      nowUtc: () => DateTime.utc(2026, 8, 21, 10, 0, retryId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: FilledButton(
+              key: const ValueKey<String>('open-quiz-route'),
+              onPressed: () {
+                Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => QuizScreen(
+                      categoryId: 'category-1',
+                      learning: retryLearning,
+                      evidenceAdapter: CurrentActivityEvidenceAdapter(
+                        learning: retryLearning,
+                      ),
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Open quiz'),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.tap(find.byKey(const ValueKey<String>('open-quiz-route')));
+    await _pumpUntilFound(tester, find.text('station'));
+
+    await tester.tap(find.text('สถานี'));
+    for (var pump = 0; pump < 20 && repository.commands.isEmpty; pump++) {
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+    expect(repository.commands, hasLength(1));
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      find.byType(QuizScreen),
+      findsOneWidget,
+      reason: 'back must not discard an answer write in flight',
+    );
+
+    firstAnswerRelease.complete();
+    final retryButton = find.byKey(
+      const ValueKey<String>('current-evidence-retry'),
+    );
+    await _pumpUntilFound(tester, retryButton);
+
+    await tester.binding.handlePopRoute();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(
+      find.byType(QuizScreen),
+      findsOneWidget,
+      reason: 'back must preserve the exact retryable answer',
+    );
+
+    final answerRetryHandler = tester
+        .widget<FilledButton>(retryButton)
+        .onPressed;
+    expect(answerRetryHandler, isNotNull);
+    answerRetryHandler!();
+    await _pumpUntilFound(tester, find.text('ดูผลการเรียน'));
+
+    expect(repository.commands, hasLength(2));
+    expect(repository.commands.last.id, repository.commands.first.id);
+    expect(
+      repository.commands.last.occurredAtUtc,
+      repository.commands.first.occurredAtUtc,
+    );
+  });
+
+  testWidgets(
+    'final close keeps one frozen retry and blocks back and stale completion',
+    (tester) async {
+      final firstFinishRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstFinishRelease.isCompleted) firstFinishRelease.complete();
+      });
+      final repository = _FailFirstLearningRepository(
+        DriftLearningRepository(database),
+        failAnswerOnce: false,
+        failFinishOnce: true,
+        firstFinishRelease: firstFinishRelease,
+      );
+      var nextId = 0;
+      var clockTick = 0;
+      final closeLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'close-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 21, 11, 0, clockTick++),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: FilledButton(
+                key: const ValueKey<String>('open-quiz-route'),
+                onPressed: () {
+                  Navigator.of(context).push<void>(
+                    MaterialPageRoute<void>(
+                      builder: (_) => QuizScreen(
+                        categoryId: 'category-1',
+                        learning: closeLearning,
+                        evidenceAdapter: CurrentActivityEvidenceAdapter(
+                          learning: closeLearning,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                child: const Text('Open quiz'),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('open-quiz-route')));
+      await _pumpUntilFound(tester, find.text('station'));
+      await tester.tap(find.text('สถานี'));
+      final finishButton = find.widgetWithText(FilledButton, 'ดูผลการเรียน');
+      await _pumpUntilFound(tester, finishButton);
+      final staleFinishHandler = tester
+          .widget<FilledButton>(finishButton)
+          .onPressed!;
+
+      await tester.tap(finishButton);
+      for (var pump = 0; pump < 20 && repository.finishCalls.isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      expect(repository.finishCalls, hasLength(1));
+
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        find.byType(QuizScreen),
+        findsOneWidget,
+        reason: 'back must not discard a session close in flight',
+      );
+
+      firstFinishRelease.complete();
+      final retryButton = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      await _pumpUntilFound(tester, retryButton);
+      expect(find.text('Retry session completion'), findsOneWidget);
+
+      staleFinishHandler();
+      await tester.pump(const Duration(milliseconds: 50));
+      expect(
+        repository.finishCalls,
+        hasLength(1),
+        reason: 'a stale completion callback must honor the pending close',
+      );
+
+      await tester.binding.handlePopRoute();
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(
+        find.byType(QuizScreen),
+        findsOneWidget,
+        reason: 'back must preserve the retry-required session close',
+      );
+
+      final closeRetryHandler = tester
+          .widget<FilledButton>(retryButton)
+          .onPressed;
+      expect(closeRetryHandler, isNotNull);
+      closeRetryHandler!();
+      await _pumpUntilFound(tester, find.byType(ScoreScreen));
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(2));
+      expect(repository.finishCalls.last, repository.finishCalls.first);
+      expect(find.byType(ScoreScreen), findsOneWidget);
+    },
+  );
 }
 
 final class _FailFirstLearningRepository implements LearningRepository {
-  _FailFirstLearningRepository(this.delegate);
+  _FailFirstLearningRepository(
+    this.delegate, {
+    this.failAnswerOnce = true,
+    this.failFinishOnce = false,
+    this.firstAnswerRelease,
+    this.firstFinishRelease,
+  });
 
   final LearningRepository delegate;
+  final bool failAnswerOnce;
+  final bool failFinishOnce;
+  final Completer<void>? firstAnswerRelease;
+  final Completer<void>? firstFinishRelease;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
-  bool _failed = false;
+  final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
+  finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
+  bool _answerFailed = false;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -254,10 +465,11 @@ final class _FailFirstLearningRepository implements LearningRepository {
       delegate.startSession(session);
 
   @override
-  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) {
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
-    if (!_failed) {
-      _failed = true;
+    if (commands.length == 1) await firstAnswerRelease?.future;
+    if (failAnswerOnce && !_answerFailed) {
+      _answerFailed = true;
       throw StateError('simulated local failure');
     }
     return delegate.recordAnswer(command);
@@ -268,11 +480,22 @@ final class _FailFirstLearningRepository implements LearningRepository {
     required String ownerId,
     required String sessionId,
     required DateTime endedAtUtc,
-  }) => delegate.finishSession(
-    ownerId: ownerId,
-    sessionId: sessionId,
-    endedAtUtc: endedAtUtc,
-  );
+  }) async {
+    finishCalls.add((
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    ));
+    if (failFinishOnce && finishCalls.length == 1) {
+      await firstFinishRelease?.future;
+      throw StateError('simulated session-close failure');
+    }
+    return delegate.finishSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    );
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

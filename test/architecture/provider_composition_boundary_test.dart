@@ -30,7 +30,201 @@ Map<String, int> _matchCounts(Map<String, String> sources, RegExp pattern) {
   return result;
 }
 
+const _dartIdentifierStart = r'[$\p{L}\p{Nl}]';
+const _dartIdentifierPart =
+    r'[$_\u200C\u200D\p{L}\p{Nl}\p{Mn}\p{Mc}\p{Nd}\p{Pc}]';
+
+RegExp _publicConstructorPattern(String type) => RegExp(
+  '\\b${RegExp.escape(type)}'
+  '(?:\\s*\\.\\s*$_dartIdentifierStart$_dartIdentifierPart*)?\\s*\\(',
+  unicode: true,
+);
+
+RegExp _privateCapabilityAccessPattern(String type) => RegExp(
+  '\\b${RegExp.escape(type)}\\s*\\.\\s*_$_dartIdentifierPart*',
+  unicode: true,
+);
+
+/// Removes comments and string-literal text while retaining executable Dart
+/// inside interpolation expressions. Newlines and token spacing are preserved
+/// so constructor matching cannot be evaded with valid trivia.
+String _dartCodeOnly(String source) {
+  final output = StringBuffer();
+  var index = 0;
+
+  void blank(String character) {
+    output.write(character == '\n' || character == '\r' ? character : ' ');
+  }
+
+  void blankRange(int start, int end) {
+    for (var cursor = start; cursor < end; cursor++) {
+      blank(source[cursor]);
+    }
+  }
+
+  void scanCode({bool stopAtInterpolationEnd = false}) {
+    var nestedBraces = 0;
+
+    void scanString({required bool raw, required String quote}) {
+      final triple =
+          index + 2 < source.length &&
+          source[index] == quote &&
+          source[index + 1] == quote &&
+          source[index + 2] == quote;
+      final delimiterLength = triple ? 3 : 1;
+      blankRange(index, index + delimiterLength);
+      index += delimiterLength;
+      while (index < source.length) {
+        if (triple) {
+          if (index + 2 < source.length &&
+              source[index] == quote &&
+              source[index + 1] == quote &&
+              source[index + 2] == quote) {
+            blankRange(index, index + 3);
+            index += 3;
+            return;
+          }
+        } else if (source[index] == quote) {
+          blank(source[index]);
+          index++;
+          return;
+        }
+
+        if (!raw && source[index] == '\\' && index + 1 < source.length) {
+          blankRange(index, index + 2);
+          index += 2;
+          continue;
+        }
+        if (!raw && source[index] == r'$' && index + 1 < source.length) {
+          blank(source[index]);
+          index++;
+          if (source[index] == '{') {
+            blank(source[index]);
+            index++;
+            scanCode(stopAtInterpolationEnd: true);
+            continue;
+          }
+          while (index < source.length &&
+              RegExp(r'[A-Za-z0-9_]').hasMatch(source[index])) {
+            output.write(source[index]);
+            index++;
+          }
+          continue;
+        }
+        blank(source[index]);
+        index++;
+      }
+    }
+
+    while (index < source.length) {
+      if (stopAtInterpolationEnd && source[index] == '}') {
+        if (nestedBraces == 0) {
+          blank(source[index]);
+          index++;
+          return;
+        }
+        nestedBraces--;
+        output.write(source[index]);
+        index++;
+        continue;
+      }
+      if (stopAtInterpolationEnd && source[index] == '{') {
+        nestedBraces++;
+        output.write(source[index]);
+        index++;
+        continue;
+      }
+      if (source[index] == '/' && index + 1 < source.length) {
+        if (source[index + 1] == '/') {
+          blankRange(index, index + 2);
+          index += 2;
+          while (index < source.length &&
+              source[index] != '\n' &&
+              source[index] != '\r') {
+            blank(source[index]);
+            index++;
+          }
+          continue;
+        }
+        if (source[index + 1] == '*') {
+          var depth = 1;
+          blankRange(index, index + 2);
+          index += 2;
+          while (index < source.length && depth > 0) {
+            if (index + 1 < source.length &&
+                source[index] == '/' &&
+                source[index + 1] == '*') {
+              depth++;
+              blankRange(index, index + 2);
+              index += 2;
+            } else if (index + 1 < source.length &&
+                source[index] == '*' &&
+                source[index + 1] == '/') {
+              depth--;
+              blankRange(index, index + 2);
+              index += 2;
+            } else {
+              blank(source[index]);
+              index++;
+            }
+          }
+          continue;
+        }
+      }
+
+      final rawString =
+          (source[index] == 'r' || source[index] == 'R') &&
+          index + 1 < source.length &&
+          (source[index + 1] == "'" || source[index + 1] == '"');
+      if (rawString) {
+        blank(source[index]);
+        index++;
+        scanString(raw: true, quote: source[index]);
+        continue;
+      }
+      if (source[index] == "'" || source[index] == '"') {
+        scanString(raw: false, quote: source[index]);
+        continue;
+      }
+      output.write(source[index]);
+      index++;
+    }
+  }
+
+  scanCode();
+  return output.toString();
+}
+
 void main() {
+  test(
+    'capability constructor matcher rejects unnamed and public named forms',
+    () {
+      final pattern = _publicConstructorPattern('PendingCapability');
+      final code = _dartCodeOnly(r'''
+PendingCapability(
+PendingCapability.named(
+factory PendingCapability.fromJson(
+PendingCapability/* comment */.commented(
+PendingCapability.named/* comment */(
+PendingCapability.from$wire(
+PendingCapability.สร้าง(
+PendingCapability._(
+PendingCapability._private(
+final privateTearOff = PendingCapability._private;
+final interpolated = '${PendingCapability.interpolated()}';
+'PendingCapability.stringOnly('
+// PendingCapability.lineComment(
+/* PendingCapability.blockComment( */
+''');
+
+      expect(pattern.allMatches(code), hasLength(8));
+      expect(
+        _privateCapabilityAccessPattern('PendingCapability').allMatches(code),
+        hasLength(3),
+      );
+    },
+  );
+
   test(
     'every production screen stays behind composed AI and voice facades',
     () {
@@ -306,33 +500,40 @@ void main() {
     },
   );
 
-  test('only LearningUseCases can mint owner-bound learning capabilities', () {
+  test('only canonical authorities can mint persistence capabilities', () {
     final production = _productionDartSources();
-    const authorityPath =
+    final codeOnly = production.map<String, String>(
+      (path, source) => MapEntry(path, _dartCodeOnly(source)),
+    );
+    const learningAuthority =
         'lib/features/learning/application/learning_use_cases.dart';
-    const capabilityTypes = <String>[
-      'OwnerBoundLearningEvidenceBasis',
-      'ResolvedLearningEvidenceRecord',
-      'PendingLearningSessionClose',
-      'PendingReadingProgress',
-    ];
+    const evidenceAuthority =
+        'lib/features/learning/application/current_activity_evidence.dart';
+    const capabilityAuthorities = <String, String>{
+      'OwnerBoundLearningEvidenceBasis': learningAuthority,
+      'ResolvedLearningEvidenceRecord': learningAuthority,
+      'PendingLearningSessionClose': learningAuthority,
+      'PendingReadingProgress': learningAuthority,
+      'PendingCurrentActivityEvidence': evidenceAuthority,
+    };
 
-    for (final type in capabilityTypes) {
+    for (final entry in capabilityAuthorities.entries) {
+      final type = entry.key;
+      final authorityPath = entry.value;
       expect(
-        _matchCounts(production, RegExp('\\bfinal\\s+class\\s+$type\\b')),
-        const <String, int>{authorityPath: 1},
+        _matchCounts(codeOnly, RegExp('\\bfinal\\s+class\\s+$type\\b')),
+        <String, int>{authorityPath: 1},
         reason: '$type must have exactly one canonical definition',
       );
       expect(
-        _matchCounts(production, RegExp('\\b$type\\s*\\(')),
+        _matchCounts(codeOnly, _publicConstructorPattern(type)),
         isEmpty,
         reason: '$type must not expose a public constructor',
       );
       expect(
-        _matchCounts(production, RegExp('\\b$type\\._\\s*\\(')),
-        const <String, int>{authorityPath: 2},
-        reason:
-            '$type must be declared and minted only inside LearningUseCases',
+        _matchCounts(codeOnly, _privateCapabilityAccessPattern(type)),
+        <String, int>{authorityPath: 2},
+        reason: '$type must be declared and minted only inside $authorityPath',
       );
     }
   });

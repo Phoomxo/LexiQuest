@@ -218,104 +218,109 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('ดวลกับสถิติเดิม')),
-      body: FutureBuilder<_DuelData>(
-        future: _load,
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return const Center(child: Text('ไม่สามารถอ่านประวัติการเรียนได้'));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          final data = snapshot.data!;
-          if (data.session.isEmpty) {
-            return Center(
-              child: Text(
-                'ยังไม่มีจุดอ่อนจากคำตอบจริงสำหรับเริ่มเกม\n'
-                'จำนวนหลักฐาน: ${data.progress.sampleSize}',
-                textAlign: TextAlign.center,
-              ),
-            );
-          }
-          final question = _finished ? null : data.session.questions[_index];
-          return ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    children: [
-                      Text(data.opponent.name),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: _ghostHp / data.opponent.maxHp,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'หลักฐาน ${data.progress.sampleSize} คำตอบ · '
-                        'ความแม่นยำ ${((data.progress.accuracy ?? 0) * 100).round()}% · '
-                        'เวลาเฉลี่ย ${data.snapshot.avgResponseTimeMs.round()} ms · '
-                        'อัลกอริทึม v${data.progress.algorithmVersion}',
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text('พลังผู้เรียน $_playerHp · พลังสถิติเดิม $_ghostHp'),
-              const SizedBox(height: 16),
-              if (question != null) ...[
-                Text(
-                  question.word.meaning,
-                  key: const ValueKey<String>('ghost-prompt'),
-                  style: Theme.of(context).textTheme.headlineSmall,
+    return PopScope(
+      canPop: _pendingEvidence == null,
+      child: Scaffold(
+        appBar: AppBar(title: const Text('ดวลกับสถิติเดิม')),
+        body: FutureBuilder<_DuelData>(
+          future: _load,
+          builder: (context, snapshot) {
+            if (snapshot.hasError) {
+              return const Center(
+                child: Text('ไม่สามารถอ่านประวัติการเรียนได้'),
+              );
+            }
+            if (!snapshot.hasData) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final data = snapshot.data!;
+            if (data.session.isEmpty) {
+              return Center(
+                child: Text(
+                  'ยังไม่มีจุดอ่อนจากคำตอบจริงสำหรับเริ่มเกม\n'
+                  'จำนวนหลักฐาน: ${data.progress.sampleSize}',
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
-                TextField(
-                  controller: _answer,
-                  enabled: !_saving && _pendingEvidence == null,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'พิมพ์คำศัพท์ภาษาอังกฤษ',
-                  ),
-                  onSubmitted: (_) => _submit(data),
-                ),
-                const SizedBox(height: 12),
-                SizedBox(
-                  height: 48,
-                  child: FilledButton(
-                    key: _pendingEvidence?.requiresRetry ?? false
-                        ? const ValueKey<String>('current-evidence-retry')
-                        : null,
-                    onPressed: _saving
-                        ? null
-                        : _pendingEvidence?.requiresRetry ?? false
-                        ? () => _retryEvidence(data)
-                        : () => _submit(data),
-                    child: Text(
-                      _saving
-                          ? 'กำลังบันทึก'
-                          : _pendingEvidence?.requiresRetry ?? false
-                          ? 'ลองบันทึกคำตอบอีกครั้ง'
-                          : 'ตอบ',
+              );
+            }
+            final question = _finished ? null : data.session.questions[_index];
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      children: [
+                        Text(data.opponent.name),
+                        const SizedBox(height: 8),
+                        LinearProgressIndicator(
+                          value: _ghostHp / data.opponent.maxHp,
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'หลักฐาน ${data.progress.sampleSize} คำตอบ · '
+                          'ความแม่นยำ ${((data.progress.accuracy ?? 0) * 100).round()}% · '
+                          'เวลาเฉลี่ย ${data.snapshot.avgResponseTimeMs.round()} ms · '
+                          'อัลกอริทึม v${data.progress.algorithmVersion}',
+                        ),
+                      ],
                     ),
                   ),
                 ),
-              ] else
-                Text(
-                  'จบเกมแล้ว · บันทึก ${_log.length} คำตอบจริง',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-              const SizedBox(height: 16),
-              for (final entry in _log) ListTile(title: Text(entry)),
-            ],
-          );
-        },
+                const SizedBox(height: 12),
+                Text('พลังผู้เรียน $_playerHp · พลังสถิติเดิม $_ghostHp'),
+                const SizedBox(height: 16),
+                if (question != null) ...[
+                  Text(
+                    question.word.meaning,
+                    key: const ValueKey<String>('ghost-prompt'),
+                    style: Theme.of(context).textTheme.headlineSmall,
+                    textAlign: TextAlign.center,
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: _answer,
+                    enabled: !_saving && _pendingEvidence == null,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'พิมพ์คำศัพท์ภาษาอังกฤษ',
+                    ),
+                    onSubmitted: (_) => _submit(data),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    height: 48,
+                    child: FilledButton(
+                      key: _pendingEvidence?.requiresRetry ?? false
+                          ? const ValueKey<String>('current-evidence-retry')
+                          : null,
+                      onPressed: _saving
+                          ? null
+                          : _pendingEvidence?.requiresRetry ?? false
+                          ? () => _retryEvidence(data)
+                          : () => _submit(data),
+                      child: Text(
+                        _saving
+                            ? 'กำลังบันทึก'
+                            : _pendingEvidence?.requiresRetry ?? false
+                            ? 'ลองบันทึกคำตอบอีกครั้ง'
+                            : 'ตอบ',
+                      ),
+                    ),
+                  ),
+                ] else
+                  Text(
+                    'จบเกมแล้ว · บันทึก ${_log.length} คำตอบจริง',
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                const SizedBox(height: 16),
+                for (final entry in _log) ListTile(title: Text(entry)),
+              ],
+            );
+          },
+        ),
       ),
     );
   }

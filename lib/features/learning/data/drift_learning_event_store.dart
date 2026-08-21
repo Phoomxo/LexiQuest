@@ -583,13 +583,11 @@ final class DriftLearningEventStore {
     final decisions = LearningProjection.values
         .map((projection) {
           final candidate = evidencePolicy.disposition(context, projection);
-          final effective = switch (rolloutMode) {
-            EvidencePolicyRolloutMode.legacy =>
-              legacyEvidenceEligibilityV1[projection]!,
-            EvidencePolicyRolloutMode.shadow =>
-              legacyEvidenceEligibilityV1[projection]!,
-            EvidencePolicyRolloutMode.enforced => candidate,
-          };
+          final effective = effectiveProjectionDisposition(
+            context: context,
+            projection: projection,
+            policyDisposition: candidate,
+          );
           final candidateToRecord =
               rolloutMode == EvidencePolicyRolloutMode.shadow
               ? candidate

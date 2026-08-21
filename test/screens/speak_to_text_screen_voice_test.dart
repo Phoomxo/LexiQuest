@@ -628,6 +628,85 @@ void main() {
     },
   );
 
+  testWidgets(
+    'canonical evidence locks pronunciation playback until persistence succeeds',
+    (tester) async {
+      final firstRecordRelease = Completer<void>();
+      addTearDown(() {
+        if (!firstRecordRelease.isCompleted) firstRecordRelease.complete();
+      });
+      final repository = _CountingLearningRepository(
+        failFirstRecord: true,
+        firstRecordRelease: firstRecordRelease,
+      );
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'speech-audio-lock',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 10),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final provider = FakeVoiceProvider();
+      final voice = VoiceUseCases(
+        provider: provider,
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpeakToTextScreen(
+            correctWord: 'cat',
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            sessionId: 'session-1',
+            wordId: 'word-1',
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final playback = find.ancestor(
+        of: find.byIcon(Icons.volume_up),
+        matching: find.byType(InkWell),
+      );
+      final stalePlaybackHandler = tester.widget<InkWell>(playback).onTap!;
+      expect(provider.spokenRequests, hasLength(1));
+
+      await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
+      await tester.pump();
+
+      expect(tester.widget<InkWell>(playback).onTap, isNull);
+      stalePlaybackHandler();
+      await tester.pump();
+      expect(
+        provider.spokenRequests,
+        hasLength(1),
+        reason: 'a stale playback callback must honor the evidence lock',
+      );
+
+      firstRecordRelease.complete();
+      await tester.pumpAndSettle();
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      expect(retry, findsOneWidget);
+      expect(tester.widget<InkWell>(playback).onTap, isNull);
+      stalePlaybackHandler();
+      await tester.pump();
+      expect(provider.spokenRequests, hasLength(1));
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+      expect(tester.widget<InkWell>(playback).onTap, isNotNull);
+      await tester.tap(playback);
+      await tester.pumpAndSettle();
+      expect(provider.spokenRequests, hasLength(2));
+    },
+  );
+
   for (final resultCase in <({String name, String correctWord})>[
     (name: 'correct', correctWord: 'cat'),
     (name: 'incorrect', correctWord: 'dog'),
@@ -796,6 +875,62 @@ void main() {
 
     expect(repository.commands, hasLength(1));
   });
+
+  for (final throwsAfterFinal in <bool>[false, true]) {
+    testWidgets(
+      'accepted final fences late callbacks and ${throwsAfterFinal ? 'start failure' : 'start completion'}',
+      (tester) async {
+        final repository = _CountingLearningRepository();
+        final learning = LearningUseCases(
+          owners: _LearningOwnerRepository(),
+          repository: repository,
+          generateId: () => 'speech-final-before-return',
+          nowUtc: () => DateTime.utc(2026, 8, 15),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        );
+        final gateway = _FinalBeforeReturnSpeechGateway(
+          throwsAfterFinal: throwsAfterFinal,
+        );
+        final voice = VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SpeakToTextScreen(
+              correctWord: 'cat',
+              voice: voice,
+              speechPractice: SpeechPracticeUseCases(gateway),
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              sessionId: 'session-1',
+              wordId: 'word-1',
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(const ValueKey<String>('speech-listen-button')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(repository.commands, hasLength(1));
+        expect(find.text('cat', findRichText: true), findsWidgets);
+        expect(
+          find.text('ไม่ได้ยินคำพูดที่ชัดเจน กรุณาลองอีกครั้ง'),
+          findsNothing,
+        );
+        expect(find.text('ระบบรู้จำเสียงไม่พร้อมใช้งาน'), findsNothing);
+        expect(find.text('หยุดฟัง'), findsNothing);
+        expect(find.text('เริ่มพูด'), findsOneWidget);
+        expect(gateway.stopCalls, 1);
+      },
+    );
+  }
 }
 
 final class _LearningOwnerRepository implements LocalOwnerRepository {
@@ -964,6 +1099,65 @@ final class _EvidenceSpeechGateway implements SpeechRecognitionGateway {
 
   @override
   Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _FinalBeforeReturnSpeechGateway
+    implements SpeechRecognitionGateway {
+  _FinalBeforeReturnSpeechGateway({required this.throwsAfterFinal});
+
+  final bool throwsAfterFinal;
+  SpeechFailureCallback? _onFailure;
+  void Function(String status)? _onStatus;
+  int stopCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {
+    _onFailure = onFailure;
+    _onStatus = onStatus;
+  }
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    isListening = true;
+    onEvent(
+      SpeechRecognitionEvent(
+        transcript: 'cat',
+        isFinal: true,
+        recognizedAtUtc: DateTime.utc(2026, 8, 15),
+        engine: 'device-stt',
+        locale: locale,
+      ),
+    );
+    _onStatus!('listening');
+    _onFailure!(SpeechFailureCode.noMatch);
+    if (throwsAfterFinal) {
+      throw const SpeechPracticeException(SpeechFailureCode.engine);
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls += 1;
     isListening = false;
   }
 }

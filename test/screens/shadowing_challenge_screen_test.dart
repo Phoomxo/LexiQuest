@@ -414,6 +414,134 @@ void main() {
     expect(gateway.isListening, isTrue);
   });
 
+  testWidgets(
+    'first final freezes callbacks and leaves the completed attempt terminal',
+    (tester) async {
+      final repository = _RetryLearningRepository(failAnswerOnce: false);
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-terminal',
+        nowUtc: () => DateTime.utc(2026, 8, 14, 9),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final gateway = _ManualSpeechGateway();
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ShadowingChallengeScreen(
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(gateway),
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final listen = find.byKey(
+        const ValueKey<String>('shadowing-listen-button'),
+      );
+      final staleListenHandler = tester.widget<FilledButton>(listen).onPressed!;
+      await tester.tap(listen);
+      await tester.pump();
+      gateway.emitFinal('Practice makes perfect');
+      await tester.pumpAndSettle();
+
+      expect(repository.commands, hasLength(1));
+      expect(repository.finishCalls, hasLength(1));
+      expect(
+        find.text('ข้อความที่ได้ยิน: Practice makes perfect'),
+        findsOneWidget,
+      );
+      expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+
+      gateway.emitPartial('late partial transcript');
+      gateway.emitStatus('listening');
+      gateway.emitFailure(SpeechFailureCode.noMatch);
+      staleListenHandler();
+      await tester.pump();
+
+      expect(
+        find.text('ข้อความที่ได้ยิน: Practice makes perfect'),
+        findsOneWidget,
+      );
+      expect(
+        find.text('ข้อความที่ได้ยิน: late partial transcript'),
+        findsNothing,
+      );
+      expect(find.text('ไม่ได้ยินเสียงพูดที่ชัดเจน'), findsNothing);
+      expect(find.text('หยุดบันทึก'), findsNothing);
+      expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+      expect(
+        gateway.startCalls,
+        1,
+        reason: 'a completed attempt cannot start an unrecordable utterance',
+      );
+      expect(repository.commands, hasLength(1));
+    },
+  );
+
+  for (final throwsAfterFinal in <bool>[false, true]) {
+    testWidgets(
+      'accepted final fences ${throwsAfterFinal ? 'failed' : 'successful'} start continuation',
+      (tester) async {
+        final repository = _RetryLearningRepository(failAnswerOnce: false);
+        final learning = LearningUseCases(
+          owners: _LearningOwnerRepository(),
+          repository: repository,
+          generateId: () => 'shadow-final-before-return',
+          nowUtc: () => DateTime.utc(2026, 8, 15, 10),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        );
+        final gateway = _FinalBeforeReturnSpeechGateway(
+          throwsAfterFinal: throwsAfterFinal,
+        );
+        final voice = VoiceUseCases(
+          provider: _FakeVoice(),
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShadowingChallengeScreen(
+              voice: voice,
+              speechPractice: SpeechPracticeUseCases(gateway),
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final listen = find.byKey(
+          const ValueKey<String>('shadowing-listen-button'),
+        );
+        await tester.tap(listen);
+        await tester.pumpAndSettle();
+
+        expect(repository.commands, hasLength(1));
+        expect(repository.finishCalls, hasLength(1));
+        expect(
+          find.text('ข้อความที่ได้ยิน: Practice makes perfect'),
+          findsOneWidget,
+        );
+        expect(find.text('ไม่ได้ยินเสียงพูดที่ชัดเจน'), findsNothing);
+        expect(find.text('ระบบรู้จำเสียงไม่พร้อมใช้งาน'), findsNothing);
+        expect(find.text('หยุดบันทึก'), findsNothing);
+        expect(tester.widget<FilledButton>(listen).onPressed, isNull);
+        expect(gateway.stopCalls, 1);
+      },
+    );
+  }
+
   testWidgets('retry reuses pending evidence identity', (tester) async {
     final repository = _RetryLearningRepository();
     var nextId = 0;
@@ -581,7 +709,7 @@ void main() {
       expect(repository.finishCalls, hasLength(2));
       expect(repository.finishCalls.last, repository.finishCalls.first);
       expect(retry, findsNothing);
-      expect(tester.widget<FilledButton>(listen).onPressed, isNotNull);
+      expect(tester.widget<FilledButton>(listen).onPressed, isNull);
       expect(tester.widget<OutlinedButton>(playReference).onPressed, isNotNull);
 
       await tester.binding.handlePopRoute();
@@ -732,6 +860,133 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
 
   @override
   Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _ManualSpeechGateway implements SpeechRecognitionGateway {
+  SpeechEventCallback? _onEvent;
+  SpeechFailureCallback? _onFailure;
+  void Function(String status)? _onStatus;
+  String? _locale;
+  int startCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {
+    _onFailure = onFailure;
+    _onStatus = onStatus;
+  }
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    startCalls += 1;
+    isListening = true;
+    _locale = locale;
+    _onEvent = onEvent;
+  }
+
+  void emitFinal(String transcript) {
+    isListening = false;
+    _emit(transcript, isFinal: true);
+  }
+
+  void emitPartial(String transcript) => _emit(transcript, isFinal: false);
+
+  void emitFailure(SpeechFailureCode failure) => _onFailure!(failure);
+
+  void emitStatus(String status) => _onStatus!(status);
+
+  void _emit(String transcript, {required bool isFinal}) {
+    _onEvent!(
+      SpeechRecognitionEvent(
+        transcript: transcript,
+        isFinal: isFinal,
+        recognizedAtUtc: DateTime.utc(2026, 8, 14),
+        engine: 'device-stt',
+        locale: _locale!,
+      ),
+    );
+  }
+
+  @override
+  Future<void> stop() async {
+    isListening = false;
+  }
+}
+
+final class _FinalBeforeReturnSpeechGateway
+    implements SpeechRecognitionGateway {
+  _FinalBeforeReturnSpeechGateway({required this.throwsAfterFinal});
+
+  final bool throwsAfterFinal;
+  SpeechFailureCallback? _onFailure;
+  void Function(String status)? _onStatus;
+  int stopCalls = 0;
+
+  @override
+  bool isListening = false;
+
+  @override
+  Future<void> cancel() async {
+    isListening = false;
+  }
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {
+    _onFailure = onFailure;
+    _onStatus = onStatus;
+  }
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.granted;
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {
+    isListening = true;
+    onEvent(
+      SpeechRecognitionEvent(
+        transcript: 'Practice makes perfect',
+        isFinal: true,
+        recognizedAtUtc: DateTime.utc(2026, 8, 15),
+        engine: 'device-stt',
+        locale: locale,
+      ),
+    );
+    _onStatus!('listening');
+    _onFailure!(SpeechFailureCode.noMatch);
+    if (throwsAfterFinal) {
+      throw const SpeechPracticeException(SpeechFailureCode.engine);
+    }
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls += 1;
     isListening = false;
   }
 }

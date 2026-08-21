@@ -180,7 +180,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_listenPending || _persistenceLocked) return;
+    if (_listenPending || _persistenceLocked || _evidenceSaved) return;
     if (_listening) {
       _listenEpoch += 1;
       _listenPending = false;
@@ -212,10 +212,15 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       final started = await activeSession.start(
         locale: 'en-US',
         onEvent: (event) {
-          if (!mounted || epoch != _listenEpoch) return;
+          if (!mounted ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
           if (event.isFinal) {
-            if (_acceptedFinalEpoch == epoch) return;
             _acceptedFinalEpoch = epoch;
+            _listenPending = false;
+            activeSession.stop().ignore();
           }
           final reference = _referenceSentence;
           if (reference == null) return;
@@ -230,19 +235,29 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           }
         },
         onFailure: (failure) {
-          if (!mounted || epoch != _listenEpoch) return;
+          if (!mounted ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
           setState(() {
             _listening = false;
             _error = _failureText(failure);
           });
         },
         onStatus: (status) {
-          if (mounted && epoch == _listenEpoch) {
+          if (mounted &&
+              epoch == _listenEpoch &&
+              _acceptedFinalEpoch != epoch) {
             setState(() => _listening = status == 'listening');
           }
         },
       );
       if (!mounted || epoch != _listenEpoch) return;
+      if (_acceptedFinalEpoch == epoch) {
+        _listenPending = false;
+        return;
+      }
       if (!started) {
         _listenPending = false;
         setState(() => _listening = false);
@@ -251,7 +266,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       _listenPending = false;
       setState(() => _listening = activeSession.isListening);
     } on SpeechPracticeException catch (error) {
-      if (!mounted || epoch != _listenEpoch) return;
+      if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+        return;
+      }
       _listenPending = false;
       setState(() => _error = _failureText(error.code));
     }
@@ -426,7 +443,10 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
               FilledButton.icon(
                 key: const ValueKey<String>('shadowing-listen-button'),
                 onPressed:
-                    reference == null || _listenPending || persistenceLocked
+                    reference == null ||
+                        _listenPending ||
+                        persistenceLocked ||
+                        _evidenceSaved
                     ? null
                     : _toggleListening,
                 icon: Icon(_listening ? Icons.stop : Icons.mic),

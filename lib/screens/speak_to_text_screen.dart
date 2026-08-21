@@ -127,6 +127,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _speakWord() async {
+    if (_pendingEvidence != null) return;
     final session = routeVoiceSession;
     if (session == null) return;
     try {
@@ -174,18 +175,30 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         locale: 'en-US',
         onEvent: (event) => _onSpeechEvent(event, epoch),
         onFailure: (failure) {
-          if (!mounted || epoch != _listenEpoch) return;
+          if (!mounted ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
           setState(() {
             _listening = false;
             _error = _speechFailureText(failure);
           });
         },
         onStatus: (status) {
-          if (!mounted || epoch != _listenEpoch) return;
+          if (!mounted ||
+              epoch != _listenEpoch ||
+              _acceptedFinalEpoch == epoch) {
+            return;
+          }
           setState(() => _listening = status == 'listening');
         },
       );
       if (!mounted || epoch != _listenEpoch) return;
+      if (_acceptedFinalEpoch == epoch) {
+        _listenPending = false;
+        return;
+      }
       if (!started) {
         _listenPending = false;
         setState(() => _listening = false);
@@ -194,7 +207,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _listenPending = false;
       setState(() => _listening = activeSession.isListening);
     } on SpeechPracticeException catch (error) {
-      if (!mounted || epoch != _listenEpoch) return;
+      if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+        return;
+      }
       _listenPending = false;
       setState(() {
         _listening = false;
@@ -207,7 +222,11 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
       return;
     }
-    if (event.isFinal) _acceptedFinalEpoch = epoch;
+    if (event.isFinal) {
+      _acceptedFinalEpoch = epoch;
+      _listenPending = false;
+      _speechSession?.stop().ignore();
+    }
     final assessment = _speech!.assess(
       target: widget.correctWord,
       event: event,
@@ -334,7 +353,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                 button: true,
                 label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
                 child: InkWell(
-                  onTap: _speakWord,
+                  onTap: evidenceLocked ? null : _speakWord,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
