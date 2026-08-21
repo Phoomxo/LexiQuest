@@ -58,8 +58,7 @@ final class FirestoreSyncGateway implements SyncGateway {
                     return _TransactionPushResult.acknowledged(
                       FirestoreSyncCodec.decodeAcknowledgement(
                         operationSnapshot.data()!,
-                        expectedOperationId: mutation.operationId,
-                        expectedCollection: mutation.collection,
+                        expectedMutation: mutation,
                       ),
                     );
                   }
@@ -110,8 +109,7 @@ final class FirestoreSyncGateway implements SyncGateway {
       }
       return FirestoreSyncCodec.decodeAcknowledgement(
         acknowledgement.data()!,
-        expectedOperationId: mutation.operationId,
-        expectedCollection: mutation.collection,
+        expectedMutation: mutation,
       );
     } on SyncFailure {
       rethrow;
@@ -320,14 +318,19 @@ final class FirestoreSyncCodec {
 
   static PushAcknowledged decodeAcknowledgement(
     Map<String, Object?> data, {
-    required String expectedOperationId,
-    required SyncCollection expectedCollection,
+    required PushMutation expectedMutation,
   }) {
-    expectedCollection.requireSupportedPayloadVersion(
-      _requiredInt(data, 'schemaVersion'),
-    );
-    if (_requiredString(data, 'operationId') != expectedOperationId ||
-        _requiredString(data, 'entityType') != expectedCollection.entityType) {
+    if (_requiredInt(data, 'schemaVersion') !=
+            expectedMutation.payloadVersion ||
+        _requiredString(data, 'operationId') != expectedMutation.operationId ||
+        _requiredString(data, 'entityType') !=
+            expectedMutation.collection.entityType ||
+        _requiredString(data, 'entityId') != expectedMutation.entityId ||
+        _requiredString(data, 'operationKind') !=
+            expectedMutation.operationKind.name ||
+        _requiredInt(data, 'baseRevision') != expectedMutation.baseRevision ||
+        _requiredInt(data, 'resultingRevision') !=
+            expectedMutation.localRevision) {
       throw const InvalidSyncPayloadFailure();
     }
     final timestamp = data['acknowledgedAt'];
@@ -335,8 +338,8 @@ final class FirestoreSyncCodec {
       throw const InvalidSyncPayloadFailure();
     }
     return PushAcknowledged(
-      operationId: expectedOperationId,
-      resultingRevision: _requiredInt(data, 'resultingRevision'),
+      operationId: expectedMutation.operationId,
+      resultingRevision: expectedMutation.localRevision,
       acknowledgedAtUtc: timestamp.toDate().toUtc(),
     );
   }

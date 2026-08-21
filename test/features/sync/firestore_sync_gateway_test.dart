@@ -205,39 +205,69 @@ void main() {
       }
     });
 
-    test('acknowledgement validates collection type and payload version', () {
-      final base = <String, Object?>{
-        'schemaVersion': 2,
-        'operationId': 'operation-2',
-        'entityType': SyncCollection.attempts.entityType,
-        'resultingRevision': 1,
-        'acknowledgedAt': Timestamp.fromDate(serverUpdatedAt),
+    test('acknowledgement accepts exact attempt v1 and v2 mutations', () {
+      for (final payloadVersion in const <int>[1, 2]) {
+        final mutation = _attemptMutation(
+          payloadVersion: payloadVersion,
+          clientUpdatedAt: clientUpdatedAt,
+        );
+        final acknowledgement = FirestoreSyncCodec.encodeOperation(
+          mutation,
+          acknowledgedAt: Timestamp.fromDate(serverUpdatedAt),
+        );
+
+        final decoded = FirestoreSyncCodec.decodeAcknowledgement(
+          acknowledgement,
+          expectedMutation: mutation,
+        );
+
+        expect(decoded.operationId, mutation.operationId);
+        expect(decoded.resultingRevision, mutation.localRevision);
+        expect(decoded.acknowledgedAtUtc, serverUpdatedAt);
+      }
+    });
+
+    test('acknowledgement rejects every mismatched mutation field', () {
+      final mutation = _attemptMutation(
+        payloadVersion: 2,
+        clientUpdatedAt: clientUpdatedAt,
+      );
+      final exact = FirestoreSyncCodec.encodeOperation(
+        mutation,
+        acknowledgedAt: Timestamp.fromDate(serverUpdatedAt),
+      );
+      final mismatches = <String, Map<String, Object?>>{
+        'operation ID': <String, Object?>{
+          ...exact,
+          'operationId': 'operation-collision',
+        },
+        'entity type': <String, Object?>{
+          ...exact,
+          'entityType': SyncCollection.words.entityType,
+        },
+        'entity ID': <String, Object?>{
+          ...exact,
+          'entityId': 'attempt-collision',
+        },
+        'operation kind': <String, Object?>{
+          ...exact,
+          'operationKind': SyncOperationKind.delete.name,
+        },
+        'payload version': <String, Object?>{...exact, 'schemaVersion': 1},
+        'base revision': <String, Object?>{...exact, 'baseRevision': 3},
+        'new revision': <String, Object?>{...exact, 'resultingRevision': 4},
       };
 
-      expect(
-        FirestoreSyncCodec.decodeAcknowledgement(
-          base,
-          expectedOperationId: 'operation-2',
-          expectedCollection: SyncCollection.attempts,
-        ).resultingRevision,
-        1,
-      );
-      expect(
-        () => FirestoreSyncCodec.decodeAcknowledgement(
-          base,
-          expectedOperationId: 'operation-2',
-          expectedCollection: SyncCollection.words,
-        ),
-        throwsA(isA<UnsupportedSyncSchemaFailure>()),
-      );
-      expect(
-        () => FirestoreSyncCodec.decodeAcknowledgement(
-          <String, Object?>{...base, 'schemaVersion': 1},
-          expectedOperationId: 'operation-2',
-          expectedCollection: SyncCollection.words,
-        ),
-        throwsA(isA<InvalidSyncPayloadFailure>()),
-      );
+      for (final mismatch in mismatches.entries) {
+        expect(
+          () => FirestoreSyncCodec.decodeAcknowledgement(
+            mismatch.value,
+            expectedMutation: mutation,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: mismatch.key,
+        );
+      }
     });
 
     test('rejects a missing server timestamp', () {
@@ -406,4 +436,22 @@ EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   cohort: 'shadow',
   researchConsentVersion: 1,
   engagementAllowed: true,
+);
+
+PushMutation _attemptMutation({
+  required int payloadVersion,
+  required DateTime clientUpdatedAt,
+}) => PushMutation(
+  operationId: 'operation-$payloadVersion',
+  firebaseUid: 'firebase-user-1',
+  collection: SyncCollection.attempts,
+  entityId: 'attempt-$payloadVersion',
+  operationKind: SyncOperationKind.upsert,
+  payloadVersion: payloadVersion,
+  baseRevision: 4,
+  localRevision: 5,
+  clientUpdatedAtUtc: clientUpdatedAt,
+  payload: payloadVersion == 1
+      ? _attemptPayloadV1()
+      : _attemptPayloadV2(_declaredEvidenceContext()),
 );

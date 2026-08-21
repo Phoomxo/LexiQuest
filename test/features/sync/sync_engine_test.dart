@@ -192,6 +192,23 @@ void main() {
     },
   );
 
+  test('invalid acknowledgement cannot clear its outbox operation', () async {
+    await _seedCategoryOperation(database);
+    gateway.pushFailure = const InvalidSyncPayloadFailure();
+
+    final result = await engine().run();
+    final operation = await database
+        .select(database.outboxOperations)
+        .getSingle();
+
+    expect(result.status, SyncRunStatus.partialFailure);
+    expect(result.pushed, 0);
+    expect(operation.state, 'permanentFailure');
+    expect(operation.failureCode, SyncFailureCode.invalidPayload.name);
+    expect(operation.acknowledgedAtUtcMs, isNull);
+    expect(gateway.appliedOperationIds, isEmpty);
+  });
+
   test('push conflict records evidence and selects cloud state', () async {
     await _seedCategoryOperation(database);
     gateway.pushResult = PushConflict(
