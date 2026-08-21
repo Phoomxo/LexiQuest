@@ -215,6 +215,8 @@ final class PendingCurrentActivityEvidence {
 
   PendingCurrentActivityEvidenceStatus _status =
       PendingCurrentActivityEvidenceStatus.captured;
+  Future<OwnerBoundLearningEvidenceBasis>? _bindingInFlight;
+  OwnerBoundLearningEvidenceBasis? _boundBasis;
   Future<ResolvedLearningEvidenceRecord>? _resolutionInFlight;
   ResolvedLearningEvidenceRecord? _resolved;
   Future<AnswerRecordResult>? _recordInFlight;
@@ -298,8 +300,9 @@ final class PendingCurrentActivityEvidence {
 
   Future<ResolvedLearningEvidenceRecord> _resolveAndMemoize() async {
     try {
-      final resolved = await _learning.resolveEvidenceForRecording(
-        command: _command,
+      final basis = await _bindOnce();
+      final resolved = await _learning.resolveOwnerBoundEvidenceForRecording(
+        basis: basis,
         resolveContexts: ({required ownerId, required command}) async {
           final rolloutMode = await _rolloutModeProvider.resolve(
             ownerId: ownerId,
@@ -358,6 +361,24 @@ final class PendingCurrentActivityEvidence {
       return resolved;
     } finally {
       _resolutionInFlight = null;
+    }
+  }
+
+  Future<OwnerBoundLearningEvidenceBasis> _bindOnce() {
+    final basis = _boundBasis;
+    if (basis != null) {
+      return Future<OwnerBoundLearningEvidenceBasis>.value(basis);
+    }
+    return _bindingInFlight ??= _bindAndMemoize();
+  }
+
+  Future<OwnerBoundLearningEvidenceBasis> _bindAndMemoize() async {
+    try {
+      final basis = await _learning.bindEvidenceForRecording(command: _command);
+      _boundBasis = basis;
+      return basis;
+    } finally {
+      _bindingInFlight = null;
     }
   }
 }

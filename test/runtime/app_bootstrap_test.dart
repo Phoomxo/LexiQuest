@@ -205,33 +205,39 @@ void main() {
     );
 
     test(
-      'Shadow without an injected research state fails before entry and DB',
+      'non-Legacy without an injected research state fails before entry and DB',
       () async {
-        var databaseCalls = 0;
-        var entryStateCalls = 0;
-        final bootstrap = AppBootstrap(
-          createDatabase: () {
-            databaseCalls += 1;
-            return _testDatabase();
-          },
-          initializeFirebase: () async {},
-          initializeSupabase: () async {},
-          loadConfig: _validConfig,
-          loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
-            evidenceRollout: 'shadow',
-            answerAttemptWriteVersion: '2',
-            firestoreRulesRevision: answerAttemptV2RulesRevision,
-          ),
-          guestSessionService: _StubGuestSessionService(),
-          createEntryStateStore: () async {
-            entryStateCalls += 1;
-            return _MemoryAppEntryStateStore();
-          },
-        );
+        for (final rollout in const <String>['shadow', 'enforced']) {
+          var databaseCalls = 0;
+          var entryStateCalls = 0;
+          final bootstrap = AppBootstrap(
+            createDatabase: () {
+              databaseCalls += 1;
+              return _testDatabase();
+            },
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
+              evidenceRollout: rollout,
+              answerAttemptWriteVersion: '2',
+              firestoreRulesRevision: answerAttemptV2RulesRevision,
+            ),
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: () async {
+              entryStateCalls += 1;
+              return _MemoryAppEntryStateStore();
+            },
+          );
 
-        await expectLater(bootstrap.initialize(), throwsStateError);
-        expect(databaseCalls, 0);
-        expect(entryStateCalls, 0);
+          await expectLater(
+            bootstrap.initialize(),
+            throwsStateError,
+            reason: rollout,
+          );
+          expect(databaseCalls, 0, reason: rollout);
+          expect(entryStateCalls, 0, reason: rollout);
+        }
       },
     );
 

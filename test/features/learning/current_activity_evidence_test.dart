@@ -180,6 +180,73 @@ void main() {
   );
 
   test(
+    'failed resolution retry preserves the first owner-bound basis',
+    () async {
+      final owners = _ChangingOwnerRepository();
+      final rollout = _CountingRolloutProvider();
+      final research = _FailOnceResearchStateProvider();
+      final repository = _RecordingRepository();
+      var source = 'owner-bound-1';
+      var now = DateTime.utc(2026, 8, 14, 9, 30, 0, 123);
+      final learning = _learning(
+        owners: owners,
+        repository: repository,
+        generateId: () => source,
+        nowUtc: () => now,
+        eventContextProvider: research,
+      );
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: learning,
+            rolloutModeProvider: rollout,
+            researchStateProvider: research,
+          ).capture(
+            input: CurrentActivityInput.typedRecall,
+            sessionId: 'session-owner-1',
+            wordId: 'word-owner-1',
+            isCorrect: false,
+            responseTimeMs: 654,
+            attemptNumber: 4,
+            providerProvenance: 'keyboard|local|v1',
+            hintLevel: 2,
+          );
+      final frozenId = pending.sourceEvidenceId;
+      final frozenOccurrence = pending.occurredAtUtc;
+
+      await expectLater(pending.record(), throwsStateError);
+      expect(owners.calls, 1);
+      expect(research.ownerIds, ['owner-1']);
+
+      owners.activeOwnerId = 'owner-2';
+      source = 'mutated';
+      now = DateTime.utc(2030);
+      final result = await pending.retry();
+
+      expect(result.inserted, isTrue);
+      expect(owners.calls, 1);
+      expect(rollout.ownerIds, ['owner-1', 'owner-1']);
+      expect(research.ownerIds, ['owner-1', 'owner-1']);
+      expect(research.inputs, [
+        CurrentActivityInput.typedRecall,
+        CurrentActivityInput.typedRecall,
+      ]);
+      expect(research.occurrences, [frozenOccurrence, frozenOccurrence]);
+      final command = repository.commands.single;
+      expect(command.ownerId, 'owner-1');
+      expect(command.id, frozenId);
+      expect(command.occurredAtUtc, frozenOccurrence);
+      expect(command.sessionId, 'session-owner-1');
+      expect(command.wordId, 'word-owner-1');
+      expect(command.promptMode, 'typedRecall');
+      expect(command.isCorrect, isFalse);
+      expect(command.responseTimeMs, 654);
+      expect(command.attemptNumber, 4);
+      expect(command.providerProvenance, 'keyboard|local|v1');
+      expect(command.evidenceContext.hintLevel, 2);
+    },
+  );
+
+  test(
     'only a complete non-Legacy Ghost protocol may override class',
     () async {
       for (final mode in <EvidencePolicyRolloutMode>{
@@ -229,6 +296,109 @@ void main() {
       }
     },
   );
+
+  test('Legacy Ghost rejects a protocol evidence-class override', () async {
+    final repository = _RecordingRepository();
+    final research = _FixedResearchStateProvider(
+      _researchSnapshot(
+        DateTime.utc(2026, 8, 14),
+        override: EvidenceClass.guidedPractice,
+      ),
+    );
+    final pending =
+        CurrentActivityEvidenceAdapter(
+          learning: _learning(
+            repository: repository,
+            eventContextProvider: research,
+          ),
+          rolloutModeProvider:
+              const FixedEvidencePolicyRolloutModeProvider.legacy(),
+          researchStateProvider: research,
+        ).capture(
+          input: CurrentActivityInput.ghostDuel,
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          isCorrect: true,
+          responseTimeMs: 1,
+          attemptNumber: 1,
+        );
+
+    await expectLater(pending.record(), throwsStateError);
+    expect(repository.commands, isEmpty);
+  });
+
+  test('non-Legacy Ghost rejects every incomplete protocol override', () async {
+    final occurrence = DateTime.utc(2026, 8, 14);
+    final incomplete = <String, CurrentActivityResearchSnapshot>{
+      'consent': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        researchConsentVersion: 0,
+      ),
+      'experiment': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        includeExperimentContext: false,
+      ),
+      'protocolId': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        protocolId: null,
+      ),
+      'protocolVersion': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        protocolVersion: null,
+      ),
+      'experimentVersion': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        experimentVersion: null,
+      ),
+      'assignmentId': _researchSnapshot(
+        occurrence,
+        override: EvidenceClass.guidedPractice,
+        assignmentId: null,
+      ),
+    };
+
+    for (final mode in <EvidencePolicyRolloutMode>{
+      EvidencePolicyRolloutMode.shadow,
+      EvidencePolicyRolloutMode.enforced,
+    }) {
+      for (final entry in incomplete.entries) {
+        final repository = _RecordingRepository();
+        final research = _FixedResearchStateProvider(entry.value);
+        final pending =
+            CurrentActivityEvidenceAdapter(
+              learning: _learning(
+                repository: repository,
+                eventContextProvider: research,
+              ),
+              rolloutModeProvider: FixedEvidencePolicyRolloutModeProvider(mode),
+              researchStateProvider: research,
+            ).capture(
+              input: CurrentActivityInput.ghostDuel,
+              sessionId: 'session-1',
+              wordId: 'word-1',
+              isCorrect: true,
+              responseTimeMs: 1,
+              attemptNumber: 1,
+            );
+
+        await expectLater(
+          pending.record(),
+          throwsStateError,
+          reason: '${mode.name}/${entry.key}',
+        );
+        expect(
+          repository.commands,
+          isEmpty,
+          reason: '${mode.name}/${entry.key}',
+        );
+      }
+    }
+  });
 }
 
 LearningUseCases _learning({
@@ -251,25 +421,33 @@ LearningUseCases _learning({
 CurrentActivityResearchSnapshot _researchSnapshot(
   DateTime occurrence, {
   EvidenceClass? override,
+  int researchConsentVersion = 1,
+  bool includeExperimentContext = true,
+  String? protocolId = 'evidence-pilot',
+  String? protocolVersion = '1.0.0',
+  int? experimentVersion = 1,
+  String? assignmentId = 'assignment-1',
 }) {
   return CurrentActivityResearchSnapshot(
     engagementAllowed: false,
     protocolEvidenceClassOverride: override,
-    consentContext: const ConsentContext(
-      researchConsentVersion: 1,
+    consentContext: ConsentContext(
+      researchConsentVersion: researchConsentVersion,
       aiConsentGranted: false,
       voiceConsentGranted: false,
       socialConsentGranted: false,
     ),
-    experimentContext: ExperimentContext(
-      experimentId: 'evidence-eligibility',
-      variantId: 'shadow',
-      assignedAtUtc: occurrence.subtract(const Duration(minutes: 1)),
-    ),
-    protocolId: 'evidence-pilot',
-    protocolVersion: '1.0.0',
-    experimentVersion: 1,
-    assignmentId: 'assignment-1',
+    experimentContext: includeExperimentContext
+        ? ExperimentContext(
+            experimentId: 'evidence-eligibility',
+            variantId: 'shadow',
+            assignedAtUtc: occurrence.subtract(const Duration(minutes: 1)),
+          )
+        : null,
+    protocolId: protocolId,
+    protocolVersion: protocolVersion,
+    experimentVersion: experimentVersion,
+    assignmentId: assignmentId,
   );
 }
 
@@ -280,6 +458,21 @@ final class _CountingOwnerRepository implements LocalOwnerRepository {
   Future<LocalOwner> getOrCreateActiveOwner() async {
     calls += 1;
     return LocalOwner(id: 'owner-1', createdAtUtc: DateTime.utc(2026));
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      throw UnimplementedError();
+}
+
+final class _ChangingOwnerRepository implements LocalOwnerRepository {
+  int calls = 0;
+  String activeOwnerId = 'owner-1';
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    calls += 1;
+    return LocalOwner(id: activeOwnerId, createdAtUtc: DateTime.utc(2026));
   }
 
   @override
@@ -331,6 +524,7 @@ final class _DelayedRolloutProvider
 final class _CountingRolloutProvider
     implements EvidencePolicyRolloutModeProvider {
   int calls = 0;
+  final List<String> ownerIds = <String>[];
 
   @override
   Future<EvidencePolicyRolloutMode> resolve({
@@ -338,8 +532,41 @@ final class _CountingRolloutProvider
     required EvidenceContext? evidenceContext,
   }) async {
     calls += 1;
+    ownerIds.add(ownerId);
     return EvidencePolicyRolloutMode.legacy;
   }
+}
+
+final class _FailOnceResearchStateProvider
+    implements CurrentActivityResearchStateProvider {
+  int activityCalls = 0;
+  final List<String> ownerIds = <String>[];
+  final List<CurrentActivityInput> inputs = <CurrentActivityInput>[];
+  final List<DateTime> occurrences = <DateTime>[];
+
+  @override
+  Future<CurrentActivityResearchSnapshot> resolveActivity({
+    required String ownerId,
+    required CurrentActivityInput input,
+    required DateTime occurredAtUtc,
+    required EvidencePolicyRolloutMode rolloutMode,
+  }) async {
+    activityCalls += 1;
+    ownerIds.add(ownerId);
+    inputs.add(input);
+    occurrences.add(occurredAtUtc);
+    if (activityCalls == 1) {
+      throw StateError('simulated research-state resolution failure');
+    }
+    return const CurrentActivityResearchSnapshot.legacyCompatibility();
+  }
+
+  @override
+  Future<LearningEventContext> resolve({
+    required String ownerId,
+    required EvidenceContext evidenceContext,
+    required DateTime occurredAtUtc,
+  }) async => throw StateError('adapter must reuse the activity snapshot');
 }
 
 final class _DelayedResearchStateProvider

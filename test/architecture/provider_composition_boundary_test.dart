@@ -4,6 +4,32 @@ import 'package:flutter_test/flutter_test.dart';
 
 String _read(String path) => File(path).readAsStringSync();
 
+Map<String, String> _productionDartSources() {
+  final entries =
+      Directory('lib')
+          .listSync(recursive: true, followLinks: false)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))
+          .map(
+            (file) => MapEntry(
+              file.path.replaceAll(Platform.pathSeparator, '/'),
+              file.readAsStringSync(),
+            ),
+          )
+          .toList(growable: false)
+        ..sort((left, right) => left.key.compareTo(right.key));
+  return Map<String, String>.fromEntries(entries);
+}
+
+Map<String, int> _matchCounts(Map<String, String> sources, RegExp pattern) {
+  final result = <String, int>{};
+  for (final entry in sources.entries) {
+    final count = pattern.allMatches(entry.value).length;
+    if (count > 0) result[entry.key] = count;
+  }
+  return result;
+}
+
 void main() {
   test(
     'every production screen stays behind composed AI and voice facades',
@@ -112,6 +138,7 @@ void main() {
   test(
     'current evidence rollout has one domain authority and one composition root',
     () {
+      final production = _productionDartSources();
       const authorityPath =
           'lib/features/learning/domain/evidence_policy_rollout.dart';
       final authority = _read(authorityPath);
@@ -156,6 +183,78 @@ void main() {
         ),
       );
 
+      expect(
+        _matchCounts(
+          production,
+          RegExp(
+            r'\babstract\s+interface\s+class\s+'
+            r'EvidencePolicyRolloutModeProvider\b',
+          ),
+        ),
+        const <String, int>{authorityPath: 1},
+      );
+      expect(
+        _matchCounts(production, RegExp(r'\bCurrentActivityRolloutProvider\b')),
+        isEmpty,
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bCurrentActivityEvidenceAdapter\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/learning/application/current_activity_evidence.dart': 1,
+          'lib/runtime/app_bootstrap.dart': 1,
+        },
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bBaselineCurrentActivityResearchStateProvider\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/learning/application/current_activity_evidence.dart': 2,
+          'lib/runtime/app_bootstrap.dart': 1,
+        },
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bFixedEvidencePolicyRolloutModeProvider(?!\.legacy)\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/learning/domain/evidence_policy_rollout.dart': 1,
+          'lib/runtime/app_bootstrap.dart': 1,
+        },
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bFixedEvidencePolicyRolloutModeProvider\.legacy\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/identity/data/drift_owner_upgrade_repository.dart': 1,
+          'lib/features/learning/application/current_activity_evidence.dart': 1,
+          'lib/features/learning/application/learning_side_effect_reconciler.dart':
+              1,
+          'lib/features/learning/data/drift_learning_event_store.dart': 1,
+          'lib/features/learning/data/drift_learning_projection_rebuilder.dart':
+              1,
+          'lib/features/learning/data/drift_learning_repository.dart': 1,
+          'lib/features/learning/domain/evidence_policy_rollout.dart': 1,
+          'lib/features/sync/data/drift_sync_store.dart': 1,
+        },
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bContextEvidencePolicyRolloutModeProvider\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/learning/domain/evidence_policy_rollout.dart': 1,
+        },
+      );
+
       const productionConsumers = <String>[
         'lib/features/learning/data/drift_learning_event_store.dart',
         'lib/features/learning/data/drift_learning_repository.dart',
@@ -179,25 +278,29 @@ void main() {
   test(
     'learning screens resolve the composed adapter and never create Legacy',
     () {
-      const screens = <String>[
-        'lib/screens/quiz_screen.dart',
-        'lib/screens/srs_flashcards_screen.dart',
-        'lib/screens/associative_reading_session_screen.dart',
-        'lib/screens/ghost_shadow_duel_screen.dart',
-        'lib/screens/speak_to_text_screen.dart',
-        'lib/screens/shadowing_challenge_screen.dart',
-      ];
-      for (final path in screens) {
-        final source = _read(path);
+      final screens = <String, String>{
+        for (final entry in _productionDartSources().entries)
+          if (entry.key.startsWith('lib/screens/')) entry.key: entry.value,
+      };
+      expect(screens, isNotEmpty);
+      for (final entry in screens.entries) {
+        final path = entry.key;
+        final source = entry.value;
+        if (!source.contains('CurrentActivityEvidenceAdapter')) continue;
         expect(
           source,
           contains('currentActivityEvidence'),
           reason: '$path must resolve the bootstrap-owned adapter',
         );
         expect(
-          source,
-          isNot(contains('CurrentActivityEvidenceAdapter.legacy(')),
-          reason: '$path must not create a separate Legacy authority',
+          RegExp(
+            r'\b(?:CurrentActivityEvidenceAdapter|'
+            r'(?:Fixed|Context)EvidencePolicyRolloutModeProvider'
+            r'(?:\.legacy)?|BaselineCurrentActivityResearchStateProvider)'
+            r'\s*\(',
+          ).hasMatch(source),
+          isFalse,
+          reason: '$path must not construct an evidence authority or fallback',
         );
       }
     },

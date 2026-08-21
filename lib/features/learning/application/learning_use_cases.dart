@@ -38,6 +38,18 @@ final class FrozenLearningEvidenceCommand {
   final String? providerProvenance;
 }
 
+/// Canonical response semantics bound to the active owner before any
+/// asynchronous policy or research-state resolution begins.
+final class OwnerBoundLearningEvidenceBasis {
+  const OwnerBoundLearningEvidenceBasis({
+    required this.ownerId,
+    required this.command,
+  });
+
+  final String ownerId;
+  final FrozenLearningEvidenceCommand command;
+}
+
 final class ResolvedLearningEvidenceContexts {
   const ResolvedLearningEvidenceContexts({
     required this.evidenceContext,
@@ -228,9 +240,33 @@ final class LearningUseCases {
     required FrozenLearningEvidenceCommand command,
     required LearningEvidenceContextsResolver resolveContexts,
   }) async {
+    final basis = await bindEvidenceForRecording(command: command);
+    return resolveOwnerBoundEvidenceForRecording(
+      basis: basis,
+      resolveContexts: resolveContexts,
+    );
+  }
+
+  /// Canonicalizes the captured response and binds it to one active owner.
+  Future<OwnerBoundLearningEvidenceBasis> bindEvidenceForRecording({
+    required FrozenLearningEvidenceCommand command,
+  }) async {
     final canonical = _canonicalEvidenceCommand(command);
     final owner = await owners.getOrCreateActiveOwner();
-    final ownerId = _requiredId(owner.id, 'ownerId');
+    return OwnerBoundLearningEvidenceBasis(
+      ownerId: _requiredId(owner.id, 'ownerId'),
+      command: canonical,
+    );
+  }
+
+  /// Resolves contexts for an already owner-bound basis without consulting
+  /// mutable active-owner state again.
+  Future<ResolvedLearningEvidenceRecord> resolveOwnerBoundEvidenceForRecording({
+    required OwnerBoundLearningEvidenceBasis basis,
+    required LearningEvidenceContextsResolver resolveContexts,
+  }) async {
+    final ownerId = _requiredId(basis.ownerId, 'ownerId');
+    final canonical = _canonicalEvidenceCommand(basis.command);
     final contexts = await resolveContexts(
       ownerId: ownerId,
       command: canonical,
