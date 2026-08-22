@@ -29,6 +29,7 @@
 
 ### Q1: `streak_and_daily_quest_service.dart`
 **Reason:** In-memory mutable state. Data resets on app restart.  
+**Authority boundary:** Non-authoritative and excluded from production composition. Operational streak state belongs only to `StreakUseCases` + `DriftStreakRepository`; this legacy service remains quarantined and is not activated or deleted here.
 **Specific issues:**
 ```dart
 int _currentStreakDays = 1;    // ← hardcoded, not persisted
@@ -73,6 +74,7 @@ class DailyQuest { String id; int targetCount; int currentProgress; ... }
 
 ### Q4: `local_user_progress_store.dart`
 **Reason:** SharedPreferences storage for streak, ZPD level, mastered words — all conflict with Drift schema.  
+**Authority boundary:** Non-authoritative and excluded from production composition. Its `streak_count` must never feed or write operational streak state; `StreakUseCases` + `DriftStreakRepository` remain authoritative. This legacy store remains quarantined and is not activated or deleted here.
 **Specific issues:**
 ```
 zpd_level     → should be in RuntimeFlags Drift table

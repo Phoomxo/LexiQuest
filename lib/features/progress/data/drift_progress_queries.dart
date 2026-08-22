@@ -100,10 +100,12 @@ final class DriftProgressQueries {
       accuracy: attempts.isEmpty ? null : correctCount / attempts.length,
       totalXp: totalXp,
       completedSessions: completedSessions,
-      streakDays: _streakDays(
-        attempts.map((row) => row.occurredAtUtcMs),
-        nowUtc,
-      ),
+      streakDays:
+          (await (database.select(
+                database.streakStates,
+              )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull())
+              ?.currentStreakDays ??
+          0,
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
@@ -242,24 +244,5 @@ final class DriftProgressQueries {
     }
     return context.evidenceClass != EvidenceClass.assessment &&
         context.evidenceClass != EvidenceClass.recreational;
-  }
-
-  int _streakDays(Iterable<int> timestamps, DateTime nowUtc) {
-    final days = timestamps
-        .map((value) => DateTime.fromMillisecondsSinceEpoch(value, isUtc: true))
-        .map((value) => DateTime.utc(value.year, value.month, value.day))
-        .toSet();
-    if (days.isEmpty) return 0;
-    final today = DateTime.utc(nowUtc.year, nowUtc.month, nowUtc.day);
-    var cursor = days.contains(today)
-        ? today
-        : today.subtract(const Duration(days: 1));
-    if (!days.contains(cursor)) return 0;
-    var streak = 0;
-    while (days.contains(cursor)) {
-      streak++;
-      cursor = cursor.subtract(const Duration(days: 1));
-    }
-    return streak;
   }
 }

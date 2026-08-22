@@ -77,65 +77,97 @@ void main() {
     },
   );
 
-  test('mixed attempts derive accuracy points weakness and streak', () async {
-    await learning.startSession(
-      LearningSessionDraft(
-        id: 'session-1',
-        ownerId: 'owner-1',
-        activityType: 'quiz',
-        startedAtUtc: DateTime.utc(2026, 7, 29, 10),
-        appVersion: 'test',
-        buildId: 'test',
-      ),
-    );
-    await learning.recordAnswer(
-      RecordAnswerCommand.frozenV13LegacyIngress(
-        id: 'attempt-1',
-        ownerId: 'owner-1',
-        sessionId: 'session-1',
-        wordId: 'word-1',
-        promptMode: 'meaningChoice',
-        isCorrect: false,
-        responseTimeMs: 500,
-        attemptNumber: 1,
-        occurredAtUtc: DateTime.utc(2026, 7, 29, 10),
-        evidenceContext: _frozenV13LegacyEvidence(),
-      ),
-    );
-    await learning.recordAnswer(
-      RecordAnswerCommand.frozenV13LegacyIngress(
-        id: 'attempt-2',
-        ownerId: 'owner-1',
-        sessionId: 'session-1',
-        wordId: 'word-2',
-        promptMode: 'meaningChoice',
-        isCorrect: true,
-        responseTimeMs: 400,
-        attemptNumber: 2,
-        occurredAtUtc: DateTime.utc(2026, 7, 30, 10),
-        evidenceContext: _frozenV13LegacyEvidence(),
-      ),
-    );
-    await learning.finishSession(
-      ownerId: 'owner-1',
-      sessionId: 'session-1',
-      endedAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
-    );
+  test('progress reads the dedicated streak authority', () async {
+    await _insertSevenDatedAttempts(database);
+    await _insertStreakState(database, currentStreakDays: 3);
 
     final result = await progress.load(
       ownerId: 'owner-1',
       nowUtc: DateTime.utc(2026, 7, 30, 12),
     );
 
-    expect(result.sampleSize, 2);
-    expect(result.accuracy, 0.5);
-    expect(result.totalXp, 1);
-    expect(result.completedSessions, 1);
-    expect(result.streakDays, 2);
-    expect(result.weaknesses.single.wordId, 'word-1');
-    expect(result.weaknesses.single.incorrectCount, 1);
-    expect(result.recommendations.single.sampleSize, 1);
+    expect(result.sampleSize, 7);
+    expect(result.streakDays, 3);
   });
+
+  test(
+    'progress reports zero when dedicated streak authority is missing',
+    () async {
+      await _insertSevenDatedAttempts(database);
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+      );
+
+      expect(result.sampleSize, 7);
+      expect(result.streakDays, 0);
+    },
+  );
+
+  test(
+    'mixed attempts derive accuracy points and weakness while reading streak',
+    () async {
+      await learning.startSession(
+        LearningSessionDraft(
+          id: 'session-1',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 29, 10),
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+      await learning.recordAnswer(
+        RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'attempt-1',
+          ownerId: 'owner-1',
+          sessionId: 'session-1',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: false,
+          responseTimeMs: 500,
+          attemptNumber: 1,
+          occurredAtUtc: DateTime.utc(2026, 7, 29, 10),
+          evidenceContext: _frozenV13LegacyEvidence(),
+        ),
+      );
+      await learning.recordAnswer(
+        RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'attempt-2',
+          ownerId: 'owner-1',
+          sessionId: 'session-1',
+          wordId: 'word-2',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 400,
+          attemptNumber: 2,
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 10),
+          evidenceContext: _frozenV13LegacyEvidence(),
+        ),
+      );
+      await learning.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-1',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+      );
+      await _insertStreakState(database, currentStreakDays: 2);
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+      );
+
+      expect(result.sampleSize, 2);
+      expect(result.accuracy, 0.5);
+      expect(result.totalXp, 1);
+      expect(result.completedSessions, 1);
+      expect(result.streakDays, 2);
+      expect(result.weaknesses.single.wordId, 'word-1');
+      expect(result.weaknesses.single.incorrectCount, 1);
+      expect(result.recommendations.single.sampleSize, 1);
+    },
+  );
 
   test('cosmetic purchase never changes lifetime xp or level', () async {
     await database
@@ -346,6 +378,65 @@ void main() {
       );
     },
   );
+}
+
+Future<void> _insertSevenDatedAttempts(AppDatabase database) async {
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: 'session-streak-authority',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: DateTime.utc(2026, 7, 24, 10).millisecondsSinceEpoch,
+          endedAtUtcMs: Value(
+            DateTime.utc(2026, 7, 30, 10, 1).millisecondsSinceEpoch,
+          ),
+          correctCount: const Value(7),
+          score: const Value(100),
+          appVersion: 'test',
+          buildId: 'test',
+        ),
+      );
+
+  for (var offset = 0; offset < 7; offset++) {
+    final occurredAtUtc = DateTime.utc(2026, 7, 24 + offset, 10);
+    await database
+        .into(database.answerAttempts)
+        .insert(
+          AnswerAttemptsCompanion.insert(
+            id: 'attempt-streak-$offset',
+            ownerId: 'owner-1',
+            sessionId: 'session-streak-authority',
+            wordId: offset.isEven ? 'word-1' : 'word-2',
+            promptMode: 'meaningChoice',
+            isCorrect: true,
+            responseTimeMs: const Value(100),
+            attemptNumber: offset + 1,
+            occurredAtUtcMs: occurredAtUtc.millisecondsSinceEpoch,
+          ),
+        );
+  }
+}
+
+Future<void> _insertStreakState(
+  AppDatabase database, {
+  required int currentStreakDays,
+}) async {
+  await database
+      .into(database.streakStates)
+      .insert(
+        StreakStatesCompanion.insert(
+          ownerId: 'owner-1',
+          currentStreakDays: Value(currentStreakDays),
+          longestStreakDays: Value(currentStreakDays),
+          lastLearnedAtUtcMs: Value(
+            DateTime.utc(2026, 7, 30, 10).millisecondsSinceEpoch,
+          ),
+          updatedAtUtcMs: DateTime.utc(2026, 7, 30, 10).millisecondsSinceEpoch,
+        ),
+      );
 }
 
 EvidenceContext _frozenV13LegacyEvidence() =>

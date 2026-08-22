@@ -46,8 +46,8 @@
 | 23 | `QuestDefinitions` | `features/quest/data/drift_quest_repository.dart` | None (catalog data) | LOW | Phase 0 D6.1 — no owner FK; catalog only |
 | 24 | `QuestInstances` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — owner-scoped, state machine |
 | 25 | `QuestObjectiveProgress` | `features/quest/data/drift_quest_repository.dart` | None | LOW | Phase 0 D6.1 — cascades from QuestInstances |
-| 26 | `StreakStates` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — one row per owner; owned by StreakUseCases |
-| 27 | `LearningDayLog` | `features/motivation/data/drift_streak_repository.dart` | None | LOW | Phase 1 D7.2 — immutable append-only; insertOrIgnore |
+| 26 | `StreakStates` | `StreakUseCases` + `features/motivation/data/drift_streak_repository.dart` | Lifecycle migration only: `features/identity/data/drift_owner_upgrade_repository.dart` | LOW | Sole operational Streak authority; Progress is a read model and reads `currentStreakDays` without recomputation |
+| 27 | `LearningDayLog` | `StreakUseCases` + `features/motivation/data/drift_streak_repository.dart` | Lifecycle migration only: `features/identity/data/drift_owner_upgrade_repository.dart` | LOW | Sole operational Streak authority; immutable append-only learning-day evidence |
 | 28 | `AssociationRecords` | `features/learning/data/drift_associative_learning_adapter.dart` | None | LOW | Phase 2 D8.3 — insertOrReplace; one cue per (owner, word, type) |
 | 29 | `AssociativeMemoryStates` | `features/learning/data/drift_associative_learning_adapter.dart` | None | LOW | Phase 2 D8.3 — insertOrReplace; one state per (owner, word) |
 
