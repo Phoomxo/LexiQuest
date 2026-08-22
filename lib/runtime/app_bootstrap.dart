@@ -68,6 +68,8 @@ import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
+import '../features/rewards/domain/economy_transaction_policy.dart';
+import '../features/rewards/domain/reward_models.dart';
 import '../features/session/data/shared_preferences_app_entry_state_store.dart';
 import '../features/session/domain/app_entry_state.dart';
 import '../features/sync/application/sync_backoff.dart';
@@ -527,6 +529,7 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
     );
     final rewardRepository = DriftRewardRepository(database);
+    const economyAwardPolicy = EconomyAwardPolicyV1();
     final rewards = RewardUseCases(
       owners: localOwners,
       repository: rewardRepository,
@@ -549,12 +552,25 @@ final class AppBootstrap {
             required ownerId,
             required idempotencyKey,
             required xpAmount,
+            required sourceEventId,
+            required occurredAtUtc,
             rewardItemId,
-          }) => rewardRepository.grantQuestXp(
-            ownerId: ownerId,
-            idempotencyKey: idempotencyKey,
-            xpAmount: xpAmount,
-          ),
+          }) async {
+            final award = economyAwardPolicy.evaluate(
+              sourceEventId: sourceEventId,
+              amount: xpAmount,
+              eligible: true,
+            );
+            final result = await rewardRepository.grantQuestXpAndCoins(
+              ownerId: ownerId,
+              sourceEventId: award.sourceEventId,
+              xpAmount: award.xpAmount,
+              occurredAtUtc: occurredAtUtc,
+            );
+            if (result == QuestEconomyGrantResult.inserted) {
+              notifyLocalMutation();
+            }
+          },
     );
 
     // ── Streak tracking (must precede learning wiring) ───────────────────
@@ -580,6 +596,53 @@ final class AppBootstrap {
 
     final learningReconciler = LearningSideEffectReconciler(
       database,
+      coinsSink: (_, evidence) async {
+        final isCorrect = evidence.attempt.isCorrect;
+        final eligibleClass =
+            evidence.context.evidenceClass != EvidenceClass.assessment &&
+            evidence.context.evidenceClass != EvidenceClass.recreational;
+        final award = economyAwardPolicy.evaluate(
+          sourceEventId: evidence.attempt.id,
+          amount: 1,
+          eligible: isCorrect && eligibleClass,
+        );
+        if (award.coinAmount == 0) {
+          return LearningProjectionResult.notApplicable(
+            payload: <String, dynamic>{
+              'reasonCode': isCorrect
+                  ? 'evidenceIneligible'
+                  : 'incorrectAnswer',
+            },
+          );
+        }
+        final result = await rewardRepository.grantCoins(
+          ownerId: evidence.attempt.ownerId,
+          idempotencyKey: award.coinIdempotencyKey,
+          amount: award.coinAmount,
+          sourceEventId: award.sourceEventId,
+          occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            evidence.attempt.occurredAtUtcMs,
+            isUtc: true,
+          ),
+        );
+        if (result == CoinGrantResult.inserted) {
+          notifyLocalMutation();
+        }
+        return switch (result) {
+          CoinGrantResult.inserted => const LearningProjectionResult.applied(
+            payload: <String, dynamic>{'status': 'inserted'},
+          ),
+          CoinGrantResult.replayed => const LearningProjectionResult.applied(
+            payload: <String, dynamic>{'status': 'replayed'},
+          ),
+          CoinGrantResult.capturedByLegacyBackfill =>
+            const LearningProjectionResult.notApplicable(
+              payload: <String, dynamic>{
+                'reasonCode': 'capturedByLegacyBackfill',
+              },
+            ),
+        };
+      },
       questSink: (event) async {
         final projection = await quest.projectEvent(
           event,

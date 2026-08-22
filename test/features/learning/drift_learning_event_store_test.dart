@@ -123,6 +123,266 @@ void main() {
     );
   });
 
+  test(
+    'coins receipt rejects an outcome without its exact result shape',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'coins-invalid-result',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 9),
+      );
+      await store.append(source);
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'coins',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+        ),
+        throwsStateError,
+      );
+
+      final rows =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.isIn(const <String>[
+                  'learning-projection:coins:'
+                      'learning-event:coins-invalid-result:v2',
+                  'learning-projection-cursor:owner-1:coins:v2',
+                ]),
+              ))
+              .get();
+      expect(
+        rows,
+        isEmpty,
+        reason: 'receipt and cursor must roll back together',
+      );
+    },
+  );
+
+  test(
+    'coins receipts accept only stable terminal statuses and reasons',
+    () async {
+      final appliedSource = _event(
+        sourceEvidenceId: 'coins-valid-applied',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 9),
+      );
+      final skippedSource = _event(
+        sourceEvidenceId: 'coins-valid-skipped',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 10),
+      );
+      await store.append(appliedSource);
+      await store.append(skippedSource);
+
+      await store.markProjectionOutcome(
+        source: appliedSource,
+        projection: 'coins',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+        result: const <String, dynamic>{'status': 'replayed'},
+      );
+      await store.markProjectionOutcome(
+        source: skippedSource,
+        projection: 'coins',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.notApplicable,
+        result: const <String, dynamic>{
+          'reasonCode': 'capturedByLegacyBackfill',
+        },
+      );
+
+      expect(
+        (await store.readProjectionReceipt(
+          source: appliedSource,
+          projection: 'coins',
+          appliedVersion: 2,
+        ))?.result,
+        const <String, dynamic>{'status': 'replayed'},
+      );
+      expect(
+        (await store.readProjectionReceipt(
+          source: skippedSource,
+          projection: 'coins',
+          appliedVersion: 2,
+        ))?.result,
+        const <String, dynamic>{'reasonCode': 'capturedByLegacyBackfill'},
+      );
+    },
+  );
+
+  test(
+    'version-two Quest grants require stable source and occurrence fields',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'quest-v2-stable-award',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 11),
+      );
+      await store.append(source);
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[
+              <String, dynamic>{
+                'ownerId': 'owner-1',
+                'idempotencyKey': 'quest-v2-stable-award',
+                'xpAmount': 50,
+              },
+            ],
+          },
+        ),
+        throwsStateError,
+      );
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[
+              <String, dynamic>{
+                'ownerId': 'owner-1',
+                'idempotencyKey': 'quest-v2-stable-award',
+                'xpAmount': 50,
+                'sourceEventId': 'different-source',
+                'occurredAtUtcMs': 1786676400000,
+              },
+            ],
+          },
+        ),
+        throwsStateError,
+      );
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[
+              <String, dynamic>{
+                'ownerId': 'owner-1',
+                'idempotencyKey': 'quest-v2-stable-award',
+                'xpAmount': 50,
+                'sourceEventId': 'quest-v2-stable-award',
+                'occurredAtUtcMs': 8640000000000001,
+              },
+            ],
+          },
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
+    'version-two Quest receipt bridged from v1 accepts legacy grant shape',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'quest-v1-bridged-award',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 12),
+      );
+      await store.append(source);
+
+      const legacyResult = <String, dynamic>{
+        'eligible': true,
+        'rewardGrants': <Object>[
+          <String, dynamic>{
+            'ownerId': 'owner-1',
+            'idempotencyKey': 'quest-v1-bridged-award',
+            'xpAmount': 50,
+          },
+        ],
+      };
+      await store.markProjectionOutcome(
+        source: source,
+        projection: 'quest',
+        appliedVersion: 1,
+        outcome: LearningProjectionOutcome.applied,
+        result: legacyResult,
+      );
+      await store.markProjectionOutcome(
+        source: source,
+        projection: 'quest',
+        appliedVersion: 2,
+        outcome: LearningProjectionOutcome.applied,
+        bridgedFromVersion: 1,
+        result: legacyResult,
+      );
+
+      final receipt = await store.readProjectionReceipt(
+        source: source,
+        projection: 'quest',
+        appliedVersion: 2,
+      );
+      expect(receipt?.bridgedFromVersion, 1);
+      expect(receipt?.result['rewardGrants'], const <Object>[
+        <String, dynamic>{
+          'ownerId': 'owner-1',
+          'idempotencyKey': 'quest-v1-bridged-award',
+          'xpAmount': 50,
+        },
+      ]);
+    },
+  );
+
+  test(
+    'version-two Quest bridge without v1 receipt rolls back receipt and cursor',
+    () async {
+      final source = _event(
+        sourceEvidenceId: 'quest-v1-missing-provenance',
+        occurredAtUtc: DateTime.utc(2026, 8, 14, 13),
+      );
+      await store.append(source);
+
+      await expectLater(
+        store.markProjectionOutcome(
+          source: source,
+          projection: 'quest',
+          appliedVersion: 2,
+          outcome: LearningProjectionOutcome.applied,
+          bridgedFromVersion: 1,
+          result: const <String, dynamic>{
+            'eligible': true,
+            'rewardGrants': <Object>[
+              <String, dynamic>{
+                'ownerId': 'owner-1',
+                'idempotencyKey': 'quest-v1-missing-provenance',
+                'xpAmount': 50,
+              },
+            ],
+          },
+        ),
+        throwsStateError,
+      );
+
+      const receiptId =
+          'learning-projection:quest:learning-event:quest-v1-missing-provenance:v2';
+      const cursorId = 'learning-projection-cursor:owner-1:quest:v2';
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(receiptId))).getSingleOrNull(),
+        isNull,
+      );
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(cursorId))).getSingleOrNull(),
+        isNull,
+      );
+    },
+  );
+
   test('decision set replay rejects a same-ID decision mutation', () async {
     final at = DateTime.utc(2026, 8, 14, 9);
     await database

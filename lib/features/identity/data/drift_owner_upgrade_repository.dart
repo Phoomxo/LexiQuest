@@ -9,6 +9,7 @@ import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/srs_operation_identity.dart';
+import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
@@ -95,6 +96,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             throw StateError('active local owner was not found');
           }
           if (source.firebaseUid == uid) {
+            await DriftEconomyCutover(_database).ensureSeparated(source.id);
+            await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
             return OwnerUpgradeResult(
               targetOwnerId: source.id,
               mode: OwnerUpgradeMode.alreadyBound,
@@ -105,6 +108,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           final target = await _ownerByFirebaseUid(uid);
           final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
           if (target == null) {
+            await DriftEconomyCutover(_database).ensureSeparated(source.id);
+            await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
             await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
             await (_database.update(
               _database.localOwners,
@@ -192,6 +197,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             updates: {_database.localOwners},
           );
           await _rebuildLearningProjections(target.id);
+          await DriftEconomyCutover(_database).ensureSeparated(target.id);
           await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
           return OwnerUpgradeResult(
             targetOwnerId: target.id,

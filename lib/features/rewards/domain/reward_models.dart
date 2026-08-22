@@ -91,14 +91,15 @@ abstract final class RewardCatalog {
 
 final class RewardAccount {
   const RewardAccount({
-    required this.balance,
+    required this.coinBalance,
     required this.catalogVersion,
     required this.ownedItemIds,
     required this.equippedBySlot,
     required this.transactionCount,
   });
 
-  final int balance;
+  final int coinBalance;
+  int get balance => coinBalance;
   final int catalogVersion;
   final Set<String> ownedItemIds;
   final Map<String, String> equippedBySlot;
@@ -106,6 +107,10 @@ final class RewardAccount {
 }
 
 enum PurchaseStatus { purchased, alreadyOwned, replayed }
+
+enum CoinGrantResult { inserted, replayed, capturedByLegacyBackfill }
+
+enum QuestEconomyGrantResult { inserted, replayed }
 
 final class PurchaseResult {
   const PurchaseResult({required this.status, required this.account});

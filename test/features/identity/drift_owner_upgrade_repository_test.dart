@@ -14,6 +14,8 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_event_s
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
@@ -86,6 +88,53 @@ void main() {
 
     expect(ownerUpgradeInventory, actual);
   });
+
+  test(
+    'alreadyBound materializes legacy coins and reward projections before returning',
+    () async {
+      await (database.update(
+        database.localOwners,
+      )..where((row) => row.id.equals('guest-owner'))).write(
+        const LocalOwnersCompanion(
+          firebaseUid: Value('already-bound-user'),
+          accountState: Value('firebaseBound'),
+        ),
+      );
+      await _seedMinimalLegacyRewardHistory(database, 'guest-owner');
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'already-bound-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.alreadyBound);
+      expect(result.targetOwnerId, 'guest-owner');
+      await _expectLegacyRewardCutover(database, 'guest-owner');
+    },
+  );
+
+  test(
+    'anonymousBound materializes legacy coins before namespace requeue and bind completes',
+    () async {
+      await (database.delete(
+        database.localOwners,
+      )..where((row) => row.id.equals('account-owner'))).go();
+      await _seedMinimalLegacyRewardHistory(database, 'guest-owner');
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'new-firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.anonymousBound);
+      expect(result.targetOwnerId, 'guest-owner');
+      final owner = await (database.select(
+        database.localOwners,
+      )..where((row) => row.id.equals('guest-owner'))).getSingle();
+      expect(owner.firebaseUid, 'new-firebase-user');
+      await _expectLegacyRewardCutover(database, 'guest-owner');
+    },
+  );
 
   test(
     'anonymous bind without a prior UID owner retains one local owner',
@@ -1144,49 +1193,64 @@ void main() {
     },
   );
 
-  test('merge preserves colliding reward evidence and debits once', () async {
-    for (final ownerId in ['guest-owner', 'account-owner']) {
+  test(
+    'merge preserves colliding reward evidence, debits duplicate purchase once, and keeps lifetime xp',
+    () async {
+      for (final ownerId in ['guest-owner', 'account-owner']) {
+        await database.customInsert(
+          "INSERT INTO points_ledger_entries "
+          "(id, owner_id, idempotency_key, entry_type, amount, "
+          "occurred_at_utc_ms) VALUES "
+          "('seed:$ownerId', '$ownerId', 'seed:$ownerId', 'quizCorrect', 100, 1)",
+        );
+      }
       await database.customInsert(
-        "INSERT INTO points_ledger_entries "
-        "(id, owner_id, idempotency_key, entry_type, amount, "
-        "occurred_at_utc_ms) VALUES "
-        "('seed:$ownerId', '$ownerId', 'seed:$ownerId', 'learning', 100, 1)",
+        "INSERT INTO reward_transactions VALUES "
+        "('reward-target', 'account-owner', 'same-tap', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 2)",
       );
-    }
-    await database.customInsert(
-      "INSERT INTO reward_transactions VALUES "
-      "('reward-target', 'account-owner', 'same-tap', 'purchase', -80, "
-      "'theme_ocean', 1, NULL, 2)",
-    );
-    await database.customInsert(
-      "INSERT INTO reward_transactions VALUES "
-      "('reward-guest', 'guest-owner', 'same-tap', 'purchase', -80, "
-      "'theme_ocean', 1, NULL, 2)",
-    );
+      await database.customInsert(
+        "INSERT INTO reward_transactions VALUES "
+        "('reward-guest', 'guest-owner', 'same-tap', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 2)",
+      );
 
-    final result = await repository.upgrade(
-      activeOwnerId: 'guest-owner',
-      firebaseUid: 'firebase-user',
-    );
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
 
-    expect(result.conflictCount, 1);
-    expect(
-      await (database.select(
+      expect(result.conflictCount, 1);
+      final transactions = await (database.select(
         database.rewardTransactions,
-      )..where((row) => row.ownerId.equals('account-owner'))).get(),
-      hasLength(2),
-    );
-    expect(
-      await (database.select(
-        database.ownedRewardItems,
-      )..where((row) => row.ownerId.equals('account-owner'))).get(),
-      hasLength(1),
-    );
-    final ledger = await (database.select(
-      database.pointsLedgerEntries,
-    )..where((row) => row.ownerId.equals('account-owner'))).get();
-    expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 120);
-  });
+      )..where((row) => row.ownerId.equals('account-owner'))).get();
+      expect(transactions, hasLength(4));
+      expect(
+        transactions.where((row) => row.transactionType == 'purchase'),
+        hasLength(2),
+      );
+      expect(
+        transactions.where(
+          (row) => row.transactionType == 'legacyEarningBackfill',
+        ),
+        hasLength(2),
+      );
+      final rewardAccount = await DriftRewardRepository(
+        database,
+      ).load('account-owner');
+      expect(
+        await (database.select(
+          database.ownedRewardItems,
+        )..where((row) => row.ownerId.equals('account-owner'))).get(),
+        hasLength(1),
+      );
+      final ledger = await (database.select(
+        database.pointsLedgerEntries,
+      )..where((row) => row.ownerId.equals('account-owner'))).get();
+      expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 200);
+      expect(rewardAccount.coinBalance, 120);
+    },
+  );
 
   test(
     'merge rehomes acknowledged anonymous cloud data to account sync',
@@ -1482,6 +1546,120 @@ Future<QueryRow> _mergeConflictFor(AppDatabase database, String entityType) {
       .getSingle();
 }
 
+const _legacyRewardPointId = 'legacy-reward-point';
+const _legacyRewardDigest =
+    'b4efae5822d88f42a3a3d90cc3a371c92bdc24a73cefe6559ec36c6907473934';
+const _legacyBackfillTransactionId = 'reward:legacy:$_legacyRewardDigest';
+const _legacyBackfillIdempotencyKey = 'economy:v1:legacy:$_legacyRewardDigest';
+const _legacyBackfillOutboxId =
+    'rewardTransaction:$_legacyBackfillTransactionId:1';
+
+Future<void> _seedMinimalLegacyRewardHistory(
+  AppDatabase database,
+  String ownerId,
+) async {
+  await database
+      .into(database.pointsLedgerEntries)
+      .insert(
+        PointsLedgerEntriesCompanion.insert(
+          id: _legacyRewardPointId,
+          ownerId: ownerId,
+          idempotencyKey: 'legacy-reward-point-key',
+          entryType: 'quizCorrect',
+          amount: 100,
+          occurredAtUtcMs: 10,
+        ),
+      );
+  await database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: 'historical-theme-purchase',
+          ownerId: ownerId,
+          idempotencyKey: 'historical-theme-purchase',
+          transactionType: 'purchase',
+          amount: -80,
+          itemId: const Value('theme_ocean'),
+          catalogVersion: 1,
+          occurredAtUtcMs: 20,
+        ),
+      );
+  await database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: 'historical-theme-equip',
+          ownerId: ownerId,
+          idempotencyKey: 'historical-theme-equip',
+          transactionType: 'equip',
+          amount: 0,
+          itemId: const Value('theme_ocean'),
+          catalogVersion: 1,
+          occurredAtUtcMs: 21,
+        ),
+      );
+}
+
+Future<void> _expectLegacyRewardCutover(
+  AppDatabase database,
+  String ownerId,
+) async {
+  final backfill = await (database.select(
+    database.rewardTransactions,
+  )..where((row) => row.id.equals(_legacyBackfillTransactionId))).getSingle();
+  expect(backfill.id, _legacyBackfillTransactionId);
+  expect(backfill.ownerId, ownerId);
+  expect(backfill.idempotencyKey, _legacyBackfillIdempotencyKey);
+  expect(backfill.transactionType, 'legacyEarningBackfill');
+  expect(backfill.amount, 100);
+  expect(backfill.itemId, isNull);
+  expect(backfill.catalogVersion, 0);
+  expect(backfill.sourceEventId, _legacyRewardPointId);
+  expect(backfill.occurredAtUtcMs, 10);
+
+  final outbox =
+      await (database.select(database.outboxOperations)
+            ..where((row) => row.operationId.equals(_legacyBackfillOutboxId)))
+          .getSingle();
+  expect(outbox.operationId, _legacyBackfillOutboxId);
+  expect(outbox.ownerId, ownerId);
+  expect(outbox.entityType, 'rewardTransaction');
+  expect(outbox.entityId, _legacyBackfillTransactionId);
+  expect(outbox.operationKind, 'upsert');
+  expect(outbox.payloadVersion, 1);
+  expect(outbox.baseRevision, 0);
+  expect(outbox.state, 'pending');
+  expect(outbox.attemptCount, 0);
+  expect(outbox.nextAttemptAtUtcMs, isNull);
+  expect(outbox.leaseToken, isNull);
+  expect(outbox.leaseExpiresAtUtcMs, isNull);
+  expect(outbox.lastAttemptAtUtcMs, isNull);
+  expect(outbox.createdAtUtcMs, 10);
+  expect(outbox.acknowledgedAtUtcMs, isNull);
+  expect(outbox.failureCode, isNull);
+
+  final owned = await (database.select(
+    database.ownedRewardItems,
+  )..where((row) => row.ownerId.equals(ownerId))).getSingle();
+  expect(owned.id, 'owned:$ownerId:theme_ocean');
+  expect(owned.itemId, 'theme_ocean');
+  expect(owned.catalogVersion, 1);
+  expect(owned.acquiredByTransactionId, 'historical-theme-purchase');
+  expect(owned.acquiredAtUtcMs, 20);
+
+  final equipped = await (database.select(
+    database.equippedRewardItems,
+  )..where((row) => row.ownerId.equals(ownerId))).getSingle();
+  expect(equipped.id, 'equipped:$ownerId:theme');
+  expect(equipped.slot, 'theme');
+  expect(equipped.itemId, 'theme_ocean');
+  expect(equipped.equippedAtUtcMs, 21);
+  expect(
+    await DriftRewardProjectionRebuilder(database).coinBalance(ownerId),
+    20,
+  );
+}
+
 Future<void> _seedOwners(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO local_owners '
@@ -1549,7 +1727,7 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   );
   await database.customInsert(
     "INSERT INTO points_ledger_entries VALUES "
-    "('points-1', 'guest-owner', 'answer:1', 'quiz', 200, 'attempt-1', 20)",
+    "('points-1', 'guest-owner', 'answer:1', 'quizCorrect', 200, NULL, 20)",
   );
   await database.customInsert(
     "INSERT INTO achievement_unlocks VALUES "

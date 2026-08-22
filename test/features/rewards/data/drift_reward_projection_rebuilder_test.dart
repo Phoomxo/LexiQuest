@@ -1,12 +1,3 @@
-/// Tests for DriftRewardProjectionRebuilder
-///
-/// Verifies rebuild() replays RewardTransactions to reconstruct
-/// OwnedRewardItems, EquippedRewardItems, and purchase deductions
-/// in PointsLedgerEntries — and that the operation is idempotent.
-///
-/// Run: flutter test test/features/rewards/data/drift_reward_projection_rebuilder_test.dart
-library;
-
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -14,131 +5,385 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
-AppDatabase _openMemory() => AppDatabase(NativeDatabase.memory());
-
-Future<void> _seedOwner(AppDatabase db) async {
-  await db
-      .into(db.localOwners)
-      .insert(
-        LocalOwnersCompanion.insert(
-          id: 'owner-reward-rebuild',
-          createdAtUtcMs: 1,
-        ),
-      );
-}
-
-/// Seed an XP balance in PointsLedgerEntries (purchase engine reads this).
-Future<void> _seedXpBalance(AppDatabase db, int amount) async {
-  await db
-      .into(db.pointsLedgerEntries)
-      .insert(
-        PointsLedgerEntriesCompanion.insert(
-          id: 'xp-seed',
-          ownerId: 'owner-reward-rebuild',
-          idempotencyKey: 'xp-seed-key',
-          entryType: 'quizCorrect',
-          amount: amount,
-          occurredAtUtcMs: 1,
-        ),
-      );
-}
-
-Future<void> _insertPurchaseTx(
-  AppDatabase db, {
-  required String txId,
-  required String itemId,
-  required int price,
-  required int seqMs,
-}) async {
-  await db
-      .into(db.rewardTransactions)
-      .insert(
-        RewardTransactionsCompanion.insert(
-          id: txId,
-          ownerId: 'owner-reward-rebuild',
-          idempotencyKey: 'key-$txId',
-          transactionType: 'purchase',
-          amount: -price,
-          itemId: Value(itemId),
-          catalogVersion: RewardCatalog.version,
-          occurredAtUtcMs:
-              DateTime.utc(2026, 1, 1).millisecondsSinceEpoch + seqMs,
-        ),
-      );
-}
-
 void main() {
-  late AppDatabase db;
+  late AppDatabase database;
+  late DriftRewardProjectionRebuilder rebuilder;
 
   setUp(() async {
-    db = _openMemory();
-    await _seedOwner(db);
+    database = AppDatabase(NativeDatabase.memory());
+    rebuilder = DriftRewardProjectionRebuilder(database);
+    await database
+        .into(database.localOwners)
+        .insert(LocalOwnersCompanion.insert(id: 'owner-1', createdAtUtcMs: 1));
   });
-  tearDown(() => db.close());
 
-  group('DriftRewardProjectionRebuilder', () {
-    test('rebuild grants OwnedRewardItem when balance is sufficient', () async {
-      // ocean theme costs 80 coins
-      await _seedXpBalance(db, 200);
-      await _insertPurchaseTx(
-        db,
-        txId: 'tx-ocean',
+  tearDown(() => database.close());
+
+  test('reconstructs coins from grants and accepted purchases only', () async {
+    await _insertGrant(
+      database,
+      id: 'legacy-1',
+      type: 'legacyEarningBackfill',
+      amount: 200,
+      source: 'legacy-source',
+      time: 1,
+    );
+    await _insertGrant(
+      database,
+      id: 'grant-1',
+      type: 'coinGrant',
+      amount: 20,
+      source: 'v2-source',
+      time: 2,
+    );
+    await _insertItemTransaction(
+      database,
+      id: 'purchase-1',
+      type: 'purchase',
+      itemId: 'theme_ocean',
+      amount: -80,
+      time: 3,
+    );
+
+    await rebuilder.rebuild('owner-1');
+
+    expect(await rebuilder.coinBalance('owner-1'), 140);
+    final owned = await database.select(database.ownedRewardItems).get();
+    expect(owned.single.itemId, 'theme_ocean');
+  });
+
+  test('insufficient purchase remains unaccepted and does not debit', () async {
+    await _insertGrant(
+      database,
+      id: 'grant-small',
+      type: 'coinGrant',
+      amount: 10,
+      source: 'small-source',
+      time: 1,
+    );
+    await _insertItemTransaction(
+      database,
+      id: 'purchase-too-large',
+      type: 'purchase',
+      itemId: 'theme_ocean',
+      amount: -80,
+      time: 2,
+    );
+
+    await rebuilder.rebuild('owner-1');
+
+    expect(await rebuilder.coinBalance('owner-1'), 10);
+    expect(await database.select(database.ownedRewardItems).get(), isEmpty);
+  });
+
+  test(
+    'rebuild is idempotent and never mutates point audit evidence',
+    () async {
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
+            PointsLedgerEntriesCompanion.insert(
+              id: 'legacy-purchase-point',
+              ownerId: 'owner-1',
+              idempotencyKey: 'legacy-purchase-point',
+              entryType: 'rewardPurchase',
+              amount: -80,
+              sourceEventId: const Value('old-purchase'),
+              occurredAtUtcMs: 1,
+            ),
+          );
+      await _insertGrant(
+        database,
+        id: 'grant-1',
+        type: 'coinGrant',
+        amount: 100,
+        source: 'source-1',
+        time: 2,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'purchase-1',
+        type: 'purchase',
         itemId: 'theme_ocean',
-        price: 80,
-        seqMs: 1000,
+        amount: -80,
+        time: 3,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'equip-1',
+        type: 'equip',
+        itemId: 'theme_ocean',
+        amount: 0,
+        time: 4,
       );
 
-      final rebuilder = DriftRewardProjectionRebuilder(db);
-      await rebuilder.rebuild('owner-reward-rebuild');
+      await rebuilder.rebuild('owner-1');
+      await rebuilder.rebuild('owner-1');
 
-      final owned = await (db.select(
-        db.ownedRewardItems,
-      )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
-      expect(owned.length, 1);
-      expect(owned.first.itemId, 'theme_ocean');
-    });
+      expect(await rebuilder.coinBalance('owner-1'), 20);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(1),
+      );
+      expect(
+        await database.select(database.ownedRewardItems).get(),
+        hasLength(1),
+      );
+      final equipped = await database
+          .select(database.equippedRewardItems)
+          .get();
+      expect(equipped.single.itemId, 'theme_ocean');
+    },
+  );
 
-    test('rebuild skips purchase when balance is insufficient', () async {
-      await _seedXpBalance(db, 10); // only 10, ocean theme costs 80
-      await _insertPurchaseTx(
-        db,
-        txId: 'tx-ocean-broke',
+  test(
+    'validates every transaction before replacing an existing projection',
+    () async {
+      await _insertGrant(
+        database,
+        id: 'grant-before-corruption',
+        type: 'coinGrant',
+        amount: 100,
+        source: 'source-before-corruption',
+        time: 1,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'purchase-before-corruption',
+        type: 'purchase',
         itemId: 'theme_ocean',
-        price: 80,
-        seqMs: 1000,
+        amount: -80,
+        time: 2,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'equip-before-corruption',
+        type: 'equip',
+        itemId: 'theme_ocean',
+        amount: 0,
+        time: 3,
+      );
+      await rebuilder.rebuild('owner-1');
+
+      await _insertItemTransaction(
+        database,
+        id: 'corrupt-purchase',
+        type: 'purchase',
+        itemId: 'theme_ocean',
+        amount: -1,
+        time: 4,
       );
 
-      final rebuilder = DriftRewardProjectionRebuilder(db);
-      await rebuilder.rebuild('owner-reward-rebuild');
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
 
-      final owned = await (db.select(
-        db.ownedRewardItems,
-      )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
-      expect(owned, isEmpty);
-    });
+      final owned = await database.select(database.ownedRewardItems).get();
+      final equipped = await database
+          .select(database.equippedRewardItems)
+          .get();
+      expect(owned.single.itemId, 'theme_ocean');
+      expect(equipped.single.itemId, 'theme_ocean');
+    },
+  );
 
+  test(
+    'rebuild rejects same-type duplicate earning sources before replacing projections',
+    () async {
+      await _seedExistingProjection(database, rebuilder);
+      final before = await _projectionState(database);
+      await _insertGrant(
+        database,
+        id: 'duplicate-coin-a',
+        type: 'coinGrant',
+        amount: 10,
+        source: 'duplicate-source',
+        time: 4,
+      );
+      await _insertGrant(
+        database,
+        id: 'duplicate-coin-b',
+        type: 'coinGrant',
+        amount: 10,
+        source: 'duplicate-source',
+        time: 5,
+      );
+
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
+
+      expect(await _projectionState(database), equals(before));
+    },
+  );
+
+  test(
+    'rebuild rejects cross-type duplicate earning sources before replacing projections',
+    () async {
+      await _seedExistingProjection(database, rebuilder);
+      final before = await _projectionState(database);
+      await _insertGrant(
+        database,
+        id: 'duplicate-legacy',
+        type: 'legacyEarningBackfill',
+        amount: 10,
+        source: 'cross-type-duplicate-source',
+        time: 4,
+      );
+      await _insertGrant(
+        database,
+        id: 'duplicate-canonical',
+        type: 'coinGrant',
+        amount: 10,
+        source: 'cross-type-duplicate-source',
+        time: 5,
+      );
+
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
+
+      expect(await _projectionState(database), equals(before));
+    },
+  );
+
+  for (final invalidRow
+      in <({String name, String idempotencyKey, int occurredAtUtcMs})>[
+        (name: 'blank idempotency key', idempotencyKey: '', occurredAtUtcMs: 4),
+        (
+          name: 'overlong idempotency key',
+          idempotencyKey: List<String>.filled(257, 'i').join(),
+          occurredAtUtcMs: 4,
+        ),
+        (
+          name: 'negative occurrence',
+          idempotencyKey: 'idem:negative-occurrence',
+          occurredAtUtcMs: -1,
+        ),
+      ]) {
     test(
-      'rebuild is idempotent — running twice yields same owned items',
+      'rebuild rejects ${invalidRow.name} before replacing projections',
       () async {
-        await _seedXpBalance(db, 200);
-        await _insertPurchaseTx(
-          db,
-          txId: 'tx-ocean-idem',
-          itemId: 'theme_ocean',
-          price: 80,
-          seqMs: 1000,
+        await _seedExistingProjection(database, rebuilder);
+        final before = await _projectionState(database);
+        await _insertGrant(
+          database,
+          id: 'invalid-full-row',
+          type: 'coinGrant',
+          amount: 10,
+          source: 'invalid-full-row-source',
+          time: invalidRow.occurredAtUtcMs,
+          idempotencyKey: invalidRow.idempotencyKey,
         );
 
-        final rebuilder = DriftRewardProjectionRebuilder(db);
-        await rebuilder.rebuild('owner-reward-rebuild');
-        await rebuilder.rebuild('owner-reward-rebuild');
+        await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
 
-        final owned = await (db.select(
-          db.ownedRewardItems,
-        )..where((row) => row.ownerId.equals('owner-reward-rebuild'))).get();
-        // rebuild deletes + re-inserts — must not double-count
-        expect(owned.length, 1);
+        expect(await _projectionState(database), equals(before));
       },
     );
-  });
+  }
+}
+
+Future<void> _insertGrant(
+  AppDatabase database, {
+  required String id,
+  required String type,
+  required int amount,
+  required String source,
+  required int time,
+  String? idempotencyKey,
+}) {
+  return database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: id,
+          ownerId: 'owner-1',
+          idempotencyKey: idempotencyKey ?? 'idem:$id',
+          transactionType: type,
+          amount: amount,
+          catalogVersion: 0,
+          sourceEventId: Value(source),
+          occurredAtUtcMs: time,
+        ),
+      );
+}
+
+Future<void> _seedExistingProjection(
+  AppDatabase database,
+  DriftRewardProjectionRebuilder rebuilder,
+) async {
+  await _insertGrant(
+    database,
+    id: 'existing-grant',
+    type: 'coinGrant',
+    amount: 100,
+    source: 'existing-source',
+    time: 1,
+  );
+  await _insertItemTransaction(
+    database,
+    id: 'existing-purchase',
+    type: 'purchase',
+    itemId: 'theme_ocean',
+    amount: -80,
+    time: 2,
+  );
+  await _insertItemTransaction(
+    database,
+    id: 'existing-equip',
+    type: 'equip',
+    itemId: 'theme_ocean',
+    amount: 0,
+    time: 3,
+  );
+  await rebuilder.rebuild('owner-1');
+}
+
+Future<Map<String, Object?>> _projectionState(AppDatabase database) async {
+  final owned = await database.select(database.ownedRewardItems).get();
+  owned.sort((left, right) => left.id.compareTo(right.id));
+  final equipped = await database.select(database.equippedRewardItems).get();
+  equipped.sort((left, right) => left.id.compareTo(right.id));
+  return <String, Object?>{
+    'owned': [
+      for (final item in owned)
+        <Object?>[
+          item.id,
+          item.ownerId,
+          item.itemId,
+          item.catalogVersion,
+          item.acquiredByTransactionId,
+          item.acquiredAtUtcMs,
+        ],
+    ],
+    'equipped': [
+      for (final item in equipped)
+        <Object?>[
+          item.id,
+          item.ownerId,
+          item.slot,
+          item.itemId,
+          item.equippedAtUtcMs,
+        ],
+    ],
+  };
+}
+
+Future<void> _insertItemTransaction(
+  AppDatabase database, {
+  required String id,
+  required String type,
+  required String itemId,
+  required int amount,
+  required int time,
+}) {
+  return database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: id,
+          ownerId: 'owner-1',
+          idempotencyKey: 'idem:$id',
+          transactionType: type,
+          amount: amount,
+          itemId: Value(itemId),
+          catalogVersion: RewardCatalog.version,
+          occurredAtUtcMs: time,
+        ),
+      );
 }

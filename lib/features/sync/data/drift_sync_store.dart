@@ -16,6 +16,7 @@ import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/learning_event_context.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../rewards/domain/economy_transaction_policy.dart';
 import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
@@ -1242,6 +1243,16 @@ final class DriftSyncStore implements SyncStore {
         if (transaction == null) {
           throw StateError('outbox reward transaction was not found');
         }
+        final payload = _rewardTransactionPayload(transaction);
+        if (transaction.sourceEventId != null &&
+            await _rewardSourceCollision(
+                  ownerId: operation.ownerId,
+                  entityId: transaction.id,
+                  sourceEventId: transaction.sourceEventId!,
+                ) !=
+                null) {
+          throw const InvalidSyncPayloadFailure();
+        }
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
@@ -1252,7 +1263,7 @@ final class DriftSyncStore implements SyncStore {
           baseRevision: 0,
           localRevision: 1,
           clientUpdatedAtUtc: _utc(transaction.occurredAtUtcMs),
-          payload: _rewardTransactionPayload(transaction),
+          payload: payload,
         );
       case 'srsState':
         final srs =
@@ -1750,6 +1761,10 @@ final class DriftSyncStore implements SyncStore {
     SyncEntity entity,
   ) async {
     _requireImmutableEntity(entity, SyncCollection.rewardTransactions);
+    final fields = _decodeRewardTransactionPayload(
+      entity.payload,
+      expectedOccurredAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
     final existing =
         await (database.select(database.rewardTransactions)..where(
               (row) =>
@@ -1766,32 +1781,11 @@ final class DriftSyncStore implements SyncStore {
       return;
     }
 
-    final payload = entity.payload;
-    final idempotencyKey = _requiredString(payload, 'idempotencyKey');
-    final transactionType = _requiredString(payload, 'transactionType');
-    final amount = _requiredInt(payload, 'amount');
-    final itemId = _requiredString(payload, 'itemId');
-    final slot = _requiredString(payload, 'slot');
-    final catalogVersion = _requiredInt(payload, 'catalogVersion');
-    final sourceEventId = _optionalString(payload, 'sourceEventId');
-    final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
-    final item = RewardCatalog.byId(itemId);
-    if (item == null ||
-        catalogVersion != RewardCatalog.version ||
-        item.catalogVersion != catalogVersion ||
-        item.slot != slot ||
-        (transactionType == 'purchase' && amount != -item.price) ||
-        (transactionType == 'equip' && amount != 0) ||
-        (transactionType != 'purchase' && transactionType != 'equip') ||
-        occurredAtUtcMs < 0) {
-      throw const InvalidSyncPayloadFailure();
-    }
-
     final idempotencyCollision =
         await (database.select(database.rewardTransactions)..where(
               (row) =>
                   row.ownerId.equals(ownerId) &
-                  row.idempotencyKey.equals(idempotencyKey),
+                  row.idempotencyKey.equals(fields.idempotencyKey),
             ))
             .getSingleOrNull();
     if (idempotencyCollision != null) {
@@ -1803,6 +1797,23 @@ final class DriftSyncStore implements SyncStore {
       );
       return;
     }
+    final sourceEventId = fields.sourceEventId;
+    if (sourceEventId != null) {
+      final sourceCollision = await _rewardSourceCollision(
+        ownerId: ownerId,
+        entityId: entity.entityId,
+        sourceEventId: sourceEventId,
+      );
+      if (sourceCollision != null) {
+        await _recordImmutableConflict(
+          ownerId: ownerId,
+          entity: entity,
+          localPayload: _rewardTransactionPayload(sourceCollision),
+          resolvedAtUtc: entity.serverUpdatedAtUtc,
+        );
+        return;
+      }
+    }
 
     await database
         .into(database.rewardTransactions)
@@ -1810,16 +1821,32 @@ final class DriftSyncStore implements SyncStore {
           db.RewardTransactionsCompanion.insert(
             id: entity.entityId,
             ownerId: ownerId,
-            idempotencyKey: idempotencyKey,
-            transactionType: transactionType,
-            amount: amount,
-            itemId: Value(itemId),
-            catalogVersion: catalogVersion,
-            sourceEventId: Value(sourceEventId),
-            occurredAtUtcMs: occurredAtUtcMs,
+            idempotencyKey: fields.idempotencyKey,
+            transactionType: fields.transactionType,
+            amount: fields.amount,
+            itemId: Value(fields.itemId),
+            catalogVersion: fields.catalogVersion,
+            sourceEventId: Value(fields.sourceEventId),
+            occurredAtUtcMs: fields.occurredAtUtcMs,
           ),
         );
     await rewardProjections.rebuild(ownerId);
+  }
+
+  Future<db.RewardTransaction?> _rewardSourceCollision({
+    required String ownerId,
+    required String entityId,
+    required String sourceEventId,
+  }) {
+    return (database.select(database.rewardTransactions)
+          ..where(
+            (row) =>
+                row.ownerId.equals(ownerId) &
+                row.sourceEventId.equals(sourceEventId) &
+                row.id.equals(entityId).not(),
+          )
+          ..limit(1))
+        .getSingleOrNull();
   }
 
   /// Apply a pulled [SyncCollection.srsStates] entity.
@@ -2346,7 +2373,7 @@ Map<String, Object?> _rewardTransactionPayload(
   final item = transaction.itemId == null
       ? null
       : RewardCatalog.byId(transaction.itemId!);
-  return <String, Object?>{
+  final payload = <String, Object?>{
     'idempotencyKey': transaction.idempotencyKey,
     'transactionType': transaction.transactionType,
     'amount': transaction.amount,
@@ -2356,6 +2383,89 @@ Map<String, Object?> _rewardTransactionPayload(
     'sourceEventId': transaction.sourceEventId,
     'occurredAtUtcMs': transaction.occurredAtUtcMs,
   };
+  _decodeRewardTransactionPayload(
+    payload,
+    expectedOccurredAtUtcMs: transaction.occurredAtUtcMs,
+  );
+  return payload;
+}
+
+const Set<String> _rewardTransactionPayloadKeys = <String>{
+  'idempotencyKey',
+  'transactionType',
+  'amount',
+  'itemId',
+  'slot',
+  'catalogVersion',
+  'sourceEventId',
+  'occurredAtUtcMs',
+};
+
+_RewardTransactionFields _decodeRewardTransactionPayload(
+  Map<String, Object?> payload, {
+  required int expectedOccurredAtUtcMs,
+}) {
+  if (payload.length != _rewardTransactionPayloadKeys.length ||
+      !_rewardTransactionPayloadKeys.every(payload.containsKey)) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  final idempotencyKey = _requiredCanonicalRewardId(payload, 'idempotencyKey');
+  final transactionType = _requiredString(payload, 'transactionType');
+  final amount = _requiredInt(payload, 'amount');
+  final itemId = _optionalString(payload, 'itemId');
+  final slot = _optionalString(payload, 'slot');
+  final catalogVersion = _requiredInt(payload, 'catalogVersion');
+  final sourceEventId = _optionalString(payload, 'sourceEventId');
+  final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
+  if (occurredAtUtcMs < 0 ||
+      occurredAtUtcMs != expectedOccurredAtUtcMs ||
+      !const EconomyTransactionPolicy().isValid(
+        transactionType: transactionType,
+        amount: amount,
+        itemId: itemId,
+        slot: slot,
+        catalogVersion: catalogVersion,
+        sourceEventId: sourceEventId,
+      )) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  return _RewardTransactionFields(
+    idempotencyKey: idempotencyKey,
+    transactionType: transactionType,
+    amount: amount,
+    itemId: itemId,
+    catalogVersion: catalogVersion,
+    sourceEventId: sourceEventId,
+    occurredAtUtcMs: occurredAtUtcMs,
+  );
+}
+
+String _requiredCanonicalRewardId(Map<String, Object?> payload, String key) {
+  final value = _requiredString(payload, key);
+  if (value.trim() != value || value.runes.length > 256) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  return value;
+}
+
+final class _RewardTransactionFields {
+  const _RewardTransactionFields({
+    required this.idempotencyKey,
+    required this.transactionType,
+    required this.amount,
+    required this.itemId,
+    required this.catalogVersion,
+    required this.sourceEventId,
+    required this.occurredAtUtcMs,
+  });
+
+  final String idempotencyKey;
+  final String transactionType;
+  final int amount;
+  final String? itemId;
+  final int catalogVersion;
+  final String? sourceEventId;
+  final int occurredAtUtcMs;
 }
 
 Map<String, Object?> _srsStatePayload(db.SrsState srs) => <String, Object?>{

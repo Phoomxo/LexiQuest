@@ -9,6 +9,8 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
   late AppDatabase database;
@@ -134,6 +136,91 @@ void main() {
     expect(result.weaknesses.single.incorrectCount, 1);
     expect(result.recommendations.single.sampleSize, 1);
   });
+
+  test('cosmetic purchase never changes lifetime xp or level', () async {
+    await database
+        .into(database.pointsLedgerEntries)
+        .insert(
+          PointsLedgerEntriesCompanion.insert(
+            id: 'xp:learning-award',
+            ownerId: 'owner-1',
+            idempotencyKey: 'xp:learning-award',
+            entryType: 'quizCorrect',
+            amount: 200,
+            sourceEventId: const Value('event:learning-award'),
+            occurredAtUtcMs: DateTime.utc(
+              2026,
+              7,
+              30,
+              10,
+            ).millisecondsSinceEpoch,
+          ),
+        );
+    final rewards = DriftRewardRepository(database);
+    final item = RewardCatalog.byId('theme_ocean')!;
+    final beforeProgress = await progress.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 7, 30, 12),
+    );
+    final beforeRewards = await rewards.load('owner-1');
+
+    final purchase = await rewards.purchase(
+      ownerId: 'owner-1',
+      item: item,
+      idempotencyKey: 'purchase:theme-ocean',
+      transactionId: 'reward:theme-ocean',
+      occurredAtUtc: DateTime.utc(2026, 7, 30, 11),
+    );
+    final afterProgress = await progress.load(
+      ownerId: 'owner-1',
+      nowUtc: DateTime.utc(2026, 7, 30, 12),
+    );
+
+    expect(afterProgress.totalXp, beforeProgress.totalXp);
+    expect(afterProgress.gameLevel, beforeProgress.gameLevel);
+    expect(
+      purchase.account.coinBalance,
+      beforeRewards.coinBalance - item.price,
+    );
+  });
+
+  test(
+    'lifetime xp excludes purchases negative and unknown point types',
+    () async {
+      for (final row in const [
+        ('quiz-positive', 'quizCorrect', 5),
+        ('quest-positive', 'questCompletion', 20),
+        ('purchase-audit', 'rewardPurchase', -10),
+        ('unknown-positive', 'futureUnknown', 999),
+        ('quiz-negative', 'quizCorrect', -3),
+      ]) {
+        await database
+            .into(database.pointsLedgerEntries)
+            .insert(
+              PointsLedgerEntriesCompanion.insert(
+                id: row.$1,
+                ownerId: 'owner-1',
+                idempotencyKey: 'idem:${row.$1}',
+                entryType: row.$2,
+                amount: row.$3,
+                occurredAtUtcMs: 1,
+              ),
+            );
+      }
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+      );
+
+      expect(result.totalXp, 25);
+      expect(result.gameLevel, 2);
+      expect(
+        await database.select(database.pointsLedgerEntries).get(),
+        hasLength(5),
+      );
+    },
+  );
 
   test(
     'assessment and recreational history are absent from every practice field',

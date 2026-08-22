@@ -339,33 +339,65 @@ service cloud.firestore {
         && !request.resource.data.isDeleted;
     }
 
+    function fieldRewardIdentifierOk(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 256
+        && value.matches('^\\S(.*\\S)?$');
+    }
+
     function fieldRewardCatalogEntryOk() {
       let payload = request.resource.data.payload;
       return payload.catalogVersion == 1
-        && ((payload.itemId == 'theme_default'
-             && payload.slot == 'theme'
-             && (payload.transactionType == 'equip'
-                 || payload.amount == 0))
-            || (payload.itemId == 'theme_ocean'
-                && payload.slot == 'theme'
-                && (payload.transactionType == 'equip'
-                    || payload.amount == -80))
-            || (payload.itemId == 'wallpaper_focus'
-                && payload.slot == 'wallpaper'
-                && (payload.transactionType == 'equip'
-                    || payload.amount == -60))
-            || (payload.itemId == 'headgear_ipa'
-                && payload.slot == 'headgear'
-                && (payload.transactionType == 'equip'
-                    || payload.amount == -100))
-            || (payload.itemId == 'weapon_cefr'
-                && payload.slot == 'weapon'
-                && (payload.transactionType == 'equip'
-                    || payload.amount == -120))
-            || (payload.itemId == 'armor_srs'
-                && payload.slot == 'armor'
-                && (payload.transactionType == 'equip'
-                    || payload.amount == -120)));
+        && payload.itemId is string
+        && payload.itemId.size() > 0
+        && payload.itemId.size() <= 256
+        && payload.slot is string
+        && payload.slot.size() > 0
+        && payload.slot.size() <= 60
+        && payload.sourceEventId == null
+        && ((payload.transactionType == 'purchase'
+             && ((payload.itemId == 'theme_ocean'
+                  && payload.slot == 'theme'
+                  && payload.amount == -80)
+                 || (payload.itemId == 'wallpaper_focus'
+                     && payload.slot == 'wallpaper'
+                     && payload.amount == -60)
+                 || (payload.itemId == 'headgear_ipa'
+                     && payload.slot == 'headgear'
+                     && payload.amount == -100)
+                 || (payload.itemId == 'weapon_cefr'
+                     && payload.slot == 'weapon'
+                     && payload.amount == -120)
+                 || (payload.itemId == 'armor_srs'
+                     && payload.slot == 'armor'
+                     && payload.amount == -120)))
+            || (payload.transactionType == 'equip'
+                && payload.amount == 0
+                && ((payload.itemId == 'theme_default'
+                     && payload.slot == 'theme')
+                    || (payload.itemId == 'theme_ocean'
+                        && payload.slot == 'theme')
+                    || (payload.itemId == 'wallpaper_focus'
+                        && payload.slot == 'wallpaper')
+                    || (payload.itemId == 'headgear_ipa'
+                        && payload.slot == 'headgear')
+                    || (payload.itemId == 'weapon_cefr'
+                        && payload.slot == 'weapon')
+                    || (payload.itemId == 'armor_srs'
+                        && payload.slot == 'armor'))));
+    }
+
+    function fieldRewardGrantEntryOk() {
+      let payload = request.resource.data.payload;
+      return payload.transactionType in [
+          'legacyEarningBackfill', 'coinGrant'
+        ]
+        && payload.amount > 0
+        && payload.itemId == null
+        && payload.slot == null
+        && payload.catalogVersion == 0
+        && fieldRewardIdentifierOk(payload.sourceEventId);
     }
 
     function fieldRewardTransactionPayloadOk() {
@@ -374,25 +406,18 @@ service cloud.firestore {
           'idempotencyKey', 'transactionType', 'amount', 'itemId', 'slot',
           'catalogVersion', 'sourceEventId', 'occurredAtUtcMs'
         ])
-        && payload.idempotencyKey is string
-        && payload.idempotencyKey.size() > 0
-        && payload.idempotencyKey.size() <= 256
-        && payload.transactionType in ['purchase', 'equip']
+        && payload.keys().size() == 8
+        && fieldRewardIdentifierOk(payload.idempotencyKey)
+        && payload.transactionType in [
+             'legacyEarningBackfill', 'coinGrant', 'purchase', 'equip'
+           ]
         && payload.amount is int
-        && payload.itemId is string
-        && payload.itemId.size() > 0
-        && payload.itemId.size() <= 256
-        && payload.slot is string
-        && payload.slot.size() > 0
-        && payload.slot.size() <= 60
         && payload.catalogVersion is int
-        && (payload.sourceEventId == null
-            || (payload.sourceEventId is string
-                && payload.sourceEventId.size() <= 256))
         && payload.occurredAtUtcMs is int
         && payload.occurredAtUtcMs >= 0
-        && (payload.transactionType != 'equip' || payload.amount == 0)
-        && fieldRewardCatalogEntryOk()
+        && payload.occurredAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && (fieldRewardGrantEntryOk() || fieldRewardCatalogEntryOk())
         && request.resource.data.revision == 1
         && !request.resource.data.isDeleted;
     }

@@ -157,6 +157,7 @@ function writeFieldLearningEvent(db, {
   entityId = 'attempt-1',
   operationId = 'attempt-operation-1',
   schemaVersion = 1,
+  clientUpdatedAtUtcMs = 2000,
   payload,
 } = {}) {
   const resolvedPayload = payload ?? {
@@ -176,7 +177,7 @@ function writeFieldLearningEvent(db, {
     payload: resolvedPayload,
     revision: 1,
     isDeleted: false,
-    clientUpdatedAtUtcMs: 2000,
+    clientUpdatedAtUtcMs,
     serverUpdatedAt: serverTimestamp(),
     lastOperationId: operationId,
   });
@@ -264,25 +265,34 @@ function writeFieldRewardTransaction(db, {
   uid = alice,
   entityId = 'reward-1',
   operationId = 'reward-operation-1',
+  clientUpdatedAtUtcMs,
   payload,
 } = {}) {
+  const resolvedPayload = payload ?? fieldRewardPayload();
   return writeFieldLearningEvent(db, {
     uid,
     collection: 'reward_transactions',
     entityType: 'rewardTransaction',
     entityId,
     operationId,
-    payload: payload ?? {
-      idempotencyKey: 'purchase-tap-1',
-      transactionType: 'purchase',
-      amount: -80,
-      itemId: 'theme_ocean',
-      slot: 'theme',
-      catalogVersion: 1,
-      sourceEventId: null,
-      occurredAtUtcMs: 4000,
-    },
+    clientUpdatedAtUtcMs:
+      clientUpdatedAtUtcMs ?? resolvedPayload.occurredAtUtcMs,
+    payload: resolvedPayload,
   });
+}
+
+function fieldRewardPayload(overrides = {}) {
+  return {
+    idempotencyKey: 'purchase-tap-1',
+    transactionType: 'purchase',
+    amount: -80,
+    itemId: 'theme_ocean',
+    slot: 'theme',
+    catalogVersion: 1,
+    sourceEventId: null,
+    occurredAtUtcMs: 4000,
+    ...overrides,
+  };
 }
 
 before(async () => {
@@ -815,6 +825,140 @@ describe('field sync ownership and atomic revision contract', () => {
     );
     await assertFails(updateDoc(ref, { 'payload.amount': 0 }));
     await assertFails(deleteDoc(ref));
+  });
+
+  it('accepts exactly the four canonical reward transaction shapes', async () => {
+    const db = authDb();
+    const payloads = [
+      fieldRewardPayload({
+        idempotencyKey: 'purchase-canonical',
+        occurredAtUtcMs: 4100,
+      }),
+      fieldRewardPayload({
+        idempotencyKey: 'equip-canonical',
+        transactionType: 'equip',
+        amount: 0,
+        occurredAtUtcMs: 4200,
+      }),
+      fieldRewardPayload({
+        idempotencyKey: 'legacy-backfill-canonical',
+        transactionType: 'legacyEarningBackfill',
+        amount: 5,
+        itemId: null,
+        slot: null,
+        catalogVersion: 0,
+        sourceEventId: 'legacy-attempt-1',
+        occurredAtUtcMs: 4300,
+      }),
+      fieldRewardPayload({
+        idempotencyKey: 'coin-grant-canonical',
+        transactionType: 'coinGrant',
+        amount: 1,
+        itemId: null,
+        slot: null,
+        catalogVersion: 0,
+        sourceEventId: 'learning-attempt-1',
+        occurredAtUtcMs: 4400,
+      }),
+    ];
+
+    for (const [index, payload] of payloads.entries()) {
+      await assertSucceeds(
+        writeFieldRewardTransaction(db, {
+          entityId: `reward-canonical-${index}`,
+          operationId: `reward-canonical-operation-${index}`,
+          payload,
+        }),
+      );
+    }
+  });
+
+  it('rejects reward payloads without exact keys and primitive types', async () => {
+    const db = authDb();
+    const canonical = fieldRewardPayload({ occurredAtUtcMs: 4500 });
+    const { slot: omittedSlot, ...missingSlot } = canonical;
+    const invalidPayloads = [
+      missingSlot,
+      { ...canonical, unexpected: true },
+      { ...canonical, idempotencyKey: 1 },
+      { ...canonical, transactionType: null },
+      { ...canonical, amount: '-80' },
+      { ...canonical, itemId: 80 },
+      { ...canonical, slot: false },
+      { ...canonical, catalogVersion: '1' },
+      { ...canonical, sourceEventId: 1 },
+      { ...canonical, occurredAtUtcMs: 4500.5 },
+    ];
+    void omittedSlot;
+
+    for (const [index, payload] of invalidPayloads.entries()) {
+      await assertFails(
+        writeFieldRewardTransaction(db, {
+          entityId: `reward-invalid-shape-${index}`,
+          operationId: `reward-invalid-shape-operation-${index}`,
+          payload,
+        }),
+      );
+    }
+  });
+
+  it('rejects noncanonical reward type-specific semantics', async () => {
+    const db = authDb();
+    const grant = (transactionType, overrides = {}) => fieldRewardPayload({
+      idempotencyKey: `${transactionType}-invalid`,
+      transactionType,
+      amount: 1,
+      itemId: null,
+      slot: null,
+      catalogVersion: 0,
+      sourceEventId: `${transactionType}-source`,
+      occurredAtUtcMs: 4600,
+      ...overrides,
+    });
+    const invalidPayloads = [
+      fieldRewardPayload({ transactionType: 'unknown' }),
+      grant('legacyEarningBackfill', { amount: 0 }),
+      grant('coinGrant', { amount: -1 }),
+      fieldRewardPayload({ amount: 0 }),
+      fieldRewardPayload({ transactionType: 'equip', amount: -80 }),
+      grant('legacyEarningBackfill', {
+        itemId: 'theme_ocean',
+        slot: 'theme',
+      }),
+      grant('coinGrant', { slot: 'theme' }),
+      grant('coinGrant', { catalogVersion: 1 }),
+      grant('legacyEarningBackfill', { sourceEventId: null }),
+      grant('coinGrant', { sourceEventId: '' }),
+      grant('coinGrant', { sourceEventId: ' leading-space' }),
+      fieldRewardPayload({ sourceEventId: 'forged-purchase-source' }),
+      fieldRewardPayload({ catalogVersion: 0 }),
+      fieldRewardPayload({
+        itemId: 'theme_default',
+        amount: 0,
+      }),
+      fieldRewardPayload({ idempotencyKey: ' trailing-space' }),
+    ];
+
+    for (const [index, payload] of invalidPayloads.entries()) {
+      await assertFails(
+        writeFieldRewardTransaction(db, {
+          entityId: `reward-invalid-semantics-${index}`,
+          operationId: `reward-invalid-semantics-operation-${index}`,
+          payload,
+        }),
+      );
+    }
+  });
+
+  it('binds reward occurrence time to the entity update time', async () => {
+    await assertFails(
+      writeFieldRewardTransaction(authDb(), {
+        entityId: 'reward-time-mismatch',
+        operationId: 'reward-time-mismatch-operation',
+        clientUpdatedAtUtcMs: 4701,
+        payload: fieldRewardPayload({ occurredAtUtcMs: 4700 }),
+      }),
+    );
   });
 
   it('rejects reward transactions with a client-invented price or slot', async () => {

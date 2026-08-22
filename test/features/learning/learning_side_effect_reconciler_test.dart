@@ -69,6 +69,7 @@ void main() {
     int number, {
     String owner = 'owner-reconcile',
     DateTime? occurredAt,
+    bool isCorrect = true,
   }) async {
     final at = occurredAt ?? DateTime.utc(2026, 8, number, 6);
     await database
@@ -80,7 +81,7 @@ void main() {
             sessionId: 'session-1',
             wordId: 'word-1',
             promptMode: 'meaningChoice',
-            isCorrect: true,
+            isCorrect: isCorrect,
             attemptNumber: number,
             occurredAtUtcMs: at.millisecondsSinceEpoch,
           ),
@@ -88,7 +89,7 @@ void main() {
         );
     final event = EventEnvelopeV2(
       eventId: 'learning-event:attempt-$number',
-      eventType: 'QuizCompleted',
+      eventType: isCorrect ? 'QuizCompleted' : 'QuizAttempted',
       eventVersion: 1,
       occurredAtUtc: at,
       recordedAtUtc: at,
@@ -237,6 +238,152 @@ void main() {
         .map((row) => row.aggregateId)
         .toSet();
   }
+
+  Future<Map<String, dynamic>> projectionReceipt({
+    required int number,
+    required String projection,
+  }) async {
+    final row =
+        await (database.select(database.eventsV2)..where(
+              (candidate) => candidate.eventId.equals(
+                'learning-projection:$projection:'
+                'learning-event:attempt-$number:v2',
+              ),
+            ))
+            .getSingle();
+    return jsonDecode(row.payloadJson) as Map<String, dynamic>;
+  }
+
+  test(
+    'coins reconcile before Quest and survive a Quest sink failure',
+    () async {
+      await addEvent(1);
+      final calls = <String>[];
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        coinsSink: (event, evidence) async {
+          calls.add('coins:${event.eventId}');
+          expect(evidence.attempt.id, 'attempt-1');
+          return const LearningProjectionResult.applied(
+            payload: <String, dynamic>{'status': 'inserted'},
+          );
+        },
+        questSink: (event) async {
+          calls.add('quest:${event.eventId}');
+          throw StateError('quest unavailable');
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+
+      expect(calls, <String>[
+        'coins:learning-event:attempt-1',
+        'quest:learning-event:attempt-1',
+      ]);
+      expect(await applied('coins'), <String>{'learning-event:attempt-1'});
+      expect(await applied('quest'), isEmpty);
+    },
+  );
+
+  test('coins never bridge a version-one receipt', () async {
+    await addEvent(1);
+    await addV1Receipt(
+      number: 1,
+      projection: 'coins',
+      applied: true,
+      result: const <String, dynamic>{'status': 'inserted'},
+    );
+    var calls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      coinsSink: (_, _) async {
+        calls++;
+        return const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'replayed'},
+        );
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(calls, 1);
+    final receipt = await projectionReceipt(number: 1, projection: 'coins');
+    expect(receipt, isNot(contains('bridgedFromVersion')));
+    expect(receipt['result'], <String, dynamic>{'status': 'replayed'});
+  });
+
+  test('incorrect answers terminate coins as not applicable', () async {
+    await addEvent(1, isCorrect: false);
+    var calls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      coinsSink: (_, evidence) async {
+        calls++;
+        expect(evidence.attempt.isCorrect, isFalse);
+        return const LearningProjectionResult.notApplicable(
+          payload: <String, dynamic>{'reasonCode': 'incorrectAnswer'},
+        );
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(calls, 1);
+    final receipt = await projectionReceipt(number: 1, projection: 'coins');
+    expect(receipt['outcome'], 'notApplicable');
+    expect(receipt['result'], <String, dynamic>{
+      'reasonCode': 'incorrectAnswer',
+    });
+  });
+
+  test('denied evidence terminates coins without invoking the sink', () async {
+    await addDeclaredAssessmentEvent(1);
+    var calls = 0;
+    final reconciler = LearningSideEffectReconciler(
+      database,
+      rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
+      coinsSink: (_, _) async {
+        calls++;
+        return const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'inserted'},
+        );
+      },
+    );
+
+    await reconciler.reconcileOwner('owner-reconcile');
+
+    expect(calls, 0);
+    final receipt = await projectionReceipt(number: 1, projection: 'coins');
+    expect(receipt['outcome'], 'notApplicable');
+    expect(receipt['result'], <String, dynamic>{
+      'reasonCode': 'evidenceIneligible',
+    });
+  });
+
+  test(
+    'a failed coins sink leaves no receipt and retries exactly once',
+    () async {
+      await addEvent(1);
+      var calls = 0;
+      final reconciler = LearningSideEffectReconciler(
+        database,
+        coinsSink: (_, _) async {
+          calls++;
+          if (calls == 1) throw StateError('coin store unavailable');
+          return const LearningProjectionResult.applied(
+            payload: <String, dynamic>{'status': 'replayed'},
+          );
+        },
+      );
+
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(await applied('coins'), isEmpty);
+
+      await reconciler.reconcileOwner('owner-reconcile');
+      expect(calls, 2);
+      expect(await applied('coins'), <String>{'learning-event:attempt-1'});
+    },
+  );
 
   test('quest failure blocks reward until quest recovers', () async {
     await addEvent(1);
@@ -867,7 +1014,7 @@ void main() {
   );
 
   test(
-    'cursor discovery stays on three primary keys with large later history',
+    'cursor discovery stays on four primary keys with large later history',
     () async {
       await addEvent(1, occurredAt: DateTime.utc(2026, 8, 9, 12));
       final calls = <String>[];
@@ -910,6 +1057,7 @@ void main() {
         appliedVersion: LearningSideEffectReconciler.appliedVersion,
       );
       expect(cursorIds, [
+        'learning-projection-cursor:owner-reconcile:coins:v2',
         'learning-projection-cursor:owner-reconcile:quest:v2',
         'learning-projection-cursor:owner-reconcile:streak:v2',
         'learning-projection-cursor:owner-reconcile:reward:v2',

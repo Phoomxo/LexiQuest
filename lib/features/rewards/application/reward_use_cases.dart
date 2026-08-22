@@ -54,6 +54,33 @@ final class RewardUseCases {
     return result;
   }
 
+  Future<CoinGrantResult> grantCoins({
+    required String idempotencyKey,
+    required int amount,
+    required String sourceEventId,
+  }) async {
+    final key = idempotencyKey.trim();
+    if (key.isEmpty || key != idempotencyKey || key.runes.length > 256) {
+      throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+    }
+    if (amount <= 0) throw ArgumentError.value(amount, 'amount');
+    if (sourceEventId.isEmpty ||
+        sourceEventId.trim() != sourceEventId ||
+        sourceEventId.runes.length > 256) {
+      throw ArgumentError.value(sourceEventId, 'sourceEventId');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    final result = await repository.grantCoins(
+      ownerId: owner.id,
+      idempotencyKey: key,
+      amount: amount,
+      sourceEventId: sourceEventId,
+      occurredAtUtc: _now(),
+    );
+    if (result == CoinGrantResult.inserted) onLocalMutation?.call();
+    return result;
+  }
+
   Future<RewardAccount> equip(String itemId) async {
     final item = RewardCatalog.byId(itemId);
     if (item == null) {

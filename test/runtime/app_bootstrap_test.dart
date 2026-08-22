@@ -897,6 +897,31 @@ void main() {
                 ))
                 .getSingleOrNull();
         expect(rewardReceipt?.eventType, 'LearningProjectionApplied');
+        final firstCoinsReceipt =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals(
+                    'learning-projection:coins:'
+                    'learning-event:quest-off-1:v2',
+                  ),
+                ))
+                .getSingleOrNull();
+        expect(firstCoinsReceipt?.eventType, 'LearningProjectionApplied');
+        final coinGrants =
+            await (database.select(database.rewardTransactions)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.transactionType.equals('coinGrant'),
+                ))
+                .get();
+        expect(coinGrants, hasLength(6));
+        expect(
+          coinGrants.fold<int>(
+            0,
+            (sum, transaction) => sum + transaction.amount,
+          ),
+          55,
+          reason: 'five correct answers and one Quest completion grant Coins',
+        );
       },
     );
 

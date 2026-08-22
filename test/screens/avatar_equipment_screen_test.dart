@@ -33,7 +33,23 @@ void main() {
 
     expect(find.text('ร้านค้ารางวัล'), findsOneWidget);
     expect(find.text('ธีมมาตรฐาน'), findsOneWidget);
+    expect(find.text('เหรียญคงเหลือ'), findsOneWidget);
+    expect(find.bySemanticsLabel('เหรียญคงเหลือ 0 เหรียญ'), findsOneWidget);
+    expect(find.text('80 เหรียญ'), findsOneWidget);
+    expect(find.text('80 คะแนน'), findsNothing);
     expect(find.text('0'), findsWidgets);
     expect(find.textContaining('Damage'), findsNothing);
+
+    final oceanThemeCard = find.ancestor(
+      of: find.text('ธีมมหาสมุทร'),
+      matching: find.byType(Card),
+    );
+    expect(oceanThemeCard, findsOneWidget);
+    await tester.tap(
+      find.descendant(of: oceanThemeCard, matching: find.byType(FilledButton)),
+    );
+    await tester.pump();
+
+    expect(find.text('เหรียญไม่เพียงพอ'), findsOneWidget);
   });
 }

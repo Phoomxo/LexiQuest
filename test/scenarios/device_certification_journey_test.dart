@@ -6,13 +6,62 @@ import 'package:vocab_learning_app/features/account/application/local_data_delet
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/economy_transaction_policy.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:uuid/uuid.dart';
+
+LearningEvidenceProjectionSink _coinsSink(DriftRewardRepository rewards) =>
+    (_, evidence) async {
+      final isCorrect = evidence.attempt.isCorrect;
+      final eligibleClass =
+          evidence.context.evidenceClass != EvidenceClass.assessment &&
+          evidence.context.evidenceClass != EvidenceClass.recreational;
+      final award = const EconomyAwardPolicyV1().evaluate(
+        sourceEventId: evidence.attempt.id,
+        amount: 1,
+        eligible: isCorrect && eligibleClass,
+      );
+      if (award.coinAmount == 0) {
+        return LearningProjectionResult.notApplicable(
+          payload: <String, dynamic>{
+            'reasonCode': isCorrect ? 'evidenceIneligible' : 'incorrectAnswer',
+          },
+        );
+      }
+      final result = await rewards.grantCoins(
+        ownerId: evidence.attempt.ownerId,
+        idempotencyKey: award.coinIdempotencyKey,
+        amount: award.coinAmount,
+        sourceEventId: award.sourceEventId,
+        occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          evidence.attempt.occurredAtUtcMs,
+          isUtc: true,
+        ),
+      );
+      return switch (result) {
+        CoinGrantResult.inserted => const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'inserted'},
+        ),
+        CoinGrantResult.replayed => const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'replayed'},
+        ),
+        CoinGrantResult.capturedByLegacyBackfill =>
+          const LearningProjectionResult.notApplicable(
+            payload: <String, dynamic>{
+              'reasonCode': 'capturedByLegacyBackfill',
+            },
+          ),
+      };
+    };
 
 /// Scenario tests that simulate real user journeys for device certification.
 /// These are NOT integration tests (no Firebase/device) — they verify the
@@ -23,6 +72,7 @@ void main() {
   late VocabularyUseCases vocabulary;
   late LearningUseCases learning;
   late RewardUseCases rewards;
+  late DriftRewardRepository rewardRepository;
   late UpgradeGuestOwner upgrade;
 
   setUp(() {
@@ -47,9 +97,10 @@ void main() {
       nowUtc: now,
       buildInfo: const AppBuildInfo.fromEnvironment(),
     );
+    rewardRepository = DriftRewardRepository(database);
     rewards = RewardUseCases(
       owners: owners,
-      repository: DriftRewardRepository(database),
+      repository: rewardRepository,
       generateId: idGen,
       nowUtc: now,
     );
@@ -197,11 +248,11 @@ void main() {
     });
 
     test(
-      'S5: Reward balance is zero initially and increases with quiz',
+      'S5: correct quiz awards lifetime xp and spendable coins separately',
       () async {
-        await owners.getOrCreateActiveOwner();
+        final owner = await owners.getOrCreateActiveOwner();
         final account = await rewards.load();
-        expect(account.balance, 0);
+        expect(account.coinBalance, 0);
 
         // Seed vocabulary for quiz
         final category = await vocabulary.createCategory('Animals');
@@ -225,11 +276,18 @@ void main() {
           responseTimeMs: 1000,
           attemptNumber: 1,
         );
+        await LearningSideEffectReconciler(
+          database,
+          coinsSink: _coinsSink(rewardRepository),
+        ).reconcileOwner(owner.id);
         await learning.finishSession(session.id);
 
-        // After answering, balance should be > 0 (XP granted per correct answer)
+        final progress = await DriftProgressQueries(
+          database,
+        ).load(ownerId: owner.id, nowUtc: DateTime.now().toUtc());
         final updatedAccount = await rewards.load();
-        expect(updatedAccount.balance, greaterThan(0));
+        expect(progress.totalXp, greaterThan(0));
+        expect(updatedAccount.coinBalance, greaterThan(0));
       },
     );
 

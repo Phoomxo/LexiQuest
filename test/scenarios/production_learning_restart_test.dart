@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
@@ -24,6 +25,8 @@ import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_repository.dart';
 import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/economy_transaction_policy.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
@@ -35,6 +38,50 @@ const _buildInfo = AppBuildInfo(version: '1.0.0', buildId: 'restart-test');
 
 AppDatabase _openDatabase(String path) =>
     AppDatabase(NativeDatabase(File(path)));
+
+LearningEvidenceProjectionSink _coinsSink(DriftRewardRepository rewards) =>
+    (_, evidence) async {
+      final isCorrect = evidence.attempt.isCorrect;
+      final eligibleClass =
+          evidence.context.evidenceClass != EvidenceClass.assessment &&
+          evidence.context.evidenceClass != EvidenceClass.recreational;
+      final award = const EconomyAwardPolicyV1().evaluate(
+        sourceEventId: evidence.attempt.id,
+        amount: 1,
+        eligible: isCorrect && eligibleClass,
+      );
+      if (award.coinAmount == 0) {
+        return LearningProjectionResult.notApplicable(
+          payload: <String, dynamic>{
+            'reasonCode': isCorrect ? 'evidenceIneligible' : 'incorrectAnswer',
+          },
+        );
+      }
+      final result = await rewards.grantCoins(
+        ownerId: evidence.attempt.ownerId,
+        idempotencyKey: award.coinIdempotencyKey,
+        amount: award.coinAmount,
+        sourceEventId: award.sourceEventId,
+        occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          evidence.attempt.occurredAtUtcMs,
+          isUtc: true,
+        ),
+      );
+      return switch (result) {
+        CoinGrantResult.inserted => const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'inserted'},
+        ),
+        CoinGrantResult.replayed => const LearningProjectionResult.applied(
+          payload: <String, dynamic>{'status': 'replayed'},
+        ),
+        CoinGrantResult.capturedByLegacyBackfill =>
+          const LearningProjectionResult.notApplicable(
+            payload: <String, dynamic>{
+              'reasonCode': 'capturedByLegacyBackfill',
+            },
+          ),
+      };
+    };
 
 final class _CrashAfterProgressRepository implements QuestRepository {
   _CrashAfterProgressRepository(this.delegate);
@@ -304,12 +351,17 @@ void main() {
                 required ownerId,
                 required idempotencyKey,
                 required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
                 rewardItemId,
-              }) => rewardRepository.grantQuestXp(
-                ownerId: ownerId,
-                idempotencyKey: idempotencyKey,
-                xpAmount: xpAmount,
-              ),
+              }) async {
+                await rewardRepository.grantQuestXpAndCoins(
+                  ownerId: ownerId,
+                  sourceEventId: sourceEventId,
+                  xpAmount: xpAmount,
+                  occurredAtUtc: occurredAtUtc,
+                );
+              },
         );
         final questDefinition = _correctAnswerQuest(
           id: 'restart-correct-once',
@@ -326,6 +378,7 @@ void main() {
         firstReconciliation = LearningReconciliationScheduler(
           LearningSideEffectReconciler(
             first,
+            coinsSink: _coinsSink(rewardRepository),
             questSink: (event) async {
               final projection = await quest.projectEvent(event, [
                 questDefinition,
@@ -851,12 +904,17 @@ void main() {
                 required ownerId,
                 required idempotencyKey,
                 required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
                 rewardItemId,
-              }) => rewardRepository.grantQuestXp(
-                ownerId: ownerId,
-                idempotencyKey: idempotencyKey,
-                xpAmount: xpAmount,
-              ),
+              }) async {
+                await rewardRepository.grantQuestXpAndCoins(
+                  ownerId: ownerId,
+                  sourceEventId: sourceEventId,
+                  xpAmount: xpAmount,
+                  occurredAtUtc: occurredAtUtc,
+                );
+              },
         );
         await database.customStatement('''
           CREATE TRIGGER fail_reward_receipt
@@ -909,12 +967,17 @@ void main() {
                 required ownerId,
                 required idempotencyKey,
                 required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
                 rewardItemId,
-              }) => restartedRewards.grantQuestXp(
-                ownerId: ownerId,
-                idempotencyKey: idempotencyKey,
-                xpAmount: xpAmount,
-              ),
+              }) async {
+                await restartedRewards.grantQuestXpAndCoins(
+                  ownerId: ownerId,
+                  sourceEventId: sourceEventId,
+                  xpAmount: xpAmount,
+                  occurredAtUtc: occurredAtUtc,
+                );
+              },
         );
         await realReconciler().reconcileOwner(owner.id);
         expect(await _appliedReceiptCount(database, 'reward'), 1);

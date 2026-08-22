@@ -17,14 +17,16 @@ final class QuestProjectionEvaluation {
   final List<QuestCompletedEvent> completed;
 }
 
-/// Called when a quest completes. The callback grants the XP reward to the
-/// learner's points ledger. Errors are swallowed in production — reward
-/// failure must never break the learning flow.
+/// Called when a quest completes. The callback grants the paired XP and Coin
+/// reward. Errors are swallowed in production — reward failure must never
+/// break the learning flow.
 typedef QuestRewardSink =
     Future<void> Function({
       required String ownerId,
       required String idempotencyKey,
       required int xpAmount,
+      required String sourceEventId,
+      required DateTime occurredAtUtc,
       String? rewardItemId,
     });
 
@@ -60,8 +62,8 @@ final class QuestUseCases {
   /// production.
   final ShadowRewardOrchestrator? shadowOrchestrator;
 
-  /// When non-null, quest-completion XP is granted to the learner's points
-  /// ledger via this callback. Idempotent by `idempotencyKey`.
+  /// When non-null, the quest-completion economy award is granted via this
+  /// callback. Idempotent by the durable completion source identity.
   final QuestRewardSink? rewardSink;
 
   // ── Public API ─────────────────────────────────────────────────────────────
@@ -207,6 +209,12 @@ final class QuestUseCases {
               'ownerId': completion.ownerId,
               'idempotencyKey': completion.idempotencyKey,
               'xpAmount': definition.reward.xpAmount,
+              // This is also the source identity written by the deployed
+              // Quest XP path. Keeping it canonical lets an interrupted
+              // pre-separation grant replay without creating duplicate XP.
+              'sourceEventId': completion.idempotencyKey,
+              'occurredAtUtcMs':
+                  completion.completedAtUtc.millisecondsSinceEpoch,
               'rewardItemId': ?rewardItemId,
             };
           })
@@ -248,6 +256,8 @@ final class QuestUseCases {
         ownerId: grant.ownerId,
         idempotencyKey: grant.idempotencyKey,
         xpAmount: grant.xpAmount,
+        sourceEventId: grant.sourceEventId,
+        occurredAtUtc: grant.occurredAtUtc,
         rewardItemId: grant.rewardItemId,
       );
       reconciled = true;
@@ -345,11 +355,19 @@ final class QuestUseCases {
     if (rawGrants.length > 64) {
       throw StateError('quest projection reward grant batch exceeds 64');
     }
-    const requiredKeys = <String>{'ownerId', 'idempotencyKey', 'xpAmount'};
+    const requiredKeys = <String>{
+      'ownerId',
+      'idempotencyKey',
+      'xpAmount',
+      'sourceEventId',
+      'occurredAtUtcMs',
+    };
     const allowedKeys = <String>{
       'ownerId',
       'idempotencyKey',
       'xpAmount',
+      'sourceEventId',
+      'occurredAtUtcMs',
       'rewardItemId',
     };
     final keys = <String>{};
@@ -365,6 +383,8 @@ final class QuestUseCases {
       final ownerId = grant['ownerId'];
       final idempotencyKey = grant['idempotencyKey'];
       final xpAmount = grant['xpAmount'];
+      final sourceEventId = grant['sourceEventId'];
+      final occurredAtUtcMs = grant['occurredAtUtcMs'];
       final rewardItemId = grant['rewardItemId'];
       final hasRewardItemId = grant.containsKey('rewardItemId');
       if (ownerId is! String || ownerId != event.ownerIdentity) {
@@ -380,6 +400,18 @@ final class QuestUseCases {
       if (xpAmount is! int || xpAmount <= 0 || xpAmount > 0x7fffffffffffffff) {
         throw StateError('invalid quest reward XP amount');
       }
+      if (sourceEventId is! String ||
+          sourceEventId.trim() != sourceEventId ||
+          sourceEventId.isEmpty ||
+          sourceEventId.runes.length > 256 ||
+          sourceEventId != idempotencyKey) {
+        throw StateError('invalid quest reward source event ID');
+      }
+      if (occurredAtUtcMs is! int ||
+          occurredAtUtcMs < 0 ||
+          occurredAtUtcMs > 8640000000000000) {
+        throw StateError('invalid quest reward occurrence time');
+      }
       if (hasRewardItemId &&
           (rewardItemId == null ||
               rewardItemId is! String ||
@@ -393,6 +425,11 @@ final class QuestUseCases {
           ownerId: ownerId,
           idempotencyKey: idempotencyKey,
           xpAmount: xpAmount,
+          sourceEventId: sourceEventId,
+          occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            occurredAtUtcMs,
+            isUtc: true,
+          ),
           rewardItemId: rewardItemId as String?,
         ),
       );
@@ -449,7 +486,7 @@ final class QuestUseCases {
   /// Falls back to 'daily' which maps to the lowest reward tier.
   String _questTypeFromIdempotencyKey(String key) => 'daily';
 
-  /// Grants quest-completion XP via [rewardSink] when wired.
+  /// Grants the quest-completion economy award via [rewardSink] when wired.
   /// Idempotent by `completedEvent.idempotencyKey`. Errors are swallowed.
   Future<void> _grantReward(
     QuestDefinition def,
@@ -463,6 +500,8 @@ final class QuestUseCases {
         ownerId: completedEvent.ownerId,
         idempotencyKey: completedEvent.idempotencyKey,
         xpAmount: def.reward.xpAmount,
+        sourceEventId: completedEvent.idempotencyKey,
+        occurredAtUtc: completedEvent.completedAtUtc,
         rewardItemId: def.reward.rewardItemId,
       );
     } catch (_) {
@@ -476,11 +515,15 @@ final class _ValidatedQuestRewardGrant {
     required this.ownerId,
     required this.idempotencyKey,
     required this.xpAmount,
+    required this.sourceEventId,
+    required this.occurredAtUtc,
     this.rewardItemId,
   });
 
   final String ownerId;
   final String idempotencyKey;
   final int xpAmount;
+  final String sourceEventId;
+  final DateTime occurredAtUtc;
   final String? rewardItemId;
 }

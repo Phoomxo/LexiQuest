@@ -31,6 +31,11 @@ final class LearningProjectionResult {
 
 typedef LearningProjectionSink =
     Future<LearningProjectionResult> Function(EventEnvelopeV2 event);
+typedef LearningEvidenceProjectionSink =
+    Future<LearningProjectionResult> Function(
+      EventEnvelopeV2 event,
+      ResolvedLearningEvidence evidence,
+    );
 typedef LearningRewardProjectionSink =
     Future<LearningProjectionResult> Function(
       EventEnvelopeV2 event,
@@ -42,6 +47,7 @@ final class LearningSideEffectReconciler {
     AppDatabase database, {
     this.questSink,
     this.streakSink,
+    this.coinsSink,
     this.rewardSink,
     this.pendingBatchSize = 50,
     EvidenceEligibilityPolicy evidencePolicy =
@@ -60,10 +66,18 @@ final class LearningSideEffectReconciler {
   final DriftLearningEventStore _events;
   final LearningProjectionSink? questSink;
   final LearningProjectionSink? streakSink;
+  final LearningEvidenceProjectionSink? coinsSink;
   final LearningRewardProjectionSink? rewardSink;
   final int pendingBatchSize;
 
   Future<void> reconcileOwner(String ownerId) async {
+    await _applyPending(
+      ownerId,
+      'coins',
+      null,
+      evidenceSink: coinsSink,
+      bridgeV1: false,
+    );
     await _applyPending(ownerId, 'quest', questSink);
     await _applyPending(ownerId, 'streak', streakSink);
     await _applyRewardPending(ownerId);
@@ -72,9 +86,11 @@ final class LearningSideEffectReconciler {
   Future<void> _applyPending(
     String ownerId,
     String projection,
-    LearningProjectionSink? sink,
-  ) async {
-    if (sink == null) return;
+    LearningProjectionSink? sink, {
+    LearningEvidenceProjectionSink? evidenceSink,
+    bool bridgeV1 = true,
+  }) async {
+    if (sink == null && evidenceSink == null) return;
     late final List<PendingLearningProjectionEvent> events;
     try {
       events = await _events.listPendingProjectionEvents(
@@ -113,26 +129,15 @@ final class LearningSideEffectReconciler {
       final policyProjection = _policyProjection(projection);
       final decision = evidence.decisionSet.decisionFor(policyProjection);
       final decisionPayload = _decisionPayload(decision);
-      late final LearningProjectionReceipt? v1Receipt;
-      try {
-        v1Receipt = await _events.readProjectionReceipt(
-          source: pending.event,
-          projection: projection,
-          appliedVersion: 1,
-        );
-      } on StateError {
-        await _events.markProjectionOutcome(
-          source: pending.event,
-          projection: projection,
-          appliedVersion: appliedVersion,
-          outcome: LearningProjectionOutcome.blocked,
-          reasonCode: 'invalidV1Receipt',
-          decision: decisionPayload,
-        );
-        continue;
-      }
-      if (v1Receipt != null) {
-        if (v1Receipt.outcome == LearningProjectionOutcome.blocked) {
+      if (bridgeV1) {
+        late final LearningProjectionReceipt? v1Receipt;
+        try {
+          v1Receipt = await _events.readProjectionReceipt(
+            source: pending.event,
+            projection: projection,
+            appliedVersion: 1,
+          );
+        } on StateError {
           await _events.markProjectionOutcome(
             source: pending.event,
             projection: projection,
@@ -141,18 +146,31 @@ final class LearningSideEffectReconciler {
             reasonCode: 'invalidV1Receipt',
             decision: decisionPayload,
           );
-        } else {
-          await _events.markProjectionOutcome(
-            source: pending.event,
-            projection: projection,
-            appliedVersion: appliedVersion,
-            outcome: v1Receipt.outcome,
-            result: v1Receipt.result,
-            bridgedFromVersion: 1,
-            decision: decisionPayload,
-          );
+          continue;
         }
-        continue;
+        if (v1Receipt != null) {
+          if (v1Receipt.outcome == LearningProjectionOutcome.blocked) {
+            await _events.markProjectionOutcome(
+              source: pending.event,
+              projection: projection,
+              appliedVersion: appliedVersion,
+              outcome: LearningProjectionOutcome.blocked,
+              reasonCode: 'invalidV1Receipt',
+              decision: decisionPayload,
+            );
+          } else {
+            await _events.markProjectionOutcome(
+              source: pending.event,
+              projection: projection,
+              appliedVersion: appliedVersion,
+              outcome: v1Receipt.outcome,
+              result: v1Receipt.result,
+              bridgedFromVersion: 1,
+              decision: decisionPayload,
+            );
+          }
+          continue;
+        }
       }
       if (!evidence.decisionSet.allows(policyProjection)) {
         await _events.markProjectionOutcome(
@@ -171,7 +189,9 @@ final class LearningSideEffectReconciler {
         continue;
       }
       try {
-        final outcome = await sink(pending.event);
+        final outcome = evidenceSink == null
+            ? await sink!(pending.event)
+            : await evidenceSink(pending.event, evidence);
         await _events.markProjectionOutcome(
           source: pending.event,
           projection: projection,
@@ -370,6 +390,7 @@ final class LearningSideEffectReconciler {
       switch (projection) {
         'quest' => LearningProjection.quest,
         'streak' => LearningProjection.streak,
+        'coins' => LearningProjection.coins,
         'reward' => LearningProjection.xp,
         _ => throw StateError('unsupported learning projection $projection'),
       };

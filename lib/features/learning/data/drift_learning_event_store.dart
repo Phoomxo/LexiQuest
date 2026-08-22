@@ -137,7 +137,12 @@ final class DriftLearningEventStore {
       'learning-projection-cursor-v1';
   static const String _projectionCursorBuildId =
       'learning-projection-cursor-v1';
-  static const List<String> _projectionNames = ['quest', 'streak', 'reward'];
+  static const List<String> _projectionNames = [
+    'coins',
+    'quest',
+    'streak',
+    'reward',
+  ];
 
   final db.AppDatabase database;
   final EvidenceEligibilityPolicy evidencePolicy;
@@ -952,6 +957,15 @@ final class DriftLearningEventStore {
       },
     );
     await database.transaction(() async {
+      if (bridgedFromVersion != null) {
+        await _requireMatchingBridgeReceipt(
+          source: source,
+          projection: projection,
+          bridgedFromVersion: bridgedFromVersion,
+          outcome: outcome,
+          result: result,
+        );
+      }
       final existingReceipts = await _rowsForBothIdentities(
         key: key,
         ownerId: source.ownerIdentity,
@@ -1090,13 +1104,28 @@ final class DriftLearningEventStore {
       throw StateError('invalid learning projection receipt metadata');
     }
     final castResult = result.cast<String, dynamic>();
+    if (bridgedFromVersion != null) {
+      await _requireMatchingBridgeReceipt(
+        source: source,
+        projection: projection,
+        bridgedFromVersion: bridgedFromVersion as int,
+        outcome: outcome,
+        result: castResult,
+      );
+    }
     if (projection == 'quest' &&
         !_validQuestReceiptResult(
           outcome: outcome,
           ownerId: source.ownerIdentity,
+          appliedVersion: appliedVersion,
+          bridgedFromVersion: bridgedFromVersion as int?,
           result: castResult,
         )) {
       throw StateError('invalid quest projection receipt result');
+    }
+    if (projection == 'coins' &&
+        !_validCoinsReceiptResult(outcome: outcome, result: castResult)) {
+      throw StateError('invalid coins projection receipt result');
     }
     return LearningProjectionReceipt(
       outcome: outcome,
@@ -1104,6 +1133,25 @@ final class DriftLearningEventStore {
       reasonCode: reasonCode as String?,
       bridgedFromVersion: bridgedFromVersion as int?,
     );
+  }
+
+  Future<void> _requireMatchingBridgeReceipt({
+    required EventEnvelopeV2 source,
+    required String projection,
+    required int bridgedFromVersion,
+    required LearningProjectionOutcome outcome,
+    required Map<String, dynamic> result,
+  }) async {
+    final earlier = await readProjectionReceipt(
+      source: source,
+      projection: projection,
+      appliedVersion: bridgedFromVersion,
+    );
+    if (earlier == null ||
+        earlier.outcome != outcome ||
+        jsonEncode(earlier.result) != jsonEncode(result)) {
+      throw StateError('invalid learning projection bridge provenance');
+    }
   }
 
   bool _validReceiptReason(
@@ -1123,6 +1171,8 @@ final class DriftLearningEventStore {
   bool _validQuestReceiptResult({
     required LearningProjectionOutcome outcome,
     required String ownerId,
+    required int appliedVersion,
+    required int? bridgedFromVersion,
     required Map<String, dynamic> result,
   }) {
     if (outcome == LearningProjectionOutcome.blocked) return result.isEmpty;
@@ -1144,14 +1194,25 @@ final class DriftLearningEventStore {
       return false;
     }
     final idempotencyKeys = <String>{};
+    final sourceEventIds = <String>{};
     for (final rawGrant in grants) {
       if (rawGrant is! Map) return false;
       final grant = rawGrant.cast<String, dynamic>();
-      const requiredGrantKeys = <String>{
+      const legacyRequiredGrantKeys = <String>{
         'ownerId',
         'idempotencyKey',
         'xpAmount',
       };
+      const durableRequiredGrantKeys = <String>{
+        ...legacyRequiredGrantKeys,
+        'sourceEventId',
+        'occurredAtUtcMs',
+      };
+      final requiresDurableGrant =
+          appliedVersion >= 2 && bridgedFromVersion != 1;
+      final requiredGrantKeys = requiresDurableGrant
+          ? durableRequiredGrantKeys
+          : legacyRequiredGrantKeys;
       const optionalGrantKeys = <String>{'rewardItemId'};
       if (!grant.keys.toSet().containsAll(requiredGrantKeys) ||
           !grant.keys.every(
@@ -1164,6 +1225,8 @@ final class DriftLearningEventStore {
       final grantOwner = grant['ownerId'];
       final idempotencyKey = grant['idempotencyKey'];
       final xpAmount = grant['xpAmount'];
+      final sourceEventId = grant['sourceEventId'];
+      final occurredAtUtcMs = grant['occurredAtUtcMs'];
       final rewardItemId = grant['rewardItemId'];
       final hasRewardItemId = grant.containsKey('rewardItemId');
       if (grantOwner is! String ||
@@ -1176,6 +1239,16 @@ final class DriftLearningEventStore {
           xpAmount is! int ||
           xpAmount < 1 ||
           xpAmount > 9223372036854775807 ||
+          (requiresDurableGrant &&
+              (sourceEventId is! String ||
+                  sourceEventId.trim() != sourceEventId ||
+                  sourceEventId.isEmpty ||
+                  sourceEventId.runes.length > 256 ||
+                  sourceEventId != idempotencyKey ||
+                  !sourceEventIds.add(sourceEventId) ||
+                  occurredAtUtcMs is! int ||
+                  occurredAtUtcMs < 0 ||
+                  occurredAtUtcMs > 8640000000000000)) ||
           (hasRewardItemId &&
               (rewardItemId == null ||
                   (rewardItemId is! String ||
@@ -1186,6 +1259,26 @@ final class DriftLearningEventStore {
       }
     }
     return true;
+  }
+
+  bool _validCoinsReceiptResult({
+    required LearningProjectionOutcome outcome,
+    required Map<String, dynamic> result,
+  }) {
+    return switch (outcome) {
+      LearningProjectionOutcome.blocked => result.isEmpty,
+      LearningProjectionOutcome.applied =>
+        result.length == 1 &&
+            (result['status'] == 'inserted' || result['status'] == 'replayed'),
+      LearningProjectionOutcome.notApplicable =>
+        result.length == 1 &&
+            switch (result['reasonCode']) {
+              'incorrectAnswer' ||
+              'evidenceIneligible' ||
+              'capturedByLegacyBackfill' => true,
+              _ => false,
+            },
+    };
   }
 
   Future<void> _writeProjectionCursor({

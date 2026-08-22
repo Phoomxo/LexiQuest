@@ -36,7 +36,14 @@ final class DriftProgressQueries {
     final pointsRow =
         await (database.selectOnly(database.pointsLedgerEntries)
               ..addColumns([pointsExpression])
-              ..where(database.pointsLedgerEntries.ownerId.equals(ownerId)))
+              ..where(
+                database.pointsLedgerEntries.ownerId.equals(ownerId) &
+                    database.pointsLedgerEntries.amount.isBiggerThanValue(0) &
+                    database.pointsLedgerEntries.entryType.isIn(const [
+                      'quizCorrect',
+                      'questCompletion',
+                    ]),
+              ))
             .getSingle();
     final totalXp = pointsRow.read(pointsExpression) ?? 0;
     final practiceSessionIds = attempts

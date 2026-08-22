@@ -500,6 +500,8 @@ void main() {
           required String ownerId,
           required String idempotencyKey,
           required int xpAmount,
+          required String sourceEventId,
+          required DateTime occurredAtUtc,
           String? rewardItemId,
         }) => rewards.grantQuestXp(
           ownerId: ownerId,
@@ -541,6 +543,23 @@ void main() {
           recovery.projectionPayload(replay, [def])['rewardGrants'],
           hasLength(1),
         );
+        final projectedGrant =
+            (recovery.projectionPayload(replay, [def])['rewardGrants'] as List)
+                    .single
+                as Map<String, dynamic>;
+        expect(
+          projectedGrant['sourceEventId'],
+          'quest_complete_quest:id-1_q-uc-daily',
+        );
+        expect(
+          projectedGrant['sourceEventId'],
+          projectedGrant['idempotencyKey'],
+          reason: 'the deployed Quest XP source identity remains canonical',
+        );
+        expect(
+          projectedGrant['occurredAtUtcMs'],
+          DateTime.utc(2026, 8, 4, 10).millisecondsSinceEpoch,
+        );
         expect(
           await (database.select(
             database.pointsLedgerEntries,
@@ -572,6 +591,8 @@ void main() {
       final event = _makeEvent();
       var calls = 0;
       final keys = <String>[];
+      final sourceEventIds = <String>[];
+      final occurredAtValues = <DateTime>[];
       final rewardUseCases = QuestUseCases(
         repository: repo,
         owners: _FakeOwners(testOwner),
@@ -583,10 +604,14 @@ void main() {
               required ownerId,
               required idempotencyKey,
               required xpAmount,
+              required sourceEventId,
+              required occurredAtUtc,
               rewardItemId,
             }) async {
               calls++;
               keys.add(idempotencyKey);
+              sourceEventIds.add(sourceEventId);
+              occurredAtValues.add(occurredAtUtc);
               if (calls == 1) throw StateError('reward unavailable');
             },
       );
@@ -636,6 +661,13 @@ void main() {
 
       expect(calls, 2);
       expect(keys.toSet(), hasLength(1));
+      expect(sourceEventIds.toSet(), <String>{
+        'quest_complete_quest:reward-retry-instance_q-uc-daily',
+      });
+      expect(sourceEventIds, keys);
+      expect(occurredAtValues.toSet(), <DateTime>{
+        DateTime.utc(2026, 8, 4, 10),
+      });
     });
 
     test(
@@ -655,6 +687,8 @@ void main() {
                 required ownerId,
                 required idempotencyKey,
                 required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
                 rewardItemId,
               }) async {
                 grants++;
@@ -693,6 +727,8 @@ void main() {
                 required ownerId,
                 required idempotencyKey,
                 required xpAmount,
+                required sourceEventId,
+                required occurredAtUtc,
                 rewardItemId,
               }) async {
                 grants++;
@@ -702,11 +738,16 @@ void main() {
           String ownerId = 'owner-uc',
           String idempotencyKey = 'quest-grant-1',
           Object xpAmount = 50,
+          Object sourceEventId = 'quest-grant-1',
+          Object? occurredAtUtcMs,
           Object? rewardItemId,
         }) => <String, dynamic>{
           'ownerId': ownerId,
           'idempotencyKey': idempotencyKey,
           'xpAmount': xpAmount,
+          'sourceEventId': sourceEventId,
+          'occurredAtUtcMs':
+              occurredAtUtcMs ?? event.recordedAtUtc.millisecondsSinceEpoch,
           if (rewardItemId != null) 'rewardItemId': rewardItemId,
         };
 
@@ -781,6 +822,34 @@ void main() {
               'rewardGrants': [
                 grant(xpAmount: jsonDecode('9223372036854775808')),
               ],
+            },
+          ),
+          (
+            'blank source event ID',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(sourceEventId: '')],
+            },
+          ),
+          (
+            'mismatched durable source identity',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(sourceEventId: 'different-source')],
+            },
+          ),
+          (
+            'negative occurrence time',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(occurredAtUtcMs: -1)],
+            },
+          ),
+          (
+            'unrepresentable occurrence time',
+            <String, dynamic>{
+              'eligible': true,
+              'rewardGrants': [grant(occurredAtUtcMs: 8640000000000001)],
             },
           ),
           (

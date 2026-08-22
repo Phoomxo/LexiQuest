@@ -51,7 +51,7 @@ class _ShopPageState extends State<ShopPage> {
     } on RewardException catch (error) {
       if (!mounted) return;
       final text = switch (error.code) {
-        RewardFailureCode.insufficientBalance => 'คะแนนสะสมไม่เพียงพอ',
+        RewardFailureCode.insufficientBalance => 'เหรียญไม่เพียงพอ',
         RewardFailureCode.staleCatalog =>
           'ข้อมูลราคาเปลี่ยนแล้ว กรุณาเปิดหน้าใหม่',
         _ => 'ไม่สามารถซื้อรายการนี้ได้',
@@ -103,13 +103,13 @@ class _ShopPageState extends State<ShopPage> {
             padding: const EdgeInsets.all(16),
             children: [
               Semantics(
-                label: 'คะแนนสะสมคงเหลือ ${account.balance} คะแนน',
+                label: 'เหรียญคงเหลือ ${account.coinBalance} เหรียญ',
                 child: Card(
                   child: ListTile(
                     leading: const Icon(Icons.toll_outlined),
-                    title: const Text('คะแนนสะสมคงเหลือ'),
+                    title: const Text('เหรียญคงเหลือ'),
                     trailing: Text(
-                      '${account.balance}',
+                      '${account.coinBalance}',
                       style: Theme.of(context).textTheme.headlineSmall,
                     ),
                     subtitle: Text(
@@ -172,7 +172,7 @@ class _CatalogTile extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   Text(item.description),
-                  Text('${item.price} คะแนน'),
+                  Text('${item.price} เหรียญ'),
                 ],
               ),
             ),
