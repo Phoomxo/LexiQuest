@@ -147,6 +147,7 @@ final class OwnerLifecycleArchiveExporter {
       'local_owners' => _ownerRoot(ownerId),
       'research_consents' => _researchConsents(ownerId),
       'experiment_assignments' => _experimentAssignments(ownerId),
+      'assessment_runs' => _assessmentRuns(ownerId),
       'vocabulary_categories' => _vocabularyCategories(ownerId),
       'vocabulary_words' => _vocabularyWords(ownerId),
       'vocabulary_imports' => _vocabularyImports(ownerId),
@@ -269,6 +270,156 @@ final class OwnerLifecycleArchiveExporter {
           ).toIso8601String(),
         },
     ];
+  }
+
+  Future<List<Map<String, Object?>>> _assessmentRuns(String ownerId) async {
+    final rows = await database
+        .customSelect(
+          'SELECT id, learning_session_id, study_cycle_id, phase, state, '
+          'protocol_id, protocol_version, experiment_id, experiment_version, '
+          'assignment_id, cohort, consent_version, '
+          'consent_decided_at_utc_ms, instrument_id, instrument_version, '
+          'form_id, form_version, instrument_checksum_sha256, '
+          'form_checksum_sha256, app_version, build_id, '
+          'database_schema_version, content_revision, '
+          'evidence_policy_version, feature_contract_revision, '
+          'feature_contract_hash, started_at_utc_ms, completed_at_utc_ms, '
+          'abandoned_at_utc_ms FROM assessment_runs WHERE owner_id = ? '
+          'ORDER BY started_at_utc_ms, id',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.assessmentRuns},
+        )
+        .get();
+    final records = <Map<String, Object?>>[
+      {'recordCount': rows.length},
+    ];
+    for (final row in rows) {
+      records.add({
+        'studyCycleId': _safeLabel(row.read<String>('study_cycle_id')),
+        'phase': _assessmentPhase(row.read<String>('phase')),
+        'state': _assessmentState(row.read<String>('state')),
+        'protocolId': _safeLabel(row.read<String>('protocol_id')),
+        'protocolVersion': _safeLabel(row.read<String>('protocol_version')),
+        'experimentId': _safeLabel(row.read<String>('experiment_id')),
+        'experimentVersion': row.read<int>('experiment_version'),
+        'cohort': _safeLabel(row.read<String>('cohort')),
+        'consentVersion': row.read<int>('consent_version'),
+        'consentDecidedAtUtc': _iso(row.read<int>('consent_decided_at_utc_ms')),
+        'instrumentId': _safeLabel(row.read<String>('instrument_id')),
+        'instrumentVersion': _safeLabel(row.read<String>('instrument_version')),
+        'formId': _safeLabel(row.read<String>('form_id')),
+        'formVersion': _safeLabel(row.read<String>('form_version')),
+        'instrumentChecksumSha256': _safeLabel(
+          row.read<String>('instrument_checksum_sha256'),
+        ),
+        'formChecksumSha256': _safeLabel(
+          row.read<String>('form_checksum_sha256'),
+        ),
+        'appVersion': _safeLabel(row.read<String>('app_version')),
+        'buildId': _safeLabel(row.read<String>('build_id')),
+        'databaseSchemaVersion': row.read<int>('database_schema_version'),
+        'contentRevision': _safeLabel(row.read<String>('content_revision')),
+        'evidencePolicyVersion': _safeLabel(
+          row.read<String>('evidence_policy_version'),
+        ),
+        'featureContractRevision': _safeLabel(
+          row.read<String>('feature_contract_revision'),
+        ),
+        'featureContractHash': _safeLabel(
+          row.read<String>('feature_contract_hash'),
+        ),
+        'startedAtUtc': _iso(row.read<int>('started_at_utc_ms')),
+        'completedAtUtc': _nullableIso(
+          row.readNullable<int>('completed_at_utc_ms'),
+        ),
+        'abandonedAtUtc': _nullableIso(
+          row.readNullable<int>('abandoned_at_utc_ms'),
+        ),
+        'controlledResponses': await _controlledAssessmentResponses(
+          ownerId: ownerId,
+          run: row,
+        ),
+      });
+    }
+    return records;
+  }
+
+  Future<List<Map<String, Object?>>> _controlledAssessmentResponses({
+    required String ownerId,
+    required QueryRow run,
+  }) async {
+    final attempts = await database
+        .customSelect(
+          'SELECT id, is_correct, response_time_ms, occurred_at_utc_ms, '
+          'evidence_class, evidence_context_json FROM answer_attempts '
+          'WHERE owner_id = ? AND session_id = ? '
+          "AND evidence_class = 'assessment' "
+          'ORDER BY occurred_at_utc_ms, id',
+          variables: [
+            Variable<String>(ownerId),
+            Variable<String>(run.read<String>('learning_session_id')),
+          ],
+          readsFrom: {database.answerAttempts},
+        )
+        .get();
+    final records = <Map<String, Object?>>[];
+    for (final attempt in attempts) {
+      final persistedClass = attempt.read<String>('evidence_class');
+      final encodedContext = attempt.read<String>('evidence_context_json');
+      if (!LearningEvidenceContract.validEvidenceMetadata(
+        evidenceClass: persistedClass,
+        evidenceContextJson: encodedContext,
+      )) {
+        throw StateError('Assessment response has invalid evidence metadata.');
+      }
+      final context = EvidenceContext.fromJson(
+        (jsonDecode(encodedContext) as Map).cast<String, Object?>(),
+      );
+      final occurredAtUtcMs = attempt.read<int>('occurred_at_utc_ms');
+      final terminalAtUtcMs =
+          run.readNullable<int>('completed_at_utc_ms') ??
+          run.readNullable<int>('abandoned_at_utc_ms');
+      final responseTimeMs = attempt.readNullable<int>('response_time_ms');
+      if (context.evidenceClass != EvidenceClass.assessment ||
+          context.assignmentId != run.read<String>('assignment_id') ||
+          context.experimentId != run.read<String>('experiment_id') ||
+          context.experimentVersion != run.read<int>('experiment_version') ||
+          context.cohort != run.read<String>('cohort') ||
+          context.researchConsentVersion != run.read<int>('consent_version') ||
+          context.protocolId != run.read<String>('protocol_id') ||
+          context.protocolVersion != run.read<String>('protocol_version') ||
+          context.instrumentId != run.read<String>('instrument_id') ||
+          context.instrumentVersion != run.read<String>('instrument_version') ||
+          context.formId != run.read<String>('form_id') ||
+          context.formVersion != run.read<String>('form_version') ||
+          context.contentRevision != run.read<String>('content_revision') ||
+          context.policyVersion !=
+              run.read<String>('evidence_policy_version') ||
+          context.featureContractRevision !=
+              run.read<String>('feature_contract_revision') ||
+          context.featureContractHash !=
+              run.read<String>('feature_contract_hash') ||
+          context.engagementAllowed ||
+          context.assessmentItemId == null ||
+          context.assessmentResponseCode == null ||
+          context.scoringRuleVersion == null ||
+          responseTimeMs == null ||
+          responseTimeMs < 0 ||
+          occurredAtUtcMs < run.read<int>('started_at_utc_ms') ||
+          (terminalAtUtcMs != null && occurredAtUtcMs > terminalAtUtcMs)) {
+        throw StateError('Assessment response does not match its run.');
+      }
+      records.add({
+        'sourceEvidenceId': attempt.read<String>('id'),
+        'itemId': context.assessmentItemId,
+        'responseCode': context.assessmentResponseCode,
+        'isCorrect': attempt.read<bool>('is_correct'),
+        'responseTimeMs': responseTimeMs,
+        'occurredAtUtc': _iso(occurredAtUtcMs),
+        'scoringRuleVersion': context.scoringRuleVersion,
+      });
+    }
+    return records;
   }
 
   Future<List<Map<String, Object?>>> _vocabularyCategories(
@@ -839,6 +990,16 @@ String _accountState(String value) => switch (value) {
 
 String _consentState(String value) => switch (value) {
   'accepted' || 'declined' || 'withdrawn' => value,
+  _ => 'unknown',
+};
+
+String _assessmentPhase(String value) => switch (value) {
+  'pre' || 'post' => value,
+  _ => 'unknown',
+};
+
+String _assessmentState(String value) => switch (value) {
+  'active' || 'completed' || 'abandoned' => value,
   _ => 'unknown',
 };
 

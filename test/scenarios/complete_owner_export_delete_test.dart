@@ -22,7 +22,7 @@ import 'package:vocab_learning_app/runtime/download_counter.dart';
 
 void main() {
   test(
-    'current schema lifecycle manifest, export, and deletion cover v14 assignments exactly once',
+    'current v15 lifecycle covers assessment runs exactly once in FK-safe order',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -32,6 +32,7 @@ void main() {
         'local_owners',
         'research_consents',
         'experiment_assignments',
+        'assessment_runs',
         'vocabulary_categories',
         'vocabulary_words',
         'vocabulary_imports',
@@ -76,7 +77,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(32),
+        hasLength(33),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -88,7 +89,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(26),
+        hasLength(27),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -137,6 +138,26 @@ void main() {
         ownerLifecyclePhysicalDeletionOrder.indexOf('experiment_assignments'),
         lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('local_owners')),
       );
+      final assessmentRunIndex = ownerLifecyclePhysicalDeletionOrder.indexOf(
+        'assessment_runs',
+      );
+      expect(assessmentRunIndex, greaterThanOrEqualTo(0));
+      expect(
+        assessmentRunIndex,
+        lessThan(
+          ownerLifecyclePhysicalDeletionOrder.indexOf('learning_sessions'),
+        ),
+      );
+      expect(
+        assessmentRunIndex,
+        lessThan(
+          ownerLifecyclePhysicalDeletionOrder.indexOf('experiment_assignments'),
+        ),
+      );
+      expect(
+        assessmentRunIndex,
+        lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('local_owners')),
+      );
       expect(ownerLifecyclePhysicalDeletionOrder.last, 'local_owners');
       final experimentAssignments = ownerLifecycleManifest
           .where((entry) => entry.tableName == 'experiment_assignments')
@@ -157,6 +178,48 @@ void main() {
         'cohort',
         'protocolVersion',
         'assignedAtUtc',
+      });
+      final assessmentRuns = ownerLifecycleManifest
+          .where((entry) => entry.tableName == 'assessment_runs')
+          .toList(growable: false);
+      expect(assessmentRuns, hasLength(1));
+      expect(
+        assessmentRuns.single.authority,
+        OwnerLifecycleAuthority.directOwner,
+      );
+      expect(
+        assessmentRuns.single.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(assessmentRuns.single.allowedExportFields.toSet(), {
+        'recordCount',
+        'studyCycleId',
+        'phase',
+        'state',
+        'protocolId',
+        'protocolVersion',
+        'experimentId',
+        'experimentVersion',
+        'cohort',
+        'consentVersion',
+        'consentDecidedAtUtc',
+        'instrumentId',
+        'instrumentVersion',
+        'formId',
+        'formVersion',
+        'instrumentChecksumSha256',
+        'formChecksumSha256',
+        'appVersion',
+        'buildId',
+        'databaseSchemaVersion',
+        'contentRevision',
+        'evidencePolicyVersion',
+        'featureContractRevision',
+        'featureContractHash',
+        'startedAtUtc',
+        'completedAtUtc',
+        'abandonedAtUtc',
+        'controlledResponses',
       });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
@@ -539,7 +602,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(32));
+      expect(archiveTables, hasLength(33));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -601,7 +664,42 @@ void main() {
           'experimentVersion': 1,
           'cohort': 'treatment-a',
           'protocolVersion': '2026.08',
-          'assignedAtUtc': '2026-08-11T12:00:00.000Z',
+          'assignedAtUtc': '1970-01-01T00:00:00.005Z',
+        },
+      ]);
+      final assessmentArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'assessmentRuns');
+      expect(assessmentArchive['records'], [
+        {'recordCount': 1},
+        {
+          'studyCycleId': 'cycle-a',
+          'phase': 'pre',
+          'state': 'completed',
+          'protocolId': 'assessment-protocol',
+          'protocolVersion': '2026.08',
+          'experimentId': 'research-assessment',
+          'experimentVersion': 1,
+          'cohort': 'treatment-a',
+          'consentVersion': 1,
+          'consentDecidedAtUtc': '1970-01-01T00:00:00.010Z',
+          'instrumentId': 'vocabulary-outcome',
+          'instrumentVersion': '1.0.0',
+          'formId': 'pre-form-a',
+          'formVersion': '1.0.0',
+          'instrumentChecksumSha256': _assessmentInstrumentHash,
+          'formChecksumSha256': _assessmentFormHash,
+          'appVersion': '1.0.0',
+          'buildId': 'task-12-test',
+          'databaseSchemaVersion': 15,
+          'contentRevision': 'assessment-content-r1',
+          'evidencePolicyVersion': 'learning-evidence-v1',
+          'featureContractRevision': '8-44-r1',
+          'featureContractHash': _assessmentContractHash,
+          'startedAtUtc': '1970-01-01T00:00:00.012Z',
+          'completedAtUtc': '1970-01-01T00:00:00.018Z',
+          'abandonedAtUtc': null,
+          'controlledResponses': <Object?>[],
         },
       ]);
       final answerAttempts = archiveTables
@@ -775,13 +873,15 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 29);
+      expect(deleted, 30);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v14 retains exactly one immutable owner-b experiment assignment after
-      // owner-a is erased, in addition to the pre-existing canonical rows.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 29);
+      // v15 retains exactly one immutable assignment and its assessment run
+      // for owner-b after owner-a is erased.
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 30);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
+      expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
+      expect(await _assessmentRunOwnerCount(database, 'owner-b'), 1);
       expect(await _ownerSnapshot(database, 'owner-b'), ownerBBefore);
       expect(await _preservedGlobalSnapshot(database), globalsBefore);
       expect(
@@ -833,6 +933,26 @@ Future<int> _experimentAssignmentOwnerCount(
   return row.read<int>('count');
 }
 
+Future<int> _assessmentRunOwnerCount(
+  AppDatabase database,
+  String ownerId,
+) async {
+  final row = await database
+      .customSelect(
+        'SELECT COUNT(*) AS count FROM assessment_runs WHERE owner_id = ?',
+        variables: [Variable<String>(ownerId)],
+      )
+      .getSingle();
+  return row.read<int>('count');
+}
+
+const _assessmentInstrumentHash =
+    '1111111111111111111111111111111111111111111111111111111111111111';
+const _assessmentFormHash =
+    '2222222222222222222222222222222222222222222222222222222222222222';
+const _assessmentContractHash =
+    '3333333333333333333333333333333333333333333333333333333333333333';
+
 Future<void> _seedCompleteOwnerA(AppDatabase database) async {
   final assignmentId =
       DriftExperimentAssignmentRepository.canonicalAssignmentId(
@@ -850,7 +970,7 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     '(id, owner_id, experiment_id, experiment_version, cohort, '
     'protocol_version, assigned_at_utc_ms) VALUES '
     "(?, 'owner-a', 'research-assessment', 1, 'treatment-a', "
-    "'2026.08', 1786449600000)",
+    "'2026.08', 5)",
     variables: [Variable<String>(assignmentId)],
   );
   await database.customInsert(
@@ -887,6 +1007,29 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     "INSERT INTO learning_sessions VALUES "
     "('a:session', 'owner-a', 'quiz', 'completed', 10, 20, 1, 0, 100, "
     "'1', '1')",
+  );
+  await database.customInsert(
+    'INSERT INTO assessment_runs '
+    '(id, owner_id, learning_session_id, study_cycle_id, phase, state, '
+    'protocol_id, protocol_version, experiment_id, experiment_version, '
+    'assignment_id, cohort, consent_version, consent_decided_at_utc_ms, '
+    'instrument_id, instrument_version, form_id, form_version, '
+    'instrument_checksum_sha256, form_checksum_sha256, app_version, build_id, '
+    'database_schema_version, content_revision, evidence_policy_version, '
+    'feature_contract_revision, feature_contract_hash, started_at_utc_ms, '
+    'completed_at_utc_ms, abandoned_at_utc_ms) VALUES '
+    "('a:assessment', 'owner-a', 'a:session', 'cycle-a', 'pre', 'completed', "
+    "'assessment-protocol', '2026.08', 'research-assessment', 1, ?, "
+    "'treatment-a', 1, 10, 'vocabulary-outcome', '1.0.0', 'pre-form-a', "
+    "'1.0.0', ?, ?, '1.0.0', 'task-12-test', 15, "
+    "'assessment-content-r1', 'learning-evidence-v1', '8-44-r1', ?, "
+    '12, 18, NULL)',
+    variables: [
+      Variable<String>(assignmentId),
+      const Variable<String>(_assessmentInstrumentHash),
+      const Variable<String>(_assessmentFormHash),
+      const Variable<String>(_assessmentContractHash),
+    ],
   );
   await database.customInsert(
     'INSERT INTO answer_attempts '
@@ -1052,11 +1195,11 @@ Future<void> _cloneOwnerAAsB(AppDatabase database) async {
     '(id, owner_id, experiment_id, experiment_version, cohort, '
     'protocol_version, assigned_at_utc_ms) VALUES '
     "(?, 'owner-b', 'research-assessment', 1, 'treatment-a', "
-    "'2026.08', 1786449600000)",
+    "'2026.08', 5)",
     variables: [Variable<String>(assignmentId)],
   );
   for (final table in ownerLifecycleDirectOwnerTableNames.where(
-    (table) => table != 'experiment_assignments',
+    (table) => table != 'experiment_assignments' && table != 'assessment_runs',
   )) {
     final schema = await database
         .customSelect('PRAGMA table_info("$table")')
@@ -1083,6 +1226,27 @@ Future<void> _cloneOwnerAAsB(AppDatabase database) async {
       variables: [const Variable<String>('owner-a')],
     );
   }
+  await database.customInsert(
+    'INSERT INTO assessment_runs '
+    '(id, owner_id, learning_session_id, study_cycle_id, phase, state, '
+    'protocol_id, protocol_version, experiment_id, experiment_version, '
+    'assignment_id, cohort, consent_version, consent_decided_at_utc_ms, '
+    'instrument_id, instrument_version, form_id, form_version, '
+    'instrument_checksum_sha256, form_checksum_sha256, app_version, build_id, '
+    'database_schema_version, content_revision, evidence_policy_version, '
+    'feature_contract_revision, feature_contract_hash, started_at_utc_ms, '
+    'completed_at_utc_ms, abandoned_at_utc_ms) '
+    "SELECT 'b:' || id, 'owner-b', 'b:' || learning_session_id, "
+    'study_cycle_id, phase, state, protocol_id, protocol_version, '
+    'experiment_id, experiment_version, ?, cohort, consent_version, '
+    'consent_decided_at_utc_ms, instrument_id, instrument_version, form_id, '
+    'form_version, instrument_checksum_sha256, form_checksum_sha256, '
+    'app_version, build_id, database_schema_version, content_revision, '
+    'evidence_policy_version, feature_contract_revision, '
+    'feature_contract_hash, started_at_utc_ms, completed_at_utc_ms, '
+    "abandoned_at_utc_ms FROM assessment_runs WHERE owner_id = 'owner-a'",
+    variables: [Variable<String>(assignmentId)],
+  );
   await database.customInsert(
     'INSERT INTO vocabulary_import_rows '
     '(id, import_id, row_number, payload_hash, status, failure_code, word_id) '

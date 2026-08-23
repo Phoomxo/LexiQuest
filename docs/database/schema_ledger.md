@@ -193,6 +193,38 @@ open a v14 database.
 
 ---
 
+### v15 — Immutable Assessment Run
+**Reserved:** 2026-08-14
+**Implemented:** 2026-08-23
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added the owner-scoped `assessment_runs` table as the immutable assessment-run
+audit authority. It pins the existing LearningSession and ExperimentAssignment
+identities, study cycle and phase, protocol/experiment/cohort/consent metadata,
+instrument and form versions plus SHA-256 checksums, build/schema/content and
+evidence-policy/feature-contract identities, and the Active, Completed, or
+Abandoned lifecycle timestamps. Unique constraints bind one run to each
+`learning_session_id` and one phase to each
+`(owner_id, study_cycle_id, phase)`. Its foreign keys are `owner_id` →
+`local_owners(id)`, `learning_session_id` → `learning_sessions(id)`, and
+`assignment_id` → `experiment_assignments(id)`. Controlled responses remain
+canonical AnswerAttempts; v15 adds no assessment-attempt, response, or score
+table.
+
+Owner upgrade coalesces only byte-equivalent runs and assessment evidence,
+participant archive retains the audit after consent withdrawal, and explicit
+owner deletion removes runs before their LearningSession, ExperimentAssignment,
+and LocalOwner parents.
+
+**Migration safety:** v14→v15 adds only `assessment_runs`; all 32 v14 tables and
+their data remain intact, producing the named 33-table v15 inventory. Rollback
+is forward-only: disabling assessment invocation or sync does not erase runs or
+evidence, no downgrade migration is provided, and older binaries must not open
+a v15 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -209,6 +241,7 @@ open a v14 database.
 | 2026-08-09 | Recorded implemented v11 and owner-scoped AI usage migration v12; deployment evidence remains pending. | LexiQuest integration |
 | 2026-08-14 | Reserved and implemented v13 evidence metadata on canonical answer attempts. | LexiQuest integration |
 | 2026-08-23 | Reserved and implemented v14 immutable experiment assignment with lifecycle coverage. | LexiQuest integration |
+| 2026-08-23 | Reserved and implemented v15 immutable assessment runs with lifecycle, export, and revisioned-sync coverage. | LexiQuest integration |
 
 ---
 

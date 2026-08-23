@@ -4,7 +4,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 
 void main() {
   test(
-    'v13 fixture upgrades through current schema with immutable experiment assignments',
+    'v13 fixture upgrades through named current schema while preserving the v14 boundary',
     () async {
       final database = AppDatabase(
         NativeDatabase.memory(setup: _createSchemaThirteenFixture),
@@ -19,14 +19,21 @@ void main() {
       expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       expect(
         AppDatabase.currentSchemaVersion,
-        greaterThanOrEqualTo(14),
-        reason: 'Task 11 must advance the production schema to v14.',
+        15,
+        reason: 'Task 12 must advance the production schema to v15.',
       );
       expect(actualInventory, expectedCurrentInventory);
       expect(
         _inventoryForSchemaVersion(14).difference(_v13TableInventory),
         {'experiment_assignments'},
         reason: 'The v14 migration has exactly one additive table.',
+      );
+      expect(
+        _inventoryForSchemaVersion(
+          15,
+        ).difference(_inventoryForSchemaVersion(14)),
+        {'assessment_runs'},
+        reason: 'The v15 migration has exactly one additive table.',
       );
 
       for (final sentinel in _v13Sentinels.entries) {
@@ -63,6 +70,42 @@ void main() {
     },
   );
 }
+
+/// Named fixture inventory shared with the targeted v14-to-v15 migration test.
+Set<String> migrationInventoryForSchemaVersion(int version) =>
+    Set<String>.unmodifiable(_inventoryForSchemaVersion(version));
+
+/// Frozen v14 fixture: every v13 table and sentinel plus the sole v14 table.
+void createSchemaFourteenFixture(dynamic sqlite) {
+  _createSchemaThirteenFixture(sqlite);
+  sqlite.execute('''
+    CREATE TABLE experiment_assignments (
+      id TEXT NOT NULL PRIMARY KEY,
+      owner_id TEXT NOT NULL REFERENCES local_owners(id),
+      experiment_id TEXT NOT NULL,
+      experiment_version INTEGER NOT NULL,
+      cohort TEXT NOT NULL,
+      protocol_version TEXT NOT NULL,
+      assigned_at_utc_ms INTEGER NOT NULL,
+      UNIQUE(owner_id, experiment_id, experiment_version)
+    )
+  ''');
+  sqlite.execute('''
+    INSERT INTO experiment_assignments(
+      id, owner_id, experiment_id, experiment_version, cohort,
+      protocol_version, assigned_at_utc_ms
+    ) VALUES (
+      'assignment:v14', 'owner:v13', 'experiment:v14', 1, 'control',
+      'protocol:v14', 20
+    )
+  ''');
+  sqlite.execute('PRAGMA user_version = 14');
+}
+
+const migrationV14Sentinels = <String, ({String column, String value})>{
+  ..._v13Sentinels,
+  'experiment_assignments': (column: 'id', value: 'assignment:v14'),
+};
 
 Set<String> _inventoryForSchemaVersion(int version) {
   return switch (version) {

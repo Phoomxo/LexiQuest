@@ -28,6 +28,7 @@ import '../features/ai_tutor/data/ai_credential_version_index.dart';
 import '../features/ai_tutor/data/ai_tutor_settings_store.dart';
 import '../features/ai_tutor/data/drift_ai_usage_repository.dart';
 import '../features/ai_tutor/domain/ai_tutor_contracts.dart';
+import '../features/assessment/application/assessment_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/consent/data/drift_research_consent_repository.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
@@ -255,6 +256,7 @@ final class AppBootstrap {
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
     this.researchStateProvider,
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
+    this.assessmentOverride,
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -299,6 +301,7 @@ final class AppBootstrap {
   final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
   final CurrentActivityResearchStateProvider? researchStateProvider;
   final ResearchProtocolModeCatalog researchProtocolModeCatalog;
+  final AssessmentUseCases? assessmentOverride;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final AppEntryStateStoreFactory createEntryStateStore;
@@ -899,6 +902,7 @@ final class AppBootstrap {
       syncEngine: syncEngine,
       syncTrigger: syncTrigger,
       learning: learning,
+      assessment: assessmentOverride,
       currentActivityEvidence: currentActivityEvidence,
       learningReconciliation: learningReconciliation,
       progress: progress,

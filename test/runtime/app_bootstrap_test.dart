@@ -11,19 +11,27 @@ import 'package:vocab_learning_app/config/research_runtime_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
+import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
+import 'package:vocab_learning_app/features/assessment/domain/assessment_instrument_catalog.dart';
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
+import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
@@ -32,6 +40,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
@@ -1942,6 +1951,106 @@ void main() {
         throwsA(isA<StateError>()),
       );
     });
+
+    test(
+      'production bootstrap keeps persisted v15 assessment runs dormant after restart',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-assessment-bootstrap-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}assessment.sqlite',
+        );
+        AppDependencies? dependencies;
+        try {
+          final seed = AppDatabase(NativeDatabase(file));
+          await _seedDormantAssessmentRun(seed);
+          await seed.close();
+
+          final bootstrap = AppBootstrap(
+            createDatabase: () => AppDatabase(NativeDatabase(file)),
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+          );
+          dependencies = await bootstrap.initialize();
+
+          expect(dependencies.assessment, isNull);
+          expect(
+            await dependencies.database!
+                .customSelect(
+                  'SELECT id, state FROM assessment_runs ORDER BY id',
+                )
+                .map((row) => row.data)
+                .get(),
+            [
+              {'id': 'bootstrap-assessment-run', 'state': 'completed'},
+            ],
+          );
+          expect(
+            await dependencies.database!
+                .customSelect('SELECT COUNT(*) AS count FROM assessment_runs')
+                .map((row) => row.read<int>('count'))
+                .getSingle(),
+            1,
+            reason: 'schema presence must not create another assessment run',
+          );
+          expect(
+            await dependencies.database!
+                .customSelect(
+                  'SELECT COUNT(*) AS count FROM experiment_assignments',
+                )
+                .map((row) => row.read<int>('count'))
+                .getSingle(),
+            1,
+            reason: 'bootstrap must not assign while assessment is off',
+          );
+          expect(
+            AppRoute.values.map((route) => route.name),
+            isNot(contains('assessment')),
+          );
+          expect(
+            Feature.values.map((feature) => feature.name),
+            isNot(contains('researchAssessment')),
+          );
+
+          final firstDispose = dependencies.dispose();
+          final secondDispose = dependencies.dispose();
+          expect(identical(firstDispose, secondDispose), isTrue);
+          await firstDispose;
+          dependencies = null;
+        } finally {
+          await dependencies?.dispose();
+          if (await directory.exists()) await directory.delete(recursive: true);
+        }
+      },
+    );
+
+    test(
+      'explicit assessment dependency injection preserves exact identity',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final injected = _buildInjectedAssessment(database);
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          assessmentOverride: injected,
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(dependencies.assessment, same(injected));
+        expect(await bootstrap.initialize(), same(dependencies));
+        await dependencies.dispose();
+        await dependencies.dispose();
+      },
+    );
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -1970,6 +2079,112 @@ void main() {
       },
     );
   });
+}
+
+AssessmentUseCases _buildInjectedAssessment(AppDatabase database) {
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'injected-assessment-owner',
+    nowUtc: () => DateTime.utc(2026, 8, 14),
+  );
+  final learning = LearningUseCases(
+    owners: owners,
+    repository: DriftLearningRepository(database),
+    generateId: () => 'injected-assessment-evidence',
+    nowUtc: () => DateTime.utc(2026, 8, 14),
+    buildInfo: const AppBuildInfo(
+      version: '1.0.0',
+      buildId: 'task-12-bootstrap-test',
+    ),
+  );
+  return AssessmentUseCases(
+    owners: owners,
+    repository: DriftAssessmentRepository(database),
+    learning: learning,
+    experimentRegistry: const NoOpExperimentRegistry(),
+    consentRegistry: const NoOpConsentRegistry(),
+    rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider.legacy(),
+    protocolModeCatalog: const ResearchProtocolModeCatalog(
+      mappings: <ResearchProtocolModeMapping>[],
+    ),
+    instrumentCatalog: AssessmentInstrumentCatalog(entries: const []),
+    buildInfo: const AppBuildInfo(
+      version: '1.0.0',
+      buildId: 'task-12-bootstrap-test',
+    ),
+    databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+    nowUtc: () => DateTime.utc(2026, 8, 14),
+  );
+}
+
+Future<void> _seedDormantAssessmentRun(AppDatabase database) async {
+  const ownerId = 'bootstrap-assessment-owner';
+  const experimentId = 'bootstrap-assessment-study';
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: ownerId,
+        experimentId: experimentId,
+        experimentVersion: 1,
+      );
+  await database.customInsert(
+    'INSERT INTO local_owners '
+    '(id, firebase_uid, account_state, created_at_utc_ms, is_active) '
+    "VALUES ('$ownerId', NULL, 'localGuest', 1, 1)",
+  );
+  await database.customInsert(
+    'INSERT INTO research_consents '
+    '(id, owner_id, consent_version, consent_state, decided_at_utc_ms, '
+    'withdrawn_at_utc_ms) VALUES '
+    "('bootstrap-assessment-consent', '$ownerId', 1, 'withdrawn', 2, 3)",
+  );
+  await database.customInsert(
+    'INSERT INTO experiment_assignments '
+    '(id, owner_id, experiment_id, experiment_version, cohort, '
+    'protocol_version, assigned_at_utc_ms) VALUES (?, ?, ?, 1, ?, ?, 2)',
+    variables: [
+      Variable<String>(assignmentId),
+      const Variable<String>(ownerId),
+      const Variable<String>(experimentId),
+      const Variable<String>('enforced-a'),
+      const Variable<String>('assessment-protocol-v1'),
+    ],
+  );
+  await database.customInsert(
+    'INSERT INTO learning_sessions '
+    '(id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, '
+    'app_version, build_id) VALUES '
+    "('bootstrap-assessment-session', '$ownerId', 'assessment', "
+    "'completed', 4, 6, '1.0.0', 'task-12-bootstrap-test')",
+  );
+  await database.customInsert(
+    'INSERT INTO assessment_runs '
+    '(id, owner_id, learning_session_id, study_cycle_id, phase, state, '
+    'protocol_id, protocol_version, experiment_id, experiment_version, '
+    'assignment_id, cohort, consent_version, consent_decided_at_utc_ms, '
+    'instrument_id, instrument_version, form_id, form_version, '
+    'instrument_checksum_sha256, form_checksum_sha256, app_version, build_id, '
+    'database_schema_version, content_revision, evidence_policy_version, '
+    'feature_contract_revision, feature_contract_hash, started_at_utc_ms, '
+    'completed_at_utc_ms, abandoned_at_utc_ms) VALUES '
+    "('bootstrap-assessment-run', '$ownerId', 'bootstrap-assessment-session', "
+    "'bootstrap-cycle', 'pre', 'completed', 'assessment-protocol', "
+    "'assessment-protocol-v1', '$experimentId', 1, ?, 'enforced-a', 1, 2, "
+    "'vocabulary-outcome', '1.0.0', 'form-a', '1.0.0', ?, ?, '1.0.0', "
+    "'task-12-bootstrap-test', 15, 'assessment-content-r1', "
+    "'learning-evidence-v1', '8-44-r1', ?, 4, 6, NULL)",
+    variables: [
+      Variable<String>(assignmentId),
+      const Variable<String>(
+        '1111111111111111111111111111111111111111111111111111111111111111',
+      ),
+      const Variable<String>(
+        '2222222222222222222222222222222222222222222222222222222222222222',
+      ),
+      const Variable<String>(
+        '3333333333333333333333333333333333333333333333333333333333333333',
+      ),
+    ],
+  );
 }
 
 final class _BootstrapAiTutorController implements AiTutorController {

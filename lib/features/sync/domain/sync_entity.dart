@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../research/domain/research_protocol_mode_catalog.dart';
@@ -9,6 +10,7 @@ const int currentCloudSyncPolicySchemaVersion = 1;
 const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
 const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
+const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -30,6 +32,10 @@ enum SyncCollection {
 
   /// Immutable, explicitly assigned research cohort audit evidence.
   experimentAssignments,
+
+  /// Revisioned assessment-run audit state. Controlled responses remain in
+  /// canonical AnswerAttempts and are never duplicated in this collection.
+  assessmentRuns,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -42,6 +48,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.srsStates => 'srs_states',
     SyncCollection.achievementUnlocks => 'achievement_unlocks',
     SyncCollection.experimentAssignments => 'experiment_assignments',
+    SyncCollection.assessmentRuns => 'assessment_runs',
   };
 
   String get entityType => switch (this) {
@@ -53,6 +60,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.srsStates => 'srsState',
     SyncCollection.achievementUnlocks => 'achievementUnlock',
     SyncCollection.experimentAssignments => 'experimentAssignment',
+    SyncCollection.assessmentRuns => 'assessmentRun',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -63,7 +71,8 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
     SyncCollection.achievementUnlocks ||
-    SyncCollection.experimentAssignments => const <int>{1},
+    SyncCollection.experimentAssignments ||
+    SyncCollection.assessmentRuns => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -93,8 +102,8 @@ final class SyncPayloadRollout {
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
     SyncCollection.achievementUnlocks ||
-    SyncCollection.experimentAssignments =>
-      collection.defaultWritePayloadVersion,
+    SyncCollection.experimentAssignments ||
+    SyncCollection.assessmentRuns => collection.defaultWritePayloadVersion,
   };
 }
 
@@ -106,22 +115,78 @@ final class ResearchCollectionSyncRollout {
   const ResearchCollectionSyncRollout.off()
     : enabled = false,
       deployedRulesRevision = '',
-      protocolModeCatalog = null;
+      _experimentAssignmentRulesRevision = '',
+      _assessmentRunRulesRevision = '',
+      protocolModeCatalog = null,
+      _experimentAssignmentsEnabled = false,
+      _assessmentRunsEnabled = false,
+      _combinedRulesRequired = false;
 
   const ResearchCollectionSyncRollout.experimentAssignmentsV1({
     required this.deployedRulesRevision,
     this.protocolModeCatalog,
     @Deprecated('Ignored. A protocolModeCatalog is required for claims.')
     int? consentVersion,
-  }) : enabled = true;
+  }) : enabled = true,
+       _experimentAssignmentRulesRevision = deployedRulesRevision,
+       _assessmentRunRulesRevision = '',
+       _experimentAssignmentsEnabled = true,
+       _assessmentRunsEnabled = false,
+       _combinedRulesRequired = false;
+
+  const ResearchCollectionSyncRollout.assessmentRunsV1({
+    required this.deployedRulesRevision,
+    required this.protocolModeCatalog,
+  }) : enabled = true,
+       _experimentAssignmentRulesRevision = '',
+       _assessmentRunRulesRevision = deployedRulesRevision,
+       _experimentAssignmentsEnabled = false,
+       _assessmentRunsEnabled = true,
+       _combinedRulesRequired = false;
+
+  const ResearchCollectionSyncRollout.researchAssessmentV1({
+    required String deployedExperimentAssignmentRulesRevision,
+    required String deployedAssessmentRunRulesRevision,
+    required this.protocolModeCatalog,
+  }) : enabled = true,
+       deployedRulesRevision = '',
+       _experimentAssignmentRulesRevision =
+           deployedExperimentAssignmentRulesRevision,
+       _assessmentRunRulesRevision = deployedAssessmentRunRulesRevision,
+       _experimentAssignmentsEnabled = true,
+       _assessmentRunsEnabled = true,
+       _combinedRulesRequired = true;
 
   final bool enabled;
   final String deployedRulesRevision;
   final ResearchProtocolModeCatalog? protocolModeCatalog;
+  final String _experimentAssignmentRulesRevision;
+  final String _assessmentRunRulesRevision;
+  final bool _experimentAssignmentsEnabled;
+  final bool _assessmentRunsEnabled;
+  final bool _combinedRulesRequired;
+
+  bool get _combinedRulesAreExact =>
+      !_combinedRulesRequired ||
+      (_experimentAssignmentRulesRevision ==
+              experimentAssignmentV1RulesRevision &&
+          _assessmentRunRulesRevision == assessmentRunV1RulesRevision);
 
   bool get allowsExperimentAssignmentClaims =>
       enabled &&
-      deployedRulesRevision == experimentAssignmentV1RulesRevision &&
+      _experimentAssignmentsEnabled &&
+      _experimentAssignmentRulesRevision ==
+          experimentAssignmentV1RulesRevision &&
+      _combinedRulesAreExact &&
+      protocolModeCatalog != null;
+
+  bool get allowsAssessmentRunClaims =>
+      enabled &&
+      _combinedRulesRequired &&
+      _experimentAssignmentsEnabled &&
+      _assessmentRunsEnabled &&
+      _assessmentRunRulesRevision == assessmentRunV1RulesRevision &&
+      _combinedRulesAreExact &&
       protocolModeCatalog != null;
 }
 
@@ -176,6 +241,209 @@ abstract final class ExperimentAssignmentSyncPayloadContract {
 
 bool _canonicalAssignmentText(String value) =>
     value.isNotEmpty && value == value.trim() && value.runes.length <= 256;
+
+abstract final class AssessmentRunSyncPayloadContract {
+  static const Set<String> keys = <String>{
+    'runId',
+    'ownerId',
+    'learningSessionId',
+    'studyCycleId',
+    'phase',
+    'state',
+    'protocolId',
+    'protocolVersion',
+    'experimentId',
+    'experimentVersion',
+    'assignmentId',
+    'cohort',
+    'consentVersion',
+    'consentDecidedAtUtcMs',
+    'instrumentId',
+    'instrumentVersion',
+    'formId',
+    'formVersion',
+    'instrumentChecksumSha256',
+    'formChecksumSha256',
+    'appVersion',
+    'buildId',
+    'databaseSchemaVersion',
+    'contentRevision',
+    'evidencePolicyVersion',
+    'featureContractRevision',
+    'featureContractHash',
+    'startedAtUtcMs',
+    'completedAtUtcMs',
+    'abandonedAtUtcMs',
+  };
+
+  static final RegExp _sha256 = RegExp(r'^[0-9a-f]{64}$');
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required String expectedEntityId,
+    String? expectedOwnerId,
+    required int revision,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+  }) {
+    try {
+      if (payload.length != keys.length ||
+          !payload.keys.every(keys.contains) ||
+          isDeleted ||
+          clientUpdatedAtUtcMs < 0) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final runId = _canonicalText(payload, 'runId');
+      final ownerId = _canonicalText(payload, 'ownerId');
+      final phase = _canonicalText(payload, 'phase');
+      final state = _canonicalText(payload, 'state');
+      final experimentVersion = _positiveInt(payload, 'experimentVersion');
+      final consentVersion = _positiveInt(payload, 'consentVersion');
+      final databaseSchemaVersion = _positiveInt(
+        payload,
+        'databaseSchemaVersion',
+      );
+      final evidencePolicyVersion = _canonicalText(
+        payload,
+        'evidencePolicyVersion',
+      );
+      final featureContractRevision = _canonicalText(
+        payload,
+        'featureContractRevision',
+      );
+      final featureContractHash = payload['featureContractHash'];
+      final consentDecidedAtUtcMs = _nonNegativeInt(
+        payload,
+        'consentDecidedAtUtcMs',
+      );
+      final startedAtUtcMs = _nonNegativeInt(payload, 'startedAtUtcMs');
+      final completedAtUtcMs = _optionalNonNegativeInt(
+        payload,
+        'completedAtUtcMs',
+      );
+      final abandonedAtUtcMs = _optionalNonNegativeInt(
+        payload,
+        'abandonedAtUtcMs',
+      );
+      for (final field in const <String>[
+        'learningSessionId',
+        'studyCycleId',
+        'protocolId',
+        'protocolVersion',
+        'experimentId',
+        'assignmentId',
+        'cohort',
+        'instrumentId',
+        'instrumentVersion',
+        'formId',
+        'formVersion',
+        'appVersion',
+        'buildId',
+        'contentRevision',
+        'evidencePolicyVersion',
+        'featureContractRevision',
+      ]) {
+        _canonicalText(payload, field);
+      }
+      for (final field in const <String>[
+        'instrumentChecksumSha256',
+        'formChecksumSha256',
+        'featureContractHash',
+      ]) {
+        final digest = payload[field];
+        if (digest is! String || !_sha256.hasMatch(digest)) {
+          throw const InvalidSyncPayloadFailure();
+        }
+      }
+      if (runId != expectedEntityId ||
+          (expectedOwnerId != null && ownerId != expectedOwnerId) ||
+          !const <String>{'pre', 'post'}.contains(phase) ||
+          experimentVersion <= 0 ||
+          consentVersion <= 0 ||
+          databaseSchemaVersion != 15 ||
+          evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
+          featureContractHash is! String ||
+          !supportedFeatureContractIdentities.any(
+            (identity) =>
+                identity.revision == featureContractRevision &&
+                identity.semanticHash == featureContractHash,
+          ) ||
+          consentDecidedAtUtcMs > startedAtUtcMs) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      switch (state) {
+        case 'active':
+          if (revision != 1 ||
+              completedAtUtcMs != null ||
+              abandonedAtUtcMs != null ||
+              clientUpdatedAtUtcMs != startedAtUtcMs) {
+            throw const InvalidSyncPayloadFailure();
+          }
+          return;
+        case 'completed':
+          if (revision != 2 ||
+              completedAtUtcMs == null ||
+              abandonedAtUtcMs != null ||
+              completedAtUtcMs < startedAtUtcMs ||
+              clientUpdatedAtUtcMs != completedAtUtcMs) {
+            throw const InvalidSyncPayloadFailure();
+          }
+          return;
+        case 'abandoned':
+          if (revision != 2 ||
+              abandonedAtUtcMs == null ||
+              completedAtUtcMs != null ||
+              abandonedAtUtcMs < startedAtUtcMs ||
+              clientUpdatedAtUtcMs != abandonedAtUtcMs) {
+            throw const InvalidSyncPayloadFailure();
+          }
+          return;
+        default:
+          throw const InvalidSyncPayloadFailure();
+      }
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static String _canonicalText(Map<String, Object?> payload, String field) {
+    final value = payload[field];
+    if (value is! String || !_canonicalAssignmentText(value)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return value;
+  }
+
+  static int _positiveInt(Map<String, Object?> payload, String field) {
+    final value = payload[field];
+    if (value is! int || value <= 0) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return value;
+  }
+
+  static int _nonNegativeInt(Map<String, Object?> payload, String field) {
+    final value = payload[field];
+    if (value is! int || value < 0) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return value;
+  }
+
+  static int? _optionalNonNegativeInt(
+    Map<String, Object?> payload,
+    String field,
+  ) {
+    final value = payload[field];
+    if (value == null) return null;
+    if (value is! int || value < 0) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return value;
+  }
+}
 
 abstract final class AnswerAttemptSyncPayloadContract {
   static EvidenceContext requireEvidenceContext({

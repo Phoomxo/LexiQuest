@@ -6,6 +6,9 @@ import 'package:drift/drift.dart';
 import '../../../data/local/app_database.dart' as db;
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../../../runtime/registries/consent_registry.dart';
+import '../../assessment/data/drift_assessment_repository.dart';
+import '../../assessment/domain/assessment_models.dart';
+import '../../assessment/domain/assessment_repository.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../learning/data/drift_learning_event_store.dart';
@@ -296,13 +299,22 @@ final class DriftSyncStore implements SyncStore {
           final attemptedIndex = group.indexWhere(
             (candidate) => candidate.attemptCount > 0,
           );
-          final selected = attemptedIndex < 0
+          final preservesAssessmentRevisions =
+              group.first.entityType ==
+              SyncCollection.assessmentRuns.entityType;
+          final selected = preservesAssessmentRevisions
+              ? group.first
+              : attemptedIndex < 0
               ? group.last
               : group[attemptedIndex];
-          final coalesced = attemptedIndex < 0
+          final coalesced = preservesAssessmentRevisions
+              ? const Iterable<db.OutboxOperation>.empty()
+              : attemptedIndex < 0
               ? group.take(group.length - 1)
               : const Iterable<db.OutboxOperation>.empty();
-          final baseRevision = attemptedIndex < 0
+          final baseRevision = preservesAssessmentRevisions
+              ? selected.baseRevision
+              : attemptedIndex < 0
               ? group
                     .map((row) => row.baseRevision)
                     .reduce((left, right) => left < right ? left : right)
@@ -771,6 +783,11 @@ final class DriftSyncStore implements SyncStore {
     }
     if (cloudEntity.collection == SyncCollection.attempts) {
       _attemptEvidenceContext(cloudEntity);
+    } else if (cloudEntity.collection == SyncCollection.assessmentRuns) {
+      _requireAssessmentCloudEntity(
+        cloudEntity,
+        expectedFirebaseUid: mutation.firebaseUid,
+      );
     }
 
     return database.transaction(() async {
@@ -806,7 +823,8 @@ final class DriftSyncStore implements SyncStore {
           cloudEntity.collection == SyncCollection.readingEvents ||
           cloudEntity.collection == SyncCollection.rewardTransactions ||
           cloudEntity.collection == SyncCollection.achievementUnlocks ||
-          cloudEntity.collection == SyncCollection.experimentAssignments) {
+          cloudEntity.collection == SyncCollection.experimentAssignments ||
+          cloudEntity.collection == SyncCollection.assessmentRuns) {
         await _resolveImmutableConflict(
           operation: operation,
           claimedPayload: mutation.payload,
@@ -874,6 +892,7 @@ final class DriftSyncStore implements SyncStore {
         case SyncCollection.rewardTransactions:
         case SyncCollection.achievementUnlocks:
         case SyncCollection.experimentAssignments:
+        case SyncCollection.assessmentRuns:
           throw const InvalidSyncPayloadFailure();
         case SyncCollection.srsStates:
           // Resolve mutable cache state without overriding local answer evidence.
@@ -1031,6 +1050,8 @@ final class DriftSyncStore implements SyncStore {
               await _applyAchievementUnlock(canonicalOwnerId, entity);
             case SyncCollection.experimentAssignments:
               await _applyExperimentAssignment(canonicalOwnerId, entity);
+            case SyncCollection.assessmentRuns:
+              await _applyAssessmentRun(canonicalOwnerId, entity);
           }
         }
 
@@ -1075,6 +1096,12 @@ final class DriftSyncStore implements SyncStore {
     if (operation.entityType ==
         SyncCollection.experimentAssignments.entityType) {
       return _catalogAllowsExperimentAssignmentClaim(
+        operation,
+        firebaseUid: firebaseUid,
+      );
+    }
+    if (operation.entityType == SyncCollection.assessmentRuns.entityType) {
+      return _catalogAllowsAssessmentRunClaim(
         operation,
         firebaseUid: firebaseUid,
       );
@@ -1237,6 +1264,174 @@ final class DriftSyncStore implements SyncStore {
     } on Object {
       return false;
     }
+  }
+
+  Future<bool> _catalogAllowsAssessmentRunClaim(
+    db.OutboxOperation operation, {
+    required String firebaseUid,
+  }) async {
+    if (!researchSyncRollout.allowsAssessmentRunClaims) return false;
+    try {
+      final run = await _assessmentRunForOperation(
+        operation,
+        firebaseUid: firebaseUid,
+      );
+      if (!await _assessmentAssignmentDeliveryReady(
+        run,
+        firebaseUid: firebaseUid,
+      )) {
+        return false;
+      }
+      final mapping = researchSyncRollout.protocolModeCatalog!.lookup(
+        protocolId: run.protocolId,
+        experimentId: run.experimentId,
+        experimentVersion: run.experimentVersion,
+        protocolVersion: run.protocolVersion,
+        consentVersion: run.consentVersion,
+      );
+      if (mapping == null ||
+          mapping.mode != EvidencePolicyRolloutMode.enforced) {
+        return false;
+      }
+      final consent = await consentRegistry.snapshot(
+        purpose: ConsentPurpose.researchDataUpload,
+        ownerId: operation.ownerId,
+        consentVersion: mapping.consentVersion,
+      );
+      final decisionUtc = consent.decisionUtc;
+      return consent.purpose == ConsentPurpose.researchDataUpload &&
+          consent.ownerId == operation.ownerId &&
+          consent.consentVersion == run.consentVersion &&
+          consent.state == ConsentState.granted &&
+          decisionUtc != null &&
+          decisionUtc == run.consentDecidedAtUtc &&
+          decisionUtc.isUtc &&
+          decisionUtc.millisecondsSinceEpoch >= 0 &&
+          consent.withdrawalUtc == null;
+    } on Object {
+      return false;
+    }
+  }
+
+  Future<AssessmentRun> _assessmentRunForOperation(
+    db.OutboxOperation operation, {
+    required String firebaseUid,
+  }) async {
+    if (operation.operationKind != SyncOperationKind.upsert.name ||
+        operation.payloadVersion != 1 ||
+        (operation.baseRevision != 0 && operation.baseRevision != 1)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    await _boundFirebaseUid(
+      operation.ownerId,
+      expectedFirebaseUid: firebaseUid,
+    );
+    final revision = operation.baseRevision + 1;
+    final expectedOperationId =
+        DriftAssessmentRepository.canonicalOutboxOperationId(
+          runId: operation.entityId,
+          revision: revision,
+        );
+    if (operation.operationId != expectedOperationId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final run = await DriftAssessmentRepository(
+      database,
+    ).getRun(operation.entityId);
+    if (run.ownerId != operation.ownerId || run.id != operation.entityId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final expectedCreatedAtUtcMs = revision == 1
+        ? run.startedAtUtc.millisecondsSinceEpoch
+        : (run.completedAtUtc ?? run.abandonedAtUtc)?.millisecondsSinceEpoch;
+    if (expectedCreatedAtUtcMs == null ||
+        operation.createdAtUtcMs != expectedCreatedAtUtcMs ||
+        (revision == 2 && run.state == AssessmentRunState.active)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    if (revision == 2) {
+      final createOperationId =
+          DriftAssessmentRepository.canonicalOutboxOperationId(
+            runId: run.id,
+            revision: 1,
+          );
+      final create =
+          await (database.select(database.outboxOperations)
+                ..where((row) => row.operationId.equals(createOperationId)))
+              .getSingleOrNull();
+      if (create == null ||
+          !const <String>{
+            'acknowledged',
+            'conflictResolved',
+          }.contains(create.state)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    }
+    final assignment = await DriftExperimentAssignmentRepository(database)
+        .getAssignment(
+          ownerId: run.ownerId,
+          experimentId: run.experimentId,
+          experimentVersion: run.experimentVersion,
+        );
+    if (assignment.id != run.assignmentId ||
+        assignment.cohort != run.cohort ||
+        assignment.protocolVersion != run.protocolVersion ||
+        assignment.assignedAtUtc.isAfter(run.startedAtUtc) ||
+        run.consentDecidedAtUtc.isAfter(assignment.assignedAtUtc)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return run;
+  }
+
+  Future<bool> _assessmentAssignmentDeliveryReady(
+    AssessmentRun run, {
+    required String firebaseUid,
+  }) async {
+    final assignment = await DriftExperimentAssignmentRepository(database)
+        .getAssignment(
+          ownerId: run.ownerId,
+          experimentId: run.experimentId,
+          experimentVersion: run.experimentVersion,
+        );
+    if (assignment.id != run.assignmentId) return false;
+
+    final cloudAssignmentId =
+        DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+          firebaseUid: firebaseUid,
+          experimentId: assignment.experimentId,
+          experimentVersion: assignment.experimentVersion,
+        );
+    final allowedEntityIds = <String>{assignment.id, cloudAssignmentId};
+    final operations =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(run.ownerId) &
+                  row.entityType.equals(
+                    SyncCollection.experimentAssignments.entityType,
+                  ) &
+                  row.entityId.isIn(allowedEntityIds),
+            ))
+            .get();
+    if (operations.isEmpty) {
+      // A cloud-pulled assignment is already durable remotely and deliberately
+      // has no local echo operation.
+      return true;
+    }
+    if (operations.length != 1) return false;
+    final operation = operations.single;
+    return operation.operationId ==
+            DriftExperimentAssignmentRepository.canonicalOutboxOperationId(
+              operation.entityId,
+            ) &&
+        operation.operationKind == SyncOperationKind.upsert.name &&
+        operation.payloadVersion == 1 &&
+        operation.baseRevision == 0 &&
+        operation.createdAtUtcMs ==
+            assignment.assignedAtUtc.millisecondsSinceEpoch &&
+        const <String>{
+          'acknowledged',
+          'conflictResolved',
+        }.contains(operation.state);
   }
 
   Future<db.ExperimentAssignmentRow?> _experimentAssignmentForOperation(
@@ -1542,6 +1737,41 @@ final class DriftSyncStore implements SyncStore {
           clientUpdatedAtUtc: assignment.assignedAtUtc,
           payload: payload,
         );
+      case 'assessmentRun':
+        final persisted = await _assessmentRunForOperation(
+          operation,
+          firebaseUid: firebaseUid,
+        );
+        final revision = baseRevision + 1;
+        if (baseRevision != operation.baseRevision ||
+            (revision != 1 && revision != 2)) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final run = _assessmentRunAtRevision(persisted, revision);
+        final payload = _assessmentRunPayload(run, firebaseUid: firebaseUid);
+        final clientUpdatedAtUtc = revision == 1
+            ? run.startedAtUtc
+            : run.completedAtUtc ?? run.abandonedAtUtc!;
+        AssessmentRunSyncPayloadContract.requireCanonical(
+          payload: payload,
+          expectedEntityId: run.id,
+          expectedOwnerId: firebaseUid,
+          revision: revision,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: clientUpdatedAtUtc.millisecondsSinceEpoch,
+        );
+        return PushMutation(
+          operationId: operation.operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.assessmentRuns,
+          entityId: run.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: baseRevision,
+          localRevision: revision,
+          clientUpdatedAtUtc: clientUpdatedAtUtc,
+          payload: payload,
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -1621,6 +1851,9 @@ final class DriftSyncStore implements SyncStore {
         return;
       case 'experimentAssignment':
         // Immutable research audit evidence has no mutable cloud revision.
+        return;
+      case 'assessmentRun':
+        // Revision receipts live in the ordered durable outbox operations.
         return;
       default:
         throw const InvalidSyncPayloadFailure();
@@ -1730,6 +1963,21 @@ final class DriftSyncStore implements SyncStore {
         );
         if (row == null) throw const InvalidSyncPayloadFailure();
         return _experimentAssignmentRowPayload(row, firebaseUid: firebaseUid);
+      case 'assessmentRun':
+        final owner =
+            await (database.select(
+                  database.localOwners,
+                )..where((candidate) => candidate.id.equals(operation.ownerId)))
+                .getSingle();
+        final firebaseUid = owner.firebaseUid;
+        if (firebaseUid == null) throw const InvalidSyncPayloadFailure();
+        final run = await DriftAssessmentRepository(
+          database,
+        ).getRun(operation.entityId);
+        return _assessmentRunPayload(
+          _assessmentRunAtRevision(run, operation.baseRevision + 1),
+          firebaseUid: firebaseUid,
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2558,6 +2806,127 @@ final class DriftSyncStore implements SyncStore {
     }
   }
 
+  Future<void> _applyAssessmentRun(String ownerId, SyncEntity entity) async {
+    final owner = await (database.select(
+      database.localOwners,
+    )..where((candidate) => candidate.id.equals(ownerId))).getSingleOrNull();
+    final firebaseUid = owner?.firebaseUid;
+    var localPayload = <String, Object?>{};
+    try {
+      if (firebaseUid == null) throw const InvalidSyncPayloadFailure();
+      try {
+        final existing = await DriftAssessmentRepository(
+          database,
+        ).getRun(entity.entityId);
+        if (existing.ownerId == ownerId) {
+          localPayload = _assessmentRunPayload(
+            _assessmentRunAtRevision(
+              existing,
+              existing.state == AssessmentRunState.active ? 1 : 2,
+            ),
+            firebaseUid: firebaseUid,
+          );
+        }
+      } on AssessmentRunConflict {
+        // An absent run has no local snapshot; malformed persisted state is
+        // handled by the fail-closed conflict path below.
+      }
+
+      _requireAssessmentCloudEntity(entity, expectedFirebaseUid: firebaseUid);
+      final experimentId = entity.payload['experimentId']! as String;
+      final experimentVersion = entity.payload['experimentVersion']! as int;
+      final assignment = await DriftExperimentAssignmentRepository(database)
+          .getAssignment(
+            ownerId: ownerId,
+            experimentId: experimentId,
+            experimentVersion: experimentVersion,
+          );
+      if (assignment.cohort != entity.payload['cohort'] ||
+          assignment.protocolVersion != entity.payload['protocolVersion'] ||
+          (entity.payload['consentDecidedAtUtcMs']! as int) >
+              assignment.assignedAtUtc.millisecondsSinceEpoch) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final run = _assessmentRunFromCloudPayload(
+        entity.payload,
+        ownerId: ownerId,
+        assignmentId: assignment.id,
+      );
+      final persisted = await DriftAssessmentRepository(
+        database,
+      ).persistRemote(run);
+      if (persisted != run) throw const InvalidSyncPayloadFailure();
+      await _resolvePendingAssessmentOutbox(
+        ownerId: ownerId,
+        runId: run.id,
+        throughRevision: entity.revision,
+      );
+    } on SyncFailure {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+    } on AssessmentRunConflict {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+    } on ExperimentAssignmentConflict {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+    } on ArgumentError {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+    } on StateError {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+    }
+  }
+
+  Future<void> _resolvePendingAssessmentOutbox({
+    required String ownerId,
+    required String runId,
+    required int throughRevision,
+  }) async {
+    await (database.update(database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityType.equals(SyncCollection.assessmentRuns.entityType) &
+              row.entityId.equals(runId) &
+              row.baseRevision.isSmallerThanValue(throughRevision) &
+              row.state.isNotIn(const <String>[
+                'acknowledged',
+                'superseded',
+                'conflictResolved',
+              ]),
+        ))
+        .write(
+          const db.OutboxOperationsCompanion(
+            state: Value('conflictResolved'),
+            leaseToken: Value(null),
+            leaseExpiresAtUtcMs: Value(null),
+            nextAttemptAtUtcMs: Value(null),
+            failureCode: Value('identicalCloudEvidence'),
+          ),
+        );
+  }
+
   Future<void> _handleExistingImmutable({
     required String ownerId,
     required SyncEntity entity,
@@ -2736,6 +3105,7 @@ final class DriftSyncStore implements SyncStore {
       case SyncCollection.srsStates:
       case SyncCollection.achievementUnlocks:
       case SyncCollection.experimentAssignments:
+      case SyncCollection.assessmentRuns:
         throw const InvalidSyncPayloadFailure();
     }
 
@@ -3155,6 +3525,171 @@ Map<String, Object?> _experimentAssignmentRowPayload(
   'protocolVersion': assignment.protocolVersion,
   'assignedAtUtcMs': assignment.assignedAtUtcMs,
 };
+
+AssessmentRun _assessmentRunAtRevision(AssessmentRun run, int revision) {
+  switch (revision) {
+    case 1:
+      if (run.state == AssessmentRunState.active) return run;
+      return AssessmentRun(
+        id: run.id,
+        ownerId: run.ownerId,
+        learningSessionId: run.learningSessionId,
+        studyCycleId: run.studyCycleId,
+        phase: run.phase,
+        state: AssessmentRunState.active,
+        protocolId: run.protocolId,
+        protocolVersion: run.protocolVersion,
+        experimentId: run.experimentId,
+        experimentVersion: run.experimentVersion,
+        assignmentId: run.assignmentId,
+        cohort: run.cohort,
+        consentVersion: run.consentVersion,
+        consentDecidedAtUtc: run.consentDecidedAtUtc,
+        instrumentId: run.instrumentId,
+        instrumentVersion: run.instrumentVersion,
+        formId: run.formId,
+        formVersion: run.formVersion,
+        instrumentChecksumSha256: run.instrumentChecksumSha256,
+        formChecksumSha256: run.formChecksumSha256,
+        appVersion: run.appVersion,
+        buildId: run.buildId,
+        databaseSchemaVersion: run.databaseSchemaVersion,
+        contentRevision: run.contentRevision,
+        evidencePolicyVersion: run.evidencePolicyVersion,
+        featureContractRevision: run.featureContractRevision,
+        featureContractHash: run.featureContractHash,
+        startedAtUtc: run.startedAtUtc,
+        completedAtUtc: null,
+        abandonedAtUtc: null,
+      );
+    case 2:
+      if (run.state == AssessmentRunState.active) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return run;
+    default:
+      throw const InvalidSyncPayloadFailure();
+  }
+}
+
+Map<String, Object?> _assessmentRunPayload(
+  AssessmentRun run, {
+  required String firebaseUid,
+}) => <String, Object?>{
+  'runId': run.id,
+  'ownerId': firebaseUid,
+  'learningSessionId': run.learningSessionId,
+  'studyCycleId': run.studyCycleId,
+  'phase': run.phase.name,
+  'state': run.state.name,
+  'protocolId': run.protocolId,
+  'protocolVersion': run.protocolVersion,
+  'experimentId': run.experimentId,
+  'experimentVersion': run.experimentVersion,
+  'assignmentId':
+      DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+        firebaseUid: firebaseUid,
+        experimentId: run.experimentId,
+        experimentVersion: run.experimentVersion,
+      ),
+  'cohort': run.cohort,
+  'consentVersion': run.consentVersion,
+  'consentDecidedAtUtcMs': run.consentDecidedAtUtc.millisecondsSinceEpoch,
+  'instrumentId': run.instrumentId,
+  'instrumentVersion': run.instrumentVersion,
+  'formId': run.formId,
+  'formVersion': run.formVersion,
+  'instrumentChecksumSha256': run.instrumentChecksumSha256,
+  'formChecksumSha256': run.formChecksumSha256,
+  'appVersion': run.appVersion,
+  'buildId': run.buildId,
+  'databaseSchemaVersion': run.databaseSchemaVersion,
+  'contentRevision': run.contentRevision,
+  'evidencePolicyVersion': run.evidencePolicyVersion,
+  'featureContractRevision': run.featureContractRevision,
+  'featureContractHash': run.featureContractHash,
+  'startedAtUtcMs': run.startedAtUtc.millisecondsSinceEpoch,
+  'completedAtUtcMs': run.completedAtUtc?.millisecondsSinceEpoch,
+  'abandonedAtUtcMs': run.abandonedAtUtc?.millisecondsSinceEpoch,
+};
+
+AssessmentRun _assessmentRunFromCloudPayload(
+  Map<String, Object?> payload, {
+  required String ownerId,
+  required String assignmentId,
+}) {
+  try {
+    return AssessmentRun(
+      id: payload['runId']! as String,
+      ownerId: ownerId,
+      learningSessionId: payload['learningSessionId']! as String,
+      studyCycleId: payload['studyCycleId']! as String,
+      phase: AssessmentPhase.values.byName(payload['phase']! as String),
+      state: AssessmentRunState.values.byName(payload['state']! as String),
+      protocolId: payload['protocolId']! as String,
+      protocolVersion: payload['protocolVersion']! as String,
+      experimentId: payload['experimentId']! as String,
+      experimentVersion: payload['experimentVersion']! as int,
+      assignmentId: assignmentId,
+      cohort: payload['cohort']! as String,
+      consentVersion: payload['consentVersion']! as int,
+      consentDecidedAtUtc: _utc(payload['consentDecidedAtUtcMs']! as int),
+      instrumentId: payload['instrumentId']! as String,
+      instrumentVersion: payload['instrumentVersion']! as String,
+      formId: payload['formId']! as String,
+      formVersion: payload['formVersion']! as String,
+      instrumentChecksumSha256: payload['instrumentChecksumSha256']! as String,
+      formChecksumSha256: payload['formChecksumSha256']! as String,
+      appVersion: payload['appVersion']! as String,
+      buildId: payload['buildId']! as String,
+      databaseSchemaVersion: payload['databaseSchemaVersion']! as int,
+      contentRevision: payload['contentRevision']! as String,
+      evidencePolicyVersion: payload['evidencePolicyVersion']! as String,
+      featureContractRevision: payload['featureContractRevision']! as String,
+      featureContractHash: payload['featureContractHash']! as String,
+      startedAtUtc: _utc(payload['startedAtUtcMs']! as int),
+      completedAtUtc: payload['completedAtUtcMs'] == null
+          ? null
+          : _utc(payload['completedAtUtcMs']! as int),
+      abandonedAtUtc: payload['abandonedAtUtcMs'] == null
+          ? null
+          : _utc(payload['abandonedAtUtcMs']! as int),
+    );
+  } on SyncFailure {
+    rethrow;
+  } catch (_) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+void _requireAssessmentCloudEntity(
+  SyncEntity entity, {
+  required String expectedFirebaseUid,
+}) {
+  if (entity.collection != SyncCollection.assessmentRuns ||
+      entity.payloadVersion != 1) {
+    throw const InvalidSyncPayloadFailure();
+  }
+  AssessmentRunSyncPayloadContract.requireCanonical(
+    payload: entity.payload,
+    expectedEntityId: entity.entityId,
+    expectedOwnerId: expectedFirebaseUid,
+    revision: entity.revision,
+    isDeleted: entity.isDeleted,
+    clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+  );
+  final experimentId = entity.payload['experimentId']! as String;
+  final experimentVersion = entity.payload['experimentVersion']! as int;
+  final expectedAssignmentId =
+      DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+        firebaseUid: expectedFirebaseUid,
+        experimentId: experimentId,
+        experimentVersion: experimentVersion,
+      );
+  if (entity.payload['assignmentId'] != expectedAssignmentId) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
 
 void _requireImmutableEntity(
   SyncEntity entity,

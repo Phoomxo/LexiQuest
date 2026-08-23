@@ -17,6 +17,8 @@ import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -217,6 +219,210 @@ void main() {
     expect(attempt, containsPair('scoringRuleVersion', 'binary-v1'));
   });
 
+  test(
+    'participant archive retains active completed and abandoned assessment audits after withdrawal',
+    () async {
+      const ownerId = 'local:owner';
+      const experimentId = 'assessment-study';
+      const experimentVersion = 1;
+      final assignmentId =
+          DriftExperimentAssignmentRepository.canonicalAssignmentId(
+            ownerId: ownerId,
+            experimentId: experimentId,
+            experimentVersion: experimentVersion,
+          );
+      await database.customInsert(
+        'INSERT INTO experiment_assignments '
+        '(id, owner_id, experiment_id, experiment_version, cohort, '
+        'protocol_version, assigned_at_utc_ms) VALUES (?, ?, ?, ?, ?, ?, ?)',
+        variables: [
+          Variable<String>(assignmentId),
+          const Variable<String>(ownerId),
+          const Variable<String>(experimentId),
+          const Variable<int>(experimentVersion),
+          const Variable<String>('enforced-a'),
+          const Variable<String>('assessment-protocol-v1'),
+          Variable<int>(DateTime.utc(2026, 7, 30, 1).millisecondsSinceEpoch),
+        ],
+      );
+
+      for (final state in const ['active', 'completed', 'abandoned']) {
+        final sessionId = 'assessment-session-$state';
+        final runId = 'assessment-run-$state';
+        final startedAt = DateTime.utc(2026, 7, 30, 2).millisecondsSinceEpoch;
+        await database.customInsert(
+          'INSERT INTO learning_sessions '
+          '(id, owner_id, activity_type, state, started_at_utc_ms, '
+          'app_version, build_id) VALUES (?, ?, ?, ?, ?, ?, ?)',
+          variables: [
+            Variable<String>(sessionId),
+            const Variable<String>(ownerId),
+            const Variable<String>('assessment'),
+            const Variable<String>('completed'),
+            Variable<int>(startedAt),
+            const Variable<String>('1.0.0'),
+            const Variable<String>('task-12-export'),
+          ],
+        );
+        await _insertAssessmentRunForExport(
+          database,
+          id: runId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          assignmentId: assignmentId,
+          studyCycleId: 'cycle-$state',
+          state: state,
+          startedAtUtcMs: startedAt,
+          completedAtUtcMs: state == 'completed' ? startedAt + 1000 : null,
+          abandonedAtUtcMs: state == 'abandoned' ? startedAt + 1000 : null,
+        );
+      }
+
+      final assessmentContext = EvidenceContext.forNewEvidence(
+        evidenceClass: EvidenceClass.assessment,
+        skillId: 'word-1',
+        hintLevel: 0,
+        contentRevision: 'assessment-content-r1',
+        rolloutMode: EvidencePolicyRolloutMode.enforced,
+        protocolId: 'assessment-protocol',
+        protocolVersion: 'assessment-protocol-v1',
+        experimentId: experimentId,
+        experimentVersion: experimentVersion,
+        assignmentId: assignmentId,
+        cohort: 'enforced-a',
+        researchConsentVersion: 1,
+        instrumentId: 'vocabulary-outcome',
+        instrumentVersion: '1.0.0',
+        formId: 'form-a',
+        formVersion: '1.0.0',
+        assessmentItemId: 'item-1',
+        assessmentResponseCode: 'choice-b',
+        scoringRuleVersion: 'binary-v1',
+        engagementAllowed: false,
+      );
+      await database.customInsert(
+        'INSERT INTO answer_attempts '
+        '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+        'response_time_ms, attempt_number, occurred_at_utc_ms, '
+        'provider_provenance, evidence_class, evidence_context_json) '
+        'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+        variables: [
+          const Variable<String>('assessment-evidence-1'),
+          const Variable<String>(ownerId),
+          const Variable<String>('assessment-session-completed'),
+          const Variable<String>('word-1'),
+          const Variable<String>('meaningChoice'),
+          const Variable<bool>(true),
+          const Variable<int>(750),
+          const Variable<int>(1),
+          Variable<int>(
+            DateTime.utc(2026, 7, 30, 2, 0, 1).millisecondsSinceEpoch,
+          ),
+          const Variable<String>('raw-response-SENTINEL'),
+          Variable<String>(assessmentContext.evidenceClass.name),
+          Variable<String>(jsonEncode(assessmentContext.toJson())),
+        ],
+      );
+      await consent.withdraw();
+
+      final artifact = await exports.prepare(
+        format: ExportFormat.ownerArchiveJson,
+        selection: const ExportSelection(
+          includeVocabulary: false,
+          includeAttempts: false,
+          includeReading: false,
+        ),
+        cancellation: ExportCancellation(),
+      );
+      final archiveText = utf8.decode(artifact.bytes);
+      final envelope = jsonDecode(archiveText) as Map<String, dynamic>;
+      final content = envelope['content'] as Map<String, dynamic>;
+      final tables = (content['tables'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      final assessmentRuns = tables.singleWhere(
+        (entry) => entry['alias'] == 'assessmentRuns',
+      );
+      final records = (assessmentRuns['records'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+
+      expect(records.first, {'recordCount': 3});
+      expect(records.skip(1).map((record) => record['state']).toSet(), {
+        'active',
+        'completed',
+        'abandoned',
+      });
+      final completed = records.singleWhere(
+        (record) => record['state'] == 'completed',
+      );
+      expect(completed, containsPair('studyCycleId', 'cycle-completed'));
+      expect(completed, containsPair('phase', 'pre'));
+      expect(completed, containsPair('protocolId', 'assessment-protocol'));
+      expect(
+        completed,
+        containsPair('protocolVersion', 'assessment-protocol-v1'),
+      );
+      expect(completed, containsPair('experimentId', experimentId));
+      expect(completed, containsPair('experimentVersion', experimentVersion));
+      expect(completed, containsPair('cohort', 'enforced-a'));
+      expect(completed, containsPair('consentVersion', 1));
+      expect(completed, containsPair('instrumentId', 'vocabulary-outcome'));
+      expect(completed, containsPair('instrumentVersion', '1.0.0'));
+      expect(completed, containsPair('formId', 'form-a'));
+      expect(completed, containsPair('formVersion', '1.0.0'));
+      expect(
+        completed,
+        containsPair('instrumentChecksumSha256', _exportInstrumentHash),
+      );
+      expect(completed, containsPair('formChecksumSha256', _exportFormHash));
+      expect(
+        completed,
+        containsPair('contentRevision', 'assessment-content-r1'),
+      );
+      expect(
+        completed,
+        containsPair(
+          'evidencePolicyVersion',
+          EvidenceContext.currentPolicyVersion,
+        ),
+      );
+      expect(
+        completed,
+        containsPair(
+          'featureContractRevision',
+          currentFeatureContractIdentity.revision,
+        ),
+      );
+      expect(
+        completed,
+        containsPair(
+          'featureContractHash',
+          currentFeatureContractIdentity.semanticHash,
+        ),
+      );
+      expect(completed['controlledResponses'], [
+        {
+          'sourceEvidenceId': 'assessment-evidence-1',
+          'itemId': 'item-1',
+          'responseCode': 'choice-b',
+          'isCorrect': true,
+          'responseTimeMs': 750,
+          'occurredAtUtc': '2026-07-30T02:00:01.000Z',
+          'scoringRuleVersion': 'binary-v1',
+        },
+      ]);
+      for (final forbidden in const [
+        'raw-response-SENTINEL',
+        'submittedResponse',
+        'providerProvenance',
+        'deviceId',
+        'combinedScore',
+        'outcomeLearningEffortEngagement',
+      ]) {
+        expect(archiveText, isNot(contains(forbidden)));
+      }
+    },
+  );
+
   test('every artifact omits raw provider provenance secrets', () async {
     const sentinel = 'provider-token-SENTINEL-DO-NOT-EXPORT';
     await database.customUpdate(
@@ -256,14 +462,14 @@ void main() {
       final envelope =
           jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
       final content = envelope['content'] as Map<String, dynamic>;
-      expect(content['tables'], hasLength(32));
+      expect(content['tables'], hasLength(33));
       expect(content['archiveSchemaVersion'], 1);
       expect(content['algorithmVersion'], 1);
       expect(
         content['databaseSchemaVersion'],
         AppDatabase.currentSchemaVersion,
       );
-      expect(content['manifestEntryCount'], 32);
+      expect(content['manifestEntryCount'], 33);
       expect(artifact.schemaVersion, content['archiveSchemaVersion']);
       expect(artifact.algorithmVersion, content['algorithmVersion']);
       expect(artifact.recordCount, content['manifestEntryCount']);
@@ -598,6 +804,69 @@ final class _ConsentReadInterceptor extends QueryInterceptor {
     }
     return rows;
   }
+}
+
+const _exportInstrumentHash =
+    '1111111111111111111111111111111111111111111111111111111111111111';
+const _exportFormHash =
+    '2222222222222222222222222222222222222222222222222222222222222222';
+Future<void> _insertAssessmentRunForExport(
+  AppDatabase database, {
+  required String id,
+  required String ownerId,
+  required String sessionId,
+  required String assignmentId,
+  required String studyCycleId,
+  required String state,
+  required int startedAtUtcMs,
+  required int? completedAtUtcMs,
+  required int? abandonedAtUtcMs,
+}) {
+  return database.customInsert(
+    'INSERT INTO assessment_runs '
+    '(id, owner_id, learning_session_id, study_cycle_id, phase, state, '
+    'protocol_id, protocol_version, experiment_id, experiment_version, '
+    'assignment_id, cohort, consent_version, consent_decided_at_utc_ms, '
+    'instrument_id, instrument_version, form_id, form_version, '
+    'instrument_checksum_sha256, form_checksum_sha256, app_version, build_id, '
+    'database_schema_version, content_revision, evidence_policy_version, '
+    'feature_contract_revision, feature_contract_hash, started_at_utc_ms, '
+    'completed_at_utc_ms, abandoned_at_utc_ms) '
+    'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '
+    '?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    variables: [
+      Variable<String>(id),
+      Variable<String>(ownerId),
+      Variable<String>(sessionId),
+      Variable<String>(studyCycleId),
+      const Variable<String>('pre'),
+      Variable<String>(state),
+      const Variable<String>('assessment-protocol'),
+      const Variable<String>('assessment-protocol-v1'),
+      const Variable<String>('assessment-study'),
+      const Variable<int>(1),
+      Variable<String>(assignmentId),
+      const Variable<String>('enforced-a'),
+      const Variable<int>(1),
+      Variable<int>(DateTime.utc(2026, 7, 30).millisecondsSinceEpoch),
+      const Variable<String>('vocabulary-outcome'),
+      const Variable<String>('1.0.0'),
+      const Variable<String>('form-a'),
+      const Variable<String>('1.0.0'),
+      const Variable<String>(_exportInstrumentHash),
+      const Variable<String>(_exportFormHash),
+      const Variable<String>('1.0.0'),
+      const Variable<String>('task-12-export'),
+      const Variable<int>(15),
+      const Variable<String>('assessment-content-r1'),
+      const Variable<String>(EvidenceContext.currentPolicyVersion),
+      Variable<String>(currentFeatureContractIdentity.revision),
+      Variable<String>(currentFeatureContractIdentity.semanticHash),
+      Variable<int>(startedAtUtcMs),
+      Variable<int>(completedAtUtcMs),
+      Variable<int>(abandonedAtUtcMs),
+    ],
+  );
 }
 
 Future<void> _seedResearchExportOwnerRace(AppDatabase database) async {

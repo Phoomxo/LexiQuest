@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
@@ -91,18 +92,25 @@ void main() {
         SyncCollection.srsStates,
         SyncCollection.achievementUnlocks,
         SyncCollection.experimentAssignments,
+        SyncCollection.assessmentRuns,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
       for (final collection in SyncCollection.values) {
-        final entityId = collection == SyncCollection.experimentAssignments
-            ? _canonicalAssignmentId()
-            : '${collection.entityType}-v1';
+        final entityId = switch (collection) {
+          SyncCollection.experimentAssignments => _canonicalAssignmentId(),
+          SyncCollection.assessmentRuns => 'assessment-run-pre',
+          _ => '${collection.entityType}-v1',
+        };
         final payload = switch (collection) {
           SyncCollection.attempts => _attemptPayloadV1(),
           SyncCollection.experimentAssignments => _assignmentPayload(
             assignmentId: entityId,
             assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
+          SyncCollection.assessmentRuns => _assessmentRunPayload(
+            assignmentId: _canonicalAssignmentId(),
+            startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
@@ -188,6 +196,234 @@ void main() {
       });
       expect(decoded.payload, payload);
       expect(SyncCollection.attempts.supportedPayloadVersions, <int>{1, 2});
+    });
+
+    test('assessment run uses one exact revision-aware v1 wire contract', () {
+      final assignmentId = _canonicalAssignmentId();
+      final activePayload = _assessmentRunPayload(
+        assignmentId: assignmentId,
+        startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final active = _assessmentRunMutation(
+        payload: activePayload,
+        clientUpdatedAtUtc: clientUpdatedAt,
+      );
+
+      final activeEncoded = FirestoreSyncCodec.encodeEntity(
+        active,
+        serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+      );
+      final activeDecoded = FirestoreSyncCodec.decodeEntity(
+        collection: SyncCollection.assessmentRuns,
+        documentId: active.entityId,
+        data: activeEncoded,
+      );
+
+      expect(SyncCollection.assessmentRuns.wireName, 'assessment_runs');
+      expect(SyncCollection.assessmentRuns.entityType, 'assessmentRun');
+      expect(SyncCollection.assessmentRuns.supportedPayloadVersions, <int>{1});
+      expect(activeDecoded.revision, 1);
+      expect(activeDecoded.payload, activePayload);
+      expect(activeDecoded.payload.keys.toSet(), _assessmentRunPayloadKeys);
+
+      final completedAt = clientUpdatedAt.add(const Duration(minutes: 30));
+      final terminalPayload = _assessmentRunPayload(
+        assignmentId: assignmentId,
+        state: AssessmentRunState.completed,
+        startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        completedAtUtcMs: completedAt.millisecondsSinceEpoch,
+      );
+      final terminal = _assessmentRunMutation(
+        payload: terminalPayload,
+        baseRevision: 1,
+        localRevision: 2,
+        clientUpdatedAtUtc: completedAt,
+      );
+      final terminalDecoded = FirestoreSyncCodec.decodeEntity(
+        collection: SyncCollection.assessmentRuns,
+        documentId: terminal.entityId,
+        data: FirestoreSyncCodec.encodeEntity(
+          terminal,
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        ),
+      );
+
+      expect(terminalDecoded.revision, 2);
+      expect(terminalDecoded.payload, terminalPayload);
+      expect(terminalDecoded.clientUpdatedAtUtc, completedAt);
+      expect(SyncCollection.attempts.supportedPayloadVersions, <int>{1, 2});
+    });
+
+    test('assessment run codec rejects every noncanonical v1 shape', () {
+      final assignmentId = _canonicalAssignmentId();
+      final exact = _assessmentRunPayload(
+        assignmentId: assignmentId,
+        startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final invalidPayloads = <String, Map<String, Object?>>{
+        'missing key': <String, Object?>{...exact}..remove('formVersion'),
+        'extra key': <String, Object?>{...exact, 'rawResponse': 'forbidden'},
+        'wrong owner': <String, Object?>{...exact, 'ownerId': 'other-user'},
+        'wrong assignment identity': <String, Object?>{
+          ...exact,
+          'assignmentId': 'foreign-local-assignment',
+        },
+        'wrong type': <String, Object?>{
+          ...exact,
+          'databaseSchemaVersion': '15',
+        },
+        'blank identifier': <String, Object?>{...exact, 'instrumentId': ''},
+        'trimmed identifier': <String, Object?>{...exact, 'formId': ' form-a'},
+        'overlong identifier': <String, Object?>{
+          ...exact,
+          'studyCycleId': List<String>.filled(257, 'x').join(),
+        },
+        'malformed checksum': <String, Object?>{
+          ...exact,
+          'formChecksumSha256': 'not-sha256',
+        },
+        'negative start': <String, Object?>{...exact, 'startedAtUtcMs': -1},
+        'active with terminal time': <String, Object?>{
+          ...exact,
+          'completedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+        },
+        'completed without timestamp': <String, Object?>{
+          ...exact,
+          'state': AssessmentRunState.completed.name,
+        },
+        'abandoned with both terminal timestamps': <String, Object?>{
+          ...exact,
+          'state': AssessmentRunState.abandoned.name,
+          'completedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch + 1,
+          'abandonedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch + 2,
+        },
+      };
+
+      for (final invalid in invalidPayloads.entries) {
+        final mutation = _assessmentRunMutation(
+          payload: invalid.value,
+          clientUpdatedAtUtc: clientUpdatedAt,
+        );
+        expect(
+          () => FirestoreSyncCodec.encodeEntity(
+            mutation,
+            serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: 'encode ${invalid.key}',
+        );
+        expect(
+          () => FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.assessmentRuns,
+            documentId: mutation.entityId,
+            data: <String, Object?>{
+              'schemaVersion': 1,
+              'entityId': mutation.entityId,
+              'revision': 1,
+              'isDeleted': false,
+              'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+              'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+              'lastOperationId': mutation.operationId,
+              'payload': invalid.value,
+            },
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: 'decode ${invalid.key}',
+        );
+      }
+    });
+
+    test('assessment run codec pins the only legal revision/state graph', () {
+      final assignmentId = _canonicalAssignmentId();
+      final startedAtMs = clientUpdatedAt.millisecondsSinceEpoch;
+      final completedAtMs =
+          startedAtMs + const Duration(minutes: 30).inMilliseconds;
+      final invalidEntities = <String, Map<String, Object?>>{
+        'create completed': <String, Object?>{
+          'revision': 1,
+          'clientUpdatedAtUtcMs': completedAtMs,
+          'payload': _assessmentRunPayload(
+            assignmentId: assignmentId,
+            state: AssessmentRunState.completed,
+            startedAtUtcMs: startedAtMs,
+            completedAtUtcMs: completedAtMs,
+          ),
+        },
+        'revision two active': <String, Object?>{
+          'revision': 2,
+          'clientUpdatedAtUtcMs': startedAtMs,
+          'payload': _assessmentRunPayload(
+            assignmentId: assignmentId,
+            startedAtUtcMs: startedAtMs,
+          ),
+        },
+        'revision three terminal': <String, Object?>{
+          'revision': 3,
+          'clientUpdatedAtUtcMs': completedAtMs,
+          'payload': _assessmentRunPayload(
+            assignmentId: assignmentId,
+            state: AssessmentRunState.completed,
+            startedAtUtcMs: startedAtMs,
+            completedAtUtcMs: completedAtMs,
+          ),
+        },
+      };
+
+      for (final invalid in invalidEntities.entries) {
+        expect(
+          () => FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.assessmentRuns,
+            documentId: 'assessment-run-pre',
+            data: <String, Object?>{
+              'schemaVersion': 1,
+              'entityId': 'assessment-run-pre',
+              'revision': invalid.value['revision'],
+              'isDeleted': false,
+              'clientUpdatedAtUtcMs': invalid.value['clientUpdatedAtUtcMs'],
+              'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+              'lastOperationId': 'assessmentRun:assessment-run-pre:invalid',
+              'payload': invalid.value['payload'],
+            },
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: invalid.key,
+        );
+      }
+
+      expect(
+        () => FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.assessmentRuns,
+          documentId: 'assessment-run-pre',
+          data: <String, Object?>{
+            'schemaVersion': 1,
+            'entityId': 'assessment-run-pre',
+            'revision': 1,
+            'isDeleted': true,
+            'clientUpdatedAtUtcMs': startedAtMs,
+            'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+            'lastOperationId': 'assessmentRun:assessment-run-pre:delete',
+            'payload': _assessmentRunPayload(
+              assignmentId: assignmentId,
+              startedAtUtcMs: startedAtMs,
+            ),
+          },
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(
+        () => FirestoreSyncCodec.encodeEntity(
+          _assessmentRunMutation(
+            payload: _assessmentRunPayload(
+              assignmentId: assignmentId,
+              startedAtUtcMs: startedAtMs,
+            ),
+            clientUpdatedAtUtc: clientUpdatedAt,
+            operationKind: SyncOperationKind.delete,
+          ),
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
     });
 
     test('experiment assignment rejects non-exact payloads at the codec', () {
@@ -588,8 +824,8 @@ String _canonicalAssignmentId({
   String ownerId = 'firebase-user-1',
   String experimentId = 'study-a',
   int experimentVersion = 1,
-}) => DriftExperimentAssignmentRepository.canonicalAssignmentId(
-  ownerId: ownerId,
+}) => DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+  firebaseUid: ownerId,
   experimentId: experimentId,
   experimentVersion: experimentVersion,
 );
@@ -606,6 +842,100 @@ Map<String, Object?> _assignmentPayload({
   'protocolVersion': 'protocol-1',
   'assignedAtUtcMs': assignedAtUtcMs,
 };
+
+const Set<String> _assessmentRunPayloadKeys = <String>{
+  'runId',
+  'ownerId',
+  'learningSessionId',
+  'studyCycleId',
+  'phase',
+  'state',
+  'protocolId',
+  'protocolVersion',
+  'experimentId',
+  'experimentVersion',
+  'assignmentId',
+  'cohort',
+  'consentVersion',
+  'consentDecidedAtUtcMs',
+  'instrumentId',
+  'instrumentVersion',
+  'formId',
+  'formVersion',
+  'instrumentChecksumSha256',
+  'formChecksumSha256',
+  'appVersion',
+  'buildId',
+  'databaseSchemaVersion',
+  'contentRevision',
+  'evidencePolicyVersion',
+  'featureContractRevision',
+  'featureContractHash',
+  'startedAtUtcMs',
+  'completedAtUtcMs',
+  'abandonedAtUtcMs',
+};
+
+Map<String, Object?> _assessmentRunPayload({
+  required String assignmentId,
+  required int startedAtUtcMs,
+  AssessmentRunState state = AssessmentRunState.active,
+  int? completedAtUtcMs,
+  int? abandonedAtUtcMs,
+}) => <String, Object?>{
+  'runId': 'assessment-run-pre',
+  'ownerId': 'firebase-user-1',
+  'learningSessionId': 'assessment-session-pre',
+  'studyCycleId': 'study-cycle-2026',
+  'phase': AssessmentPhase.pre.name,
+  'state': state.name,
+  'protocolId': 'assessment-protocol',
+  'protocolVersion': 'protocol-1',
+  'experimentId': 'study-a',
+  'experimentVersion': 1,
+  'assignmentId': assignmentId,
+  'cohort': 'intervention',
+  'consentVersion': 1,
+  'consentDecidedAtUtcMs': startedAtUtcMs - 2000,
+  'instrumentId': 'instrument-core',
+  'instrumentVersion': 'instrument-v1',
+  'formId': 'form-a',
+  'formVersion': 'form-v1',
+  'instrumentChecksumSha256':
+      'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+  'formChecksumSha256':
+      'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+  'appVersion': '1.0.0',
+  'buildId': 'task-12-sync',
+  'databaseSchemaVersion': 15,
+  'contentRevision': 'assessment-content-v1',
+  'evidencePolicyVersion': 'learning-evidence-v1',
+  'featureContractRevision': '1.0.0',
+  'featureContractHash':
+      'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0',
+  'startedAtUtcMs': startedAtUtcMs,
+  'completedAtUtcMs': completedAtUtcMs,
+  'abandonedAtUtcMs': abandonedAtUtcMs,
+};
+
+PushMutation _assessmentRunMutation({
+  required Map<String, Object?> payload,
+  required DateTime clientUpdatedAtUtc,
+  int baseRevision = 0,
+  int localRevision = 1,
+  SyncOperationKind operationKind = SyncOperationKind.upsert,
+}) => PushMutation(
+  operationId: 'assessmentRun:assessment-run-pre:$localRevision',
+  firebaseUid: 'firebase-user-1',
+  collection: SyncCollection.assessmentRuns,
+  entityId: 'assessment-run-pre',
+  operationKind: operationKind,
+  payloadVersion: 1,
+  baseRevision: baseRevision,
+  localRevision: localRevision,
+  clientUpdatedAtUtc: clientUpdatedAtUtc,
+  payload: payload,
+);
 
 Map<String, Object?> _attemptPayloadV2(EvidenceContext context) =>
     <String, Object?>{

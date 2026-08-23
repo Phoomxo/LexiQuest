@@ -332,7 +332,10 @@ function writeFieldExperimentAssignment(db, {
       revision: 1,
       isDeleted: false,
       clientUpdatedAtUtcMs:
-        clientUpdatedAtUtcMs ?? experimentAssignmentAssignedAtUtcMs,
+        clientUpdatedAtUtcMs ??
+        (Number.isInteger(resolvedPayload.assignedAtUtcMs)
+          ? resolvedPayload.assignedAtUtcMs
+          : experimentAssignmentAssignedAtUtcMs),
       serverUpdatedAt: serverTimestamp(),
       lastOperationId: operationId,
     },
@@ -348,6 +351,157 @@ function writeFieldExperimentAssignment(db, {
     acknowledgedAt: serverTimestamp(),
   });
   return batch.commit();
+}
+
+const assessmentRunStartedAtUtcMs = 5000;
+const assessmentRunCompletedAtUtcMs = 6000;
+const assessmentRunInstrumentChecksum =
+  'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const assessmentRunFormChecksum =
+  'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+const assessmentRunContractHash =
+  'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0';
+
+function fieldAssessmentRunPayload(overrides = {}) {
+  return {
+    runId: 'assessment-run-pre',
+    ownerId: alice,
+    learningSessionId: 'assessment-session-pre',
+    studyCycleId: 'study-cycle-2026',
+    phase: 'pre',
+    state: 'active',
+    protocolId: 'assessment-protocol',
+    protocolVersion: 'protocol-1',
+    experimentId: 'study-a',
+    experimentVersion: 1,
+    assignmentId: 'experiment-assignment:assessment-cloud-1',
+    cohort: 'intervention',
+    consentVersion: 1,
+    consentDecidedAtUtcMs: 4500,
+    instrumentId: 'instrument-core',
+    instrumentVersion: 'instrument-v1',
+    formId: 'form-a',
+    formVersion: 'form-v1',
+    instrumentChecksumSha256: assessmentRunInstrumentChecksum,
+    formChecksumSha256: assessmentRunFormChecksum,
+    appVersion: '1.0.0',
+    buildId: 'task-12-sync',
+    databaseSchemaVersion: 15,
+    contentRevision: 'assessment-content-v1',
+    evidencePolicyVersion: 'learning-evidence-v1',
+    featureContractRevision: '1.0.0',
+    featureContractHash: assessmentRunContractHash,
+    startedAtUtcMs: assessmentRunStartedAtUtcMs,
+    completedAtUtcMs: null,
+    abandonedAtUtcMs: null,
+    ...overrides,
+  };
+}
+
+function writeFieldAssessmentRun(db, {
+  uid = alice,
+  entityId = 'assessment-run-pre',
+  operationId = 'assessmentRun:assessment-run-pre:1',
+  schemaVersion = 1,
+  operationSchemaVersion = 1,
+  revision = 1,
+  baseRevision = revision - 1,
+  isDeleted = false,
+  clientUpdatedAtUtcMs,
+  payload,
+  entityExtra = {},
+  operationExtra = {},
+  omitEntityKey,
+  omitOperationKey,
+} = {}) {
+  const resolvedPayload = payload ?? fieldAssessmentRunPayload({
+    runId: entityId,
+    ownerId: uid,
+  });
+  const resolvedClientUpdatedAtUtcMs = clientUpdatedAtUtcMs ?? (
+    resolvedPayload.completedAtUtcMs ??
+    resolvedPayload.abandonedAtUtcMs ??
+    resolvedPayload.startedAtUtcMs
+  );
+  const batch = writeBatch(db);
+  const entityDocument = {
+    schemaVersion,
+    entityId,
+    payload: resolvedPayload,
+    revision,
+    isDeleted,
+    clientUpdatedAtUtcMs: resolvedClientUpdatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+    ...entityExtra,
+  };
+  const operationDocument = {
+    schemaVersion: operationSchemaVersion,
+    operationId,
+    entityType: 'assessmentRun',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+    ...operationExtra,
+  };
+  if (omitEntityKey !== undefined) delete entityDocument[omitEntityKey];
+  if (omitOperationKey !== undefined) delete operationDocument[omitOperationKey];
+  batch.set(
+    doc(db, 'field_users', uid, 'assessment_runs', entityId),
+    entityDocument,
+  );
+  batch.set(
+    doc(db, 'field_users', uid, 'operations', operationId),
+    operationDocument,
+  );
+  return batch.commit();
+}
+
+function writeAssessmentAssignment(db, operationSuffix) {
+  const assignmentId = 'experiment-assignment:assessment-cloud-1';
+  return writeFieldExperimentAssignment(db, {
+    entityId: assignmentId,
+    operationId: `experiment-assignment-operation-${operationSuffix}`,
+    payload: fieldExperimentAssignmentPayload({
+      assignmentId,
+      ownerId: alice,
+      experimentId: 'study-a',
+      experimentVersion: 1,
+      cohort: 'intervention',
+      protocolVersion: 'protocol-1',
+      assignedAtUtcMs: 4600,
+    }),
+  });
+}
+
+async function seedFieldAssessmentRun({
+  uid = alice,
+  entityId = 'assessment-run-pre',
+  revision = 1,
+  payload,
+} = {}) {
+  await testEnv.withSecurityRulesDisabled(async (context) => {
+    const db = context.firestore();
+    const resolvedPayload = payload ?? fieldAssessmentRunPayload({
+      runId: entityId,
+      ownerId: uid,
+    });
+    await setDoc(doc(db, 'field_users', uid, 'assessment_runs', entityId), {
+      schemaVersion: 1,
+      entityId,
+      payload: resolvedPayload,
+      revision,
+      isDeleted: false,
+      clientUpdatedAtUtcMs:
+        resolvedPayload.completedAtUtcMs ??
+        resolvedPayload.abandonedAtUtcMs ??
+        resolvedPayload.startedAtUtcMs,
+      serverUpdatedAt: new Date(0),
+      lastOperationId: `seed:${entityId}:${revision}`,
+    });
+  });
 }
 
 before(async () => {
@@ -715,6 +869,7 @@ describe('field sync ownership and atomic revision contract', () => {
       ['srs_states', 'srsState'],
       ['achievement_unlocks', 'achievementUnlock'],
       ['experiment_assignments', 'experimentAssignment'],
+      ['assessment_runs', 'assessmentRun'],
     ];
     for (const [collection, entityType] of legacyCollections) {
       await assertFails(
@@ -1492,6 +1647,667 @@ describe('experiment_assignments immutable research contract', () => {
         }),
       );
     }
+  });
+});
+
+describe('assessment_runs revisioned research contract', () => {
+  it('keeps assessment responses on canonical AnswerAttempts only', async () => {
+    await assertFails(
+      writeFieldLearningEvent(authDb(), {
+        collection: 'assessment_attempts',
+        entityType: 'assessmentAttempt',
+        entityId: 'assessment-attempt-forbidden',
+        operationId: 'assessmentAttempt:forbidden:1',
+        payload: {},
+      }),
+    );
+    await assertFails(
+      writeFieldLearningEvent(authDb(), {
+        collection: 'assessment_responses',
+        entityType: 'assessmentResponse',
+        entityId: 'assessment-response-forbidden',
+        operationId: 'assessmentResponse:forbidden:1',
+        payload: { submittedRawResponse: 'must-never-sync' },
+      }),
+    );
+  });
+
+  it('allows an authenticated own-owner Active v1 create with exact pins', async () => {
+    const db = authDb();
+    const assignmentId = 'experiment-assignment:assessment-cloud-1';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: assignmentId,
+        operationId: 'experiment-assignment-operation-assessment-create',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId,
+          ownerId: alice,
+          experimentId: 'study-a',
+          experimentVersion: 1,
+          cohort: 'intervention',
+          protocolVersion: 'protocol-1',
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+
+    await assertSucceeds(writeFieldAssessmentRun(db));
+    const ref = doc(
+      db,
+      'field_users',
+      alice,
+      'assessment_runs',
+      'assessment-run-pre',
+    );
+    const snapshot = await assertSucceeds(getDoc(ref));
+    if (
+      snapshot.data().schemaVersion !== 1 ||
+      snapshot.data().revision !== 1 ||
+      snapshot.data().payload.state !== 'active' ||
+      snapshot.data().payload.ownerId !== alice ||
+      snapshot.data().payload.assignmentId !== assignmentId
+    ) {
+      throw new Error('Assessment run create lost canonical research pins.');
+    }
+    await assertFails(getDoc(doc(
+      authDb(bob),
+      'field_users',
+      alice,
+      'assessment_runs',
+      ref.id,
+    )));
+  });
+
+  it('allows only revision-two Completed or Abandoned terminal updates', async () => {
+    const db = authDb();
+    const assignmentId = 'experiment-assignment:assessment-cloud-1';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: assignmentId,
+        operationId: 'experiment-assignment-operation-assessment-terminal',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId,
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+
+    const terminalCases = [
+      {
+        entityId: 'assessment-run-completed',
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        abandonedAtUtcMs: null,
+      },
+      {
+        entityId: 'assessment-run-abandoned',
+        state: 'abandoned',
+        completedAtUtcMs: null,
+        abandonedAtUtcMs: assessmentRunCompletedAtUtcMs,
+      },
+    ];
+    for (const terminal of terminalCases) {
+      await seedFieldAssessmentRun({
+        entityId: terminal.entityId,
+        payload: fieldAssessmentRunPayload({ runId: terminal.entityId }),
+      });
+      await assertSucceeds(
+        writeFieldAssessmentRun(db, {
+          entityId: terminal.entityId,
+          operationId: `assessmentRun:${terminal.entityId}:2`,
+          revision: 2,
+          baseRevision: 1,
+          clientUpdatedAtUtcMs: assessmentRunCompletedAtUtcMs,
+          payload: fieldAssessmentRunPayload({
+            runId: terminal.entityId,
+            state: terminal.state,
+            completedAtUtcMs: terminal.completedAtUtcMs,
+            abandonedAtUtcMs: terminal.abandonedAtUtcMs,
+          }),
+        }),
+      );
+      const snapshot = await assertSucceeds(getDoc(doc(
+        db,
+        'field_users',
+        alice,
+        'assessment_runs',
+        terminal.entityId,
+      )));
+      if (
+        snapshot.data().revision !== 2 ||
+        snapshot.data().payload.state !== terminal.state
+      ) {
+        throw new Error(`Assessment ${terminal.state} transition was not exact.`);
+      }
+    }
+  });
+
+  it('requires the exact cloud assignment dependency before run creation', async () => {
+    const db = authDb();
+    await assertFails(writeFieldAssessmentRun(db));
+
+    const assignmentId = 'experiment-assignment:assessment-cloud-1';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: assignmentId,
+        operationId: 'experiment-assignment-operation-assessment-dependency',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId,
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-assignment-mismatch',
+        operationId: 'assessmentRun:assessment-run-assignment-mismatch:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-assignment-mismatch',
+          experimentId: 'different-study',
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-cohort-mismatch',
+        operationId: 'assessmentRun:assessment-run-cohort-mismatch:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-cohort-mismatch',
+          cohort: 'control',
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-protocol-mismatch',
+        operationId: 'assessmentRun:assessment-run-protocol-mismatch:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-protocol-mismatch',
+          protocolVersion: 'protocol-2',
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-experiment-version-mismatch',
+        operationId:
+          'assessmentRun:assessment-run-experiment-version-mismatch:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-experiment-version-mismatch',
+          experimentVersion: 2,
+        }),
+      }),
+    );
+
+    const secondAssignmentId = 'experiment-assignment:assessment-cloud-2';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: secondAssignmentId,
+        operationId: 'experiment-assignment-operation-assessment-dependency-2',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: secondAssignmentId,
+          ownerId: alice,
+          experimentId: 'study-a',
+          experimentVersion: 2,
+          cohort: 'intervention',
+          protocolVersion: 'protocol-2',
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-cross-assignment',
+        operationId: 'assessmentRun:assessment-run-cross-assignment:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-cross-assignment',
+          assignmentId: secondAssignmentId,
+        }),
+      }),
+    );
+  });
+
+  it('rejects every missing canonical payload key and every extra key', async () => {
+    const db = authDb();
+    const assignmentId = 'experiment-assignment:assessment-cloud-1';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: assignmentId,
+        operationId: 'experiment-assignment-operation-assessment-shape',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId,
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+    const keys = Object.keys(fieldAssessmentRunPayload());
+    for (const key of keys) {
+      const entityId = `assessment-run-missing-${key}`;
+      const payload = fieldAssessmentRunPayload({ runId: entityId });
+      delete payload[key];
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          clientUpdatedAtUtcMs: assessmentRunStartedAtUtcMs,
+          payload,
+        }),
+      );
+    }
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-extra-key',
+        operationId: 'assessmentRun:assessment-run-extra-key:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-extra-key',
+          submittedRawResponse: 'must-never-sync',
+        }),
+      }),
+    );
+  });
+
+  it('rejects missing or extra entity and operation envelope keys', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-outer-shape'));
+    const cases = [
+      ['entity-missing', { omitEntityKey: 'lastOperationId' }],
+      ['entity-extra', { entityExtra: { unexpected: true } }],
+      ['operation-missing', { omitOperationKey: 'resultingRevision' }],
+      ['operation-extra', { operationExtra: { unexpected: true } }],
+    ];
+    for (const [name, options] of cases) {
+      const entityId = `assessment-run-outer-${name}`;
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({ runId: entityId }),
+          ...options,
+        }),
+      );
+    }
+  });
+
+  it('rejects noncanonical identifiers checksums versions and field types', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-types'));
+    const overlong = 'x'.repeat(257);
+    const cases = [
+      ['run-empty', { runId: '' }],
+      ['run-trimmed', { runId: ' assessment-run' }],
+      ['run-overlong', { runId: overlong }],
+      ['owner-empty', { ownerId: '' }],
+      ['owner-type', { ownerId: 1 }],
+      ['session-empty', { learningSessionId: '' }],
+      ['cycle-trimmed', { studyCycleId: ' cycle' }],
+      ['phase-unknown', { phase: 'during' }],
+      ['state-unknown', { state: 'reopened' }],
+      ['protocol-empty', { protocolId: '' }],
+      ['protocol-trimmed', { protocolId: ' assessment-protocol' }],
+      ['protocol-overlong', { protocolId: overlong }],
+      ['protocol-version-empty', { protocolVersion: '' }],
+      ['protocol-version-trimmed', { protocolVersion: ' protocol-1' }],
+      ['protocol-version-overlong', { protocolVersion: overlong }],
+      ['protocol-version-type', { protocolVersion: 1 }],
+      ['experiment-empty', { experimentId: '' }],
+      ['experiment-version-zero', { experimentVersion: 0 }],
+      ['experiment-version-type', { experimentVersion: '1' }],
+      ['assignment-empty', { assignmentId: '' }],
+      ['cohort-overlong', { cohort: overlong }],
+      ['consent-version-zero', { consentVersion: 0 }],
+      ['consent-version-type', { consentVersion: '1' }],
+      ['instrument-empty', { instrumentId: '' }],
+      ['instrument-trimmed', { instrumentId: ' instrument-core' }],
+      ['instrument-version-empty', { instrumentVersion: '' }],
+      ['instrument-version-trimmed', { instrumentVersion: ' instrument-v1' }],
+      ['instrument-version-overlong', { instrumentVersion: overlong }],
+      ['form-empty', { formId: '' }],
+      ['form-trimmed', { formId: ' form-a' }],
+      ['form-version-empty', { formVersion: '' }],
+      ['form-version-trimmed', { formVersion: ' form-v1' }],
+      ['form-version-overlong', { formVersion: overlong }],
+      ['instrument-checksum-short', { instrumentChecksumSha256: 'abc' }],
+      ['instrument-checksum-uppercase', {
+        instrumentChecksumSha256: assessmentRunInstrumentChecksum.toUpperCase(),
+      }],
+      ['form-checksum-type', { formChecksumSha256: 1 }],
+      ['schema-version-wrong', { databaseSchemaVersion: 14 }],
+      ['schema-version-type', { databaseSchemaVersion: '15' }],
+      ['app-version-empty', { appVersion: '' }],
+      ['app-version-trimmed', { appVersion: ' 1.0.0' }],
+      ['app-version-overlong', { appVersion: overlong }],
+      ['build-id-empty', { buildId: '' }],
+      ['build-id-trimmed', { buildId: ' task-12-sync' }],
+      ['build-id-overlong', { buildId: overlong }],
+      ['content-revision-empty', { contentRevision: '' }],
+      ['content-revision-trimmed', {
+        contentRevision: ' assessment-content-v1',
+      }],
+      ['content-revision-overlong', { contentRevision: overlong }],
+      ['evidence-policy-empty', { evidencePolicyVersion: '' }],
+      ['evidence-policy-trimmed', {
+        evidencePolicyVersion: ' learning-evidence-v1',
+      }],
+      ['evidence-policy-overlong', { evidencePolicyVersion: overlong }],
+      ['contract-revision-empty', { featureContractRevision: '' }],
+      ['contract-revision-trimmed', { featureContractRevision: ' 1.0.0' }],
+      ['contract-revision-overlong', { featureContractRevision: overlong }],
+      ['contract-hash-short', { featureContractHash: 'abc' }],
+      ['contract-hash-uppercase', {
+        featureContractHash: assessmentRunContractHash.toUpperCase(),
+      }],
+      ['started-type', { startedAtUtcMs: '5000' }],
+    ];
+
+    for (const [name, override] of cases) {
+      const entityId = `assessment-run-invalid-${name}`;
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            ...override,
+          }),
+        }),
+      );
+    }
+    const overlongDocumentId = `assessment-run-${'x'.repeat(257)}`;
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: overlongDocumentId,
+        operationId: 'assessmentRun:overlong-document:1',
+        payload: fieldAssessmentRunPayload({ runId: overlongDocumentId }),
+      }),
+    );
+    const trimmedDocumentId = ' assessment-run-trimmed';
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: trimmedDocumentId,
+        operationId: 'assessmentRun:trimmed-document:1',
+        payload: fieldAssessmentRunPayload({ runId: trimmedDocumentId }),
+      }),
+    );
+  });
+
+  it('rejects invalid timestamp and terminal-state shapes', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-times'));
+    const cases = [
+      ['negative-consent-time', { consentDecidedAtUtcMs: -1 }],
+      ['consent-after-start', { consentDecidedAtUtcMs: 5001 }],
+      ['negative-start', { startedAtUtcMs: -1 }],
+      ['active-completed-time', { completedAtUtcMs: 6000 }],
+      ['active-abandoned-time', { abandonedAtUtcMs: 6000 }],
+      ['completed-missing-time', { state: 'completed' }],
+      ['completed-both-times', {
+        state: 'completed',
+        completedAtUtcMs: 6000,
+        abandonedAtUtcMs: 6000,
+      }],
+      ['completed-before-start', {
+        state: 'completed',
+        completedAtUtcMs: 4999,
+      }],
+      ['abandoned-missing-time', { state: 'abandoned' }],
+      ['abandoned-both-times', {
+        state: 'abandoned',
+        completedAtUtcMs: 6000,
+        abandonedAtUtcMs: 6000,
+      }],
+    ];
+    for (const [name, override] of cases) {
+      const entityId = `assessment-run-time-${name}`;
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          clientUpdatedAtUtcMs: assessmentRunStartedAtUtcMs,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            ...override,
+          }),
+        }),
+      );
+    }
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-client-time-drift',
+        operationId: 'assessmentRun:assessment-run-client-time-drift:1',
+        clientUpdatedAtUtcMs: assessmentRunStartedAtUtcMs + 1,
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-client-time-drift',
+        }),
+      }),
+    );
+  });
+
+  it('rejects assessment schema v2 and deletion envelopes', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-envelope'));
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-schema-v2',
+        operationId: 'assessmentRun:assessment-run-schema-v2:1',
+        schemaVersion: 2,
+        operationSchemaVersion: 1,
+        payload: fieldAssessmentRunPayload({ runId: 'assessment-run-schema-v2' }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-deleted',
+        operationId: 'assessmentRun:assessment-run-deleted:1',
+        isDeleted: true,
+        payload: fieldAssessmentRunPayload({ runId: 'assessment-run-deleted' }),
+      }),
+    );
+  });
+
+  it('rejects create-terminal cross-owner and owner reassignment writes', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-owner'));
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-created-completed',
+        operationId: 'assessmentRun:assessment-run-created-completed:1',
+        clientUpdatedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-created-completed',
+          state: 'completed',
+          completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldAssessmentRun(authDb(bob), {
+        uid: alice,
+        entityId: 'assessment-run-cross-auth',
+        operationId: 'assessmentRun:assessment-run-cross-auth:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-cross-auth',
+        }),
+      }),
+    );
+
+    await seedFieldAssessmentRun({ entityId: 'assessment-run-owner-change' });
+    await assertFails(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-owner-change',
+        operationId: 'assessmentRun:assessment-run-owner-change:2',
+        revision: 2,
+        baseRevision: 1,
+        clientUpdatedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-owner-change',
+          ownerId: bob,
+          state: 'completed',
+          completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        }),
+      }),
+    );
+  });
+
+  it('rejects metadata mutation revision gaps and Active-to-Active updates', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-updates'));
+    const cases = [
+      ['protocol', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        protocolId: 'different-protocol',
+      }],
+      ['protocol-version', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        protocolVersion: 'protocol-2',
+      }],
+      ['experiment', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        experimentId: 'study-b',
+        experimentVersion: 2,
+      }],
+      ['assignment', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        assignmentId: 'experiment-assignment:assessment-cloud-2',
+      }],
+      ['cohort-consent', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        cohort: 'control',
+        consentVersion: 2,
+        consentDecidedAtUtcMs: 4499,
+      }],
+      ['instrument', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        instrumentId: 'instrument-secondary',
+        instrumentVersion: 'instrument-v2',
+      }],
+      ['form', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        formId: 'form-b',
+        formVersion: 'form-v2',
+      }],
+      ['checksum', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        formChecksumSha256: assessmentRunInstrumentChecksum,
+      }],
+      ['build-schema', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        appVersion: '1.0.1',
+        buildId: 'task-12-sync-2',
+        databaseSchemaVersion: 16,
+      }],
+      ['content-policy', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        contentRevision: 'assessment-content-v2',
+        evidencePolicyVersion: 'learning-evidence-v2',
+      }],
+      ['feature-contract', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        featureContractRevision: '2.0.0',
+        featureContractHash: assessmentRunInstrumentChecksum,
+      }],
+      ['session-cycle-phase', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        learningSessionId: 'different-session',
+        studyCycleId: 'different-cycle',
+        phase: 'post',
+      }],
+      ['start-time', 2, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+        startedAtUtcMs: assessmentRunStartedAtUtcMs - 1,
+      }],
+      ['revision-gap', 3, 1, {
+        state: 'completed',
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+      }],
+      ['active-to-active', 2, 1, {}],
+    ];
+    for (const [name, revision, baseRevision, override] of cases) {
+      const entityId = `assessment-run-update-${name}`;
+      await seedFieldAssessmentRun({ entityId });
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:${revision}`,
+          revision,
+          baseRevision,
+          clientUpdatedAtUtcMs:
+            override.completedAtUtcMs ?? assessmentRunStartedAtUtcMs,
+          payload: fieldAssessmentRunPayload({ runId: entityId, ...override }),
+        }),
+      );
+    }
+  });
+
+  it('rejects terminal reopen swap timestamp mutation and delete', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'assessment-terminal'));
+    const completedPayload = fieldAssessmentRunPayload({
+      runId: 'assessment-run-terminal',
+      state: 'completed',
+      completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+    });
+    const terminalCases = [
+      ['reopen', {
+        state: 'active',
+        completedAtUtcMs: null,
+      }],
+      ['swap', {
+        state: 'abandoned',
+        completedAtUtcMs: null,
+        abandonedAtUtcMs: assessmentRunCompletedAtUtcMs,
+      }],
+      ['timestamp', {
+        completedAtUtcMs: assessmentRunCompletedAtUtcMs + 1,
+      }],
+      ['metadata', { contentRevision: 'different-content' }],
+    ];
+    for (const [name, override] of terminalCases) {
+      const entityId = `assessment-run-terminal-${name}`;
+      await seedFieldAssessmentRun({
+        entityId,
+        revision: 2,
+        payload: { ...completedPayload, runId: entityId },
+      });
+      const payload = {
+        ...completedPayload,
+        runId: entityId,
+        ...override,
+      };
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:3`,
+          revision: 3,
+          baseRevision: 2,
+          clientUpdatedAtUtcMs:
+            payload.completedAtUtcMs ?? payload.abandonedAtUtcMs ??
+            assessmentRunStartedAtUtcMs,
+          payload,
+        }),
+      );
+    }
+
+    await seedFieldAssessmentRun({ entityId: 'assessment-run-delete' });
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'assessment_runs',
+      'assessment-run-delete',
+    )));
   });
 });
 

@@ -253,6 +253,24 @@ final class FirestoreSyncPreflight {
         payload: assignmentPayload,
         entityId: entityId,
       );
+    } else if (collection == SyncCollection.assessmentRuns) {
+      final runPayload = payload;
+      if (runPayload == null ||
+          entityId == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final state = runPayload['state'];
+      final revision = state == 'active' ? 1 : 2;
+      AssessmentRunSyncPayloadContract.requireCanonical(
+        payload: runPayload,
+        expectedEntityId: entityId,
+        expectedOwnerId: firebaseUid,
+        revision: revision,
+        isDeleted: false,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
+      );
+      _requireCanonicalAssessmentAssignmentId(runPayload);
     }
     return beginTransaction();
   }
@@ -337,6 +355,17 @@ final class FirestoreSyncCodec {
             _requiredBool(data, 'isDeleted')) {
           throw const InvalidSyncPayloadFailure();
         }
+      } else if (collection == SyncCollection.assessmentRuns) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        AssessmentRunSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          expectedEntityId: entityId,
+          expectedOwnerId: expectedFirebaseUid,
+          revision: _requiredInt(data, 'revision'),
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+        );
+        _requireCanonicalAssessmentAssignmentId(canonicalPayload);
       }
       return SyncEntity(
         collection: collection,
@@ -362,7 +391,8 @@ final class FirestoreSyncCodec {
     Map<String, Object?> data, {
     required PushMutation expectedMutation,
   }) {
-    if (expectedMutation.collection == SyncCollection.experimentAssignments) {
+    if (expectedMutation.collection == SyncCollection.experimentAssignments ||
+        expectedMutation.collection == SyncCollection.assessmentRuns) {
       _requireExactKeys(data, _operationEnvelopeKeys);
     }
     if (_requiredInt(data, 'schemaVersion') !=
@@ -395,6 +425,25 @@ final class FirestoreSyncCodec {
         payloadVersion: mutation.payloadVersion,
         payload: mutation.payload,
       );
+      return;
+    }
+    if (mutation.collection == SyncCollection.assessmentRuns) {
+      if (mutation.payloadVersion != 1 ||
+          mutation.operationKind != SyncOperationKind.upsert ||
+          !((mutation.baseRevision == 0 && mutation.localRevision == 1) ||
+              (mutation.baseRevision == 1 && mutation.localRevision == 2))) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      AssessmentRunSyncPayloadContract.requireCanonical(
+        payload: mutation.payload,
+        expectedEntityId: mutation.entityId,
+        expectedOwnerId: mutation.firebaseUid,
+        revision: mutation.localRevision,
+        isDeleted: false,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      );
+      _requireCanonicalAssessmentAssignmentId(mutation.payload);
       return;
     }
     if (mutation.collection != SyncCollection.experimentAssignments) return;
@@ -509,6 +558,18 @@ void _requireCanonicalExperimentAssignmentId({
         experimentVersion: payload['experimentVersion']! as int,
       );
   if (entityId != canonicalId || payload['assignmentId'] != canonicalId) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+void _requireCanonicalAssessmentAssignmentId(Map<String, Object?> payload) {
+  final canonicalId =
+      DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+        firebaseUid: payload['ownerId']! as String,
+        experimentId: payload['experimentId']! as String,
+        experimentVersion: payload['experimentVersion']! as int,
+      );
+  if (payload['assignmentId'] != canonicalId) {
     throw const InvalidSyncPayloadFailure();
   }
 }

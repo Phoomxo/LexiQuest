@@ -512,6 +512,138 @@ service cloud.firestore {
         && !request.resource.data.isDeleted;
     }
 
+    function fieldAssessmentRunPayloadKeysOk(payload) {
+      return payload.keys().hasOnly([
+          'runId', 'ownerId', 'learningSessionId', 'studyCycleId', 'phase',
+          'state', 'protocolId', 'protocolVersion', 'experimentId',
+          'experimentVersion', 'assignmentId', 'cohort', 'consentVersion',
+          'consentDecidedAtUtcMs', 'instrumentId', 'instrumentVersion',
+          'formId', 'formVersion', 'instrumentChecksumSha256',
+          'formChecksumSha256', 'appVersion', 'buildId',
+          'databaseSchemaVersion', 'contentRevision',
+          'evidencePolicyVersion', 'featureContractRevision',
+          'featureContractHash', 'startedAtUtcMs', 'completedAtUtcMs',
+          'abandonedAtUtcMs'
+        ])
+        && payload.keys().size() == 30;
+    }
+
+    function fieldAssessmentRunPayloadShapeOk(uid, runId) {
+      let payload = request.resource.data.payload;
+      return fieldAssessmentRunPayloadKeysOk(payload)
+        // Validate the canonical identity once, then require the payload to
+        // reuse it exactly instead of re-running the same predicate twice.
+        && fieldResearchIdentifierOk(runId)
+        && payload.runId == runId
+        // Authentication owns ownerId canonicality. The remaining assignment
+        // lineage fields are validated once by
+        // fieldAssessmentRunAssignmentOk against an immutable revision-one
+        // experiment assignment, so repeating its identifier/type predicates
+        // here is redundant on the valid create path.
+        && payload.ownerId == uid
+        && fieldResearchIdentifierOk(payload.learningSessionId)
+        && fieldResearchIdentifierOk(payload.studyCycleId)
+        && payload.phase in ['pre', 'post']
+        && fieldResearchIdentifierOk(payload.protocolId)
+        && payload.consentVersion is int
+        && payload.consentVersion > 0
+        && payload.consentDecidedAtUtcMs is int
+        && payload.consentDecidedAtUtcMs >= 0
+        && fieldResearchIdentifierOk(payload.instrumentId)
+        && fieldResearchIdentifierOk(payload.instrumentVersion)
+        && fieldResearchIdentifierOk(payload.formId)
+        && fieldResearchIdentifierOk(payload.formVersion)
+        && payload.instrumentChecksumSha256 is string
+        && payload.instrumentChecksumSha256.matches('^[0-9a-f]{64}$')
+        && payload.formChecksumSha256 is string
+        && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
+        && fieldResearchIdentifierOk(payload.appVersion)
+        && fieldResearchIdentifierOk(payload.buildId)
+        && payload.databaseSchemaVersion == 15
+        && fieldResearchIdentifierOk(payload.contentRevision)
+        && payload.evidencePolicyVersion == 'learning-evidence-v1'
+        && payload.featureContractRevision == '1.0.0'
+        && payload.featureContractHash
+             == 'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0'
+        && payload.startedAtUtcMs is int
+        && payload.startedAtUtcMs >= 0
+        && payload.consentDecidedAtUtcMs <= payload.startedAtUtcMs;
+    }
+
+    function fieldAssessmentRunAssignmentOk(uid) {
+      let payload = request.resource.data.payload;
+      let assignmentPath =
+        /databases/$(database)/documents/field_users/$(uid)/experiment_assignments/$(payload.assignmentId);
+      let assignmentEntity = getAfter(assignmentPath).data;
+      let assignment = assignmentEntity.payload;
+      return existsAfter(assignmentPath)
+        && assignmentEntity.schemaVersion == 1
+        && assignmentEntity.entityId == payload.assignmentId
+        && assignmentEntity.revision == 1
+        && !assignmentEntity.isDeleted
+        && assignment.assignmentId == payload.assignmentId
+        && assignment.ownerId == uid
+        && assignment.experimentId == payload.experimentId
+        && assignment.experimentVersion == payload.experimentVersion
+        && assignment.cohort == payload.cohort
+        && assignment.protocolVersion == payload.protocolVersion
+        && payload.consentDecidedAtUtcMs <= assignment.assignedAtUtcMs
+        && assignment.assignedAtUtcMs <= payload.startedAtUtcMs;
+    }
+
+    function fieldAssessmentRunActiveStateOk() {
+      let payload = request.resource.data.payload;
+      return payload.state == 'active'
+        && request.resource.data.revision == 1
+        && payload.completedAtUtcMs == null
+        && payload.abandonedAtUtcMs == null
+        && request.resource.data.clientUpdatedAtUtcMs
+             == payload.startedAtUtcMs
+        && !request.resource.data.isDeleted;
+    }
+
+    function fieldAssessmentRunTerminalStateOk() {
+      let payload = request.resource.data.payload;
+      return request.resource.data.revision == 2
+        && ((payload.state == 'completed'
+             && payload.completedAtUtcMs is int
+             && payload.completedAtUtcMs >= payload.startedAtUtcMs
+             && payload.abandonedAtUtcMs == null
+             && request.resource.data.clientUpdatedAtUtcMs
+                  == payload.completedAtUtcMs)
+            || (payload.state == 'abandoned'
+                && payload.completedAtUtcMs == null
+                && payload.abandonedAtUtcMs is int
+                && payload.abandonedAtUtcMs >= payload.startedAtUtcMs
+                && request.resource.data.clientUpdatedAtUtcMs
+                     == payload.abandonedAtUtcMs))
+        && !request.resource.data.isDeleted;
+    }
+
+    function fieldAssessmentRunCreateOk(uid, runId) {
+      return fieldAssessmentRunPayloadShapeOk(uid, runId)
+        && fieldAssessmentRunAssignmentOk(uid)
+        && fieldAssessmentRunActiveStateOk();
+    }
+
+    function fieldAssessmentRunTerminalUpdateOk(runId) {
+      let payload = request.resource.data.payload;
+      return fieldAssessmentRunPayloadKeysOk(payload)
+        && fieldAssessmentRunTerminalStateOk()
+        && resource.data.schemaVersion == 1
+        && resource.data.entityId == runId
+        && resource.data.revision == 1
+        && !resource.data.isDeleted
+        && resource.data.payload.state == 'active'
+        && resource.data.payload.completedAtUtcMs == null
+        && resource.data.payload.abandonedAtUtcMs == null
+        && payload.diff(resource.data.payload).affectedKeys().hasOnly(
+             payload.state == 'completed'
+               ? ['state', 'completedAtUtcMs']
+               : ['state', 'abandonedAtUtcMs']
+           );
+    }
+
     function fieldOperationAfter(uid, operationId) {
       return getAfter(
         /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId)
@@ -554,7 +686,7 @@ service cloud.firestore {
         && request.resource.data.entityType in [
              'category', 'word', 'attempt', 'readingEvent',
              'rewardTransaction', 'srsState', 'achievementUnlock',
-             'experimentAssignment'
+             'experimentAssignment', 'assessmentRun'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -685,6 +817,77 @@ service cloud.firestore {
         && entity.lastOperationId == request.resource.data.operationId
         && entity.schemaVersion == 1
         && entity.revision == 1;
+    }
+
+    function fieldOperationMatchesAssessmentRun(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/assessment_runs/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return request.resource.data.schemaVersion == 1
+        && request.resource.data.operationKind == 'upsert'
+        && ((request.resource.data.baseRevision == 0
+             && request.resource.data.resultingRevision == 1
+             && !exists(entityPath))
+            || (request.resource.data.baseRevision == 1
+                && request.resource.data.resultingRevision == 2
+                && exists(entityPath)
+                && get(entityPath).data.revision == 1))
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.schemaVersion == 1
+        && entity.revision == request.resource.data.resultingRevision
+        && entity.payload.runId == entityId
+        && entity.payload.ownerId == uid
+        && entity.serverUpdatedAt == request.resource.data.acknowledgedAt;
+    }
+
+    // The assessment entity owns the complete payload, assignment and state
+    // validation. Its reciprocal operation check only proves that a fresh,
+    // exact acknowledgement for this revision exists in the same atomic write.
+    // The operation document's own match owns its full exact-envelope check.
+    function fieldAssessmentRunOperationLinkOk(uid, runId) {
+      let operationId = request.resource.data.lastOperationId;
+      let operationPath =
+        /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId);
+      let operation = getAfter(operationPath).data;
+      return existsAfter(operationPath)
+        && operation.schemaVersion == 1
+        && operation.operationId == operationId
+        && operation.entityType == 'assessmentRun'
+        && operation.entityId == runId
+        && operation.operationKind == 'upsert'
+        && operation.baseRevision == request.resource.data.revision - 1
+        && operation.resultingRevision == request.resource.data.revision
+        && operation.acknowledgedAt == request.resource.data.serverUpdatedAt;
+    }
+
+    // Dispatch exactly one entity-specific acknowledgement predicate. A broad
+    // boolean OR here makes the rules evaluator account for unrelated branch
+    // graphs and can exhaust the per-request expression budget as collections
+    // are added. Conditional expressions are lazy, so an assessment operation
+    // never evaluates legacy collection lookups (and vice versa).
+    function fieldOperationMatchesEntity(uid) {
+      let entityType = request.resource.data.entityType;
+      return entityType == 'assessmentRun'
+        ? fieldOperationMatchesAssessmentRun(uid)
+        : entityType == 'experimentAssignment'
+          ? fieldOperationMatchesExperimentAssignment(uid)
+          : entityType == 'category'
+            ? fieldOperationMatchesCategory(uid)
+            : entityType == 'word'
+              ? fieldOperationMatchesWord(uid)
+              : entityType == 'attempt'
+                ? fieldOperationMatchesAttempt(uid)
+                : entityType == 'readingEvent'
+                  ? fieldOperationMatchesReadingEvent(uid)
+                  : entityType == 'rewardTransaction'
+                    ? fieldOperationMatchesRewardTransaction(uid)
+                    : entityType == 'srsState'
+                      ? fieldOperationMatchesSrsState(uid)
+                      : entityType == 'achievementUnlock'
+                        ? fieldOperationMatchesAchievementUnlock(uid)
+                        : false;
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
@@ -853,22 +1056,7 @@ service cloud.firestore {
         allow read: if ownsFieldUser(uid);
         allow create: if ownsFieldUser(uid)
           && fieldOperationEnvelopeOk(operationId)
-          && ((request.resource.data.entityType == 'category'
-               && fieldOperationMatchesCategory(uid))
-              || (request.resource.data.entityType == 'word'
-                  && fieldOperationMatchesWord(uid))
-              || (request.resource.data.entityType == 'attempt'
-                  && fieldOperationMatchesAttempt(uid))
-              || (request.resource.data.entityType == 'readingEvent'
-                  && fieldOperationMatchesReadingEvent(uid))
-              || (request.resource.data.entityType == 'rewardTransaction'
-                  && fieldOperationMatchesRewardTransaction(uid))
-              || (request.resource.data.entityType == 'srsState'
-                  && fieldOperationMatchesSrsState(uid))
-              || (request.resource.data.entityType == 'achievementUnlock'
-                  && fieldOperationMatchesAchievementUnlock(uid))
-              || (request.resource.data.entityType == 'experimentAssignment'
-                  && fieldOperationMatchesExperimentAssignment(uid)));
+          && fieldOperationMatchesEntity(uid);
         allow update, delete: if false;
       }
 
@@ -901,6 +1089,19 @@ service cloud.firestore {
                assignmentId
              );
         allow update, delete: if false;
+      }
+
+      match /assessment_runs/{runId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(runId)
+          && fieldAssessmentRunCreateOk(uid, runId)
+          && fieldAssessmentRunOperationLinkOk(uid, runId);
+        allow update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(runId)
+          && fieldAssessmentRunTerminalUpdateOk(runId)
+          && fieldAssessmentRunOperationLinkOk(uid, runId);
+        allow delete: if false;
       }
 
       // ── P2.6: Quest, streak, events, speech evidence sync rules ───────

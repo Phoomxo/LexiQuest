@@ -6,6 +6,9 @@ import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
+import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
+import 'package:vocab_learning_app/features/assessment/domain/assessment_repository.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
@@ -29,6 +32,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
+import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
   late AppDatabase database;
@@ -1630,6 +1634,296 @@ void main() {
   );
 
   test(
+    'lifecycle manifest declares assessment runs once before every parent',
+    () {
+      final runs = ownerLifecycleManifest
+          .where((descriptor) => descriptor.tableName == 'assessment_runs')
+          .toList(growable: false);
+
+      expect(runs, hasLength(1));
+      expect(runs.single.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        runs.single.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      final runIndex = ownerLifecyclePhysicalDeletionOrder.indexOf(
+        'assessment_runs',
+      );
+      expect(runIndex, greaterThanOrEqualTo(0));
+      for (final parent in const [
+        'learning_sessions',
+        'experiment_assignments',
+        'local_owners',
+      ]) {
+        expect(
+          runIndex,
+          lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf(parent)),
+          reason: 'assessment_runs must be deleted before $parent',
+        );
+      }
+      expect(ownerUpgradeInventory, contains('assessment_runs'));
+    },
+  );
+
+  test(
+    'merge coalesces only byte-equivalent assessment runs under owner mapping',
+    () async {
+      final pair = await _seedEquivalentAssessmentPair(database);
+      final guestBefore = await _assessmentRunSnapshot(
+        database,
+        pair.guestRun.id,
+      );
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      expect(result.targetOwnerId, 'account-owner');
+      expect(await _assessmentRunsForOwner(database, 'guest-owner'), isEmpty);
+      final targetRuns = await _assessmentRunsForOwner(
+        database,
+        'account-owner',
+      );
+      expect(targetRuns, hasLength(1));
+      expect(targetRuns.single['study_cycle_id'], 'assessment-cycle');
+      expect(targetRuns.single['phase'], 'pre');
+      expect(targetRuns.single['state'], 'active');
+      expect(targetRuns.single['protocol_id'], guestBefore['protocol_id']);
+      expect(
+        targetRuns.single['protocol_version'],
+        guestBefore['protocol_version'],
+      );
+      expect(targetRuns.single['cohort'], guestBefore['cohort']);
+      expect(
+        targetRuns.single['instrument_checksum_sha256'],
+        guestBefore['instrument_checksum_sha256'],
+      );
+      expect(
+        targetRuns.single['form_checksum_sha256'],
+        guestBefore['form_checksum_sha256'],
+      );
+      expect(
+        targetRuns.single['feature_contract_hash'],
+        guestBefore['feature_contract_hash'],
+      );
+      expect(targetRuns.single['assignment_id'], pair.targetAssignment.id);
+      expect(
+        targetRuns.single['learning_session_id'],
+        pair.targetRun.learningSessionId,
+      );
+      expect(await _experimentAssignmentOutbox(database), hasLength(1));
+      expect(
+        (await _experimentAssignmentOutbox(database)).single.ownerId,
+        'account-owner',
+      );
+    },
+  );
+
+  test(
+    'equivalent terminal run merge retires source revisions and keeps target '
+    'sync claimable',
+    () async {
+      final pair = await _seedEquivalentAssessmentPair(database);
+      final terminalAtUtc = DateTime.fromMillisecondsSinceEpoch(
+        40,
+        isUtc: true,
+      );
+      final assessments = DriftAssessmentRepository(database);
+      await assessments.complete(
+        runId: pair.guestRun.id,
+        completedAtUtc: terminalAtUtc,
+      );
+      await assessments.complete(
+        runId: pair.targetRun.id,
+        completedAtUtc: terminalAtUtc,
+      );
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final operations =
+          await (database.select(database.outboxOperations)
+                ..where((row) => row.entityType.equals('assessmentRun'))
+                ..orderBy([
+                  (row) => OrderingTerm.asc(row.baseRevision),
+                  (row) => OrderingTerm.asc(row.operationId),
+                ]))
+              .get();
+      expect(operations.map((row) => row.operationId), <String>[
+        'assessmentRun:${pair.targetRun.id}:1',
+        'assessmentRun:${pair.targetRun.id}:2',
+      ]);
+      expect(
+        operations.map((row) => row.ownerId),
+        everyElement('account-owner'),
+      );
+      expect(
+        operations.map((row) => row.entityId),
+        everyElement(pair.targetRun.id),
+      );
+      expect(operations.map((row) => row.state), everyElement('pending'));
+
+      final claimAtUtc = DateTime.fromMillisecondsSinceEpoch(50, isUtc: true);
+      const gateToken = 'assessment-coalescence-owner-gate';
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: gateToken,
+          nowUtc: claimAtUtc,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final catalog = ResearchProtocolModeCatalog(
+        mappings: <ResearchProtocolModeMapping>[
+          ResearchProtocolModeMapping(
+            protocolId: 'assessment-protocol',
+            experimentId: pair.targetAssignment.experimentId,
+            experimentVersion: pair.targetAssignment.experimentVersion,
+            protocolVersion: pair.targetAssignment.protocolVersion,
+            consentVersion: 1,
+            mode: EvidencePolicyRolloutMode.enforced,
+          ),
+        ],
+      );
+      expect(
+        await database.customUpdate(
+          "UPDATE outbox_operations SET state = 'acknowledged', "
+          'acknowledged_at_utc_ms = 45 '
+          "WHERE entity_type = 'experimentAssignment'",
+        ),
+        1,
+        reason: 'the canonical assignment prerequisite is cloud-durable',
+      );
+      final claims =
+          await DriftSyncStore(
+            database,
+            researchSyncRollout:
+                ResearchCollectionSyncRollout.researchAssessmentV1(
+                  deployedExperimentAssignmentRulesRevision:
+                      experimentAssignmentV1RulesRevision,
+                  deployedAssessmentRunRulesRevision:
+                      assessmentRunV1RulesRevision,
+                  protocolModeCatalog: catalog,
+                ),
+            consentRegistry: DriftConsentRegistry(database),
+          ).claimPending(
+            ownerId: 'account-owner',
+            firebaseUid: 'firebase-user',
+            limit: 1,
+            leaseToken: 'assessment-coalescence-lease',
+            ownerGateToken: gateToken,
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: claimAtUtc,
+          );
+      expect(claims, hasLength(1));
+      expect(claims.single.localOperationId, operations.first.operationId);
+      expect(claims.single.mutation.collection, SyncCollection.assessmentRuns);
+      expect(claims.single.mutation.entityId, pair.targetRun.id);
+      expect(claims.single.mutation.localRevision, 1);
+    },
+  );
+
+  test(
+    'assessment metadata state timestamp and evidence conflicts roll back owner upgrade',
+    () async {
+      final cases = <String, Future<void> Function(AppDatabase)>{
+        'cohort': (db) => _updateAssessmentRun(db, 'cohort', 'other-arm'),
+        'protocol': (db) =>
+            _updateAssessmentRun(db, 'protocol_version', 'other-protocol'),
+        'form': (db) => _updateAssessmentRun(db, 'form_id', 'other-form'),
+        'instrument': (db) =>
+            _updateAssessmentRun(db, 'instrument_id', 'other-instrument'),
+        'checksum': (db) => _updateAssessmentRun(
+          db,
+          'form_checksum_sha256',
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        ),
+        'content': (db) =>
+            _updateAssessmentRun(db, 'content_revision', 'other-content'),
+        'policy': (db) =>
+            _updateAssessmentRun(db, 'evidence_policy_version', 'other-policy'),
+        'contract': (db) => _updateAssessmentRun(
+          db,
+          'feature_contract_hash',
+          'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
+        ),
+        'state': (db) async {
+          await db.customUpdate(
+            "UPDATE assessment_runs SET state = 'completed', "
+            'completed_at_utc_ms = 40 WHERE id = ?',
+            variables: const [Variable<String>('target-assessment-run')],
+          );
+        },
+        'timestamp': (db) => _updateAssessmentRun(db, 'started_at_utc_ms', 31),
+        'evidence set': _seedGuestOnlyAssessmentEvidence,
+      };
+
+      for (final entry in cases.entries) {
+        final caseDatabase = AppDatabase(NativeDatabase.memory());
+        try {
+          await _seedOwners(caseDatabase);
+          await _seedEquivalentAssessmentPair(caseDatabase);
+          await entry.value(caseDatabase);
+          final beforeRuns = await _assessmentRunInventory(caseDatabase);
+          final beforeAssignments = await _experimentAssignmentOutboxSnapshot(
+            caseDatabase,
+          );
+          final caseRepository = DriftOwnerUpgradeRepository(
+            caseDatabase,
+            nowUtc: () => DateTime.utc(2026, 8, 14, 12),
+            generateConflictId: () => 'assessment-${entry.key}-conflict',
+            generateOwnerId: () => 'unused-assessment-owner',
+            generateOwnerOperationToken: () =>
+                'assessment-${entry.key}-operation',
+            deleteOwnerSecrets: (_) async {},
+          );
+
+          await expectLater(
+            caseRepository.upgrade(
+              activeOwnerId: 'guest-owner',
+              firebaseUid: 'firebase-user',
+            ),
+            throwsA(isA<AssessmentRunConflict>()),
+            reason: entry.key,
+          );
+
+          expect(
+            await _assessmentRunInventory(caseDatabase),
+            beforeRuns,
+            reason: entry.key,
+          );
+          expect(
+            await _experimentAssignmentOutboxSnapshot(caseDatabase),
+            beforeAssignments,
+            reason: entry.key,
+          );
+          final owners = await caseDatabase
+              .customSelect(
+                'SELECT id, firebase_uid, is_active FROM local_owners '
+                'ORDER BY id',
+              )
+              .map((row) => row.data)
+              .get();
+          expect(owners, [
+            {
+              'id': 'account-owner',
+              'firebase_uid': 'firebase-user',
+              'is_active': 0,
+            },
+            {'id': 'guest-owner', 'firebase_uid': null, 'is_active': 1},
+          ], reason: entry.key);
+        } finally {
+          await caseDatabase.close();
+        }
+      }
+    },
+  );
+
+  test(
     'merge reconciles equivalent assignment and cloud outbox exactly once',
     () async {
       const assignedAtUtcMs = 1723651200000;
@@ -2141,10 +2435,242 @@ Future<void> _seedExperimentAssignment(
   );
 }
 
+Future<
+  ({
+    AssessmentRun guestRun,
+    AssessmentRun targetRun,
+    ExperimentAssignment guestAssignment,
+    ExperimentAssignment targetAssignment,
+  })
+>
+_seedEquivalentAssessmentPair(AppDatabase database) async {
+  await _putResearchConsent(
+    database,
+    ownerId: 'guest-owner',
+    consentVersion: 1,
+    decidedAtUtcMs: 20,
+  );
+  await _putResearchConsent(
+    database,
+    ownerId: 'account-owner',
+    consentVersion: 1,
+    decidedAtUtcMs: 20,
+  );
+  final assignments = DriftExperimentAssignmentRepository(database);
+  final assignedAtUtc = DateTime.fromMillisecondsSinceEpoch(25, isUtc: true);
+  final guestAssignment = await assignments.assignIfAbsent(
+    ownerId: 'guest-owner',
+    experimentId: 'assessment-study',
+    experimentVersion: 1,
+    cohort: 'enforced-a',
+    protocolVersion: 'assessment-protocol-v1',
+    assignedAtUtc: assignedAtUtc,
+  );
+  final targetAssignment = await assignments.assignIfAbsent(
+    ownerId: 'account-owner',
+    experimentId: 'assessment-study',
+    experimentVersion: 1,
+    cohort: 'enforced-a',
+    protocolVersion: 'assessment-protocol-v1',
+    assignedAtUtc: assignedAtUtc,
+  );
+  await database.customInsert(
+    'INSERT INTO learning_sessions '
+    '(id, owner_id, activity_type, state, started_at_utc_ms, app_version, '
+    'build_id) VALUES '
+    "('guest-assessment-session', 'guest-owner', 'assessment', 'active', "
+    "30, '1.0.0', 'task-12-owner-upgrade'), "
+    "('target-assessment-session', 'account-owner', 'assessment', 'active', "
+    "30, '1.0.0', 'task-12-owner-upgrade')",
+  );
+  final repository = DriftAssessmentRepository(database);
+  final guestRun = await repository.start(
+    _assessmentRun(
+      id: 'guest-assessment-run',
+      ownerId: 'guest-owner',
+      learningSessionId: 'guest-assessment-session',
+      assignment: guestAssignment,
+    ),
+  );
+  final targetRun = await repository.start(
+    _assessmentRun(
+      id: 'target-assessment-run',
+      ownerId: 'account-owner',
+      learningSessionId: 'target-assessment-session',
+      assignment: targetAssignment,
+    ),
+  );
+  return (
+    guestRun: guestRun,
+    targetRun: targetRun,
+    guestAssignment: guestAssignment,
+    targetAssignment: targetAssignment,
+  );
+}
+
+AssessmentRun _assessmentRun({
+  required String id,
+  required String ownerId,
+  required String learningSessionId,
+  required ExperimentAssignment assignment,
+}) {
+  return AssessmentRun(
+    id: id,
+    ownerId: ownerId,
+    learningSessionId: learningSessionId,
+    studyCycleId: 'assessment-cycle',
+    phase: AssessmentPhase.pre,
+    state: AssessmentRunState.active,
+    protocolId: 'assessment-protocol',
+    protocolVersion: assignment.protocolVersion,
+    experimentId: assignment.experimentId,
+    experimentVersion: assignment.experimentVersion,
+    assignmentId: assignment.id,
+    cohort: assignment.cohort,
+    consentVersion: 1,
+    consentDecidedAtUtc: DateTime.fromMillisecondsSinceEpoch(20, isUtc: true),
+    instrumentId: 'vocabulary-outcome',
+    instrumentVersion: '1.0.0',
+    formId: 'form-a',
+    formVersion: '1.0.0',
+    instrumentChecksumSha256:
+        '1111111111111111111111111111111111111111111111111111111111111111',
+    formChecksumSha256:
+        '2222222222222222222222222222222222222222222222222222222222222222',
+    appVersion: '1.0.0',
+    buildId: 'task-12-owner-upgrade',
+    databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+    contentRevision: 'assessment-content-r1',
+    evidencePolicyVersion: EvidenceContext.currentPolicyVersion,
+    featureContractRevision: currentFeatureContractIdentity.revision,
+    featureContractHash: currentFeatureContractIdentity.semanticHash,
+    startedAtUtc: DateTime.fromMillisecondsSinceEpoch(30, isUtc: true),
+    completedAtUtc: null,
+    abandonedAtUtc: null,
+  );
+}
+
+Future<void> _updateAssessmentRun(
+  AppDatabase database,
+  String column,
+  Object value,
+) async {
+  await database.customUpdate(
+    'UPDATE assessment_runs SET "$column" = ? WHERE id = ?',
+    variables: [
+      if (value is int)
+        Variable<int>(value)
+      else
+        Variable<String>(value as String),
+      const Variable<String>('target-assessment-run'),
+    ],
+  );
+}
+
+Future<void> _seedGuestOnlyAssessmentEvidence(AppDatabase database) async {
+  final assignment = await database
+      .customSelect(
+        'SELECT id FROM experiment_assignments WHERE owner_id = ?',
+        variables: const [Variable<String>('guest-owner')],
+      )
+      .map((row) => row.read<String>('id'))
+      .getSingle();
+  final context = EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.assessment,
+    skillId: 'guest-assessment-word',
+    hintLevel: 0,
+    contentRevision: 'assessment-content-r1',
+    rolloutMode: EvidencePolicyRolloutMode.enforced,
+    protocolId: 'assessment-protocol',
+    protocolVersion: 'assessment-protocol-v1',
+    experimentId: 'assessment-study',
+    experimentVersion: 1,
+    assignmentId: assignment,
+    cohort: 'enforced-a',
+    researchConsentVersion: 1,
+    instrumentId: 'vocabulary-outcome',
+    instrumentVersion: '1.0.0',
+    formId: 'form-a',
+    formVersion: '1.0.0',
+    assessmentItemId: 'item-1',
+    assessmentResponseCode: 'choice-a',
+    scoringRuleVersion: 'binary-v1',
+    engagementAllowed: false,
+  );
+  await database.customInsert(
+    'INSERT INTO vocabulary_categories '
+    '(id, owner_id, name, normalized_name, created_at_utc_ms, '
+    'updated_at_utc_ms) VALUES '
+    "('guest-assessment-category', 'guest-owner', 'Assessment', "
+    "'assessment', 30, 30)",
+  );
+  await database.customInsert(
+    'INSERT INTO vocabulary_words '
+    '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
+    'normalized_meaning, part_of_speech, created_at_utc_ms, '
+    'updated_at_utc_ms) VALUES '
+    "('guest-assessment-word', 'guest-owner', 'guest-assessment-category', "
+    "'word', 'word', 'meaning', 'meaning', 'noun', 30, 30)",
+  );
+  await database.customInsert(
+    'INSERT INTO answer_attempts '
+    '(id, owner_id, session_id, word_id, prompt_mode, is_correct, '
+    'response_time_ms, attempt_number, occurred_at_utc_ms, evidence_class, '
+    'evidence_context_json) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    variables: [
+      const Variable<String>('guest-assessment-evidence'),
+      const Variable<String>('guest-owner'),
+      const Variable<String>('guest-assessment-session'),
+      const Variable<String>('guest-assessment-word'),
+      const Variable<String>('meaningChoice'),
+      const Variable<bool>(true),
+      const Variable<int>(50),
+      const Variable<int>(1),
+      const Variable<int>(31),
+      const Variable<String>('assessment'),
+      Variable<String>(jsonEncode(context.toJson())),
+    ],
+  );
+}
+
+Future<Map<String, Object?>> _assessmentRunSnapshot(
+  AppDatabase database,
+  String id,
+) {
+  return database
+      .customSelect(
+        'SELECT * FROM assessment_runs WHERE id = ?',
+        variables: [Variable<String>(id)],
+      )
+      .map((row) => row.data)
+      .getSingle();
+}
+
+Future<List<Map<String, Object?>>> _assessmentRunsForOwner(
+  AppDatabase database,
+  String ownerId,
+) {
+  return database
+      .customSelect(
+        'SELECT * FROM assessment_runs WHERE owner_id = ? ORDER BY id',
+        variables: [Variable<String>(ownerId)],
+      )
+      .map((row) => row.data)
+      .get();
+}
+
+Future<List<String>> _assessmentRunInventory(AppDatabase database) async {
+  final rows = await database
+      .customSelect('SELECT * FROM assessment_runs ORDER BY id')
+      .get();
+  return rows.map((row) => row.data.toString()).toList(growable: false);
+}
+
 Future<void> _putResearchConsent(
   AppDatabase database, {
   required String ownerId,
   required int consentVersion,
+  int decidedAtUtcMs = 1723622400000,
 }) {
   return database.customInsert(
     'INSERT INTO research_consents '
@@ -2155,7 +2681,7 @@ Future<void> _putResearchConsent(
       Variable<String>(ownerId),
       Variable<int>(consentVersion),
       const Variable<String>('accepted'),
-      const Variable<int>(1723622400000),
+      Variable<int>(decidedAtUtcMs),
     ],
   );
 }
@@ -2285,6 +2811,13 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await database.customInsert(
     "INSERT INTO learning_sessions VALUES "
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
+  );
+  await _seedCompleteInventoryAssessmentRun(
+    database,
+    runId: 'assessment-inventory-run',
+    ownerId: 'guest-owner',
+    learningSessionId: 'session-1',
+    assignmentId: assignmentId,
   );
   await database.customInsert(
     'INSERT INTO answer_attempts '
@@ -2432,6 +2965,60 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "request_type, outcome, latency_ms) VALUES "
     "('ai-usage-seed-1', 'guest-owner', 20, 'gemini', 'model', "
     "'tutorReply', 'success', 10)",
+  );
+}
+
+Future<void> _seedCompleteInventoryAssessmentRun(
+  AppDatabase database, {
+  required String runId,
+  required String ownerId,
+  required String learningSessionId,
+  required String assignmentId,
+}) async {
+  final repository = DriftAssessmentRepository(database);
+  final startedAtUtc = DateTime.fromMillisecondsSinceEpoch(
+    1723651200010,
+    isUtc: true,
+  );
+  await repository.start(
+    AssessmentRun(
+      id: runId,
+      ownerId: ownerId,
+      learningSessionId: learningSessionId,
+      studyCycleId: 'inventory-assessment-cycle',
+      phase: AssessmentPhase.pre,
+      state: AssessmentRunState.active,
+      protocolId: 'research-assessment-protocol',
+      protocolVersion: '2026.08',
+      experimentId: 'research-assessment',
+      experimentVersion: 1,
+      assignmentId: assignmentId,
+      cohort: 'treatment-a',
+      consentVersion: 1,
+      consentDecidedAtUtc: DateTime.fromMillisecondsSinceEpoch(10, isUtc: true),
+      instrumentId: 'vocabulary-outcome',
+      instrumentVersion: '1.0.0',
+      formId: 'inventory-form-a',
+      formVersion: '1.0.0',
+      instrumentChecksumSha256:
+          '1111111111111111111111111111111111111111111111111111111111111111',
+      formChecksumSha256:
+          '2222222222222222222222222222222222222222222222222222222222222222',
+      appVersion: '1.0.0',
+      buildId: 'owner-inventory-fixture',
+      databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+      contentRevision: 'assessment-content-r1',
+      evidencePolicyVersion: EvidenceContext.currentPolicyVersion,
+      featureContractRevision: currentFeatureContractIdentity.revision,
+      featureContractHash: currentFeatureContractIdentity.semanticHash,
+      startedAtUtc: startedAtUtc,
+      completedAtUtc: null,
+      abandonedAtUtc: null,
+    ),
+  );
+  await repository.complete(
+    runId: runId,
+    completedAtUtc: startedAtUtc.add(const Duration(milliseconds: 10)),
   );
 }
 

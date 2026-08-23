@@ -68,6 +68,7 @@ final class SyncEngine {
     SyncCollection.categories,
     SyncCollection.words,
     SyncCollection.experimentAssignments,
+    SyncCollection.assessmentRuns,
     SyncCollection.attempts,
     SyncCollection.readingEvents,
     SyncCollection.rewardTransactions,
@@ -302,6 +303,10 @@ final class SyncEngine {
             }
             pulled += page.changes.length;
             retryRecommended = retryRecommended || page.hasMore;
+            if (collection == SyncCollection.experimentAssignments &&
+                page.hasMore) {
+              break;
+            }
           } on SyncFailure catch (failure) {
             failures++;
             retryRecommended = retryRecommended || failure.retryable;
@@ -309,6 +314,7 @@ final class SyncEngine {
               permanentFailure = true;
               break;
             }
+            if (collection == SyncCollection.experimentAssignments) break;
           }
         }
       }

@@ -4,9 +4,14 @@ import 'dart:convert';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../assessment/data/drift_assessment_repository.dart';
+import '../../assessment/domain/assessment_models.dart';
+import '../../assessment/domain/assessment_repository.dart';
 import '../../learning/data/drift_learning_projection_rebuilder.dart';
 import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
+import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
@@ -165,6 +170,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          await _mergeAssessmentRuns(source.id, target.id);
           await _mergeExperimentAssignments(source.id, target.id);
           conflicts += await _discardNaturalKeyDuplicates(
             source.id,
@@ -1421,6 +1427,533 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       }
     }
     return conflicts;
+  }
+
+  Future<void> _mergeAssessmentRuns(
+    String sourceOwnerId,
+    String targetOwnerId,
+  ) async {
+    final sourceRows = await _database
+        .customSelect(
+          'SELECT * FROM assessment_runs WHERE owner_id = ? '
+          'ORDER BY study_cycle_id, phase, id',
+          variables: [Variable<String>(sourceOwnerId)],
+          readsFrom: {_database.assessmentRuns},
+        )
+        .get();
+
+    for (final sourceRow in sourceRows) {
+      final sourceRun = _readAssessmentRunOrConflict(sourceRow);
+      await _requireAssessmentSessionOwner(sourceRun);
+      final sourceAssignment = await _database
+          .customSelect(
+            'SELECT id, owner_id, experiment_id, experiment_version, cohort, '
+            'protocol_version, assigned_at_utc_ms FROM experiment_assignments '
+            'WHERE id = ? AND owner_id = ? LIMIT 1',
+            variables: [
+              Variable<String>(sourceRun.assignmentId),
+              Variable<String>(sourceOwnerId),
+            ],
+            readsFrom: {_database.experimentAssignments},
+          )
+          .getSingleOrNull();
+      if (sourceAssignment == null) {
+        throw _assessmentConflict(sourceRun.id, 'source assignment is missing');
+      }
+      final sourceAssignmentValue = _readExperimentAssignment(sourceAssignment);
+      _validateAssessmentAssignment(sourceRun.id, sourceAssignmentValue);
+      if (!_runMatchesAssignment(sourceRun, sourceAssignmentValue)) {
+        throw _assessmentConflict(
+          sourceRun.id,
+          'source assignment identity does not match the run',
+        );
+      }
+
+      final targetAssignmentId =
+          DriftExperimentAssignmentRepository.canonicalAssignmentId(
+            ownerId: targetOwnerId,
+            experimentId: sourceRun.experimentId,
+            experimentVersion: sourceRun.experimentVersion,
+          );
+      final targetAssignmentRow = await _database
+          .customSelect(
+            'SELECT id, owner_id, experiment_id, experiment_version, cohort, '
+            'protocol_version, assigned_at_utc_ms FROM experiment_assignments '
+            'WHERE owner_id = ? AND experiment_id = ? '
+            'AND experiment_version = ? LIMIT 1',
+            variables: [
+              Variable<String>(targetOwnerId),
+              Variable<String>(sourceRun.experimentId),
+              Variable<int>(sourceRun.experimentVersion),
+            ],
+            readsFrom: {_database.experimentAssignments},
+          )
+          .getSingleOrNull();
+
+      late final ExperimentAssignment targetAssignment;
+      if (targetAssignmentRow == null) {
+        final idCollision = await (_database.select(
+          _database.experimentAssignments,
+        )..where((row) => row.id.equals(targetAssignmentId))).getSingleOrNull();
+        if (idCollision != null) {
+          throw _assessmentConflict(
+            sourceRun.id,
+            'target assignment identity collides',
+          );
+        }
+        await _database
+            .into(_database.experimentAssignments)
+            .insert(
+              db.ExperimentAssignmentsCompanion.insert(
+                id: targetAssignmentId,
+                ownerId: targetOwnerId,
+                experimentId: sourceAssignmentValue.experimentId,
+                experimentVersion: sourceAssignmentValue.experimentVersion,
+                cohort: sourceAssignmentValue.cohort,
+                protocolVersion: sourceAssignmentValue.protocolVersion,
+                assignedAtUtcMs:
+                    sourceAssignmentValue.assignedAtUtc.millisecondsSinceEpoch,
+              ),
+            );
+        targetAssignment = ExperimentAssignment(
+          id: targetAssignmentId,
+          ownerId: targetOwnerId,
+          experimentId: sourceAssignmentValue.experimentId,
+          experimentVersion: sourceAssignmentValue.experimentVersion,
+          cohort: sourceAssignmentValue.cohort,
+          protocolVersion: sourceAssignmentValue.protocolVersion,
+          assignedAtUtc: sourceAssignmentValue.assignedAtUtc,
+        );
+      } else {
+        targetAssignment = _readExperimentAssignment(targetAssignmentRow);
+        _validateAssessmentAssignment(sourceRun.id, targetAssignment);
+        if (!_assignmentsEquivalent(sourceAssignmentValue, targetAssignment)) {
+          throw _assessmentConflict(
+            sourceRun.id,
+            'target assignment payload differs',
+          );
+        }
+      }
+
+      final targetRunRow = await _database
+          .customSelect(
+            'SELECT * FROM assessment_runs WHERE owner_id = ? '
+            'AND study_cycle_id = ? AND phase = ? LIMIT 1',
+            variables: [
+              Variable<String>(targetOwnerId),
+              Variable<String>(sourceRun.studyCycleId),
+              Variable<String>(sourceRun.phase.name),
+            ],
+            readsFrom: {_database.assessmentRuns},
+          )
+          .getSingleOrNull();
+
+      if (targetRunRow == null) {
+        await _rehomeAssessmentEvidence(
+          run: sourceRun,
+          sourceAssignmentId: sourceAssignmentValue.id,
+          targetAssignmentId: targetAssignment.id,
+        );
+        await (_database.update(
+          _database.assessmentRuns,
+        )..where((row) => row.id.equals(sourceRun.id))).write(
+          db.AssessmentRunsCompanion(
+            ownerId: Value(targetOwnerId),
+            assignmentId: Value(targetAssignment.id),
+          ),
+        );
+        continue;
+      }
+
+      final targetRun = _readAssessmentRunOrConflict(targetRunRow);
+      await _requireAssessmentSessionOwner(targetRun);
+      if (!_runMatchesAssignment(targetRun, targetAssignment) ||
+          !_assessmentRunPayloadEquivalent(sourceRun, targetRun) ||
+          !await _assessmentEvidenceEquivalent(
+            sourceRun: sourceRun,
+            targetRun: targetRun,
+            targetAssignmentId: targetAssignment.id,
+          )) {
+        throw _assessmentConflict(
+          sourceRun.id,
+          'target assessment run or evidence differs',
+        );
+      }
+      await _retireEquivalentAssessmentRunOutbox(sourceRun);
+      await (_database.delete(
+        _database.assessmentRuns,
+      )..where((row) => row.id.equals(sourceRun.id))).go();
+    }
+  }
+
+  bool _assignmentsEquivalent(
+    ExperimentAssignment source,
+    ExperimentAssignment target,
+  ) {
+    return source.experimentId == target.experimentId &&
+        source.experimentVersion == target.experimentVersion &&
+        source.cohort == target.cohort &&
+        source.protocolVersion == target.protocolVersion &&
+        source.assignedAtUtc == target.assignedAtUtc;
+  }
+
+  Future<void> _retireEquivalentAssessmentRunOutbox(
+    AssessmentRun sourceRun,
+  ) async {
+    final operations =
+        await (_database.select(_database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(sourceRun.ownerId) &
+                  row.entityType.equals('assessmentRun') &
+                  row.entityId.equals(sourceRun.id),
+            ))
+            .get();
+    for (final operation in operations) {
+      final revision = operation.baseRevision + 1;
+      final expectedCreatedAtUtcMs = switch (revision) {
+        1 => sourceRun.startedAtUtc.millisecondsSinceEpoch,
+        2 when sourceRun.state == AssessmentRunState.completed =>
+          sourceRun.completedAtUtc!.millisecondsSinceEpoch,
+        2 when sourceRun.state == AssessmentRunState.abandoned =>
+          sourceRun.abandonedAtUtc!.millisecondsSinceEpoch,
+        _ => null,
+      };
+      if (expectedCreatedAtUtcMs == null ||
+          operation.operationId !=
+              DriftAssessmentRepository.canonicalOutboxOperationId(
+                runId: sourceRun.id,
+                revision: revision,
+              ) ||
+          operation.operationKind != 'upsert' ||
+          operation.payloadVersion != 1 ||
+          operation.createdAtUtcMs != expectedCreatedAtUtcMs) {
+        throw _assessmentConflict(
+          sourceRun.id,
+          'source assessment outbox revision is not canonical',
+        );
+      }
+    }
+    if (operations.isNotEmpty) {
+      await (_database.delete(_database.outboxOperations)..where(
+            (row) => row.operationId.isIn(
+              operations.map((operation) => operation.operationId),
+            ),
+          ))
+          .go();
+    }
+  }
+
+  Future<void> _requireAssessmentSessionOwner(AssessmentRun run) async {
+    final session = await _database
+        .customSelect(
+          'SELECT owner_id FROM learning_sessions WHERE id = ? LIMIT 1',
+          variables: [Variable<String>(run.learningSessionId)],
+          readsFrom: {_database.learningSessions},
+        )
+        .getSingleOrNull();
+    if (session == null || session.read<String>('owner_id') != run.ownerId) {
+      throw _assessmentConflict(
+        run.id,
+        'assessment learning-session identity is invalid',
+      );
+    }
+  }
+
+  void _validateAssessmentAssignment(
+    String runId,
+    ExperimentAssignment assignment,
+  ) {
+    try {
+      _validateExperimentAssignmentIdentity(assignment);
+    } on Object {
+      throw _assessmentConflict(
+        runId,
+        'assessment assignment identity is malformed',
+      );
+    }
+  }
+
+  bool _runMatchesAssignment(
+    AssessmentRun run,
+    ExperimentAssignment assignment,
+  ) {
+    return run.ownerId == assignment.ownerId &&
+        run.assignmentId == assignment.id &&
+        run.experimentId == assignment.experimentId &&
+        run.experimentVersion == assignment.experimentVersion &&
+        run.cohort == assignment.cohort &&
+        run.protocolVersion == assignment.protocolVersion;
+  }
+
+  bool _assessmentRunPayloadEquivalent(
+    AssessmentRun source,
+    AssessmentRun target,
+  ) {
+    return source.studyCycleId == target.studyCycleId &&
+        source.phase == target.phase &&
+        source.state == target.state &&
+        source.protocolId == target.protocolId &&
+        source.protocolVersion == target.protocolVersion &&
+        source.experimentId == target.experimentId &&
+        source.experimentVersion == target.experimentVersion &&
+        source.cohort == target.cohort &&
+        source.consentVersion == target.consentVersion &&
+        source.consentDecidedAtUtc == target.consentDecidedAtUtc &&
+        source.instrumentId == target.instrumentId &&
+        source.instrumentVersion == target.instrumentVersion &&
+        source.formId == target.formId &&
+        source.formVersion == target.formVersion &&
+        source.instrumentChecksumSha256 == target.instrumentChecksumSha256 &&
+        source.formChecksumSha256 == target.formChecksumSha256 &&
+        source.appVersion == target.appVersion &&
+        source.buildId == target.buildId &&
+        source.databaseSchemaVersion == target.databaseSchemaVersion &&
+        source.contentRevision == target.contentRevision &&
+        source.evidencePolicyVersion == target.evidencePolicyVersion &&
+        source.featureContractRevision == target.featureContractRevision &&
+        source.featureContractHash == target.featureContractHash &&
+        source.startedAtUtc == target.startedAtUtc &&
+        source.completedAtUtc == target.completedAtUtc &&
+        source.abandonedAtUtc == target.abandonedAtUtc;
+  }
+
+  Future<bool> _assessmentEvidenceEquivalent({
+    required AssessmentRun sourceRun,
+    required AssessmentRun targetRun,
+    required String targetAssignmentId,
+  }) async {
+    final source = await _assessmentEvidenceSet(
+      sourceRun,
+      normalizedAssignmentId: targetAssignmentId,
+    );
+    final target = await _assessmentEvidenceSet(
+      targetRun,
+      normalizedAssignmentId: targetAssignmentId,
+    );
+    if (source.length != target.length) return false;
+    for (var index = 0; index < source.length; index += 1) {
+      if (source[index] != target[index]) return false;
+    }
+    return true;
+  }
+
+  Future<List<String>> _assessmentEvidenceSet(
+    AssessmentRun run, {
+    required String normalizedAssignmentId,
+  }) async {
+    final rows = await _database
+        .customSelect(
+          'SELECT id, word_id, prompt_mode, is_correct, response_time_ms, '
+          'attempt_number, occurred_at_utc_ms, evidence_context_json '
+          'FROM answer_attempts WHERE owner_id = ? AND session_id = ? '
+          "AND evidence_class = 'assessment' ORDER BY id",
+          variables: [
+            Variable<String>(run.ownerId),
+            Variable<String>(run.learningSessionId),
+          ],
+          readsFrom: {_database.answerAttempts},
+        )
+        .get();
+    final result = <String>[];
+    for (final row in rows) {
+      final context = _readAssessmentEvidenceContext(
+        row.read<String>('evidence_context_json'),
+        run,
+      );
+      final contextJson = Map<String, Object?>.from(context.toJson())
+        ..['assignmentId'] = normalizedAssignmentId;
+      result.add(
+        jsonEncode(<String, Object?>{
+          'id': row.read<String>('id'),
+          'wordId': row.read<String>('word_id'),
+          'promptMode': row.read<String>('prompt_mode'),
+          'isCorrect': row.read<bool>('is_correct'),
+          'responseTimeMs': row.readNullable<int>('response_time_ms'),
+          'attemptNumber': row.read<int>('attempt_number'),
+          'occurredAtUtcMs': row.read<int>('occurred_at_utc_ms'),
+          'evidenceContext': contextJson,
+        }),
+      );
+    }
+    result.sort();
+    return result;
+  }
+
+  Future<void> _rehomeAssessmentEvidence({
+    required AssessmentRun run,
+    required String sourceAssignmentId,
+    required String targetAssignmentId,
+  }) async {
+    final attempts = await _database
+        .customSelect(
+          'SELECT id, evidence_context_json FROM answer_attempts '
+          'WHERE owner_id = ? AND session_id = ? '
+          "AND evidence_class = 'assessment' ORDER BY id",
+          variables: [
+            Variable<String>(run.ownerId),
+            Variable<String>(run.learningSessionId),
+          ],
+          readsFrom: {_database.answerAttempts},
+        )
+        .get();
+    for (final attempt in attempts) {
+      final attemptId = attempt.read<String>('id');
+      final context = _readAssessmentEvidenceContext(
+        attempt.read<String>('evidence_context_json'),
+        run,
+      );
+      if (context.assignmentId != sourceAssignmentId) {
+        throw _assessmentConflict(
+          run.id,
+          'assessment evidence assignment differs',
+        );
+      }
+      final contextJson = Map<String, Object?>.from(context.toJson())
+        ..['assignmentId'] = targetAssignmentId;
+      final normalized = EvidenceContext.fromJson(contextJson).toJson();
+      final encodedContext = jsonEncode(normalized);
+
+      final event = await _database
+          .customSelect(
+            'SELECT event_id, payload_json FROM events_v2 '
+            'WHERE owner_id = ? AND idempotency_key = ? LIMIT 1',
+            variables: [
+              Variable<String>(run.ownerId),
+              Variable<String>(
+                LearningEvidenceContract.learningAttemptIdempotencyKey(
+                  attemptId,
+                ),
+              ),
+            ],
+            readsFrom: {_database.eventsV2},
+          )
+          .getSingleOrNull();
+      if (event == null) {
+        throw _assessmentConflict(
+          run.id,
+          'assessment evidence event is missing',
+        );
+      }
+      final payload = (jsonDecode(event.read<String>('payload_json')) as Map)
+          .cast<String, Object?>();
+      final payloadContext = payload['evidenceContext'];
+      if (payloadContext is! Map ||
+          jsonEncode(payloadContext) != jsonEncode(context.toJson())) {
+        throw _assessmentConflict(
+          run.id,
+          'assessment event evidence context differs',
+        );
+      }
+      payload['evidenceContext'] = normalized;
+      await (_database.update(
+            _database.eventsV2,
+          )..where((row) => row.eventId.equals(event.read<String>('event_id'))))
+          .write(db.EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
+      await (_database.update(
+        _database.answerAttempts,
+      )..where((row) => row.id.equals(attemptId))).write(
+        db.AnswerAttemptsCompanion(evidenceContextJson: Value(encodedContext)),
+      );
+    }
+  }
+
+  EvidenceContext _readAssessmentEvidenceContext(
+    String encoded,
+    AssessmentRun run,
+  ) {
+    try {
+      final context = EvidenceContext.fromJson(
+        (jsonDecode(encoded) as Map).cast<String, Object?>(),
+      );
+      if (context.evidenceClass != EvidenceClass.assessment ||
+          context.assignmentId != run.assignmentId ||
+          context.experimentId != run.experimentId ||
+          context.experimentVersion != run.experimentVersion ||
+          context.cohort != run.cohort ||
+          context.protocolId != run.protocolId ||
+          context.protocolVersion != run.protocolVersion ||
+          context.researchConsentVersion != run.consentVersion ||
+          context.instrumentId != run.instrumentId ||
+          context.instrumentVersion != run.instrumentVersion ||
+          context.formId != run.formId ||
+          context.formVersion != run.formVersion ||
+          context.contentRevision != run.contentRevision ||
+          context.policyVersion != run.evidencePolicyVersion ||
+          context.featureContractRevision != run.featureContractRevision ||
+          context.featureContractHash != run.featureContractHash) {
+        throw const FormatException('assessment evidence identity mismatch');
+      }
+      return context;
+    } on Object {
+      throw _assessmentConflict(
+        run.id,
+        'assessment evidence metadata is malformed',
+      );
+    }
+  }
+
+  AssessmentRun _readAssessmentRunOrConflict(QueryRow row) {
+    final runId = row.read<String>('id');
+    try {
+      return AssessmentRun(
+        id: runId,
+        ownerId: row.read<String>('owner_id'),
+        learningSessionId: row.read<String>('learning_session_id'),
+        studyCycleId: row.read<String>('study_cycle_id'),
+        phase: AssessmentPhase.values.singleWhere(
+          (value) => value.name == row.read<String>('phase'),
+        ),
+        state: AssessmentRunState.values.singleWhere(
+          (value) => value.name == row.read<String>('state'),
+        ),
+        protocolId: row.read<String>('protocol_id'),
+        protocolVersion: row.read<String>('protocol_version'),
+        experimentId: row.read<String>('experiment_id'),
+        experimentVersion: row.read<int>('experiment_version'),
+        assignmentId: row.read<String>('assignment_id'),
+        cohort: row.read<String>('cohort'),
+        consentVersion: row.read<int>('consent_version'),
+        consentDecidedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          row.read<int>('consent_decided_at_utc_ms'),
+          isUtc: true,
+        ),
+        instrumentId: row.read<String>('instrument_id'),
+        instrumentVersion: row.read<String>('instrument_version'),
+        formId: row.read<String>('form_id'),
+        formVersion: row.read<String>('form_version'),
+        instrumentChecksumSha256: row.read<String>(
+          'instrument_checksum_sha256',
+        ),
+        formChecksumSha256: row.read<String>('form_checksum_sha256'),
+        appVersion: row.read<String>('app_version'),
+        buildId: row.read<String>('build_id'),
+        databaseSchemaVersion: row.read<int>('database_schema_version'),
+        contentRevision: row.read<String>('content_revision'),
+        evidencePolicyVersion: row.read<String>('evidence_policy_version'),
+        featureContractRevision: row.read<String>('feature_contract_revision'),
+        featureContractHash: row.read<String>('feature_contract_hash'),
+        startedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          row.read<int>('started_at_utc_ms'),
+          isUtc: true,
+        ),
+        completedAtUtc: _nullableAssessmentUtc(
+          row.readNullable<int>('completed_at_utc_ms'),
+        ),
+        abandonedAtUtc: _nullableAssessmentUtc(
+          row.readNullable<int>('abandoned_at_utc_ms'),
+        ),
+      );
+    } on Object {
+      throw _assessmentConflict(runId, 'assessment run is malformed');
+    }
+  }
+
+  DateTime? _nullableAssessmentUtc(int? milliseconds) => milliseconds == null
+      ? null
+      : DateTime.fromMillisecondsSinceEpoch(milliseconds, isUtc: true);
+
+  AssessmentRunConflict _assessmentConflict(String runId, String reason) {
+    return AssessmentRunConflict(runId: runId, reason: reason);
   }
 
   Future<void> _mergeExperimentAssignments(

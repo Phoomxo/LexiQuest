@@ -23,6 +23,7 @@ part 'app_database.g.dart';
     LocalOwners,
     ResearchConsents,
     ExperimentAssignments,
+    AssessmentRuns,
     VocabularyCategories,
     VocabularyWords,
     VocabularyImports,
@@ -55,7 +56,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 14;
+  static const int currentSchemaVersion = 15;
 
   AppDatabase(super.executor);
 
@@ -193,6 +194,9 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 14 && !await _tableExists('experiment_assignments')) {
         await migrator.createTable(experimentAssignments);
+      }
+      if (from < 15 && !await _tableExists('assessment_runs')) {
+        await migrator.createTable(assessmentRuns);
       }
     },
     beforeOpen: (details) async {

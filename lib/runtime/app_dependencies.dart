@@ -4,6 +4,7 @@ import '../config/app_config.dart';
 import '../data/local/app_database.dart';
 import '../features/account/application/account_use_cases.dart';
 import '../features/account/application/local_data_deletion.dart';
+import '../features/assessment/application/assessment_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
@@ -60,6 +61,7 @@ final class AppDependencies {
     this.syncEngine,
     this.syncTrigger,
     this.learning,
+    this.assessment,
     this.currentActivityEvidence,
     this.learningReconciliation,
     this.progress,
@@ -100,6 +102,7 @@ final class AppDependencies {
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
   final LearningUseCases? learning;
+  final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;
   final ProgressUseCases? progress;
