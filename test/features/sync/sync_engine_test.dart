@@ -18,10 +18,11 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
 
 void main() {
   late AppDatabase database;
-  late DriftSyncStore store;
+  late SyncStore store;
   late _OwnerRepository owners;
   late _FakeGateway gateway;
   late DateTime nowUtc;
@@ -226,6 +227,56 @@ void main() {
 
       expect(operation.state, isNot('acknowledged'));
       expect(operation.acknowledgedAtUtcMs, isNull);
+    },
+  );
+
+  test(
+    'only the exact cloud acknowledgement translates to the local operation',
+    () async {
+      await _seedCategoryOperation(database);
+      final translatingStore = _CloudIdentitySyncStore(
+        store,
+        localOperationId: 'category:travel:1:upsert',
+        cloudOperationId: 'cloud:category:travel:1:upsert',
+      );
+      store = translatingStore;
+      gateway.onPush = (mutation) async => PushAcknowledged(
+        operationId: 'wrong:${mutation.operationId}',
+        resultingRevision: mutation.localRevision,
+        acknowledgedAtUtc: nowUtc,
+      );
+
+      await expectLater(engine().run(), throwsA(isA<ArgumentError>()));
+      var operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+      expect(
+        gateway.pushedMutations.single.operationId,
+        translatingStore.cloudOperationId,
+      );
+      expect(translatingStore.acknowledgeCalls, 0);
+      expect(operation.operationId, translatingStore.localOperationId);
+      expect(operation.state, isNot('acknowledged'));
+      expect(operation.acknowledgedAtUtcMs, isNull);
+
+      nowUtc = nowUtc.add(const Duration(minutes: 6));
+      gateway.onPush = (mutation) async => PushAcknowledged(
+        operationId: mutation.operationId,
+        resultingRevision: mutation.localRevision,
+        acknowledgedAtUtc: nowUtc,
+      );
+
+      final retry = await engine().run();
+      operation = await database.select(database.outboxOperations).getSingle();
+      expect(retry.status, SyncRunStatus.completed);
+      expect(retry.pushed, 1);
+      expect(translatingStore.acknowledgeCalls, 1);
+      expect(
+        translatingStore.lastAcknowledgementOperationId,
+        translatingStore.localOperationId,
+      );
+      expect(operation.state, 'acknowledged');
+      expect(operation.acknowledgedAtUtcMs, isNotNull);
     },
   );
 
@@ -872,6 +923,179 @@ final class _OwnerRepository implements LocalOwnerRepository {
       upgradedAtUtc: owner.upgradedAtUtc,
     );
     return owner;
+  }
+}
+
+final class _CloudIdentitySyncStore implements SyncStore {
+  _CloudIdentitySyncStore(
+    this.delegate, {
+    required this.localOperationId,
+    required this.cloudOperationId,
+  });
+
+  final SyncStore delegate;
+  final String localOperationId;
+  final String cloudOperationId;
+  int acknowledgeCalls = 0;
+  String? lastAcknowledgementOperationId;
+
+  @override
+  Future<List<ClaimedSyncOperation>> claimPending({
+    required String ownerId,
+    required String firebaseUid,
+    required int limit,
+    required String leaseToken,
+    required String ownerGateToken,
+    required Duration leaseDuration,
+    required DateTime nowUtc,
+  }) async {
+    final claims = await delegate.claimPending(
+      ownerId: ownerId,
+      firebaseUid: firebaseUid,
+      limit: limit,
+      leaseToken: leaseToken,
+      ownerGateToken: ownerGateToken,
+      leaseDuration: leaseDuration,
+      nowUtc: nowUtc,
+    );
+    return claims.map(_translate).toList(growable: false);
+  }
+
+  @override
+  Future<ClaimedSyncOperation?> beginAttempt({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) async {
+    final begun = await delegate.beginAttempt(
+      claim: claim,
+      ownerGateToken: ownerGateToken,
+      nowUtc: nowUtc,
+    );
+    return begun == null ? null : _translate(begun);
+  }
+
+  @override
+  Future<bool> acknowledge({
+    required String operationId,
+    required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+    required PushAcknowledged acknowledgement,
+  }) {
+    acknowledgeCalls += 1;
+    lastAcknowledgementOperationId = acknowledgement.operationId;
+    return delegate.acknowledge(
+      operationId: operationId,
+      leaseToken: leaseToken,
+      ownerGateToken: ownerGateToken,
+      nowUtc: nowUtc,
+      acknowledgement: acknowledgement,
+    );
+  }
+
+  @override
+  Future<bool> markRetry({
+    required String operationId,
+    required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+    required DateTime nextAttemptAtUtc,
+    required SyncFailure failure,
+  }) => delegate.markRetry(
+    operationId: operationId,
+    leaseToken: leaseToken,
+    ownerGateToken: ownerGateToken,
+    nowUtc: nowUtc,
+    nextAttemptAtUtc: nextAttemptAtUtc,
+    failure: failure,
+  );
+
+  @override
+  Future<bool> markTerminalFailure({
+    required String operationId,
+    required String leaseToken,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+    required SyncFailure failure,
+  }) => delegate.markTerminalFailure(
+    operationId: operationId,
+    leaseToken: leaseToken,
+    ownerGateToken: ownerGateToken,
+    nowUtc: nowUtc,
+    failure: failure,
+  );
+
+  @override
+  Future<bool> releaseClaim({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) => delegate.releaseClaim(
+    claim: claim,
+    ownerGateToken: ownerGateToken,
+    nowUtc: nowUtc,
+  );
+
+  @override
+  Future<bool> resolvePushConflict({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required SyncEntity cloudEntity,
+    required DateTime resolvedAtUtc,
+  }) => delegate.resolvePushConflict(
+    claim: claim,
+    ownerGateToken: ownerGateToken,
+    cloudEntity: cloudEntity,
+    resolvedAtUtc: resolvedAtUtc,
+  );
+
+  @override
+  Future<SyncCursor?> readCheckpoint(
+    String ownerId,
+    SyncCollection collection,
+  ) => delegate.readCheckpoint(ownerId, collection);
+
+  @override
+  Future<bool> applyPullPage({
+    required String ownerId,
+    required SyncCollection collection,
+    required PullPage page,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) => delegate.applyPullPage(
+    ownerId: ownerId,
+    collection: collection,
+    page: page,
+    ownerGateToken: ownerGateToken,
+    nowUtc: nowUtc,
+  );
+
+  ClaimedSyncOperation _translate(ClaimedSyncOperation claim) {
+    final mutation = claim.mutation;
+    if (mutation.operationId == cloudOperationId) return claim;
+    if (mutation.operationId != localOperationId ||
+        claim.localOperationId != localOperationId) {
+      throw StateError('unexpected operation identity in test store');
+    }
+    return ClaimedSyncOperation(
+      leaseToken: claim.leaseToken,
+      attemptCount: claim.attemptCount,
+      releaseState: claim.releaseState,
+      localOperationId: localOperationId,
+      mutation: PushMutation(
+        operationId: cloudOperationId,
+        firebaseUid: mutation.firebaseUid,
+        collection: mutation.collection,
+        entityId: mutation.entityId,
+        operationKind: mutation.operationKind,
+        payloadVersion: mutation.payloadVersion,
+        baseRevision: mutation.baseRevision,
+        localRevision: mutation.localRevision,
+        clientUpdatedAtUtc: mutation.clientUpdatedAtUtc,
+        payload: mutation.payload,
+      ),
+    );
   }
 }
 

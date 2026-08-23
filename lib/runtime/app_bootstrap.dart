@@ -51,7 +51,6 @@ import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
-import '../features/learning/domain/evidence_policy_rollout.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -70,6 +69,9 @@ import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/rewards/domain/economy_transaction_policy.dart';
 import '../features/rewards/domain/reward_models.dart';
+import '../features/research/application/assigned_learning_event_context_provider.dart';
+import '../features/research/application/experiment_assignment_use_cases.dart';
+import '../features/research/data/drift_experiment_assignment_repository.dart';
 import '../features/session/data/shared_preferences_app_entry_state_store.dart';
 import '../features/session/domain/app_entry_state.dart';
 import '../features/sync/application/sync_backoff.dart';
@@ -95,6 +97,8 @@ import 'central_cost_policy.dart';
 import 'download_counter.dart';
 import 'app_runtime_status.dart';
 import 'app_start_route_resolver.dart';
+import 'registries/drift_consent_registry.dart';
+import 'registries/experiment_registry.dart';
 import 'registries/feature_registry.dart';
 import 'runtime_feature_override_store.dart';
 import 'resource_disposer_stack.dart';
@@ -250,6 +254,7 @@ final class AppBootstrap {
     ManagedVoiceBuilder? buildVoice,
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
     this.researchStateProvider,
+    ResearchProtocolModeCatalog? researchProtocolModeCatalog,
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -259,6 +264,11 @@ final class AppBootstrap {
        buildVoice = buildVoice ?? _buildManagedVoice,
        loadResearchRuntimeConfig =
            loadResearchRuntimeConfig ?? _legacyResearchRuntimeConfig,
+       researchProtocolModeCatalog =
+           researchProtocolModeCatalog ??
+           const ResearchProtocolModeCatalog(
+             mappings: <ResearchProtocolModeMapping>[],
+           ),
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
        aiNowUtc = aiNowUtc ?? _aiSystemNowUtc;
@@ -288,6 +298,7 @@ final class AppBootstrap {
   final AppConfigLoader loadConfig;
   final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
   final CurrentActivityResearchStateProvider? researchStateProvider;
+  final ResearchProtocolModeCatalog researchProtocolModeCatalog;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
   final AppEntryStateStoreFactory createEntryStateStore;
@@ -321,19 +332,6 @@ final class AppBootstrap {
 
   Future<AppDependencies> _compose(ResourceDisposerStack resources) async {
     final researchRuntimeConfig = loadResearchRuntimeConfig();
-    final evidenceRolloutModeProvider = FixedEvidencePolicyRolloutModeProvider(
-      researchRuntimeConfig.evidenceRollout,
-    );
-    final currentResearchStateProvider =
-        researchStateProvider ??
-        switch (researchRuntimeConfig.evidenceRollout) {
-          EvidencePolicyRolloutMode.legacy =>
-            const BaselineCurrentActivityResearchStateProvider(),
-          EvidencePolicyRolloutMode.shadow ||
-          EvidencePolicyRolloutMode.enforced => throw StateError(
-            'research state provider is required outside Legacy',
-          ),
-        };
     final entryState = await _createEntryState();
     final database = createDatabase();
     resources.own(database.close);
@@ -351,6 +349,34 @@ final class AppBootstrap {
     await localOwners.getOrCreateActiveOwner();
     Future<String> activeOwnerId() async =>
         (await localOwners.getOrCreateActiveOwner()).id;
+    final experimentAssignmentRepository = DriftExperimentAssignmentRepository(
+      database,
+    );
+    final experimentRegistry = DriftExperimentRegistry(
+      experimentAssignmentRepository,
+    );
+    final consentRegistry = DriftConsentRegistry(database);
+    final experimentAssignments = ExperimentAssignmentUseCases(
+      repository: experimentAssignmentRepository,
+      consentRegistry: consentRegistry,
+    );
+    final assignedLearningEventContext = AssignedLearningEventContextProvider(
+      experimentRegistry: experimentRegistry,
+      consentRegistry: consentRegistry,
+      protocolModeCatalog: researchProtocolModeCatalog,
+    );
+    final currentResearchStateProvider =
+        researchStateProvider ??
+        (researchProtocolModeCatalog.isEmpty
+            ? const BaselineCurrentActivityResearchStateProvider()
+            : assignedLearningEventContext);
+    final evidenceRolloutModeProvider =
+        PersistedEvidencePolicyRolloutModeProvider(
+          experimentRegistry: experimentRegistry,
+          consentRegistry: consentRegistry,
+          protocolModeCatalog: researchProtocolModeCatalog,
+          currentActivityResearchStateProvider: assignedLearningEventContext,
+        );
     final aiCredentialVersionIndex = DriftAiCredentialVersionIndex(database);
     final aiTutorSettings = SecureAiTutorSettingsStore.production(
       activeOwnerId: activeOwnerId,
@@ -468,6 +494,7 @@ final class AppBootstrap {
           evidencePolicy: evidencePolicy,
           rolloutModeProvider: evidenceRolloutModeProvider,
           payloadRollout: researchRuntimeConfig.syncPayloadRollout,
+          consentRegistry: consentRegistry,
         ),
         gateway: gateway,
         policyProvider: policy.call,
@@ -860,6 +887,11 @@ final class AppBootstrap {
       guestSessionService: exposedGuestSession,
       features: runtimeFeatures,
       featureControls: featureControls,
+      experiments: experimentRegistry,
+      consents: consentRegistry,
+      experimentAssignments: experimentAssignments,
+      assignedLearningEventContext: assignedLearningEventContext,
+      evidencePolicyRolloutModeProvider: evidenceRolloutModeProvider,
       buildInfo: const AppBuildInfo.fromEnvironment(),
       database: database,
       localOwners: localOwners,

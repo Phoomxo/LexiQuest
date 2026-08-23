@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
@@ -18,7 +19,11 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_event_s
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
+import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
+import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
@@ -27,10 +32,14 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
@@ -171,6 +180,152 @@ Future<void> _insertFrozenLearningEvidence(
       );
 }
 
+Future<({String sessionId, String wordId})>
+_insertBootstrapCurrentActivityTarget(
+  AppDatabase database, {
+  required String ownerId,
+  required DateTime startedAtUtc,
+}) async {
+  final categoryId = 'bootstrap-live-category:$ownerId';
+  final wordId = 'bootstrap-live-word:$ownerId';
+  final sessionId = 'bootstrap-live-session:$ownerId';
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Bootstrap current activity',
+          normalizedName: 'bootstrap current activity',
+          createdAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+          updatedAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+        ),
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: 'persisted',
+          normalizedSpelling: 'persisted',
+          meaning: 'persisted research authority',
+          normalizedMeaning: 'persisted research authority',
+          partOfSpeech: 'adjective',
+          createdAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+          updatedAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+        ),
+      );
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          state: 'active',
+          startedAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+          appVersion: '1.0.0',
+          buildId: 'bootstrap-test',
+        ),
+      );
+  return (sessionId: sessionId, wordId: wordId);
+}
+
+const _bootstrapProtocolModeCatalog = ResearchProtocolModeCatalog(
+  mappings: <ResearchProtocolModeMapping>[
+    ResearchProtocolModeMapping(
+      protocolId: 'bootstrap-protocol',
+      protocolVersion: 'bootstrap-protocol-v1',
+      experimentId: 'bootstrap-experiment',
+      experimentVersion: 1,
+      consentVersion: 7,
+      mode: EvidencePolicyRolloutMode.shadow,
+    ),
+  ],
+);
+
+Future<void> _putBootstrapConsent(
+  AppDatabase database, {
+  required String ownerId,
+  required int consentVersion,
+  required DateTime decidedAtUtc,
+}) {
+  return database.customInsert(
+    'INSERT INTO research_consents('
+    'id, owner_id, consent_version, consent_state, decided_at_utc_ms'
+    ') VALUES (?, ?, ?, ?, ?)',
+    variables: [
+      Variable<String>('bootstrap-consent:$ownerId:$consentVersion'),
+      Variable<String>(ownerId),
+      Variable<int>(consentVersion),
+      const Variable<String>('accepted'),
+      Variable<int>(decidedAtUtc.millisecondsSinceEpoch),
+    ],
+  );
+}
+
+Future<int> _bootstrapAssignmentCount(AppDatabase database) {
+  return database
+      .customSelect('SELECT COUNT(*) AS count FROM experiment_assignments')
+      .map((row) => row.read<int>('count'))
+      .getSingle();
+}
+
+Future<int> _bootstrapResearchOutboxCount(AppDatabase database) {
+  return (database.select(database.outboxOperations)..where(
+        (row) => row.entityType.equals(
+          SyncCollection.experimentAssignments.entityType,
+        ),
+      ))
+      .get()
+      .then((rows) => rows.length);
+}
+
+EvidenceContext _bootstrapResearchEvidence(ExperimentAssignment assignment) {
+  return EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.independentRecall,
+    skillId: 'vocabulary-recall',
+    hintLevel: 0,
+    contentRevision: 'bootstrap-content-v1',
+    rolloutMode: EvidencePolicyRolloutMode.enforced,
+    protocolId: 'bootstrap-protocol',
+    protocolVersion: assignment.protocolVersion,
+    experimentId: assignment.experimentId,
+    experimentVersion: assignment.experimentVersion,
+    assignmentId: assignment.id,
+    cohort: assignment.cohort,
+    researchConsentVersion: 7,
+    engagementAllowed: true,
+  );
+}
+
+EvidenceContext _bootstrapMissingAssessmentEvidence() {
+  return EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.assessment,
+    skillId: 'assessment-vocabulary-recall',
+    hintLevel: 0,
+    contentRevision: 'bootstrap-assessment-v1',
+    rolloutMode: EvidencePolicyRolloutMode.enforced,
+    protocolId: 'bootstrap-protocol',
+    protocolVersion: 'bootstrap-protocol-v1',
+    experimentId: 'bootstrap-experiment',
+    experimentVersion: 1,
+    assignmentId: 'missing-bootstrap-assignment',
+    cohort: 'intervention',
+    researchConsentVersion: 7,
+    instrumentId: 'instrument-1',
+    instrumentVersion: '1',
+    formId: 'form-a',
+    formVersion: '1',
+    assessmentItemId: 'item-1',
+    assessmentResponseCode: 'correct',
+    scoringRuleVersion: '1',
+    engagementAllowed: false,
+  );
+}
+
 void main() {
   group('AppBootstrap.initialize', () {
     test(
@@ -204,45 +359,58 @@ void main() {
       },
     );
 
-    test(
-      'non-Legacy without an injected research state fails before entry and DB',
-      () async {
-        for (final rollout in const <String>['shadow', 'enforced']) {
-          var databaseCalls = 0;
-          var entryStateCalls = 0;
-          final bootstrap = AppBootstrap(
-            createDatabase: () {
-              databaseCalls += 1;
-              return _testDatabase();
-            },
-            initializeFirebase: () async {},
-            initializeSupabase: () async {},
-            loadConfig: _validConfig,
-            loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
-              evidenceRollout: rollout,
-              answerAttemptWriteVersion: '2',
-              firestoreRulesRevision: answerAttemptV2RulesRevision,
-            ),
-            guestSessionService: _StubGuestSessionService(),
-            createEntryStateStore: () async {
-              entryStateCalls += 1;
-              return _MemoryAppEntryStateStore();
-            },
-          );
+    test('delivery rollout cannot activate an unassigned owner', () async {
+      for (final rollout in const <String>['shadow', 'enforced']) {
+        var databaseCalls = 0;
+        var entryStateCalls = 0;
+        final bootstrap = AppBootstrap(
+          createDatabase: () {
+            databaseCalls += 1;
+            return _testDatabase();
+          },
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          loadResearchRuntimeConfig: () => ResearchRuntimeConfig.fromValues(
+            evidenceRollout: rollout,
+            answerAttemptWriteVersion: '2',
+            firestoreRulesRevision: answerAttemptV2RulesRevision,
+          ),
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: () async {
+            entryStateCalls += 1;
+            return _MemoryAppEntryStateStore();
+          },
+        );
 
-          await expectLater(
-            bootstrap.initialize(),
-            throwsStateError,
-            reason: rollout,
-          );
-          expect(databaseCalls, 0, reason: rollout);
-          expect(entryStateCalls, 0, reason: rollout);
-        }
-      },
-    );
+        final dependencies = await bootstrap.initialize();
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+
+        expect(databaseCalls, 1, reason: rollout);
+        expect(entryStateCalls, 1, reason: rollout);
+        expect(
+          await dependencies.evidencePolicyRolloutModeProvider.resolve(
+            ownerId: owner.id,
+            evidenceContext: null,
+          ),
+          EvidencePolicyRolloutMode.legacy,
+          reason: rollout,
+        );
+        expect(
+          await dependencies.database!
+              .customSelect(
+                'SELECT COUNT(*) AS count FROM experiment_assignments',
+              )
+              .map((row) => row.read<int>('count'))
+              .getSingle(),
+          0,
+          reason: rollout,
+        );
+      }
+    });
 
     test(
-      'valid research configuration reaches policy and sync composition',
+      'valid delivery configuration stays separate from persisted policy',
       () async {
         final gateway = _BootstrapSyncGateway();
         final researchState = _BootstrapResearchStateProvider();
@@ -271,11 +439,19 @@ void main() {
         );
         expect(
           store.projections.evidenceDecisions.rolloutModeProvider,
-          isA<FixedEvidencePolicyRolloutModeProvider>().having(
-            (provider) => provider.mode,
-            'mode',
-            EvidencePolicyRolloutMode.shadow,
+          same(dependencies.evidencePolicyRolloutModeProvider),
+        );
+        expect(
+          dependencies.evidencePolicyRolloutModeProvider,
+          isA<PersistedEvidencePolicyRolloutModeProvider>(),
+        );
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        expect(
+          await dependencies.evidencePolicyRolloutModeProvider.resolve(
+            ownerId: owner.id,
+            evidenceContext: null,
           ),
+          EvidencePolicyRolloutMode.legacy,
         );
         expect(
           identical(dependencies.learning!.eventContextProvider, researchState),
@@ -309,11 +485,11 @@ void main() {
       expect(store.payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
       expect(
         store.projections.evidenceDecisions.rolloutModeProvider,
-        isA<FixedEvidencePolicyRolloutModeProvider>().having(
-          (provider) => provider.mode,
-          'mode',
-          EvidencePolicyRolloutMode.legacy,
-        ),
+        same(dependencies.evidencePolicyRolloutModeProvider),
+      );
+      expect(
+        dependencies.evidencePolicyRolloutModeProvider,
+        isA<PersistedEvidencePolicyRolloutModeProvider>(),
       );
       final adapter = dependencies.currentActivityEvidence!;
       final repository =
@@ -402,7 +578,7 @@ void main() {
           jsonDecode(utf8.decode(ownerArchive.bytes)) as Map<String, dynamic>;
       expect(
         (archiveEnvelope['content'] as Map<String, dynamic>)['tables'],
-        hasLength(31),
+        hasLength(ownerLifecycleManifest.length),
       );
     });
 
@@ -576,6 +752,422 @@ void main() {
         expect(dependencies.localOwners, isNotNull);
         expect(owners, hasLength(1));
         expect(owners.single.isActive, isTrue);
+      },
+    );
+
+    test(
+      'production composes one persisted research authority after active owner',
+      () async {
+        final database = _testDatabase();
+        final gateway = _BootstrapSyncGateway();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          syncGatewayFactory: () => gateway,
+          researchProtocolModeCatalog: _bootstrapProtocolModeCatalog,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        final repeatedDependencies = await bootstrap.initialize();
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        final store = dependencies.syncEngine!.store as DriftSyncStore;
+
+        expect(identical(dependencies, repeatedDependencies), isTrue);
+        expect(dependencies.experiments, isA<DriftExperimentRegistry>());
+        expect(dependencies.experiments, isNot(isA<NoOpExperimentRegistry>()));
+        expect(dependencies.consents, isA<DriftConsentRegistry>());
+        expect(dependencies.consents, isNot(isA<NoOpConsentRegistry>()));
+        expect(
+          dependencies.experimentAssignments,
+          isA<ExperimentAssignmentUseCases>(),
+        );
+        expect(
+          dependencies.assignedLearningEventContext,
+          isA<AssignedLearningEventContextProvider>(),
+        );
+        expect(
+          dependencies.evidencePolicyRolloutModeProvider,
+          isA<PersistedEvidencePolicyRolloutModeProvider>(),
+        );
+        expect(
+          identical(
+            dependencies.learning!.eventContextProvider,
+            dependencies.assignedLearningEventContext,
+          ),
+          isTrue,
+        );
+        expect(
+          identical(
+            dependencies.currentActivityEvidence!.rolloutModeProvider,
+            dependencies.evidencePolicyRolloutModeProvider,
+          ),
+          isTrue,
+        );
+        expect(store.researchSyncRollout.enabled, isFalse);
+        expect(identical(store.consentRegistry, dependencies.consents), isTrue);
+        expect(
+          store.researchSyncRollout.allowsExperimentAssignmentClaims,
+          isFalse,
+        );
+
+        expect(
+          dependencies.features.isVisible(Feature.shadowRewardV2),
+          isFalse,
+        );
+        await dependencies.featureControls!.emergencyOff(
+          Feature.shadowRewardV2,
+        );
+        await dependencies.featureControls!.clear(Feature.shadowRewardV2);
+        expect(await _bootstrapAssignmentCount(database), 0);
+        final missingAssessment = _bootstrapMissingAssessmentEvidence();
+        expect(dependencies.features.isVisible(Feature.quiz), isTrue);
+        expect(
+          await dependencies.evidencePolicyRolloutModeProvider.resolve(
+            ownerId: owner.id,
+            evidenceContext: missingAssessment,
+          ),
+          EvidencePolicyRolloutMode.legacy,
+        );
+        await expectLater(
+          dependencies.assignedLearningEventContext!.resolve(
+            ownerId: owner.id,
+            evidenceContext: missingAssessment,
+            occurredAtUtc: DateTime.utc(2026, 8, 14, 8),
+          ),
+          throwsStateError,
+        );
+        expect(await _bootstrapAssignmentCount(database), 0);
+
+        final decidedAt = DateTime.utc(2026, 8, 14, 8);
+        final assignedAt = decidedAt.add(const Duration(minutes: 1));
+        await _putBootstrapConsent(
+          database,
+          ownerId: owner.id,
+          consentVersion: 7,
+          decidedAtUtc: decidedAt,
+        );
+        final assignment = await dependencies.experimentAssignments!
+            .assignIfConsented(
+              ownerId: owner.id,
+              experimentId: 'bootstrap-experiment',
+              experimentVersion: 1,
+              cohort: 'intervention',
+              protocolVersion: 'bootstrap-protocol-v1',
+              consentVersion: 7,
+              assignedAtUtc: assignedAt,
+            );
+        final replay = await dependencies.experimentAssignments!
+            .assignIfConsented(
+              ownerId: owner.id,
+              experimentId: 'bootstrap-experiment',
+              experimentVersion: 1,
+              cohort: 'intervention',
+              protocolVersion: 'bootstrap-protocol-v1',
+              consentVersion: 7,
+              assignedAtUtc: assignedAt,
+            );
+
+        expect(assignment, isNotNull);
+        final persistedAssignment = assignment!;
+        expect(replay, assignment);
+        expect(await _bootstrapAssignmentCount(database), 1);
+        final outbox =
+            await (database.select(database.outboxOperations)..where(
+                  (row) => row.entityType.equals(
+                    SyncCollection.experimentAssignments.entityType,
+                  ),
+                ))
+                .get();
+        expect(outbox, hasLength(1));
+        expect(outbox.single.entityId, persistedAssignment.id);
+        expect(outbox.single.payloadVersion, 1);
+        expect(
+          await dependencies.experiments.getAssignment(
+            ownerId: owner.id,
+            experimentId: 'bootstrap-experiment',
+            experimentVersion: 1,
+          ),
+          assignment,
+        );
+
+        final evidence = _bootstrapResearchEvidence(persistedAssignment);
+        expect(
+          await dependencies.evidencePolicyRolloutModeProvider.resolve(
+            ownerId: owner.id,
+            evidenceContext: evidence,
+          ),
+          EvidencePolicyRolloutMode.shadow,
+        );
+        final eventContext = await dependencies.assignedLearningEventContext!
+            .resolve(
+              ownerId: owner.id,
+              evidenceContext: evidence,
+              occurredAtUtc: assignedAt.add(const Duration(minutes: 1)),
+            );
+        expect(eventContext.assignmentId, persistedAssignment.id);
+
+        await dependencies.featureControls!.emergencyOff(
+          Feature.shadowRewardV2,
+        );
+        expect(
+          dependencies.features.isEnabled(Feature.shadowRewardV2),
+          isFalse,
+        );
+        expect(
+          await dependencies.evidencePolicyRolloutModeProvider.resolve(
+            ownerId: owner.id,
+            evidenceContext: evidence,
+          ),
+          EvidencePolicyRolloutMode.shadow,
+        );
+        expect(await _bootstrapAssignmentCount(database), 1);
+        expect(
+          store.researchSyncRollout.allowsExperimentAssignmentClaims,
+          isFalse,
+        );
+        expect(
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.entityType.equals(
+                  SyncCollection.experimentAssignments.entityType,
+                ),
+              ))
+              .get(),
+          hasLength(1),
+        );
+      },
+    );
+
+    test(
+      'bootstrap reopen shares persisted research authority before evidence exists',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-bootstrap-research-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final decidedAt = DateTime.utc(2026, 8, 14, 8);
+        final assignedAt = decidedAt.add(const Duration(minutes: 1));
+        ExperimentAssignment? assignment;
+        AppDependencies? first;
+        AppDependencies? second;
+
+        Future<void> disposeAfterFailure(AppDependencies? dependencies) async {
+          if (dependencies == null) return;
+          try {
+            await Future.wait(<Future<void>>[
+              dependencies.dispose(),
+              dependencies.dispose(),
+            ]);
+          } on Object {
+            // Preserve the semantic RED failure while cleanup is best-effort.
+          }
+        }
+
+        try {
+          final firstBootstrap = AppBootstrap(
+            createDatabase: () => AppDatabase(NativeDatabase(file)),
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            researchProtocolModeCatalog: _bootstrapProtocolModeCatalog,
+          );
+          first = await firstBootstrap.initialize();
+          final firstDependencies = first!;
+          final owner = await firstDependencies.localOwners!
+              .getOrCreateActiveOwner();
+          await _putBootstrapConsent(
+            firstDependencies.database!,
+            ownerId: owner.id,
+            consentVersion: 7,
+            decidedAtUtc: decidedAt,
+          );
+          assignment = await firstDependencies.experimentAssignments!
+              .assignIfConsented(
+                ownerId: owner.id,
+                experimentId: 'bootstrap-experiment',
+                experimentVersion: 1,
+                cohort: 'intervention',
+                protocolVersion: 'bootstrap-protocol-v1',
+                consentVersion: 7,
+                assignedAtUtc: assignedAt,
+              );
+          expect(assignment, isNotNull);
+          expect(
+            await firstDependencies.evidencePolicyRolloutModeProvider.resolve(
+              ownerId: owner.id,
+              evidenceContext: _bootstrapResearchEvidence(assignment!),
+            ),
+            EvidencePolicyRolloutMode.shadow,
+          );
+          expect(
+            await _bootstrapAssignmentCount(firstDependencies.database!),
+            1,
+          );
+          expect(
+            await _bootstrapResearchOutboxCount(firstDependencies.database!),
+            1,
+          );
+          await Future.wait(<Future<void>>[
+            firstDependencies.dispose(),
+            firstDependencies.dispose(),
+          ]);
+          first = null;
+
+          final secondBootstrap = AppBootstrap(
+            createDatabase: () => AppDatabase(NativeDatabase(file)),
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            researchProtocolModeCatalog: _bootstrapProtocolModeCatalog,
+          );
+          second = await secondBootstrap.initialize();
+          final secondDependencies = second!;
+          final reopenedOwner = await secondDependencies.localOwners!
+              .getOrCreateActiveOwner();
+          final reopenedAssignment = await secondDependencies.experiments
+              .getAssignment(
+                ownerId: reopenedOwner.id,
+                experimentId: 'bootstrap-experiment',
+                experimentVersion: 1,
+              );
+
+          expect(reopenedAssignment, assignment);
+          final restoredAssignment = reopenedAssignment!;
+          await secondDependencies.featureControls!.emergencyOff(
+            Feature.shadowRewardV2,
+          );
+          final target = await _insertBootstrapCurrentActivityTarget(
+            secondDependencies.database!,
+            ownerId: reopenedOwner.id,
+            startedAtUtc: assignedAt.add(const Duration(minutes: 1)),
+          );
+          final pending = secondDependencies.currentActivityEvidence!.capture(
+            input: CurrentActivityInput.meaningMultipleChoice,
+            sessionId: target.sessionId,
+            wordId: target.wordId,
+            isCorrect: true,
+            responseTimeMs: 750,
+            attemptNumber: 1,
+          );
+          expect(pending.evidenceContext, isNull);
+
+          await pending.record();
+
+          final capturedContext = pending.evidenceContext!;
+          expect(capturedContext.rolloutMode, EvidencePolicyRolloutMode.shadow);
+          expect(capturedContext.protocolId, 'bootstrap-protocol');
+          expect(capturedContext.protocolVersion, 'bootstrap-protocol-v1');
+          expect(capturedContext.experimentId, 'bootstrap-experiment');
+          expect(capturedContext.experimentVersion, 1);
+          expect(capturedContext.assignmentId, restoredAssignment.id);
+          expect(capturedContext.cohort, 'intervention');
+          expect(capturedContext.researchConsentVersion, 7);
+          expect(
+            identical(
+              secondDependencies.learning!.eventContextProvider,
+              secondDependencies.currentActivityEvidence!.researchStateProvider,
+            ),
+            isTrue,
+            reason:
+                'learning events and current activity must share one persisted '
+                'research-state authority',
+          );
+          final sharedEventContext = await secondDependencies
+              .learning!
+              .eventContextProvider
+              .resolve(
+                ownerId: reopenedOwner.id,
+                evidenceContext: capturedContext,
+                occurredAtUtc: pending.occurredAtUtc,
+              );
+          expect(sharedEventContext.assignmentId, restoredAssignment.id);
+          expect(
+            sharedEventContext.experimentContext?.variantId,
+            capturedContext.cohort,
+          );
+          expect(
+            await secondDependencies.evidencePolicyRolloutModeProvider.resolve(
+              ownerId: reopenedOwner.id,
+              evidenceContext: _bootstrapResearchEvidence(restoredAssignment),
+            ),
+            EvidencePolicyRolloutMode.shadow,
+          );
+          expect(
+            await secondDependencies.experimentAssignments!.assignIfConsented(
+              ownerId: reopenedOwner.id,
+              experimentId: 'bootstrap-experiment',
+              experimentVersion: 1,
+              cohort: 'intervention',
+              protocolVersion: 'bootstrap-protocol-v1',
+              consentVersion: 7,
+              assignedAtUtc: assignedAt,
+            ),
+            assignment,
+          );
+          expect(
+            await _bootstrapAssignmentCount(secondDependencies.database!),
+            1,
+          );
+          expect(
+            await _bootstrapResearchOutboxCount(secondDependencies.database!),
+            1,
+          );
+
+          await secondDependencies.database!.customUpdate(
+            'UPDATE research_consents SET withdrawn_at_utc_ms = ? '
+            'WHERE owner_id = ? AND consent_version = ?',
+            variables: <Variable<Object>>[
+              Variable<int>(
+                assignedAt
+                    .add(const Duration(minutes: 2))
+                    .millisecondsSinceEpoch,
+              ),
+              Variable<String>(reopenedOwner.id),
+              const Variable<int>(7),
+            ],
+          );
+          final withdrawn = secondDependencies.currentActivityEvidence!.capture(
+            input: CurrentActivityInput.meaningMultipleChoice,
+            sessionId: target.sessionId,
+            wordId: target.wordId,
+            isCorrect: true,
+            responseTimeMs: 800,
+            attemptNumber: 2,
+          );
+          await withdrawn.record();
+          expect(
+            withdrawn.evidenceContext!.rolloutMode,
+            EvidencePolicyRolloutMode.legacy,
+          );
+          expect(
+            await _bootstrapAssignmentCount(secondDependencies.database!),
+            1,
+          );
+          expect(
+            await _bootstrapResearchOutboxCount(secondDependencies.database!),
+            1,
+          );
+          await Future.wait(<Future<void>>[
+            secondDependencies.dispose(),
+            secondDependencies.dispose(),
+          ]);
+          second = null;
+        } finally {
+          await disposeAfterFailure(second);
+          await disposeAfterFailure(first);
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
       },
     );
 

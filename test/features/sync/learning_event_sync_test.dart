@@ -5,6 +5,16 @@ import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
+    as identity;
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
+import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
+import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -12,12 +22,29 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/srs_operation_identity.dart';
+import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
+
+const _declaredEvidenceResearchCatalog = ResearchProtocolModeCatalog(
+  mappings: <ResearchProtocolModeMapping>[
+    ResearchProtocolModeMapping(
+      protocolId: 'evidence-pilot',
+      experimentId: 'evidence-eligibility',
+      experimentVersion: 1,
+      protocolVersion: '1.0.0',
+      consentVersion: 1,
+      mode: EvidencePolicyRolloutMode.shadow,
+    ),
+  ],
+);
 
 void main() {
   late AppDatabase database;
@@ -121,7 +148,10 @@ void main() {
   test(
     'attempt payload v2 preserves the complete declared evidence context',
     () async {
-      final context = _declaredEvidence();
+      final context = await _seedDeclaredEvidenceState(
+        database,
+        assignedAtUtc: now.subtract(const Duration(minutes: 1)),
+      );
       await _insertAttemptForSync(
         database,
         id: 'attempt-v2',
@@ -157,13 +187,680 @@ void main() {
         claim.mutation.payload['evidenceClass'],
         context.evidenceClass.name,
       );
-      expect(claim.mutation.payload['evidenceContext'], context.toJson());
+      expect(
+        claim.mutation.payload['evidenceContext'],
+        _declaredEvidence(
+          assignmentId: _declaredEvidenceCloudAssignmentId(),
+        ).toJson(),
+      );
+    },
+  );
+
+  test(
+    'declared evidence crosses devices through cloud assignment identity',
+    () async {
+      const firebaseUid = 'shared-research-user';
+      const destinationOwnerId = 'device-b-owner';
+      final consentAt = DateTime.utc(2026, 8, 14, 7, 59);
+      final assignedAt = DateTime.utc(2026, 8, 14, 8);
+      final attemptAt = DateTime.utc(2026, 8, 14, 9);
+      await _bindOwner(database, ownerId: 'owner-1', firebaseUid: firebaseUid);
+      await _putGrantedResearchConsent(
+        database,
+        ownerId: 'owner-1',
+        decidedAtUtc: consentAt,
+      );
+      final sourceRepository = DriftExperimentAssignmentRepository(database);
+      final sourceAssignment = await sourceRepository.assignIfAbsent(
+        ownerId: 'owner-1',
+        experimentId: 'cross-device-evidence',
+        experimentVersion: 2,
+        cohort: 'shadow-b',
+        protocolVersion: 'protocol-v2',
+        assignedAtUtc: assignedAt,
+      );
+      final sourceContext = _crossDeviceDeclaredEvidence(
+        assignmentId: sourceAssignment.id,
+      );
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-cross-device-v2',
+        sessionId: 'session-cross-device-v2',
+        occurredAt: attemptAt,
+        evidenceContext: sourceContext,
+      );
+
+      const sourceGateToken = 'cross-device-source-gate';
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: sourceGateToken,
+          nowUtc: attemptAt,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final sourceStore = DriftSyncStore(
+        database,
+        payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+        researchSyncRollout:
+            const ResearchCollectionSyncRollout.experimentAssignmentsV1(
+              deployedRulesRevision: experimentAssignmentV1RulesRevision,
+              protocolModeCatalog: _crossDeviceResearchCatalog,
+            ),
+        consentRegistry: DriftConsentRegistry(database),
+      );
+      final claims = await sourceStore.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: firebaseUid,
+        limit: 10,
+        leaseToken: 'cross-device-source-lease',
+        ownerGateToken: sourceGateToken,
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: attemptAt,
+      );
+      expect(claims, hasLength(2));
+      final assignmentClaim = claims.singleWhere(
+        (claim) =>
+            claim.mutation.collection == SyncCollection.experimentAssignments,
+      );
+      final attemptClaim = claims.singleWhere(
+        (claim) => claim.mutation.collection == SyncCollection.attempts,
+      );
+      final cloudAssignmentId =
+          DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+            firebaseUid: firebaseUid,
+            experimentId: sourceAssignment.experimentId,
+            experimentVersion: sourceAssignment.experimentVersion,
+          );
+      expect(assignmentClaim.mutation.entityId, cloudAssignmentId);
+      expect(
+        assignmentClaim.mutation.payload['assignmentId'],
+        cloudAssignmentId,
+      );
+      final outboundContext = EvidenceContext.fromJson(
+        (attemptClaim.mutation.payload['evidenceContext'] as Map)
+            .cast<String, Object?>(),
+      );
+      expect(outboundContext.assignmentId, cloudAssignmentId);
+      expect(<String, Object?>{
+        ...outboundContext.toJson(),
+        'assignmentId': sourceAssignment.id,
+      }, sourceContext.toJson());
+
+      final destination = AppDatabase(NativeDatabase.memory());
+      try {
+        await _seedBoundVocabulary(
+          destination,
+          ownerId: destinationOwnerId,
+          firebaseUid: firebaseUid,
+        );
+        await _putGrantedResearchConsent(
+          destination,
+          ownerId: destinationOwnerId,
+          decidedAtUtc: consentAt,
+        );
+        final destinationStore = DriftSyncStore(
+          destination,
+          payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+          rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
+            EvidencePolicyRolloutMode.shadow,
+          ),
+        );
+        final assignmentEntity = _entityFromMutation(
+          assignmentClaim.mutation,
+          serverUpdatedAtUtc: assignedAt.add(const Duration(seconds: 1)),
+        );
+        final attemptEntity = _entityFromMutation(
+          attemptClaim.mutation,
+          serverUpdatedAtUtc: attemptAt.add(const Duration(seconds: 1)),
+        );
+        await destinationStore.applyPullPage(
+          ownerId: destinationOwnerId,
+          collection: SyncCollection.experimentAssignments,
+          page: _page(assignmentEntity),
+        );
+        await destinationStore.applyPullPage(
+          ownerId: destinationOwnerId,
+          collection: SyncCollection.attempts,
+          page: _page(attemptEntity),
+        );
+        await destinationStore.applyPullPage(
+          ownerId: destinationOwnerId,
+          collection: SyncCollection.attempts,
+          page: _page(_laterServerReplay(attemptEntity)),
+        );
+
+        final destinationAssignmentId =
+            DriftExperimentAssignmentRepository.canonicalAssignmentId(
+              ownerId: destinationOwnerId,
+              experimentId: sourceAssignment.experimentId,
+              experimentVersion: sourceAssignment.experimentVersion,
+            );
+        final assignments = await destination
+            .select(destination.experimentAssignments)
+            .get();
+        expect(assignments, hasLength(1));
+        expect(assignments.single.id, destinationAssignmentId);
+        final attempts = await destination
+            .select(destination.answerAttempts)
+            .get();
+        expect(attempts, hasLength(1));
+        final destinationContext = EvidenceContext.fromJson(
+          (jsonDecode(attempts.single.evidenceContextJson) as Map)
+              .cast<String, Object?>(),
+        );
+        final expectedDestinationContext = <String, Object?>{
+          ...sourceContext.toJson(),
+          'assignmentId': destinationAssignmentId,
+        };
+        expect(destinationContext.toJson(), expectedDestinationContext);
+        expect(
+          await destination.select(destination.outboxOperations).get(),
+          isEmpty,
+        );
+
+        final resolved =
+            await AssignedLearningEventContextProvider(
+              experimentRegistry: DriftExperimentRegistry(
+                DriftExperimentAssignmentRepository(destination),
+              ),
+              consentRegistry: DriftConsentRegistry(destination),
+              protocolModeCatalog: _crossDeviceResearchCatalog,
+            ).resolve(
+              ownerId: destinationOwnerId,
+              evidenceContext: destinationContext,
+              occurredAtUtc: attemptAt,
+            );
+        expect(resolved.assignmentId, destinationAssignmentId);
+        expect(resolved.protocolId, sourceContext.protocolId);
+        expect(resolved.protocolVersion, sourceAssignment.protocolVersion);
+        expect(resolved.experimentContext?.variantId, sourceAssignment.cohort);
+        expect(
+          resolved.consentContext.researchConsentVersion,
+          sourceContext.researchConsentVersion,
+        );
+
+        final exported = await DriftExportReader(destination).load(
+          ownerId: destinationOwnerId,
+          vocabulary: false,
+          attempts: true,
+          reading: false,
+        );
+        expect(exported.attempts, hasLength(1));
+        expect(
+          exported.attempts.single.evidenceContext.toJson(),
+          expectedDestinationContext,
+        );
+        final destinationEvent =
+            await (destination.select(destination.eventsV2)..where(
+                  (row) => row.eventId.equals(
+                    LearningEvidenceContract.learningEventId(
+                      'attempt-cross-device-v2',
+                    ),
+                  ),
+                ))
+                .getSingle();
+        final destinationExperimentContext =
+            (jsonDecode(destinationEvent.experimentContextJson!) as Map)
+                .cast<String, Object?>();
+        expect(destinationEvent.occurredAtUtc.toUtc(), attemptAt);
+        expect(
+          destinationExperimentContext['experimentId'],
+          sourceAssignment.experimentId,
+        );
+        expect(
+          destinationExperimentContext['variantId'],
+          sourceAssignment.cohort,
+        );
+        expect(
+          destinationExperimentContext['assignedAtUtc'],
+          assignedAt.toIso8601String(),
+          reason:
+              'Event V2 must preserve the immutable assignment timestamp '
+              'rather than synthesizing it from attempt occurrence.',
+        );
+      } finally {
+        await destination.close();
+      }
+    },
+  );
+
+  test(
+    'declared v2 identical cloud conflict normalizes assignment identity',
+    () async {
+      const firebaseUid = 'shared-conflict-user';
+      final consentAt = DateTime.utc(2026, 8, 14, 7, 59);
+      final assignedAt = DateTime.utc(2026, 8, 14, 8);
+      final attemptAt = DateTime.utc(2026, 8, 14, 9);
+      await _bindOwner(database, ownerId: 'owner-1', firebaseUid: firebaseUid);
+      await _putGrantedResearchConsent(
+        database,
+        ownerId: 'owner-1',
+        decidedAtUtc: consentAt,
+      );
+      final assignment = await DriftExperimentAssignmentRepository(database)
+          .assignIfAbsent(
+            ownerId: 'owner-1',
+            experimentId: 'cross-device-evidence',
+            experimentVersion: 2,
+            cohort: 'shadow-b',
+            protocolVersion: 'protocol-v2',
+            assignedAtUtc: assignedAt,
+          );
+      final localContext = _crossDeviceDeclaredEvidence(
+        assignmentId: assignment.id,
+      );
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-cloud-conflict-v2',
+        sessionId: 'session-cloud-conflict-v2',
+        occurredAt: attemptAt,
+        evidenceContext: localContext,
+      );
+
+      final store = DriftSyncStore(
+        database,
+        payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+        researchSyncRollout:
+            const ResearchCollectionSyncRollout.experimentAssignmentsV1(
+              deployedRulesRevision: experimentAssignmentV1RulesRevision,
+              protocolModeCatalog: _crossDeviceResearchCatalog,
+            ),
+        consentRegistry: DriftConsentRegistry(database),
+      );
+      PushMutation? cloudAttemptMutation;
+      final gateway = _ResearchPullGateway(
+        nowUtc: attemptAt,
+        entities: const <SyncCollection, SyncEntity>{},
+        onPush: (mutation) async {
+          if (mutation.collection != SyncCollection.attempts) {
+            return PushAcknowledged(
+              operationId: mutation.operationId,
+              resultingRevision: mutation.localRevision,
+              acknowledgedAtUtc: attemptAt,
+            );
+          }
+          cloudAttemptMutation = mutation;
+          return PushConflict(
+            _entityFromMutation(
+              mutation,
+              serverUpdatedAtUtc: attemptAt.add(const Duration(seconds: 1)),
+            ),
+          );
+        },
+      );
+      var lease = 0;
+      final result = await SyncEngine(
+        owners: _FixedOwnerRepository(
+          identity.LocalOwner(
+            id: 'owner-1',
+            firebaseUid: firebaseUid,
+            createdAtUtc: consentAt,
+          ),
+        ),
+        store: store,
+        gateway: gateway,
+        policyProvider: () async => CloudSyncPolicy(
+          enabled: true,
+          source: CloudSyncPolicySource.cache,
+          fetchedAtUtc: attemptAt,
+          expiresAtUtc: attemptAt.add(const Duration(hours: 1)),
+        ),
+        ownerGate: DriftOwnerOperationGate(database),
+        mutex: SyncMutex(),
+        backoff: const SyncBackoff(jitterFraction: 0),
+        nowUtc: () => attemptAt.add(const Duration(seconds: 2)),
+        generateLeaseToken: () => 'cloud-conflict-${++lease}',
+        heartbeatDelay: (_) async {},
+      ).run();
+      expect(result.status, SyncRunStatus.completed);
+      final claimedAttempt = cloudAttemptMutation!;
+      final cloudContext = EvidenceContext.fromJson(
+        (claimedAttempt.payload['evidenceContext'] as Map)
+            .cast<String, Object?>(),
+      );
+      expect(cloudContext.assignmentId, isNot(assignment.id));
+
+      final operation =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals(
+                  LearningEvidenceContract.answerAttemptOutboxOperationId(
+                    'attempt-cloud-conflict-v2',
+                  ),
+                ),
+              ))
+              .getSingle();
+      expect(operation.state, 'conflictResolved');
+      expect(operation.failureCode, 'identicalCloudEvidence');
+      expect(await database.select(database.syncConflicts).get(), isEmpty);
+      final storedAttempt =
+          await (database.select(database.answerAttempts)
+                ..where((row) => row.id.equals('attempt-cloud-conflict-v2')))
+              .getSingle();
+      expect(
+        EvidenceContext.fromJson(
+          (jsonDecode(storedAttempt.evidenceContextJson) as Map)
+              .cast<String, Object?>(),
+        ).assignmentId,
+        assignment.id,
+      );
+    },
+  );
+
+  test(
+    'one engine run pulls assignment before its declared attempt dependency',
+    () async {
+      const firebaseUid = 'fresh-device-research-user';
+      const destinationOwnerId = 'fresh-device-owner';
+      final consentAt = DateTime.utc(2026, 8, 14, 7, 59);
+      final assignedAt = DateTime.utc(2026, 8, 14, 8);
+      final attemptAt = DateTime.utc(2026, 8, 14, 9);
+      await _bindOwner(database, ownerId: 'owner-1', firebaseUid: firebaseUid);
+      await _putGrantedResearchConsent(
+        database,
+        ownerId: 'owner-1',
+        decidedAtUtc: consentAt,
+      );
+      final sourceAssignment =
+          await DriftExperimentAssignmentRepository(database).assignIfAbsent(
+            ownerId: 'owner-1',
+            experimentId: 'cross-device-evidence',
+            experimentVersion: 2,
+            cohort: 'shadow-b',
+            protocolVersion: 'protocol-v2',
+            assignedAtUtc: assignedAt,
+          );
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-engine-order-v2',
+        sessionId: 'session-engine-order-v2',
+        occurredAt: attemptAt,
+        evidenceContext: _crossDeviceDeclaredEvidence(
+          assignmentId: sourceAssignment.id,
+        ),
+      );
+
+      const sourceGateToken = 'engine-order-source-gate';
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: sourceGateToken,
+          nowUtc: attemptAt,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final sourceClaims =
+          await DriftSyncStore(
+            database,
+            payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+            researchSyncRollout:
+                const ResearchCollectionSyncRollout.experimentAssignmentsV1(
+                  deployedRulesRevision: experimentAssignmentV1RulesRevision,
+                  protocolModeCatalog: _crossDeviceResearchCatalog,
+                ),
+            consentRegistry: DriftConsentRegistry(database),
+          ).claimPending(
+            ownerId: 'owner-1',
+            firebaseUid: firebaseUid,
+            limit: 10,
+            leaseToken: 'engine-order-source-lease',
+            ownerGateToken: sourceGateToken,
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: attemptAt,
+          );
+      final assignmentEntity = _entityFromMutation(
+        sourceClaims
+            .singleWhere(
+              (claim) =>
+                  claim.mutation.collection ==
+                  SyncCollection.experimentAssignments,
+            )
+            .mutation,
+        serverUpdatedAtUtc: assignedAt.add(const Duration(seconds: 1)),
+      );
+      final attemptEntity = _entityFromMutation(
+        sourceClaims
+            .singleWhere(
+              (claim) => claim.mutation.collection == SyncCollection.attempts,
+            )
+            .mutation,
+        serverUpdatedAtUtc: attemptAt.add(const Duration(seconds: 1)),
+      );
+
+      final destination = AppDatabase(NativeDatabase.memory());
+      try {
+        await _seedBoundVocabulary(
+          destination,
+          ownerId: destinationOwnerId,
+          firebaseUid: firebaseUid,
+        );
+        await _putGrantedResearchConsent(
+          destination,
+          ownerId: destinationOwnerId,
+          decidedAtUtc: consentAt,
+        );
+        final destinationStore = DriftSyncStore(
+          destination,
+          payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+          rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
+            EvidencePolicyRolloutMode.shadow,
+          ),
+        );
+        final gateway = _ResearchPullGateway(
+          nowUtc: attemptAt,
+          entities: <SyncCollection, SyncEntity>{
+            SyncCollection.experimentAssignments: assignmentEntity,
+            SyncCollection.attempts: attemptEntity,
+          },
+        );
+        var lease = 0;
+        final syncEngine = SyncEngine(
+          owners: _FixedOwnerRepository(
+            identity.LocalOwner(
+              id: destinationOwnerId,
+              firebaseUid: firebaseUid,
+              createdAtUtc: consentAt,
+            ),
+          ),
+          store: destinationStore,
+          gateway: gateway,
+          policyProvider: () async => CloudSyncPolicy(
+            enabled: true,
+            source: CloudSyncPolicySource.cache,
+            fetchedAtUtc: attemptAt,
+            expiresAtUtc: attemptAt.add(const Duration(hours: 1)),
+          ),
+          ownerGate: DriftOwnerOperationGate(destination),
+          mutex: SyncMutex(),
+          backoff: const SyncBackoff(jitterFraction: 0),
+          nowUtc: () => attemptAt.add(const Duration(seconds: 2)),
+          generateLeaseToken: () => 'engine-order-${++lease}',
+          heartbeatDelay: (_) async {},
+        );
+
+        final first = await syncEngine.run();
+        expect(first.status, SyncRunStatus.completed);
+        expect(first.pulled, 2);
+        expect(
+          gateway.pulledCollections.indexOf(
+            SyncCollection.experimentAssignments,
+          ),
+          lessThan(gateway.pulledCollections.indexOf(SyncCollection.attempts)),
+        );
+        final assignments = await destination
+            .select(destination.experimentAssignments)
+            .get();
+        final attempts = await destination
+            .select(destination.answerAttempts)
+            .get();
+        expect(assignments, hasLength(1));
+        expect(attempts, hasLength(1));
+        final localContext = EvidenceContext.fromJson(
+          (jsonDecode(attempts.single.evidenceContextJson) as Map)
+              .cast<String, Object?>(),
+        );
+        expect(localContext.assignmentId, assignments.single.id);
+        final resolved =
+            await AssignedLearningEventContextProvider(
+              experimentRegistry: DriftExperimentRegistry(
+                DriftExperimentAssignmentRepository(destination),
+              ),
+              consentRegistry: DriftConsentRegistry(destination),
+              protocolModeCatalog: _crossDeviceResearchCatalog,
+            ).resolve(
+              ownerId: destinationOwnerId,
+              evidenceContext: localContext,
+              occurredAtUtc: attemptAt,
+            );
+        expect(resolved.assignmentId, assignments.single.id);
+        expect(
+          await (destination.select(destination.outboxOperations)..where(
+                (row) => row.state.isIn(const <String>[
+                  'pending',
+                  'inFlight',
+                  'retryWaiting',
+                ]),
+              ))
+              .get(),
+          isEmpty,
+        );
+
+        final replay = await syncEngine.run();
+        expect(replay.status, SyncRunStatus.completed);
+        expect(
+          await destination.select(destination.experimentAssignments).get(),
+          hasLength(1),
+        );
+        expect(
+          await destination.select(destination.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(
+          await (destination.select(destination.outboxOperations)..where(
+                (row) => row.state.isIn(const <String>[
+                  'pending',
+                  'inFlight',
+                  'retryWaiting',
+                ]),
+              ))
+              .get(),
+          isEmpty,
+        );
+      } finally {
+        await destination.close();
+      }
+    },
+  );
+
+  test(
+    'declared evidence rejects a foreign local assignment identity before pull persistence',
+    () async {
+      const firebaseUid = 'shared-research-user';
+      const destinationOwnerId = 'device-b-owner';
+      final consentAt = DateTime.utc(2026, 8, 14, 7, 59);
+      final assignedAt = DateTime.utc(2026, 8, 14, 8);
+      final attemptAt = DateTime.utc(2026, 8, 14, 9);
+      final destination = AppDatabase(NativeDatabase.memory());
+      try {
+        await _seedBoundVocabulary(
+          destination,
+          ownerId: destinationOwnerId,
+          firebaseUid: firebaseUid,
+        );
+        await _putGrantedResearchConsent(
+          destination,
+          ownerId: destinationOwnerId,
+          decidedAtUtc: consentAt,
+        );
+        final cloudAssignmentId =
+            DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+              firebaseUid: firebaseUid,
+              experimentId: 'cross-device-evidence',
+              experimentVersion: 2,
+            );
+        final assignmentEntity = SyncEntity(
+          collection: SyncCollection.experimentAssignments,
+          entityId: cloudAssignmentId,
+          revision: 1,
+          isDeleted: false,
+          payloadVersion: 1,
+          clientUpdatedAtUtc: assignedAt,
+          serverUpdatedAtUtc: assignedAt.add(const Duration(seconds: 1)),
+          payload: <String, Object?>{
+            'assignmentId': cloudAssignmentId,
+            'ownerId': firebaseUid,
+            'experimentId': 'cross-device-evidence',
+            'experimentVersion': 2,
+            'cohort': 'shadow-b',
+            'protocolVersion': 'protocol-v2',
+            'assignedAtUtcMs': assignedAt.millisecondsSinceEpoch,
+          },
+        );
+        final destinationStore = DriftSyncStore(
+          destination,
+          payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+          rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
+            EvidencePolicyRolloutMode.shadow,
+          ),
+        );
+        await destinationStore.applyPullPage(
+          ownerId: destinationOwnerId,
+          collection: SyncCollection.experimentAssignments,
+          page: _page(assignmentEntity),
+        );
+        final foreignLocalAssignmentId =
+            DriftExperimentAssignmentRepository.canonicalAssignmentId(
+              ownerId: 'device-a-owner',
+              experimentId: 'cross-device-evidence',
+              experimentVersion: 2,
+            );
+        expect(foreignLocalAssignmentId, isNot(cloudAssignmentId));
+        final malformedAttempt = _attemptEntity(
+          id: 'attempt-foreign-assignment-v2',
+          sessionId: 'session-foreign-assignment-v2',
+          occurredAt: attemptAt,
+          payloadVersion: 2,
+          evidenceContext: _crossDeviceDeclaredEvidence(
+            assignmentId: foreignLocalAssignmentId,
+          ),
+        );
+
+        await expectLater(
+          destinationStore.applyPullPage(
+            ownerId: destinationOwnerId,
+            collection: SyncCollection.attempts,
+            page: _page(malformedAttempt),
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+        expect(
+          await destination.select(destination.answerAttempts).get(),
+          isEmpty,
+        );
+        expect(
+          await destinationStore.readCheckpoint(
+            destinationOwnerId,
+            SyncCollection.attempts,
+          ),
+          isNull,
+        );
+        expect(
+          await destination.select(destination.outboxOperations).get(),
+          isEmpty,
+        );
+      } finally {
+        await destination.close();
+      }
     },
   );
 
   test(
     'mixed attempt batch chooses row-specific versions regardless of order',
     () async {
+      final declaredContext = await _seedDeclaredEvidenceState(
+        database,
+        assignedAtUtc: now.subtract(const Duration(minutes: 1)),
+      );
       final fixtures =
           <({String id, EvidenceContext context, DateTime occurredAt})>[
             (
@@ -173,12 +870,12 @@ void main() {
             ),
             (
               id: 'attempt-declared-after',
-              context: _declaredEvidence(),
+              context: declaredContext,
               occurredAt: now.add(const Duration(milliseconds: 1)),
             ),
             (
               id: 'attempt-declared-first',
-              context: _declaredEvidence(),
+              context: declaredContext,
               occurredAt: now.add(const Duration(milliseconds: 2)),
             ),
             (
@@ -249,8 +946,101 @@ void main() {
         'attempt-declared-after',
         'attempt-declared-first',
       ]) {
-        expect(mutations[id]!.payload['evidenceContext'], isA<Map>());
+        expect(
+          mutations[id]!.payload['evidenceContext'],
+          _declaredEvidence(
+            assignmentId: _declaredEvidenceCloudAssignmentId(),
+          ).toJson(),
+        );
       }
+    },
+  );
+
+  test(
+    'consent-blocked declared attempt cannot starve later ordinary work',
+    () async {
+      final attemptAt = now.subtract(const Duration(minutes: 1));
+      final context = await _seedDeclaredEvidenceState(
+        database,
+        assignedAtUtc: attemptAt.subtract(const Duration(minutes: 1)),
+      );
+      await _insertAttemptForSync(
+        database,
+        id: 'attempt-consent-blocked-v2',
+        sessionId: 'session-consent-blocked-v2',
+        occurredAt: attemptAt,
+        evidenceContext: context,
+      );
+      await database.delete(database.researchConsents).go();
+      await database
+          .into(database.vocabularyCategories)
+          .insert(
+            VocabularyCategoriesCompanion.insert(
+              id: 'category-consent-independent',
+              ownerId: 'owner-1',
+              name: 'Independent',
+              normalizedName: 'independent',
+              createdAtUtcMs: now.millisecondsSinceEpoch,
+              updatedAtUtcMs: now.millisecondsSinceEpoch,
+            ),
+          );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'category:consent-independent:1',
+              ownerId: 'owner-1',
+              entityType: SyncCollection.categories.entityType,
+              entityId: 'category-consent-independent',
+              operationKind: SyncOperationKind.upsert.name,
+              createdAtUtcMs: now.millisecondsSinceEpoch,
+            ),
+          );
+      const gateToken = 'consent-blocked-attempt-gate';
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: gateToken,
+          nowUtc: now,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+
+      final claims =
+          await DriftSyncStore(
+            database,
+            payloadRollout: const SyncPayloadRollout.answerAttemptV2(),
+            researchSyncRollout:
+                const ResearchCollectionSyncRollout.experimentAssignmentsV1(
+                  deployedRulesRevision: experimentAssignmentV1RulesRevision,
+                  protocolModeCatalog: _declaredEvidenceResearchCatalog,
+                ),
+            consentRegistry: DriftConsentRegistry(database),
+          ).claimPending(
+            ownerId: 'owner-1',
+            firebaseUid: 'firebase-1',
+            limit: 1,
+            leaseToken: 'consent-blocked-attempt-lease',
+            ownerGateToken: gateToken,
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: now,
+          );
+
+      expect(claims, hasLength(1));
+      expect(claims.single.mutation.collection, SyncCollection.categories);
+      expect(claims.single.mutation.entityId, 'category-consent-independent');
+      final attemptOperation =
+          await (database.select(database.outboxOperations)..where(
+                (row) => row.operationId.equals(
+                  LearningEvidenceContract.answerAttemptOutboxOperationId(
+                    'attempt-consent-blocked-v2',
+                  ),
+                ),
+              ))
+              .getSingle();
+      expect(attemptOperation.state, 'pending');
+      expect(attemptOperation.leaseToken, isNull);
+      expect(attemptOperation.leaseExpiresAtUtcMs, isNull);
     },
   );
 
@@ -370,7 +1160,10 @@ void main() {
   test(
     'pulled attempt payload v2 preserves declared evidence exactly',
     () async {
-      final context = _declaredEvidence();
+      final context = await _seedDeclaredEvidenceState(
+        database,
+        assignedAtUtc: now.subtract(const Duration(minutes: 1)),
+      );
       final v2Store = DriftSyncStore(
         database,
         rolloutModeProvider: const FixedEvidencePolicyRolloutModeProvider(
@@ -382,7 +1175,9 @@ void main() {
         sessionId: 'session-remote-v2',
         occurredAt: now,
         payloadVersion: 2,
-        evidenceContext: context,
+        evidenceContext: _declaredEvidence(
+          assignmentId: _declaredEvidenceCloudAssignmentId(),
+        ),
       );
 
       await v2Store.applyPullPage(
@@ -1519,21 +2314,254 @@ SyncEntity _attemptEntity({
   },
 );
 
-EvidenceContext _declaredEvidence() => EvidenceContext.forNewEvidence(
-  evidenceClass: EvidenceClass.independentRecall,
-  skillId: 'meaning-recall',
-  hintLevel: 0,
-  contentRevision: 'built-in-v1',
-  rolloutMode: EvidencePolicyRolloutMode.shadow,
-  protocolId: 'evidence-pilot',
-  protocolVersion: '1.0.0',
-  experimentId: 'evidence-eligibility',
-  experimentVersion: 1,
-  assignmentId: 'assignment-1',
-  cohort: 'shadow',
-  researchConsentVersion: 1,
-  engagementAllowed: true,
+const _crossDeviceResearchCatalog = ResearchProtocolModeCatalog(
+  mappings: <ResearchProtocolModeMapping>[
+    ResearchProtocolModeMapping(
+      protocolId: 'cross-device-protocol',
+      experimentId: 'cross-device-evidence',
+      experimentVersion: 2,
+      protocolVersion: 'protocol-v2',
+      consentVersion: 1,
+      mode: EvidencePolicyRolloutMode.shadow,
+    ),
+  ],
 );
+
+EvidenceContext _crossDeviceDeclaredEvidence({required String assignmentId}) =>
+    EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'meaning-recall',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      rolloutMode: EvidencePolicyRolloutMode.shadow,
+      protocolId: 'cross-device-protocol',
+      protocolVersion: 'protocol-v2',
+      experimentId: 'cross-device-evidence',
+      experimentVersion: 2,
+      assignmentId: assignmentId,
+      cohort: 'shadow-b',
+      researchConsentVersion: 1,
+      engagementAllowed: true,
+    );
+
+SyncEntity _entityFromMutation(
+  PushMutation mutation, {
+  required DateTime serverUpdatedAtUtc,
+}) => SyncEntity(
+  collection: mutation.collection,
+  entityId: mutation.entityId,
+  revision: mutation.localRevision,
+  isDeleted: false,
+  payloadVersion: mutation.payloadVersion,
+  clientUpdatedAtUtc: mutation.clientUpdatedAtUtc,
+  serverUpdatedAtUtc: serverUpdatedAtUtc,
+  payload: mutation.payload,
+);
+
+Future<void> _bindOwner(
+  AppDatabase database, {
+  required String ownerId,
+  required String firebaseUid,
+}) async {
+  await (database.update(
+    database.localOwners,
+  )..where((owner) => owner.id.equals(ownerId))).write(
+    LocalOwnersCompanion(
+      firebaseUid: Value(firebaseUid),
+      accountState: const Value('firebaseBound'),
+      isActive: const Value(true),
+    ),
+  );
+}
+
+Future<void> _putGrantedResearchConsent(
+  AppDatabase database, {
+  required String ownerId,
+  required DateTime decidedAtUtc,
+}) {
+  return database.customStatement(
+    'INSERT INTO research_consents('
+    'id, owner_id, consent_version, consent_state, decided_at_utc_ms, '
+    'withdrawn_at_utc_ms) VALUES (?, ?, 1, ?, ?, NULL)',
+    <Object?>[
+      'consent:$ownerId:1',
+      ownerId,
+      'accepted',
+      decidedAtUtc.millisecondsSinceEpoch,
+    ],
+  );
+}
+
+Future<EvidenceContext> _seedDeclaredEvidenceState(
+  AppDatabase database, {
+  required DateTime assignedAtUtc,
+}) async {
+  await _bindOwner(database, ownerId: 'owner-1', firebaseUid: 'firebase-1');
+  await _putGrantedResearchConsent(
+    database,
+    ownerId: 'owner-1',
+    decidedAtUtc: assignedAtUtc.subtract(const Duration(milliseconds: 1)),
+  );
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: 'owner-1',
+        experimentId: 'evidence-eligibility',
+        experimentVersion: 1,
+      );
+  await database
+      .into(database.experimentAssignments)
+      .insert(
+        ExperimentAssignmentsCompanion.insert(
+          id: assignmentId,
+          ownerId: 'owner-1',
+          experimentId: 'evidence-eligibility',
+          experimentVersion: 1,
+          cohort: 'shadow',
+          protocolVersion: '1.0.0',
+          assignedAtUtcMs: assignedAtUtc.millisecondsSinceEpoch,
+        ),
+      );
+  return _declaredEvidence(assignmentId: assignmentId);
+}
+
+String _declaredEvidenceCloudAssignmentId() =>
+    DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+      firebaseUid: 'firebase-1',
+      experimentId: 'evidence-eligibility',
+      experimentVersion: 1,
+    );
+
+final class _FixedOwnerRepository implements LocalOwnerRepository {
+  _FixedOwnerRepository(this.owner);
+
+  identity.LocalOwner owner;
+
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() async => owner;
+
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) async {
+    owner = identity.LocalOwner(
+      id: owner.id,
+      firebaseUid: firebaseUid,
+      createdAtUtc: owner.createdAtUtc,
+      upgradedAtUtc: owner.upgradedAtUtc,
+    );
+    return owner;
+  }
+}
+
+final class _ResearchPullGateway implements SyncGateway {
+  _ResearchPullGateway({
+    required this.nowUtc,
+    required this.entities,
+    this.onPush,
+  });
+
+  final DateTime nowUtc;
+  final Map<SyncCollection, SyncEntity> entities;
+  final Future<PushResult> Function(PushMutation mutation)? onPush;
+  final List<SyncCollection> pulledCollections = <SyncCollection>[];
+
+  @override
+  Future<CloudSyncPolicy> fetchPolicy() async => CloudSyncPolicy(
+    enabled: true,
+    source: CloudSyncPolicySource.remote,
+    fetchedAtUtc: nowUtc,
+    expiresAtUtc: nowUtc.add(const Duration(hours: 1)),
+  );
+
+  @override
+  Future<PullPage> pull({
+    required String firebaseUid,
+    required SyncCollection collection,
+    required SyncCursor? after,
+    required int limit,
+  }) async {
+    pulledCollections.add(collection);
+    final entity = entities[collection];
+    if (entity == null || after != null) {
+      return PullPage(
+        changes: const <SyncEntity>[],
+        nextCursor: after,
+        hasMore: false,
+      );
+    }
+    return _page(entity);
+  }
+
+  @override
+  Future<PushResult> push(PushMutation mutation) async {
+    final handler = onPush;
+    if (handler != null) return handler(mutation);
+    return PushAcknowledged(
+      operationId: mutation.operationId,
+      resultingRevision: mutation.localRevision,
+      acknowledgedAtUtc: nowUtc,
+    );
+  }
+}
+
+Future<void> _seedBoundVocabulary(
+  AppDatabase database, {
+  required String ownerId,
+  required String firebaseUid,
+}) async {
+  await database.customStatement(
+    'INSERT INTO local_owners('
+    'id, firebase_uid, account_state, created_at_utc_ms, is_active) '
+    'VALUES (?, ?, ?, 1, 1)',
+    <Object?>[ownerId, firebaseUid, 'firebaseBound'],
+  );
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: 'category-1',
+          ownerId: ownerId,
+          name: 'Travel',
+          normalizedName: 'travel',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: 'word-1',
+          ownerId: ownerId,
+          categoryId: 'category-1',
+          spelling: 'station',
+          normalizedSpelling: 'station',
+          meaning: 'สถานี',
+          normalizedMeaning: 'สถานี',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+}
+
+EvidenceContext _declaredEvidence({String assignmentId = 'assignment-1'}) =>
+    EvidenceContext.forNewEvidence(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'meaning-recall',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      rolloutMode: EvidencePolicyRolloutMode.shadow,
+      protocolId: 'evidence-pilot',
+      protocolVersion: '1.0.0',
+      experimentId: 'evidence-eligibility',
+      experimentVersion: 1,
+      assignmentId: assignmentId,
+      cohort: 'shadow',
+      researchConsentVersion: 1,
+      engagementAllowed: true,
+    );
 
 Future<void> _insertAttemptForSync(
   AppDatabase database, {

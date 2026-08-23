@@ -146,6 +146,7 @@ final class OwnerLifecycleArchiveExporter {
     return switch (descriptor.tableName) {
       'local_owners' => _ownerRoot(ownerId),
       'research_consents' => _researchConsents(ownerId),
+      'experiment_assignments' => _experimentAssignments(ownerId),
       'vocabulary_categories' => _vocabularyCategories(ownerId),
       'vocabulary_words' => _vocabularyWords(ownerId),
       'vocabulary_imports' => _vocabularyImports(ownerId),
@@ -238,6 +239,34 @@ final class OwnerLifecycleArchiveExporter {
           'withdrawnAtUtc': _nullableIso(
             row.readNullable<int>('withdrawn_at_utc_ms'),
           ),
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _experimentAssignments(
+    String ownerId,
+  ) async {
+    final rows = await database
+        .customSelect(
+          'SELECT experiment_id, experiment_version, cohort, protocol_version, '
+          'assigned_at_utc_ms FROM experiment_assignments WHERE owner_id = ? '
+          'ORDER BY experiment_id, experiment_version',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.experimentAssignments},
+        )
+        .get();
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'experimentId': row.read<String>('experiment_id'),
+          'experimentVersion': row.read<int>('experiment_version'),
+          'cohort': row.read<String>('cohort'),
+          'protocolVersion': row.read<String>('protocol_version'),
+          'assignedAtUtc': DateTime.fromMillisecondsSinceEpoch(
+            row.read<int>('assigned_at_utc_ms'),
+            isUtc: true,
+          ).toIso8601String(),
         },
     ];
   }

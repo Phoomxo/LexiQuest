@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart'
+    as research;
 import 'package:vocab_learning_app/runtime/registries/consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/entitlement_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
@@ -6,7 +8,7 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
   group('Registry separation — D2.4', () {
-    test('feature flag does not assign experiment cohort', () {
+    test('feature flag does not assign experiment cohort', () async {
       // Enable aiTutor in the feature registry.
       final features = MutableFeatureRegistry();
       features.enable(Feature.aiTutor);
@@ -15,28 +17,34 @@ void main() {
       // The experiment registry is entirely separate — enabling a feature
       // must not produce any cohort assignment.
       const experiments = NoOpExperimentRegistry();
-      final assignment = experiments.getAssignment(
-        'ai_tutor_experiment',
-        'user1',
-      );
+      final research.ExperimentAssignment? assignment = await experiments
+          .getAssignment(
+            ownerId: 'user1',
+            experimentId: 'ai_tutor_experiment',
+            experimentVersion: 1,
+          );
 
       expect(
-        assignment.isUnassigned,
-        isTrue,
+        assignment,
+        isNull,
         reason: 'Enabling a feature flag must not assign an experiment cohort',
       );
     });
 
-    test('disabling a feature does not affect consent state', () {
+    test('disabling a feature does not affect consent state', () async {
       final features = MutableFeatureRegistry();
       features.disable(Feature.export);
       expect(features.isVisible(Feature.export), isFalse);
 
       const consents = NoOpConsentRegistry();
-      final state = consents.check(ConsentPurpose.personalDataExport, 'user1');
+      final snapshot = await consents.snapshot(
+        purpose: ConsentPurpose.personalDataExport,
+        ownerId: 'user1',
+        consentVersion: 1,
+      );
 
       // Consent state is unknown regardless of feature state.
-      expect(state, ConsentState.unknown);
+      expect(snapshot.state, ConsentState.unknown);
     });
 
     test('entitlement registry denies all by default', () {
@@ -50,14 +58,21 @@ void main() {
       }
     });
 
-    test('experiment registry returns unassigned for every query', () {
-      const experiments = NoOpExperimentRegistry();
-      final assignment = experiments.getAssignment('unknown_exp', 'nobody');
-      expect(assignment.isUnassigned, isTrue);
-      expect(assignment.isCohort('control'), isFalse);
-      expect(assignment.experimentId, 'unknown_exp');
-      expect(assignment.ownerId, 'nobody');
-    });
+    test(
+      'experiment registry re-exports the canonical nullable type',
+      () async {
+        const experiments = NoOpExperimentRegistry();
+        final ExperimentAssignment? reExported = await experiments
+            .getAssignment(
+              ownerId: 'nobody',
+              experimentId: 'unknown_exp',
+              experimentVersion: 7,
+            );
+        final research.ExperimentAssignment? canonical = reExported;
+
+        expect(canonical, isNull);
+      },
+    );
 
     test('BuildFeatureRegistry.fieldDefaults matches production defaults', () {
       const reg = BuildFeatureRegistry.fieldDefaults();
@@ -84,7 +99,7 @@ void main() {
       }
     });
 
-    test('four registries are independent — no shared state', () {
+    test('four registries are independent — no shared state', () async {
       final features = MutableFeatureRegistry();
       features.enable(Feature.aiTutor);
 
@@ -94,9 +109,20 @@ void main() {
 
       // Each registry answers its own question; none bleeds into the others.
       expect(features.isVisible(Feature.aiTutor), isTrue);
-      expect(experiments.getAssignment('ai_exp', 'u1').isUnassigned, isTrue);
       expect(
-        consents.check(ConsentPurpose.aiProviderDataSharing, 'u1'),
+        await experiments.getAssignment(
+          ownerId: 'u1',
+          experimentId: 'ai_exp',
+          experimentVersion: 1,
+        ),
+        isNull,
+      );
+      expect(
+        (await consents.snapshot(
+          purpose: ConsentPurpose.aiProviderDataSharing,
+          ownerId: 'u1',
+          consentVersion: 1,
+        )).state,
         ConsentState.unknown,
       );
       expect(

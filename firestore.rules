@@ -480,6 +480,38 @@ service cloud.firestore {
         && !request.resource.data.isDeleted;
     }
 
+    function fieldResearchIdentifierOk(value) {
+      return value is string
+        && value.size() > 0
+        && value.size() <= 256
+        && value.matches('^\\S(.*\\S)?$');
+    }
+
+    function fieldExperimentAssignmentPayloadOk(uid, assignmentId) {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'assignmentId', 'ownerId', 'experimentId', 'experimentVersion',
+          'cohort', 'protocolVersion', 'assignedAtUtcMs'
+        ])
+        && payload.keys().size() == 7
+        && fieldResearchIdentifierOk(assignmentId)
+        && fieldResearchIdentifierOk(payload.assignmentId)
+        && payload.assignmentId == assignmentId
+        && fieldResearchIdentifierOk(payload.ownerId)
+        && payload.ownerId == uid
+        && fieldResearchIdentifierOk(payload.experimentId)
+        && payload.experimentVersion is int
+        && payload.experimentVersion > 0
+        && fieldResearchIdentifierOk(payload.cohort)
+        && fieldResearchIdentifierOk(payload.protocolVersion)
+        && payload.assignedAtUtcMs is int
+        && payload.assignedAtUtcMs >= 0
+        && payload.assignedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
     function fieldOperationAfter(uid, operationId) {
       return getAfter(
         /databases/$(database)/documents/field_users/$(uid)/operations/$(operationId)
@@ -521,7 +553,8 @@ service cloud.firestore {
         && request.resource.data.operationId.size() <= 256
         && request.resource.data.entityType in [
              'category', 'word', 'attempt', 'readingEvent',
-             'rewardTransaction', 'srsState', 'achievementUnlock'
+             'rewardTransaction', 'srsState', 'achievementUnlock',
+             'experimentAssignment'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -635,6 +668,22 @@ service cloud.firestore {
         && request.resource.data.resultingRevision == 1
         && entity.entityId == entityId
         && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == 1;
+    }
+
+    function fieldOperationMatchesExperimentAssignment(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/experiment_assignments/$(entityId);
+      let entity = getAfter(entityPath).data;
+      return !exists(entityPath)
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.schemaVersion == 1
         && entity.revision == 1;
     }
 
@@ -817,7 +866,9 @@ service cloud.firestore {
               || (request.resource.data.entityType == 'srsState'
                   && fieldOperationMatchesSrsState(uid))
               || (request.resource.data.entityType == 'achievementUnlock'
-                  && fieldOperationMatchesAchievementUnlock(uid)));
+                  && fieldOperationMatchesAchievementUnlock(uid))
+              || (request.resource.data.entityType == 'experimentAssignment'
+                  && fieldOperationMatchesExperimentAssignment(uid)));
         allow update, delete: if false;
       }
 
@@ -836,6 +887,19 @@ service cloud.firestore {
           && fieldEntityEnvelopeOk(unlockId)
           && fieldAchievementUnlockPayloadOk()
           && fieldOperationLinksEntity(uid, 'achievementUnlock', unlockId);
+        allow update, delete: if false;
+      }
+
+      match /experiment_assignments/{assignmentId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(assignmentId)
+          && fieldExperimentAssignmentPayloadOk(uid, assignmentId)
+          && fieldOperationLinksEntity(
+               uid,
+               'experimentAssignment',
+               assignmentId
+             );
         allow update, delete: if false;
       }
 

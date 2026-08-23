@@ -1,60 +1,116 @@
-/// V2 Experiment Registry — A/B experiment cohort assignment.
+/// Stable, versioned experiment assignment lookup.
 ///
-/// Intentionally separate from [FeatureRegistry]: enabling a feature flag
-/// for a user must never implicitly assign them to an experiment cohort, and
-/// vice versa.  Callers that need both must query each registry independently.
+/// Assignment remains independent from product delivery, feature visibility,
+/// consent decisions, and runtime kill switches.
 library;
 
-/// The result of looking up a user's assignment for one experiment.
-final class ExperimentAssignment {
-  const ExperimentAssignment._({
-    required this.experimentId,
-    required this.ownerId,
-    required this.cohort,
+import '../../features/research/data/drift_experiment_assignment_repository.dart';
+import '../../features/research/domain/experiment_assignment.dart';
+
+export '../../features/research/domain/experiment_assignment.dart'
+    show ExperimentAssignment;
+
+abstract interface class ExperimentRegistry {
+  Future<ExperimentAssignment?> getAssignment({
+    required String ownerId,
+    required String experimentId,
+    required int experimentVersion,
   });
 
-  /// The experiment that was queried.
-  final String experimentId;
-
-  /// The owner (learner) that was queried.
-  final String ownerId;
-
-  /// `null` when the owner has not been assigned to any cohort.
-  final String? cohort;
-
-  /// `true` when the owner has no assignment for this experiment.
-  bool get isUnassigned => cohort == null;
-
-  /// `true` when [cohort] matches [name] (case-sensitive).
-  bool isCohort(String name) => cohort == name;
-
-  @override
-  String toString() =>
-      'ExperimentAssignment(experiment=$experimentId, owner=$ownerId, '
-      'cohort=${cohort ?? "<unassigned>"})';
+  Future<List<ExperimentAssignment>> listAssignments({required String ownerId});
 }
 
-/// Read-only contract for querying experiment cohort assignments.
-abstract interface class ExperimentRegistry {
-  /// Returns the [ExperimentAssignment] for [experimentId] and [ownerId].
-  ///
-  /// Always returns a non-null value; use [ExperimentAssignment.isUnassigned]
-  /// to detect the absence of an assignment.
-  ExperimentAssignment getAssignment(String experimentId, String ownerId);
-}
-
-/// No-op [ExperimentRegistry] that reports every owner as unassigned.
-///
-/// Suitable for production Phase -1 before real experiment infrastructure
-/// is wired up, and for tests that do not exercise experiment behaviour.
 final class NoOpExperimentRegistry implements ExperimentRegistry {
   const NoOpExperimentRegistry();
 
   @override
-  ExperimentAssignment getAssignment(String experimentId, String ownerId) =>
-      ExperimentAssignment._(
-        experimentId: experimentId,
+  Future<ExperimentAssignment?> getAssignment({
+    required String ownerId,
+    required String experimentId,
+    required int experimentVersion,
+  }) async => null;
+
+  @override
+  Future<List<ExperimentAssignment>> listAssignments({
+    required String ownerId,
+  }) async => const <ExperimentAssignment>[];
+}
+
+final class DriftExperimentRegistry implements ExperimentRegistry {
+  const DriftExperimentRegistry(this._repository);
+
+  final DriftExperimentAssignmentRepository _repository;
+
+  @override
+  Future<ExperimentAssignment?> getAssignment({
+    required String ownerId,
+    required String experimentId,
+    required int experimentVersion,
+  }) async {
+    ExperimentAssignment assignment;
+    try {
+      assignment = await _repository.getAssignment(
         ownerId: ownerId,
-        cohort: null,
+        experimentId: experimentId,
+        experimentVersion: experimentVersion,
       );
+    } on StateError {
+      return null;
+    }
+
+    _requireValidAssignment(assignment, expectedOwnerId: ownerId);
+    if (assignment.experimentId != experimentId ||
+        assignment.experimentVersion != experimentVersion) {
+      throw StateError('Malformed persisted experiment assignment.');
+    }
+    return assignment;
+  }
+
+  @override
+  Future<List<ExperimentAssignment>> listAssignments({
+    required String ownerId,
+  }) async {
+    final assignments = await _repository.listAssignmentsForOwner(
+      ownerId: ownerId,
+    );
+    for (final assignment in assignments) {
+      _requireValidAssignment(assignment, expectedOwnerId: ownerId);
+    }
+    return assignments;
+  }
+
+  Future<bool> matchesAssignmentIdentity({
+    required String ownerId,
+    required String experimentId,
+    required int experimentVersion,
+    required String candidateAssignmentId,
+  }) {
+    return _repository.matchesAssignmentIdentity(
+      ownerId: ownerId,
+      experimentId: experimentId,
+      experimentVersion: experimentVersion,
+      candidateAssignmentId: candidateAssignmentId,
+    );
+  }
+}
+
+void _requireValidAssignment(
+  ExperimentAssignment assignment, {
+  required String expectedOwnerId,
+}) {
+  if (assignment.ownerId != expectedOwnerId ||
+      !_isCanonical(assignment.id) ||
+      !_isCanonical(assignment.ownerId) ||
+      !_isCanonical(assignment.experimentId) ||
+      assignment.experimentVersion <= 0 ||
+      !_isCanonical(assignment.cohort) ||
+      !_isCanonical(assignment.protocolVersion) ||
+      !assignment.assignedAtUtc.isUtc ||
+      assignment.assignedAtUtc.millisecondsSinceEpoch < 0) {
+    throw StateError('Malformed persisted experiment assignment.');
+  }
+}
+
+bool _isCanonical(String value) {
+  return value.isNotEmpty && value == value.trim() && value.runes.length <= 256;
 }

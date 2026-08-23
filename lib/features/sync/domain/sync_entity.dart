@@ -2,10 +2,13 @@ import 'dart:convert';
 
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../research/domain/research_protocol_mode_catalog.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
 const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
+const String experimentAssignmentV1RulesRevision =
+    'experiment-assignment-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -24,6 +27,9 @@ enum SyncCollection {
   /// Pull semantics: insertOrIgnore (once unlocked, never revoked).
   /// Phase 0 Week 12-13.
   achievementUnlocks,
+
+  /// Immutable, explicitly assigned research cohort audit evidence.
+  experimentAssignments,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -35,6 +41,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.rewardTransactions => 'reward_transactions',
     SyncCollection.srsStates => 'srs_states',
     SyncCollection.achievementUnlocks => 'achievement_unlocks',
+    SyncCollection.experimentAssignments => 'experiment_assignments',
   };
 
   String get entityType => switch (this) {
@@ -45,6 +52,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.rewardTransactions => 'rewardTransaction',
     SyncCollection.srsStates => 'srsState',
     SyncCollection.achievementUnlocks => 'achievementUnlock',
+    SyncCollection.experimentAssignments => 'experimentAssignment',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -54,7 +62,8 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.readingEvents ||
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
-    SyncCollection.achievementUnlocks => const <int>{1},
+    SyncCollection.achievementUnlocks ||
+    SyncCollection.experimentAssignments => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -83,9 +92,90 @@ final class SyncPayloadRollout {
     SyncCollection.readingEvents ||
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
-    SyncCollection.achievementUnlocks => collection.defaultWritePayloadVersion,
+    SyncCollection.achievementUnlocks ||
+    SyncCollection.experimentAssignments =>
+      collection.defaultWritePayloadVersion,
   };
 }
+
+/// Delivery gate for immutable research collections.
+///
+/// This is deliberately independent from product visibility and assignment
+/// creation. Local assignment persistence never enables cloud delivery.
+final class ResearchCollectionSyncRollout {
+  const ResearchCollectionSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '',
+      protocolModeCatalog = null;
+
+  const ResearchCollectionSyncRollout.experimentAssignmentsV1({
+    required this.deployedRulesRevision,
+    this.protocolModeCatalog,
+    @Deprecated('Ignored. A protocolModeCatalog is required for claims.')
+    int? consentVersion,
+  }) : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+  final ResearchProtocolModeCatalog? protocolModeCatalog;
+
+  bool get allowsExperimentAssignmentClaims =>
+      enabled &&
+      deployedRulesRevision == experimentAssignmentV1RulesRevision &&
+      protocolModeCatalog != null;
+}
+
+abstract final class ExperimentAssignmentSyncPayloadContract {
+  static const Set<String> keys = <String>{
+    'assignmentId',
+    'ownerId',
+    'experimentId',
+    'experimentVersion',
+    'cohort',
+    'protocolVersion',
+    'assignedAtUtcMs',
+  };
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required String expectedEntityId,
+    String? expectedOwnerId,
+    int? expectedAssignedAtUtcMs,
+  }) {
+    final assignmentId = payload['assignmentId'];
+    final ownerId = payload['ownerId'];
+    final experimentId = payload['experimentId'];
+    final experimentVersion = payload['experimentVersion'];
+    final cohort = payload['cohort'];
+    final protocolVersion = payload['protocolVersion'];
+    final assignedAtUtcMs = payload['assignedAtUtcMs'];
+    if (payload.length != keys.length ||
+        !payload.keys.every(keys.contains) ||
+        assignmentId is! String ||
+        !_canonicalAssignmentText(assignmentId) ||
+        assignmentId != expectedEntityId ||
+        ownerId is! String ||
+        !_canonicalAssignmentText(ownerId) ||
+        (expectedOwnerId != null && ownerId != expectedOwnerId) ||
+        experimentId is! String ||
+        !_canonicalAssignmentText(experimentId) ||
+        experimentVersion is! int ||
+        experimentVersion <= 0 ||
+        cohort is! String ||
+        !_canonicalAssignmentText(cohort) ||
+        protocolVersion is! String ||
+        !_canonicalAssignmentText(protocolVersion) ||
+        assignedAtUtcMs is! int ||
+        assignedAtUtcMs < 0 ||
+        (expectedAssignedAtUtcMs != null &&
+            assignedAtUtcMs != expectedAssignedAtUtcMs)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+}
+
+bool _canonicalAssignmentText(String value) =>
+    value.isNotEmpty && value == value.trim() && value.runes.length <= 256;
 
 abstract final class AnswerAttemptSyncPayloadContract {
   static EvidenceContext requireEvidenceContext({

@@ -256,14 +256,14 @@ void main() {
       final envelope =
           jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
       final content = envelope['content'] as Map<String, dynamic>;
-      expect(content['tables'], hasLength(31));
+      expect(content['tables'], hasLength(32));
       expect(content['archiveSchemaVersion'], 1);
       expect(content['algorithmVersion'], 1);
       expect(
         content['databaseSchemaVersion'],
         AppDatabase.currentSchemaVersion,
       );
-      expect(content['manifestEntryCount'], 31);
+      expect(content['manifestEntryCount'], 32);
       expect(artifact.schemaVersion, content['archiveSchemaVersion']);
       expect(artifact.algorithmVersion, content['algorithmVersion']);
       expect(artifact.recordCount, content['manifestEntryCount']);

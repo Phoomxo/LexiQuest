@@ -1,10 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/export/application/export_use_cases.dart';
@@ -481,6 +484,20 @@ void main() {
         upgradeDatabaseOpen = true;
         await syncDatabase.customSelect('SELECT 1').getSingle();
         await _seedCompleteSyncInventory(syncDatabase);
+        final guestAssignmentId =
+            DriftExperimentAssignmentRepository.canonicalAssignmentId(
+              ownerId: 'guest-owner',
+              experimentId: 'research-assessment',
+              experimentVersion: 1,
+            );
+        await syncDatabase.customInsert(
+          'INSERT INTO experiment_assignments '
+          '(id, owner_id, experiment_id, experiment_version, cohort, '
+          'protocol_version, assigned_at_utc_ms) VALUES '
+          "(?, 'guest-owner', 'research-assessment', 1, 'treatment-a', "
+          "'2026.08', 1786449600000)",
+          variables: [Variable<String>(guestAssignmentId)],
+        );
         await upgradeDatabase.customSelect('SELECT 1').getSingle();
 
         final owners = DriftLocalOwnerRepository(
@@ -587,14 +604,62 @@ void main() {
           gateway.pushFirebaseUids.skip(oldNamespaceCalls),
           everyElement('firebase-new'),
         );
+        const finalCanonicalPointIds = <String>['points-1', 'points:attempt-1'];
+        final finalPointIds = await syncDatabase
+            .customSelect(
+              'SELECT id FROM points_ledger_entries WHERE owner_id = ? '
+              'AND entry_type = ? ORDER BY id',
+              variables: const [
+                Variable<String>('account-owner'),
+                Variable<String>('quizCorrect'),
+              ],
+            )
+            .map((row) => row.read<String>('id'))
+            .get();
+        expect(finalPointIds, finalCanonicalPointIds);
+        final canonicalOperationIds = <String>{
+          'operation:category',
+          'operation:word',
+          'operation:attempt',
+          'operation:reading',
+          'operation:reward',
+          'operation:srs',
+          'operation:achievement',
+        };
+        final expectedOperationIdentities = <String>{
+          for (final operationId in canonicalOperationIds)
+            'anonymous-old:$operationId',
+          for (final operationId in canonicalOperationIds)
+            'firebase-new:$operationId',
+          for (final pointId in finalCanonicalPointIds)
+            'firebase-new:${_legacyBackfillOperationId(pointId)}',
+        };
+        expect(
+          gateway.namespaceApplyCounts.keys.toSet(),
+          expectedOperationIdentities,
+        );
         expect(gateway.namespaceApplyCounts.values, everyElement(1));
-        expect(gateway.namespaceApplyCounts, hasLength(14));
+        expect(gateway.namespaceApplyCounts, hasLength(16));
 
         final beforeReopen = await _inventorySnapshot(syncDatabase);
         expect(beforeReopen['activeOwnerId'], 'account-owner');
         expect(beforeReopen['operationTypes'], _sevenEntityTypes);
         expect(beforeReopen['checkpointCount'], 0);
         expect(beforeReopen['guestInventoryCount'], 0);
+        final assignmentBeforeReopen = await syncDatabase
+            .customSelect(
+              'SELECT experiment_id, experiment_version, cohort, protocol_version, '
+              'assigned_at_utc_ms FROM experiment_assignments WHERE owner_id = ?',
+              variables: [const Variable<String>('account-owner')],
+            )
+            .getSingle();
+        expect(assignmentBeforeReopen.data, {
+          'experiment_id': 'research-assessment',
+          'experiment_version': 1,
+          'cohort': 'treatment-a',
+          'protocol_version': '2026.08',
+          'assigned_at_utc_ms': 1786449600000,
+        });
 
         await upgradeDatabase.close();
         upgradeDatabaseOpen = false;
@@ -619,10 +684,18 @@ void main() {
           firebaseUid: 'firebase-new',
         );
         final afterReopen = await _inventorySnapshot(syncDatabase);
+        final assignmentAfterReopen = await syncDatabase
+            .customSelect(
+              'SELECT experiment_id, experiment_version, cohort, protocol_version, '
+              'assigned_at_utc_ms FROM experiment_assignments WHERE owner_id = ?',
+              variables: [const Variable<String>('account-owner')],
+            )
+            .getSingle();
 
         expect(replayed.mode, OwnerUpgradeMode.alreadyBound);
         expect(replayed.targetOwnerId, 'account-owner');
         expect(afterReopen, beforeReopen);
+        expect(assignmentAfterReopen.data, assignmentBeforeReopen.data);
         await syncDatabase.close();
         syncDatabaseOpen = false;
       } finally {
@@ -715,14 +788,50 @@ void main() {
               variables: [const Variable<String>('guest-owner')],
             )
             .get();
+        final boundInventory = await _completeInventoryIdentity(database);
+        final boundCounts = await _completeInventoryCounts(database);
 
         expect(bound.mode, OwnerUpgradeMode.anonymousBound);
         expect(bound.targetOwnerId, 'guest-owner');
         expect(ownerAfterBind.id, 'guest-owner');
         expect(ownerAfterBind.firebaseUid, 'firebase-new');
         expect(ownerAfterBind.isActive, isTrue);
-        expect(await _completeInventoryIdentity(database), seededInventory);
-        expect(await _completeInventoryCounts(database), seededCounts);
+        for (final entry in seededInventory.entries) {
+          expect(boundInventory[entry.key], containsAll(entry.value));
+        }
+        expect(
+          boundCounts['reward_transactions'],
+          seededCounts['reward_transactions']! + 1,
+        );
+        expect(
+          boundCounts['outbox_operations'],
+          seededCounts['outbox_operations']! + 2,
+        );
+        expect(
+          resetOperations
+              .map((row) => row.read<String>('operation_id'))
+              .toSet(),
+          <String>{
+            'operation:category',
+            'operation:word',
+            'operation:attempt',
+            'operation:reading',
+            'operation:reward',
+            'operation:srs',
+            'operation:achievement',
+            // Owner binding requeues its audit operation separately from the
+            // deterministic legacy-reward backfill.
+            'rehome:bind-0',
+            _legacyBackfillOperationId('points-1'),
+          },
+        );
+        for (final entry in seededCounts.entries) {
+          if (entry.key == 'reward_transactions' ||
+              entry.key == 'outbox_operations') {
+            continue;
+          }
+          expect(boundCounts[entry.key], entry.value);
+        }
         expect(await _foreignOwnerSnapshot(database), seededForeign);
         expect(
           resetOperations.map((row) => row.read<int>('attempt_count')),
@@ -784,13 +893,13 @@ void main() {
         final afterReplay = await _completeInventorySnapshot(database);
 
         expect(firstReplay.status, SyncRunStatus.completed);
-        expect(firstReplay.pushed, 7);
+        expect(firstReplay.pushed, 9);
         expect(gateway.pushFirebaseUids, everyElement('firebase-new'));
-        expect(gateway.namespaceApplyCounts, hasLength(7));
+        expect(gateway.namespaceApplyCounts, hasLength(9));
         expect(gateway.namespaceApplyCounts.values, everyElement(1));
         expect(afterReplay['activeOwnerId'], 'guest-owner');
-        expect(afterReplay['inventoryIdentity'], seededInventory);
-        expect(afterReplay['inventoryCounts'], seededCounts);
+        expect(afterReplay['inventoryIdentity'], boundInventory);
+        expect(afterReplay['inventoryCounts'], boundCounts);
         expect(afterReplay['operationTypes'], _sevenEntityTypes);
         expect(await _foreignOwnerSnapshot(database), seededForeign);
         expect(
@@ -925,7 +1034,8 @@ void main() {
           '(id, owner_id, idempotency_key, transaction_type, amount, '
           'item_id, catalog_version, source_event_id, occurred_at_utc_ms) '
           "VALUES ('target:reward-key-blocker', 'account-owner', "
-          "'merged:reward-1', 'grant', 1, NULL, 1, NULL, 12)",
+          "'merged:reward-1', 'coinGrant', 1, NULL, 0, "
+          "'reward-key-blocker-source', 12)",
         );
         await database.customInsert(
           'INSERT INTO quest_objective_progress '
@@ -1092,8 +1202,13 @@ void main() {
                   .toList(),
             );
         expect(rewardKeys, <String>[
+          'economy:v1:legacy:27925de0205bdf9121f6d8ff25eddee5f512d2659bed21b231cfce184866d531',
+          'economy:v1:legacy:6765a58b5cbdaf6214f8604244a36faa46ae91a9a746a8bbcd9a06d715a5fba3',
+          'economy:v1:legacy:a6a6ac178ebf92f281b7141d89888b96777d3f7c105fbdc4231d9b7763161559',
           'merged:reward-1',
           'merged:reward-1:1',
+          'merged:reward-equip-1',
+          'reward-equip-key-1',
           'reward-key-1',
         ]);
         final mergedSrs = await (database.select(
@@ -1428,6 +1543,7 @@ final class _AnonymousBoundCloud implements SyncGateway {
 
 const Map<String, String> _inventoryIdentityColumns = <String, String>{
   'research_consents': 'id',
+  'experiment_assignments': 'id',
   'vocabulary_categories': 'id',
   'vocabulary_words': 'id',
   'vocabulary_imports': 'id',
@@ -1691,6 +1807,11 @@ Future<Map<String, Object>> _inventorySnapshot(AppDatabase database) async {
   };
 }
 
+String _legacyBackfillOperationId(String pointId) {
+  final digest = sha256.convert(utf8.encode(pointId));
+  return 'rewardTransaction:reward:legacy:$digest:1';
+}
+
 Future<void> _seedCompleteSyncInventory(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO local_owners '
@@ -1742,7 +1863,7 @@ Future<void> _seedCompleteSyncInventory(AppDatabase database) async {
   );
   await database.customInsert(
     "INSERT INTO points_ledger_entries VALUES ('points-1', 'guest-owner', "
-    "'seed-points', 'learning', 200, NULL, 2)",
+    "'seed-points', 'quizCorrect', 200, NULL, 2)",
   );
   await database.customInsert(
     "INSERT INTO reward_transactions VALUES ('reward-1', 'guest-owner', "
@@ -1789,6 +1910,20 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",
+  );
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: 'guest-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+      );
+  await database.customInsert(
+    'INSERT INTO experiment_assignments '
+    '(id, owner_id, experiment_id, experiment_version, cohort, '
+    'protocol_version, assigned_at_utc_ms) VALUES '
+    "(?, 'guest-owner', 'research-assessment', 1, 'treatment-a', "
+    "'2026.08', 1723201200000)",
+    variables: [Variable<String>(assignmentId)],
   );
   await database.customInsert(
     'INSERT INTO vocabulary_categories '
@@ -1839,7 +1974,7 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
   );
   await database.customInsert(
     "INSERT INTO points_ledger_entries VALUES ('points-1', 'guest-owner', "
-    "'answer:1', 'quiz', 200, 'attempt-1', 20)",
+    "'answer:1', 'quizCorrect', 200, NULL, 20)",
   );
   await database.customInsert(
     "INSERT INTO achievement_unlocks VALUES ('achievement-1', 'guest-owner', "
@@ -1850,12 +1985,17 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
     "'reward-key-1', 'purchase', -80, 'theme_ocean', 1, NULL, 20)",
   );
   await database.customInsert(
-    "INSERT INTO owned_reward_items VALUES ('owned-1', 'guest-owner', "
+    "INSERT INTO reward_transactions VALUES ('reward-equip-1', "
+    "'guest-owner', 'reward-equip-key-1', 'equip', 0, 'theme_ocean', 1, "
+    'NULL, 21)',
+  );
+  await database.customInsert(
+    "INSERT INTO owned_reward_items VALUES ('owned:guest-owner:theme_ocean', 'guest-owner', "
     "'theme_ocean', 1, 'reward-1', 20)",
   );
   await database.customInsert(
-    "INSERT INTO equipped_reward_items VALUES ('equipped-1', 'guest-owner', "
-    "'theme', 'theme_ocean', 20)",
+    "INSERT INTO equipped_reward_items VALUES ('equipped:guest-owner:theme', 'guest-owner', "
+    "'theme', 'theme_ocean', 21)",
   );
 
   const operations = <(String, String, String)>[

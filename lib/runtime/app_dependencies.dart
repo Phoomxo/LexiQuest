@@ -12,12 +12,15 @@ import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
+import '../features/learning/domain/evidence_policy_rollout.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
+import '../features/research/application/assigned_learning_event_context_provider.dart';
+import '../features/research/application/experiment_assignment_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -45,8 +48,11 @@ final class AppDependencies {
     this.buildInfo = const AppBuildInfo.fromEnvironment(),
     this.features = const BuildFeatureRegistry.fieldDefaults(),
     this.featureControls,
-    this.experiments = const NoOpExperimentRegistry(),
-    this.consents = const NoOpConsentRegistry(),
+    required this.experiments,
+    required this.consents,
+    required this.experimentAssignments,
+    required this.assignedLearningEventContext,
+    required this.evidencePolicyRolloutModeProvider,
     this.entitlements = const NoOpEntitlementRegistry(),
     this.database,
     this.localOwners,
@@ -84,6 +90,9 @@ final class AppDependencies {
   final RuntimeFeatureControls? featureControls;
   final ExperimentRegistry experiments;
   final ConsentRegistry consents;
+  final ExperimentAssignmentUseCases experimentAssignments;
+  final AssignedLearningEventContextProvider assignedLearningEventContext;
+  final EvidencePolicyRolloutModeProvider evidencePolicyRolloutModeProvider;
   final EntitlementRegistry entitlements;
   final AppDatabase? database;
   final LocalOwnerRepository? localOwners;

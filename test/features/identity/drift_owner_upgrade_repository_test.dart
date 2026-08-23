@@ -9,6 +9,11 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
+import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
+import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -18,8 +23,12 @@ import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
+import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 
 void main() {
   late AppDatabase database;
@@ -155,6 +164,175 @@ void main() {
       expect(owners.single.id, 'guest-owner');
       expect(owners.single.firebaseUid, 'new-firebase-user');
       expect(owners.single.isActive, isTrue);
+    },
+  );
+
+  test(
+    'anonymous bind rehomes assignment cloud identity and survives restart context',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-assignment-anonymous-bind-',
+      );
+      final file = File('${directory.path}${Platform.pathSeparator}app.sqlite');
+      AppDatabase? fileDatabase;
+      try {
+        fileDatabase = AppDatabase(NativeDatabase(file));
+        await fileDatabase.customInsert(
+          'INSERT INTO local_owners '
+          '(id, firebase_uid, account_state, created_at_utc_ms, is_active) '
+          "VALUES ('restart-guest', NULL, 'localGuest', 1, 1)",
+        );
+        await _putResearchConsent(
+          fileDatabase,
+          ownerId: 'restart-guest',
+          consentVersion: 1,
+        );
+        final assignedAtUtc = DateTime.utc(2026, 8, 14, 8, 1);
+        final assignmentRepository = DriftExperimentAssignmentRepository(
+          fileDatabase,
+        );
+        final sourceAssignment = await assignmentRepository.assignIfAbsent(
+          ownerId: 'restart-guest',
+          experimentId: 'restart-study',
+          experimentVersion: 1,
+          cohort: 'intervention',
+          protocolVersion: 'protocol-v1',
+          assignedAtUtc: assignedAtUtc,
+        );
+        final declaredEvidence = _assignmentEvidence(
+          sourceAssignment,
+          consentVersion: 1,
+        );
+        final localAssignmentId = sourceAssignment.id;
+        final cloudAssignmentId =
+            DriftExperimentAssignmentRepository.canonicalAssignmentId(
+              ownerId: 'restart-firebase-user',
+              experimentId: sourceAssignment.experimentId,
+              experimentVersion: sourceAssignment.experimentVersion,
+            );
+        expect(localAssignmentId, isNot(cloudAssignmentId));
+        final isolatedUpgrade = DriftOwnerUpgradeRepository(
+          fileDatabase,
+          nowUtc: () => DateTime.utc(2026, 8, 14, 9),
+          generateConflictId: () => 'restart-upgrade-conflict',
+          generateOwnerId: () => 'unused-restart-owner',
+          generateOwnerOperationToken: () => 'restart-upgrade-operation',
+          deleteOwnerSecrets: (_) async {},
+        );
+
+        final result = await isolatedUpgrade.upgrade(
+          activeOwnerId: 'restart-guest',
+          firebaseUid: 'restart-firebase-user',
+        );
+        expect(result.mode, OwnerUpgradeMode.anonymousBound);
+        expect(result.targetOwnerId, 'restart-guest');
+        await fileDatabase.close();
+
+        fileDatabase = AppDatabase(NativeDatabase(file));
+        final reopenedRepository = DriftExperimentAssignmentRepository(
+          fileDatabase,
+        );
+        final persisted = await reopenedRepository.getAssignment(
+          ownerId: 'restart-guest',
+          experimentId: 'restart-study',
+          experimentVersion: 1,
+        );
+        expect(persisted.id, localAssignmentId);
+        expect(persisted.cohort, sourceAssignment.cohort);
+        expect(persisted.protocolVersion, sourceAssignment.protocolVersion);
+        expect(persisted.assignedAtUtc, sourceAssignment.assignedAtUtc);
+        final outbox = await _experimentAssignmentOutbox(fileDatabase);
+        expect(outbox, hasLength(1));
+        expect(outbox.single.ownerId, 'restart-guest');
+        expect(outbox.single.entityId, cloudAssignmentId);
+        expect(
+          outbox.single.operationId,
+          DriftExperimentAssignmentRepository.canonicalOutboxOperationId(
+            cloudAssignmentId,
+          ),
+        );
+        expect(outbox.single.state, 'pending');
+        expect(
+          outbox.where((operation) => operation.entityId == localAssignmentId),
+          isEmpty,
+        );
+
+        final replay = await reopenedRepository.assignIfAbsent(
+          ownerId: 'restart-guest',
+          experimentId: persisted.experimentId,
+          experimentVersion: persisted.experimentVersion,
+          cohort: persisted.cohort,
+          protocolVersion: persisted.protocolVersion,
+          assignedAtUtc: persisted.assignedAtUtc,
+        );
+        expect(replay, persisted);
+        expect(await _experimentAssignmentOutbox(fileDatabase), hasLength(1));
+
+        final context =
+            await AssignedLearningEventContextProvider(
+              experimentRegistry: DriftExperimentRegistry(reopenedRepository),
+              consentRegistry: DriftConsentRegistry(fileDatabase),
+            ).resolve(
+              ownerId: 'restart-guest',
+              evidenceContext: declaredEvidence,
+              occurredAtUtc: DateTime.utc(2026, 8, 14, 9, 1),
+            );
+        expect(context.assignmentId, persisted.id);
+        expect(context.experimentContext?.variantId, persisted.cohort);
+        expect(
+          context.experimentContext?.assignedAtUtc,
+          persisted.assignedAtUtc,
+        );
+
+        const gateToken = 'restart-assignment-claim-gate';
+        final claimCatalog = ResearchProtocolModeCatalog(
+          mappings: <ResearchProtocolModeMapping>[
+            ResearchProtocolModeMapping(
+              experimentId: persisted.experimentId,
+              experimentVersion: persisted.experimentVersion,
+              protocolVersion: persisted.protocolVersion,
+              consentVersion: 1,
+              mode: EvidencePolicyRolloutMode.shadow,
+            ),
+          ],
+        );
+        expect(
+          await DriftOwnerOperationGate(fileDatabase).tryAcquire(
+            token: gateToken,
+            nowUtc: DateTime.utc(2026, 8, 14, 9, 2),
+            leaseDuration: const Duration(minutes: 10),
+          ),
+          isTrue,
+        );
+        final claims =
+            await DriftSyncStore(
+              fileDatabase,
+              researchSyncRollout:
+                  ResearchCollectionSyncRollout.experimentAssignmentsV1(
+                    deployedRulesRevision: experimentAssignmentV1RulesRevision,
+                    protocolModeCatalog: claimCatalog,
+                  ),
+              consentRegistry: DriftConsentRegistry(fileDatabase),
+            ).claimPending(
+              ownerId: 'restart-guest',
+              firebaseUid: 'restart-firebase-user',
+              limit: 1,
+              leaseToken: 'restart-assignment-claim-lease',
+              ownerGateToken: gateToken,
+              leaseDuration: const Duration(minutes: 5),
+              nowUtc: DateTime.utc(2026, 8, 14, 9, 2),
+            );
+        expect(claims, hasLength(1));
+        expect(claims.single.mutation.entityId, cloudAssignmentId);
+        final encoded = FirestoreSyncCodec.encodeOperation(
+          claims.single.mutation,
+          acknowledgedAt: 'server-timestamp',
+        );
+        expect(encoded['entityId'], cloudAssignmentId);
+      } finally {
+        await fileDatabase?.close();
+        await directory.delete(recursive: true);
+      }
     },
   );
 
@@ -1424,6 +1602,280 @@ void main() {
       );
     },
   );
+
+  test(
+    'lifecycle manifest declares experiment assignments once before owner deletion',
+    () {
+      final assignments = ownerLifecycleManifest
+          .where(
+            (descriptor) => descriptor.tableName == 'experiment_assignments',
+          )
+          .toList(growable: false);
+
+      expect(assignments, hasLength(1));
+      expect(assignments.single.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        assignments.single.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      final assignmentIndex = ownerLifecyclePhysicalDeletionOrder.indexOf(
+        'experiment_assignments',
+      );
+      expect(assignmentIndex, greaterThanOrEqualTo(0));
+      expect(
+        assignmentIndex,
+        lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('local_owners')),
+      );
+    },
+  );
+
+  test(
+    'merge reconciles equivalent assignment and cloud outbox exactly once',
+    () async {
+      const assignedAtUtcMs = 1723651200000;
+      final assignmentRepository = DriftExperimentAssignmentRepository(
+        database,
+      );
+      final guestAssignment = await assignmentRepository.assignIfAbsent(
+        ownerId: 'guest-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+        cohort: 'treatment-a',
+        protocolVersion: '2026.08',
+        assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          assignedAtUtcMs,
+          isUtc: true,
+        ),
+      );
+      final guestDeclaredEvidence = _assignmentEvidence(
+        guestAssignment,
+        consentVersion: 1,
+      );
+      final accountAssignment = await assignmentRepository.assignIfAbsent(
+        ownerId: 'account-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+        cohort: 'treatment-a',
+        protocolVersion: '2026.08',
+        assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          assignedAtUtcMs,
+          isUtc: true,
+        ),
+      );
+      await _putResearchConsent(
+        database,
+        ownerId: 'account-owner',
+        consentVersion: 1,
+      );
+      final cloudAssignmentId =
+          DriftExperimentAssignmentRepository.canonicalAssignmentId(
+            ownerId: 'firebase-user',
+            experimentId: accountAssignment.experimentId,
+            experimentVersion: accountAssignment.experimentVersion,
+          );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final rows = await database
+          .customSelect(
+            '''
+          SELECT id, owner_id, experiment_id, experiment_version, cohort,
+                 protocol_version, assigned_at_utc_ms
+          FROM experiment_assignments
+          WHERE owner_id = ?
+        ''',
+            variables: [Variable<String>('account-owner')],
+          )
+          .get();
+      expect(rows, hasLength(1));
+      expect(rows.single.data['id'], accountAssignment.id);
+      expect(rows.single.data['experiment_id'], 'research-assessment');
+      expect(rows.single.data['experiment_version'], 1);
+      expect(rows.single.data['cohort'], 'treatment-a');
+      expect(rows.single.data['protocol_version'], '2026.08');
+      expect(rows.single.data['assigned_at_utc_ms'], assignedAtUtcMs);
+      expect(
+        await _experimentAssignmentCount(database, ownerId: 'guest-owner'),
+        0,
+      );
+      final assignmentOutbox = await _experimentAssignmentOutbox(database);
+      expect(assignmentOutbox, hasLength(1));
+      expect(assignmentOutbox.single.ownerId, 'account-owner');
+      expect(assignmentOutbox.single.entityId, cloudAssignmentId);
+      expect(
+        assignmentOutbox.single.operationId,
+        DriftExperimentAssignmentRepository.canonicalOutboxOperationId(
+          cloudAssignmentId,
+        ),
+      );
+      expect(
+        assignmentOutbox.where(
+          (operation) => operation.entityId == guestAssignment.id,
+        ),
+        isEmpty,
+      );
+      final replay = await assignmentRepository.assignIfAbsent(
+        ownerId: 'account-owner',
+        experimentId: accountAssignment.experimentId,
+        experimentVersion: accountAssignment.experimentVersion,
+        cohort: accountAssignment.cohort,
+        protocolVersion: accountAssignment.protocolVersion,
+        assignedAtUtc: accountAssignment.assignedAtUtc,
+      );
+      expect(replay, accountAssignment);
+      expect(await _experimentAssignmentOutbox(database), hasLength(1));
+      final mergedContext =
+          await AssignedLearningEventContextProvider(
+            experimentRegistry: DriftExperimentRegistry(assignmentRepository),
+            consentRegistry: DriftConsentRegistry(database),
+          ).resolve(
+            ownerId: 'account-owner',
+            evidenceContext: guestDeclaredEvidence,
+            occurredAtUtc: DateTime.utc(2026, 8, 14, 8, 30),
+          );
+      expect(mergedContext.assignmentId, guestAssignment.id);
+      expect(
+        mergedContext.experimentContext?.variantId,
+        guestAssignment.cohort,
+      );
+      expect(
+        mergedContext.experimentContext?.assignedAtUtc,
+        guestAssignment.assignedAtUtc,
+      );
+
+      const gateToken = 'merged-assignment-claim-gate';
+      final claimAt = DateTime.utc(2026, 8, 14, 9);
+      final claimCatalog = ResearchProtocolModeCatalog(
+        mappings: <ResearchProtocolModeMapping>[
+          ResearchProtocolModeMapping(
+            experimentId: accountAssignment.experimentId,
+            experimentVersion: accountAssignment.experimentVersion,
+            protocolVersion: accountAssignment.protocolVersion,
+            consentVersion: 1,
+            mode: EvidencePolicyRolloutMode.shadow,
+          ),
+        ],
+      );
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: gateToken,
+          nowUtc: claimAt,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final claims =
+          await DriftSyncStore(
+            database,
+            researchSyncRollout:
+                ResearchCollectionSyncRollout.experimentAssignmentsV1(
+                  deployedRulesRevision: experimentAssignmentV1RulesRevision,
+                  protocolModeCatalog: claimCatalog,
+                ),
+            consentRegistry: DriftConsentRegistry(database),
+          ).claimPending(
+            ownerId: 'account-owner',
+            firebaseUid: 'firebase-user',
+            limit: 1,
+            leaseToken: 'merged-assignment-claim-lease',
+            ownerGateToken: gateToken,
+            leaseDuration: const Duration(minutes: 5),
+            nowUtc: claimAt,
+          );
+      expect(claims, hasLength(1));
+      expect(claims.single.mutation.entityId, cloudAssignmentId);
+      expect(
+        () => FirestoreSyncCodec.encodeOperation(
+          claims.single.mutation,
+          acknowledgedAt: 'server-timestamp',
+        ),
+        returnsNormally,
+      );
+    },
+  );
+
+  test(
+    'conflicting experiment assignment aborts owner upgrade without partial migration',
+    () async {
+      final assignmentRepository = DriftExperimentAssignmentRepository(
+        database,
+      );
+      await assignmentRepository.assignIfAbsent(
+        ownerId: 'guest-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+        cohort: 'control',
+        protocolVersion: '2026.08',
+        assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          1723651200000,
+          isUtc: true,
+        ),
+      );
+      await assignmentRepository.assignIfAbsent(
+        ownerId: 'account-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+        cohort: 'treatment-a',
+        protocolVersion: '2026.08',
+        assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          1723651200000,
+          isUtc: true,
+        ),
+      );
+      final outboxBefore = await _experimentAssignmentOutboxSnapshot(database);
+      await database.customInsert(
+        '''
+          INSERT INTO vocabulary_categories
+            (id, owner_id, name, normalized_name, created_at_utc_ms,
+             updated_at_utc_ms)
+          VALUES (?, ?, ?, ?, ?, ?)
+        ''',
+        variables: const [
+          Variable<String>('guest-category'),
+          Variable<String>('guest-owner'),
+          Variable<String>('guest category'),
+          Variable<String>('guest category'),
+          Variable<int>(1723651200000),
+          Variable<int>(1723651200000),
+        ],
+      );
+
+      await expectLater(
+        repository.upgrade(
+          activeOwnerId: 'guest-owner',
+          firebaseUid: 'firebase-user',
+        ),
+        throwsA(isA<ExperimentAssignmentConflict>()),
+      );
+
+      expect(
+        await _experimentAssignmentCount(database, ownerId: 'guest-owner'),
+        1,
+      );
+      expect(
+        await _experimentAssignmentCount(database, ownerId: 'account-owner'),
+        1,
+      );
+      final guest = await database
+          .customSelect(
+            'SELECT firebase_uid FROM local_owners WHERE id = ?',
+            variables: [Variable<String>('guest-owner')],
+          )
+          .getSingle();
+      expect(guest.data['firebase_uid'], isNull);
+      final category = await database
+          .customSelect(
+            'SELECT owner_id FROM vocabulary_categories WHERE id = ?',
+            variables: [Variable<String>('guest-category')],
+          )
+          .getSingle();
+      expect(category.data['owner_id'], 'guest-owner');
+      expect(await _experimentAssignmentOutboxSnapshot(database), outboxBefore);
+    },
+  );
 }
 
 final class _ManualOwnerGateDelay {
@@ -1660,6 +2112,121 @@ Future<void> _expectLegacyRewardCutover(
   );
 }
 
+Future<void> _seedExperimentAssignment(
+  AppDatabase database, {
+  required String id,
+  required String ownerId,
+  required String experimentId,
+  required int experimentVersion,
+  required String cohort,
+  required String protocolVersion,
+  required int assignedAtUtcMs,
+}) {
+  return database.customInsert(
+    '''
+      INSERT INTO experiment_assignments
+        (id, owner_id, experiment_id, experiment_version, cohort,
+         protocol_version, assigned_at_utc_ms)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    ''',
+    variables: [
+      Variable<String>(id),
+      Variable<String>(ownerId),
+      Variable<String>(experimentId),
+      Variable<int>(experimentVersion),
+      Variable<String>(cohort),
+      Variable<String>(protocolVersion),
+      Variable<int>(assignedAtUtcMs),
+    ],
+  );
+}
+
+Future<void> _putResearchConsent(
+  AppDatabase database, {
+  required String ownerId,
+  required int consentVersion,
+}) {
+  return database.customInsert(
+    'INSERT INTO research_consents '
+    '(id, owner_id, consent_version, consent_state, decided_at_utc_ms, '
+    'withdrawn_at_utc_ms) VALUES (?, ?, ?, ?, ?, NULL)',
+    variables: [
+      Variable<String>('consent:$ownerId:$consentVersion'),
+      Variable<String>(ownerId),
+      Variable<int>(consentVersion),
+      const Variable<String>('accepted'),
+      const Variable<int>(1723622400000),
+    ],
+  );
+}
+
+EvidenceContext _assignmentEvidence(
+  ExperimentAssignment assignment, {
+  required int consentVersion,
+}) {
+  return EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.independentRecall,
+    skillId: 'meaning-recall',
+    hintLevel: 0,
+    contentRevision: 'content-v1',
+    rolloutMode: EvidencePolicyRolloutMode.shadow,
+    protocolId: 'study-protocol',
+    protocolVersion: assignment.protocolVersion,
+    experimentId: assignment.experimentId,
+    experimentVersion: assignment.experimentVersion,
+    assignmentId: assignment.id,
+    cohort: assignment.cohort,
+    researchConsentVersion: consentVersion,
+    engagementAllowed: true,
+  );
+}
+
+Future<List<OutboxOperation>> _experimentAssignmentOutbox(
+  AppDatabase database,
+) {
+  return (database.select(database.outboxOperations)..where(
+        (row) => row.entityType.equals(
+          SyncCollection.experimentAssignments.entityType,
+        ),
+      ))
+      .get();
+}
+
+Future<List<String>> _experimentAssignmentOutboxSnapshot(
+  AppDatabase database,
+) async {
+  final rows = await _experimentAssignmentOutbox(database);
+  return rows
+      .map(
+        (row) => <Object?>[
+          row.operationId,
+          row.ownerId,
+          row.entityType,
+          row.entityId,
+          row.operationKind,
+          row.payloadVersion,
+          row.baseRevision,
+          row.state,
+          row.createdAtUtcMs,
+        ].join('|'),
+      )
+      .toList(growable: false)
+    ..sort();
+}
+
+Future<int> _experimentAssignmentCount(
+  AppDatabase database, {
+  required String ownerId,
+}) async {
+  final row = await database
+      .customSelect(
+        'SELECT COUNT(*) AS count FROM experiment_assignments WHERE owner_id = ?',
+        variables: [Variable<String>(ownerId)],
+      )
+      .getSingle();
+  return row.read<int>('count');
+}
+
 Future<void> _seedOwners(AppDatabase database) async {
   await database.customInsert(
     'INSERT INTO local_owners '
@@ -1674,6 +2241,20 @@ Future<void> _seedOwners(AppDatabase database) async {
 }
 
 Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: 'guest-owner',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+      );
+  await database.customInsert(
+    'INSERT INTO experiment_assignments '
+    '(id, owner_id, experiment_id, experiment_version, cohort, '
+    'protocol_version, assigned_at_utc_ms) VALUES '
+    "(?, 'guest-owner', 'research-assessment', 1, 'treatment-a', "
+    "'2026.08', 1723651200000)",
+    variables: [Variable<String>(assignmentId)],
+  );
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
     "('consent-1', 'guest-owner', 1, 'accepted', 10, NULL)",

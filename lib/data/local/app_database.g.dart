@@ -890,6 +890,502 @@ class ResearchConsentsCompanion extends UpdateCompanion<ResearchConsent> {
   }
 }
 
+class $ExperimentAssignmentsTable extends ExperimentAssignments
+    with TableInfo<$ExperimentAssignmentsTable, ExperimentAssignmentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ExperimentAssignmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _experimentIdMeta = const VerificationMeta(
+    'experimentId',
+  );
+  @override
+  late final GeneratedColumn<String> experimentId = GeneratedColumn<String>(
+    'experiment_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _experimentVersionMeta = const VerificationMeta(
+    'experimentVersion',
+  );
+  @override
+  late final GeneratedColumn<int> experimentVersion = GeneratedColumn<int>(
+    'experiment_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cohortMeta = const VerificationMeta('cohort');
+  @override
+  late final GeneratedColumn<String> cohort = GeneratedColumn<String>(
+    'cohort',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _protocolVersionMeta = const VerificationMeta(
+    'protocolVersion',
+  );
+  @override
+  late final GeneratedColumn<String> protocolVersion = GeneratedColumn<String>(
+    'protocol_version',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _assignedAtUtcMsMeta = const VerificationMeta(
+    'assignedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> assignedAtUtcMs = GeneratedColumn<int>(
+    'assigned_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    experimentId,
+    experimentVersion,
+    cohort,
+    protocolVersion,
+    assignedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'experiment_assignments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ExperimentAssignmentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('experiment_id')) {
+      context.handle(
+        _experimentIdMeta,
+        experimentId.isAcceptableOrUnknown(
+          data['experiment_id']!,
+          _experimentIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_experimentIdMeta);
+    }
+    if (data.containsKey('experiment_version')) {
+      context.handle(
+        _experimentVersionMeta,
+        experimentVersion.isAcceptableOrUnknown(
+          data['experiment_version']!,
+          _experimentVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_experimentVersionMeta);
+    }
+    if (data.containsKey('cohort')) {
+      context.handle(
+        _cohortMeta,
+        cohort.isAcceptableOrUnknown(data['cohort']!, _cohortMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cohortMeta);
+    }
+    if (data.containsKey('protocol_version')) {
+      context.handle(
+        _protocolVersionMeta,
+        protocolVersion.isAcceptableOrUnknown(
+          data['protocol_version']!,
+          _protocolVersionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_protocolVersionMeta);
+    }
+    if (data.containsKey('assigned_at_utc_ms')) {
+      context.handle(
+        _assignedAtUtcMsMeta,
+        assignedAtUtcMs.isAcceptableOrUnknown(
+          data['assigned_at_utc_ms']!,
+          _assignedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_assignedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, experimentId, experimentVersion},
+  ];
+  @override
+  ExperimentAssignmentRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ExperimentAssignmentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      experimentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}experiment_id'],
+      )!,
+      experimentVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}experiment_version'],
+      )!,
+      cohort: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cohort'],
+      )!,
+      protocolVersion: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}protocol_version'],
+      )!,
+      assignedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}assigned_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $ExperimentAssignmentsTable createAlias(String alias) {
+    return $ExperimentAssignmentsTable(attachedDatabase, alias);
+  }
+}
+
+class ExperimentAssignmentRow extends DataClass
+    implements Insertable<ExperimentAssignmentRow> {
+  final String id;
+  final String ownerId;
+  final String experimentId;
+  final int experimentVersion;
+  final String cohort;
+  final String protocolVersion;
+  final int assignedAtUtcMs;
+  const ExperimentAssignmentRow({
+    required this.id,
+    required this.ownerId,
+    required this.experimentId,
+    required this.experimentVersion,
+    required this.cohort,
+    required this.protocolVersion,
+    required this.assignedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['experiment_id'] = Variable<String>(experimentId);
+    map['experiment_version'] = Variable<int>(experimentVersion);
+    map['cohort'] = Variable<String>(cohort);
+    map['protocol_version'] = Variable<String>(protocolVersion);
+    map['assigned_at_utc_ms'] = Variable<int>(assignedAtUtcMs);
+    return map;
+  }
+
+  ExperimentAssignmentsCompanion toCompanion(bool nullToAbsent) {
+    return ExperimentAssignmentsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      experimentId: Value(experimentId),
+      experimentVersion: Value(experimentVersion),
+      cohort: Value(cohort),
+      protocolVersion: Value(protocolVersion),
+      assignedAtUtcMs: Value(assignedAtUtcMs),
+    );
+  }
+
+  factory ExperimentAssignmentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ExperimentAssignmentRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      experimentId: serializer.fromJson<String>(json['experimentId']),
+      experimentVersion: serializer.fromJson<int>(json['experimentVersion']),
+      cohort: serializer.fromJson<String>(json['cohort']),
+      protocolVersion: serializer.fromJson<String>(json['protocolVersion']),
+      assignedAtUtcMs: serializer.fromJson<int>(json['assignedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'experimentId': serializer.toJson<String>(experimentId),
+      'experimentVersion': serializer.toJson<int>(experimentVersion),
+      'cohort': serializer.toJson<String>(cohort),
+      'protocolVersion': serializer.toJson<String>(protocolVersion),
+      'assignedAtUtcMs': serializer.toJson<int>(assignedAtUtcMs),
+    };
+  }
+
+  ExperimentAssignmentRow copyWith({
+    String? id,
+    String? ownerId,
+    String? experimentId,
+    int? experimentVersion,
+    String? cohort,
+    String? protocolVersion,
+    int? assignedAtUtcMs,
+  }) => ExperimentAssignmentRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    experimentId: experimentId ?? this.experimentId,
+    experimentVersion: experimentVersion ?? this.experimentVersion,
+    cohort: cohort ?? this.cohort,
+    protocolVersion: protocolVersion ?? this.protocolVersion,
+    assignedAtUtcMs: assignedAtUtcMs ?? this.assignedAtUtcMs,
+  );
+  ExperimentAssignmentRow copyWithCompanion(
+    ExperimentAssignmentsCompanion data,
+  ) {
+    return ExperimentAssignmentRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      experimentId: data.experimentId.present
+          ? data.experimentId.value
+          : this.experimentId,
+      experimentVersion: data.experimentVersion.present
+          ? data.experimentVersion.value
+          : this.experimentVersion,
+      cohort: data.cohort.present ? data.cohort.value : this.cohort,
+      protocolVersion: data.protocolVersion.present
+          ? data.protocolVersion.value
+          : this.protocolVersion,
+      assignedAtUtcMs: data.assignedAtUtcMs.present
+          ? data.assignedAtUtcMs.value
+          : this.assignedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExperimentAssignmentRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('experimentId: $experimentId, ')
+          ..write('experimentVersion: $experimentVersion, ')
+          ..write('cohort: $cohort, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('assignedAtUtcMs: $assignedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    experimentId,
+    experimentVersion,
+    cohort,
+    protocolVersion,
+    assignedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ExperimentAssignmentRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.experimentId == this.experimentId &&
+          other.experimentVersion == this.experimentVersion &&
+          other.cohort == this.cohort &&
+          other.protocolVersion == this.protocolVersion &&
+          other.assignedAtUtcMs == this.assignedAtUtcMs);
+}
+
+class ExperimentAssignmentsCompanion
+    extends UpdateCompanion<ExperimentAssignmentRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> experimentId;
+  final Value<int> experimentVersion;
+  final Value<String> cohort;
+  final Value<String> protocolVersion;
+  final Value<int> assignedAtUtcMs;
+  final Value<int> rowid;
+  const ExperimentAssignmentsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.experimentId = const Value.absent(),
+    this.experimentVersion = const Value.absent(),
+    this.cohort = const Value.absent(),
+    this.protocolVersion = const Value.absent(),
+    this.assignedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ExperimentAssignmentsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String experimentId,
+    required int experimentVersion,
+    required String cohort,
+    required String protocolVersion,
+    required int assignedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       experimentId = Value(experimentId),
+       experimentVersion = Value(experimentVersion),
+       cohort = Value(cohort),
+       protocolVersion = Value(protocolVersion),
+       assignedAtUtcMs = Value(assignedAtUtcMs);
+  static Insertable<ExperimentAssignmentRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? experimentId,
+    Expression<int>? experimentVersion,
+    Expression<String>? cohort,
+    Expression<String>? protocolVersion,
+    Expression<int>? assignedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (experimentId != null) 'experiment_id': experimentId,
+      if (experimentVersion != null) 'experiment_version': experimentVersion,
+      if (cohort != null) 'cohort': cohort,
+      if (protocolVersion != null) 'protocol_version': protocolVersion,
+      if (assignedAtUtcMs != null) 'assigned_at_utc_ms': assignedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ExperimentAssignmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? experimentId,
+    Value<int>? experimentVersion,
+    Value<String>? cohort,
+    Value<String>? protocolVersion,
+    Value<int>? assignedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return ExperimentAssignmentsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      experimentId: experimentId ?? this.experimentId,
+      experimentVersion: experimentVersion ?? this.experimentVersion,
+      cohort: cohort ?? this.cohort,
+      protocolVersion: protocolVersion ?? this.protocolVersion,
+      assignedAtUtcMs: assignedAtUtcMs ?? this.assignedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (experimentId.present) {
+      map['experiment_id'] = Variable<String>(experimentId.value);
+    }
+    if (experimentVersion.present) {
+      map['experiment_version'] = Variable<int>(experimentVersion.value);
+    }
+    if (cohort.present) {
+      map['cohort'] = Variable<String>(cohort.value);
+    }
+    if (protocolVersion.present) {
+      map['protocol_version'] = Variable<String>(protocolVersion.value);
+    }
+    if (assignedAtUtcMs.present) {
+      map['assigned_at_utc_ms'] = Variable<int>(assignedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ExperimentAssignmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('experimentId: $experimentId, ')
+          ..write('experimentVersion: $experimentVersion, ')
+          ..write('cohort: $cohort, ')
+          ..write('protocolVersion: $protocolVersion, ')
+          ..write('assignedAtUtcMs: $assignedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 class $VocabularyCategoriesTable extends VocabularyCategories
     with TableInfo<$VocabularyCategoriesTable, VocabularyCategory> {
   @override
@@ -19285,6 +19781,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   late final $ResearchConsentsTable researchConsents = $ResearchConsentsTable(
     this,
   );
+  late final $ExperimentAssignmentsTable experimentAssignments =
+      $ExperimentAssignmentsTable(this);
   late final $VocabularyCategoriesTable vocabularyCategories =
       $VocabularyCategoriesTable(this);
   late final $VocabularyWordsTable vocabularyWords = $VocabularyWordsTable(
@@ -19344,6 +19842,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
   List<DatabaseSchemaEntity> get allSchemaEntities => [
     localOwners,
     researchConsents,
+    experimentAssignments,
     vocabularyCategories,
     vocabularyWords,
     vocabularyImports,
@@ -19448,6 +19947,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _researchConsentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ExperimentAssignmentsTable,
+    List<ExperimentAssignmentRow>
+  >
+  _experimentAssignmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.experimentAssignments,
+        aliasName: 'local_owners__id__experiment_assignments__owner_id',
+      );
+
+  $$ExperimentAssignmentsTableProcessedTableManager
+  get experimentAssignmentsRefs {
+    final manager = $$ExperimentAssignmentsTableTableManager(
+      $_db,
+      $_db.experimentAssignments,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _experimentAssignmentsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -20000,6 +20524,32 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> experimentAssignmentsRefs(
+    Expression<bool> Function($$ExperimentAssignmentsTableFilterComposer f) f,
+  ) {
+    final $$ExperimentAssignmentsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableFilterComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -20706,6 +21256,32 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> experimentAssignmentsRefs<T extends Object>(
+    Expression<T> Function($$ExperimentAssignmentsTableAnnotationComposer a) f,
+  ) {
+    final $$ExperimentAssignmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.experimentAssignments,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ExperimentAssignmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.experimentAssignments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> vocabularyCategoriesRefs<T extends Object>(
     Expression<T> Function($$VocabularyCategoriesTableAnnotationComposer a) f,
   ) {
@@ -21332,6 +21908,7 @@ class $$LocalOwnersTableTableManager
           LocalOwner,
           PrefetchHooks Function({
             bool researchConsentsRefs,
+            bool experimentAssignmentsRefs,
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
             bool vocabularyImportsRefs,
@@ -21416,6 +21993,7 @@ class $$LocalOwnersTableTableManager
           prefetchHooksCallback:
               ({
                 researchConsentsRefs = false,
+                experimentAssignmentsRefs = false,
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
                 vocabularyImportsRefs = false,
@@ -21445,6 +22023,7 @@ class $$LocalOwnersTableTableManager
                   db: db,
                   explicitlyWatchedTables: [
                     if (researchConsentsRefs) db.researchConsents,
+                    if (experimentAssignmentsRefs) db.experimentAssignments,
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
@@ -21488,6 +22067,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).researchConsentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (experimentAssignmentsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ExperimentAssignmentRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._experimentAssignmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).experimentAssignmentsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -22020,6 +22620,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
       LocalOwner,
       PrefetchHooks Function({
         bool researchConsentsRefs,
+        bool experimentAssignmentsRefs,
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
         bool vocabularyImportsRefs,
@@ -22397,6 +22998,391 @@ typedef $$ResearchConsentsTableProcessedTableManager =
       $$ResearchConsentsTableUpdateCompanionBuilder,
       (ResearchConsent, $$ResearchConsentsTableReferences),
       ResearchConsent,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$ExperimentAssignmentsTableCreateCompanionBuilder =
+    ExperimentAssignmentsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String experimentId,
+      required int experimentVersion,
+      required String cohort,
+      required String protocolVersion,
+      required int assignedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$ExperimentAssignmentsTableUpdateCompanionBuilder =
+    ExperimentAssignmentsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> experimentId,
+      Value<int> experimentVersion,
+      Value<String> cohort,
+      Value<String> protocolVersion,
+      Value<int> assignedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$ExperimentAssignmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ExperimentAssignmentsTable,
+          ExperimentAssignmentRow
+        > {
+  $$ExperimentAssignmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('experiment_assignments__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ExperimentAssignmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $ExperimentAssignmentsTable> {
+  $$ExperimentAssignmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cohort => $composableBuilder(
+    column: $table.cohort,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExperimentAssignmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ExperimentAssignmentsTable> {
+  $$ExperimentAssignmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cohort => $composableBuilder(
+    column: $table.cohort,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExperimentAssignmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ExperimentAssignmentsTable> {
+  $$ExperimentAssignmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get experimentId => $composableBuilder(
+    column: $table.experimentId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get experimentVersion => $composableBuilder(
+    column: $table.experimentVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get cohort =>
+      $composableBuilder(column: $table.cohort, builder: (column) => column);
+
+  GeneratedColumn<String> get protocolVersion => $composableBuilder(
+    column: $table.protocolVersion,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get assignedAtUtcMs => $composableBuilder(
+    column: $table.assignedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ExperimentAssignmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ExperimentAssignmentsTable,
+          ExperimentAssignmentRow,
+          $$ExperimentAssignmentsTableFilterComposer,
+          $$ExperimentAssignmentsTableOrderingComposer,
+          $$ExperimentAssignmentsTableAnnotationComposer,
+          $$ExperimentAssignmentsTableCreateCompanionBuilder,
+          $$ExperimentAssignmentsTableUpdateCompanionBuilder,
+          (ExperimentAssignmentRow, $$ExperimentAssignmentsTableReferences),
+          ExperimentAssignmentRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ExperimentAssignmentsTableTableManager(
+    _$AppDatabase db,
+    $ExperimentAssignmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ExperimentAssignmentsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ExperimentAssignmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ExperimentAssignmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> experimentId = const Value.absent(),
+                Value<int> experimentVersion = const Value.absent(),
+                Value<String> cohort = const Value.absent(),
+                Value<String> protocolVersion = const Value.absent(),
+                Value<int> assignedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ExperimentAssignmentsCompanion(
+                id: id,
+                ownerId: ownerId,
+                experimentId: experimentId,
+                experimentVersion: experimentVersion,
+                cohort: cohort,
+                protocolVersion: protocolVersion,
+                assignedAtUtcMs: assignedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String experimentId,
+                required int experimentVersion,
+                required String cohort,
+                required String protocolVersion,
+                required int assignedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => ExperimentAssignmentsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                experimentId: experimentId,
+                experimentVersion: experimentVersion,
+                cohort: cohort,
+                protocolVersion: protocolVersion,
+                assignedAtUtcMs: assignedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ExperimentAssignmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$ExperimentAssignmentsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ExperimentAssignmentsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ExperimentAssignmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ExperimentAssignmentsTable,
+      ExperimentAssignmentRow,
+      $$ExperimentAssignmentsTableFilterComposer,
+      $$ExperimentAssignmentsTableOrderingComposer,
+      $$ExperimentAssignmentsTableAnnotationComposer,
+      $$ExperimentAssignmentsTableCreateCompanionBuilder,
+      $$ExperimentAssignmentsTableUpdateCompanionBuilder,
+      (ExperimentAssignmentRow, $$ExperimentAssignmentsTableReferences),
+      ExperimentAssignmentRow,
       PrefetchHooks Function({bool ownerId})
     >;
 typedef $$VocabularyCategoriesTableCreateCompanionBuilder =
@@ -36424,6 +37410,8 @@ class $AppDatabaseManager {
       $$LocalOwnersTableTableManager(_db, _db.localOwners);
   $$ResearchConsentsTableTableManager get researchConsents =>
       $$ResearchConsentsTableTableManager(_db, _db.researchConsents);
+  $$ExperimentAssignmentsTableTableManager get experimentAssignments =>
+      $$ExperimentAssignmentsTableTableManager(_db, _db.experimentAssignments);
   $$VocabularyCategoriesTableTableManager get vocabularyCategories =>
       $$VocabularyCategoriesTableTableManager(_db, _db.vocabularyCategories);
   $$VocabularyWordsTableTableManager get vocabularyWords =>

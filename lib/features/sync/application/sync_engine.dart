@@ -64,6 +64,16 @@ final class SyncEngine {
   static const Duration leaseDuration = Duration(minutes: 5);
   static const Duration runLeaseDuration = Duration(minutes: 10);
   static const Duration heartbeatInterval = Duration(minutes: 3);
+  static const List<SyncCollection> _pullOrder = <SyncCollection>[
+    SyncCollection.categories,
+    SyncCollection.words,
+    SyncCollection.experimentAssignments,
+    SyncCollection.attempts,
+    SyncCollection.readingEvents,
+    SyncCollection.rewardTransactions,
+    SyncCollection.srsStates,
+    SyncCollection.achievementUnlocks,
+  ];
 
   final LocalOwnerRepository owners;
   final SyncStore store;
@@ -164,12 +174,27 @@ final class SyncEngine {
           }
           switch (result) {
             case PushAcknowledged():
+              if (result.operationId != claim.mutation.operationId) {
+                throw ArgumentError.value(
+                  result.operationId,
+                  'acknowledgement.operationId',
+                  'must match the exact cloud mutation operationId',
+                );
+              }
+              final localAcknowledgement =
+                  result.operationId == claim.localOperationId
+                  ? result
+                  : PushAcknowledged(
+                      operationId: claim.localOperationId,
+                      resultingRevision: result.resultingRevision,
+                      acknowledgedAtUtc: result.acknowledgedAtUtc,
+                    );
               final acknowledged = await store.acknowledge(
-                operationId: claim.mutation.operationId,
+                operationId: claim.localOperationId,
                 leaseToken: claim.leaseToken,
                 ownerGateToken: runLeaseToken,
                 nowUtc: _currentUtc(),
-                acknowledgement: result,
+                acknowledgement: localAcknowledgement,
               );
               if (acknowledged) {
                 pushed++;
@@ -198,7 +223,7 @@ final class SyncEngine {
           failures++;
           if (failure.retryable) {
             final marked = await store.markRetry(
-              operationId: claim.mutation.operationId,
+              operationId: claim.localOperationId,
               leaseToken: claim.leaseToken,
               ownerGateToken: runLeaseToken,
               nowUtc: _currentUtc(),
@@ -220,7 +245,7 @@ final class SyncEngine {
             }
           } else {
             final marked = await store.markTerminalFailure(
-              operationId: claim.mutation.operationId,
+              operationId: claim.localOperationId,
               leaseToken: claim.leaseToken,
               ownerGateToken: runLeaseToken,
               nowUtc: _currentUtc(),
@@ -247,7 +272,7 @@ final class SyncEngine {
       }
 
       if (!providerUnavailable && !permanentFailure && gateOwned) {
-        for (final collection in SyncCollection.values) {
+        for (final collection in _pullOrder) {
           if (!gateOwned) break;
           try {
             final checkpoint = await store.readCheckpoint(owner.id, collection);

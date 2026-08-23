@@ -10,6 +10,7 @@ import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
+import 'tables/research_tables.dart';
 import 'tables/runtime_tables.dart';
 import 'tables/speech_evidence_tables.dart';
 import 'tables/sync_tables.dart';
@@ -21,6 +22,7 @@ part 'app_database.g.dart';
   tables: [
     LocalOwners,
     ResearchConsents,
+    ExperimentAssignments,
     VocabularyCategories,
     VocabularyWords,
     VocabularyImports,
@@ -53,7 +55,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 13;
+  static const int currentSchemaVersion = 14;
 
   AppDatabase(super.executor);
 
@@ -188,6 +190,9 @@ final class AppDatabase extends _$AppDatabase {
           answerAttempts,
           answerAttempts.evidenceContextJson,
         );
+      }
+      if (from < 14 && !await _tableExists('experiment_assignments')) {
+        await migrator.createTable(experimentAssignments);
       }
     },
     beforeOpen: (details) async {

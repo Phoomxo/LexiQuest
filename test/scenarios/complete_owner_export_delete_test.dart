@@ -15,13 +15,14 @@ import 'package:vocab_learning_app/features/export/application/owner_lifecycle_a
 import 'package:vocab_learning_app/features/gemini/data/secure_gemini_settings_store.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/runtime/download_counter.dart';
 
 void main() {
   test(
-    'current schema lifecycle manifest, export, and deletion cover 31 tables',
+    'current schema lifecycle manifest, export, and deletion cover v14 assignments exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -30,6 +31,7 @@ void main() {
       const exactCurrentSchemaTables = <String>{
         'local_owners',
         'research_consents',
+        'experiment_assignments',
         'vocabulary_categories',
         'vocabulary_words',
         'vocabulary_imports',
@@ -74,7 +76,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(31),
+        hasLength(32),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -86,7 +88,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(25),
+        hasLength(26),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -131,7 +133,31 @@ void main() {
           ownerLifecyclePhysicalDeletionOrder.indexOf('quest_instances'),
         ),
       );
+      expect(
+        ownerLifecyclePhysicalDeletionOrder.indexOf('experiment_assignments'),
+        lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('local_owners')),
+      );
       expect(ownerLifecyclePhysicalDeletionOrder.last, 'local_owners');
+      final experimentAssignments = ownerLifecycleManifest
+          .where((entry) => entry.tableName == 'experiment_assignments')
+          .toList(growable: false);
+      expect(experimentAssignments, hasLength(1));
+      expect(
+        experimentAssignments.single.authority,
+        OwnerLifecycleAuthority.directOwner,
+      );
+      expect(
+        experimentAssignments.single.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(experimentAssignments.single.allowedExportFields.toSet(), {
+        'recordCount',
+        'experimentId',
+        'experimentVersion',
+        'cohort',
+        'protocolVersion',
+        'assignedAtUtc',
+      });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
       );
@@ -432,6 +458,10 @@ void main() {
       });
       await _seedCompleteOwnerA(database);
       await _cloneOwnerAAsB(database);
+      await database.customUpdate(
+        "UPDATE research_consents SET consent_state = 'withdrawn', "
+        'withdrawn_at_utc_ms = 1723377600000 WHERE owner_id = \'owner-a\'',
+      );
       final now = DateTime.utc(2026, 8, 11, 12);
       final gate = DriftOwnerOperationGate(database);
       final index = DriftAiCredentialVersionIndex(database);
@@ -509,7 +539,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(31));
+      expect(archiveTables, hasLength(32));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -561,6 +591,19 @@ void main() {
           reason: '$alias must materialize its complete personal allowlist',
         );
       }
+      final assignmentArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'experimentAssignments');
+      expect(assignmentArchive['records'], [
+        {'recordCount': 1},
+        {
+          'experimentId': 'research-assessment',
+          'experimentVersion': 1,
+          'cohort': 'treatment-a',
+          'protocolVersion': '2026.08',
+          'assignedAtUtc': '2026-08-11T12:00:00.000Z',
+        },
+      ]);
       final answerAttempts = archiveTables
           .cast<Map<String, dynamic>>()
           .singleWhere((entry) => entry['alias'] == 'answerAttempts');
@@ -732,9 +775,13 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 28);
+      expect(deleted, 29);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 28);
+      // v14 retains exactly one immutable owner-b experiment assignment after
+      // owner-a is erased, in addition to the pre-existing canonical rows.
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 29);
+      expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
+      expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _ownerSnapshot(database, 'owner-b'), ownerBBefore);
       expect(await _preservedGlobalSnapshot(database), globalsBefore);
       expect(
@@ -773,11 +820,38 @@ void main() {
   );
 }
 
+Future<int> _experimentAssignmentOwnerCount(
+  AppDatabase database,
+  String ownerId,
+) async {
+  final row = await database
+      .customSelect(
+        'SELECT COUNT(*) AS count FROM experiment_assignments WHERE owner_id = ?',
+        variables: [Variable<String>(ownerId)],
+      )
+      .getSingle();
+  return row.read<int>('count');
+}
+
 Future<void> _seedCompleteOwnerA(AppDatabase database) async {
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: 'owner-a',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+      );
   await database.customInsert(
     'INSERT INTO local_owners '
     '(id, firebase_uid, account_state, created_at_utc_ms, is_active) VALUES '
     "('owner-a', 'firebase-owner-a', 'firebaseBound', 1, 1)",
+  );
+  await database.customInsert(
+    'INSERT INTO experiment_assignments '
+    '(id, owner_id, experiment_id, experiment_version, cohort, '
+    'protocol_version, assigned_at_utc_ms) VALUES '
+    "(?, 'owner-a', 'research-assessment', 1, 'treatment-a', "
+    "'2026.08', 1786449600000)",
+    variables: [Variable<String>(assignmentId)],
   );
   await database.customInsert(
     "INSERT INTO research_consents VALUES "
@@ -962,12 +1036,28 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
 }
 
 Future<void> _cloneOwnerAAsB(AppDatabase database) async {
+  final assignmentId =
+      DriftExperimentAssignmentRepository.canonicalAssignmentId(
+        ownerId: 'owner-b',
+        experimentId: 'research-assessment',
+        experimentVersion: 1,
+      );
   await database.customInsert(
     'INSERT INTO local_owners '
     '(id, firebase_uid, account_state, created_at_utc_ms, is_active) VALUES '
     "('owner-b', 'firebase-owner-b', 'firebaseBound', 2, 0)",
   );
-  for (final table in ownerLifecycleDirectOwnerTableNames) {
+  await database.customInsert(
+    'INSERT INTO experiment_assignments '
+    '(id, owner_id, experiment_id, experiment_version, cohort, '
+    'protocol_version, assigned_at_utc_ms) VALUES '
+    "(?, 'owner-b', 'research-assessment', 1, 'treatment-a', "
+    "'2026.08', 1786449600000)",
+    variables: [Variable<String>(assignmentId)],
+  );
+  for (final table in ownerLifecycleDirectOwnerTableNames.where(
+    (table) => table != 'experiment_assignments',
+  )) {
     final schema = await database
         .customSelect('PRAGMA table_info("$table")')
         .get();

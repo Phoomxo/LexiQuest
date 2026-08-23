@@ -295,6 +295,61 @@ function fieldRewardPayload(overrides = {}) {
   };
 }
 
+const experimentAssignmentAssignedAtUtcMs = 4000;
+
+function fieldExperimentAssignmentPayload(overrides = {}) {
+  return {
+    assignmentId: 'experiment-assignment:canonical-1',
+    ownerId: alice,
+    experimentId: 'study-a',
+    experimentVersion: 1,
+    cohort: 'intervention',
+    protocolVersion: 'protocol-1',
+    assignedAtUtcMs: experimentAssignmentAssignedAtUtcMs,
+    ...overrides,
+  };
+}
+
+function writeFieldExperimentAssignment(db, {
+  uid = alice,
+  entityId = 'experiment-assignment:canonical-1',
+  operationId = 'experiment-assignment-operation-1',
+  schemaVersion = 1,
+  clientUpdatedAtUtcMs,
+  payload,
+} = {}) {
+  const resolvedPayload = payload ?? fieldExperimentAssignmentPayload({
+    assignmentId: entityId,
+    ownerId: uid,
+  });
+  const batch = writeBatch(db);
+  batch.set(
+    doc(db, 'field_users', uid, 'experiment_assignments', entityId),
+    {
+      schemaVersion,
+      entityId,
+      payload: resolvedPayload,
+      revision: 1,
+      isDeleted: false,
+      clientUpdatedAtUtcMs:
+        clientUpdatedAtUtcMs ?? experimentAssignmentAssignedAtUtcMs,
+      serverUpdatedAt: serverTimestamp(),
+      lastOperationId: operationId,
+    },
+  );
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion,
+    operationId,
+    entityType: 'experimentAssignment',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision: 0,
+    resultingRevision: 1,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -659,6 +714,7 @@ describe('field sync ownership and atomic revision contract', () => {
       ['reward_transactions', 'rewardTransaction'],
       ['srs_states', 'srsState'],
       ['achievement_unlocks', 'achievementUnlock'],
+      ['experiment_assignments', 'experimentAssignment'],
     ];
     for (const [collection, entityType] of legacyCollections) {
       await assertFails(
@@ -1230,6 +1286,212 @@ describe('field sync ownership and atomic revision contract', () => {
         },
       }),
     );
+  });
+});
+
+describe('experiment_assignments immutable research contract', () => {
+  it('allows exactly one authenticated own-owner v1 create', async () => {
+    const db = authDb();
+    const ref = doc(
+      db,
+      'field_users',
+      alice,
+      'experiment_assignments',
+      'experiment-assignment:canonical-1',
+    );
+
+    await assertSucceeds(writeFieldExperimentAssignment(db));
+    const snapshot = await assertSucceeds(getDoc(ref));
+    if (
+      snapshot.data().schemaVersion !== 1 ||
+      snapshot.data().payload.ownerId !== alice ||
+      snapshot.data().payload.assignmentId !== ref.id
+    ) {
+      throw new Error('Experiment assignment create lost canonical identity.');
+    }
+    await assertFails(getDoc(doc(
+      authDb(bob),
+      'field_users',
+      alice,
+      'experiment_assignments',
+      ref.id,
+    )));
+  });
+
+  it('allows the Unix epoch and rejects update or delete', async () => {
+    const db = authDb();
+    const entityId = 'experiment-assignment:epoch';
+    const ref = doc(
+      db,
+      'field_users',
+      alice,
+      'experiment_assignments',
+      entityId,
+    );
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId,
+        operationId: 'experiment-assignment-operation-epoch',
+        clientUpdatedAtUtcMs: 0,
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: entityId,
+          assignedAtUtcMs: 0,
+        }),
+      }),
+    );
+
+    await assertFails(updateDoc(ref, { 'payload.cohort': 'control' }));
+    await assertFails(deleteDoc(ref));
+  });
+
+  it('rejects cross-owner path, authentication, and payload identity', async () => {
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(bob), {
+        uid: alice,
+        entityId: 'experiment-assignment:cross-auth',
+        operationId: 'experiment-assignment-operation-cross-auth',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: 'experiment-assignment:cross-auth',
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(), {
+        entityId: 'experiment-assignment:owner-mismatch',
+        operationId: 'experiment-assignment-operation-owner-mismatch',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: 'experiment-assignment:owner-mismatch',
+          ownerId: bob,
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(), {
+        entityId: 'experiment-assignment:path-mismatch',
+        operationId: 'experiment-assignment-operation-path-mismatch',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: 'experiment-assignment:different',
+        }),
+      }),
+    );
+  });
+
+  it('rejects every missing canonical key and every extra key', async () => {
+    const keys = Object.keys(fieldExperimentAssignmentPayload());
+    for (const key of keys) {
+      const entityId = `experiment-assignment:missing-${key}`;
+      const payload = fieldExperimentAssignmentPayload({
+        assignmentId: entityId,
+      });
+      delete payload[key];
+      await assertFails(
+        writeFieldExperimentAssignment(authDb(), {
+          entityId,
+          operationId: `experiment-assignment-operation-missing-${key}`,
+          payload,
+        }),
+      );
+    }
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(), {
+        entityId: 'experiment-assignment:extra-key',
+        operationId: 'experiment-assignment-operation-extra-key',
+        payload: {
+          ...fieldExperimentAssignmentPayload(),
+          assignmentId: 'experiment-assignment:extra-key',
+          runtimeEnabled: true,
+        },
+      }),
+    );
+  });
+
+  it('rejects noncanonical identifier values and types', async () => {
+    const overlong = 'x'.repeat(257);
+    const cases = [
+      ['assignmentId-empty', { assignmentId: '' }],
+      ['assignmentId-trimmed', { assignmentId: ' assignment-id' }],
+      ['assignmentId-overlong', { assignmentId: overlong }],
+      ['assignmentId-type', { assignmentId: 1 }],
+      ['ownerId-empty', { ownerId: '' }],
+      ['ownerId-trimmed', { ownerId: `${alice} ` }],
+      ['ownerId-overlong', { ownerId: overlong }],
+      ['ownerId-type', { ownerId: 1 }],
+      ['experimentId-empty', { experimentId: '' }],
+      ['experimentId-trimmed', { experimentId: ' study-a' }],
+      ['experimentId-overlong', { experimentId: overlong }],
+      ['experimentId-type', { experimentId: 1 }],
+      ['cohort-empty', { cohort: '' }],
+      ['cohort-trimmed', { cohort: 'intervention ' }],
+      ['cohort-overlong', { cohort: overlong }],
+      ['cohort-type', { cohort: 1 }],
+      ['protocol-empty', { protocolVersion: '' }],
+      ['protocol-trimmed', { protocolVersion: ' protocol-1' }],
+      ['protocol-overlong', { protocolVersion: overlong }],
+      ['protocol-type', { protocolVersion: 1 }],
+    ];
+
+    for (const [name, override] of cases) {
+      const entityId = `experiment-assignment:invalid-${name}`;
+      await assertFails(
+        writeFieldExperimentAssignment(authDb(), {
+          entityId,
+          operationId: `experiment-assignment-operation-invalid-${name}`,
+          payload: fieldExperimentAssignmentPayload({
+            assignmentId: entityId,
+            ...override,
+          }),
+        }),
+      );
+    }
+
+    const overlongDocumentId = `experiment-assignment:${'x'.repeat(257)}`;
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(), {
+        entityId: overlongDocumentId,
+        operationId: 'experiment-assignment-operation-overlong-document',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: overlongDocumentId,
+        }),
+      }),
+    );
+    const trimmedDocumentId = ' experiment-assignment:trimmed-document';
+    await assertFails(
+      writeFieldExperimentAssignment(authDb(), {
+        entityId: trimmedDocumentId,
+        operationId: 'experiment-assignment-operation-trimmed-document',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId: trimmedDocumentId,
+        }),
+      }),
+    );
+  });
+
+  it('rejects unsupported versions, timestamps, types, and timestamp drift', async () => {
+    const cases = [
+      ['payload-v2', { schemaVersion: 2 }],
+      ['zero-version', { payloadOverride: { experimentVersion: 0 } }],
+      ['negative-version', { payloadOverride: { experimentVersion: -1 } }],
+      ['version-type', { payloadOverride: { experimentVersion: '1' } }],
+      ['negative-time', { payloadOverride: { assignedAtUtcMs: -1 } }],
+      ['time-type', { payloadOverride: { assignedAtUtcMs: '4000' } }],
+      ['timestamp-drift', { clientUpdatedAtUtcMs: 4001 }],
+    ];
+
+    for (const [name, options] of cases) {
+      const entityId = `experiment-assignment:invalid-${name}`;
+      await assertFails(
+        writeFieldExperimentAssignment(authDb(), {
+          entityId,
+          operationId: `experiment-assignment-operation-invalid-${name}`,
+          schemaVersion: options.schemaVersion ?? 1,
+          clientUpdatedAtUtcMs: options.clientUpdatedAtUtcMs,
+          payload: fieldExperimentAssignmentPayload({
+            assignmentId: entityId,
+            ...(options.payloadOverride ?? {}),
+          }),
+        }),
+      );
+    }
   });
 });
 

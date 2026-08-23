@@ -11,6 +11,8 @@ import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../research/data/drift_experiment_assignment_repository.dart';
+import '../../research/domain/experiment_assignment.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
 import '../domain/owner_upgrade.dart';
@@ -111,6 +113,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             await DriftEconomyCutover(_database).ensureSeparated(source.id);
             await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
             await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+            await _reconcileExperimentAssignmentOutbox(
+              ownerId: source.id,
+              firebaseUid: uid,
+              historicalOwnerIds: <String>{source.id},
+            );
             await (_database.update(
               _database.localOwners,
             )..where((row) => row.id.equals(source.id))).write(
@@ -158,6 +165,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          await _mergeExperimentAssignments(source.id, target.id);
           conflicts += await _discardNaturalKeyDuplicates(
             source.id,
             target.id,
@@ -172,6 +180,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             upgradedAt,
           );
           await _moveOwnerRows(source.id, target.id);
+          await _reconcileExperimentAssignmentOutbox(
+            ownerId: target.id,
+            firebaseUid: uid,
+            historicalOwnerIds: <String>{source.id, target.id},
+          );
           await _database.customUpdate(
             'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
           );
@@ -1408,6 +1421,262 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       }
     }
     return conflicts;
+  }
+
+  Future<void> _mergeExperimentAssignments(
+    String sourceId,
+    String targetId,
+  ) async {
+    final sourceRows = await _database
+        .customSelect(
+          'SELECT id, owner_id, experiment_id, experiment_version, cohort, '
+          'protocol_version, assigned_at_utc_ms FROM experiment_assignments '
+          'WHERE owner_id = ? ORDER BY experiment_id, experiment_version, id',
+          variables: [Variable<String>(sourceId)],
+          readsFrom: {_database.experimentAssignments},
+        )
+        .get();
+
+    for (final sourceRow in sourceRows) {
+      final source = _readExperimentAssignment(sourceRow);
+      _validateExperimentAssignmentIdentity(source);
+      final targetAssignmentId =
+          DriftExperimentAssignmentRepository.canonicalAssignmentId(
+            ownerId: targetId,
+            experimentId: source.experimentId,
+            experimentVersion: source.experimentVersion,
+          );
+      final targetRow = await _database
+          .customSelect(
+            'SELECT id, owner_id, experiment_id, experiment_version, cohort, '
+            'protocol_version, assigned_at_utc_ms FROM experiment_assignments '
+            'WHERE owner_id = ? AND experiment_id = ? '
+            'AND experiment_version = ? LIMIT 1',
+            variables: [
+              Variable<String>(targetId),
+              Variable<String>(source.experimentId),
+              Variable<int>(source.experimentVersion),
+            ],
+            readsFrom: {_database.experimentAssignments},
+          )
+          .getSingleOrNull();
+
+      if (targetRow != null) {
+        final target = _readExperimentAssignment(targetRow);
+        _validateExperimentAssignmentIdentity(target);
+        if (source.cohort != target.cohort ||
+            source.protocolVersion != target.protocolVersion ||
+            source.assignedAtUtc != target.assignedAtUtc) {
+          throw ExperimentAssignmentConflict(
+            ownerId: targetId,
+            experimentId: source.experimentId,
+            experimentVersion: source.experimentVersion,
+          );
+        }
+        await (_database.delete(
+          _database.experimentAssignments,
+        )..where((row) => row.id.equals(source.id))).go();
+        continue;
+      }
+
+      final idCollision = await (_database.select(
+        _database.experimentAssignments,
+      )..where((row) => row.id.equals(targetAssignmentId))).getSingleOrNull();
+      if (idCollision != null) {
+        throw ExperimentAssignmentConflict(
+          ownerId: targetId,
+          experimentId: source.experimentId,
+          experimentVersion: source.experimentVersion,
+        );
+      }
+      await (_database.update(
+        _database.experimentAssignments,
+      )..where((row) => row.id.equals(source.id))).write(
+        db.ExperimentAssignmentsCompanion(
+          id: Value(targetAssignmentId),
+          ownerId: Value(targetId),
+        ),
+      );
+    }
+  }
+
+  Future<void> _reconcileExperimentAssignmentOutbox({
+    required String ownerId,
+    required String firebaseUid,
+    required Set<String> historicalOwnerIds,
+  }) async {
+    final assignments = await (_database.select(
+      _database.experimentAssignments,
+    )..where((row) => row.ownerId.equals(ownerId))).get();
+    final operations =
+        await (_database.select(_database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityType.equals('experimentAssignment'),
+            ))
+            .get();
+    if (operations.isEmpty) return;
+
+    final reconciledOperationIds = <String>{};
+    for (final assignment in assignments) {
+      final allowedEntityIds = <String>{
+        for (final historicalOwnerId in historicalOwnerIds)
+          DriftExperimentAssignmentRepository.canonicalAssignmentId(
+            ownerId: historicalOwnerId,
+            experimentId: assignment.experimentId,
+            experimentVersion: assignment.experimentVersion,
+          ),
+        DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+          firebaseUid: firebaseUid,
+          experimentId: assignment.experimentId,
+          experimentVersion: assignment.experimentVersion,
+        ),
+      };
+      final matches = operations
+          .where((operation) => allowedEntityIds.contains(operation.entityId))
+          .toList(growable: false);
+      if (matches.isEmpty) continue;
+
+      for (final operation in matches) {
+        final canonicalOperationId =
+            DriftExperimentAssignmentRepository.canonicalOutboxOperationId(
+              operation.entityId,
+            );
+        if (operation.operationId != canonicalOperationId ||
+            operation.operationKind != 'upsert' ||
+            operation.payloadVersion != 1 ||
+            operation.baseRevision != 0 ||
+            operation.createdAtUtcMs != assignment.assignedAtUtcMs) {
+          throw ExperimentAssignmentConflict(
+            ownerId: ownerId,
+            experimentId: assignment.experimentId,
+            experimentVersion: assignment.experimentVersion,
+          );
+        }
+        reconciledOperationIds.add(operation.operationId);
+      }
+
+      final cloudEntityId =
+          DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+            firebaseUid: firebaseUid,
+            experimentId: assignment.experimentId,
+            experimentVersion: assignment.experimentVersion,
+          );
+      final cloudOperationId =
+          DriftExperimentAssignmentRepository.canonicalOutboxOperationId(
+            cloudEntityId,
+          );
+      db.OutboxOperation? canonicalCloudOperation;
+      for (final operation in matches) {
+        if (operation.operationId == cloudOperationId &&
+            operation.entityId == cloudEntityId) {
+          canonicalCloudOperation = operation;
+          break;
+        }
+      }
+      if (canonicalCloudOperation != null) {
+        final staleOperationIds = matches
+            .where((operation) => operation.operationId != cloudOperationId)
+            .map((operation) => operation.operationId)
+            .toList(growable: false);
+        if (staleOperationIds.isNotEmpty) {
+          await (_database.delete(
+            _database.outboxOperations,
+          )..where((row) => row.operationId.isIn(staleOperationIds))).go();
+        }
+        continue;
+      }
+      final unrelatedCollision =
+          await (_database.select(_database.outboxOperations)
+                ..where((row) => row.operationId.equals(cloudOperationId)))
+              .getSingleOrNull();
+      if (unrelatedCollision != null &&
+          !matches.any(
+            (operation) => operation.operationId == cloudOperationId,
+          )) {
+        throw ExperimentAssignmentConflict(
+          ownerId: ownerId,
+          experimentId: assignment.experimentId,
+          experimentVersion: assignment.experimentVersion,
+        );
+      }
+
+      await (_database.delete(_database.outboxOperations)..where(
+            (row) => row.operationId.isIn(
+              matches.map((operation) => operation.operationId),
+            ),
+          ))
+          .go();
+      await _database
+          .into(_database.outboxOperations)
+          .insert(
+            db.OutboxOperationsCompanion.insert(
+              operationId: cloudOperationId,
+              ownerId: ownerId,
+              entityType: 'experimentAssignment',
+              entityId: cloudEntityId,
+              operationKind: 'upsert',
+              payloadVersion: const Value(1),
+              baseRevision: const Value(0),
+              createdAtUtcMs: assignment.assignedAtUtcMs,
+            ),
+          );
+    }
+
+    if (reconciledOperationIds.length != operations.length) {
+      final assignment = assignments.isEmpty ? null : assignments.first;
+      throw ExperimentAssignmentConflict(
+        ownerId: ownerId,
+        experimentId: assignment?.experimentId ?? 'unknown-assignment',
+        experimentVersion: assignment?.experimentVersion ?? 1,
+      );
+    }
+  }
+
+  ExperimentAssignment _readExperimentAssignment(QueryRow row) {
+    return ExperimentAssignment(
+      id: row.read<String>('id'),
+      ownerId: row.read<String>('owner_id'),
+      experimentId: row.read<String>('experiment_id'),
+      experimentVersion: row.read<int>('experiment_version'),
+      cohort: row.read<String>('cohort'),
+      protocolVersion: row.read<String>('protocol_version'),
+      assignedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        row.read<int>('assigned_at_utc_ms'),
+        isUtc: true,
+      ),
+    );
+  }
+
+  void _validateExperimentAssignmentIdentity(ExperimentAssignment assignment) {
+    final values = <String>[
+      assignment.ownerId,
+      assignment.experimentId,
+      assignment.cohort,
+      assignment.protocolVersion,
+    ];
+    final isMalformed =
+        values.any(
+          (value) =>
+              value.isEmpty ||
+              value != value.trim() ||
+              value.runes.length > 256,
+        ) ||
+        assignment.experimentVersion <= 0 ||
+        assignment.assignedAtUtc.millisecondsSinceEpoch < 0 ||
+        assignment.id !=
+            DriftExperimentAssignmentRepository.canonicalAssignmentId(
+              ownerId: assignment.ownerId,
+              experimentId: assignment.experimentId,
+              experimentVersion: assignment.experimentVersion,
+            );
+    if (isMalformed) {
+      throw ExperimentAssignmentConflict(
+        ownerId: assignment.ownerId,
+        experimentId: assignment.experimentId,
+        experimentVersion: assignment.experimentVersion,
+      );
+    }
   }
 
   Future<void> _moveOwnerRows(String sourceId, String targetId) async {

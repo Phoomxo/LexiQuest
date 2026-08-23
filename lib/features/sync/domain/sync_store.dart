@@ -5,17 +5,36 @@ import 'sync_result.dart';
 const int maxSyncSendReservations = 5;
 
 final class ClaimedSyncOperation {
-  const ClaimedSyncOperation({
+  ClaimedSyncOperation({
+    required String leaseToken,
+    required int attemptCount,
+    required String releaseState,
+    required PushMutation mutation,
+    String? localOperationId,
+  }) : this._(
+         leaseToken: leaseToken,
+         attemptCount: attemptCount,
+         releaseState: releaseState,
+         mutation: mutation,
+         localOperationId: localOperationId ?? mutation.operationId,
+       );
+
+  const ClaimedSyncOperation._({
     required this.leaseToken,
     required this.attemptCount,
     required this.releaseState,
     required this.mutation,
+    required this.localOperationId,
   });
 
   final String leaseToken;
   final int attemptCount;
   final String releaseState;
   final PushMutation mutation;
+
+  /// Durable local outbox identity. It may differ from the cloud operation ID
+  /// when an owner-bound assignment is translated to a Firebase namespace.
+  final String localOperationId;
 }
 
 abstract interface class SyncStore {

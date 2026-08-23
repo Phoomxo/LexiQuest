@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
@@ -78,6 +79,174 @@ void main() {
       expect(entity.revision, 7);
       expect(entity.payload['cefrLevel'], isNull);
       expect(entity.serverUpdatedAtUtc, serverUpdatedAt);
+    });
+
+    test('round-trips every declared collection generically at v1', () {
+      const expectedCollections = <SyncCollection>{
+        SyncCollection.categories,
+        SyncCollection.words,
+        SyncCollection.attempts,
+        SyncCollection.readingEvents,
+        SyncCollection.rewardTransactions,
+        SyncCollection.srsStates,
+        SyncCollection.achievementUnlocks,
+        SyncCollection.experimentAssignments,
+      };
+      expect(SyncCollection.values.toSet(), expectedCollections);
+
+      for (final collection in SyncCollection.values) {
+        final entityId = collection == SyncCollection.experimentAssignments
+            ? _canonicalAssignmentId()
+            : '${collection.entityType}-v1';
+        final payload = switch (collection) {
+          SyncCollection.attempts => _attemptPayloadV1(),
+          SyncCollection.experimentAssignments => _assignmentPayload(
+            assignmentId: entityId,
+            assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
+          _ => <String, Object?>{'collection': collection.wireName},
+        };
+        final mutation = PushMutation(
+          operationId: 'operation:${collection.entityType}:v1',
+          firebaseUid: 'firebase-user-1',
+          collection: collection,
+          entityId: entityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: clientUpdatedAt,
+          payload: payload,
+        );
+
+        final encoded = FirestoreSyncCodec.encodeEntity(
+          mutation,
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        );
+        final decoded = FirestoreSyncCodec.decodeEntity(
+          collection: collection,
+          documentId: entityId,
+          data: encoded,
+        );
+
+        expect(decoded.collection, collection, reason: collection.name);
+        expect(decoded.entityId, entityId, reason: collection.name);
+        expect(decoded.payloadVersion, 1, reason: collection.name);
+        expect(decoded.payload, payload, reason: collection.name);
+      }
+    });
+
+    test('experiment assignment uses one exact v1 wire contract', () {
+      final assignmentId = _canonicalAssignmentId();
+      final payload = _assignmentPayload(
+        assignmentId: assignmentId,
+        assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final mutation = PushMutation(
+        operationId: 'experimentAssignment:$assignmentId:1',
+        firebaseUid: 'firebase-user-1',
+        collection: SyncCollection.experimentAssignments,
+        entityId: assignmentId,
+        operationKind: SyncOperationKind.upsert,
+        payloadVersion: 1,
+        baseRevision: 0,
+        localRevision: 1,
+        clientUpdatedAtUtc: clientUpdatedAt,
+        payload: payload,
+      );
+
+      final encoded = FirestoreSyncCodec.encodeEntity(
+        mutation,
+        serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+      );
+      final decoded = FirestoreSyncCodec.decodeEntity(
+        collection: SyncCollection.experimentAssignments,
+        documentId: assignmentId,
+        data: encoded,
+      );
+
+      expect(
+        SyncCollection.experimentAssignments.wireName,
+        'experiment_assignments',
+      );
+      expect(
+        SyncCollection.experimentAssignments.entityType,
+        'experimentAssignment',
+      );
+      expect(
+        SyncCollection.experimentAssignments.supportedPayloadVersions,
+        <int>{1},
+      );
+      expect(decoded.payload.keys.toSet(), <String>{
+        'assignmentId',
+        'ownerId',
+        'experimentId',
+        'experimentVersion',
+        'cohort',
+        'protocolVersion',
+        'assignedAtUtcMs',
+      });
+      expect(decoded.payload, payload);
+      expect(SyncCollection.attempts.supportedPayloadVersions, <int>{1, 2});
+    });
+
+    test('experiment assignment rejects non-exact payloads at the codec', () {
+      final assignmentId = _canonicalAssignmentId();
+      final exact = _assignmentPayload(
+        assignmentId: assignmentId,
+        assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final invalidPayloads = <Map<String, Object?>>[
+        <String, Object?>{...exact}..remove('protocolVersion'),
+        <String, Object?>{...exact, 'extra': true},
+        <String, Object?>{...exact, 'ownerId': 'other-owner'},
+        <String, Object?>{...exact, 'experimentId': 'study-b'},
+        <String, Object?>{...exact, 'experimentVersion': 2},
+        <String, Object?>{...exact, 'experimentVersion': 0},
+        <String, Object?>{...exact, 'assignedAtUtcMs': -1},
+      ];
+
+      for (var index = 0; index < invalidPayloads.length; index += 1) {
+        final payload = invalidPayloads[index];
+        final mutation = PushMutation(
+          operationId: 'invalid-assignment-$index',
+          firebaseUid: 'firebase-user-1',
+          collection: SyncCollection.experimentAssignments,
+          entityId: assignmentId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: clientUpdatedAt,
+          payload: payload,
+        );
+        expect(
+          () => FirestoreSyncCodec.encodeEntity(
+            mutation,
+            serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: 'encode case $index',
+        );
+        expect(
+          () => FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.experimentAssignments,
+            documentId: assignmentId,
+            data: <String, Object?>{
+              'schemaVersion': 1,
+              'entityId': assignmentId,
+              'revision': 1,
+              'isDeleted': false,
+              'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+              'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+              'lastOperationId': 'invalid-assignment-$index',
+              'payload': payload,
+            },
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+          reason: 'decode case $index',
+        );
+      }
     });
 
     test('rejects unknown schemas and mismatched document IDs', () {
@@ -413,6 +582,29 @@ Map<String, Object?> _attemptPayloadV1() => <String, Object?>{
   'attemptNumber': 1,
   'occurredAtUtcMs': 2000,
   'providerProvenance': null,
+};
+
+String _canonicalAssignmentId({
+  String ownerId = 'firebase-user-1',
+  String experimentId = 'study-a',
+  int experimentVersion = 1,
+}) => DriftExperimentAssignmentRepository.canonicalAssignmentId(
+  ownerId: ownerId,
+  experimentId: experimentId,
+  experimentVersion: experimentVersion,
+);
+
+Map<String, Object?> _assignmentPayload({
+  required String assignmentId,
+  required int assignedAtUtcMs,
+}) => <String, Object?>{
+  'assignmentId': assignmentId,
+  'ownerId': 'firebase-user-1',
+  'experimentId': 'study-a',
+  'experimentVersion': 1,
+  'cohort': 'intervention',
+  'protocolVersion': 'protocol-1',
+  'assignedAtUtcMs': assignedAtUtcMs,
 };
 
 Map<String, Object?> _attemptPayloadV2(EvidenceContext context) =>

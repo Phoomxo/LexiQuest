@@ -169,6 +169,30 @@ forward-only; rollback disables new invocation and continues reading v13.
 
 ---
 
+### v14 — Immutable Experiment Assignment
+**Reserved:** 2026-08-14
+**Implemented:** 2026-08-23
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added the owner-scoped `experiment_assignments` table as the single immutable
+experiment-assignment authority. The table stores the canonical owner-bound
+assignment ID, experiment ID and positive version, cohort, protocol version,
+and UTC assignment timestamp, with a unique constraint on
+`(owner_id, experiment_id, experiment_version)`.
+
+Owner upgrade preserves byte-equivalent assignments, rejects conflicting
+immutable payloads atomically, and rebinds only the deterministic owner-bound
+ID. Participant archive and explicit owner deletion share the lifecycle
+manifest; consent withdrawal retains the assignment audit row.
+
+**Migration safety:** v13→v14 adds only `experiment_assignments`; all 31 v13
+tables and their data remain intact. Rollback is forward-only: disabling
+research activation does not erase assignments, and older binaries must not
+open a v14 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -184,6 +208,7 @@ forward-only; rollback disables new invocation and continues reading v13.
 | 2026-08-04 | Initial ledger created. v1–v6 history recorded. v7–v9 reserved for Phase -1. | Architecture Team |
 | 2026-08-09 | Recorded implemented v11 and owner-scoped AI usage migration v12; deployment evidence remains pending. | LexiQuest integration |
 | 2026-08-14 | Reserved and implemented v13 evidence metadata on canonical answer attempts. | LexiQuest integration |
+| 2026-08-23 | Reserved and implemented v14 immutable experiment assignment with lifecycle coverage. | LexiQuest integration |
 
 ---
 

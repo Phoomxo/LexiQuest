@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../domain/cloud_sync_policy.dart';
 import '../domain/sync_entity.dart';
 import '../domain/sync_failure.dart';
@@ -51,6 +52,10 @@ final class FirestoreSyncGateway implements SyncGateway {
             collection: mutation.collection,
             payloadVersion: mutation.payloadVersion,
             payload: mutation.payload,
+            entityId: mutation.entityId,
+            firebaseUid: mutation.firebaseUid,
+            clientUpdatedAtUtcMs:
+                mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
             beginTransaction: () => _firestore
                 .runTransaction<_TransactionPushResult>((transaction) async {
                   final operationSnapshot = await transaction.get(operation);
@@ -76,6 +81,7 @@ final class FirestoreSyncGateway implements SyncGateway {
                         collection: mutation.collection,
                         documentId: entitySnapshot.id,
                         data: entitySnapshot.data()!,
+                        expectedFirebaseUid: mutation.firebaseUid,
                       ),
                     );
                   }
@@ -156,6 +162,7 @@ final class FirestoreSyncGateway implements SyncGateway {
               collection: collection,
               documentId: document.id,
               data: document.data(),
+              expectedFirebaseUid: firebaseUid,
             ),
           )
           .toList(growable: false);
@@ -216,6 +223,9 @@ final class FirestoreSyncPreflight {
     required SyncCollection collection,
     required int payloadVersion,
     Map<String, Object?>? payload,
+    String? entityId,
+    String? firebaseUid,
+    int? clientUpdatedAtUtcMs,
     required Future<T> Function() beginTransaction,
   }) async {
     collection.requireSupportedPayloadVersion(payloadVersion);
@@ -227,6 +237,21 @@ final class FirestoreSyncPreflight {
       AnswerAttemptSyncPayloadContract.requireEvidenceContext(
         payloadVersion: payloadVersion,
         payload: attemptPayload,
+      );
+    } else if (collection == SyncCollection.experimentAssignments) {
+      final assignmentPayload = payload;
+      if (assignmentPayload == null || entityId == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      ExperimentAssignmentSyncPayloadContract.requireCanonical(
+        payload: assignmentPayload,
+        expectedEntityId: entityId,
+        expectedOwnerId: firebaseUid,
+        expectedAssignedAtUtcMs: clientUpdatedAtUtcMs,
+      );
+      _requireCanonicalExperimentAssignmentId(
+        payload: assignmentPayload,
+        entityId: entityId,
       );
     }
     return beginTransaction();
@@ -240,7 +265,7 @@ final class FirestoreSyncCodec {
     PushMutation mutation, {
     required Object serverTimestamp,
   }) {
-    _requireValidAttemptPayload(mutation);
+    _requireValidPayload(mutation);
     return <String, Object?>{
       'schemaVersion': mutation.payloadVersion,
       'entityId': mutation.entityId,
@@ -258,7 +283,7 @@ final class FirestoreSyncCodec {
     PushMutation mutation, {
     required Object acknowledgedAt,
   }) {
-    _requireValidAttemptPayload(mutation);
+    _requireValidPayload(mutation);
     return <String, Object?>{
       'schemaVersion': mutation.payloadVersion,
       'operationId': mutation.operationId,
@@ -275,6 +300,7 @@ final class FirestoreSyncCodec {
     required SyncCollection collection,
     required String documentId,
     required Map<String, Object?> data,
+    String? expectedFirebaseUid,
   }) {
     final schemaVersion = _requiredInt(data, 'schemaVersion');
     collection.requireSupportedPayloadVersion(schemaVersion);
@@ -295,6 +321,22 @@ final class FirestoreSyncCodec {
           payloadVersion: schemaVersion,
           payload: canonicalPayload,
         );
+      } else if (collection == SyncCollection.experimentAssignments) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        ExperimentAssignmentSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          expectedEntityId: entityId,
+          expectedOwnerId: expectedFirebaseUid,
+          expectedAssignedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+        );
+        _requireCanonicalExperimentAssignmentId(
+          payload: canonicalPayload,
+          entityId: entityId,
+        );
+        if (_requiredInt(data, 'revision') != 1 ||
+            _requiredBool(data, 'isDeleted')) {
+          throw const InvalidSyncPayloadFailure();
+        }
       }
       return SyncEntity(
         collection: collection,
@@ -320,6 +362,9 @@ final class FirestoreSyncCodec {
     Map<String, Object?> data, {
     required PushMutation expectedMutation,
   }) {
+    if (expectedMutation.collection == SyncCollection.experimentAssignments) {
+      _requireExactKeys(data, _operationEnvelopeKeys);
+    }
     if (_requiredInt(data, 'schemaVersion') !=
             expectedMutation.payloadVersion ||
         _requiredString(data, 'operationId') != expectedMutation.operationId ||
@@ -344,13 +389,55 @@ final class FirestoreSyncCodec {
     );
   }
 
-  static void _requireValidAttemptPayload(PushMutation mutation) {
-    if (mutation.collection != SyncCollection.attempts) return;
-    AnswerAttemptSyncPayloadContract.requireEvidenceContext(
-      payloadVersion: mutation.payloadVersion,
+  static void _requireValidPayload(PushMutation mutation) {
+    if (mutation.collection == SyncCollection.attempts) {
+      AnswerAttemptSyncPayloadContract.requireEvidenceContext(
+        payloadVersion: mutation.payloadVersion,
+        payload: mutation.payload,
+      );
+      return;
+    }
+    if (mutation.collection != SyncCollection.experimentAssignments) return;
+    if (mutation.payloadVersion != 1 ||
+        mutation.operationKind != SyncOperationKind.upsert ||
+        mutation.baseRevision != 0 ||
+        mutation.localRevision != 1) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    ExperimentAssignmentSyncPayloadContract.requireCanonical(
       payload: mutation.payload,
+      expectedEntityId: mutation.entityId,
+      expectedOwnerId: mutation.firebaseUid,
+      expectedAssignedAtUtcMs:
+          mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
+    _requireCanonicalExperimentAssignmentId(
+      payload: mutation.payload,
+      entityId: mutation.entityId,
     );
   }
+
+  static const Set<String> _entityEnvelopeKeys = <String>{
+    'schemaVersion',
+    'entityId',
+    'payload',
+    'revision',
+    'isDeleted',
+    'clientUpdatedAtUtcMs',
+    'serverUpdatedAt',
+    'lastOperationId',
+  };
+
+  static const Set<String> _operationEnvelopeKeys = <String>{
+    'schemaVersion',
+    'operationId',
+    'entityType',
+    'entityId',
+    'operationKind',
+    'baseRevision',
+    'resultingRevision',
+    'acknowledgedAt',
+  };
 }
 
 final class FirestoreSyncErrorMapper {
@@ -402,6 +489,28 @@ bool _requiredBool(Map<String, Object?> data, String field) {
   final value = data[field];
   if (value is! bool) throw const InvalidSyncPayloadFailure();
   return value;
+}
+
+void _requireExactKeys(Map<String, Object?> data, Set<String> expectedKeys) {
+  if (data.length != expectedKeys.length ||
+      !data.keys.every(expectedKeys.contains)) {
+    throw const InvalidSyncPayloadFailure();
+  }
+}
+
+void _requireCanonicalExperimentAssignmentId({
+  required Map<String, Object?> payload,
+  required String entityId,
+}) {
+  final canonicalId =
+      DriftExperimentAssignmentRepository.canonicalCloudAssignmentId(
+        firebaseUid: payload['ownerId']! as String,
+        experimentId: payload['experimentId']! as String,
+        experimentVersion: payload['experimentVersion']! as int,
+      );
+  if (entityId != canonicalId || payload['assignmentId'] != canonicalId) {
+    throw const InvalidSyncPayloadFailure();
+  }
 }
 
 DateTime _systemUtcClock() => DateTime.now().toUtc();
