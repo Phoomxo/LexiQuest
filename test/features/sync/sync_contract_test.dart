@@ -51,6 +51,8 @@ void main() {
           SyncCollection.rewardTransactions: <int>{1},
           SyncCollection.srsStates: <int>{1},
           SyncCollection.achievementUnlocks: <int>{1},
+          SyncCollection.experimentAssignments: <int>{1},
+          SyncCollection.assessmentRuns: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());

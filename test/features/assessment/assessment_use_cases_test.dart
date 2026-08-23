@@ -21,7 +21,6 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_policy_roll
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
-import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
@@ -259,9 +258,8 @@ void main() {
     );
     AppDatabase? database;
     var clockTick = 0;
-    DateTime advancingNow() => _startedAtUtc.add(
-      Duration(seconds: clockTick++),
-    );
+    DateTime advancingNow() =>
+        _startedAtUtc.add(Duration(seconds: clockTick++));
     try {
       database = AppDatabase(NativeDatabase(file));
       final initial = await _Harness.create(
@@ -280,10 +278,9 @@ void main() {
       final replay = await retry.useCases.start(_startCommand());
       expect(replay.startedAtUtc, _startedAtUtc);
       expect(await _count(database, 'assessment_runs'), 1);
-      expect(
-        await _assessmentOutboxOperationIds(database, _runId),
-        <String>['assessmentRun:$_runId:1'],
-      );
+      expect(await _assessmentOutboxOperationIds(database, _runId), <String>[
+        'assessmentRun:$_runId:1',
+      ]);
     } finally {
       await database?.close();
       if (await directory.exists()) await directory.delete(recursive: true);
@@ -294,75 +291,65 @@ void main() {
     (name: 'complete', state: AssessmentRunState.completed),
     (name: 'abandon', state: AssessmentRunState.abandoned),
   ]) {
-    test(
-      'same-intent public start retry after ${terminalCase.name} returns '
-      'durable terminal after reopen',
-      () async {
-        final directory = await Directory.systemTemp.createTemp(
-          'lexiquest-assessment-${terminalCase.name}-retry-',
+    test('same-intent public start retry after ${terminalCase.name} returns '
+        'durable terminal after reopen', () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-assessment-${terminalCase.name}-retry-',
+      );
+      final file = File(
+        '${directory.path}${Platform.pathSeparator}assessment.sqlite',
+      );
+      AppDatabase? database;
+      var clockTick = 0;
+      DateTime advancingNow() =>
+          _startedAtUtc.add(Duration(seconds: clockTick++));
+      final runId = '$_runId-${terminalCase.name}';
+      try {
+        database = AppDatabase(NativeDatabase(file));
+        final initial = await _Harness.create(
+          databaseOverride: database,
+          nowUtc: advancingNow,
         );
-        final file = File(
-          '${directory.path}${Platform.pathSeparator}assessment.sqlite',
+        await initial.useCases.start(_startCommand(runId: runId));
+        final firstTerminal = terminalCase.state == AssessmentRunState.completed
+            ? await initial.useCases.complete(runId)
+            : await initial.useCases.abandon(runId);
+        final durableTerminalAt = _startedAtUtc.add(const Duration(seconds: 1));
+        expect(
+          firstTerminal.completedAtUtc ?? firstTerminal.abandonedAtUtc,
+          durableTerminalAt,
         );
-        AppDatabase? database;
-        var clockTick = 0;
-        DateTime advancingNow() => _startedAtUtc.add(
-          Duration(seconds: clockTick++),
-        );
-        final runId = '$_runId-${terminalCase.name}';
-        try {
-          database = AppDatabase(NativeDatabase(file));
-          final initial = await _Harness.create(
-            databaseOverride: database,
-            nowUtc: advancingNow,
-          );
-          await initial.useCases.start(_startCommand(runId: runId));
-          final firstTerminal = terminalCase.state ==
-                  AssessmentRunState.completed
-              ? await initial.useCases.complete(runId)
-              : await initial.useCases.abandon(runId);
-          final durableTerminalAt = _startedAtUtc.add(
-            const Duration(seconds: 1),
-          );
-          expect(
-            firstTerminal.completedAtUtc ?? firstTerminal.abandonedAtUtc,
-            durableTerminalAt,
-          );
-          await database.close();
+        await database.close();
 
-          database = AppDatabase(NativeDatabase(file));
-          final terminalRetry = await _Harness.create(
-            databaseOverride: database,
-            seedFixture: false,
-            nowUtc: advancingNow,
-          );
-          final startReplay = await terminalRetry.useCases.start(
-            _startCommand(runId: runId),
-          );
-          expect(startReplay, sameAssessmentRunAs(firstTerminal));
-          final replay = terminalCase.state == AssessmentRunState.completed
-              ? await terminalRetry.useCases.complete(runId)
-              : await terminalRetry.useCases.abandon(runId);
-          expect(replay, sameAssessmentRunAs(firstTerminal));
-          expect(
-            clockTick,
-            2,
-            reason: 'a durable terminal replay must not sample a new clock',
-          );
-          expect(await _count(database, 'assessment_runs'), 1);
-          expect(
-            await _assessmentOutboxOperationIds(database, runId),
-            <String>[
-              'assessmentRun:$runId:1',
-              'assessmentRun:$runId:2',
-            ],
-          );
-        } finally {
-          await database?.close();
-          if (await directory.exists()) await directory.delete(recursive: true);
-        }
-      },
-    );
+        database = AppDatabase(NativeDatabase(file));
+        final terminalRetry = await _Harness.create(
+          databaseOverride: database,
+          seedFixture: false,
+          nowUtc: advancingNow,
+        );
+        final startReplay = await terminalRetry.useCases.start(
+          _startCommand(runId: runId),
+        );
+        expect(startReplay, sameAssessmentRunAs(firstTerminal));
+        final replay = terminalCase.state == AssessmentRunState.completed
+            ? await terminalRetry.useCases.complete(runId)
+            : await terminalRetry.useCases.abandon(runId);
+        expect(replay, sameAssessmentRunAs(firstTerminal));
+        expect(
+          clockTick,
+          2,
+          reason: 'a durable terminal replay must not sample a new clock',
+        );
+        expect(await _count(database, 'assessment_runs'), 1);
+        expect(await _assessmentOutboxOperationIds(database, runId), <String>[
+          'assessmentRun:$runId:1',
+          'assessmentRun:$runId:2',
+        ]);
+      } finally {
+        await database?.close();
+        if (await directory.exists()) await directory.delete(recursive: true);
+      }
+    });
   }
 
   test(
@@ -1301,12 +1288,14 @@ Future<List<String>> _assessmentOutboxOperationIds(
   AppDatabase database,
   String runId,
 ) async {
-  final rows = await database.customSelect(
-    'SELECT operation_id FROM outbox_operations '
-    "WHERE entity_type = 'assessmentRun' AND entity_id = ? "
-    'ORDER BY base_revision, operation_id',
-    variables: [Variable<String>(runId)],
-  ).get();
+  final rows = await database
+      .customSelect(
+        'SELECT operation_id FROM outbox_operations '
+        "WHERE entity_type = 'assessmentRun' AND entity_id = ? "
+        'ORDER BY base_revision, operation_id',
+        variables: [Variable<String>(runId)],
+      )
+      .get();
   return rows.map((row) => row.read<String>('operation_id')).toList();
 }
 

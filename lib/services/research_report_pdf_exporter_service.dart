@@ -18,7 +18,8 @@ class ResearchReportPdfExporterService {
     if (recordCount < minimum) {
       return (
         isSufficient: false,
-        reason: 'ข้อมูลไม่เพียงพอ ($recordCount ระเบียน) '
+        reason:
+            'ข้อมูลไม่เพียงพอ ($recordCount ระเบียน) '
             'ต้องการอย่างน้อย $minimum ระเบียนเพื่อสร้างรายงาน',
       );
     }

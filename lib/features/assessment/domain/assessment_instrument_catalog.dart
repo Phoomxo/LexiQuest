@@ -56,10 +56,9 @@ final class AssessmentInstrumentDefinition {
              wordId: item.wordId,
              promptMode: item.promptMode,
              scoringRuleVersion: item.scoringRuleVersion,
-             responses:
-                 Map<String, AssessmentControlledResponse>.unmodifiable(
-                   item.responses,
-                 ),
+             responses: Map<String, AssessmentControlledResponse>.unmodifiable(
+               item.responses,
+             ),
            ),
          ),
        );

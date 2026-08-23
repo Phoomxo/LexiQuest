@@ -16,7 +16,6 @@ import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_mani
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
-import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_side_effect_reconciler.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -2403,35 +2402,6 @@ Future<void> _expectLegacyRewardCutover(
   expect(
     await DriftRewardProjectionRebuilder(database).coinBalance(ownerId),
     20,
-  );
-}
-
-Future<void> _seedExperimentAssignment(
-  AppDatabase database, {
-  required String id,
-  required String ownerId,
-  required String experimentId,
-  required int experimentVersion,
-  required String cohort,
-  required String protocolVersion,
-  required int assignedAtUtcMs,
-}) {
-  return database.customInsert(
-    '''
-      INSERT INTO experiment_assignments
-        (id, owner_id, experiment_id, experiment_version, cohort,
-         protocol_version, assigned_at_utc_ms)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    ''',
-    variables: [
-      Variable<String>(id),
-      Variable<String>(ownerId),
-      Variable<String>(experimentId),
-      Variable<int>(experimentVersion),
-      Variable<String>(cohort),
-      Variable<String>(protocolVersion),
-      Variable<int>(assignedAtUtcMs),
-    ],
   );
 }
 

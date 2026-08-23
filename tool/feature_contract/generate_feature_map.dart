@@ -85,7 +85,7 @@ int runFeatureMapGenerator(
     }
     writeOutput(
       'Feature-map artifacts are current '
-      '(${artifacts.semanticHash}, revision ${featureContractRevision}).',
+      '(${artifacts.semanticHash}, revision $featureContractRevision).',
     );
     return 0;
   }
@@ -101,7 +101,7 @@ int runFeatureMapGenerator(
   if (identityCheck.revisionOnlyChange) {
     writeError(
       'Warning: revision-only feature contract change '
-      '(${identityCheck.previousRevision} -> ${featureContractRevision}); '
+      '(${identityCheck.previousRevision} -> $featureContractRevision); '
       'semantic hash is unchanged.',
     );
   }
@@ -111,7 +111,7 @@ int runFeatureMapGenerator(
   _writeUtf8(jsonFile, artifacts.normalizedJson);
   writeOutput(
     'Wrote $_markdownRelativePath and $_jsonRelativePath '
-    '(${artifacts.semanticHash}, revision ${featureContractRevision}).',
+    '(${artifacts.semanticHash}, revision $featureContractRevision).',
   );
   return 0;
 }
@@ -132,7 +132,7 @@ bool _checkArtifact(
   }
   final actualBytes = file.readAsBytesSync();
   final expectedBytes = utf8.encode(expected);
-  if (!_bytesEqual(actualBytes, expectedBytes)) {
+  if (!_bytesEqual(_canonicalizeLineEndings(actualBytes), expectedBytes)) {
     writeError('Generated feature-map artifact has drifted: $relativePath');
     return true;
   }
@@ -201,6 +201,26 @@ bool _bytesEqual(List<int> left, List<int> right) {
     }
   }
   return true;
+}
+
+/// Canonicalizes only line endings for portable generated-artifact checks.
+///
+/// Generated output remains UTF-8/LF. Existing CRLF and lone-CR files are
+/// accepted when their remaining bytes exactly match the canonical artifact.
+List<int> _canonicalizeLineEndings(List<int> bytes) {
+  final canonical = <int>[];
+  for (var index = 0; index < bytes.length; index += 1) {
+    final byte = bytes[index];
+    if (byte != 0x0d) {
+      canonical.add(byte);
+      continue;
+    }
+    canonical.add(0x0a);
+    if (index + 1 < bytes.length && bytes[index + 1] == 0x0a) {
+      index += 1;
+    }
+  }
+  return canonical;
 }
 
 String _join(String root, String relativePath) =>

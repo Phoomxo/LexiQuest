@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 class _GuestSessionService implements GuestSessionService {
@@ -43,6 +44,7 @@ void main() {
       generateId: () => 'id-${++idCounter}',
       nowUtc: () => nowUtc,
     );
+    final research = InertResearchDependencies(database);
     dependencies = AppDependencies(
       initialRoute: AppRoute.home,
       runtimeStatus: const AppRuntimeStatus(
@@ -54,6 +56,12 @@ void main() {
       config: null,
       guestSessionService: _GuestSessionService(),
       quest: testQuestUseCases(),
+      experiments: research.experiments,
+      consents: research.consents,
+      experimentAssignments: research.experimentAssignments,
+      assignedLearningEventContext: research.assignedLearningEventContext,
+      evidencePolicyRolloutModeProvider:
+          research.evidencePolicyRolloutModeProvider,
       database: database,
       localOwners: owners,
       vocabulary: vocabulary,

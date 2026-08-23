@@ -19,7 +19,6 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_policy_roll
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
-import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
@@ -318,8 +317,8 @@ final class _ComparisonHarness {
   _ComparisonHarness({
     required this.database,
     required this.useCases,
-    required _MutableClock clock,
-  }) : _clock = clock;
+    required this._clock,
+  });
 
   final AppDatabase database;
   final AssessmentUseCases useCases;

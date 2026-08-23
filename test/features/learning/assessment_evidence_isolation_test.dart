@@ -404,8 +404,23 @@ Future<int> _count(AppDatabase database, String table) async {
 }
 
 Future<void> _seedRewardState(AppDatabase database) async {
+  const coinGrantId = 'reward-coin-grant-practice';
   const purchaseId = 'reward-purchase-practice';
   const equipId = 'reward-equip-practice';
+  await database
+      .into(database.rewardTransactions)
+      .insert(
+        RewardTransactionsCompanion.insert(
+          id: coinGrantId,
+          ownerId: _ownerId,
+          idempotencyKey: 'coin-grant-practice',
+          transactionType: 'coinGrant',
+          amount: 100,
+          catalogVersion: 0,
+          sourceEventId: const Value('reward-source-practice'),
+          occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch,
+        ),
+      );
   await database
       .into(database.rewardTransactions)
       .insert(
@@ -414,10 +429,9 @@ Future<void> _seedRewardState(AppDatabase database) async {
           ownerId: _ownerId,
           idempotencyKey: 'purchase-practice',
           transactionType: 'purchase',
-          amount: 0,
-          itemId: const Value('theme_default'),
+          amount: -80,
+          itemId: const Value('theme_ocean'),
           catalogVersion: RewardCatalog.version,
-          sourceEventId: const Value('learning-event:$_practiceEvidenceId'),
           occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 1,
         ),
       );
@@ -430,9 +444,8 @@ Future<void> _seedRewardState(AppDatabase database) async {
           idempotencyKey: 'equip-practice',
           transactionType: 'equip',
           amount: 0,
-          itemId: const Value('theme_default'),
+          itemId: const Value('theme_ocean'),
           catalogVersion: RewardCatalog.version,
-          sourceEventId: const Value('learning-event:$_practiceEvidenceId'),
           occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 2,
         ),
       );

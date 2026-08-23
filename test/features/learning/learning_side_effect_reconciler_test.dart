@@ -1236,7 +1236,7 @@ void main() {
       'ownerId': ownerId,
       'idempotencyKey': idempotencyKey,
       'xpAmount': xpAmount,
-      if (rewardItemId != null) 'rewardItemId': rewardItemId,
+      'rewardItemId': ?rewardItemId,
     };
     final invalidAppliedResults = <Map<String, dynamic>>[
       <String, dynamic>{'eligible': false, 'rewardGrants': <Object>[]},

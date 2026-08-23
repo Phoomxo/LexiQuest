@@ -22,6 +22,7 @@ import 'package:vocab_learning_app/screens/setting_screen.dart';
 import 'package:vocab_learning_app/screens/vocab_list_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 class _FakeGuestSessionService implements GuestSessionService {
@@ -63,6 +64,9 @@ AppDependencies _dependencies({
   final availability = ready
       ? RuntimeAvailability.ready
       : RuntimeAvailability.unavailable;
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  final research = InertResearchDependencies(database);
   return AppDependencies(
     initialRoute: initialRoute,
     runtimeStatus: AppRuntimeStatus(
@@ -74,6 +78,12 @@ AppDependencies _dependencies({
     config: null,
     guestSessionService: _FakeGuestSessionService(),
     quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
   );
 }
 

@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
@@ -18,6 +20,7 @@ import 'package:vocab_learning_app/screens/game_launcher_screen.dart';
 import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
@@ -337,7 +340,20 @@ final class _DependenciesHost extends StatefulWidget {
 }
 
 final class _DependenciesHostState extends State<_DependenciesHost> {
+  final db.AppDatabase _researchDatabase = db.AppDatabase(
+    NativeDatabase.memory(),
+  );
+  late final InertResearchDependencies _research = InertResearchDependencies(
+    _researchDatabase,
+  );
+
   void notifyDependencyChange() => setState(() {});
+
+  @override
+  void dispose() {
+    unawaited(_researchDatabase.close());
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -353,6 +369,12 @@ final class _DependenciesHostState extends State<_DependenciesHost> {
         config: null,
         guestSessionService: _GuestSessionService(),
         quest: testQuestUseCases(),
+        experiments: _research.experiments,
+        consents: _research.consents,
+        experimentAssignments: _research.experimentAssignments,
+        assignedLearningEventContext: _research.assignedLearningEventContext,
+        evidencePolicyRolloutModeProvider:
+            _research.evidencePolicyRolloutModeProvider,
         vocabulary: widget.vocabulary,
       ),
       child: MaterialApp(home: GameLauncherScreen(gameMode: widget.gameMode)),

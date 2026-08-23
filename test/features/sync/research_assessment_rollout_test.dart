@@ -8,7 +8,6 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
-import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';

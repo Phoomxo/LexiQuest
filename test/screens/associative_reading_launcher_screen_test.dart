@@ -24,6 +24,7 @@ import 'package:vocab_learning_app/screens/categories_page.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 final class _GuestSession implements GuestSessionService {
@@ -44,6 +45,7 @@ void main() {
   AppDependencies makeDependencies({
     FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   }) {
+    final research = InertResearchDependencies(database);
     return AppDependencies(
       initialRoute: AppRoute.home,
       runtimeStatus: const AppRuntimeStatus(
@@ -55,6 +57,12 @@ void main() {
       config: null,
       guestSessionService: _GuestSession(),
       quest: testQuestUseCases(),
+      experiments: research.experiments,
+      consents: research.consents,
+      experimentAssignments: research.experimentAssignments,
+      assignedLearningEventContext: research.assignedLearningEventContext,
+      evidencePolicyRolloutModeProvider:
+          research.evidencePolicyRolloutModeProvider,
       features: features,
       database: database,
       localOwners: owners,

@@ -279,7 +279,8 @@ void main() {
         expect(
           dbContent.contains('from < 11'),
           isTrue,
-          reason: 'Schema v11 migration must exist after P0 voice/AI integration',
+          reason:
+              'Schema v11 migration must exist after P0 voice/AI integration',
         );
       },
     );
@@ -289,7 +290,8 @@ void main() {
       expect(
         dbContent.contains('schemaVersion => 11'),
         isTrue,
-        reason: 'app_database.dart schemaVersion must be 11 after P0 integration',
+        reason:
+            'app_database.dart schemaVersion must be 11 after P0 integration',
       );
     });
   });

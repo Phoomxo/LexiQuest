@@ -748,7 +748,7 @@ void main() {
           'sourceEventId': sourceEventId,
           'occurredAtUtcMs':
               occurredAtUtcMs ?? event.recordedAtUtc.millisecondsSinceEpoch,
-          if (rewardItemId != null) 'rewardItemId': rewardItemId,
+          'rewardItemId': ?rewardItemId,
         };
 
         final invalid = <(String, Map<String, dynamic>)>[

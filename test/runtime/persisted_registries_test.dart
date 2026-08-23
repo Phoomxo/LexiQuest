@@ -288,8 +288,8 @@ void main() {
 
       expect(assignment, isNotNull);
       expect(assignment!.ownerId, 'owner-a');
-      expect(assignment!.cohort, 'intervention');
-      expect(assignment!.assignedAtUtc, assignedAt);
+      expect(assignment.cohort, 'intervention');
+      expect(assignment.assignedAtUtc, assignedAt);
       expect(await _assignmentCount(database), 1);
     });
 
@@ -369,9 +369,11 @@ void main() {
       );
 
       expect(context.consentContext.researchConsentVersion, 7);
-      expect(context.experimentContext!.experimentId, 'context-experiment');
-      expect(context.experimentContext!.variantId, 'intervention');
-      expect(context.experimentContext!.assignedAtUtc, assignedAt);
+      final experimentContext = context.experimentContext;
+      expect(experimentContext, isNotNull);
+      expect(experimentContext!.experimentId, 'context-experiment');
+      expect(experimentContext.variantId, 'intervention');
+      expect(experimentContext.assignedAtUtc, assignedAt);
       expect(context.protocolId, 'study-protocol');
       expect(context.protocolVersion, 'protocol-2');
       expect(context.experimentVersion, 2);
@@ -1000,6 +1002,9 @@ Future<void> _putConsent(
   int? withdrawnAtUtcMs,
 }) {
   final withdrawal = withdrawnAtUtcMs;
+  final withdrawalVariable = withdrawal == null
+      ? null
+      : Variable<int>(withdrawal);
   return database.transaction(() async {
     await database.customStatement(
       'DELETE FROM research_consents '
@@ -1017,7 +1022,7 @@ Future<void> _putConsent(
         Variable<int>(version),
         Variable<String>(state),
         Variable<int>(decidedAtUtcMs),
-        if (withdrawal != null) Variable<int>(withdrawal),
+        ?withdrawalVariable,
       ],
     );
   });

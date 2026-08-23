@@ -46,12 +46,14 @@ class ResearchDataExporterService {
           if (row is! Map) continue;
           final id = row['id'];
           if (id is String && seen.contains(id)) {
-            errors.add(ResearchExportError(
-              code: 'duplicateId',
-              message: 'Duplicate attempt ID found.',
-              rowNumber: i + 1,
-              entityId: id,
-            ));
+            errors.add(
+              ResearchExportError(
+                code: 'duplicateId',
+                message: 'Duplicate attempt ID found.',
+                rowNumber: i + 1,
+                entityId: id,
+              ),
+            );
           } else if (id is String) {
             seen.add(id);
           }
@@ -59,11 +61,14 @@ class ResearchDataExporterService {
       }
 
       if (recordCount < 10) {
-        errors.add(ResearchExportError(
-          code: 'insufficientData',
-          message: 'Dataset has only $recordCount records. '
-              'Results may not be statistically meaningful.',
-        ));
+        errors.add(
+          ResearchExportError(
+            code: 'insufficientData',
+            message:
+                'Dataset has only $recordCount records. '
+                'Results may not be statistically meaningful.',
+          ),
+        );
       }
 
       return ResearchExportReport(
@@ -74,10 +79,7 @@ class ResearchDataExporterService {
     } on FormatException catch (e) {
       return ResearchExportReport(
         errors: [
-          ResearchExportError(
-            code: 'jsonParseError',
-            message: e.message,
-          ),
+          ResearchExportError(code: 'jsonParseError', message: e.message),
         ],
       );
     }

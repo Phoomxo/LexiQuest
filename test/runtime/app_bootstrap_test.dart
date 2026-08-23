@@ -14,8 +14,8 @@ import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.d
 import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_instrument_catalog.dart';
-import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
@@ -30,8 +30,6 @@ import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
-import 'package:vocab_learning_app/features/research/domain/experiment_assignment.dart';
-import 'package:vocab_learning_app/features/research/domain/research_protocol_mode_catalog.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
@@ -842,7 +840,7 @@ void main() {
           EvidencePolicyRolloutMode.legacy,
         );
         await expectLater(
-          dependencies.assignedLearningEventContext!.resolve(
+          dependencies.assignedLearningEventContext.resolve(
             ownerId: owner.id,
             evidenceContext: missingAssessment,
             occurredAtUtc: DateTime.utc(2026, 8, 14, 8),
@@ -859,7 +857,7 @@ void main() {
           consentVersion: 7,
           decidedAtUtc: decidedAt,
         );
-        final assignment = await dependencies.experimentAssignments!
+        final assignment = await dependencies.experimentAssignments
             .assignIfConsented(
               ownerId: owner.id,
               experimentId: 'bootstrap-experiment',
@@ -869,7 +867,7 @@ void main() {
               consentVersion: 7,
               assignedAtUtc: assignedAt,
             );
-        final replay = await dependencies.experimentAssignments!
+        final replay = await dependencies.experimentAssignments
             .assignIfConsented(
               ownerId: owner.id,
               experimentId: 'bootstrap-experiment',
@@ -911,7 +909,7 @@ void main() {
           ),
           EvidencePolicyRolloutMode.shadow,
         );
-        final eventContext = await dependencies.assignedLearningEventContext!
+        final eventContext = await dependencies.assignedLearningEventContext
             .resolve(
               ownerId: owner.id,
               evidenceContext: evidence,
@@ -988,7 +986,7 @@ void main() {
             researchProtocolModeCatalog: _bootstrapProtocolModeCatalog,
           );
           first = await firstBootstrap.initialize();
-          final firstDependencies = first!;
+          final firstDependencies = first;
           final owner = await firstDependencies.localOwners!
               .getOrCreateActiveOwner();
           await _putBootstrapConsent(
@@ -997,7 +995,7 @@ void main() {
             consentVersion: 7,
             decidedAtUtc: decidedAt,
           );
-          assignment = await firstDependencies.experimentAssignments!
+          assignment = await firstDependencies.experimentAssignments
               .assignIfConsented(
                 ownerId: owner.id,
                 experimentId: 'bootstrap-experiment',
@@ -1039,7 +1037,7 @@ void main() {
             researchProtocolModeCatalog: _bootstrapProtocolModeCatalog,
           );
           second = await secondBootstrap.initialize();
-          final secondDependencies = second!;
+          final secondDependencies = second;
           final reopenedOwner = await secondDependencies.localOwners!
               .getOrCreateActiveOwner();
           final reopenedAssignment = await secondDependencies.experiments
@@ -1111,7 +1109,7 @@ void main() {
             EvidencePolicyRolloutMode.shadow,
           );
           expect(
-            await secondDependencies.experimentAssignments!.assignIfConsented(
+            await secondDependencies.experimentAssignments.assignIfConsented(
               ownerId: reopenedOwner.id,
               experimentId: 'bootstrap-experiment',
               experimentVersion: 1,

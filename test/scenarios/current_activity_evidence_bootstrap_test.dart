@@ -6,7 +6,6 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
-import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';

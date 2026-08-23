@@ -38,6 +38,8 @@ import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
+
 void main() {
   final productionEntries = <_ProductionEntryCase>[
     const _ProductionEntryCase(
@@ -411,6 +413,7 @@ AppDependencies _dependencies(
 ) {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
+  final research = InertResearchDependencies(database);
   final owners = _OwnerRepository();
   final learning = LearningUseCases(
     owners: owners,
@@ -429,6 +432,12 @@ AppDependencies _dependencies(
     ),
     config: null,
     guestSessionService: _GuestSessionService(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
     features: features,
     localOwners: owners,
     learning: learning,

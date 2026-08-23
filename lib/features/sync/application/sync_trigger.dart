@@ -99,7 +99,7 @@ final class SyncTrigger {
       final delay = retryDelay(retryInterval);
       final stopWaiting = await Future.any<bool>(<Future<bool>>[
         delay.then((_) => false),
-        if (cancelled != null) cancelled.then((_) => true),
+        ?cancelled?.then((_) => true),
         _disposeSignal.future.then((_) => true),
       ]);
       if (stopWaiting) return last;

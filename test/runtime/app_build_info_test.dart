@@ -1,5 +1,7 @@
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
@@ -9,6 +11,7 @@ import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
+import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 class _FakeGuestSessionService implements GuestSessionService {
@@ -22,6 +25,9 @@ AppDependencies _dependencies(
   Future<void> Function()? disposeResources,
   SyncTrigger? syncTrigger,
 }) {
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  final research = InertResearchDependencies(database);
   return AppDependencies(
     initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
@@ -33,6 +39,12 @@ AppDependencies _dependencies(
     config: null,
     guestSessionService: _FakeGuestSessionService(),
     quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
     buildInfo: buildInfo,
     syncTrigger: syncTrigger,
     disposeResources: disposeResources,

@@ -486,7 +486,8 @@ final class AssessmentUseCases {
         persisted.appVersion == buildInfo.version &&
         persisted.buildId == buildInfo.buildId &&
         persisted.databaseSchemaVersion == databaseSchemaVersion &&
-        persisted.evidencePolicyVersion == EvidenceContext.currentPolicyVersion &&
+        persisted.evidencePolicyVersion ==
+            EvidenceContext.currentPolicyVersion &&
         persisted.featureContractRevision ==
             currentFeatureContractIdentity.revision &&
         persisted.featureContractHash ==

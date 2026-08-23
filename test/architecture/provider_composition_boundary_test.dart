@@ -418,6 +418,16 @@ final interpolated = '${PendingCapability.interpolated()}';
         ),
         const <String, int>{
           'lib/features/learning/domain/evidence_policy_rollout.dart': 1,
+        },
+      );
+      expect(
+        _matchCounts(
+          production,
+          RegExp(r'\bPersistedEvidencePolicyRolloutModeProvider\s*\('),
+        ),
+        const <String, int>{
+          'lib/features/research/application/assigned_learning_event_context_provider.dart':
+              1,
           'lib/runtime/app_bootstrap.dart': 1,
         },
       );
@@ -457,7 +467,6 @@ final interpolated = '${PendingCapability.interpolated()}';
         'lib/features/identity/data/drift_owner_upgrade_repository.dart',
         'lib/features/sync/data/drift_sync_store.dart',
         'lib/features/learning/application/current_activity_evidence.dart',
-        'lib/runtime/app_bootstrap.dart',
       ];
       for (final path in productionConsumers) {
         expect(
@@ -466,6 +475,21 @@ final interpolated = '${PendingCapability.interpolated()}';
           reason: '$path must import the canonical domain authority',
         );
       }
+      const persistedProviderPath =
+          'lib/features/research/application/'
+          'assigned_learning_event_context_provider.dart';
+      final persistedProvider = _read(persistedProviderPath);
+      expect(
+        persistedProvider,
+        contains('evidence_policy_rollout.dart'),
+        reason:
+            '$persistedProviderPath must import the canonical domain authority',
+      );
+      expect(
+        persistedProvider,
+        contains('implements EvidencePolicyRolloutModeProvider'),
+        reason: '$persistedProviderPath must implement the canonical authority',
+      );
     },
   );
 

@@ -815,10 +815,7 @@ Future<void> _seedOwner(AppDatabase database, String ownerId) {
   );
 }
 
-Future<void> _seedConsent(
-  AppDatabase database, {
-  required String ownerId,
-}) {
+Future<void> _seedConsent(AppDatabase database, {required String ownerId}) {
   return database.customInsert(
     'INSERT INTO research_consents('
     'id, owner_id, consent_version, consent_state, decided_at_utc_ms, '

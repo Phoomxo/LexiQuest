@@ -203,6 +203,37 @@ void main() {
       expect(json.readAsBytesSync(), beforeJson);
     });
 
+    test(
+      '--check accepts byte-equivalent CRLF artifacts without rewriting',
+      () {
+        expect(
+          runFeatureMapGenerator(const <String>[
+            '--write',
+          ], repositoryRoot: repositoryRoot),
+          0,
+        );
+        final markdown = _markdownFile(repositoryRoot);
+        final json = _jsonFile(repositoryRoot);
+        markdown.writeAsBytesSync(
+          utf8.encode(markdown.readAsStringSync().replaceAll('\n', '\r\n')),
+        );
+        json.writeAsBytesSync(
+          utf8.encode(json.readAsStringSync().replaceAll('\n', '\r\n')),
+        );
+        final beforeMarkdown = markdown.readAsBytesSync();
+        final beforeJson = json.readAsBytesSync();
+
+        expect(
+          runFeatureMapGenerator(const <String>[
+            '--check',
+          ], repositoryRoot: repositoryRoot),
+          0,
+        );
+        expect(markdown.readAsBytesSync(), beforeMarkdown);
+        expect(json.readAsBytesSync(), beforeJson);
+      },
+    );
+
     test('unsupported arguments exit 64 without creating artifacts', () {
       final errors = <String>[];
 
