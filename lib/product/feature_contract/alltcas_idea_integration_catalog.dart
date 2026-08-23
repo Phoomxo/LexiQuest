@@ -3,7 +3,8 @@ import '../../runtime/registries/feature.dart';
 import 'compatibility_profiles.dart';
 import 'feature_contract_models.dart';
 
-const String featureContractRevision = '1.0.0';
+const String featureContractRevision = '1.1.0';
+const String featureContractInitialRevision = '1.0.0';
 const String featureContractBaselineCommit = '61a4fec';
 const int featureContractSchemaVersion = 1;
 const String featureContractGeneratorVersion = '1.0.0';
@@ -40,6 +41,20 @@ const productContractIdsByRuntimeFeature = <Feature, Set<FeatureContractId>>{
   Feature.export: <FeatureContractId>{FeatureContractId.f40},
   Feature.shadowRewardV2: <FeatureContractId>{FeatureContractId.f29},
   Feature.questV2: <FeatureContractId>{FeatureContractId.f29},
+  Feature.studyPlanning: <FeatureContractId>{
+    FeatureContractId.f01,
+    FeatureContractId.f26,
+    FeatureContractId.f27,
+  },
+  Feature.researchAssessment: <FeatureContractId>{FeatureContractId.f28},
+  Feature.dailyContinuity: <FeatureContractId>{
+    FeatureContractId.f22,
+    FeatureContractId.f30,
+    FeatureContractId.f37,
+    FeatureContractId.f42,
+    FeatureContractId.f43,
+  },
+  Feature.offlineContent: <FeatureContractId>{FeatureContractId.f44},
 };
 
 final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
@@ -742,7 +757,7 @@ final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
           'test/architecture/alltcas_idea_feature_contract_test.dart',
         ),
       ],
-      introductionRevision: featureContractRevision,
+      introductionRevision: featureContractInitialRevision,
     ),
     ExperimentalCandidate.validated(
       id: ExperimentalCandidateId.expP2,
@@ -762,7 +777,7 @@ final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
           'test/architecture/alltcas_idea_feature_contract_test.dart',
         ),
       ],
-      introductionRevision: featureContractRevision,
+      introductionRevision: featureContractInitialRevision,
     ),
   ],
 );
@@ -820,7 +835,7 @@ ProductFeatureContract _record({
         'test/architecture/alltcas_idea_feature_contract_test.dart',
       ),
     ],
-    introductionRevision: featureContractRevision,
+    introductionRevision: featureContractInitialRevision,
   );
 }
 

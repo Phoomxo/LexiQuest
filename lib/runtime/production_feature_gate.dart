@@ -1,9 +1,14 @@
 import 'package:flutter/material.dart';
 
 import 'app_dependencies.dart';
+import 'production_feature_contract.dart';
 import 'registries/feature_registry.dart';
 
-enum ProductionFeatureUnavailableReason { missingRegistry, unavailableState }
+enum ProductionFeatureUnavailableReason {
+  missingRegistry,
+  unavailableState,
+  missingDependency,
+}
 
 /// Shared fail-closed experience for stale or direct feature routes.
 final class ProductionFeatureUnavailable extends StatelessWidget {
@@ -116,6 +121,20 @@ final class _ProductionFeatureGateState extends State<ProductionFeatureGate> {
       return ProductionFeatureUnavailable(
         feature: widget.feature,
         reason: ProductionFeatureUnavailableReason.unavailableState,
+        state: state,
+      );
+    }
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final delivery = productionFeatureContract[widget.feature];
+    if (dependencies == null ||
+        delivery == null ||
+        !delivery.durable ||
+        delivery.productionEntryId.isEmpty ||
+        delivery.dependencyId.isEmpty ||
+        !dependencies.hasComposedDependencyFor(widget.feature)) {
+      return ProductionFeatureUnavailable(
+        feature: widget.feature,
+        reason: ProductionFeatureUnavailableReason.missingDependency,
         state: state,
       );
     }

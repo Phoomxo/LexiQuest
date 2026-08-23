@@ -3,9 +3,9 @@ import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
-  test('production delivery contract is the exact frozen 15-row contract', () {
+  test('production delivery contract is the exact frozen 19-row contract', () {
     expect(productionFeatureContract.keys.toSet(), Feature.values.toSet());
-    expect(productionFeatureContract, hasLength(15));
+    expect(productionFeatureContract, hasLength(19));
 
     const expected =
         <
@@ -88,6 +88,26 @@ void main() {
             dependencyId: 'QuestUseCases',
             durable: true,
           ),
+          Feature.studyPlanning: (
+            productionEntryId: 'home/study-planning',
+            dependencyId: 'StudyPlanningUseCases',
+            durable: true,
+          ),
+          Feature.researchAssessment: (
+            productionEntryId: 'research/assessment',
+            dependencyId: 'AssessmentUseCases',
+            durable: true,
+          ),
+          Feature.dailyContinuity: (
+            productionEntryId: 'home/today',
+            dependencyId: 'TodayHubUseCases',
+            durable: true,
+          ),
+          Feature.offlineContent: (
+            productionEntryId: 'settings/offline-content',
+            dependencyId: 'OfflineContentManager',
+            durable: true,
+          ),
         };
 
     for (final entry in expected.entries) {
@@ -106,6 +126,10 @@ void main() {
     expect(registry.configuredFeatures.toSet(), Feature.values.toSet());
     expect(registry.stateOf(Feature.shadowRewardV2), FeatureState.hidden);
     expect(registry.stateOf(Feature.questV2), FeatureState.limited);
+    expect(registry.stateOf(Feature.studyPlanning), FeatureState.hidden);
+    expect(registry.stateOf(Feature.researchAssessment), FeatureState.hidden);
+    expect(registry.stateOf(Feature.dailyContinuity), FeatureState.hidden);
+    expect(registry.stateOf(Feature.offlineContent), FeatureState.hidden);
 
     for (final delivery in productionFeatureContract.values) {
       final state = registry.stateOf(delivery.feature);

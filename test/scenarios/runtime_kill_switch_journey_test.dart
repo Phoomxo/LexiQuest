@@ -5,12 +5,19 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_screen.dart';
 import 'package:vocab_learning_app/screens/ai_tutor_settings_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 void main() {
   test(
@@ -115,12 +122,15 @@ void main() {
     });
     await controls.initialize();
     await tester.pumpWidget(
-      MaterialApp(
-        home: ProductionFeatureGate(
-          feature: Feature.aiTutor,
-          registry: registry,
-          builder: (_) =>
-              AiTutorScreen(aiTutor: tutor, featureRegistry: registry),
+      AppDependenciesScope(
+        dependencies: _dependencies(database, registry, aiTutor: tutor),
+        child: MaterialApp(
+          home: ProductionFeatureGate(
+            feature: Feature.aiTutor,
+            registry: registry,
+            builder: (_) =>
+                AiTutorScreen(aiTutor: tutor, featureRegistry: registry),
+          ),
         ),
       ),
     );
@@ -163,7 +173,7 @@ void main() {
         () => _RuntimeHarness.open(file, clock),
       ))!;
       harnesses.add(first);
-      await _pumpProductionShell(tester, first.registry);
+      await _pumpProductionShell(tester, first);
       await _openDrawer(tester);
       final entry = find.byKey(const ValueKey<String>('drawer/ai-tutor/chat'));
       await tester.scrollUntilVisible(
@@ -205,7 +215,7 @@ void main() {
         () => _RuntimeHarness.open(file, clock),
       ))!;
       harnesses.add(restarted);
-      await _pumpProductionShell(tester, restarted.registry);
+      await _pumpProductionShell(tester, restarted);
       await _openDrawer(tester);
       expect(entry, findsNothing);
       await Navigator.of(
@@ -244,7 +254,7 @@ void main() {
         () => _RuntimeHarness.open(file, clock),
       ))!;
       harnesses.add(clearedRestart);
-      await _pumpProductionShell(tester, clearedRestart.registry);
+      await _pumpProductionShell(tester, clearedRestart);
       await _openDrawer(tester);
       await tester.scrollUntilVisible(
         entry,
@@ -261,12 +271,45 @@ void main() {
 
 Future<void> _pumpProductionShell(
   WidgetTester tester,
-  RuntimeFeatureRegistry registry,
+  _RuntimeHarness harness,
 ) async {
   await tester.pumpWidget(
-    MaterialApp(home: MainNavigationScreen(featureRegistry: registry)),
+    AppDependenciesScope(
+      dependencies: _dependencies(harness.database, harness.registry),
+      child: MaterialApp(
+        home: MainNavigationScreen(featureRegistry: harness.registry),
+      ),
+    ),
   );
   await tester.pumpAndSettle();
+}
+
+AppDependencies _dependencies(
+  AppDatabase database,
+  FeatureRegistry features, {
+  AiTutorController? aiTutor,
+}) {
+  final research = InertResearchDependencies(database);
+  return AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.ready,
+      supabase: RuntimeAvailability.ready,
+      backends: RuntimeAvailability.ready,
+    ),
+    config: null,
+    guestSessionService: _GuestSessionService(),
+    quest: testQuestUseCases(),
+    features: features,
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
+    aiTutor: aiTutor ?? _RecordingAiTutorController(),
+  );
 }
 
 Future<void> _openDrawer(WidgetTester tester) async {
@@ -439,4 +482,10 @@ final class _RecordingAiTutorController implements AiTutorController {
     required bool providerConsent,
     required bool shareLearningSummary,
   }) async => totalCalls += 1;
+}
+
+final class _GuestSessionService implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'runtime-kill-switch');
 }

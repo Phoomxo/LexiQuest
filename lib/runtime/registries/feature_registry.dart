@@ -56,6 +56,10 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.export: FeatureState.enabled,
         Feature.shadowRewardV2: FeatureState.hidden,
         Feature.questV2: FeatureState.limited,
+        Feature.studyPlanning: FeatureState.hidden,
+        Feature.researchAssessment: FeatureState.hidden,
+        Feature.dailyContinuity: FeatureState.hidden,
+        Feature.offlineContent: FeatureState.hidden,
       };
 
   const BuildFeatureRegistry.allEnabled()
@@ -75,6 +79,10 @@ final class BuildFeatureRegistry implements FeatureRegistry {
         Feature.export: FeatureState.enabled,
         Feature.shadowRewardV2: FeatureState.enabled,
         Feature.questV2: FeatureState.enabled,
+        Feature.studyPlanning: FeatureState.enabled,
+        Feature.researchAssessment: FeatureState.enabled,
+        Feature.dailyContinuity: FeatureState.enabled,
+        Feature.offlineContent: FeatureState.enabled,
       };
 
   final Map<Feature, FeatureState> _states;

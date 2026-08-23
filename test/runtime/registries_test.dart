@@ -84,7 +84,11 @@ void main() {
       expect(reg.stateOf(Feature.aiTutor), FeatureState.limited);
       expect(reg.stateOf(Feature.objectScanner), FeatureState.limited);
       expect(reg.stateOf(Feature.speechPractice), FeatureState.limited);
-      // Unknown feature is hidden
+      // Broad 8/44 delivery parents are implemented-off until composed.
+      expect(reg.stateOf(Feature.studyPlanning), FeatureState.hidden);
+      expect(reg.stateOf(Feature.researchAssessment), FeatureState.hidden);
+      expect(reg.stateOf(Feature.dailyContinuity), FeatureState.hidden);
+      expect(reg.stateOf(Feature.offlineContent), FeatureState.hidden);
       expect(reg.isVisible(Feature.aiTutor), isTrue); // limited is visible
     });
 

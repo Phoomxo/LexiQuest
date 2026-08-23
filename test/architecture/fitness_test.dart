@@ -698,7 +698,7 @@ void main() {
   // ---------------------------------------------------------------------------
 
   test(
-    'T18 — exact 44-product and 15-runtime catalogs generate exact docs',
+    'T18 — exact 44-product and 19-runtime catalogs generate exact docs',
     () {
       expect(FeatureContractId.values, hasLength(44));
       expect(allTcasIdeaIntegrationCatalog.records, hasLength(44));
@@ -706,8 +706,8 @@ void main() {
         allTcasIdeaIntegrationCatalog.records.map((record) => record.id),
         orderedEquals(FeatureContractId.values),
       );
-      expect(Feature.values, hasLength(15));
-      expect(productionFeatureContract, hasLength(15));
+      expect(Feature.values, hasLength(19));
+      expect(productionFeatureContract, hasLength(19));
       expect(productionFeatureContract.keys.toSet(), Feature.values.toSet());
       expect(
         productContractIdsByRuntimeFeature.keys.toSet(),

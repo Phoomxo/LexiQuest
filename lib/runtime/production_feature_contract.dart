@@ -6,12 +6,14 @@ final class ProductionFeatureDelivery {
     required this.productionEntryId,
     required this.dependencyId,
     required this.durable,
+    this.screenClassName = '',
   });
 
   final Feature feature;
   final String productionEntryId;
   final String dependencyId;
   final bool durable;
+  final String screenClassName;
 }
 
 const productionFeatureContract = <Feature, ProductionFeatureDelivery>{
@@ -104,5 +106,33 @@ const productionFeatureContract = <Feature, ProductionFeatureDelivery>{
     productionEntryId: 'drawer/rewards/quests',
     dependencyId: 'QuestUseCases',
     durable: true,
+  ),
+  Feature.studyPlanning: ProductionFeatureDelivery(
+    feature: Feature.studyPlanning,
+    productionEntryId: 'home/study-planning',
+    dependencyId: 'StudyPlanningUseCases',
+    durable: true,
+    screenClassName: 'StudyPlanningHubScreen',
+  ),
+  Feature.researchAssessment: ProductionFeatureDelivery(
+    feature: Feature.researchAssessment,
+    productionEntryId: 'research/assessment',
+    dependencyId: 'AssessmentUseCases',
+    durable: true,
+    screenClassName: 'PrePostAssessmentScreen',
+  ),
+  Feature.dailyContinuity: ProductionFeatureDelivery(
+    feature: Feature.dailyContinuity,
+    productionEntryId: 'home/today',
+    dependencyId: 'TodayHubUseCases',
+    durable: true,
+    screenClassName: 'TodayHubScreen',
+  ),
+  Feature.offlineContent: ProductionFeatureDelivery(
+    feature: Feature.offlineContent,
+    productionEntryId: 'settings/offline-content',
+    dependencyId: 'OfflineContentManager',
+    durable: true,
+    screenClassName: 'OfflineContentManagerScreen',
   ),
 };

@@ -12,7 +12,7 @@ import 'package:vocab_learning_app/runtime/registries/feature.dart';
 void main() {
   group('AllTCAS 8/44 product feature contract', () {
     test('pins the catalog metadata and exact approved definitions', () {
-      expect(featureContractRevision, '1.0.0');
+      expect(featureContractRevision, '1.1.0');
       expect(featureContractBaselineCommit, '61a4fec');
       expect(featureContractSchemaVersion, 1);
       expect(featureContractGeneratorVersion, '1.0.0');
@@ -691,8 +691,22 @@ void main() {
         Feature.export: {FeatureContractId.f40},
         Feature.shadowRewardV2: {FeatureContractId.f29},
         Feature.questV2: {FeatureContractId.f29},
+        Feature.studyPlanning: {
+          FeatureContractId.f01,
+          FeatureContractId.f26,
+          FeatureContractId.f27,
+        },
+        Feature.researchAssessment: {FeatureContractId.f28},
+        Feature.dailyContinuity: {
+          FeatureContractId.f22,
+          FeatureContractId.f30,
+          FeatureContractId.f37,
+          FeatureContractId.f42,
+          FeatureContractId.f43,
+        },
+        Feature.offlineContent: {FeatureContractId.f44},
       };
-      expect(Feature.values, hasLength(15));
+      expect(Feature.values, hasLength(19));
       expect(productContractIdsByRuntimeFeature, expected);
       expect(
         productContractIdsByRuntimeFeature.keys.toSet(),

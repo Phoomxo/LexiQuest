@@ -131,6 +131,30 @@ final class AppDependencies {
   final Future<void> Function()? disposeResources;
   Future<void>? _disposeFuture;
 
+  /// Reports whether the canonical composition root can satisfy one runtime
+  /// delivery. Unknown and not-yet-composed broad parents remain unavailable
+  /// even if a registry override makes their flag visible.
+  bool hasComposedDependencyFor(Feature feature) => switch (feature) {
+    Feature.vocabulary => vocabulary != null,
+    Feature.quiz || Feature.srs || Feature.ghostDuel => learning != null,
+    Feature.reading =>
+      vocabulary != null && learning != null && associativeLearning != null,
+    Feature.mastery ||
+    Feature.weakness ||
+    Feature.achievements => progress != null,
+    Feature.shop => rewards != null,
+    Feature.objectScanner => objectScanner != null,
+    Feature.speechPractice => speechPractice != null,
+    Feature.aiTutor => aiTutor != null,
+    Feature.export => exports != null,
+    Feature.shadowRewardV2 => false,
+    Feature.questV2 => true,
+    Feature.studyPlanning => false,
+    Feature.researchAssessment => assessment != null,
+    Feature.dailyContinuity => false,
+    Feature.offlineContent => false,
+  };
+
   Future<void> dispose() {
     return _disposeFuture ??= disposeResources?.call() ?? Future<void>.value();
   }

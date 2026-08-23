@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "revision": "1.0.0",
+  "revision": "1.1.0",
   "baselineCommit": "61a4fec",
   "generatorVersion": "1.0.0",
-  "semanticHash": "f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0",
+  "semanticHash": "40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27",
   "records": [
     {
       "id": "f01",
@@ -16,6 +16,7 @@
       "coverage": "partial",
       "researchRole": "infrastructure",
       "runtimeFeatures": [
+        "studyPlanning",
         "vocabulary"
       ],
       "dependencies": [],
@@ -29,7 +30,8 @@
       "rolloutProfileId": "rollout.existing-runtime",
       "rollbackProfileId": "rollback.runtime-flag",
       "productionEntryIds": [
-        "home/vocabulary"
+        "home/vocabulary",
+        "home/study-planning"
       ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
@@ -685,6 +687,7 @@
       "coverage": "partial",
       "researchRole": "intervention",
       "runtimeFeatures": [
+        "dailyContinuity",
         "srs"
       ],
       "dependencies": [
@@ -702,7 +705,8 @@
       "rolloutProfileId": "rollout.existing-runtime",
       "rollbackProfileId": "rollback.runtime-flag",
       "productionEntryIds": [
-        "home/learn/srs"
+        "home/learn/srs",
+        "home/today"
       ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
@@ -803,16 +807,20 @@
       "provenance": "adaptedToLexiQuest",
       "coverage": "newCapability",
       "researchRole": "neutral",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "studyPlanning"
+      ],
       "dependencies": [],
       "authorityDependencies": [],
       "authorityProfileId": "authority.read-only",
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.new-capability",
-      "activationProfileId": "activation.always-on-foundation",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/study-planning"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -828,7 +836,9 @@
       "provenance": "adaptedToLexiQuest",
       "coverage": "newCapability",
       "researchRole": "engagement",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "studyPlanning"
+      ],
       "dependencies": [
         "f22",
         "f26"
@@ -837,10 +847,12 @@
       "authorityProfileId": "authority.read-only",
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.new-capability",
-      "activationProfileId": "activation.always-on-foundation",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/study-planning"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -856,7 +868,9 @@
       "provenance": "lexiQuestControl",
       "coverage": "newCapability",
       "researchRole": "measurement",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "researchAssessment"
+      ],
       "dependencies": [
         "f04",
         "f05"
@@ -871,7 +885,9 @@
       "activationProfileId": "activation.protocol-assigned",
       "rolloutProfileId": "rollout.controlled",
       "rollbackProfileId": "rollback.protocol",
-      "productionEntryIds": [],
+      "productionEntryIds": [
+        "research/assessment"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -921,7 +937,9 @@
       "provenance": "adaptedToLexiQuest",
       "coverage": "existing",
       "researchRole": "engagement",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "dailyContinuity"
+      ],
       "dependencies": [
         "f24"
       ],
@@ -931,10 +949,12 @@
       "authorityProfileId": "authority.writer.streak",
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.existing",
-      "activationProfileId": "activation.always-on-foundation",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/today"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -1141,7 +1161,9 @@
       "provenance": "lexiQuestControl",
       "coverage": "partial",
       "researchRole": "intervention",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "dailyContinuity"
+      ],
       "dependencies": [
         "f15",
         "f36"
@@ -1153,9 +1175,11 @@
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.partial",
       "activationProfileId": "activation.read-model-only",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/today"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -1283,7 +1307,9 @@
       "provenance": "lexiQuestControl",
       "coverage": "newCapability",
       "researchRole": "neutral",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "dailyContinuity"
+      ],
       "dependencies": [
         "f22",
         "f37"
@@ -1296,9 +1322,11 @@
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.new-capability",
       "activationProfileId": "activation.read-model-only",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/today"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -1314,7 +1342,9 @@
       "provenance": "lexiQuestControl",
       "coverage": "partial",
       "researchRole": "measurement",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "dailyContinuity"
+      ],
       "dependencies": [
         "f40"
       ],
@@ -1325,9 +1355,11 @@
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.partial",
       "activationProfileId": "activation.read-model-only",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "home/today"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],
@@ -1343,7 +1375,9 @@
       "provenance": "lexiQuestControl",
       "coverage": "partial",
       "researchRole": "infrastructure",
-      "runtimeFeatures": [],
+      "runtimeFeatures": [
+        "offlineContent"
+      ],
       "dependencies": [
         "f04",
         "f40"
@@ -1354,10 +1388,12 @@
       "authorityProfileId": "authority.writer.download-state",
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.partial",
-      "activationProfileId": "activation.always-on-foundation",
-      "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
-      "productionEntryIds": [],
+      "activationProfileId": "activation.runtime-flagged",
+      "rolloutProfileId": "rollout.existing-runtime",
+      "rollbackProfileId": "rollback.runtime-flag",
+      "productionEntryIds": [
+        "settings/offline-content"
+      ],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"
       ],

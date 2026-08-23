@@ -58,6 +58,11 @@ const List<FeatureContractIdentity> supportedFeatureContractIdentities =
         semanticHash:
             'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0',
       ),
+      FeatureContractIdentity(
+        revision: '1.1.0',
+        semanticHash:
+            '40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27',
+      ),
     ];
 
 Map<String, Object> _semanticRecordJson(

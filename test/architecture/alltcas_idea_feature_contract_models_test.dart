@@ -48,7 +48,7 @@ const _seedCatalog = ProductFeatureCatalog(
 );
 
 void main() {
-  test('runtime feature identities remain the exact persisted 15 names', () {
+  test('runtime feature identities remain the exact persisted 19 names', () {
     expect(Feature.values.map((value) => value.name), const <String>[
       'vocabulary',
       'quiz',
@@ -65,6 +65,10 @@ void main() {
       'export',
       'shadowRewardV2',
       'questV2',
+      'studyPlanning',
+      'researchAssessment',
+      'dailyContinuity',
+      'offlineContent',
     ]);
   });
 

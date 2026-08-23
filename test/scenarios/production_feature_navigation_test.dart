@@ -1,19 +1,40 @@
+import 'dart:typed_data';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
-    hide LocalOwner, QuestDefinition, QuestInstance;
+    hide
+        LocalOwner,
+        QuestDefinition,
+        QuestInstance,
+        VocabularyCategory,
+        VocabularyWord;
+import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
+import 'package:vocab_learning_app/features/export/application/export_use_cases.dart';
+import 'package:vocab_learning_app/features/export/data/drift_export_reader.dart';
+import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_repository.dart';
+import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_category.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/main.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
@@ -422,6 +443,12 @@ AppDependencies _dependencies(
     nowUtc: () => DateTime.utc(2026, 8, 11),
     buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
   );
+  final vocabulary = VocabularyUseCases(
+    owners: owners,
+    vocabulary: _NavigationVocabularyRepository(),
+    generateId: () => 'navigation-vocabulary-id',
+    nowUtc: () => DateTime.utc(2026, 8, 11),
+  );
   return AppDependencies(
     initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
@@ -432,6 +459,7 @@ AppDependencies _dependencies(
     ),
     config: null,
     guestSessionService: _GuestSessionService(),
+    database: database,
     experiments: research.experiments,
     consents: research.consents,
     experimentAssignments: research.experimentAssignments,
@@ -441,11 +469,28 @@ AppDependencies _dependencies(
     features: features,
     localOwners: owners,
     learning: learning,
+    vocabulary: vocabulary,
+    associativeLearning: InMemoryAssociativeLearningAdapter(),
     currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
     progress: ProgressUseCases(
       owners: owners,
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.utc(2026, 8, 11),
+    ),
+    rewards: RewardUseCases(
+      owners: owners,
+      repository: DriftRewardRepository(database),
+      generateId: () => 'navigation-reward-id',
+      nowUtc: () => DateTime.utc(2026, 8, 11),
+    ),
+    objectScanner: _NavigationObjectScannerController(),
+    speechPractice: SpeechPracticeUseCases(_NavigationSpeechGateway()),
+    aiTutor: _NavigationAiTutorController(),
+    exports: ExportUseCases(
+      reader: DriftExportReader(database),
+      store: _NavigationExportStore(),
+      nowUtc: () => DateTime.utc(2026, 8, 11),
+      loadThaiFont: () async => ByteData(0),
     ),
     quest: QuestUseCases(
       repository: repository,
@@ -455,6 +500,59 @@ AppDependencies _dependencies(
       timezoneId: 'Asia/Bangkok',
     ),
   );
+}
+
+final class _NavigationObjectScannerController
+    implements ObjectScannerController {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _NavigationVocabularyRepository implements VocabularyRepository {
+  @override
+  Stream<List<VocabularyCategory>> watchCategories(String ownerId) {
+    return Stream.value(const []);
+  }
+
+  @override
+  Stream<List<VocabularyWord>> watchWords(String ownerId, String categoryId) {
+    return Stream.value(const []);
+  }
+
+  @override
+  Future<List<VocabularyWord>> listAllWords(String ownerId) async => const [];
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _NavigationSpeechGateway implements SpeechRecognitionGateway {
+  @override
+  bool get isListening => false;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _NavigationAiTutorController implements AiTutorController {
+  @override
+  Future<AiTutorSettingsStatus> loadSettings() async {
+    return const AiTutorSettingsStatus(
+      hasKey: false,
+      providerConsent: false,
+      shareLearningSummary: false,
+      providerId: AiProviderId.gemini,
+      model: null,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _NavigationExportStore implements ExportArtifactStore {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _LearningRepositoryFake implements LearningRepository {

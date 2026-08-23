@@ -2097,7 +2097,15 @@ void main() {
           );
           expect(
             Feature.values.map((feature) => feature.name),
-            isNot(contains('researchAssessment')),
+            contains('researchAssessment'),
+          );
+          expect(
+            dependencies.features.stateOf(Feature.researchAssessment),
+            FeatureState.hidden,
+          );
+          expect(
+            dependencies.hasComposedDependencyFor(Feature.researchAssessment),
+            isFalse,
           );
 
           final firstDispose = dependencies.dispose();
@@ -2130,6 +2138,15 @@ void main() {
         final dependencies = await bootstrap.initialize();
 
         expect(dependencies.assessment, same(injected));
+        expect(
+          dependencies.hasComposedDependencyFor(Feature.researchAssessment),
+          isTrue,
+        );
+        expect(
+          dependencies.features.stateOf(Feature.researchAssessment),
+          FeatureState.hidden,
+          reason: 'dependency composition must not auto-enable delivery',
+        );
         expect(await bootstrap.initialize(), same(dependencies));
         await dependencies.dispose();
         await dependencies.dispose();

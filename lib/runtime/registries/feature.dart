@@ -14,6 +14,10 @@ enum Feature {
   export,
   shadowRewardV2,
   questV2,
+  studyPlanning,
+  researchAssessment,
+  dailyContinuity,
+  offlineContent,
 }
 
 enum FeatureState { enabled, limited, hidden, disabled, emergencyOff }
