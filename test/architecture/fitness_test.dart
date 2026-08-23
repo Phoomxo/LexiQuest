@@ -1,14 +1,29 @@
 /// LexiQuest Architecture Fitness Tests
 ///
-/// 15 structural rules enforced on every commit.
-/// All 15 MUST pass for Phase -1 Week 3-4 Gate 2.1 to clear.
+/// Structural rules enforced on every commit.
+/// All rules MUST pass for Phase -1 Week 3-4 Gate 2.1 to clear.
 ///
 /// Run:  flutter test test/architecture/fitness_test.dart
 /// CI:   included in flutter_analyze + flutter_test jobs
 library;
 
 import 'dart:io';
+
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/product/feature_contract/alltcas_idea_integration_catalog.dart';
+import 'package:vocab_learning_app/product/feature_contract/compatibility_profiles.dart';
+import 'package:vocab_learning_app/product/feature_contract/feature_contract_models.dart';
+import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
+import 'package:vocab_learning_app/runtime/registries/feature.dart';
+
+import '../../tool/feature_contract/generate_feature_map.dart';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -39,6 +54,153 @@ List<File> _screenFiles() => _dartFiles('lib/screens');
 String _read(String rel) {
   final f = File('${_root()}/$rel');
   return f.existsSync() ? f.readAsStringSync() : '';
+}
+
+String _canonicalNewlines(String source) {
+  return source.replaceAll('\r\n', '\n').replaceAll('\r', '\n');
+}
+
+Map<String, String> _productionDartSources() {
+  final entries =
+      _dartFiles('lib')
+          .where((file) => !file.path.endsWith('.g.dart'))
+          .map(
+            (file) => MapEntry(
+              file.path
+                  .replaceAll('\\', '/')
+                  .split('${_root().replaceAll('\\', '/')}/')
+                  .last,
+              file.readAsStringSync(),
+            ),
+          )
+          .toList(growable: false)
+        ..sort((left, right) => left.key.compareTo(right.key));
+  return Map<String, String>.fromEntries(entries);
+}
+
+({int start, int end}) _requiredBlockRange(String source, String marker) {
+  final markerStart = source.indexOf(marker);
+  if (markerStart < 0) {
+    throw StateError('Required source marker is missing: $marker');
+  }
+  final bodyStart = source.indexOf('{', markerStart + marker.length);
+  if (bodyStart < 0) {
+    throw StateError('Required source block has no body: $marker');
+  }
+  var depth = 0;
+  for (var index = bodyStart; index < source.length; index += 1) {
+    switch (source[index]) {
+      case '{':
+        depth += 1;
+        break;
+      case '}':
+        depth -= 1;
+        if (depth == 0) {
+          return (start: bodyStart, end: index + 1);
+        }
+        break;
+    }
+  }
+  throw StateError('Required source block is unbalanced: $marker');
+}
+
+String _requiredBlock(String source, String marker) {
+  final range = _requiredBlockRange(source, marker);
+  return source.substring(range.start, range.end);
+}
+
+String _requiredMethodBody(String source, String marker) {
+  final markerStart = source.indexOf(marker);
+  if (markerStart < 0) {
+    throw StateError('Required method marker is missing: $marker');
+  }
+  final parametersStart = source.indexOf('(', markerStart);
+  if (parametersStart < 0) {
+    throw StateError('Required method has no parameter list: $marker');
+  }
+
+  var parameterDepth = 0;
+  var parametersEnd = -1;
+  parameterScan:
+  for (var index = parametersStart; index < source.length; index += 1) {
+    switch (source[index]) {
+      case '(':
+        parameterDepth += 1;
+        break;
+      case ')':
+        parameterDepth -= 1;
+        if (parameterDepth < 0) {
+          throw StateError(
+            'Required method parameter list is unbalanced: $marker',
+          );
+        }
+        if (parameterDepth == 0) {
+          parametersEnd = index + 1;
+          break parameterScan;
+        }
+        break;
+    }
+  }
+  if (parametersEnd < 0) {
+    throw StateError('Required method parameter list is unbalanced: $marker');
+  }
+
+  final bodyStart = source.indexOf('{', parametersEnd);
+  final declarationEnd = source.indexOf(';', parametersEnd);
+  final expressionBody = source.indexOf('=>', parametersEnd);
+  if (bodyStart < 0 ||
+      (declarationEnd >= 0 && declarationEnd < bodyStart) ||
+      (expressionBody >= 0 && expressionBody < bodyStart)) {
+    throw StateError('Required method has no block body: $marker');
+  }
+
+  var bodyDepth = 0;
+  for (var index = bodyStart; index < source.length; index += 1) {
+    switch (source[index]) {
+      case '{':
+        bodyDepth += 1;
+        break;
+      case '}':
+        bodyDepth -= 1;
+        if (bodyDepth == 0) {
+          return source.substring(bodyStart, index + 1);
+        }
+        break;
+    }
+  }
+  throw StateError('Required method body is unbalanced: $marker');
+}
+
+int _occurrences(String source, String needle) {
+  var count = 0;
+  var start = 0;
+  while (true) {
+    final match = source.indexOf(needle, start);
+    if (match < 0) return count;
+    count += 1;
+    start = match + needle.length;
+  }
+}
+
+List<int> _streakMutationOffsets(String source) {
+  final patterns = <RegExp>[
+    RegExp(r'\b(?:db\.)?StreakStatesCompanion(?:\.insert)?\s*\('),
+    RegExp(
+      r'\.(?:into|update|delete)\s*\(\s*[^)]*\.streakStates\b',
+      multiLine: true,
+    ),
+    RegExp(
+      r'\b(?:INSERT(?:\s+OR\s+(?:ROLLBACK|ABORT|FAIL|IGNORE|REPLACE))?'
+      r'\s+INTO|REPLACE\s+INTO|UPDATE(?:\s+OR\s+(?:ROLLBACK|ABORT|FAIL|IGNORE|REPLACE))?'
+      r'|DELETE\s+FROM)\s+["`]?streak_states\b',
+      caseSensitive: false,
+      multiLine: true,
+    ),
+  ];
+  return <int>[
+    for (final pattern in patterns)
+      for (final match in pattern.allMatches(source)) match.start,
+  ]..sort();
 }
 
 // ---------------------------------------------------------------------------
@@ -528,6 +690,454 @@ void main() {
           'SrsService is deprecated (SharedPreferences-backed). '
           'Use LearningUseCases.startDueReview() instead:\n'
           '${violations.join('\n')}',
+    );
+  });
+
+  // ---------------------------------------------------------------------------
+  // Task 13 — Shared compatibility foundation closure
+  // ---------------------------------------------------------------------------
+
+  test(
+    'T18 — exact 44-product and 15-runtime catalogs generate exact docs',
+    () {
+      expect(FeatureContractId.values, hasLength(44));
+      expect(allTcasIdeaIntegrationCatalog.records, hasLength(44));
+      expect(
+        allTcasIdeaIntegrationCatalog.records.map((record) => record.id),
+        orderedEquals(FeatureContractId.values),
+      );
+      expect(Feature.values, hasLength(15));
+      expect(productionFeatureContract, hasLength(15));
+      expect(productionFeatureContract.keys.toSet(), Feature.values.toSet());
+      expect(
+        productContractIdsByRuntimeFeature.keys.toSet(),
+        Feature.values.toSet(),
+      );
+
+      final generated = buildFeatureMapArtifacts(allTcasIdeaIntegrationCatalog);
+      expect(
+        _canonicalNewlines(
+          _read('docs/generated/alltcas-idea-integration-feature-map.md'),
+        ),
+        _canonicalNewlines(generated.markdown),
+      );
+      expect(
+        _canonicalNewlines(
+          _read('docs/generated/alltcas-idea-integration-feature-map.json'),
+        ),
+        _canonicalNewlines(generated.normalizedJson),
+      );
+    },
+  );
+
+  test('T19 — production has no legacy FieldFeatureRegistry consumer', () {
+    final consumers = <String>[];
+    final legacyImport = RegExp(
+      r'''^\s*import\s+['"][^'"]*field_feature_registry\.dart['"]''',
+      multiLine: true,
+    );
+    final legacyUse = RegExp(
+      r'\b(?:BuildFieldFeatureRegistry|FieldFeatureRegistry)\s*(?:[<.(])',
+    );
+    for (final entry in _productionDartSources().entries) {
+      if (entry.key == 'lib/runtime/field_feature_registry.dart') continue;
+      if (legacyImport.hasMatch(entry.value) ||
+          legacyUse.hasMatch(entry.value)) {
+        consumers.add(entry.key);
+      }
+    }
+    expect(
+      consumers,
+      isEmpty,
+      reason:
+          'FieldFeatureRegistry is a legacy definition only; production '
+          'must use FeatureRegistry:\n${consumers.join('\n')}',
+    );
+  });
+
+  test('T20 — Streak and purchase keep their single-ledger authorities', () {
+    const streakAuthority =
+        'lib/features/motivation/data/drift_streak_repository.dart';
+    const lifecycleException =
+        'lib/features/identity/data/drift_owner_upgrade_repository.dart';
+    final sources = _productionDartSources();
+    final streakMutations = <String, List<int>>{
+      for (final entry in sources.entries)
+        if (_streakMutationOffsets(entry.value).isNotEmpty)
+          entry.key: _streakMutationOffsets(entry.value),
+    };
+    expect(
+      streakMutations.keys.toSet(),
+      <String>{streakAuthority, lifecycleException},
+      reason:
+          'Only DriftStreakRepository may write operational Streak state; '
+          'owner upgrade is the lifecycle-only exception.',
+    );
+    expect(
+      sources[streakAuthority],
+      contains('final class DriftStreakRepository'),
+    );
+    final lifecycleSource = sources[lifecycleException]!;
+    final lifecycleRange = _requiredBlockRange(
+      lifecycleSource,
+      'Future<int> _mergeStreakState(',
+    );
+    expect(
+      streakMutations[lifecycleException]!.every(
+        (offset) =>
+            offset >= lifecycleRange.start && offset < lifecycleRange.end,
+      ),
+      isTrue,
+      reason:
+          'Every owner-upgrade Streak mutation must stay lexically inside '
+          '_mergeStreakState.',
+    );
+    expect(
+      _read('test/architecture/streak_authority_test.dart'),
+      contains('operational streak writes stay inside the canonical authority'),
+      reason:
+          'The exhaustive Drift API/alias/raw-SQL Streak writer detector must '
+          'remain installed.',
+    );
+
+    final purchase = _requiredMethodBody(
+      _read('lib/features/rewards/data/drift_reward_repository.dart'),
+      'Future<PurchaseResult> purchase(',
+    );
+    for (final xpLedgerToken in const <String>[
+      'pointsLedgerEntries',
+      'PointsLedgerEntriesCompanion',
+      'points_ledger_entries',
+    ]) {
+      expect(
+        purchase,
+        isNot(contains(xpLedgerToken)),
+        reason: 'A cosmetic purchase must never write lifetime XP.',
+      );
+    }
+    expect(purchase, contains('rewardTransactions'));
+  });
+
+  test(
+    'T21 — every current activity is typed and screens avoid recordAnswer',
+    () {
+      const expectedActivities = <String>{
+        'meaningMultipleChoice',
+        'srsRecall',
+        'typedRecall',
+        'associativeRecall',
+        'ghostDuel',
+        'speakToText',
+        'shadowing',
+        'readingExposure',
+      };
+      expect(
+        CurrentActivityInput.values.map((value) => value.name).toSet(),
+        expectedActivities,
+      );
+      final activitySource = _read(
+        'lib/features/learning/application/current_activity_evidence.dart',
+      );
+      expect(activitySource, contains('final EvidenceClass evidenceClass;'));
+      expect(activitySource, contains('final String promptMode;'));
+      expect(activitySource, contains('final String skillId;'));
+      for (final activity in CurrentActivityInput.values) {
+        expect(
+          RegExp(
+            'CurrentActivityInput\\.${activity.name}\\s*=>\\s*'
+            'const _CurrentActivityDeclaration\\s*\\(',
+          ).allMatches(activitySource),
+          hasLength(1),
+          reason: '${activity.name} must have exactly one typed declaration',
+        );
+      }
+
+      final deprecatedCallers = <String>[];
+      final deprecatedRecordAnswer = RegExp(r'\.\s*recordAnswer\s*\(');
+      for (final file in _screenFiles()) {
+        if (deprecatedRecordAnswer.hasMatch(file.readAsStringSync())) {
+          deprecatedCallers.add(
+            file.path.replaceAll('\\', '/').split('lib/').last,
+          );
+        }
+      }
+      expect(
+        deprecatedCallers,
+        isEmpty,
+        reason:
+            'Screens must capture typed evidence, not call the deprecated '
+            'recordAnswer wrapper:\n${deprecatedCallers.join('\n')}',
+      );
+    },
+  );
+
+  test(
+    'T22 — production evidence and sync stay Legacy v1 and research Off',
+    () async {
+      const evidenceProvider = FixedEvidencePolicyRolloutModeProvider.legacy();
+      expect(
+        await evidenceProvider.resolve(
+          ownerId: 'architecture-fitness-owner',
+          evidenceContext: null,
+        ),
+        EvidencePolicyRolloutMode.legacy,
+      );
+      expect(
+        _read(
+          'lib/features/learning/application/current_activity_evidence.dart',
+        ),
+        contains('const FixedEvidencePolicyRolloutModeProvider.legacy()'),
+      );
+
+      const payloadRollout = SyncPayloadRollout.productionDefault();
+      expect(payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
+      const researchRollout = ResearchCollectionSyncRollout.off();
+      expect(researchRollout.enabled, isFalse);
+      expect(researchRollout.allowsExperimentAssignmentClaims, isFalse);
+      expect(researchRollout.allowsAssessmentRunClaims, isFalse);
+      final syncStore = _read('lib/features/sync/data/drift_sync_store.dart');
+      expect(
+        syncStore,
+        contains(
+          'this.payloadRollout = const SyncPayloadRollout.productionDefault()',
+        ),
+      );
+      expect(
+        syncStore,
+        contains(
+          'this.researchSyncRollout = const ResearchCollectionSyncRollout.off()',
+        ),
+      );
+
+      final deploymentEvidenceViolations = <String>[];
+      for (final entry in _productionDartSources().entries) {
+        if (entry.value.contains('test:rules') ||
+            entry.value.contains('firestore-rules.test.cjs')) {
+          deploymentEvidenceViolations.add(entry.key);
+        }
+      }
+      expect(
+        deploymentEvidenceViolations,
+        isEmpty,
+        reason:
+            'Local rules tests are verification only, never deployment '
+            'evidence:\n${deploymentEvidenceViolations.join('\n')}',
+      );
+      final bootstrap = _read('lib/runtime/app_bootstrap.dart');
+      expect(bootstrap, isNot(contains('experimentAssignmentV1RulesRevision')));
+      expect(bootstrap, isNot(contains('assessmentRunV1RulesRevision')));
+    },
+  );
+
+  test('T23 — v2 receipts bridge exact v1 receipts before any sink', () {
+    final reconciler = _read(
+      'lib/features/learning/application/learning_side_effect_reconciler.dart',
+    );
+    final pending = _requiredMethodBody(
+      reconciler,
+      'Future<void> _applyPending(',
+    );
+    final pendingBridgeStart = pending.indexOf('if (v1Receipt != null)');
+    final pendingSinkStart = pending.indexOf(
+      'final outcome = evidenceSink == null',
+    );
+    expect(pendingBridgeStart, greaterThanOrEqualTo(0));
+    expect(pendingSinkStart, greaterThan(pendingBridgeStart));
+    final pendingBridge = _requiredBlock(pending, 'if (v1Receipt != null)');
+    expect(pendingBridge, contains('bridgedFromVersion: 1'));
+    expect(pendingBridge, contains('continue;'));
+    expect(pendingBridge, isNot(contains('await sink')));
+
+    final reward = _requiredMethodBody(
+      reconciler,
+      'Future<void> _applyRewardPending(',
+    );
+    final rewardBridgeStart = reward.indexOf('if (v1Receipt != null)');
+    final rewardSinkStart = reward.indexOf('final outcome = await sink(');
+    expect(rewardBridgeStart, greaterThanOrEqualTo(0));
+    expect(rewardSinkStart, greaterThan(rewardBridgeStart));
+    final rewardBridge = _requiredBlock(reward, 'if (v1Receipt != null)');
+    expect(rewardBridge, contains('bridgedFromVersion: 1'));
+    expect(rewardBridge, contains('continue;'));
+    expect(rewardBridge, isNot(contains('await sink')));
+
+    final eventStore = _read(
+      'lib/features/learning/data/drift_learning_event_store.dart',
+    );
+    final markReceipt = _requiredMethodBody(
+      eventStore,
+      'Future<void> markProjectionOutcome(',
+    );
+    expect(markReceipt, contains('await _requireMatchingBridgeReceipt('));
+    final bridgeValidation = _requiredMethodBody(
+      eventStore,
+      'Future<void> _requireMatchingBridgeReceipt(',
+    );
+    expect(bridgeValidation, contains('earlier.outcome != outcome'));
+    expect(
+      bridgeValidation,
+      contains('jsonEncode(earlier.result) != jsonEncode(result)'),
+    );
+  });
+
+  test('T24 — assessment reaches Outcome only through shared evidence', () {
+    final assessmentPolicy =
+        evidenceCompatibilityMatrix[ContractEvidenceClass.assessment]!;
+    for (final deniedProjection in const <ProjectionFamily>{
+      ProjectionFamily.masterySrs,
+      ProjectionFamily.pronunciation,
+      ProjectionFamily.quest,
+      ProjectionFamily.streak,
+      ProjectionFamily.achievement,
+      ProjectionFamily.xp,
+      ProjectionFamily.coins,
+    }) {
+      expect(
+        assessmentPolicy[deniedProjection],
+        ProjectionDecision.deny,
+        reason: 'Assessment must not reach ${deniedProjection.name}.',
+      );
+    }
+    expect(
+      assessmentPolicy[ProjectionFamily.assessmentOutcome],
+      ProjectionDecision.allow,
+    );
+
+    const forbiddenDirectProjectionImports = <String>[
+      'drift_learning_projection_rebuilder.dart',
+      '/motivation/',
+      '/quest/',
+      '/rewards/',
+      '/progress/',
+    ];
+    final violations = <String>[];
+    for (final file in _dartFiles('lib/features/assessment')) {
+      final source = file.readAsStringSync();
+      for (final forbidden in forbiddenDirectProjectionImports) {
+        if (source.contains(forbidden)) {
+          violations.add('${file.path}: $forbidden');
+        }
+      }
+    }
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'Assessment must not import learning/motivation projection '
+          'authorities directly:\n${violations.join('\n')}',
+    );
+    final useCases = _read(
+      'lib/features/assessment/application/assessment_use_cases.dart',
+    );
+    expect(useCases, contains('learning.resolveEvidenceForRecording('));
+    expect(useCases, contains('learning.recordResolvedEvidence('));
+  });
+
+  test(
+    'T25 — lifecycle manifest covers every live table exactly once',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final liveTables = database.allTables
+          .map((table) => table.actualTableName)
+          .toList(growable: false);
+      final manifestTables = ownerLifecycleManifest
+          .map((entry) => entry.tableName)
+          .toList(growable: false);
+
+      expect(liveTables, hasLength(33));
+      expect(manifestTables, hasLength(liveTables.length));
+      expect(manifestTables.toSet(), hasLength(manifestTables.length));
+      expect(manifestTables.toSet(), liveTables.toSet());
+      expect(ownerLifecycleExportTableNames, liveTables.toSet());
+      expect(ownerLifecycleDeletionTableNames, liveTables.toSet());
+    },
+  );
+
+  test('T26 — assignment and assessment have exact v1 sync and rules', () {
+    expect(
+      SyncCollection.experimentAssignments.wireName,
+      'experiment_assignments',
+    );
+    expect(
+      SyncCollection.experimentAssignments.entityType,
+      'experimentAssignment',
+    );
+    expect(SyncCollection.experimentAssignments.supportedPayloadVersions, <int>{
+      1,
+    });
+    expect(SyncCollection.assessmentRuns.wireName, 'assessment_runs');
+    expect(SyncCollection.assessmentRuns.entityType, 'assessmentRun');
+    expect(SyncCollection.assessmentRuns.supportedPayloadVersions, <int>{1});
+
+    final gateway = _read('lib/features/sync/data/firestore_sync_gateway.dart');
+    expect(
+      gateway,
+      contains('ExperimentAssignmentSyncPayloadContract.requireCanonical('),
+    );
+    expect(
+      gateway,
+      contains('AssessmentRunSyncPayloadContract.requireCanonical('),
+    );
+    final store = _read('lib/features/sync/data/drift_sync_store.dart');
+    expect(store, contains('Future<void> _applyExperimentAssignment('));
+    expect(store, contains('Future<void> _applyAssessmentRun('));
+
+    final rules = _read('firestore.rules');
+    expect(
+      _occurrences(rules, 'match /experiment_assignments/{assignmentId}'),
+      1,
+    );
+    expect(_occurrences(rules, 'match /assessment_runs/{runId}'), 1);
+    expect(rules, contains('fieldExperimentAssignmentPayloadOk'));
+    expect(rules, contains('fieldAssessmentRunCreateOk'));
+    expect(rules, contains('fieldAssessmentRunTerminalUpdateOk'));
+    expect(rules, isNot(contains('match /assessment_attempts/')));
+    expect(rules, isNot(contains('match /assessment_responses/')));
+  });
+
+  test('T27 — runtime feature flags never assign an experiment cohort', () {
+    final violations = <String>[];
+    final mutator = RegExp(r'\b(?:assignIfAbsent|assignIfConsented)\s*\(');
+    final cohortArgument = RegExp(r'\bcohort\s*:');
+    for (final entry in _productionDartSources().entries) {
+      if (!entry.key.startsWith('lib/runtime/')) continue;
+      if (mutator.hasMatch(entry.value) ||
+          cohortArgument.hasMatch(entry.value)) {
+        violations.add(entry.key);
+      }
+    }
+    expect(
+      violations,
+      isEmpty,
+      reason:
+          'Runtime visibility/kill-switch code may read assignments but never '
+          'assign a cohort:\n${violations.join('\n')}',
+    );
+  });
+
+  test('T28 — composed Hub History Review and Recommendation own no table', () {
+    final tableNames = ownerLifecycleManifest
+        .map((entry) => entry.tableName)
+        .toList(growable: false);
+    final competingSource = RegExp(
+      r'(?:today(?:_hub)?|history|review_center|recommendation)',
+      caseSensitive: false,
+    );
+    expect(
+      tableNames.where(competingSource.hasMatch),
+      isEmpty,
+      reason:
+          'Today Hub, History, Review Center, and Recommendation must '
+          'compose canonical read models and own no source table.',
+    );
+    expect(
+      _read('lib/features/learning/application/learning_use_cases.dart'),
+      contains('listSessionHistory('),
+    );
+    expect(
+      _read('lib/features/progress/data/drift_progress_queries.dart'),
+      contains('recommendations:'),
     );
   });
 }
