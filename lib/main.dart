@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:timezone/data/latest_all.dart' as tz_data;
 import 'config/m3_theme.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
@@ -14,7 +13,6 @@ import 'navigation/app_routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  tz_data.initializeTimeZones();
   final dependencies = await AppBootstrap.production().initialize();
   runApp(MyApp(dependencies: dependencies));
   final owners = dependencies.localOwners;

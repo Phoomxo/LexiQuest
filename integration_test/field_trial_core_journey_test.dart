@@ -193,24 +193,28 @@ void main() {
           tester,
           find.byType(AssociativeReadingSessionScreen),
         );
+        final completeAndContinueButton = find.widgetWithText(
+          FilledButton,
+          'Complete & Continue',
+        );
         for (final title in const <String>[
           'Stage 2: Cue Fading',
           'Stage 3: Active Recall',
         ]) {
-          await tester.tap(find.text('Complete & Continue'));
+          await _tapVisibleTop(tester, completeAndContinueButton);
           await _pumpUntilFound(tester, find.text(title));
         }
         await tester.enterText(find.byType(TextField).first, 'station');
-        await tester.tap(find.text('Complete & Continue'));
+        await _tapVisibleTop(tester, completeAndContinueButton);
         await _pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
         await tester.enterText(find.byType(TextField).first, 'train platform');
-        await tester.tap(find.text('Complete & Continue'));
+        await _tapVisibleTop(tester, completeAndContinueButton);
         await _pumpUntilFound(tester, find.text('Stage 5: Context Transfer'));
         await tester.enterText(
           find.byType(TextField).first,
           'Meet me at the station.',
         );
-        await tester.tap(find.text('Complete & Continue'));
+        await _tapVisibleTop(tester, completeAndContinueButton);
         await _pumpUntilFound(tester, find.text('Stage 6: Finish'));
         await _tapVisibleTop(
           tester,
@@ -445,6 +449,7 @@ AppBootstrap _bootstrap(
   createDatabase: () => AppDatabase(NativeDatabase(File(databasePath))),
   createEntryStateStore: () async => entryState,
   bindGuestOwnership: true,
+  learningTimezoneId: () => 'Asia/Bangkok',
   accountGatewayFactory: () => accountGateway,
   exportStoreFactory: () => exportStore,
   cameraGatewayFactory: HostFakeCameraGateway.new,
@@ -545,6 +550,9 @@ Future<void> _scrollDrawerTo(WidgetTester tester, Finder target) async {
 }
 
 Future<void> _tapVisibleTop(WidgetTester tester, Finder target) async {
+  expect(target, findsOneWidget);
+  await tester.ensureVisible(target);
+  await tester.pump(const Duration(milliseconds: 20));
   final rect = tester.getRect(target);
   // The retained production shell can cover the bottom edge during a bounded
   // host frame; use a real hit-tested point near the visible top of the button.

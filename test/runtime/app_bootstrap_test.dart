@@ -1792,6 +1792,92 @@ void main() {
       expect(entryStateCalls, 1);
     });
 
+    test(
+      'resolves one injected learning timezone for quest and streak',
+      () async {
+        var timezoneResolutionCalls = 0;
+        final bootstrap = AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          learningTimezoneId: () {
+            timezoneResolutionCalls += 1;
+            return 'Asia/Bangkok';
+          },
+        );
+
+        final dependencies = await bootstrap.initialize();
+
+        expect(timezoneResolutionCalls, 1);
+        expect(dependencies.quest.timezoneId, 'Asia/Bangkok');
+        expect(dependencies.streak, isNotNull);
+        expect(dependencies.streak!.timezoneId, 'Asia/Bangkok');
+        expect(dependencies.streak!.timezoneId, dependencies.quest.timezoneId);
+      },
+    );
+
+    test(
+      'default learning timezone is canonical and reconciles eligible streak',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+        final dependencies = await bootstrap.initialize();
+        expect(dependencies.quest.timezoneId, 'Asia/Bangkok');
+        expect(dependencies.streak, isNotNull);
+        expect(dependencies.streak!.timezoneId, 'Asia/Bangkok');
+        expect(dependencies.streak!.timezoneId, dependencies.quest.timezoneId);
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        final target = await _insertBootstrapCurrentActivityTarget(
+          database,
+          ownerId: owner.id,
+          startedAtUtc: DateTime.utc(2026, 8, 24, 8),
+        );
+        final pending = dependencies.currentActivityEvidence!.capture(
+          input: CurrentActivityInput.meaningMultipleChoice,
+          sessionId: target.sessionId,
+          wordId: target.wordId,
+          isCorrect: true,
+          responseTimeMs: 500,
+          attemptNumber: 1,
+        );
+
+        await pending.record();
+        await dependencies.learningReconciliation!.drain();
+
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.aggregateType.equals('LearningSession') &
+                    row.aggregateId.equals(target.sessionId) &
+                    row.idempotencyKey.equals(
+                      'learning-attempt:${pending.sourceEvidenceId}:v2',
+                    ),
+              ))
+              .get(),
+          hasLength(1),
+        );
+        final streakState = await (database.select(
+          database.streakStates,
+        )..where((row) => row.ownerId.equals(owner.id))).getSingleOrNull();
+        expect(streakState, isNotNull);
+        expect(streakState!.currentStreakDays, 1);
+      },
+    );
+
     test('closes the database when later composition fails', () async {
       final database = AppDatabase(NativeDatabase.memory());
       final bootstrap = AppBootstrap(

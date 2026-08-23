@@ -11,6 +11,7 @@ import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
@@ -121,6 +122,14 @@ typedef ManagedVoiceBuilder =
 
 DateTime _runtimeFeatureSystemNowUtc() => DateTime.now().toUtc();
 DateTime _aiSystemNowUtc() => DateTime.now().toUtc();
+String _systemLearningTimezoneId() => 'Asia/Bangkok';
+bool _learningTimezonesInitialized = false;
+void _initializeLearningTimezonesOnce() {
+  if (_learningTimezonesInitialized) return;
+  timezone_data.initializeTimeZones();
+  _learningTimezonesInitialized = true;
+}
+
 ExportArtifactStore _productionExportStore() => const FileSelectorExportStore();
 CameraGateway _productionCameraGateway() => PluginCameraGateway();
 SpeechRecognitionGateway _productionSpeechRecognitionGateway() =>
@@ -247,6 +256,7 @@ final class AppBootstrap {
     this.cloudSyncEnabled = true,
     DateTime Function()? runtimeFeatureNowUtc,
     DateTime Function()? aiNowUtc,
+    String Function()? learningTimezoneId,
     this.scheduleRuntimeFeatureExpiry,
     ExportArtifactStoreFactory? exportStoreFactory,
     CameraGatewayFactory? cameraGatewayFactory,
@@ -273,7 +283,8 @@ final class AppBootstrap {
            ),
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
-       aiNowUtc = aiNowUtc ?? _aiSystemNowUtc;
+       aiNowUtc = aiNowUtc ?? _aiSystemNowUtc,
+       learningTimezoneId = learningTimezoneId ?? _systemLearningTimezoneId;
 
   factory AppBootstrap.production() {
     return AppBootstrap(
@@ -311,6 +322,7 @@ final class AppBootstrap {
   final bool cloudSyncEnabled;
   final DateTime Function() runtimeFeatureNowUtc;
   final DateTime Function() aiNowUtc;
+  final String Function() learningTimezoneId;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ExportArtifactStoreFactory exportStoreFactory;
   final CameraGatewayFactory cameraGatewayFactory;
@@ -334,6 +346,7 @@ final class AppBootstrap {
   }
 
   Future<AppDependencies> _compose(ResourceDisposerStack resources) async {
+    _initializeLearningTimezonesOnce();
     final researchRuntimeConfig = loadResearchRuntimeConfig();
     final entryState = await _createEntryState();
     final database = createDatabase();
@@ -571,12 +584,13 @@ final class AppBootstrap {
     // ── V2 Quest pipeline (must precede learning wiring) ─────────────────
     final questRepository = DriftQuestRepository(database);
     final buildInfo = const AppBuildInfo.fromEnvironment();
+    final resolvedLearningTimezoneId = learningTimezoneId();
     final quest = QuestUseCases(
       repository: questRepository,
       owners: localOwners,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
-      timezoneId: DateTime.now().timeZoneName,
+      timezoneId: resolvedLearningTimezoneId,
       rewardSink:
           ({
             required ownerId,
@@ -608,7 +622,7 @@ final class AppBootstrap {
       repository: DriftStreakRepository(database),
       owners: localOwners,
       nowUtc: () => DateTime.now().toUtc(),
-      timezoneId: DateTime.now().timeZoneName,
+      timezoneId: resolvedLearningTimezoneId,
     );
 
     // ── Event adapter for V1→V2 event conversion ──────────────────────────
