@@ -52,7 +52,7 @@ import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
-import '../features/learning/application/legacy_lesson_mode_adapters.dart';
+import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
@@ -914,7 +914,7 @@ final class AppBootstrap {
       rolloutModeProvider: evidenceRolloutModeProvider,
       researchStateProvider: currentResearchStateProvider,
     );
-    final lessonModes = buildLegacyLessonModeRegistry();
+    final lessonModes = buildLessonModeRegistry();
     final learningTime = DriftLearningTimeRepository(
       database,
       owners: localOwners,

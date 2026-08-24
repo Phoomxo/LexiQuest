@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -10,7 +11,7 @@ import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
 void main() {
   test('canonical mode registry is an exact typed delivery and route join', () {
-    final registrations = buildLegacyLessonModeRegistry().registrations.toList(
+    final registrations = buildLessonModeRegistry().registrations.toList(
       growable: false,
     );
     const expected =
@@ -67,12 +68,18 @@ void main() {
         reason: 'legacy activity screens cannot silently become hint authority',
       );
     }
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.flashcard)
+          .adapter,
+      isA<FlashcardModeAdapter>(),
+    );
   });
 
   test(
     'hint capability is typed without adding a production delivery path',
     () {
-      final registrations = buildLegacyLessonModeRegistry().registrations;
+      final registrations = buildLessonModeRegistry().registrations;
       final hintRegistrations = registrations
           .where(
             (registration) =>
@@ -87,6 +94,59 @@ void main() {
       expect(registrations, hasLength(LessonMode.values.length));
     },
   );
+
+  test('flashcard adapter keeps reveal and independent recall disjoint', () {
+    const adapter = FlashcardModeAdapter();
+    final response = LessonResponse(
+      sourceEvidenceId: 'flashcard-boundary',
+      occurredAtUtc: DateTime.utc(2026, 8, 25),
+      sessionId: 'flashcard-session',
+      wordId: 'flashcard-word',
+      promptMode: 'flashcardExposure',
+      isCorrect: false,
+      responseTimeMs: 250,
+      attemptNumber: 1,
+      feedbackContext: const AnswerFeedbackContext(
+        canonicalCorrectAnswer: 'answer',
+      ),
+    );
+    final exposure = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.exposure,
+      skillId: 'srs-recall',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+    final assisted = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.guidedPractice,
+      skillId: 'srs-recall',
+      hintLevel: 1,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+
+    expect(
+      adapter.classify(response, LessonSupport(evidenceContext: exposure)),
+      same(exposure),
+    );
+    expect(
+      () => adapter.classify(
+        LessonResponse(
+          sourceEvidenceId: response.sourceEvidenceId,
+          occurredAtUtc: response.occurredAtUtc,
+          sessionId: response.sessionId,
+          wordId: response.wordId,
+          promptMode: 'srsRecall',
+          isCorrect: true,
+          responseTimeMs: response.responseTimeMs,
+          attemptNumber: response.attemptNumber,
+          feedbackContext: response.feedbackContext,
+        ),
+        LessonSupport(evidenceContext: assisted),
+      ),
+      throwsStateError,
+    );
+  });
 
   test(
     'registry rejects alternate adapters competing for one delivery path',
@@ -152,8 +212,8 @@ void main() {
         ),
       );
 
-      for (final registration
-          in buildLegacyLessonModeRegistry().registrations) {
+      for (final registration in buildLessonModeRegistry().registrations) {
+        if (registration.mode == LessonMode.flashcard) continue;
         expect(
           registration.adapter.classify(
             response,

@@ -168,6 +168,54 @@ final class CurrentActivityEvidenceAdapter {
     int hintLevel = 0,
   }) {
     final declaration = _declarationFor(input);
+    return _capture(
+      input: input,
+      declaration: declaration,
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: providerProvenance,
+      hintLevel: hintLevel,
+    );
+  }
+
+  /// Typed exposure ingress for a flashcard answer reveal. Research assignment
+  /// still resolves against the SRS activity while the durable declaration is
+  /// exposure, so a reveal can never masquerade as independent recall.
+  PendingCurrentActivityEvidence captureFlashcardExposure({
+    required String sessionId,
+    required String wordId,
+    required int? responseTimeMs,
+    required int attemptNumber,
+  }) => _capture(
+    input: CurrentActivityInput.srsRecall,
+    declaration: const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.exposure,
+      skillId: 'srs-recall',
+      promptMode: 'flashcardExposure',
+    ),
+    sessionId: sessionId,
+    wordId: wordId,
+    isCorrect: false,
+    responseTimeMs: responseTimeMs,
+    attemptNumber: attemptNumber,
+    providerProvenance: null,
+    hintLevel: 0,
+  );
+
+  PendingCurrentActivityEvidence _capture({
+    required CurrentActivityInput input,
+    required _CurrentActivityDeclaration declaration,
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required String? providerProvenance,
+    required int hintLevel,
+  }) {
     final generatedId = generateId().trim();
     if (generatedId.isEmpty) {
       throw StateError('learning id generator returned blank');

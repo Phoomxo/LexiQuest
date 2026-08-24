@@ -169,8 +169,9 @@ class _WordbookImportScreenState extends State<WordbookImportScreen> {
                     context,
                     AppPage<void>(
                       name: 'learning/import-srs',
-                      builder: (context) =>
-                          SrsFlashcardsScreen(wordList: _parsedWords),
+                      builder: (context) => SrsFlashcardCompatibilityRoute(
+                        wordList: _parsedWords,
+                      ),
                     ),
                   );
                 },

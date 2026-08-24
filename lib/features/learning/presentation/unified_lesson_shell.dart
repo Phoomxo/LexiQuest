@@ -8,6 +8,8 @@ import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
 import '../../../runtime/app_dependencies.dart';
+import '../../../runtime/production_feature_gate.dart';
+import '../../../runtime/registries/feature_registry.dart';
 import '../../time_tracking/presentation/focus_timer_widget.dart';
 import 'answer_feedback_panel.dart';
 import 'hint_panel.dart';
@@ -16,31 +18,66 @@ typedef LessonUtcNow = DateTime Function();
 typedef LessonLifecycleStateReader = AppLifecycleState? Function();
 
 final class UnifiedLessonSessionLifecycle {
-  const UnifiedLessonSessionLifecycle._(this._controller, this._nowUtc);
+  const UnifiedLessonSessionLifecycle._(
+    this._controller,
+    this._nowUtc,
+    this._routeLifecycle,
+  );
 
   final UnifiedLessonController _controller;
   final LessonUtcNow _nowUtc;
+  final UnifiedLessonRouteLifecycle? _routeLifecycle;
+
+  bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
 
   Future<void> start({
     required String sessionId,
     required DateTime startedAtUtc,
     required int itemCount,
-  }) => _controller.start(
-    LessonStartCommand(
+  }) {
+    final command = LessonStartCommand(
       sessionId: sessionId,
       mode: _controller.state.mode,
       itemCount: itemCount,
       startedAtUtc: startedAtUtc,
-    ),
-  );
+    );
+    return _routeLifecycle?.start(command) ?? _controller.start(command);
+  }
+
+  Future<QuizSession> initializeSession(Future<QuizSession> load) {
+    final routeLifecycle = _routeLifecycle;
+    if (routeLifecycle != null) {
+      return routeLifecycle.initializeSession(load);
+    }
+    return _initializeWithoutRouteOwner(load);
+  }
+
+  Future<QuizSession> _initializeWithoutRouteOwner(
+    Future<QuizSession> load,
+  ) async {
+    final session = await load;
+    final startedAtUtc = session.startedAtUtc;
+    if (!session.isEmpty && startedAtUtc != null) {
+      await start(
+        sessionId: session.id,
+        startedAtUtc: startedAtUtc,
+        itemCount: session.questions.length,
+      );
+    }
+    return session;
+  }
 
   Future<LearningSessionSummary> complete(PendingLearningSessionClose close) =>
+      _routeLifecycle?.complete(close) ??
       _controller.completeCapturedSession(close, _nowUtc());
 
-  Future<void> abandon() => _controller.abandon(_nowUtc());
+  Future<void> abandon() =>
+      _routeLifecycle?.retire() ?? _controller.abandon(_nowUtc());
 
-  void recordInteraction() =>
-      _controller.noteActiveLearningInteraction(_nowUtc());
+  void recordInteraction() {
+    if (!acceptsOperations) return;
+    _controller.noteActiveLearningInteraction(_nowUtc());
+  }
 }
 
 final class UnifiedLessonSessionLifecycleScope extends InheritedWidget {
@@ -61,17 +98,189 @@ final class UnifiedLessonSessionLifecycleScope extends InheritedWidget {
       !identical(lifecycle, oldWidget.lifecycle);
 }
 
+/// One route-owned arbiter for initialization, accepted terminal work, and
+/// runtime retirement. Closing acceptance is synchronous; durable mutation is
+/// serialized behind work that crossed the boundary first.
+final class UnifiedLessonRouteLifecycle {
+  UnifiedLessonRouteLifecycle(this._controller, this._learning, this._nowUtc);
+
+  final UnifiedLessonController _controller;
+  final LearningUseCases? _learning;
+  final LessonUtcNow _nowUtc;
+  final Map<String, Future<void>> _unattachedCompensations =
+      <String, Future<void>>{};
+
+  bool _accepting = true;
+  Future<QuizSession>? _initialization;
+  String? _loadedSessionId;
+  Future<void>? _startInFlight;
+  Future<LearningSessionSummary>? _completionInFlight;
+  PendingLearningSessionClose? _acceptedClose;
+  Future<void>? _terminal;
+
+  bool get acceptsOperations => _accepting;
+
+  Future<QuizSession> initializeSession(Future<QuizSession> load) {
+    final existing = _initialization;
+    if (existing != null) return existing;
+    final initialization = _initializeSession(load);
+    _initialization = initialization;
+    return initialization;
+  }
+
+  Future<QuizSession> _initializeSession(Future<QuizSession> load) async {
+    final session = await load;
+    final startedAtUtc = session.startedAtUtc;
+    if (session.isEmpty) return session;
+    _loadedSessionId = session.id;
+    if (startedAtUtc == null) {
+      await _compensateUnattached(session.id);
+      throw StateError('A durable lesson session has no start occurrence.');
+    }
+    final command = LessonStartCommand(
+      sessionId: session.id,
+      mode: _controller.state.mode,
+      itemCount: session.questions.length,
+      startedAtUtc: startedAtUtc,
+    );
+    try {
+      await start(command);
+    } catch (_) {
+      if (_controller.state.sessionId != session.id) {
+        await _compensateUnattached(session.id);
+      }
+      rethrow;
+    }
+    return session;
+  }
+
+  Future<void> start(LessonStartCommand command) {
+    if (!_accepting) return _compensateUnattached(command.sessionId);
+    final operation = _controller.start(command);
+    _startInFlight = operation;
+    unawaited(
+      operation.then<void>(
+        (_) => _clearStart(operation),
+        onError: (Object _, StackTrace _) => _clearStart(operation),
+      ),
+    );
+    return operation;
+  }
+
+  void _clearStart(Future<void> operation) {
+    if (identical(_startInFlight, operation)) _startInFlight = null;
+  }
+
+  Future<LearningSessionSummary> complete(PendingLearningSessionClose close) {
+    if (!_accepting) {
+      return Future<LearningSessionSummary>.error(
+        StateError('The lesson route is no longer accepting operations.'),
+      );
+    }
+    final acceptedClose = _acceptedClose;
+    if (acceptedClose != null && !identical(acceptedClose, close)) {
+      return Future<LearningSessionSummary>.error(
+        StateError('A different terminal close is already accepted.'),
+      );
+    }
+    _acceptedClose = close;
+    final operation = _controller.completeCapturedSession(close, _nowUtc());
+    _completionInFlight = operation;
+    unawaited(
+      operation.then<void>(
+        (_) => _clearCompletion(operation),
+        onError: (Object _, StackTrace _) => _clearCompletion(operation),
+      ),
+    );
+    return operation;
+  }
+
+  void _clearCompletion(Future<LearningSessionSummary> operation) {
+    if (identical(_completionInFlight, operation)) {
+      _completionInFlight = null;
+    }
+  }
+
+  Future<void> retire() {
+    _accepting = false;
+    return _terminal ??= _retire();
+  }
+
+  Future<void> _retire() async {
+    try {
+      await _initialization;
+    } catch (_) {
+      // Initialization either never created a session or compensated the
+      // returned identity before surfacing its original failure.
+    }
+    final loadedSessionId = _loadedSessionId;
+    if (loadedSessionId != null &&
+        _controller.state.sessionId != loadedSessionId) {
+      await _compensateUnattached(loadedSessionId);
+    }
+    try {
+      await _startInFlight;
+    } catch (_) {
+      // A failed attach is compensated by initialization before this point.
+    }
+    final completion = _completionInFlight;
+    if (completion != null) {
+      try {
+        await completion;
+      } catch (_) {
+        // The exact accepted close gets one bounded reconciliation below.
+      }
+    }
+    final status = _controller.state.status;
+    if (status == LessonSessionStatus.completed ||
+        status == LessonSessionStatus.abandoned) {
+      return;
+    }
+    final close = _acceptedClose;
+    if (close != null) {
+      await _controller.completeCapturedSession(close, _nowUtc());
+      return;
+    }
+    await _controller.abandon(_nowUtc());
+  }
+
+  Future<void> _compensateUnattached(String sessionId) {
+    final existing = _unattachedCompensations[sessionId];
+    if (existing != null) return existing;
+    final learning = _learning;
+    if (learning == null) {
+      return Future<void>.error(
+        StateError('Route session compensation authority is unavailable.'),
+      );
+    }
+    final operation = learning.abandonSession(
+      sessionId: sessionId,
+      abandonedAtUtc: _nowUtc(),
+    );
+    _unattachedCompensations[sessionId] = operation;
+    return operation;
+  }
+}
+
 final class UnifiedLessonModeHost extends StatefulWidget {
   const UnifiedLessonModeHost({
     super.key,
     required this.adapter,
     required this.createController,
     required this.builder,
+    this.feature,
+    this.featureRegistry,
+    this.learning,
+    this.nowUtc,
   });
 
   final LessonModeAdapter adapter;
   final UnifiedLessonControllerFactory createController;
   final WidgetBuilder builder;
+  final Feature? feature;
+  final FeatureRegistry? featureRegistry;
+  final LearningUseCases? learning;
+  final LessonUtcNow? nowUtc;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
@@ -81,14 +290,127 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
   late final UnifiedLessonController _controller = widget.createController(
     widget.adapter,
   );
+  FeatureRegistry? _features;
+  Listenable? _featureChanges;
+  bool _routeEnabled = true;
+  FeatureState? _disabledState;
+  Future<void>? _terminalCompensation;
+  UnifiedLessonRouteLifecycle? _routeLifecycle;
+  bool _controllerDisposed = false;
 
   @override
-  Widget build(BuildContext context) =>
-      UnifiedLessonShell(controller: _controller, builder: widget.builder);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _routeLifecycle ??= UnifiedLessonRouteLifecycle(
+      _controller,
+      widget.learning ?? AppDependenciesScope.maybeOf(context)?.learning,
+      widget.nowUtc ?? _systemUtcNow,
+    );
+    _observeFeatures(
+      widget.featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features,
+    );
+  }
+
+  @override
+  void didUpdateWidget(UnifiedLessonModeHost oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.featureRegistry, widget.featureRegistry) ||
+        oldWidget.feature != widget.feature) {
+      _observeFeatures(
+        widget.featureRegistry ??
+            AppDependenciesScope.maybeOf(context)?.features,
+      );
+    }
+  }
+
+  void _observeFeatures(FeatureRegistry? features) {
+    if (identical(features, _features)) {
+      _reconcileFeatureState();
+      return;
+    }
+    _featureChanges?.removeListener(_onFeatureChanged);
+    _features = features;
+    final changes = features is Listenable ? features as Listenable : null;
+    _featureChanges = changes;
+    changes?.addListener(_onFeatureChanged);
+    _reconcileFeatureState();
+  }
+
+  void _onFeatureChanged() => _reconcileFeatureState();
+
+  void _reconcileFeatureState() {
+    final feature = widget.feature;
+    final features = _features;
+    if (feature == null || features == null) return;
+    if (_routeEnabled && !features.isEnabled(feature)) {
+      _routeEnabled = false;
+      _disabledState = features.stateOf(feature);
+      if (mounted) setState(() {});
+      _beginTerminalCompensation();
+    }
+  }
+
+  void _beginTerminalCompensation() {
+    if (_terminalCompensation != null) return;
+    final compensation = _routeLifecycle!.retire();
+    _terminalCompensation = compensation;
+    unawaited(
+      compensation.then<void>(
+        (_) => _disposeController(),
+        onError: (Object _, StackTrace _) => _disposeController(),
+      ),
+    );
+  }
+
+  static DateTime _systemUtcNow() => DateTime.now().toUtc();
+
+  void _disposeController() {
+    if (_controllerDisposed) return;
+    _controllerDisposed = true;
+    _controller.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final feature = widget.feature;
+    if (!_routeEnabled && feature != null) {
+      return ProductionFeatureUnavailable(
+        feature: feature,
+        reason: ProductionFeatureUnavailableReason.unavailableState,
+        state: _disabledState,
+      );
+    }
+    final shell = UnifiedLessonShell(
+      controller: _controller,
+      nowUtc: widget.nowUtc,
+      routeLifecycle: _routeLifecycle,
+      builder: widget.builder,
+    );
+    final features = _features;
+    if (feature == null || features == null) return shell;
+    return ProductionFeatureGate(
+      feature: feature,
+      registry: features,
+      builder: (_) => shell,
+    );
+  }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _featureChanges?.removeListener(_onFeatureChanged);
+    final routeLifecycle = _routeLifecycle;
+    if (routeLifecycle == null) {
+      _disposeController();
+    } else {
+      final compensation = _terminalCompensation ?? routeLifecycle.retire();
+      _terminalCompensation = compensation;
+      unawaited(
+        compensation.then<void>(
+          (_) => _disposeController(),
+          onError: (Object _, StackTrace _) => _disposeController(),
+        ),
+      );
+    }
     super.dispose();
   }
 }
@@ -100,12 +422,14 @@ final class UnifiedLessonShell extends StatefulWidget {
     this.controller,
     this.nowUtc,
     this.lifecycleStateReader,
+    this.routeLifecycle,
   });
 
   final WidgetBuilder builder;
   final UnifiedLessonController? controller;
   final LessonUtcNow? nowUtc;
   final LessonLifecycleStateReader? lifecycleStateReader;
+  final UnifiedLessonRouteLifecycle? routeLifecycle;
 
   @override
   State<UnifiedLessonShell> createState() => _UnifiedLessonShellState();
@@ -372,7 +696,11 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
     return UnifiedLessonSessionLifecycleScope(
-      lifecycle: UnifiedLessonSessionLifecycle._(controller, _now),
+      lifecycle: UnifiedLessonSessionLifecycle._(
+        controller,
+        _now,
+        widget.routeLifecycle,
+      ),
       child: Semantics(
         container: true,
         label: 'Lesson ${controller.state.status.name}',

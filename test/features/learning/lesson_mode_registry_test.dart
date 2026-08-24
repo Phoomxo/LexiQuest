@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
@@ -9,7 +10,7 @@ void main() {
   test(
     'production registry has one adapter for each canonical learning entry',
     () {
-      final registry = buildLegacyLessonModeRegistry();
+      final registry = buildLessonModeRegistry();
       final registrations = registry.registrations.toList(growable: false);
 
       expect(registrations.map((entry) => entry.mode).toSet(), <LessonMode>{
@@ -27,6 +28,14 @@ void main() {
           LessonMode.meaningQuiz: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
         },
+      );
+      expect(
+        registry.find(LessonMode.flashcard)!.adapter,
+        isA<FlashcardModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.meaningQuiz)!.adapter,
+        isA<LegacyLessonModeAdapter>(),
       );
       for (final entry in registrations) {
         expect(

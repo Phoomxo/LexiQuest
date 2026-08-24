@@ -5,12 +5,119 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/evidence_context.dart';
+import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature_registry.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/voice/presentation/route_voice_session_mixin.dart';
 import '../voice/voice_models.dart';
+
+/// Owner-scoped gateway for historical transient decks.
+///
+/// These rows have no stable vocabulary identity, so only the canonical
+/// Legacy evidence rollout may enter the nonpersistent compatibility screen.
+/// Shadow and Enforced must use the typed production adapter instead.
+final class SrsFlashcardCompatibilityRoute extends StatefulWidget {
+  const SrsFlashcardCompatibilityRoute({
+    super.key,
+    required this.wordList,
+    this.voice,
+  });
+
+  final List<Map<String, String>> wordList;
+  final VoiceUseCases? voice;
+
+  @override
+  State<SrsFlashcardCompatibilityRoute> createState() =>
+      _SrsFlashcardCompatibilityRouteState();
+}
+
+final class _SrsFlashcardCompatibilityRouteState
+    extends State<SrsFlashcardCompatibilityRoute> {
+  AppDependencies? _dependencies;
+  Future<EvidencePolicyRolloutMode>? _rollout;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    if (identical(dependencies, _dependencies)) return;
+    _dependencies = dependencies;
+    _rollout = _resolveRollout(dependencies);
+  }
+
+  Future<EvidencePolicyRolloutMode> _resolveRollout(
+    AppDependencies? dependencies,
+  ) async {
+    final learning = dependencies?.learning;
+    final rollout = dependencies?.evidencePolicyRolloutModeProvider;
+    if (learning == null || rollout == null) {
+      throw StateError('flashcard compatibility authority unavailable');
+    }
+    final owner = await learning.owners.getOrCreateActiveOwner();
+    final ownerId = owner.id.trim();
+    if (ownerId.isEmpty) {
+      throw StateError('active owner identity unavailable');
+    }
+    return rollout.resolve(ownerId: ownerId, evidenceContext: null);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final dependencies = _dependencies;
+    return ProductionFeatureGate(
+      feature: Feature.srs,
+      registry: dependencies?.features,
+      builder: (_) => FutureBuilder<EvidencePolicyRolloutMode>(
+        future: _rollout,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState != ConnectionState.done) {
+            return Scaffold(
+              appBar: AppBar(title: const Text('ทบทวน SRS')),
+              body: const Center(child: CircularProgressIndicator()),
+            );
+          }
+          if (snapshot.hasError ||
+              snapshot.data != EvidencePolicyRolloutMode.legacy) {
+            return ProductionFeatureUnavailable(
+              feature: Feature.srs,
+              reason: snapshot.hasError
+                  ? ProductionFeatureUnavailableReason.missingDependency
+                  : ProductionFeatureUnavailableReason.incompatibleRollout,
+              state: dependencies?.features.stateOf(Feature.srs),
+            );
+          }
+          return _LegacyFlashcardCompatibilityScope(
+            child: SrsFlashcardsScreen(
+              wordList: widget.wordList,
+              voice: widget.voice,
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+final class _LegacyFlashcardCompatibilityScope extends InheritedWidget {
+  const _LegacyFlashcardCompatibilityScope({required super.child});
+
+  static bool authorized(BuildContext context) =>
+      context
+          .dependOnInheritedWidgetOfExactType<
+            _LegacyFlashcardCompatibilityScope
+          >() !=
+      null;
+
+  @override
+  bool updateShouldNotify(_LegacyFlashcardCompatibilityScope oldWidget) =>
+      false;
+}
 
 class SrsFlashcardsScreen extends StatefulWidget {
   const SrsFlashcardsScreen({
@@ -19,6 +126,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.voice,
     this.learning,
     this.evidenceAdapter,
+    this.modeAdapter,
   });
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
@@ -26,6 +134,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final FlashcardModeAdapter? modeAdapter;
 
   @override
   State<SrsFlashcardsScreen> createState() => _SrsFlashcardsScreenState();
@@ -42,22 +151,27 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   LearningUseCases? _learning;
   Future<QuizSession>? _load;
   QuizSession? _session;
+  FlashcardReviewController? _review;
   int _currentIndex = 0;
   bool _isFlipped = false;
-  bool _saving = false;
-  DateTime? _questionStartedAt;
+  bool _abandoning = false;
+  final Stopwatch _responseStopwatch = Stopwatch();
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
-  PendingCurrentActivityEvidence? _pendingEvidence;
-  PendingLearningSessionClose? _pendingSessionClose;
+  FlashcardModeAdapter? _modeAdapter;
   UnifiedLessonSessionLifecycle? _lessonLifecycle;
-  bool _completionCommitted = false;
+  bool _compatibilityCompleted = false;
   bool _loadSettled = false;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
-  bool get _persistenceLocked =>
-      _pendingEvidence != null || _pendingSessionClose != null;
+  bool get _persistenceLocked => _review?.persistenceLocked ?? false;
+  bool get _completionCommitted =>
+      _compatibilityCompleted || (_review?.isCompleted ?? false);
+  bool get _saving => _abandoning || (_review?.isSaving ?? false);
   bool get _actionLocked =>
-      _saving || _persistenceLocked || _completionCommitted;
+      _abandoning ||
+      (!_isCompatibilityDeck && _lessonLifecycle?.acceptsOperations == false) ||
+      (!_isCompatibilityDeck && (_review?.actionLocked ?? true)) ||
+      _completionCommitted;
 
   @override
   void initState() {
@@ -81,9 +195,21 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     refreshRouteVoiceSession();
     if (_load != null) return;
     if (_isCompatibilityDeck) {
-      _load = Future.value(_compatibilitySession(widget.wordList!));
+      _load = _LegacyFlashcardCompatibilityScope.authorized(context)
+          ? Future.value(_compatibilitySession(widget.wordList!))
+          : Future<QuizSession>.error(
+              StateError('Legacy flashcard compatibility is unauthorized'),
+            );
     } else {
       _learning = widget.learning ?? dependencies?.learning;
+      final registeredAdapter = dependencies?.lessonModes
+          ?.find(LessonMode.flashcard)
+          ?.adapter;
+      _modeAdapter =
+          widget.modeAdapter ??
+          (registeredAdapter is FlashcardModeAdapter
+              ? registeredAdapter
+              : null);
       final learning = _learning;
       if (learning != null) {
         _evidenceAdapter =
@@ -97,8 +223,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           ? Future<QuizSession>.error(
               StateError('current activity evidence dependency unavailable'),
             )
+          : _modeAdapter == null
+          ? Future<QuizSession>.error(
+              StateError('flashcard mode adapter dependency unavailable'),
+            )
+          : !identical(_evidenceAdapter!.learning, learning)
+          ? Future<QuizSession>.error(
+              StateError('flashcard learning authority mismatch'),
+            )
           : learning.startDueReview();
-      _load = _startLifecycle(load);
+      final lifecycle = _lessonLifecycle;
+      _load = lifecycle == null
+          ? _startLifecycle(load)
+          : lifecycle.initializeSession(load);
     }
     unawaited(_primeLoadedSession(_load!));
   }
@@ -123,7 +260,22 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       _loadSettled = true;
       if (session.isEmpty) return;
       _session = session;
-      _questionStartedAt = DateTime.now();
+      if (!_isCompatibilityDeck) {
+        final lifecycle = _lessonLifecycle;
+        _review = _modeAdapter!.createReview(
+          session: session,
+          learning: _learning!,
+          evidence: _evidenceAdapter!,
+          completeSession: lifecycle == null
+              ? null
+              : (close) => lifecycle.complete(close),
+          recordInteraction: () => _lessonLifecycle?.recordInteraction(),
+          acceptsOperation: () => _lessonLifecycle?.acceptsOperations ?? true,
+        )..addListener(_onReviewChanged);
+      }
+      _responseStopwatch
+        ..reset()
+        ..start();
       await _playAudio();
     } on Object {
       // FutureBuilder renders the typed local-unavailable state from the
@@ -156,7 +308,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
     );
   }
 
-  QuizQuestion get _currentQuestion => _session!.questions[_currentIndex];
+  QuizQuestion get _currentQuestion => _isCompatibilityDeck
+      ? _session!.questions[_currentIndex]
+      : _review!.currentQuestion;
+
+  int get _visibleIndex =>
+      _isCompatibilityDeck ? _currentIndex : _review!.index;
+
+  bool get _visibleFlipped =>
+      _isCompatibilityDeck ? _isFlipped : (_review?.isRevealed ?? false);
+
+  void _onReviewChanged() {
+    if (mounted) setState(() {});
+  }
 
   Future<void> _playAudio() async {
     if (_actionLocked) return;
@@ -181,6 +345,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   void _flipCard() {
     if (_actionLocked) return;
+    if (!_isCompatibilityDeck) {
+      unawaited(_revealAnswer());
+      return;
+    }
     _lessonLifecycle?.recordInteraction();
     if (_isFlipped) {
       _controller.reverse();
@@ -192,132 +360,104 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Future<void> _rateItem(bool isCorrect) async {
     if (_actionLocked) return;
-    _lessonLifecycle?.recordInteraction();
-    PendingCurrentActivityEvidence? pending;
-    if (!_isCompatibilityDeck) {
-      final existing = _pendingEvidence;
-      if (existing != null) return;
-      final elapsed = DateTime.now().difference(
-        _questionStartedAt ?? DateTime.now(),
-      );
-      pending = _evidenceAdapter!.capture(
-        input: CurrentActivityInput.srsRecall,
-        sessionId: _session!.id,
-        wordId: _currentQuestion.word.id,
-        isCorrect: isCorrect,
-        responseTimeMs: elapsed.inMilliseconds,
-        attemptNumber: _currentIndex + 1,
-      );
-      _pendingEvidence = pending;
+    if (_isCompatibilityDeck) {
+      await _nextCompatibilityCard();
+      return;
     }
-    setState(() => _saving = true);
+    final review = _review!;
+    final previousIndex = review.index;
     try {
-      if (_isCompatibilityDeck) {
-        // Legacy compatibility deck — SrsService removed (Phase 0 Week 14-15).
-        // SharedPreferences-backed SRS recording is deprecated; no-op here.
-        // SRS state for real words is tracked via LearningUseCases + Drift.
-      } else {
-        await pending!.record();
-      }
-      if (!mounted) return;
-      await _nextCard();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
-        ),
+      await review.rate(
+        remembered: isCorrect,
+        responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
-    }
-  }
-
-  Future<void> _retryEvidence() async {
-    final pending = _pendingEvidence;
-    if (pending == null || !pending.requiresRetry || _saving) return;
-    setState(() => _saving = true);
-    try {
-      await pending.retry();
-      if (!mounted) return;
-      await _nextCard();
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง'),
-        ),
-      );
-    }
-  }
-
-  Future<void> _retrySessionClose() async {
-    final pending = _pendingSessionClose;
-    if (pending == null || _saving) return;
-    setState(() => _saving = true);
-    try {
-      final lifecycle = _lessonLifecycle;
-      if (lifecycle == null) {
-        if (pending.requiresRetry) {
-          await pending.retry();
-        } else {
-          await pending.finish();
-        }
-      } else {
-        await lifecycle.complete(pending);
-      }
-      _pendingSessionClose = null;
-      await _completeReview();
+      await _afterReviewAction(previousIndex: previousIndex);
     } catch (_) {
       _showSaveFailure();
     }
   }
 
-  Future<void> _nextCard() async {
+  Future<void> _revealAnswer() async {
+    final review = _review;
+    if (review == null || _actionLocked) return;
+    try {
+      await review.reveal(
+        responseTimeMs: _responseStopwatch.elapsedMilliseconds,
+      );
+      if (!mounted) return;
+      await _controller.forward();
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _advanceAfterReveal() async {
+    final review = _review;
+    if (review == null || _actionLocked) return;
+    final previousIndex = review.index;
+    try {
+      await review.advanceAfterReveal();
+      await _afterReviewAction(previousIndex: previousIndex);
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _retryReview() async {
+    final review = _review;
+    if (review == null || !review.requiresRetry || review.isSaving) return;
+    final previousIndex = review.index;
+    final wasRevealed = review.isRevealed;
+    try {
+      await review.retry();
+      if (!mounted) return;
+      if (!wasRevealed && review.isRevealed) {
+        await _controller.forward();
+      }
+      await _afterReviewAction(previousIndex: previousIndex);
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _afterReviewAction({required int previousIndex}) async {
+    if (!mounted) return;
+    final review = _review!;
+    if (review.isCompleted) {
+      await _completeReview();
+      return;
+    }
+    if (review.index != previousIndex) {
+      if (_controller.value != 0) await _controller.reverse();
+      _responseStopwatch
+        ..reset()
+        ..start();
+      await _playAudio();
+    }
+  }
+
+  Future<void> _nextCompatibilityCard() async {
+    _lessonLifecycle?.recordInteraction();
     if (_currentIndex < _session!.questions.length - 1) {
       if (_isFlipped) _controller.reverse();
       setState(() {
         _isFlipped = false;
         _currentIndex++;
-        _saving = false;
-        _questionStartedAt = DateTime.now();
-        _pendingEvidence = null;
       });
+      _responseStopwatch
+        ..reset()
+        ..start();
       await _playAudio();
-      return;
-    }
-    if (!_isCompatibilityDeck) {
-      await _finishFinalSession();
       return;
     }
     await _completeReview();
   }
 
-  Future<void> _finishFinalSession() async {
-    try {
-      final pending = _pendingSessionClose ??= _learning!.captureSessionClose(
-        sessionId: _session!.id,
-      );
-      _pendingEvidence = null;
-      final lifecycle = _lessonLifecycle;
-      if (lifecycle == null) {
-        await pending.finish();
-      } else {
-        await lifecycle.complete(pending);
-      }
-      _pendingSessionClose = null;
-      await _completeReview();
-    } catch (_) {
-      _showSaveFailure();
-    }
-  }
-
   Future<void> _completeReview() async {
     if (!mounted) return;
-    setState(() {
-      _completionCommitted = true;
-      _saving = false;
-    });
+    if (_isCompatibilityDeck) {
+      setState(() => _compatibilityCompleted = true);
+    }
     await WidgetsBinding.instance.endOfFrame;
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
@@ -328,7 +468,6 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   void _showSaveFailure() {
     if (!mounted) return;
-    setState(() => _saving = false);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('บันทึกผลทบทวนไม่สำเร็จ กรุณาลองอีกครั้ง')),
     );
@@ -336,6 +475,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   @override
   void dispose() {
+    _responseStopwatch.stop();
+    _review
+      ?..removeListener(_onReviewChanged)
+      ..dispose();
     _controller.dispose();
     super.dispose();
   }
@@ -378,10 +521,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Future<void> _abandonAndPop() async {
     if (_saving || _completionCommitted) return;
-    setState(() => _saving = true);
+    setState(() => _abandoning = true);
     try {
       await _lessonLifecycle?.abandon();
     } catch (_) {
+      if (mounted) setState(() => _abandoning = false);
       _showSaveFailure();
       return;
     }
@@ -391,117 +535,176 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   Widget _buildCard() {
     final word = _currentQuestion.word;
     final actionLocked = _actionLocked;
-    return Padding(
-      padding: const EdgeInsets.all(24),
-      child: Column(
-        children: [
-          Text(
-            '${_currentIndex + 1}/${_session!.questions.length}',
-            style: Theme.of(context).textTheme.labelLarge,
-          ),
-          const SizedBox(height: 12),
-          Expanded(
-            child: GestureDetector(
-              onTap: actionLocked ? null : _flipCard,
-              child: AnimatedBuilder(
-                animation: _animation,
-                builder: (context, child) {
-                  final angle = _animation.value * pi;
-                  final front = angle < pi / 2;
-                  return Transform(
-                    transform: Matrix4.identity()
-                      ..setEntry(3, 2, 0.001)
-                      ..rotateY(angle),
-                    alignment: Alignment.center,
-                    child: Card(
-                      child: SizedBox.expand(
-                        child: Padding(
-                          padding: const EdgeInsets.all(24),
-                          child: front
-                              ? _front(word)
-                              : Transform(
-                                  transform: Matrix4.identity()..rotateY(pi),
-                                  alignment: Alignment.center,
-                                  child: _back(word),
+    return LayoutBuilder(
+      builder: (context, constraints) => SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: max(0, constraints.maxHeight - 48),
+            ),
+            child: Column(
+              children: [
+                Text(
+                  '${_visibleIndex + 1}/${_session!.questions.length}',
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  height: max(180, constraints.maxHeight * 0.52),
+                  child: Semantics(
+                    button: !_visibleFlipped,
+                    enabled: !actionLocked,
+                    label: _visibleFlipped
+                        ? 'Answer for ${word.spelling}'
+                        : 'Reveal answer for ${word.spelling}',
+                    child: GestureDetector(
+                      key: !_isCompatibilityDeck && !_visibleFlipped
+                          ? const ValueKey<String>('flashcard-reveal-answer')
+                          : null,
+                      onTap: actionLocked || _visibleFlipped ? null : _flipCard,
+                      child: AnimatedBuilder(
+                        animation: _animation,
+                        builder: (context, child) {
+                          final angle = _animation.value * pi;
+                          final front = angle < pi / 2;
+                          return Transform(
+                            transform: Matrix4.identity()
+                              ..setEntry(3, 2, 0.001)
+                              ..rotateY(angle),
+                            alignment: Alignment.center,
+                            child: Card(
+                              child: SizedBox.expand(
+                                child: Padding(
+                                  padding: const EdgeInsets.all(24),
+                                  child: front
+                                      ? _front(word)
+                                      : Transform(
+                                          transform: Matrix4.identity()
+                                            ..rotateY(pi),
+                                          alignment: Alignment.center,
+                                          child: _back(word),
+                                        ),
                                 ),
-                        ),
+                              ),
+                            ),
+                          );
+                        },
                       ),
                     ),
-                  );
-                },
-              ),
+                  ),
+                ),
+                const SizedBox(height: 20),
+                if (_saving)
+                  const LinearProgressIndicator()
+                else if (_review?.requiresRetry ?? false)
+                  FilledButton(
+                    key: const ValueKey<String>('current-evidence-retry'),
+                    onPressed: _retryReview,
+                    child: Text(
+                      _review!.requiresCompletionRetry
+                          ? 'Retry session completion'
+                          : 'Retry saved review',
+                    ),
+                  )
+                else if (_completionCommitted)
+                  const SizedBox.shrink()
+                else if (_isCompatibilityDeck && _visibleFlipped)
+                  _ratingControls()
+                else if (!_isCompatibilityDeck && _visibleFlipped)
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      key: const ValueKey<String>('flashcard-continue'),
+                      onPressed: _advanceAfterReveal,
+                      child: const Text('Continue'),
+                    ),
+                  )
+                else if (!_isCompatibilityDeck)
+                  _ratingControls(includeRevealInstruction: true)
+                else
+                  const Text('แตะการ์ดเพื่อดูคำแปล'),
+              ],
             ),
           ),
-          const SizedBox(height: 20),
-          if (_saving)
-            const LinearProgressIndicator()
-          else if (_pendingEvidence?.requiresRetry ?? false)
-            FilledButton(
-              key: const ValueKey<String>('current-evidence-retry'),
-              onPressed: _retryEvidence,
-              child: const Text('Retry saved review'),
-            )
-          else if (_pendingSessionClose != null)
-            FilledButton(
-              key: const ValueKey<String>('current-evidence-retry'),
-              onPressed: _retrySessionClose,
-              child: const Text('Retry session completion'),
-            )
-          else if (_completionCommitted)
-            const SizedBox.shrink()
-          else if (_isFlipped)
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _rateItem(false),
-                    child: const Text('จำไม่ได้ (Again)'),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: FilledButton(
-                    onPressed: () => _rateItem(true),
-                    child: const Text('จำได้แล้ว (Good)'),
-                  ),
-                ),
-              ],
-            )
-          else
-            const Text('แตะการ์ดเพื่อดูคำแปล'),
-        ],
+        ),
       ),
     );
   }
 
-  Widget _front(QuizWord word) {
+  Widget _ratingControls({bool includeRevealInstruction = false}) {
     return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(word.spelling, style: Theme.of(context).textTheme.headlineLarge),
-        const SizedBox(height: 16),
-        IconButton(
-          onPressed: _actionLocked ? null : _playAudio,
-          icon: const Icon(Icons.volume_up_outlined),
-          iconSize: 40,
-          tooltip: 'ฟังเสียง',
+        OutlinedButton(
+          key: const ValueKey<String>('flashcard-not-remembered'),
+          onPressed: () => _rateItem(false),
+          child: const Text('จำไม่ได้ (Again)'),
         ),
+        const SizedBox(height: 8),
+        FilledButton(
+          key: const ValueKey<String>('flashcard-remembered'),
+          onPressed: () => _rateItem(true),
+          child: const Text('จำได้แล้ว (Good)'),
+        ),
+        if (includeRevealInstruction) ...[
+          const SizedBox(height: 8),
+          const Text(
+            'แตะการ์ดเพื่อดูคำแปล (ไม่นับเป็นการจำได้ด้วยตนเอง)',
+            textAlign: TextAlign.center,
+          ),
+        ],
       ],
     );
   }
 
+  Widget _front(QuizWord word) {
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              word.spelling,
+              style: Theme.of(context).textTheme.headlineLarge,
+            ),
+            const SizedBox(height: 16),
+            IconButton(
+              onPressed: _actionLocked ? null : _playAudio,
+              icon: const Icon(Icons.volume_up_outlined),
+              iconSize: 40,
+              tooltip: 'ฟังเสียง',
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _back(QuizWord word) {
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(word.spelling, style: Theme.of(context).textTheme.headlineSmall),
-        const SizedBox(height: 12),
-        Text(word.meaning, style: Theme.of(context).textTheme.headlineMedium),
-        if (word.partOfSpeech.isNotEmpty) ...[
-          const SizedBox(height: 16),
-          Text(word.partOfSpeech, textAlign: TextAlign.center),
-        ],
-      ],
+    return Center(
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              word.spelling,
+              style: Theme.of(context).textTheme.headlineSmall,
+            ),
+            const SizedBox(height: 12),
+            Text(
+              word.meaning,
+              style: Theme.of(context).textTheme.headlineMedium,
+            ),
+            if (word.partOfSpeech.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Text(word.partOfSpeech, textAlign: TextAlign.center),
+            ],
+          ],
+        ),
+      ),
     );
   }
 }

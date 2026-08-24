@@ -8,6 +8,7 @@ enum ProductionFeatureUnavailableReason {
   missingRegistry,
   unavailableState,
   missingDependency,
+  incompatibleRollout,
 }
 
 /// Shared fail-closed experience for stale or direct feature routes.

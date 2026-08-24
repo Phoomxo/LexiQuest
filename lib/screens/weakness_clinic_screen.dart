@@ -114,32 +114,35 @@ class _WeaknessBody extends StatelessWidget {
                     context,
                     AppPage<void>(
                       name: 'learning/weakness-srs',
-                      builder: (_) => ProductionFeatureGate(
-                        feature: Feature.srs,
-                        builder: (context) {
-                          final dependencies = AppDependenciesScope.maybeOf(
-                            context,
-                          );
-                          final registration = dependencies?.lessonModes?.find(
-                            LessonMode.flashcard,
-                          );
-                          final createController =
-                              dependencies?.createLessonController;
-                          if (registration == null ||
-                              createController == null) {
-                            return const ProductionFeatureUnavailable(
+                      builder: (context) {
+                        final dependencies = AppDependenciesScope.maybeOf(
+                          context,
+                        );
+                        final registration = dependencies?.lessonModes?.find(
+                          LessonMode.flashcard,
+                        );
+                        final createController =
+                            dependencies?.createLessonController;
+                        if (registration == null || createController == null) {
+                          return ProductionFeatureGate(
+                            feature: Feature.srs,
+                            registry: dependencies?.features,
+                            builder: (_) => const ProductionFeatureUnavailable(
                               feature: Feature.srs,
                               reason: ProductionFeatureUnavailableReason
                                   .missingDependency,
-                            );
-                          }
-                          return UnifiedLessonModeHost(
-                            adapter: registration.adapter,
-                            createController: createController,
-                            builder: (_) => const SrsFlashcardsScreen(),
+                            ),
                           );
-                        },
-                      ),
+                        }
+                        return UnifiedLessonModeHost(
+                          adapter: registration.adapter,
+                          createController: createController,
+                          feature: Feature.srs,
+                          featureRegistry: dependencies?.features,
+                          learning: dependencies?.learning,
+                          builder: (_) => const SrsFlashcardsScreen(),
+                        );
+                      },
                     ),
                   ),
             style: FilledButton.styleFrom(

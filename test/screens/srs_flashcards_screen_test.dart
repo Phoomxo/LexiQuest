@@ -1,19 +1,36 @@
 import 'dart:async';
 
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide LocalOwner;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
@@ -57,16 +74,10 @@ void main() {
       },
     ];
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SrsFlashcardsScreen(
-          wordList: wordList,
-          voice: VoiceUseCases(
-            provider: fakeVoice,
-            disposeProvider: () async {},
-          ),
-        ),
-      ),
+    await _pumpLegacyCompatibility(
+      tester,
+      wordList: wordList,
+      voice: VoiceUseCases(provider: fakeVoice, disposeProvider: () async {}),
     );
     await tester.pumpAndSettle();
 
@@ -81,15 +92,12 @@ void main() {
       disposeProvider: () async {},
     );
     try {
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SrsFlashcardsScreen(
-            wordList: const [
-              {'word': 'apple', 'translation': 'apple', 'example': 'apple'},
-            ],
-            voice: voice,
-          ),
-        ),
+      await _pumpLegacyCompatibility(
+        tester,
+        wordList: const [
+          {'word': 'apple', 'translation': 'apple', 'example': 'apple'},
+        ],
+        voice: voice,
       );
       await tester.pumpAndSettle();
 
@@ -139,6 +147,7 @@ void main() {
             voice: voice,
             learning: learning,
             evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const FlashcardModeAdapter(),
           ),
         ),
       );
@@ -188,16 +197,10 @@ void main() {
         },
       ];
 
-      await tester.pumpWidget(
-        MaterialApp(
-          home: SrsFlashcardsScreen(
-            wordList: wordList,
-            voice: VoiceUseCases(
-              provider: fakeVoice,
-              disposeProvider: () async {},
-            ),
-          ),
-        ),
+      await _pumpLegacyCompatibility(
+        tester,
+        wordList: wordList,
+        voice: VoiceUseCases(provider: fakeVoice, disposeProvider: () async {}),
       );
       await tester.pumpAndSettle();
 
@@ -225,61 +228,220 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('retry reuses pending evidence identity', (tester) async {
-    final repository = _RetryLearningRepository();
-    var nextId = 0;
-    final learning = LearningUseCases(
-      owners: _ScenarioOwnerRepository(),
-      repository: repository,
-      generateId: () => 'srs-${++nextId}',
-      nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
-      buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
-    );
-    final voice = VoiceUseCases(
-      provider: FakeVoiceProvider(),
-      disposeProvider: () async {},
-    );
-    addTearDown(voice.dispose);
+  for (final remembered in <bool>[true, false]) {
+    testWidgets(
+      '${remembered ? 'remembered' : 'not-remembered'} retry reuses frozen evidence identity',
+      (tester) async {
+        final repository = _RetryLearningRepository();
+        var nextId = 0;
+        final learning = LearningUseCases(
+          owners: _ScenarioOwnerRepository(),
+          repository: repository,
+          generateId: () => 'srs-${++nextId}',
+          nowUtc: () => DateTime.utc(2026, 8, 11, 10, 0, nextId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+        );
+        final voice = VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        );
+        addTearDown(voice.dispose);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        home: SrsFlashcardsScreen(
-          voice: voice,
-          learning: learning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+        await tester.pumpWidget(
+          MaterialApp(
+            home: SrsFlashcardsScreen(
+              voice: voice,
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const FlashcardModeAdapter(),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        final rating = find.byKey(
+          ValueKey<String>(
+            remembered ? 'flashcard-remembered' : 'flashcard-not-remembered',
+          ),
+        );
+        await tester.tap(rating);
+        await tester.pumpAndSettle();
+        ScaffoldMessenger.of(
+          tester.element(find.byType(SrsFlashcardsScreen)),
+        ).removeCurrentSnackBar();
+        await tester.pumpAndSettle();
+        expect(rating, findsNothing);
+        final retryButton = find.byKey(
+          const ValueKey<String>('current-evidence-retry'),
+        );
+        await tester.ensureVisible(retryButton);
+        await tester.tap(retryButton);
+        await tester.pumpAndSettle();
+
+        expect(repository.commands, hasLength(2));
+        final first = repository.commands.first;
+        final retry = repository.commands.last;
+        expect(retry.id, first.id);
+        expect(retry.occurredAtUtc, first.occurredAtUtc);
+        expect(retry.isCorrect, remembered);
+        expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+        expect(
+          retry.evidenceContext.evidenceClass,
+          EvidenceClass.independentRecall,
+        );
+      },
+    );
+  }
+
+  testWidgets(
+    'assisted reveal stays exposure and survives an offline restart without changing SRS',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime.utc(2026, 8, 25, 9);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'flashcard-owner',
+        nowUtc: () => now,
+      );
+      final vocabulary = VocabularyUseCases(
+        owners: owners,
+        vocabulary: DriftVocabularyRepository(database),
+        generateId: () => 'flashcard-vocabulary-id',
+        nowUtc: () => now,
+      );
+      final category = await vocabulary.createCategory('Flashcards');
+      final word = await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'durable',
+          meaning: 'lasting',
+          partOfSpeech: 'adjective',
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('durable'));
-    await tester.pumpAndSettle();
+      );
+      var nextId = 0;
+      var clock = now.subtract(const Duration(days: 2));
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'flashcard-${++nextId}',
+        nowUtc: () => clock.add(Duration(milliseconds: nextId)),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-test'),
+      );
+      final seedSession = await learning.startQuiz();
+      await learning.recordEvidence(
+        sourceEvidenceId: 'attempt:flashcard-seed',
+        occurredAtUtc: clock,
+        sessionId: seedSession.id,
+        wordId: word.id,
+        promptMode: 'srsRecall',
+        isCorrect: true,
+        responseTimeMs: 200,
+        attemptNumber: 1,
+        evidenceContext: EvidenceContext.legacyCompatibility(
+          evidenceClass: EvidenceClass.independentRecall,
+          skillId: 'srs-recall',
+          hintLevel: 0,
+          contentRevision: 'built-in-v1',
+          engagementAllowed: true,
+        ),
+      );
+      final before = (await database.select(database.srsStates).get()).single;
+      clock = now;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SrsFlashcardsScreen(
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const FlashcardModeAdapter(),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    final good = find.text('จำได้แล้ว (Good)');
-    await tester.tap(good);
-    await tester.pumpAndSettle();
-    ScaffoldMessenger.of(
-      tester.element(find.byType(SrsFlashcardsScreen)),
-    ).removeCurrentSnackBar();
-    await tester.pumpAndSettle();
-    expect(good, findsNothing);
-    final retryButton = find.byKey(
-      const ValueKey<String>('current-evidence-retry'),
-    );
-    await tester.ensureVisible(retryButton);
-    await tester.tap(retryButton);
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('durable'));
+      for (
+        var pump = 0;
+        pump < 50 && find.text('lasting').evaluate().isEmpty;
+        pump++
+      ) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.pumpAndSettle();
 
-    expect(repository.commands, hasLength(2));
-    final first = repository.commands.first;
-    final retry = repository.commands.last;
-    expect(retry.id, first.id);
-    expect(retry.occurredAtUtc, first.occurredAtUtc);
-    expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
-    expect(
-      retry.evidenceContext.evidenceClass,
-      EvidenceClass.independentRecall,
-    );
-  });
+      final attempts = await database.select(database.answerAttempts).get();
+      final srs = await database.select(database.srsStates).get();
+      expect(attempts, hasLength(2));
+      final exposure = attempts.singleWhere(
+        (attempt) => attempt.promptMode == 'flashcardExposure',
+      );
+      expect(exposure.evidenceClass, EvidenceClass.exposure.name);
+      expect(srs, hasLength(1));
+      expect(srs.single.id, before.id);
+      expect(srs.single.intervalDays, before.intervalDays);
+      expect(srs.single.repetitions, before.repetitions);
+      expect(srs.single.lapses, before.lapses);
+      expect(srs.single.dueAtUtcMs, before.dueAtUtcMs);
+      expect(find.text('lasting'), findsOneWidget);
+      expect(find.text('จำได้แล้ว (Good)'), findsNothing);
+
+      var restartId = 0;
+      final restartedLearning = LearningUseCases(
+        owners: owners,
+        repository: DriftLearningRepository(database),
+        generateId: () => 'flashcard-restart-${++restartId}',
+        nowUtc: () => now.add(Duration(seconds: restartId)),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'f06-restart-test',
+        ),
+      );
+      final dueAfterRestart = await restartedLearning.startDueReview();
+      expect(dueAfterRestart.questions.single.word.id, word.id);
+    },
+  );
+
+  testWidgets(
+    'production controls remain accessible at narrow width and 200% text',
+    (tester) async {
+      await tester.binding.setSurfaceSize(const Size(320, 568));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+      final repository = _RetryLearningRepository(failAnswerOnce: false);
+      final learning = LearningUseCases(
+        owners: _ScenarioOwnerRepository(),
+        repository: repository,
+        generateId: () => 'accessible-flashcard',
+        nowUtc: () => DateTime.utc(2026, 8, 25, 10),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f06-a11y'),
+      );
+
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: MaterialApp(
+            home: SrsFlashcardsScreen(
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+              modeAdapter: const FlashcardModeAdapter(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('durable'), findsOneWidget);
+      expect(find.text('จำได้แล้ว (Good)'), findsOneWidget);
+      expect(find.text('จำไม่ได้ (Again)'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Reveal answer for durable'),
+        findsOneWidget,
+      );
+    },
+  );
 
   testWidgets(
     'final-card close failure keeps one answer and a route-safe close retry',
@@ -323,6 +485,7 @@ void main() {
                         evidenceAdapter: CurrentActivityEvidenceAdapter(
                           learning: learning,
                         ),
+                        modeAdapter: const FlashcardModeAdapter(),
                       ),
                     ),
                   );
@@ -335,9 +498,6 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey<String>('open-srs-route')));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('durable'));
-      await tester.pumpAndSettle();
-
       final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
       final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
       await tester.tap(good);
@@ -432,14 +592,12 @@ void main() {
               evidenceAdapter: CurrentActivityEvidenceAdapter(
                 learning: learning,
               ),
+              modeAdapter: const FlashcardModeAdapter(),
             ),
           ),
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.text('durable'));
-      await tester.pumpAndSettle();
-
       final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
       final again = find.widgetWithText(OutlinedButton, 'จำไม่ได้ (Again)');
       final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
@@ -534,6 +692,7 @@ void main() {
             voice: voice,
             learning: learning,
             evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const FlashcardModeAdapter(),
           ),
         ),
       );
@@ -548,16 +707,9 @@ void main() {
           .first;
       final staleAudioHandler = tester.widget<IconButton>(audio).onPressed!;
       final staleFlipHandler = tester.widget<GestureDetector>(card).onTap!;
-      final initialAudioCalls = provider.spokenRequests.length;
-
-      staleFlipHandler();
-      await tester.pumpAndSettle();
       final good = find.widgetWithText(FilledButton, 'จำได้แล้ว (Good)');
       final staleGoodHandler = tester.widget<FilledButton>(good).onPressed!;
-      staleFlipHandler();
-      await tester.pumpAndSettle();
-      expect(find.text('lasting'), findsNothing);
-      expect(audio, findsOneWidget);
+      final initialAudioCalls = provider.spokenRequests.length;
 
       staleGoodHandler();
       for (var pump = 0; pump < 20 && repository.commands.isEmpty; pump++) {
@@ -636,6 +788,67 @@ void main() {
       );
     },
   );
+}
+
+Future<void> _pumpLegacyCompatibility(
+  WidgetTester tester, {
+  required List<Map<String, String>> wordList,
+  required VoiceUseCases voice,
+}) async {
+  final database = AppDatabase(NativeDatabase.memory());
+  addTearDown(database.close);
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'legacy-flashcard-owner',
+    nowUtc: () => DateTime.utc(2026, 8, 25),
+  );
+  final learning = LearningUseCases(
+    owners: owners,
+    repository: DriftLearningRepository(database),
+    generateId: () => 'legacy-flashcard-id',
+    nowUtc: () => DateTime.utc(2026, 8, 25),
+    buildInfo: const AppBuildInfo(
+      version: 'test',
+      buildId: 'f06-legacy-flashcard-fixture',
+    ),
+  );
+  final research = InertResearchDependencies(database);
+  final dependencies = AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.unavailable,
+      supabase: RuntimeAvailability.unavailable,
+      backends: RuntimeAvailability.unavailable,
+    ),
+    config: null,
+    guestSessionService: _GuestSession(),
+    quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        const FixedEvidencePolicyRolloutModeProvider.legacy(),
+    features: const BuildFeatureRegistry.allEnabled(),
+    database: database,
+    localOwners: owners,
+    learning: learning,
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: MaterialApp(
+        home: SrsFlashcardCompatibilityRoute(wordList: wordList, voice: voice),
+      ),
+    ),
+  );
+}
+
+final class _GuestSession implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionFailed(GuestSessionFailure.unknown);
 }
 
 final class _ScenarioOwnerRepository implements LocalOwnerRepository {

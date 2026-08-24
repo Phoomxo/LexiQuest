@@ -171,7 +171,9 @@ class _CefrSelectionScreenState extends State<CefrSelectionScreen>
                             AppPage<void>(
                               name: 'learning/cefr-srs',
                               builder: (context) =>
-                                  SrsFlashcardsScreen(wordList: wordMaps),
+                                  SrsFlashcardCompatibilityRoute(
+                                    wordList: wordMaps,
+                                  ),
                             ),
                           );
                         }

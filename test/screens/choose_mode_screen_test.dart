@@ -1,17 +1,27 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
-import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
+import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
@@ -21,6 +31,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/inert_research_dependencies.dart';
@@ -70,7 +81,7 @@ void main() {
         MaterialApp(
           home: ChooseModeScreen(
             featureRegistry: const BuildFeatureRegistry.allEnabled(),
-            lessonModes: buildLegacyLessonModeRegistry(),
+            lessonModes: buildLessonModeRegistry(),
           ),
         ),
       );
@@ -126,8 +137,12 @@ void main() {
           partOfSpeech: 'adjective',
         ),
       );
-      final modes = buildLegacyLessonModeRegistry();
+      final modes = buildLessonModeRegistry();
       final research = InertResearchDependencies(database);
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
       var controllerBuilds = 0;
       final dependencies = AppDependencies(
         initialRoute: AppRoute.home,
@@ -151,6 +166,7 @@ void main() {
         currentActivityEvidence: CurrentActivityEvidenceAdapter(
           learning: learning,
         ),
+        features: features,
         lessonModes: modes,
         createLessonController: (adapter) {
           controllerBuilds += 1;
@@ -206,6 +222,18 @@ void main() {
         );
         final controller = shell.controller!;
         expect(controller.state.mode, routeCase.mode);
+        if (routeCase.mode == LessonMode.flashcard) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isA<FlashcardModeAdapter>(),
+          );
+          expect(
+            tester
+                .widget<SrsFlashcardsScreen>(find.byType(SrsFlashcardsScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+        }
         if (routeCase.mode == LessonMode.meaningQuiz) {
           expect(controller.state.status, LessonSessionStatus.active);
 
@@ -221,6 +249,15 @@ void main() {
           expect(controller.state.status, LessonSessionStatus.active);
         }
 
+        if (routeCase.mode == LessonMode.flashcard) {
+          features.emergencyOff(Feature.srs);
+          await tester.pumpAndSettle();
+          expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+          expect(find.byType(SrsFlashcardsScreen), findsNothing);
+          expect(find.byType(UnifiedLessonShell), findsNothing);
+          continue;
+        }
+
         Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
         await tester.pumpAndSettle();
         if (routeCase.mode == LessonMode.associativeReading) {
@@ -230,6 +267,462 @@ void main() {
       }
     },
   );
+
+  testWidgets(
+    'SRS off during delayed due load compensates the later durable session',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(delayDue: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      await tester.pump();
+      await tester.runAsync(
+        () => harness.repository.dueEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+
+      harness.features.emergencyOff(Feature.srs);
+      harness.repository.dueRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(SrsFlashcardsScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions, hasLength(2));
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.abandoned,
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.inactive,
+      );
+      expect(
+        await harness.database
+            .select(harness.database.learningTimeSegments)
+            .get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'SRS off synchronously fences a retained rating before terminal close',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(blockAbandon: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      await tester.pumpAndSettle();
+
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.active,
+      );
+      expect(harness.activeTimes.single.state, ActiveLearningTimeState.active);
+      final srsBefore =
+          (await harness.database.select(harness.database.srsStates).get())
+              .single
+              .toJson();
+      final staleRemembered = tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey<String>('flashcard-remembered')),
+          )
+          .onPressed!;
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+      harness.features.emergencyOff(Feature.srs);
+      staleRemembered();
+      await tester.runAsync(
+        () => harness.repository.abandonEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      harness.repository.abandonRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(SrsFlashcardsScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions, hasLength(2));
+      final gatedSession = sessions.singleWhere(
+        (session) => session.id == harness.controllers.single.state.sessionId,
+      );
+      expect(gatedSession.state, 'abandoned');
+      expect(gatedSession.endedAtUtcMs, isNotNull);
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.finished,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(
+        (await harness.database.select(harness.database.srsStates).get()).single
+            .toJson(),
+        srsBefore,
+      );
+    },
+  );
+
+  testWidgets(
+    'SRS off awaits an accepted completion instead of racing abandonment',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(blockFinish: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      await tester.pumpAndSettle();
+
+      final remembered = find.byKey(
+        const ValueKey<String>('flashcard-remembered'),
+      );
+      final staleNotRemembered = tester
+          .widget<OutlinedButton>(
+            find.byKey(const ValueKey<String>('flashcard-not-remembered')),
+          )
+          .onPressed!;
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      await tester.tap(remembered);
+      await tester.runAsync(
+        () => harness.repository.finishEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      final attemptsAtOff = await harness.database
+          .select(harness.database.answerAttempts)
+          .get();
+      final srsAtOff =
+          (await harness.database.select(harness.database.srsStates).get())
+              .single
+              .toJson();
+
+      harness.features.emergencyOff(Feature.srs);
+      staleNotRemembered();
+      expect(harness.repository.abandonCalls, 0);
+      harness.repository.finishRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.finishCalls, 1);
+      expect(harness.repository.abandonCalls, 0);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions
+            .singleWhere(
+              (session) =>
+                  session.id == harness.controllers.single.state.sessionId,
+            )
+            .state,
+        'completed',
+      );
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(attemptsAtOff.length),
+      );
+      expect(
+        (await harness.database.select(harness.database.srsStates).get()).single
+            .toJson(),
+        srsAtOff,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
+    },
+  );
+}
+
+final class _SrsGateHarness {
+  _SrsGateHarness._({
+    required this.database,
+    required this.features,
+    required this.repository,
+    required this.dependencies,
+    required this.controllers,
+    required this.activeTimes,
+  });
+
+  final AppDatabase database;
+  final RuntimeFeatureRegistry features;
+  final _CoordinatedLearningRepository repository;
+  final AppDependencies dependencies;
+  final List<UnifiedLessonController> controllers;
+  final List<ActiveLearningTimeController> activeTimes;
+  int monotonicMicros = 0;
+
+  static Future<_SrsGateHarness> create({
+    bool delayDue = false,
+    bool blockAbandon = false,
+    bool blockFinish = false,
+  }) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final now = DateTime.utc(2026, 8, 25, 15);
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'srs-gate-owner',
+      nowUtc: () => now,
+    );
+    final vocabulary = VocabularyUseCases(
+      owners: owners,
+      vocabulary: DriftVocabularyRepository(database),
+      generateId: () => 'srs-gate-vocabulary',
+      nowUtc: () => now,
+    );
+    final category = await vocabulary.createCategory('SRS gate');
+    await vocabulary.createWord(
+      CreateWordCommand(
+        categoryId: category.id,
+        spelling: 'durable',
+        meaning: 'lasting',
+        partOfSpeech: 'adjective',
+      ),
+    );
+    final driftLearning = DriftLearningRepository(database);
+    var seedId = 0;
+    final seedTime = now.subtract(const Duration(days: 2));
+    final seedLearning = LearningUseCases(
+      owners: owners,
+      repository: driftLearning,
+      generateId: () => 'srs-gate-seed-${++seedId}',
+      nowUtc: () => seedTime,
+      buildInfo: const AppBuildInfo(
+        version: 'test',
+        buildId: 'f06-live-srs-gate-seed',
+      ),
+    );
+    final seedSession = await seedLearning.startQuiz();
+    await seedLearning.recordEvidence(
+      sourceEvidenceId: 'attempt:srs-gate-seed',
+      occurredAtUtc: seedTime,
+      sessionId: seedSession.id,
+      wordId: seedSession.questions.single.word.id,
+      promptMode: 'srsRecall',
+      isCorrect: true,
+      responseTimeMs: 100,
+      attemptNumber: 1,
+      evidenceContext: EvidenceContext.legacyCompatibility(
+        evidenceClass: EvidenceClass.independentRecall,
+        skillId: 'srs-recall',
+        hintLevel: 0,
+        contentRevision: 'built-in-v1',
+        engagementAllowed: true,
+      ),
+    );
+    await seedLearning.finishSession(seedSession.id);
+    final repository = _CoordinatedLearningRepository(
+      driftLearning,
+      delayDue: delayDue,
+      blockAbandon: blockAbandon,
+      blockFinish: blockFinish,
+    );
+    var nextId = 0;
+    final learning = LearningUseCases(
+      owners: owners,
+      repository: repository,
+      generateId: () => 'srs-gate-${++nextId}',
+      nowUtc: () => now,
+      buildInfo: const AppBuildInfo(
+        version: 'test',
+        buildId: 'f06-live-srs-gate',
+      ),
+    );
+    final learningTime = DriftLearningTimeRepository(database, owners: owners);
+    final controllers = <UnifiedLessonController>[];
+    final activeTimes = <ActiveLearningTimeController>[];
+    final features = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    final modes = buildLessonModeRegistry();
+    final research = InertResearchDependencies(database);
+    late final _SrsGateHarness harness;
+    final dependencies = AppDependencies(
+      initialRoute: AppRoute.home,
+      runtimeStatus: const AppRuntimeStatus(
+        localData: RuntimeAvailability.ready,
+        firebase: RuntimeAvailability.unavailable,
+        supabase: RuntimeAvailability.unavailable,
+        backends: RuntimeAvailability.unavailable,
+      ),
+      config: null,
+      guestSessionService: _GuestSession(),
+      quest: testQuestUseCases(),
+      experiments: research.experiments,
+      consents: research.consents,
+      experimentAssignments: research.experimentAssignments,
+      assignedLearningEventContext: research.assignedLearningEventContext,
+      evidencePolicyRolloutModeProvider:
+          research.evidencePolicyRolloutModeProvider,
+      features: features,
+      database: database,
+      localOwners: owners,
+      learning: learning,
+      vocabulary: vocabulary,
+      lessonModes: modes,
+      currentActivityEvidence: CurrentActivityEvidenceAdapter(
+        learning: learning,
+      ),
+      learningTime: learningTime,
+      learningTimeCaptureRollout: const LearningTimeCaptureRollout.internal(),
+      createLessonController: (adapter) {
+        final activeTime = ActiveLearningTimeController(
+          repository: learningTime,
+          monotonicMicros: () => harness.monotonicMicros,
+          nowUtc: () => now,
+          timezoneContext: (_) => const LearningTimeZoneContext(
+            timezoneId: 'Etc/UTC',
+            utcOffsetMinutes: 0,
+          ),
+        );
+        activeTimes.add(activeTime);
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: adapter,
+          activeLearningTime: activeTime,
+        );
+        controllers.add(controller);
+        return controller;
+      },
+    );
+    harness = _SrsGateHarness._(
+      database: database,
+      features: features,
+      repository: repository,
+      dependencies: dependencies,
+      controllers: controllers,
+      activeTimes: activeTimes,
+    );
+    return harness;
+  }
+
+  Future<void> pump(WidgetTester tester) => tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: dependencies,
+      child: const MaterialApp(home: ChooseModeScreen()),
+    ),
+  );
+
+  Future<void> close() async {
+    repository.releaseAll();
+    features.dispose();
+    await database.close();
+  }
+}
+
+final class _CoordinatedLearningRepository
+    implements LearningRepository, LearningSessionLifecycleRepository {
+  _CoordinatedLearningRepository(
+    this.delegate, {
+    required this.delayDue,
+    required this.blockAbandon,
+    required this.blockFinish,
+  });
+
+  final LearningRepository delegate;
+  final bool delayDue;
+  final bool blockAbandon;
+  final bool blockFinish;
+  final Completer<void> dueEntered = Completer<void>();
+  final Completer<void> dueRelease = Completer<void>();
+  final Completer<void> abandonEntered = Completer<void>();
+  final Completer<void> abandonRelease = Completer<void>();
+  final Completer<void> finishEntered = Completer<void>();
+  final Completer<void> finishRelease = Completer<void>();
+  int abandonCalls = 0;
+  int finishCalls = 0;
+
+  @override
+  Future<List<QuizWord>> listDueWords({
+    required String ownerId,
+    required DateTime nowUtc,
+    required int limit,
+  }) async {
+    if (delayDue) {
+      if (!dueEntered.isCompleted) dueEntered.complete();
+      await dueRelease.future;
+    }
+    return delegate.listDueWords(
+      ownerId: ownerId,
+      nowUtc: nowUtc,
+      limit: limit,
+    );
+  }
+
+  @override
+  Future<void> startSession(LearningSessionDraft session) =>
+      delegate.startSession(session);
+
+  @override
+  Future<LearningSessionSummary> abandonSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) async {
+    abandonCalls += 1;
+    if (blockAbandon) {
+      if (!abandonEntered.isCompleted) abandonEntered.complete();
+      await abandonRelease.future;
+    }
+    return (delegate as LearningSessionLifecycleRepository).abandonSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      abandonedAtUtc: abandonedAtUtc,
+    );
+  }
+
+  @override
+  Future<LearningSessionSummary> finishSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime endedAtUtc,
+  }) async {
+    finishCalls += 1;
+    if (blockFinish) {
+      if (!finishEntered.isCompleted) finishEntered.complete();
+      await finishRelease.future;
+    }
+    return delegate.finishSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    );
+  }
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
+      delegate.recordAnswer(command);
+
+  void releaseAll() {
+    if (!dueRelease.isCompleted) dueRelease.complete();
+    if (!abandonRelease.isCompleted) abandonRelease.complete();
+    if (!finishRelease.isCompleted) finishRelease.complete();
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _GuestSession implements GuestSessionService {

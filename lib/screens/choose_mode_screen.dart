@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
@@ -36,7 +37,7 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.associativeReading,
-                (_) => const AssociativeReadingLauncherScreen(),
+                (_, _) => const AssociativeReadingLauncherScreen(),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true)
@@ -48,7 +49,7 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.meaningQuiz,
-                (_) => const QuizScreen(),
+                (_, _) => const QuizScreen(),
               ),
             ),
           if (features?.isVisible(Feature.srs) == true)
@@ -60,7 +61,9 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.flashcard,
-                (_) => const SrsFlashcardsScreen(),
+                (_, adapter) => SrsFlashcardsScreen(
+                  modeAdapter: adapter as FlashcardModeAdapter,
+                ),
               ),
             ),
           const Padding(
@@ -78,7 +81,7 @@ class ChooseModeScreen extends StatelessWidget {
   Future<void> _openMode(
     BuildContext context,
     LessonMode mode,
-    WidgetBuilder builder,
+    Widget Function(BuildContext context, LessonModeAdapter adapter) builder,
   ) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final modes = lessonModes ?? dependencies?.lessonModes;
@@ -89,34 +92,48 @@ class ChooseModeScreen extends StatelessWidget {
       );
       return Future<void>.value();
     }
+    if (mode == LessonMode.flashcard &&
+        registration.adapter is! FlashcardModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This flashcard mode is unavailable.')),
+      );
+      return Future<void>.value();
+    }
     final features = featureRegistry ?? dependencies?.features;
     return AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
         name: registration.routeName,
-        builder: (_) => ProductionFeatureGate(
-          feature: registration.feature,
-          registry: features,
-          builder: (_) {
-            final createController = dependencies?.createLessonController;
-            if (createController == null) {
-              return ProductionFeatureUnavailable(
+        builder: (_) {
+          final createController = dependencies?.createLessonController;
+          if (createController == null) {
+            return ProductionFeatureGate(
+              feature: registration.feature,
+              registry: features,
+              builder: (_) => ProductionFeatureUnavailable(
                 feature: registration.feature,
                 reason: ProductionFeatureUnavailableReason.missingDependency,
-              );
-            }
-            if (mode == LessonMode.associativeReading) {
-              // The launcher can create multiple durable sessions. Each
-              // pushed session owns a fresh shell/controller instance.
-              return builder(context);
-            }
-            return UnifiedLessonModeHost(
-              adapter: registration.adapter,
-              createController: createController,
-              builder: builder,
+              ),
             );
-          },
-        ),
+          }
+          if (mode == LessonMode.associativeReading) {
+            // The launcher can create multiple durable sessions. Each
+            // pushed session owns a fresh shell/controller instance.
+            return ProductionFeatureGate(
+              feature: registration.feature,
+              registry: features,
+              builder: (_) => builder(context, registration.adapter),
+            );
+          }
+          return UnifiedLessonModeHost(
+            adapter: registration.adapter,
+            createController: createController,
+            feature: registration.feature,
+            featureRegistry: features,
+            learning: dependencies?.learning,
+            builder: (context) => builder(context, registration.adapter),
+          );
+        },
       ),
     );
   }

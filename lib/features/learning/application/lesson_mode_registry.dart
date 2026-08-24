@@ -1,5 +1,8 @@
+import '../../../runtime/production_feature_contract.dart';
 import '../../../runtime/registries/feature.dart';
 import '../domain/lesson_mode.dart';
+import 'flashcard_mode_adapter.dart';
+import 'legacy_lesson_mode_adapters.dart';
 
 final class LessonModeRegistration {
   const LessonModeRegistration({
@@ -74,4 +77,37 @@ final class LessonModeRegistry {
     }
     return indexed;
   }
+}
+
+/// Production registry. Each migrated mode replaces the legacy adapter at the
+/// same typed entry and route, so there is never a competing delivery path.
+LessonModeRegistry buildLessonModeRegistry() {
+  LessonModeRegistration registration({
+    required LessonModeAdapter adapter,
+    required Feature feature,
+    required String routeName,
+  }) => LessonModeRegistration(
+    adapter: adapter,
+    feature: feature,
+    productionEntryId: productionFeatureContract[feature]!.productionEntryId,
+    routeName: routeName,
+  );
+
+  return LessonModeRegistry(<LessonModeRegistration>[
+    registration(
+      adapter: const LegacyLessonModeAdapter(LessonMode.associativeReading),
+      feature: Feature.reading,
+      routeName: 'learning/associative-reading',
+    ),
+    registration(
+      adapter: const LegacyLessonModeAdapter(LessonMode.meaningQuiz),
+      feature: Feature.quiz,
+      routeName: 'learning/quiz',
+    ),
+    registration(
+      adapter: const FlashcardModeAdapter(),
+      feature: Feature.srs,
+      routeName: 'learning/srs',
+    ),
+  ]);
 }
