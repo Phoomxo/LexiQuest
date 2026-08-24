@@ -173,12 +173,11 @@ ProjectionDisposition effectiveProjectionDisposition({
   if (context.evidenceClass == EvidenceClass.recreational) {
     return evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
   }
-  // A presentation-only occurrence is never a memory update, including while
-  // the rest of the application is still on the class-agnostic Legacy rollout.
-  // This is the same kind of safety floor as recreational active effort, but
-  // deliberately scoped to the canonical SRS projection so Legacy fallback
-  // behavior for unrelated projections remains byte-for-byte unchanged.
-  if (context.evidenceClass == EvidenceClass.exposure &&
+  // Exposure and recognition are never binary recall memory updates, including
+  // while unrelated projections still use the class-agnostic Legacy rollout.
+  // This safety floor is deliberately scoped to the canonical SRS projection.
+  if ((context.evidenceClass == EvidenceClass.exposure ||
+          context.evidenceClass == EvidenceClass.recognition) &&
       projection == LearningProjection.masterySrs) {
     return ProjectionDisposition.deny;
   }

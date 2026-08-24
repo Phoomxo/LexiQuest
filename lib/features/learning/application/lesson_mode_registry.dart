@@ -3,6 +3,7 @@ import '../../../runtime/registries/feature.dart';
 import '../domain/lesson_mode.dart';
 import 'flashcard_mode_adapter.dart';
 import 'legacy_lesson_mode_adapters.dart';
+import 'meaning_quiz_mode_adapter.dart';
 
 final class LessonModeRegistration {
   const LessonModeRegistration({
@@ -100,7 +101,7 @@ LessonModeRegistry buildLessonModeRegistry() {
       routeName: 'learning/associative-reading',
     ),
     registration(
-      adapter: const LegacyLessonModeAdapter(LessonMode.meaningQuiz),
+      adapter: const MeaningQuizModeAdapter(),
       feature: Feature.quiz,
       routeName: 'learning/quiz',
     ),

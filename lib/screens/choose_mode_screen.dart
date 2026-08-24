@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -49,7 +50,8 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.meaningQuiz,
-                (_, _) => const QuizScreen(),
+                (_, adapter) =>
+                    QuizScreen(modeAdapter: adapter as MeaningQuizModeAdapter),
               ),
             ),
           if (features?.isVisible(Feature.srs) == true)
@@ -96,6 +98,13 @@ class ChooseModeScreen extends StatelessWidget {
         registration.adapter is! FlashcardModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This flashcard mode is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    if (mode == LessonMode.meaningQuiz &&
+        registration.adapter is! MeaningQuizModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This meaning quiz is unavailable.')),
       );
       return Future<void>.value();
     }

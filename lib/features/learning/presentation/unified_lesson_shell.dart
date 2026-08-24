@@ -30,6 +30,13 @@ final class UnifiedLessonSessionLifecycle {
 
   bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
 
+  Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
+    final routeLifecycle = _routeLifecycle;
+    return routeLifecycle == null
+        ? Future<T>.sync(operation)
+        : routeLifecycle.runAcceptedOperation(operation);
+  }
+
   Future<void> start({
     required String sessionId,
     required DateTime startedAtUtc,
@@ -117,8 +124,30 @@ final class UnifiedLessonRouteLifecycle {
   Future<LearningSessionSummary>? _completionInFlight;
   PendingLearningSessionClose? _acceptedClose;
   Future<void>? _terminal;
+  final Set<Future<void>> _acceptedOperations = <Future<void>>{};
 
   bool get acceptsOperations => _accepting;
+
+  Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
+    if (!_accepting) {
+      return Future<T>.error(
+        StateError('The lesson route is no longer accepting operations.'),
+      );
+    }
+    late final Future<T> accepted;
+    try {
+      accepted = Future<T>.sync(operation);
+    } catch (error, stackTrace) {
+      return Future<T>.error(error, stackTrace);
+    }
+    final settled = accepted.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
+    _acceptedOperations.add(settled);
+    unawaited(settled.whenComplete(() => _acceptedOperations.remove(settled)));
+    return accepted;
+  }
 
   Future<QuizSession> initializeSession(Future<QuizSession> load) {
     final existing = _initialization;
@@ -203,10 +232,21 @@ final class UnifiedLessonRouteLifecycle {
 
   Future<void> retire() {
     _accepting = false;
-    return _terminal ??= _retire();
+    final existing = _terminal;
+    if (existing != null) return existing;
+    final cutoff = _controller.captureTerminalCutoff(_nowUtc());
+    final timeClose = _controller.closeTimeAtCutoff(cutoff);
+    return _terminal ??= _retire(cutoff, timeClose);
   }
 
-  Future<void> _retire() async {
+  Future<void> _retire(
+    LessonTerminalCutoff cutoff,
+    Future<void> timeClose,
+  ) async {
+    final settledTimeClose = timeClose.then<void>(
+      (_) {},
+      onError: (Object _, StackTrace _) {},
+    );
     try {
       await _initialization;
     } catch (_) {
@@ -223,6 +263,11 @@ final class UnifiedLessonRouteLifecycle {
     } catch (_) {
       // A failed attach is compensated by initialization before this point.
     }
+    final acceptedOperations = _acceptedOperations.toList(growable: false);
+    if (acceptedOperations.isNotEmpty) {
+      await Future.wait<void>(acceptedOperations);
+    }
+    await settledTimeClose;
     final completion = _completionInFlight;
     if (completion != null) {
       try {
@@ -238,10 +283,10 @@ final class UnifiedLessonRouteLifecycle {
     }
     final close = _acceptedClose;
     if (close != null) {
-      await _controller.completeCapturedSession(close, _nowUtc());
+      await _controller.completeCapturedSessionAtCutoff(close, cutoff);
       return;
     }
-    await _controller.abandon(_nowUtc());
+    await _controller.abandonAtCutoff(cutoff);
   }
 
   Future<void> _compensateUnattached(String sessionId) {

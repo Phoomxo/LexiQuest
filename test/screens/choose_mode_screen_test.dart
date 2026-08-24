@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -31,6 +32,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -235,6 +237,14 @@ void main() {
           );
         }
         if (routeCase.mode == LessonMode.meaningQuiz) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isA<MeaningQuizModeAdapter>(),
+          );
+          expect(
+            tester.widget<QuizScreen>(find.byType(QuizScreen)).modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
           expect(controller.state.status, LessonSessionStatus.active);
 
           tester.binding.handleAppLifecycleStateChanged(
@@ -454,6 +464,257 @@ void main() {
       expect(segments.single.activeDurationMs, 2000);
     },
   );
+
+  testWidgets(
+    'Quiz off during delayed initialization compensates the returned session',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(delayQuiz: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+      await tester.pump();
+      await tester.runAsync(
+        () => harness.repository.quizEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+
+      harness.features.emergencyOff(Feature.quiz);
+      harness.repository.quizRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(QuizScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions, hasLength(2));
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.inactive,
+      );
+      expect(
+        await harness.database
+            .select(harness.database.learningTimeSegments)
+            .get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets('Quiz off synchronously rejects a retained answer callback', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(blockAbandon: true);
+    addTearDown(harness.close);
+    await harness.pump(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+    await tester.pumpAndSettle();
+
+    final answer = find.byKey(
+      const ValueKey<String>(
+        'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+      ),
+    );
+    final staleAnswer = tester.widget<FilledButton>(answer).onPressed!;
+    final srsBefore =
+        (await harness.database.select(harness.database.srsStates).get()).single
+            .toJson();
+    harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+    harness.features.emergencyOff(Feature.quiz);
+    staleAnswer();
+    await tester.runAsync(
+      () => harness.repository.abandonEntered.future.timeout(
+        const Duration(seconds: 1),
+      ),
+    );
+    harness.repository.abandonRelease.complete();
+    await tester.pumpAndSettle();
+
+    expect(harness.repository.answerCalls, 0);
+    expect(harness.repository.abandonCalls, 1);
+    expect(
+      await harness.database.select(harness.database.answerAttempts).get(),
+      hasLength(1),
+      reason: 'only the pre-existing SRS seed may remain',
+    );
+    expect(
+      (await harness.database.select(harness.database.srsStates).get()).single
+          .toJson(),
+      srsBefore,
+    );
+    final sessions = await harness.database
+        .select(harness.database.learningSessions)
+        .get();
+    expect(sessions.where((session) => session.state == 'active'), isEmpty);
+    expect(
+      sessions.where((session) => session.state == 'abandoned'),
+      hasLength(1),
+    );
+    final segments = await harness.database
+        .select(harness.database.learningTimeSegments)
+        .get();
+    expect(segments, hasLength(1));
+    expect(segments.single.activeDurationMs, 2000);
+  });
+
+  testWidgets('Quiz off freezes time while accepted evidence settles', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(blockAnswer: true);
+    addTearDown(harness.close);
+    await harness.pump(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+    await tester.pumpAndSettle();
+
+    final answer = find.byKey(
+      const ValueKey<String>(
+        'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+      ),
+    );
+    final staleAnswer = tester.widget<FilledButton>(answer).onPressed!;
+    final srsBefore =
+        (await harness.database.select(harness.database.srsStates).get()).single
+            .toJson();
+    harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+    staleAnswer();
+    await tester.runAsync(
+      () => harness.repository.answerEntered.future.timeout(
+        const Duration(seconds: 1),
+      ),
+    );
+
+    harness.features.emergencyOff(Feature.quiz);
+    staleAnswer();
+    await tester.pump();
+    expect(
+      harness.repository.abandonCalls,
+      0,
+      reason: 'terminalization must wait the accepted evidence operation',
+    );
+    harness.monotonicMicros = const Duration(hours: 1).inMicroseconds;
+    await tester.pump(const Duration(minutes: 10));
+    await tester.pump();
+    expect(
+      harness.activeTimes.single.state,
+      ActiveLearningTimeState.finished,
+      reason: 'F24 must close while the accepted evidence write is blocked',
+    );
+    final segmentsWhileBlocked = await harness.database
+        .select(harness.database.learningTimeSegments)
+        .get();
+    expect(segmentsWhileBlocked, hasLength(1));
+    expect(segmentsWhileBlocked.single.activeDurationMs, 2000);
+    harness.repository.answerRelease.complete();
+    await tester.pumpAndSettle();
+
+    expect(harness.repository.answerCalls, 1);
+    expect(harness.repository.abandonCalls, 1);
+    final attempts = await harness.database
+        .select(harness.database.answerAttempts)
+        .get();
+    expect(attempts, hasLength(2));
+    final recognition = attempts.singleWhere(
+      (attempt) => attempt.promptMode == 'meaningChoice',
+    );
+    expect(recognition.evidenceClass, EvidenceClass.recognition.name);
+    expect(
+      (await harness.database.select(harness.database.srsStates).get()).single
+          .toJson(),
+      srsBefore,
+    );
+    final sessions = await harness.database
+        .select(harness.database.learningSessions)
+        .get();
+    expect(sessions.where((session) => session.state == 'active'), isEmpty);
+    expect(
+      sessions.where((session) => session.state == 'abandoned'),
+      hasLength(1),
+    );
+    final segments = await harness.database
+        .select(harness.database.learningTimeSegments)
+        .get();
+    expect(segments, hasLength(1));
+    expect(segments.single.activeDurationMs, 2000);
+  });
+
+  testWidgets(
+    'Quiz off awaits an accepted final completion without abandonment race',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(blockFinish: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+      await tester.pumpAndSettle();
+
+      final answer = find.byKey(
+        const ValueKey<String>(
+          'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+        ),
+      );
+      final staleAnswer = tester.widget<FilledButton>(answer).onPressed!;
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      await tester.tap(answer);
+      final next = find.byKey(const ValueKey<String>('meaning-quiz-next'));
+      for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      expect(next, findsOneWidget);
+      await tester.ensureVisible(next);
+      await tester.tap(next);
+      await tester.runAsync(
+        () => harness.repository.finishEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      final attemptsAtOff = await harness.database
+          .select(harness.database.answerAttempts)
+          .get();
+      final srsAtOff =
+          (await harness.database.select(harness.database.srsStates).get())
+              .single
+              .toJson();
+
+      harness.features.emergencyOff(Feature.quiz);
+      staleAnswer();
+      expect(harness.repository.abandonCalls, 0);
+      harness.repository.finishRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.finishCalls, 1);
+      expect(harness.repository.abandonCalls, 0);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'completed'),
+        hasLength(2),
+      );
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(attemptsAtOff.length),
+      );
+      expect(
+        (await harness.database.select(harness.database.srsStates).get()).single
+            .toJson(),
+        srsAtOff,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
+    },
+  );
 }
 
 final class _SrsGateHarness {
@@ -476,7 +737,9 @@ final class _SrsGateHarness {
 
   static Future<_SrsGateHarness> create({
     bool delayDue = false,
+    bool delayQuiz = false,
     bool blockAbandon = false,
+    bool blockAnswer = false,
     bool blockFinish = false,
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
@@ -536,7 +799,9 @@ final class _SrsGateHarness {
     final repository = _CoordinatedLearningRepository(
       driftLearning,
       delayDue: delayDue,
+      delayQuiz: delayQuiz,
       blockAbandon: blockAbandon,
+      blockAnswer: blockAnswer,
       blockFinish: blockFinish,
     );
     var nextId = 0;
@@ -637,22 +902,48 @@ final class _CoordinatedLearningRepository
   _CoordinatedLearningRepository(
     this.delegate, {
     required this.delayDue,
+    required this.delayQuiz,
     required this.blockAbandon,
+    required this.blockAnswer,
     required this.blockFinish,
   });
 
   final LearningRepository delegate;
   final bool delayDue;
+  final bool delayQuiz;
   final bool blockAbandon;
+  final bool blockAnswer;
   final bool blockFinish;
   final Completer<void> dueEntered = Completer<void>();
   final Completer<void> dueRelease = Completer<void>();
+  final Completer<void> quizEntered = Completer<void>();
+  final Completer<void> quizRelease = Completer<void>();
+  final Completer<void> answerEntered = Completer<void>();
+  final Completer<void> answerRelease = Completer<void>();
   final Completer<void> abandonEntered = Completer<void>();
   final Completer<void> abandonRelease = Completer<void>();
   final Completer<void> finishEntered = Completer<void>();
   final Completer<void> finishRelease = Completer<void>();
   int abandonCalls = 0;
+  int answerCalls = 0;
   int finishCalls = 0;
+
+  @override
+  Future<List<QuizWord>> listQuizWords({
+    required String ownerId,
+    String? categoryId,
+    required int limit,
+  }) async {
+    if (delayQuiz) {
+      if (!quizEntered.isCompleted) quizEntered.complete();
+      await quizRelease.future;
+    }
+    return delegate.listQuizWords(
+      ownerId: ownerId,
+      categoryId: categoryId,
+      limit: limit,
+    );
+  }
 
   @override
   Future<List<QuizWord>> listDueWords({
@@ -712,11 +1003,19 @@ final class _CoordinatedLearningRepository
   }
 
   @override
-  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
-      delegate.recordAnswer(command);
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    answerCalls += 1;
+    if (blockAnswer) {
+      if (!answerEntered.isCompleted) answerEntered.complete();
+      await answerRelease.future;
+    }
+    return delegate.recordAnswer(command);
+  }
 
   void releaseAll() {
     if (!dueRelease.isCompleted) dueRelease.complete();
+    if (!quizRelease.isCompleted) quizRelease.complete();
+    if (!answerRelease.isCompleted) answerRelease.complete();
     if (!abandonRelease.isCompleted) abandonRelease.complete();
     if (!finishRelease.isCompleted) finishRelease.complete();
   }

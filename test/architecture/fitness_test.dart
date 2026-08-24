@@ -823,6 +823,7 @@ void main() {
     () {
       const expectedActivities = <String>{
         'meaningMultipleChoice',
+        'meaningToWordMultipleChoice',
         'srsRecall',
         'typedRecall',
         'associativeRecall',

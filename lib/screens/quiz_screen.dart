@@ -3,13 +3,16 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/presentation/answer_feedback_panel.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
-import '../navigation/app_routes.dart';
 
 class QuizScreen extends StatefulWidget {
   const QuizScreen({
@@ -17,42 +20,38 @@ class QuizScreen extends StatefulWidget {
     this.categoryId,
     this.learning,
     this.evidenceAdapter,
+    this.modeAdapter,
   });
 
   final String? categoryId;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final MeaningQuizModeAdapter? modeAdapter;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
 }
 
 class _QuizScreenState extends State<QuizScreen> {
+  final Stopwatch _responseStopwatch = Stopwatch();
   LearningUseCases? _learning;
+  CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  MeaningQuizModeAdapter? _modeAdapter;
+  UnifiedLessonSessionLifecycle? _lessonLifecycle;
   Future<QuizSession>? _load;
   QuizSession? _session;
-  int _index = 0;
-  bool _answered = false;
-  bool _saving = false;
-  String? _selected;
-  DateTime? _questionStartedAt;
-  CurrentActivityEvidenceAdapter? _evidenceAdapter;
-  PendingCurrentActivityEvidence? _pendingEvidence;
-  PendingLearningSessionClose? _pendingSessionClose;
-  UnifiedLessonSessionLifecycle? _lessonLifecycle;
+  MeaningQuizReviewController? _review;
   bool _completionCommitted = false;
   bool _loadSettled = false;
-
-  bool get _evidencePersistenceLocked {
-    final pending = _pendingEvidence;
-    return pending != null && !pending.isCommitted;
-  }
+  bool _abandoning = false;
 
   bool get _persistenceLocked =>
-      _evidencePersistenceLocked ||
-      _pendingSessionClose != null ||
+      _abandoning || (_review?.persistenceLocked ?? false);
+  bool get _actionLocked =>
+      _abandoning ||
+      _lessonLifecycle?.acceptsOperations == false ||
+      (_review?.actionLocked ?? true) ||
       _completionCommitted;
-  bool get _actionLocked => _saving || _persistenceLocked;
 
   @override
   void didChangeDependencies() {
@@ -66,7 +65,17 @@ class _QuizScreenState extends State<QuizScreen> {
       _evidenceAdapter =
           widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     }
-    final load = learning == null
+    final registeredAdapter = dependencies?.lessonModes
+        ?.find(LessonMode.meaningQuiz)
+        ?.adapter;
+    _modeAdapter =
+        widget.modeAdapter ??
+        (registeredAdapter is MeaningQuizModeAdapter
+            ? registeredAdapter
+            : dependencies == null
+            ? const MeaningQuizModeAdapter()
+            : null);
+    final rawLoad = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
           )
@@ -74,43 +83,64 @@ class _QuizScreenState extends State<QuizScreen> {
         ? Future<QuizSession>.error(
             StateError('current activity evidence dependency unavailable'),
           )
+        : _modeAdapter == null
+        ? Future<QuizSession>.error(
+            StateError('meaning quiz mode adapter dependency unavailable'),
+          )
+        : !identical(_evidenceAdapter!.learning, learning)
+        ? Future<QuizSession>.error(
+            StateError('meaning quiz learning authority mismatch'),
+          )
         : learning.startQuiz(categoryId: widget.categoryId);
-    _load = _loadAndStartSession(load);
+    final lifecycle = _lessonLifecycle;
+    _load = _prepareSession(
+      lifecycle == null ? rawLoad : lifecycle.initializeSession(rawLoad),
+    );
   }
 
-  Future<QuizSession> _loadAndStartSession(Future<QuizSession> load) async {
+  Future<QuizSession> _prepareSession(Future<QuizSession> load) async {
     try {
       final session = await load;
-      final startedAtUtc = session.startedAtUtc;
-      if (!session.isEmpty && startedAtUtc != null) {
-        await _lessonLifecycle?.start(
-          sessionId: session.id,
-          startedAtUtc: startedAtUtc,
-          itemCount: session.questions.length,
-        );
+      if (!mounted) return session;
+      if (!session.isEmpty) {
+        final lifecycle = _lessonLifecycle;
+        _review = _modeAdapter!.createReview(
+          session: session,
+          learning: _learning!,
+          evidence: _evidenceAdapter!,
+          completeSession: lifecycle == null
+              ? null
+              : (close) => lifecycle.complete(close),
+          recordInteraction: () => lifecycle?.recordInteraction(),
+          acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
+          runEvidenceOperation: lifecycle == null
+              ? null
+              : (operation) => lifecycle.runAcceptedOperation(operation),
+        )..addListener(_onReviewChanged);
+        _responseStopwatch
+          ..reset()
+          ..start();
       }
-      if (mounted) {
-        setState(() {
-          _session = session;
-          _questionStartedAt = DateTime.now();
-        });
-      }
+      setState(() => _session = session);
       return session;
     } finally {
       if (mounted) setState(() => _loadSettled = true);
     }
   }
 
+  void _onReviewChanged() {
+    if (mounted) setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
-    final persistenceLocked = _persistenceLocked;
     return PopScope(
       canPop:
-          !persistenceLocked &&
+          !_persistenceLocked &&
           _loadSettled &&
           (_session == null || _session!.isEmpty || _completionCommitted),
       onPopInvokedWithResult: (didPop, _) {
-        if (didPop || persistenceLocked) return;
+        if (didPop || _persistenceLocked) return;
         unawaited(_confirmExit(context));
       },
       child: Scaffold(
@@ -128,40 +158,42 @@ class _QuizScreenState extends State<QuizScreen> {
             if (!snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
-            final session = snapshot.data!;
-            if (session.isEmpty) {
+            if (snapshot.data!.isEmpty) {
               return const _QuizMessage(
                 icon: Icons.library_add_outlined,
                 message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
               );
             }
-            return _buildQuestion(session);
+            final review = _review;
+            if (review == null) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            return _buildQuestion(review);
           },
         ),
       ),
     );
   }
 
-  Widget _buildQuestion(QuizSession session) {
-    final question = session.questions[_index];
+  Widget _buildQuestion(MeaningQuizReviewController review) {
+    final question = review.currentQuestion;
     final actionLocked = _actionLocked;
-    final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
-    final sessionCloseRetryRequired = _pendingSessionClose != null;
     return SafeArea(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
+          children: <Widget>[
             Semantics(
-              label: 'คำถาม ${_index + 1} จาก ${session.questions.length}',
+              label: 'คำถาม ${review.index + 1} จาก ${review.questions.length}',
               child: LinearProgressIndicator(
-                value: (_index + 1) / session.questions.length,
+                value: (review.index + 1) / review.questions.length,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              question.word.spelling,
+              question.prompt,
+              key: const ValueKey<String>('meaning-quiz-prompt'),
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.headlineMedium,
             ),
@@ -176,43 +208,145 @@ class _QuizScreenState extends State<QuizScreen> {
               (option) => Padding(
                 padding: const EdgeInsets.only(bottom: 10),
                 child: FilledButton.tonal(
-                  onPressed: _answered || actionLocked
+                  key: ValueKey<String>(
+                    'meaning-quiz-option-${question.word.id}-$option',
+                  ),
+                  onPressed: review.isAnswered || actionLocked
                       ? null
-                      : () => _record(question, option),
+                      : () => _record(option),
                   style: FilledButton.styleFrom(
                     minimumSize: const Size.fromHeight(52),
-                    backgroundColor: _answerColor(question, option),
+                    backgroundColor: _answerColor(review, option),
                   ),
                   child: Text(option),
                 ),
               ),
             ),
-            const Spacer(),
-            if (_saving) const LinearProgressIndicator(),
-            if (evidenceRetryRequired)
+            if (review.isSaving) const LinearProgressIndicator(),
+            if (review.phase == MeaningQuizReviewPhase.evidenceRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: _saving ? null : _retryEvidence,
+                onPressed: review.isSaving ? null : _retryEvidence,
                 child: const Text('Retry saved answer'),
               )
-            else if (sessionCloseRetryRequired)
+            else if (review.phase ==
+                MeaningQuizReviewPhase.completionRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: _saving ? null : _retrySessionClose,
+                onPressed: review.isSaving ? null : _retrySessionClose,
                 child: const Text('Retry session completion'),
               ),
-            if (_answered && _pendingSessionClose == null)
+            if (review.feedback case final feedback?) ...<Widget>[
+              const SizedBox(height: 12),
+              AnswerFeedbackPanel(feedback: feedback),
+            ],
+            if (review.isAnswered) ...<Widget>[
+              const SizedBox(height: 12),
               FilledButton(
+                key: const ValueKey<String>('meaning-quiz-next'),
                 onPressed: actionLocked ? null : _next,
                 child: Text(
-                  _index == session.questions.length - 1
+                  review.index == review.questions.length - 1
                       ? 'ดูผลการเรียน'
                       : 'คำถามถัดไป',
                 ),
               ),
+            ],
           ],
         ),
       ),
+    );
+  }
+
+  Color? _answerColor(MeaningQuizReviewController review, String option) {
+    if (!review.isAnswered) return null;
+    if (option == review.currentQuestion.correctOption) {
+      return Colors.green.shade100;
+    }
+    if (option == review.selectedOption) return Colors.red.shade100;
+    return null;
+  }
+
+  Future<void> _record(String option) async {
+    final review = _review;
+    if (review == null || _actionLocked) return;
+    try {
+      final result = await review.answer(
+        option: option,
+        responseTimeMs: _responseStopwatch.elapsedMilliseconds,
+      );
+      await _haptic(result);
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _retryEvidence() async {
+    final review = _review;
+    if (review == null || !review.requiresRetry || review.isSaving) return;
+    try {
+      final result = await review.retryEvidence();
+      await _haptic(result);
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _haptic(AnswerRecordResult result) async {
+    try {
+      if (result.isCorrect) {
+        await HapticFeedback.lightImpact();
+      } else {
+        await HapticFeedback.vibrate();
+      }
+    } catch (_) {
+      // Evidence is already durable; ornamental feedback is best-effort.
+    }
+  }
+
+  Future<void> _next() async {
+    final review = _review;
+    if (review == null || _actionLocked) return;
+    try {
+      final summary = await review.advance();
+      if (summary != null) {
+        await _showScore(summary);
+        return;
+      }
+      _responseStopwatch
+        ..reset()
+        ..start();
+    } catch (_) {
+      _showSessionCloseFailure();
+    }
+  }
+
+  Future<void> _retrySessionClose() async {
+    final review = _review;
+    if (review == null || review.isSaving) return;
+    try {
+      await _showScore(await review.retryCompletion());
+    } catch (_) {
+      _showSessionCloseFailure();
+    }
+  }
+
+  Future<void> _showScore(LearningSessionSummary summary) async {
+    if (!mounted) return;
+    setState(() => _completionCommitted = true);
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+    await AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'learning/score',
+        builder: (_) => ScoreScreen(
+          correctAnswers: summary.correctCount,
+          wrongAnswers: summary.wrongCount,
+          score: summary.score,
+        ),
+      ),
+      replace: true,
     );
   }
 
@@ -223,7 +357,7 @@ class _QuizScreenState extends State<QuizScreen> {
       builder: (ctx) => AlertDialog(
         title: const Text('ออกจาก Quiz?'),
         content: const Text('ความคืบหน้าในเซสชันนี้จะไม่ถูกบันทึก'),
-        actions: [
+        actions: <Widget>[
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
             child: const Text('เล่นต่อ'),
@@ -241,13 +375,22 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _abandonAndPop() async {
-    if (_saving || _completionCommitted) return;
-    setState(() => _saving = true);
+    final session = _session;
+    if (_abandoning || _completionCommitted || session == null) return;
+    setState(() => _abandoning = true);
     try {
-      await _lessonLifecycle?.abandon();
+      final lifecycle = _lessonLifecycle;
+      if (lifecycle != null) {
+        await lifecycle.abandon();
+      } else {
+        await _learning!.abandonSession(
+          sessionId: session.id,
+          abandonedAtUtc: DateTime.now().toUtc(),
+        );
+      }
     } catch (_) {
       if (!mounted) return;
-      setState(() => _saving = false);
+      setState(() => _abandoning = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
       );
@@ -256,153 +399,26 @@ class _QuizScreenState extends State<QuizScreen> {
     if (mounted) Navigator.of(context).pop();
   }
 
-  Color? _answerColor(QuizQuestion question, String option) {
-    if (!_answered) return null;
-    if (option == question.correctAnswer) return Colors.green.shade100;
-    if (option == _selected) return Colors.red.shade100;
-    return null;
-  }
-
-  Future<void> _record(QuizQuestion question, String option) async {
-    final session = _session;
-    if (session == null || _pendingEvidence != null) return;
-    _lessonLifecycle?.recordInteraction();
-    final correct = option == question.correctAnswer;
-    final elapsed = DateTime.now().difference(
-      _questionStartedAt ?? DateTime.now(),
-    );
-    final pending = _evidenceAdapter!.capture(
-      input: CurrentActivityInput.meaningMultipleChoice,
-      sessionId: session.id,
-      wordId: question.word.id,
-      isCorrect: correct,
-      responseTimeMs: elapsed.inMilliseconds,
-      attemptNumber: _index + 1,
-    );
-    _pendingEvidence = pending;
-    setState(() {
-      _saving = true;
-      _selected = option;
-    });
-    await _commitPending(pending, retry: false);
-  }
-
-  Future<void> _retryEvidence() async {
-    final pending = _pendingEvidence;
-    if (pending == null || !pending.requiresRetry || _saving) return;
-    setState(() => _saving = true);
-    await _commitPending(pending, retry: true);
-  }
-
-  Future<void> _commitPending(
-    PendingCurrentActivityEvidence pending, {
-    required bool retry,
-  }) async {
-    try {
-      if (retry) {
-        await pending.retry();
-      } else {
-        await pending.record();
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _saving = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
-      );
-      return;
-    }
-    if (!mounted) return;
-    setState(() {
-      _answered = true;
-      _saving = false;
-    });
-    try {
-      if (pending.isCorrect) {
-        await HapticFeedback.lightImpact();
-      } else {
-        await HapticFeedback.vibrate();
-      }
-    } catch (_) {
-      // Evidence is already durable; ornamental feedback is best-effort.
-    }
-  }
-
-  Future<void> _next() async {
-    if (_actionLocked) return;
-    final session = _session!;
-    if (_index < session.questions.length - 1) {
-      setState(() {
-        _index++;
-        _answered = false;
-        _selected = null;
-        _questionStartedAt = DateTime.now();
-        _pendingEvidence = null;
-      });
-      return;
-    }
-    setState(() => _saving = true);
-    try {
-      final pending = _pendingSessionClose ??= _learning!.captureSessionClose(
-        sessionId: session.id,
-      );
-      final lifecycle = _lessonLifecycle;
-      final summary = lifecycle == null
-          ? await pending.finish()
-          : await lifecycle.complete(pending);
-      await _showScore(summary);
-    } catch (_) {
-      _showSessionCloseFailure();
-    }
-  }
-
-  Future<void> _retrySessionClose() async {
-    final pending = _pendingSessionClose;
-    if (pending == null || _saving) return;
-    setState(() => _saving = true);
-    try {
-      final lifecycle = _lessonLifecycle;
-      final summary = lifecycle == null
-          ? pending.requiresRetry
-                ? await pending.retry()
-                : await pending.finish()
-          : await lifecycle.complete(pending);
-      await _showScore(summary);
-    } catch (_) {
-      _showSessionCloseFailure();
-    }
-  }
-
-  Future<void> _showScore(LearningSessionSummary summary) async {
-    if (!mounted) return;
-    setState(() {
-      _pendingEvidence = null;
-      _pendingSessionClose = null;
-      _completionCommitted = true;
-      _saving = false;
-    });
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-    await AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: 'learning/score',
-        builder: (_) => ScoreScreen(
-          correctAnswers: summary.correctCount,
-          wrongAnswers: summary.wrongCount,
-          score: summary.score,
-        ),
-      ),
-      replace: true,
+  void _showSaveFailure() {
+    if (!mounted || _lessonLifecycle?.acceptsOperations == false) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('บันทึกคำตอบไม่สำเร็จ กรุณาลองอีกครั้ง')),
     );
   }
 
   void _showSessionCloseFailure() {
-    if (!mounted) return;
-    setState(() => _saving = false);
+    if (!mounted || _lessonLifecycle?.acceptsOperations == false) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
     );
+  }
+
+  @override
+  void dispose() {
+    _responseStopwatch.stop();
+    _review?.removeListener(_onReviewChanged);
+    _review?.dispose();
+    super.dispose();
   }
 }
 
@@ -419,7 +435,7 @@ class _QuizMessage extends StatelessWidget {
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          children: [
+          children: <Widget>[
             Icon(icon, size: 48),
             const SizedBox(height: 12),
             Text(message, textAlign: TextAlign.center),

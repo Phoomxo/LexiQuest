@@ -16,7 +16,7 @@ final class AnswerFeedbackContext {
 
   /// Produces the immutable display value that is safe to retain with a
   /// pending submission before any evidence write begins.
-  AnswerFeedbackContext normalized() {
+  FrozenAnswerFeedbackContext freeze() {
     final correctAnswer = canonicalCorrectAnswer.trim();
     if (correctAnswer.isEmpty) {
       throw ArgumentError.value(
@@ -37,11 +37,30 @@ final class AnswerFeedbackContext {
         'must contain canonical nonblank id and positive revision',
       );
     }
-    return AnswerFeedbackContext(
+    return FrozenAnswerFeedbackContext._(
       canonicalCorrectAnswer: correctAnswer,
       bookmarkIdentity: identity,
     );
   }
+
+  AnswerFeedbackContext normalized() => freeze().asContext;
+}
+
+/// Complete validated presentation context retained with a pending write.
+/// Construction is private so publishing feedback from this value cannot fail.
+final class FrozenAnswerFeedbackContext {
+  const FrozenAnswerFeedbackContext._({
+    required this.canonicalCorrectAnswer,
+    required this.bookmarkIdentity,
+  });
+
+  final String canonicalCorrectAnswer;
+  final ContentIdentity? bookmarkIdentity;
+
+  AnswerFeedbackContext get asContext => AnswerFeedbackContext(
+    canonicalCorrectAnswer: canonicalCorrectAnswer,
+    bookmarkIdentity: bookmarkIdentity,
+  );
 }
 
 /// A pure learner-facing interpretation of one already committed answer.
@@ -49,12 +68,19 @@ final class AnswerFeedback {
   factory AnswerFeedback.fromCommittedResult({
     required AnswerRecordResult result,
     required AnswerFeedbackContext context,
+  }) => AnswerFeedback.fromFrozenCommittedResult(
+    result: result,
+    context: context.freeze(),
+  );
+
+  factory AnswerFeedback.fromFrozenCommittedResult({
+    required AnswerRecordResult result,
+    required FrozenAnswerFeedbackContext context,
   }) {
-    final frozenContext = context.normalized();
     return AnswerFeedback._(
       isCorrect: result.isCorrect,
-      canonicalCorrectAnswer: frozenContext.canonicalCorrectAnswer,
-      bookmarkIdentity: frozenContext.bookmarkIdentity,
+      canonicalCorrectAnswer: context.canonicalCorrectAnswer,
+      bookmarkIdentity: context.bookmarkIdentity,
     );
   }
 

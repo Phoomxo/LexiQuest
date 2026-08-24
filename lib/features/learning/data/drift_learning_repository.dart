@@ -77,6 +77,8 @@ final class DriftLearningRepository
             spelling: row.spelling,
             meaning: row.meaning,
             partOfSpeech: row.partOfSpeech,
+            normalizedSpelling: row.normalizedSpelling,
+            normalizedMeaning: row.normalizedMeaning,
           ),
         )
         .toList(growable: false);
@@ -402,6 +404,8 @@ final class DriftLearningRepository
             spelling: word.spelling,
             meaning: word.meaning,
             partOfSpeech: word.partOfSpeech,
+            normalizedSpelling: word.normalizedSpelling,
+            normalizedMeaning: word.normalizedMeaning,
           ),
         )
         .toList(growable: false);

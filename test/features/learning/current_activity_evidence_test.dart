@@ -27,6 +27,8 @@ void main() {
       final adapter = CurrentActivityEvidenceAdapter(learning: learning);
       const expected = <CurrentActivityInput, EvidenceClass>{
         CurrentActivityInput.meaningMultipleChoice: EvidenceClass.recognition,
+        CurrentActivityInput.meaningToWordMultipleChoice:
+            EvidenceClass.recognition,
         CurrentActivityInput.srsRecall: EvidenceClass.independentRecall,
         CurrentActivityInput.typedRecall: EvidenceClass.independentRecall,
         CurrentActivityInput.associativeRecall: EvidenceClass.independentRecall,

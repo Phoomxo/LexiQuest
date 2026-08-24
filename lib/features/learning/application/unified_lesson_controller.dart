@@ -22,6 +22,21 @@ import 'learning_use_cases.dart';
 typedef UnifiedLessonControllerFactory =
     UnifiedLessonController Function(LessonModeAdapter adapter);
 
+/// Route-owned terminal occurrence captured when operation acceptance closes.
+/// Its private authority prevents a later wall/monotonic observation or a
+/// different lesson controller from extending the trusted cutoff.
+final class LessonTerminalCutoff {
+  const LessonTerminalCutoff._({
+    required this.authority,
+    required this.occurredAtUtc,
+    required this.timeOccurrence,
+  });
+
+  final Object authority;
+  final DateTime occurredAtUtc;
+  final LearningTimeObservation? timeOccurrence;
+}
+
 final class UnifiedLessonController extends ChangeNotifier {
   factory UnifiedLessonController({
     required LearningUseCases learning,
@@ -115,6 +130,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool _disposed = false;
   bool _focusTimerGateEnabled = true;
   Object? _lastActiveLearningTimeFailure;
+  final Object _terminalCutoffAuthority = Object();
 
   LessonSessionState get state => _state;
   AnswerFeedback? get feedback => _feedback;
@@ -433,8 +449,23 @@ final class UnifiedLessonController extends ChangeNotifier {
     DateTime occurredAtUtc,
   ) {
     try {
+      return completeCapturedSessionAtCutoff(
+        close,
+        captureTerminalCutoff(occurredAtUtc),
+      );
+    } catch (error, stackTrace) {
+      return Future<LearningSessionSummary>.error(error, stackTrace);
+    }
+  }
+
+  Future<LearningSessionSummary> completeCapturedSessionAtCutoff(
+    PendingLearningSessionClose close,
+    LessonTerminalCutoff cutoff,
+  ) {
+    try {
       _requireNotDisposed();
-      final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+      _requireTerminalCutoff(cutoff);
+      final occurredAt = cutoff.occurredAtUtc;
       final inFlight = _capturedCompletionInFlight;
       if (inFlight != null) return inFlight;
       if (_completionInFlight != null || _abandonInFlight != null) {
@@ -445,12 +476,7 @@ final class UnifiedLessonController extends ChangeNotifier {
           'Captured close does not belong to the active session.',
         );
       }
-      final activeTime = _activeLearningTime;
-      final timeOccurrence =
-          activeTime != null &&
-              activeTime.state != ActiveLearningTimeState.inactive
-          ? activeTime.observe(occurredAt)
-          : null;
+      final timeOccurrence = cutoff.timeOccurrence;
       late final Future<LearningSessionSummary> future;
       future =
           _serialize<LearningSessionSummary>(() async {
@@ -473,20 +499,24 @@ final class UnifiedLessonController extends ChangeNotifier {
 
   Future<void> abandon(DateTime occurredAtUtc) {
     try {
+      return abandonAtCutoff(captureTerminalCutoff(occurredAtUtc));
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> abandonAtCutoff(LessonTerminalCutoff cutoff) {
+    try {
       _requireNotDisposed();
-      final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+      _requireTerminalCutoff(cutoff);
+      final occurredAt = cutoff.occurredAtUtc;
       if (_state.status == LessonSessionStatus.abandoned) {
         return Future<void>.value();
       }
       final inFlight = _abandonInFlight;
       if (inFlight != null) return inFlight;
       _requireNoTerminalMutation('abandon');
-      final activeTime = _activeLearningTime;
-      final timeOccurrence =
-          activeTime != null &&
-              activeTime.state != ActiveLearningTimeState.inactive
-          ? activeTime.observe(occurredAt)
-          : null;
+      final timeOccurrence = cutoff.timeOccurrence;
       late final Future<void> future;
       future =
           _serialize<void>(() async {
@@ -591,7 +621,9 @@ final class UnifiedLessonController extends ChangeNotifier {
     }
     _terminalClosePending = close;
     final activeTime = _activeLearningTime;
-    if (activeTime != null && timeOccurrence != null) {
+    if (activeTime != null &&
+        timeOccurrence != null &&
+        activeTime.state != ActiveLearningTimeState.inactive) {
       try {
         await _focusTimer?.finishObserved(timeOccurrence);
         await activeTime.finishObserved(timeOccurrence);
@@ -621,12 +653,14 @@ final class UnifiedLessonController extends ChangeNotifier {
     final activeTime = _activeLearningTime;
     final previousTimeState = activeTime?.state;
     var timeFinished = false;
-    if (activeTime != null && timeOccurrence != null) {
+    if (activeTime != null &&
+        timeOccurrence != null &&
+        activeTime.state != ActiveLearningTimeState.inactive) {
       try {
         await _focusTimer?.finishObserved(timeOccurrence);
         await activeTime.finishObserved(timeOccurrence);
         _lastActiveLearningTimeFailure = null;
-        timeFinished = true;
+        timeFinished = previousTimeState != ActiveLearningTimeState.finished;
       } catch (error) {
         _lastActiveLearningTimeFailure = error;
         rethrow;
@@ -662,6 +696,50 @@ final class UnifiedLessonController extends ChangeNotifier {
       }
     });
     return result.future;
+  }
+
+  LessonTerminalCutoff captureTerminalCutoff(DateTime occurredAtUtc) {
+    _requireNotDisposed();
+    final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+    return LessonTerminalCutoff._(
+      authority: _terminalCutoffAuthority,
+      occurredAtUtc: occurredAt,
+      timeOccurrence: _activeLearningTime?.observe(occurredAt),
+    );
+  }
+
+  Future<void> closeTimeAtCutoff(LessonTerminalCutoff cutoff) {
+    try {
+      _requireNotDisposed();
+      _requireTerminalCutoff(cutoff);
+      return _serialize<void>(() async {
+        final activeTime = _activeLearningTime;
+        if (activeTime == null ||
+            activeTime.state == ActiveLearningTimeState.inactive) {
+          return;
+        }
+        try {
+          await _focusTimer?.finishObserved(cutoff.timeOccurrence!);
+          await activeTime.finishObserved(cutoff.timeOccurrence!);
+          _lastActiveLearningTimeFailure = null;
+        } catch (error) {
+          _lastActiveLearningTimeFailure = error;
+          rethrow;
+        }
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  void _requireTerminalCutoff(LessonTerminalCutoff cutoff) {
+    if (!identical(cutoff.authority, _terminalCutoffAuthority)) {
+      throw ArgumentError.value(
+        cutoff,
+        'cutoff',
+        'must be captured by this lesson controller',
+      );
+    }
   }
 
   Future<void> recordActiveLearningInteraction(DateTime occurredAtUtc) {

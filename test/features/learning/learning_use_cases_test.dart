@@ -301,6 +301,10 @@ void main() {
       AppDatabase? reopenedDatabase;
       var firstDatabaseClosed = false;
       final occurredAtUtc = DateTime.utc(2026, 8, 14, 9, 0, 2, 123);
+      final recognitionEvidence = _legacyEvidence(
+        evidenceClass: EvidenceClass.recognition,
+        skillId: 'meaning-recall',
+      );
       try {
         final firstOwners = DriftLocalOwnerRepository(
           firstDatabase,
@@ -333,7 +337,11 @@ void main() {
           isCorrect: true,
           responseTimeMs: 2000,
           attemptNumber: 1,
-          evidenceContext: _legacyEvidence(),
+          evidenceContext: recognitionEvidence,
+        );
+        expect(
+          await firstDatabase.select(firstDatabase.srsStates).get(),
+          isEmpty,
         );
         await firstDatabase.close();
         firstDatabaseClosed = true;
@@ -366,7 +374,7 @@ void main() {
           isCorrect: true,
           responseTimeMs: 2000,
           attemptNumber: 1,
-          evidenceContext: _legacyEvidence(),
+          evidenceContext: recognitionEvidence,
         );
 
         expect(replay.inserted, isFalse);
@@ -382,6 +390,10 @@ void main() {
                 .getSingle();
         expect(attempt.occurredAtUtcMs, occurredAtUtc.millisecondsSinceEpoch);
         expect(event.occurredAtUtc.toUtc(), DateTime.utc(2026, 8, 14, 9, 0, 2));
+        expect(
+          await reopenedDatabase.select(reopenedDatabase.srsStates).get(),
+          isEmpty,
+        );
 
         await expectLater(
           reopenedUseCases.recordEvidence(
@@ -393,7 +405,7 @@ void main() {
             isCorrect: true,
             responseTimeMs: 2000,
             attemptNumber: 1,
-            evidenceContext: _legacyEvidence(),
+            evidenceContext: recognitionEvidence,
           ),
           throwsStateError,
         );
@@ -1135,9 +1147,12 @@ Future<void> _seedVocabulary(AppDatabase database, String ownerId) async {
       );
 }
 
-EvidenceContext _legacyEvidence({String skillId = 'legacy-current-activity'}) {
+EvidenceContext _legacyEvidence({
+  String skillId = 'legacy-current-activity',
+  EvidenceClass evidenceClass = EvidenceClass.independentRecall,
+}) {
   return EvidenceContext.legacyCompatibility(
-    evidenceClass: EvidenceClass.independentRecall,
+    evidenceClass: evidenceClass,
     skillId: skillId,
     hintLevel: 0,
     contentRevision: 'legacy-unknown',

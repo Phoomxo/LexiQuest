@@ -128,8 +128,14 @@ void main() {
             ),
             projection: projection,
           );
+          final hasSrsSafetyFloor =
+              projection == LearningProjection.masterySrs &&
+              (evidenceClass == EvidenceClass.exposure ||
+                  evidenceClass == EvidenceClass.recognition);
           final expectedShadow = evidenceClass == EvidenceClass.recreational
               ? _expectedV1[evidenceClass]![projection]
+              : hasSrsSafetyFloor
+              ? ProjectionDisposition.deny
               : _expectedLegacy[projection];
           expect(
             shadow.dispositionToApply,
@@ -239,6 +245,33 @@ void main() {
               decision.isEligible,
               expected == ProjectionDisposition.allow,
               reason: '${context.rolloutMode.name} $projection',
+            );
+          }
+        }
+      },
+    );
+
+    test(
+      'recognition and exposure keep their SRS safety floor in Legacy and Shadow',
+      () {
+        for (final evidenceClass in const <EvidenceClass>[
+          EvidenceClass.recognition,
+          EvidenceClass.exposure,
+        ]) {
+          final contexts = <EvidenceContext>[
+            _legacyContext(evidenceClass: evidenceClass),
+            _declaredContext(
+              evidenceClass: evidenceClass,
+              rolloutMode: EvidencePolicyRolloutMode.shadow,
+            ),
+          ];
+          for (final context in contexts) {
+            expect(
+              EvidenceProjectionDecision.resolve(
+                context: context,
+                projection: LearningProjection.masterySrs,
+              ).dispositionToApply,
+              ProjectionDisposition.deny,
             );
           }
         }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
+import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
@@ -74,6 +75,12 @@ void main() {
           .adapter,
       isA<FlashcardModeAdapter>(),
     );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.meaningQuiz)
+          .adapter,
+      isA<MeaningQuizModeAdapter>(),
+    );
   });
 
   test(
@@ -143,6 +150,59 @@ void main() {
           feedbackContext: response.feedbackContext,
         ),
         LessonSupport(evidenceContext: assisted),
+      ),
+      throwsStateError,
+    );
+  });
+
+  test('meaning quiz keeps both directions recognition-only', () {
+    const adapter = MeaningQuizModeAdapter();
+    final recognition = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.recognition,
+      skillId: 'meaning-recall',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+    final independentRecall = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'meaning-recall',
+      hintLevel: 0,
+      contentRevision: 'built-in-v1',
+      engagementAllowed: true,
+    );
+    LessonResponse response(String promptMode) => LessonResponse(
+      sourceEvidenceId: 'meaning-boundary-$promptMode',
+      occurredAtUtc: DateTime.utc(2026, 8, 26),
+      sessionId: 'meaning-session',
+      wordId: 'meaning-word',
+      promptMode: promptMode,
+      isCorrect: true,
+      responseTimeMs: 250,
+      attemptNumber: 1,
+      feedbackContext: const AnswerFeedbackContext(
+        canonicalCorrectAnswer: 'answer',
+      ),
+    );
+
+    expect(
+      adapter.classify(
+        response('meaningChoice'),
+        LessonSupport(evidenceContext: recognition),
+      ),
+      same(recognition),
+    );
+    expect(
+      adapter.classify(
+        response('wordChoice'),
+        LessonSupport(evidenceContext: recognition),
+      ),
+      same(recognition),
+    );
+    expect(
+      () => adapter.classify(
+        response('wordChoice'),
+        LessonSupport(evidenceContext: independentRecall),
       ),
       throwsStateError,
     );

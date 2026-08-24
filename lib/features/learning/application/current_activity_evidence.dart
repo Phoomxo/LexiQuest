@@ -9,6 +9,7 @@ import 'learning_use_cases.dart';
 
 enum CurrentActivityInput {
   meaningMultipleChoice,
+  meaningToWordMultipleChoice,
   srsRecall,
   typedRecall,
   associativeRecall,
@@ -467,6 +468,12 @@ _CurrentActivityDeclaration _declarationFor(CurrentActivityInput input) {
         evidenceClass: EvidenceClass.recognition,
         skillId: 'meaning-recall',
         promptMode: 'meaningChoice',
+      ),
+    CurrentActivityInput.meaningToWordMultipleChoice =>
+      const _CurrentActivityDeclaration(
+        evidenceClass: EvidenceClass.recognition,
+        skillId: 'meaning-recall',
+        promptMode: 'wordChoice',
       ),
     CurrentActivityInput.srsRecall => const _CurrentActivityDeclaration(
       evidenceClass: EvidenceClass.independentRecall,

@@ -17,7 +17,7 @@ import 'package:vocab_learning_app/features/export/domain/export_contracts.dart'
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
-import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -480,7 +480,7 @@ AppDependencies _dependencies(
     generateId: () => 'navigation-vocabulary-id',
     nowUtc: () => DateTime.utc(2026, 8, 11),
   );
-  final lessonModes = buildLegacyLessonModeRegistry();
+  final lessonModes = buildLessonModeRegistry();
   final progress = ProgressUseCases(
     owners: owners,
     queries: DriftProgressQueries(database),

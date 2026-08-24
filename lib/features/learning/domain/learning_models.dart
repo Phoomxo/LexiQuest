@@ -9,6 +9,8 @@ final class QuizWord {
     required this.spelling,
     required this.meaning,
     required this.partOfSpeech,
+    this.normalizedSpelling,
+    this.normalizedMeaning,
   });
 
   final String id;
@@ -16,6 +18,8 @@ final class QuizWord {
   final String spelling;
   final String meaning;
   final String partOfSpeech;
+  final String? normalizedSpelling;
+  final String? normalizedMeaning;
 }
 
 final class QuizQuestion {
