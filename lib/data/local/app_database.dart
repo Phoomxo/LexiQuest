@@ -17,6 +17,7 @@ import 'tables/review_tables.dart';
 import 'tables/runtime_tables.dart';
 import 'tables/speech_evidence_tables.dart';
 import 'tables/sync_tables.dart';
+import 'tables/time_tracking_tables.dart';
 import 'tables/vocabulary_tables.dart';
 
 part 'app_database.g.dart';
@@ -62,10 +63,11 @@ part 'app_database.g.dart';
     SpeechEvidence,
     SavedLearningItems,
     ContentQualityReports,
+    LearningTimeSegments,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 17;
+  static const int currentSchemaVersion = 18;
 
   AppDatabase(super.executor);
 
@@ -247,6 +249,9 @@ final class AppDatabase extends _$AppDatabase {
           await migrator.createTable(contentQualityReports);
         }
       }
+      if (from < 18 && !await _tableExists('learning_time_segments')) {
+        await migrator.createTable(learningTimeSegments);
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
@@ -254,8 +259,62 @@ final class AppDatabase extends _$AppDatabase {
       await _createEventIndexes();
       await _createAiUsageIndexes();
       await _createContentManifestImmutabilityTriggers();
+      await _createLearningTimeGuards();
     },
   );
+
+  Future<void> _createLearningTimeGuards() async {
+    if (!await _tableExists('learning_time_segments')) return;
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS learning_time_segments_require_authority
+      BEFORE INSERT ON learning_time_segments
+      WHEN NEW.active_duration_ms > 300000 OR NOT EXISTS (
+        SELECT 1 FROM learning_sessions AS session
+        WHERE session.id = NEW.session_id
+          AND session.owner_id = NEW.owner_id
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'learning_time_segment_authority_invalid');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS learning_time_segments_reject_overlap
+      BEFORE INSERT ON learning_time_segments
+      WHEN EXISTS (
+        SELECT 1 FROM learning_time_segments AS existing
+        WHERE existing.session_id = NEW.session_id
+          AND existing.active_start_offset_ms
+                < NEW.active_start_offset_ms + NEW.active_duration_ms
+          AND existing.active_start_offset_ms + existing.active_duration_ms
+                > NEW.active_start_offset_ms
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'learning_time_segments_must_not_overlap');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS learning_time_segments_reject_mutation
+      BEFORE UPDATE OF id, session_id, active_start_offset_ms, active_duration_ms,
+        started_at_utc_ms, ended_at_utc_ms, timezone_id,
+        timezone_offset_minutes, capture_source
+      ON learning_time_segments
+      BEGIN
+        SELECT RAISE(ABORT, 'learning_time_segment_is_immutable');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS learning_time_segments_require_owner_update
+      BEFORE UPDATE OF owner_id ON learning_time_segments
+      WHEN NOT EXISTS (
+        SELECT 1 FROM learning_sessions AS session
+        WHERE session.id = OLD.session_id
+          AND session.owner_id = NEW.owner_id
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'learning_time_segment_owner_mismatch');
+      END
+    ''');
+  }
 
   Future<void> _createContentManifestImmutabilityTriggers() async {
     if (!await _tableExists('content_manifests')) return;
@@ -485,6 +544,9 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('content_quality_reports')) {
       await migrator.createTable(contentQualityReports);
+    }
+    if (!await _tableExists('learning_time_segments')) {
+      await migrator.createTable(learningTimeSegments);
     }
   }
 

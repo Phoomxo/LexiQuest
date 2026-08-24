@@ -14,6 +14,7 @@ import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../review/domain/content_quality_report.dart';
+import '../../time_tracking/domain/learning_time_segment.dart';
 
 final class OwnerLifecycleArchiveArtifact {
   const OwnerLifecycleArchiveArtifact({
@@ -156,6 +157,7 @@ final class OwnerLifecycleArchiveExporter {
       'vocabulary_words' => _vocabularyWords(ownerId),
       'vocabulary_imports' => _vocabularyImports(ownerId),
       'learning_sessions' => _learningSessions(ownerId),
+      'learning_time_segments' => _learningTimeSegments(ownerId),
       'answer_attempts' => _answerAttempts(ownerId),
       'srs_states' => _srsStates(ownerId),
       'reading_progress_entries' => _readingProgress(ownerId, documentAliases),
@@ -577,6 +579,32 @@ final class OwnerLifecycleArchiveExporter {
           'correctCount': row.read<int>('correct_count'),
           'wrongCount': row.read<int>('wrong_count'),
           'score': row.readNullable<int>('score'),
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _learningTimeSegments(
+    String ownerId,
+  ) async {
+    final rows = await DriftExportReader(
+      database,
+    ).loadLearningTimeSegments(ownerId);
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'sessionId': _safeLabel(row.sessionId),
+          'activeStartOffsetMs': row.activeStartOffsetMs,
+          'activeDurationMs': row.activeDurationMs,
+          'startedAtUtc': row.startedAtUtc.toIso8601String(),
+          'endedAtUtc': row.endedAtUtc.toIso8601String(),
+          'timezoneId': _safeTimezoneId(
+            row.timezoneId,
+            utcOffsetMinutes: row.timezoneOffsetMinutes,
+            occurredAtUtcMs: row.startedAtUtc.millisecondsSinceEpoch,
+          ),
+          'timezoneOffsetMinutes': row.timezoneOffsetMinutes,
+          'captureSource': _safeLabel(row.captureSource),
         },
     ];
   }
@@ -1088,6 +1116,23 @@ String _safeLabel(String value) {
   if (canonical.isEmpty || canonical.length > 200) return 'redacted';
   if (!RegExp(r'^[A-Za-z0-9._:-]+$').hasMatch(canonical)) return 'redacted';
   return canonical;
+}
+
+String _safeTimezoneId(
+  String value, {
+  required int utcOffsetMinutes,
+  required int occurredAtUtcMs,
+}) {
+  try {
+    LearningTimeSegment.requireCanonicalTimezoneContext(
+      timezoneId: value,
+      utcOffsetMinutes: utcOffsetMinutes,
+      occurredAtUtcMs: occurredAtUtcMs,
+    );
+    return value;
+  } on Object {
+    return 'redacted';
+  }
 }
 
 String _modelState(String value) =>

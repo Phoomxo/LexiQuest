@@ -12,7 +12,7 @@ import 'package:vocab_learning_app/runtime/registries/feature.dart';
 void main() {
   group('AllTCAS 8/44 product feature contract', () {
     test('pins the catalog metadata and exact approved definitions', () {
-      expect(featureContractRevision, '1.1.0');
+      expect(featureContractRevision, '1.2.0');
       expect(featureContractBaselineCommit, '61a4fec');
       expect(featureContractSchemaVersion, 1);
       expect(featureContractGeneratorVersion, '1.0.0');
@@ -416,6 +416,40 @@ void main() {
       for (final id in FeatureContractId.values) {
         visit(id);
       }
+    });
+
+    test('pins f23 and f24 to the approved typed dependency order', () {
+      final records = <FeatureContractId, ProductFeatureContract>{
+        for (final record in allTcasIdeaIntegrationCatalog.records)
+          record.id: record,
+      };
+      expect(
+        records[FeatureContractId.f23]!.dependencies,
+        const <FeatureContractId>{FeatureContractId.f24},
+      );
+      final f24 = records[FeatureContractId.f24]!;
+      expect(f24.dependencies, const <FeatureContractId>{
+        FeatureContractId.f05,
+        FeatureContractId.f17,
+        FeatureContractId.f19,
+        FeatureContractId.f20,
+        FeatureContractId.f21,
+      });
+      expect(f24.activationProfileId, runtimeFlaggedActivationProfileId);
+      expect(f24.rolloutProfileId, controlledRolloutProfileId);
+      expect(f24.rollbackProfileId, runtimeFlagRollbackProfileId);
+      expect(f24.authorityDependencies, const <DomainAuthority>{
+        DomainAuthority.responseEvidence,
+        DomainAuthority.activeLearningTime,
+      });
+      expect(
+        f24.authorityProfileId,
+        activeLearningTimeWriterAuthorityProfileId,
+      );
+      expect(
+        singleWriterAuthorityMatrix[DomainAuthority.activeLearningTime],
+        activeLearningTimeWriterAuthorityProfileId,
+      );
     });
 
     test('resolves every profile and gives each authority one writer', () {

@@ -621,6 +621,66 @@ function writeFieldContentQualityReport(db, {
   return batch.commit();
 }
 
+function fieldLearningTimePayload(overrides = {}) {
+  const payload = {
+    sessionId: 'session:meaning-quiz:1',
+    activeStartOffsetMs: 0,
+    activeDurationMs: 30000,
+    startedAtUtcMs: 9000,
+    // A wall-clock rollback is valid; monotonic duration remains authoritative.
+    endedAtUtcMs: 8000,
+    timezoneId: 'Asia/Bangkok',
+    timezoneOffsetMinutes: 420,
+    captureSource: 'automaticLesson',
+    ...overrides,
+  };
+  const identity = `v1|${payload.sessionId}|${payload.activeStartOffsetMs}|${payload.captureSource}`;
+  return {
+    segmentId: `learning-time-segment:${createHash('sha256')
+      .update(identity, 'utf8').digest('hex')}`,
+    ...payload,
+  };
+}
+
+function fieldLearningTimeOperationId(entityId) {
+  return `learning-time-operation:${createHash('sha256')
+    .update(`v1|${entityId}`, 'utf8').digest('hex')}`;
+}
+
+function writeFieldLearningTime(db, {
+  uid = alice,
+  payload = fieldLearningTimePayload(),
+  entityId = payload.segmentId,
+  operationId = fieldLearningTimeOperationId(entityId),
+  revision = 1,
+  baseRevision = 0,
+  schemaVersion = 1,
+  clientUpdatedAtUtcMs = payload.endedAtUtcMs,
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'learning_time_segments', entityId), {
+    schemaVersion,
+    entityId,
+    payload,
+    revision,
+    isDeleted: false,
+    clientUpdatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion,
+    operationId,
+    entityType: 'learningTimeSegment',
+    entityId,
+    operationKind: 'upsert',
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -1870,7 +1930,7 @@ describe('assessment_runs revisioned research contract', () => {
     )));
   });
 
-  it('accepts assessment evidence pinned to current database schema v17', async () => {
+  it('accepts assessment evidence pinned to current database schema v18', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-v16';
     await assertSucceeds(
@@ -1890,7 +1950,7 @@ describe('assessment_runs revisioned research contract', () => {
         payload: fieldAssessmentRunPayload({
           runId: 'assessment-run-v16',
           assignmentId,
-          databaseSchemaVersion: 17,
+          databaseSchemaVersion: 18,
         }),
       }),
     );
@@ -2711,6 +2771,96 @@ describe('content_quality_reports exact immutable consent-bound contract', () =>
     }));
     await assertFails(writeFieldContentQualityReport(db, {
       operationId: `content-quality-operation:${'0'.repeat(64)}`,
+    }));
+  });
+});
+
+describe('learning_time_segments exact immutable active-effort contract', () => {
+  it('allows exact owner create with wall rollback and monotonic duration', async () => {
+    const db = authDb();
+    const payload = fieldLearningTimePayload();
+    await assertSucceeds(writeFieldLearningTime(db, { payload }));
+    await assertSucceeds(getDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learning_time_segments',
+      payload.segmentId,
+    )));
+  });
+
+  it('denies cross-owner mutation deletion replay and noncanonical identity', async () => {
+    await assertFails(writeFieldLearningTime(authDb(bob), { uid: alice }));
+    const db = authDb();
+    const payload = fieldLearningTimePayload({
+      sessionId: 'session:immutable',
+    });
+    await assertSucceeds(writeFieldLearningTime(db, { payload }));
+    await assertFails(updateDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learning_time_segments',
+      payload.segmentId,
+    ), { clientUpdatedAtUtcMs: 9999 }));
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learning_time_segments',
+      payload.segmentId,
+    )));
+    await assertFails(writeFieldLearningTime(db, {
+      payload,
+      revision: 2,
+      baseRevision: 1,
+    }));
+    await assertFails(writeFieldLearningTime(db, {
+      payload,
+      entityId: 'device-local-time-id',
+      operationId: fieldLearningTimeOperationId('device-local-time-id'),
+    }));
+  });
+
+  it('rejects non-exact keys ranges timezone source and envelope time', async () => {
+    const db = authDb();
+    const canonical = fieldLearningTimePayload({
+      sessionId: 'session:invalid-cases',
+    });
+    const missingDuration = { ...canonical };
+    delete missingDuration.activeDurationMs;
+    const cases = [
+      { ...canonical, extra: true },
+      missingDuration,
+      fieldLearningTimePayload({ sessionId: ' session:bad' }),
+      fieldLearningTimePayload({ activeStartOffsetMs: -1 }),
+      fieldLearningTimePayload({ activeStartOffsetMs: 315576000001 }),
+      fieldLearningTimePayload({ activeDurationMs: 0 }),
+      fieldLearningTimePayload({ activeDurationMs: 300001 }),
+      fieldLearningTimePayload({ startedAtUtcMs: -1 }),
+      fieldLearningTimePayload({ endedAtUtcMs: -1 }),
+      fieldLearningTimePayload({ timezoneId: 'Asia Bangkok' }),
+      fieldLearningTimePayload({ timezoneId: 'Asia' }),
+      fieldLearningTimePayload({ timezoneId: 'Asia//Bangkok' }),
+      fieldLearningTimePayload({ timezoneOffsetMinutes: 841 }),
+      fieldLearningTimePayload({ captureSource: 'recreational' }),
+    ];
+    for (const [index, payload] of cases.entries()) {
+      await assertFails(writeFieldLearningTime(db, {
+        payload,
+        entityId: payload.segmentId ?? canonical.segmentId,
+        operationId: fieldLearningTimeOperationId(
+          payload.segmentId ?? canonical.segmentId,
+        ),
+      }), `invalid learning-time case ${index}`);
+    }
+    await assertFails(writeFieldLearningTime(db, {
+      payload: canonical,
+      clientUpdatedAtUtcMs: canonical.endedAtUtcMs + 1,
+    }));
+    await assertFails(writeFieldLearningTime(db, {
+      payload: canonical,
+      operationId: `learning-time-operation:${'0'.repeat(64)}`,
     }));
   });
 });

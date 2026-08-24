@@ -123,6 +123,7 @@ void main() {
         SyncCollection.assessmentRuns,
         SyncCollection.savedLearningItems,
         SyncCollection.contentQualityReports,
+        SyncCollection.learningTimeSegments,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
@@ -134,6 +135,7 @@ void main() {
             _savedLearningItemCloudEntityId(),
           SyncCollection.contentQualityReports =>
             _contentQualityReportCloudEntityId(),
+          SyncCollection.learningTimeSegments => _learningTimeSegmentId(),
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
@@ -155,16 +157,25 @@ void main() {
           SyncCollection.contentQualityReports => _contentQualityReportPayload(
             submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
+          SyncCollection.learningTimeSegments => _learningTimeSegmentPayload(
+            endedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
         final mutation = PushMutation(
-          operationId: collection == SyncCollection.contentQualityReports
-              ? ContentQualityReportSyncPayloadContract.canonicalOperationId(
-                  localOperationId: 'contentQualityReport:generic:v1',
-                  reportId: payload['reportId']! as String,
-                  submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
-                )
-              : 'operation:${collection.entityType}:v1',
+          operationId: switch (collection) {
+            SyncCollection.contentQualityReports =>
+              ContentQualityReportSyncPayloadContract.canonicalOperationId(
+                localOperationId: 'contentQualityReport:generic:v1',
+                reportId: payload['reportId']! as String,
+                submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
+              ),
+            SyncCollection.learningTimeSegments =>
+              LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+                entityId,
+              ),
+            _ => 'operation:${collection.entityType}:v1',
+          },
           firebaseUid: 'firebase-user-1',
           collection: collection,
           entityId: entityId,
@@ -323,6 +334,81 @@ void main() {
         );
       }
     });
+
+    test(
+      'learning time codec is exact immutable and wall-clock independent',
+      () {
+        final entityId = _learningTimeSegmentId();
+        final payload = _learningTimeSegmentPayload(
+          endedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        );
+        final mutation = PushMutation(
+          operationId:
+              LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+                entityId,
+              ),
+          firebaseUid: 'firebase-user-1',
+          collection: SyncCollection.learningTimeSegments,
+          entityId: entityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: clientUpdatedAt,
+          payload: payload,
+        );
+
+        final encoded = FirestoreSyncCodec.encodeEntity(
+          mutation,
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        );
+        expect(
+          FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.learningTimeSegments,
+            documentId: entityId,
+            data: encoded,
+          ).payload,
+          payload,
+        );
+        for (final invalid in <PushMutation>[
+          PushMutation(
+            operationId: 'learning-time-operation:wrong',
+            firebaseUid: 'firebase-user-1',
+            collection: SyncCollection.learningTimeSegments,
+            entityId: entityId,
+            operationKind: SyncOperationKind.upsert,
+            payloadVersion: 1,
+            baseRevision: 0,
+            localRevision: 1,
+            clientUpdatedAtUtc: clientUpdatedAt,
+            payload: payload,
+          ),
+          PushMutation(
+            operationId:
+                LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+                  entityId,
+                ),
+            firebaseUid: 'firebase-user-1',
+            collection: SyncCollection.learningTimeSegments,
+            entityId: entityId,
+            operationKind: SyncOperationKind.delete,
+            payloadVersion: 1,
+            baseRevision: 0,
+            localRevision: 1,
+            clientUpdatedAtUtc: clientUpdatedAt,
+            payload: payload,
+          ),
+        ]) {
+          expect(
+            () => FirestoreSyncCodec.encodeEntity(
+              invalid,
+              serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+            ),
+            throwsA(isA<InvalidSyncPayloadFailure>()),
+          );
+        }
+      },
+    );
 
     test('experiment assignment uses one exact v1 wire contract', () {
       final assignmentId = _canonicalAssignmentId();
@@ -1389,6 +1475,348 @@ void main() {
     );
 
     test(
+      'learning time claims are deploy-gated and emit one immutable mutation',
+      () async {
+        const sessionId = 'session:time-sync';
+        final segmentId = _learningTimeSegmentId(sessionId: sessionId);
+        final operationId =
+            LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+              segmentId,
+            );
+        await database.customInsert('''
+          INSERT INTO learning_sessions(
+            id, owner_id, activity_type, state, started_at_utc_ms,
+            app_version, build_id
+          ) VALUES (
+            '$sessionId', 'owner-1', 'meaning-quiz', 'active', 2000,
+            'test', 'f24-sync'
+          )
+        ''');
+        await database.customInsert('''
+          INSERT INTO learning_time_segments(
+            id, owner_id, session_id, active_start_offset_ms,
+            active_duration_ms, started_at_utc_ms, ended_at_utc_ms,
+            timezone_id, timezone_offset_minutes, capture_source
+          ) VALUES (
+            '$segmentId', 'owner-1', '$sessionId', 0, 7000, 2000, 1000,
+            'Asia/Bangkok', 420, 'automaticLesson'
+          )
+        ''');
+        await database.customInsert('''
+          INSERT INTO outbox_operations(
+            operation_id, owner_id, entity_type, entity_id, operation_kind,
+            payload_version, base_revision, state, attempt_count,
+            created_at_utc_ms
+          ) VALUES (
+            '$operationId', 'owner-1', 'learningTimeSegment', '$segmentId',
+            'upsert', 1, 0, 'pending', 0, 1000
+          )
+        ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 11);
+        const gateToken = 'f24-learning-time-rollout';
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: gateToken,
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+
+        final offClaims = await DriftSyncStore(database).claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f24-off-lease',
+          ownerGateToken: gateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+        expect(offClaims, isEmpty);
+
+        final claims =
+            await DriftSyncStore(
+              database,
+              learningTimeSegmentSyncRollout:
+                  const LearningTimeSegmentSyncRollout.v1(
+                    deployedRulesRevision: learningTimeSegmentV1RulesRevision,
+                  ),
+            ).claimPending(
+              ownerId: 'owner-1',
+              firebaseUid: 'firebase-user-1',
+              limit: 1,
+              leaseToken: 'f24-on-lease',
+              ownerGateToken: gateToken,
+              leaseDuration: const Duration(minutes: 1),
+              nowUtc: nowUtc,
+            );
+
+        expect(claims, hasLength(1));
+        final mutation = claims.single.mutation;
+        expect(mutation.collection, SyncCollection.learningTimeSegments);
+        expect(mutation.entityId, segmentId);
+        expect(mutation.operationId, operationId);
+        expect(mutation.operationKind, SyncOperationKind.upsert);
+        expect(mutation.baseRevision, 0);
+        expect(mutation.localRevision, 1);
+        expect(
+          mutation.payload,
+          _learningTimeSegmentPayload(
+            sessionId: sessionId,
+            startedAtUtcMs: 2000,
+            endedAtUtcMs: 1000,
+          ),
+        );
+      },
+    );
+
+    test(
+      'learning time pull is immutable owner-bound and restart-idempotent',
+      () async {
+        const sessionId = 'session:remote-time';
+        final entityId = _learningTimeSegmentId(sessionId: sessionId);
+        final payload = _learningTimeSegmentPayload(
+          sessionId: sessionId,
+          startedAtUtcMs: 2000,
+          endedAtUtcMs: 1000,
+        );
+        final serverTime = DateTime.utc(2026, 8, 24, 11);
+        final page = PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.learningTimeSegments,
+              entityId: entityId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                1000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: serverTime,
+              payload: payload,
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: serverTime,
+            documentId: entityId,
+          ),
+          hasMore: false,
+        );
+        final store = DriftSyncStore(
+          database,
+          learningTimeSegmentSyncRollout:
+              const LearningTimeSegmentSyncRollout.v1(
+                deployedRulesRevision: learningTimeSegmentV1RulesRevision,
+              ),
+        );
+
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningTimeSegments,
+          page: page,
+        );
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningTimeSegments,
+          page: page,
+        );
+        expect(
+          await database.select(database.learningTimeSegments).get(),
+          hasLength(1),
+        );
+        expect(
+          await (database.select(
+            database.learningSessions,
+          )..where((row) => row.id.equals(sessionId))).getSingle(),
+          isNotNull,
+        );
+
+        final mismatch = <String, Object?>{
+          ...payload,
+          'activeDurationMs': 8000,
+        };
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningTimeSegments,
+          page: PullPage(
+            changes: <SyncEntity>[
+              SyncEntity(
+                collection: SyncCollection.learningTimeSegments,
+                entityId: entityId,
+                revision: 1,
+                isDeleted: false,
+                payloadVersion: 1,
+                clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  1000,
+                  isUtc: true,
+                ),
+                serverUpdatedAtUtc: serverTime.add(const Duration(seconds: 1)),
+                payload: mismatch,
+              ),
+            ],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: serverTime.add(const Duration(seconds: 1)),
+              documentId: entityId,
+            ),
+            hasMore: false,
+          ),
+        );
+        expect(
+          (await database.select(database.learningTimeSegments).get())
+              .single
+              .activeDurationMs,
+          7000,
+        );
+        expect(
+          await database.select(database.syncConflicts).get(),
+          hasLength(1),
+        );
+
+        final latestTime = serverTime.add(const Duration(seconds: 2));
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningTimeSegments,
+          page: PullPage(
+            changes: <SyncEntity>[
+              SyncEntity(
+                collection: SyncCollection.learningTimeSegments,
+                entityId: entityId,
+                revision: 1,
+                isDeleted: false,
+                payloadVersion: 1,
+                clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  1000,
+                  isUtc: true,
+                ),
+                serverUpdatedAtUtc: latestTime,
+                payload: mismatch,
+              ),
+            ],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: latestTime,
+              documentId: entityId,
+            ),
+            hasMore: false,
+          ),
+        );
+        expect(
+          await database.select(database.syncConflicts).get(),
+          hasLength(1),
+        );
+        expect(
+          await store.readCheckpoint(
+            'owner-1',
+            SyncCollection.learningTimeSegments,
+          ),
+          SyncCursor(serverUpdatedAtUtc: latestTime, documentId: entityId),
+        );
+      },
+    );
+
+    test(
+      'learning time pull quarantines overlapping canonical identities and advances',
+      () async {
+        const sessionId = 'session:remote-overlap';
+        final retainedId = _learningTimeSegmentId(sessionId: sessionId);
+        final overlappingId = _learningTimeSegmentId(
+          sessionId: sessionId,
+          captureSource: 'focusTimer',
+        );
+        final serverTime = DateTime.utc(2026, 8, 24, 11, 30);
+        final finalServerTime = serverTime.add(const Duration(seconds: 1));
+        final page = PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.learningTimeSegments,
+              entityId: retainedId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                1000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: serverTime,
+              payload: _learningTimeSegmentPayload(
+                sessionId: sessionId,
+                endedAtUtcMs: 1000,
+              ),
+            ),
+            SyncEntity(
+              collection: SyncCollection.learningTimeSegments,
+              entityId: overlappingId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                1000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: finalServerTime,
+              payload: _learningTimeSegmentPayload(
+                sessionId: sessionId,
+                activeDurationMs: 6000,
+                endedAtUtcMs: 1000,
+                captureSource: 'focusTimer',
+              ),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: finalServerTime,
+            documentId: overlappingId,
+          ),
+          hasMore: false,
+        );
+        final store = DriftSyncStore(
+          database,
+          learningTimeSegmentSyncRollout:
+              const LearningTimeSegmentSyncRollout.v1(
+                deployedRulesRevision: learningTimeSegmentV1RulesRevision,
+              ),
+        );
+
+        expect(
+          await store.applyPullPage(
+            ownerId: 'owner-1',
+            collection: SyncCollection.learningTimeSegments,
+            page: page,
+          ),
+          isTrue,
+        );
+        expect(
+          await store.applyPullPage(
+            ownerId: 'owner-1',
+            collection: SyncCollection.learningTimeSegments,
+            page: page,
+          ),
+          isTrue,
+        );
+
+        final segments = await database
+            .select(database.learningTimeSegments)
+            .get();
+        expect(segments, hasLength(1));
+        expect(segments.single.id, retainedId);
+        expect(segments.single.captureSource, 'automaticLesson');
+        final conflicts = await database.select(database.syncConflicts).get();
+        expect(conflicts, hasLength(1));
+        expect(conflicts.single.entityId, overlappingId);
+        expect(conflicts.single.outcome, 'quarantined');
+        expect(
+          await store.readCheckpoint(
+            'owner-1',
+            SyncCollection.learningTimeSegments,
+          ),
+          SyncCursor(
+            serverUpdatedAtUtc: finalServerTime,
+            documentId: overlappingId,
+          ),
+        );
+      },
+    );
+
+    test(
       'content report queued before consent withdrawal stays pending without retry',
       () async {
         final consent = DriftResearchConsentRepository(database);
@@ -2326,6 +2754,39 @@ Map<String, Object?> _contentQualityReportPayload({
 String _contentQualityReportCloudEntityId({
   String reportId = 'report:station:audio',
 }) => 'content-quality-report:${sha256.convert(utf8.encode(reportId))}';
+
+String _learningTimeSegmentId({
+  String sessionId = 'session:meaning:1',
+  int activeStartOffsetMs = 0,
+  String captureSource = 'automaticLesson',
+}) => LearningTimeSegmentSyncPayloadContract.canonicalEntityId(
+  sessionId: sessionId,
+  activeStartOffsetMs: activeStartOffsetMs,
+  captureSource: captureSource,
+);
+
+Map<String, Object?> _learningTimeSegmentPayload({
+  String sessionId = 'session:meaning:1',
+  int activeStartOffsetMs = 0,
+  int activeDurationMs = 7000,
+  int startedAtUtcMs = 2000,
+  required int endedAtUtcMs,
+  String captureSource = 'automaticLesson',
+}) => <String, Object?>{
+  'segmentId': _learningTimeSegmentId(
+    sessionId: sessionId,
+    activeStartOffsetMs: activeStartOffsetMs,
+    captureSource: captureSource,
+  ),
+  'sessionId': sessionId,
+  'activeStartOffsetMs': activeStartOffsetMs,
+  'activeDurationMs': activeDurationMs,
+  'startedAtUtcMs': startedAtUtcMs,
+  'endedAtUtcMs': endedAtUtcMs,
+  'timezoneId': 'Asia/Bangkok',
+  'timezoneOffsetMinutes': 420,
+  'captureSource': captureSource,
+};
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.independentRecall,

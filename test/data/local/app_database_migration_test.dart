@@ -65,6 +65,19 @@ void main() {
         'reward_transactions',
         'owned_reward_items',
         'equipped_reward_items',
+        'learning_time_segments',
+      ]),
+    );
+    expect(
+      await _columnNames(database, 'learning_time_segments'),
+      containsAll(<String>[
+        'active_start_offset_ms',
+        'active_duration_ms',
+        'started_at_utc_ms',
+        'ended_at_utc_ms',
+        'timezone_id',
+        'timezone_offset_minutes',
+        'capture_source',
       ]),
     );
     expect(

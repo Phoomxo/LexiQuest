@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/lesson_mode_registry.dart';
-import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -106,7 +105,12 @@ class ChooseModeScreen extends StatelessWidget {
                 reason: ProductionFeatureUnavailableReason.missingDependency,
               );
             }
-            return _ControllerBackedLessonMode(
+            if (mode == LessonMode.associativeReading) {
+              // The launcher can create multiple durable sessions. Each
+              // pushed session owns a fresh shell/controller instance.
+              return builder(context);
+            }
+            return UnifiedLessonModeHost(
               adapter: registration.adapter,
               createController: createController,
               builder: builder,
@@ -115,39 +119,6 @@ class ChooseModeScreen extends StatelessWidget {
         ),
       ),
     );
-  }
-}
-
-class _ControllerBackedLessonMode extends StatefulWidget {
-  const _ControllerBackedLessonMode({
-    required this.adapter,
-    required this.createController,
-    required this.builder,
-  });
-
-  final LessonModeAdapter adapter;
-  final UnifiedLessonControllerFactory createController;
-  final WidgetBuilder builder;
-
-  @override
-  State<_ControllerBackedLessonMode> createState() =>
-      _ControllerBackedLessonModeState();
-}
-
-class _ControllerBackedLessonModeState
-    extends State<_ControllerBackedLessonMode> {
-  late final UnifiedLessonController _controller = widget.createController(
-    widget.adapter,
-  );
-
-  @override
-  Widget build(BuildContext context) =>
-      UnifiedLessonShell(controller: _controller, builder: widget.builder);
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
   }
 }
 

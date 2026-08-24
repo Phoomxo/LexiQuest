@@ -14,6 +14,7 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 
 import '../../support/current_database_contract.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
@@ -92,6 +93,31 @@ void main() {
         DateTime.fromMillisecondsSinceEpoch(4, isUtc: true),
       );
       expect(rows.single.isSaved, isTrue);
+    },
+  );
+
+  test(
+    'learning time export keeps duration and wall audit context separate',
+    () async {
+      final rows = await DriftExportReader(
+        database,
+      ).loadLearningTimeSegments('local:owner');
+
+      expect(rows, hasLength(1));
+      expect(rows.single.sessionId, 'session-1');
+      expect(rows.single.activeStartOffsetMs, 0);
+      expect(rows.single.activeDurationMs, 7000);
+      expect(
+        rows.single.startedAtUtc,
+        DateTime.fromMillisecondsSinceEpoch(9000, isUtc: true),
+      );
+      expect(
+        rows.single.endedAtUtc,
+        DateTime.fromMillisecondsSinceEpoch(8000, isUtc: true),
+      );
+      expect(rows.single.timezoneId, 'Asia/Bangkok');
+      expect(rows.single.timezoneOffsetMinutes, 420);
+      expect(rows.single.captureSource, 'automaticLesson');
     },
   );
 
@@ -515,6 +541,28 @@ void main() {
       expect(word['contentProvenance'], 'userAuthored');
       expect(word['contentReviewState'], 'unreviewed');
       expect(word['contentPublicationState'], 'private');
+      final learningTime = tables.singleWhere(
+        (table) => table['alias'] == 'learningTimeSegments',
+      );
+      final segment = (learningTime['records'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .where((record) => !record.containsKey('recordCount'))
+          .single;
+      expect(segment.keys.toSet(), {
+        'sessionId',
+        'activeStartOffsetMs',
+        'activeDurationMs',
+        'startedAtUtc',
+        'endedAtUtc',
+        'timezoneId',
+        'timezoneOffsetMinutes',
+        'captureSource',
+      });
+      expect(segment['activeDurationMs'], 7000);
+      expect(segment['startedAtUtc'], '1970-01-01T00:00:09.000Z');
+      expect(segment['endedAtUtc'], '1970-01-01T00:00:08.000Z');
+      expect(segment['timezoneId'], 'Asia/Bangkok');
+      expect(segment['timezoneOffsetMinutes'], 420);
 
       final saved = await exports.export(
         format: ExportFormat.ownerArchiveJson,
@@ -528,6 +576,40 @@ void main() {
       expect(saved.bytesWritten, artifact.bytes.length);
     },
   );
+
+  test('owner archive redacts a noncanonical raw timezone', () async {
+    await database.customInsert(
+      'INSERT INTO learning_time_segments '
+      '(id, owner_id, session_id, active_start_offset_ms, active_duration_ms, '
+      'started_at_utc_ms, ended_at_utc_ms, timezone_id, '
+      'timezone_offset_minutes, capture_source) VALUES '
+      "('invalid-timezone-segment', 'local:owner', 'session-1', 7000, 1, "
+      "9000, 8000, 'Mars/Olympus', 0, 'automaticLesson')",
+    );
+
+    final artifact = await exports.prepare(
+      format: ExportFormat.ownerArchiveJson,
+      selection: const ExportSelection(
+        includeVocabulary: false,
+        includeAttempts: false,
+        includeReading: false,
+      ),
+      cancellation: ExportCancellation(),
+    );
+    final envelope =
+        jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+    final content = envelope['content'] as Map<String, dynamic>;
+    final table = (content['tables'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .singleWhere((entry) => entry['alias'] == 'learningTimeSegments');
+    final invalid = (table['records'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .where((record) => record['activeStartOffsetMs'] == 7000)
+        .single;
+
+    expect(invalid['timezoneId'], 'redacted');
+    expect(invalid['timezoneOffsetMinutes'], 0);
+  });
 
   test(
     'owner archive maps missing active owner to typed unavailable',
@@ -958,6 +1040,20 @@ Future<void> _seed(AppDatabase database) async {
     "INSERT INTO learning_sessions "
     "(id, owner_id, activity_type, state, started_at_utc_ms, app_version, build_id) "
     "VALUES ('session-1', 'local:owner', 'quiz', 'completed', 1, '1', 'test')",
+  );
+  final segmentId = LearningTimeSegment.canonicalId(
+    sessionId: 'session-1',
+    activeStartOffsetMs: 0,
+    captureSource: LearningTimeCaptureSource.automaticLesson,
+  );
+  await database.customInsert(
+    'INSERT INTO learning_time_segments '
+    '(id, owner_id, session_id, active_start_offset_ms, active_duration_ms, '
+    'started_at_utc_ms, ended_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, capture_source) VALUES '
+    "(?, 'local:owner', 'session-1', 0, 7000, 9000, 8000, "
+    "'Asia/Bangkok', 420, 'automaticLesson')",
+    variables: [Variable<String>(segmentId)],
   );
   await database.customInsert(
     "INSERT INTO answer_attempts "

@@ -238,6 +238,45 @@ service cloud.firestore {
         && request.resource.data.revision == 1;
     }
 
+    function fieldLearningTimeSegmentPayloadOk(segmentId) {
+      let payload = request.resource.data.payload;
+      let identity = 'v1|' + payload.sessionId + '|'
+        + string(payload.activeStartOffsetMs) + '|' + payload.captureSource;
+      return payload.keys().hasOnly([
+          'segmentId', 'sessionId', 'activeStartOffsetMs',
+          'activeDurationMs', 'startedAtUtcMs', 'endedAtUtcMs',
+          'timezoneId', 'timezoneOffsetMinutes', 'captureSource'
+        ])
+        && payload.segmentId is string
+        && payload.segmentId == segmentId
+        && payload.sessionId is string
+        && payload.sessionId.size() > 0
+        && payload.sessionId.size() <= 256
+        && payload.sessionId.matches('^\\S(.*\\S)?$')
+        && payload.activeStartOffsetMs is int
+        && payload.activeStartOffsetMs >= 0
+        && payload.activeStartOffsetMs <= 315576000000
+        && payload.activeDurationMs is int
+        && payload.activeDurationMs > 0
+        && payload.activeDurationMs <= 300000
+        && payload.startedAtUtcMs is int
+        && payload.startedAtUtcMs >= 0
+        && payload.endedAtUtcMs is int
+        && payload.endedAtUtcMs >= 0
+        && payload.endedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && payload.timezoneId is string
+        && payload.timezoneId.matches('^(UTC|[A-Za-z][A-Za-z0-9._+\\-]{0,63}/[A-Za-z][A-Za-z0-9._+\\-]{0,63}(/[A-Za-z][A-Za-z0-9._+\\-]{0,63})?)$')
+        && payload.timezoneOffsetMinutes is int
+        && payload.timezoneOffsetMinutes >= -840
+        && payload.timezoneOffsetMinutes <= 840
+        && payload.captureSource in ['automaticLesson', 'focusTimer']
+        && segmentId == 'learning-time-segment:'
+             + hashing.sha256(identity.toUtf8()).toHexString().lower()
+        && request.resource.data.revision == 1
+        && !request.resource.data.isDeleted;
+    }
+
     function fieldWordCategoryExists(uid) {
       return existsAfter(
         /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
@@ -664,7 +703,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion in [15, 16, 17]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && payload.featureContractRevision == '1.0.0'
@@ -792,7 +831,7 @@ service cloud.firestore {
              'category', 'word', 'attempt', 'readingEvent',
              'rewardTransaction', 'srsState', 'achievementUnlock',
              'experimentAssignment', 'assessmentRun', 'savedLearningItem',
-             'contentQualityReport'
+             'contentQualityReport', 'learningTimeSegment'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -862,6 +901,28 @@ service cloud.firestore {
         && request.resource.data.schemaVersion == 1
         && request.resource.data.operationId
              == 'content-quality-operation:'
+                  + hashing.sha256(operationIdentity.toUtf8())
+                      .toHexString().lower()
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.schemaVersion == 1
+        && entity.revision == 1
+        && !entity.isDeleted;
+    }
+
+    function fieldOperationMatchesLearningTimeSegment(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/learning_time_segments/$(entityId);
+      let entity = getAfter(entityPath).data;
+      let operationIdentity = 'v1|' + entityId;
+      return !exists(entityPath)
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.operationId
+             == 'learning-time-operation:'
                   + hashing.sha256(operationIdentity.toUtf8())
                       .toHexString().lower()
         && request.resource.data.operationKind == 'upsert'
@@ -1025,6 +1086,8 @@ service cloud.firestore {
                 ? fieldOperationMatchesSavedLearningItem(uid)
                 : entityType == 'contentQualityReport'
                   ? fieldOperationMatchesContentQualityReport(uid)
+                  : entityType == 'learningTimeSegment'
+                    ? fieldOperationMatchesLearningTimeSegment(uid)
                   : entityType == 'attempt'
                     ? fieldOperationMatchesAttempt(uid)
                     : entityType == 'readingEvent'
@@ -1277,6 +1340,19 @@ service cloud.firestore {
                uid,
                'contentQualityReport',
                reportId
+             );
+        allow update, delete: if false;
+      }
+
+      match /learning_time_segments/{segmentId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(segmentId)
+          && fieldLearningTimeSegmentPayloadOk(segmentId)
+          && fieldOperationLinksEntity(
+               uid,
+               'learningTimeSegment',
+               segmentId
              );
         allow update, delete: if false;
       }

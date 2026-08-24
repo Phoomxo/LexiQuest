@@ -5,7 +5,38 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/domain/learning_models.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
+
+typedef AssociativeReadingTerminalCompensationClaim =
+    Future<AssociativeReadingTerminalCompensationResult> Function(
+      Future<void> Function() operation,
+    );
+
+final class AssociativeReadingTerminalCompensationResult {
+  const AssociativeReadingTerminalCompensationResult._({
+    required this.ownsClaim,
+    required this.error,
+    required this.stackTrace,
+  });
+
+  const AssociativeReadingTerminalCompensationResult.success({
+    required bool ownsClaim,
+  }) : this._(ownsClaim: ownsClaim, error: null, stackTrace: null);
+
+  const AssociativeReadingTerminalCompensationResult.failure({
+    required bool ownsClaim,
+    required Object error,
+    required StackTrace stackTrace,
+  }) : this._(ownsClaim: ownsClaim, error: error, stackTrace: stackTrace);
+
+  final bool ownsClaim;
+  final Object? error;
+  final StackTrace? stackTrace;
+
+  bool get succeeded => error == null;
+}
 
 /// Six-stage Associative Reading Loop screen.
 ///
@@ -30,7 +61,13 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.associativeLearning,
     this.targetWordIds,
     this.sessionId,
+    this.sessionStartedAtUtc,
+    this.sessionLifecycle,
     this.evidenceAdapter,
+    this.claimTerminalCompensation,
+    this.retainsLifecycleOwnership,
+    this.mayPublishOwnedTerminalFailure,
+    this.onTerminalFailurePublished,
   });
 
   final String cefrLevel;
@@ -54,7 +91,13 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
   /// navigating to this screen.
   final String? sessionId;
+  final DateTime? sessionStartedAtUtc;
+  final UnifiedLessonSessionLifecycle? sessionLifecycle;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final AssociativeReadingTerminalCompensationClaim? claimTerminalCompensation;
+  final bool Function()? retainsLifecycleOwnership;
+  final bool Function()? mayPublishOwnedTerminalFailure;
+  final VoidCallback? onTerminalFailurePublished;
 
   @override
   State<AssociativeReadingSessionScreen> createState() =>
@@ -65,6 +108,11 @@ enum AssociativeReadingUnavailableReason {
   learning,
   currentActivityEvidence,
   associativeLearning,
+}
+
+enum AssociativeReadingInitializationFailureReason {
+  progressLoad,
+  lifecycleStart,
 }
 
 class AssociativeReadingUnavailable extends StatelessWidget {
@@ -89,6 +137,44 @@ class AssociativeReadingUnavailable extends StatelessWidget {
   }
 }
 
+class AssociativeReadingInitializationFailure extends StatelessWidget {
+  const AssociativeReadingInitializationFailure({
+    super.key,
+    required this.reason,
+  });
+
+  final AssociativeReadingInitializationFailureReason reason;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      key: const ValueKey<String>('associative-reading-initialization-failure'),
+      appBar: AppBar(title: const Text('Associative Reading')),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(24),
+          child: Text(
+            'This reading session could not be opened safely. Return and start a new session.',
+            textAlign: TextAlign.center,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+final class _AssociativeReadingInitializationException implements Exception {
+  const _AssociativeReadingInitializationException(
+    this.reason,
+    this.cause, {
+    this.ownsTerminalFailure = false,
+  });
+
+  final AssociativeReadingInitializationFailureReason reason;
+  final Object cause;
+  final bool ownsTerminalFailure;
+}
+
 class _AssociativeReadingSessionScreenState
     extends State<AssociativeReadingSessionScreen>
     with WidgetsBindingObserver {
@@ -104,6 +190,7 @@ class _AssociativeReadingSessionScreenState
   LearningUseCases? _learning;
   AssociativeLearningPort? _associativeLearning;
   AssociativeReadingUnavailableReason? _unavailableReason;
+  AssociativeReadingInitializationFailureReason? _initializationFailure;
   bool _initialized = false;
 
   int _currentStage = 1;
@@ -111,6 +198,7 @@ class _AssociativeReadingSessionScreenState
   bool _saving = false;
   bool _completed = false;
   PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lessonLifecycle;
   PendingReadingProgress? _pendingCompletionProgress;
   PendingReadingProgress? _pendingCheckpointProgress;
   int? _pendingCheckpointPosition;
@@ -183,6 +271,9 @@ class _AssociativeReadingSessionScreenState
     if (_initialized) return;
     _initialized = true;
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _lessonLifecycle =
+        widget.sessionLifecycle ??
+        UnifiedLessonSessionLifecycleScope.maybeOf(context);
     _learning = widget.learning ?? dependencies?.learning;
     _associativeLearning =
         widget.associativeLearning ?? dependencies?.associativeLearning;
@@ -206,27 +297,158 @@ class _AssociativeReadingSessionScreenState
       _loading = false;
       return;
     }
-    learning
-        .loadReadingProgress(
-          documentId: _documentId,
-          documentRevision: widget.documentRevision,
-        )
+    _initializeProgress(learning)
         .then((progress) {
-          if (!mounted) return;
+          if (!_canContinueInitialization) return;
           setState(() {
             _currentStage = (progress?.lastPosition ?? 1).clamp(1, 6);
             _completed = progress?.isCompleted ?? false;
             _loading = false;
           });
         })
-        .catchError((Object _) {
-          if (mounted) setState(() => _loading = false);
+        .catchError((Object error) {
+          final ownsTerminalFailure =
+              error is _AssociativeReadingInitializationException &&
+              error.ownsTerminalFailure;
+          final mayPublishOwnedFailure =
+              ownsTerminalFailure &&
+              (widget.mayPublishOwnedTerminalFailure?.call() ?? true);
+          if (!mounted ||
+              (!_canContinueInitialization && !mayPublishOwnedFailure)) {
+            return;
+          }
+          final failure = error is _AssociativeReadingInitializationException
+              ? error.reason
+              : AssociativeReadingInitializationFailureReason.progressLoad;
+          setState(() {
+            _initializationFailure = failure;
+            _loading = false;
+          });
+          widget.onTerminalFailurePublished?.call();
         });
+  }
+
+  Future<ReadingProgressSnapshot?> _initializeProgress(
+    LearningUseCases learning,
+  ) async {
+    final sessionId = widget.sessionId;
+    final startedAtUtc = widget.sessionStartedAtUtc;
+    late final ReadingProgressSnapshot? progress;
+    try {
+      progress = await learning.loadReadingProgress(
+        documentId: _documentId,
+        documentRevision: widget.documentRevision,
+      );
+    } catch (error, stackTrace) {
+      if (!_canContinueInitialization) return null;
+      await _abandonAndFailInitialization(
+        learning: learning,
+        sessionId: sessionId,
+        reason: AssociativeReadingInitializationFailureReason.progressLoad,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (!_canContinueInitialization) return progress;
+    if (sessionId == null || startedAtUtc == null) return progress;
+
+    final lifecycle = _lessonLifecycle;
+    if (lifecycle == null) {
+      final error = StateError(
+        'Associative reading lesson lifecycle is unavailable.',
+      );
+      await _abandonAndFailInitialization(
+        learning: learning,
+        sessionId: sessionId,
+        reason: AssociativeReadingInitializationFailureReason.lifecycleStart,
+        error: error,
+        stackTrace: StackTrace.current,
+      );
+    }
+    try {
+      await lifecycle.start(
+        sessionId: sessionId,
+        startedAtUtc: startedAtUtc,
+        itemCount: widget.targetWords.length,
+      );
+      if (!_canContinueInitialization) return progress;
+      if (progress?.isCompleted ?? false) {
+        await lifecycle.abandon();
+      }
+    } catch (error, stackTrace) {
+      if (!_canContinueInitialization) return progress;
+      await _abandonAndFailInitialization(
+        learning: learning,
+        sessionId: sessionId,
+        reason: AssociativeReadingInitializationFailureReason.lifecycleStart,
+        error: error,
+        stackTrace: stackTrace,
+      );
+    }
+    return progress;
+  }
+
+  bool get _canContinueInitialization =>
+      mounted && (widget.retainsLifecycleOwnership?.call() ?? true);
+
+  Future<Never> _abandonAndFailInitialization({
+    required LearningUseCases learning,
+    required String? sessionId,
+    required AssociativeReadingInitializationFailureReason reason,
+    required Object error,
+    required StackTrace stackTrace,
+  }) async {
+    var ownsTerminalFailure = false;
+    if (sessionId != null) {
+      try {
+        Future<void> abandon() async {
+          await learning.abandonSession(
+            sessionId: sessionId,
+            abandonedAtUtc: DateTime.now().toUtc(),
+          );
+        }
+
+        final claim = widget.claimTerminalCompensation;
+        if (claim == null) {
+          await abandon();
+          ownsTerminalFailure = true;
+        } else {
+          final result = await claim(abandon);
+          ownsTerminalFailure = result.ownsClaim;
+          if (!result.succeeded) {
+            Error.throwWithStackTrace(result.error!, result.stackTrace!);
+          }
+        }
+      } catch (abandonError, abandonStackTrace) {
+        Error.throwWithStackTrace(
+          _AssociativeReadingInitializationException(
+            reason,
+            abandonError,
+            ownsTerminalFailure: ownsTerminalFailure,
+          ),
+          abandonStackTrace,
+        );
+      }
+    }
+    Error.throwWithStackTrace(
+      _AssociativeReadingInitializationException(
+        reason,
+        error,
+        ownsTerminalFailure: ownsTerminalFailure,
+      ),
+      stackTrace,
+    );
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (_unavailableReason != null || _persistenceLocked || _completed) return;
+    if (_loading ||
+        _initializationFailure != null ||
+        _unavailableReason != null ||
+        _persistenceLocked ||
+        _completed) {
+      return;
+    }
     if (state == AppLifecycleState.inactive ||
         state == AppLifecycleState.paused) {
       unawaited(
@@ -255,6 +477,7 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _nextStage() async {
     if (_actionLocked) return;
+    _lessonLifecycle?.recordInteraction();
     setState(() => _saving = true);
 
     // Stage-specific side effects before advancing.
@@ -333,7 +556,12 @@ class _AssociativeReadingSessionScreenState
         sessionId: sessionId,
       );
       try {
-        await close.finish();
+        final lifecycle = _lessonLifecycle;
+        if (lifecycle == null) {
+          await close.finish();
+        } else {
+          await lifecycle.complete(close);
+        }
         _pendingSessionClose = null;
       } catch (_) {
         _showCompletionFailure(
@@ -347,10 +575,19 @@ class _AssociativeReadingSessionScreenState
 
   Future<void> _retrySessionClose() async {
     final close = _pendingSessionClose;
-    if (_saving || _completed || close == null || !close.requiresRetry) return;
+    if (_saving || _completed || close == null) return;
     setState(() => _saving = true);
     try {
-      await close.retry();
+      final lifecycle = _lessonLifecycle;
+      if (lifecycle == null) {
+        if (close.requiresRetry) {
+          await close.retry();
+        } else {
+          await close.finish();
+        }
+      } else {
+        await lifecycle.complete(close);
+      }
       _pendingSessionClose = null;
       await _saveCompletionProgress();
     } catch (_) {
@@ -704,97 +941,129 @@ class _AssociativeReadingSessionScreenState
     if (unavailableReason != null) {
       return AssociativeReadingUnavailable(reason: unavailableReason);
     }
+    final initializationFailure = _initializationFailure;
+    if (initializationFailure != null) {
+      return AssociativeReadingInitializationFailure(
+        reason: initializationFailure,
+      );
+    }
     final recallRetry = _pendingRecallEvidence.any(
       (pending) => pending?.requiresRetry ?? false,
     );
-    final closeRetry = _pendingSessionClose?.requiresRetry ?? false;
+    final closeRetry = _pendingSessionClose != null;
     final progressRetry = _pendingCompletionProgress?.requiresRetry ?? false;
     final checkpointRetry = _pendingCheckpointProgress?.requiresRetry ?? false;
     final associationRetry = _pendingAssociationBatch?.requiresRetry ?? false;
-    return PopScope(
-      canPop: !_persistenceLocked,
-      child: Scaffold(
-        appBar: AppBar(
-          title: Text('Associative Reading (${widget.cefrLevel})'),
-        ),
-        body: _loading
-            ? const Center(child: CircularProgressIndicator())
-            : Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    LinearProgressIndicator(value: _currentStage / 6),
-                    const SizedBox(height: 12),
-                    Text(
-                      _stageTitles[_currentStage - 1],
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 16),
-                    Expanded(
-                      child: SingleChildScrollView(child: _buildStageContent()),
-                    ),
-                    if (_saving) const LinearProgressIndicator(),
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      key: closeRetry
-                          ? const ValueKey<String>(
-                              'current-session-close-retry',
-                            )
-                          : progressRetry
-                          ? const ValueKey<String>(
-                              'current-reading-progress-retry',
-                            )
-                          : checkpointRetry
-                          ? const ValueKey<String>(
-                              'current-reading-checkpoint-retry',
-                            )
-                          : associationRetry
-                          ? const ValueKey<String>('current-association-retry')
-                          : recallRetry
-                          ? const ValueKey<String>('current-evidence-retry')
-                          : null,
-                      onPressed: _saving || _completed
-                          ? null
-                          : closeRetry
-                          ? _retrySessionClose
-                          : progressRetry
-                          ? _retryCompletionProgress
-                          : checkpointRetry
-                          ? _retryCheckpoint
-                          : associationRetry
-                          ? _retryAssociationBatch
-                          : _completionLocked
-                          ? null
-                          : _checkpointLocked
-                          ? null
-                          : _associationLocked
-                          ? null
-                          : _nextStage,
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
+    return Listener(
+      behavior: HitTestBehavior.translucent,
+      onPointerDown: (_) => _lessonLifecycle?.recordInteraction(),
+      child: PopScope(
+        canPop: !_persistenceLocked && (_completed || widget.sessionId == null),
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop || _persistenceLocked || widget.sessionId == null) return;
+          unawaited(_abandonAndPop());
+        },
+        child: Scaffold(
+          appBar: AppBar(
+            title: Text('Associative Reading (${widget.cefrLevel})'),
+          ),
+          body: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      LinearProgressIndicator(value: _currentStage / 6),
+                      const SizedBox(height: 12),
+                      Text(
+                        _stageTitles[_currentStage - 1],
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      child: Text(
-                        closeRetry
-                            ? 'Retry Session Completion'
+                      const SizedBox(height: 16),
+                      Expanded(
+                        child: SingleChildScrollView(
+                          child: _buildStageContent(),
+                        ),
+                      ),
+                      if (_saving) const LinearProgressIndicator(),
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        key: closeRetry
+                            ? const ValueKey<String>(
+                                'current-session-close-retry',
+                              )
                             : progressRetry
-                            ? 'Retry Reading Completion'
+                            ? const ValueKey<String>(
+                                'current-reading-progress-retry',
+                              )
                             : checkpointRetry
-                            ? 'Retry Reading Checkpoint'
+                            ? const ValueKey<String>(
+                                'current-reading-checkpoint-retry',
+                              )
                             : associationRetry
-                            ? 'Retry Memory Associations'
+                            ? const ValueKey<String>(
+                                'current-association-retry',
+                              )
                             : recallRetry
-                            ? 'Retry Evidence'
-                            : _currentStage < 6
-                            ? 'Complete & Continue'
-                            : 'Finish Session',
+                            ? const ValueKey<String>('current-evidence-retry')
+                            : null,
+                        onPressed: _saving || _completed
+                            ? null
+                            : closeRetry
+                            ? _retrySessionClose
+                            : progressRetry
+                            ? _retryCompletionProgress
+                            : checkpointRetry
+                            ? _retryCheckpoint
+                            : associationRetry
+                            ? _retryAssociationBatch
+                            : _completionLocked
+                            ? null
+                            : _checkpointLocked
+                            ? null
+                            : _associationLocked
+                            ? null
+                            : _nextStage,
+                        style: FilledButton.styleFrom(
+                          minimumSize: const Size.fromHeight(52),
+                        ),
+                        child: Text(
+                          closeRetry
+                              ? 'Retry Session Completion'
+                              : progressRetry
+                              ? 'Retry Reading Completion'
+                              : checkpointRetry
+                              ? 'Retry Reading Checkpoint'
+                              : associationRetry
+                              ? 'Retry Memory Associations'
+                              : recallRetry
+                              ? 'Retry Evidence'
+                              : _currentStage < 6
+                              ? 'Complete & Continue'
+                              : 'Finish Session',
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+        ),
       ),
     );
+  }
+
+  Future<void> _abandonAndPop() async {
+    if (_saving || _completed) return;
+    setState(() => _saving = true);
+    try {
+      await _lessonLifecycle?.abandon();
+    } catch (_) {
+      _showCompletionFailure(
+        'Could not close the learning session. Try again.',
+      );
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
   }
 
   Widget _buildStageContent() {
@@ -840,6 +1109,7 @@ class _AssociativeReadingSessionScreenState
                 child: TextField(
                   controller: _recallControllers[i],
                   enabled: !_saving && !_recallBatchFrozen,
+                  onChanged: (_) => _lessonLifecycle?.recordInteraction(),
                   decoration: InputDecoration(
                     labelText: 'Word ${i + 1}',
                     hintText: 'Type from memory',
@@ -901,6 +1171,7 @@ class _AssociativeReadingSessionScreenState
                       controller: _cueControllers[i],
                       enabled:
                           !_saving && !_associationLocked && !_checkpointLocked,
+                      onChanged: (_) => _lessonLifecycle?.recordInteraction(),
                       decoration: const InputDecoration(
                         hintText: 'Keyword, story, or image...',
                         border: OutlineInputBorder(),
@@ -923,6 +1194,7 @@ class _AssociativeReadingSessionScreenState
             const SizedBox(height: 12),
             TextField(
               enabled: !_saving && !_checkpointLocked,
+              onChanged: (_) => _lessonLifecycle?.recordInteraction(),
               decoration: const InputDecoration(
                 hintText: 'Enter a new sentence',
                 border: OutlineInputBorder(),

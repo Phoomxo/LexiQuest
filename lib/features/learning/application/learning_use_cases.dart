@@ -437,7 +437,10 @@ final class LearningUseCases {
     );
   }
 
-  Future<String> startAssociativeReadingSession() async {
+  Future<String> startAssociativeReadingSession() async =>
+      (await startAssociativeReadingSessionHandle()).id;
+
+  Future<LearningSessionHandle> startAssociativeReadingSessionHandle() async {
     final owner = await owners.getOrCreateActiveOwner();
     final startedAtUtc = _now();
     final sessionId = 'session:${_nextId()}';
@@ -451,7 +454,7 @@ final class LearningUseCases {
         buildId: buildInfo.buildId,
       ),
     );
-    return sessionId;
+    return LearningSessionHandle(id: sessionId, startedAtUtc: startedAtUtc);
   }
 
   /// Resolves the active owner once, then gives that exact owner and the

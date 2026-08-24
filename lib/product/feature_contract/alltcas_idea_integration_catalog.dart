@@ -3,7 +3,7 @@ import '../../runtime/registries/feature.dart';
 import 'compatibility_profiles.dart';
 import 'feature_contract_models.dart';
 
-const String featureContractRevision = '1.1.0';
+const String featureContractRevision = '1.2.0';
 const String featureContractInitialRevision = '1.0.0';
 const String featureContractBaselineCommit = '61a4fec';
 const int featureContractSchemaVersion = 1;
@@ -428,6 +428,7 @@ final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
       provenance: FeatureProvenance.alltcasConfirmed,
       coverage: FeatureCoverage.newCapability,
       researchRole: ResearchRole.measurement,
+      dependencies: const <FeatureContractId>{FeatureContractId.f24},
     ),
     _record(
       id: FeatureContractId.f24,
@@ -440,12 +441,19 @@ final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
       researchRole: ResearchRole.measurement,
       dependencies: const <FeatureContractId>{
         FeatureContractId.f05,
-        FeatureContractId.f23,
+        FeatureContractId.f17,
+        FeatureContractId.f19,
+        FeatureContractId.f20,
+        FeatureContractId.f21,
       },
       authorityDependencies: const <DomainAuthority>{
         DomainAuthority.responseEvidence,
+        DomainAuthority.activeLearningTime,
       },
-      authorityProfileId: responseEvidenceWriterAuthorityProfileId,
+      authorityProfileId: activeLearningTimeWriterAuthorityProfileId,
+      activationProfileId: runtimeFlaggedActivationProfileId,
+      rolloutProfileId: controlledRolloutProfileId,
+      rollbackProfileId: runtimeFlagRollbackProfileId,
     ),
     _record(
       id: FeatureContractId.f25,

@@ -16,8 +16,8 @@ void main() {
 
       expect(
         AppDatabase.currentSchemaVersion,
-        17,
-        reason: 'f20 owns the current v16-to-v17 schema advance.',
+        18,
+        reason: 'f24 owns the current v17-to-v18 schema advance.',
       );
       expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
 
@@ -27,7 +27,7 @@ void main() {
       expect(v14Inventory, hasLength(32));
       expect(v15Inventory, hasLength(33));
       expect(v15Inventory.difference(v14Inventory), {'assessment_runs'});
-      expect(currentInventory, hasLength(39));
+      expect(currentInventory, hasLength(40));
       expect(currentInventory.difference(v15Inventory), {
         'learning_packs',
         'learning_pack_items',
@@ -35,6 +35,7 @@ void main() {
         'content_download_states',
         'saved_learning_items',
         'content_quality_reports',
+        'learning_time_segments',
       });
       expect(await _tableNames(database), currentInventory);
       expect(
@@ -77,7 +78,7 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 17);
+      expect(AppDatabase.currentSchemaVersion, 18);
       expect(await _columnContract(database, 'assessment_runs'), const [
         (name: 'id', type: 'TEXT', notNull: true, primaryKey: true),
         (name: 'owner_id', type: 'TEXT', notNull: true, primaryKey: false),

@@ -29,6 +29,7 @@ import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dar
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
@@ -810,6 +811,19 @@ void main() {
         .map((row) => row.read<String>('entity_type'))
         .get();
     expect(migratedEvidenceOutbox, ['attempt', 'readingEvent']);
+    final timeSegment = await database
+        .select(database.learningTimeSegments)
+        .getSingle();
+    final timeOutbox =
+        await (database.select(database.outboxOperations)
+              ..where((row) => row.entityType.equals('learningTimeSegment')))
+            .getSingle();
+    expect(timeSegment.ownerId, 'account-owner');
+    expect(timeOutbox.ownerId, 'account-owner');
+    expect(
+      timeOutbox.operationId,
+      LearningTimeSegment.canonicalOperationId(timeSegment.id),
+    );
   });
 
   test(
@@ -2947,6 +2961,20 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
   await database.customInsert(
     "INSERT INTO learning_sessions VALUES "
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
+  );
+  final learningTimeSegmentId = LearningTimeSegment.canonicalId(
+    sessionId: 'session-1',
+    activeStartOffsetMs: 0,
+    captureSource: LearningTimeCaptureSource.automaticLesson,
+  );
+  await database.customInsert(
+    'INSERT INTO learning_time_segments '
+    '(id, owner_id, session_id, active_start_offset_ms, active_duration_ms, '
+    'started_at_utc_ms, ended_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, capture_source) VALUES '
+    "(?, 'guest-owner', 'session-1', 0, 10, 10, 20, 'Asia/Bangkok', 420, "
+    "'automaticLesson')",
+    variables: [Variable<String>(learningTimeSegmentId)],
   );
   await _seedCompleteInventoryAssessmentRun(
     database,

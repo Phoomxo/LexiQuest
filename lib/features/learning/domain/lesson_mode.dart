@@ -63,3 +63,8 @@ abstract interface class LessonModeAdapter {
 
   Future<LessonItem> next(LessonCursor cursor);
 }
+
+/// Marker for adapters whose complete session is educational active effort.
+/// Recreational activities must never implement this contract.
+abstract interface class TrustworthyActiveEffortLessonModeAdapter
+    implements LessonModeAdapter {}

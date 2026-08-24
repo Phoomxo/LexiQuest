@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import 'score_screen.dart';
 import '../navigation/app_routes.dart';
@@ -36,7 +39,9 @@ class _QuizScreenState extends State<QuizScreen> {
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
   PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lessonLifecycle;
   bool _completionCommitted = false;
+  bool _loadSettled = false;
 
   bool get _evidencePersistenceLocked {
     final pending = _pendingEvidence;
@@ -54,13 +59,14 @@ class _QuizScreenState extends State<QuizScreen> {
     super.didChangeDependencies();
     if (_load != null) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _lessonLifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     _learning = widget.learning ?? dependencies?.learning;
     final learning = _learning;
     if (learning != null) {
       _evidenceAdapter =
           widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     }
-    _load = learning == null
+    final load = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
           )
@@ -69,21 +75,43 @@ class _QuizScreenState extends State<QuizScreen> {
             StateError('current activity evidence dependency unavailable'),
           )
         : learning.startQuiz(categoryId: widget.categoryId);
-    _load!.then((session) {
-      if (!mounted) return;
-      _session = session;
-      _questionStartedAt = DateTime.now();
-    });
+    _load = _loadAndStartSession(load);
+  }
+
+  Future<QuizSession> _loadAndStartSession(Future<QuizSession> load) async {
+    try {
+      final session = await load;
+      final startedAtUtc = session.startedAtUtc;
+      if (!session.isEmpty && startedAtUtc != null) {
+        await _lessonLifecycle?.start(
+          sessionId: session.id,
+          startedAtUtc: startedAtUtc,
+          itemCount: session.questions.length,
+        );
+      }
+      if (mounted) {
+        setState(() {
+          _session = session;
+          _questionStartedAt = DateTime.now();
+        });
+      }
+      return session;
+    } finally {
+      if (mounted) setState(() => _loadSettled = true);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final persistenceLocked = _persistenceLocked;
     return PopScope(
-      canPop: !persistenceLocked && (_session == null || _index == 0),
+      canPop:
+          !persistenceLocked &&
+          _loadSettled &&
+          (_session == null || _session!.isEmpty || _completionCommitted),
       onPopInvokedWithResult: (didPop, _) {
         if (didPop || persistenceLocked) return;
-        _confirmExit(context);
+        unawaited(_confirmExit(context));
       },
       child: Scaffold(
         appBar: AppBar(title: const Text('Quiz คำศัพท์')),
@@ -118,8 +146,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final question = session.questions[_index];
     final actionLocked = _actionLocked;
     final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
-    final sessionCloseRetryRequired =
-        _pendingSessionClose?.requiresRetry ?? false;
+    final sessionCloseRetryRequired = _pendingSessionClose != null;
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -209,8 +236,24 @@ class _QuizScreenState extends State<QuizScreen> {
       ),
     );
     if (shouldExit == true && context.mounted && !_persistenceLocked) {
-      Navigator.pop(context);
+      await _abandonAndPop();
     }
+  }
+
+  Future<void> _abandonAndPop() async {
+    if (_saving || _completionCommitted) return;
+    setState(() => _saving = true);
+    try {
+      await _lessonLifecycle?.abandon();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _saving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('ปิด session ไม่สำเร็จ กรุณาลองอีกครั้ง')),
+      );
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
   }
 
   Color? _answerColor(QuizQuestion question, String option) {
@@ -223,6 +266,7 @@ class _QuizScreenState extends State<QuizScreen> {
   Future<void> _record(QuizQuestion question, String option) async {
     final session = _session;
     if (session == null || _pendingEvidence != null) return;
+    _lessonLifecycle?.recordInteraction();
     final correct = option == question.correctAnswer;
     final elapsed = DateTime.now().difference(
       _questionStartedAt ?? DateTime.now(),
@@ -302,7 +346,10 @@ class _QuizScreenState extends State<QuizScreen> {
       final pending = _pendingSessionClose ??= _learning!.captureSessionClose(
         sessionId: session.id,
       );
-      final summary = await pending.finish();
+      final lifecycle = _lessonLifecycle;
+      final summary = lifecycle == null
+          ? await pending.finish()
+          : await lifecycle.complete(pending);
       await _showScore(summary);
     } catch (_) {
       _showSessionCloseFailure();
@@ -311,10 +358,15 @@ class _QuizScreenState extends State<QuizScreen> {
 
   Future<void> _retrySessionClose() async {
     final pending = _pendingSessionClose;
-    if (pending == null || !pending.requiresRetry || _saving) return;
+    if (pending == null || _saving) return;
     setState(() => _saving = true);
     try {
-      final summary = await pending.retry();
+      final lifecycle = _lessonLifecycle;
+      final summary = lifecycle == null
+          ? pending.requiresRetry
+                ? await pending.retry()
+                : await pending.finish()
+          : await lifecycle.complete(pending);
       await _showScore(summary);
     } catch (_) {
       _showSessionCloseFailure();

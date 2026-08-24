@@ -12,6 +12,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:timezone/data/latest_all.dart' as timezone_data;
+import 'package:timezone/timezone.dart' as timezone;
 import 'package:uuid/uuid.dart';
 
 import '../config/app_config.dart';
@@ -55,6 +56,7 @@ import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
+import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/learning_packs/data/drift_learning_pack_repository.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
@@ -94,7 +96,12 @@ import '../features/sync/data/drift_cloud_policy_cache.dart';
 import '../features/sync/data/drift_owner_operation_gate.dart';
 import '../features/sync/data/drift_sync_store.dart';
 import '../features/sync/data/firestore_sync_gateway.dart';
+import '../features/time_tracking/application/active_learning_time_controller.dart';
+import '../features/time_tracking/application/learning_time_capture_rollout.dart';
+import '../features/time_tracking/data/drift_learning_time_repository.dart';
+import '../features/time_tracking/domain/learning_time_segment.dart';
 import '../features/sync/domain/sync_gateway.dart';
+import '../features/sync/domain/sync_entity.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -133,6 +140,9 @@ typedef ManagedVoiceBuilder =
 DateTime _runtimeFeatureSystemNowUtc() => DateTime.now().toUtc();
 DateTime _aiSystemNowUtc() => DateTime.now().toUtc();
 String _systemLearningTimezoneId() => 'Asia/Bangkok';
+final Stopwatch _learningTimeMonotonicClock = Stopwatch()..start();
+int _systemLearningTimeMonotonicMicros() =>
+    _learningTimeMonotonicClock.elapsedMicroseconds;
 bool _learningTimezonesInitialized = false;
 void _initializeLearningTimezonesOnce() {
   if (_learningTimezonesInitialized) return;
@@ -308,6 +318,12 @@ final class AppBootstrap {
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
     this.assessmentOverride,
     ContentArtifactBytesLoader? loadContentArtifactBytes,
+    LearningTimeMonotonicMicros? learningTimeMonotonicMicros,
+    this.activeLearningIdleTimeout = const Duration(minutes: 5),
+    this.learningTimeCaptureRollout =
+        const LearningTimeCaptureRollout.implementedOff(),
+    this.learningTimeSegmentSyncRollout =
+        const LearningTimeSegmentSyncRollout.off(),
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -326,10 +342,15 @@ final class AppBootstrap {
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
        aiNowUtc = aiNowUtc ?? _aiSystemNowUtc,
        learningTimezoneId = learningTimezoneId ?? _systemLearningTimezoneId,
+       learningTimeMonotonicMicros =
+           learningTimeMonotonicMicros ?? _systemLearningTimeMonotonicMicros,
        loadContentArtifactBytes =
            loadContentArtifactBytes ?? _productionContentArtifactBytes;
 
-  factory AppBootstrap.production() {
+  factory AppBootstrap.production({
+    LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout =
+        const LearningTimeSegmentSyncRollout.off(),
+  }) {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
       initializeSupabase: _initializeSupabaseOptional,
@@ -342,10 +363,12 @@ final class AppBootstrap {
       syncGatewayFactory: () => FirestoreSyncGateway(
         firestore: FirebaseFirestore.instance,
         auth: FirebaseAuth.instance,
+        learningTimeSegmentRollout: learningTimeSegmentSyncRollout,
       ),
       accountGatewayFactory: () =>
           FirebaseAccountGateway(FirebaseAuth.instance),
       cloudSyncEnabled: productionCloudSyncEnabledByDefault,
+      learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
     );
   }
 
@@ -366,6 +389,10 @@ final class AppBootstrap {
   final DateTime Function() runtimeFeatureNowUtc;
   final DateTime Function() aiNowUtc;
   final String Function() learningTimezoneId;
+  final LearningTimeMonotonicMicros learningTimeMonotonicMicros;
+  final Duration activeLearningIdleTimeout;
+  final LearningTimeCaptureRollout learningTimeCaptureRollout;
+  final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ExportArtifactStoreFactory exportStoreFactory;
   final CameraGatewayFactory cameraGatewayFactory;
@@ -541,6 +568,22 @@ final class AppBootstrap {
     final createGateway = syncGatewayFactory;
     if (firebase == RuntimeAvailability.ready && createGateway != null) {
       final gateway = createGateway();
+      if (learningTimeSegmentSyncRollout.enabled) {
+        if (gateway is! LearningTimeSegmentSyncRolloutGateway) {
+          throw StateError(
+            'Learning-time sync rollout must be shared by store and gateway.',
+          );
+        }
+        final rolloutGateway = gateway as LearningTimeSegmentSyncRolloutGateway;
+        if (!identical(
+          rolloutGateway.learningTimeSegmentSyncRollout,
+          learningTimeSegmentSyncRollout,
+        )) {
+          throw StateError(
+            'Learning-time sync rollout must be shared by store and gateway.',
+          );
+        }
+      }
       final policy = CloudSyncPolicyProvider(
         buildEnabled: cloudSyncEnabled,
         cache: DriftCloudPolicyCache(database),
@@ -555,6 +598,7 @@ final class AppBootstrap {
           rolloutModeProvider: evidenceRolloutModeProvider,
           payloadRollout: researchRuntimeConfig.syncPayloadRollout,
           consentRegistry: consentRegistry,
+          learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
         ),
         gateway: gateway,
         policyProvider: policy.call,
@@ -563,6 +607,9 @@ final class AppBootstrap {
         backoff: const SyncBackoff(),
         nowUtc: () => DateTime.now().toUtc(),
         generateLeaseToken: idGenerator.v4,
+        optionalPullCollections: learningTimeSegmentSyncRollout.allowsClaims
+            ? const <SyncCollection>{SyncCollection.learningTimeSegments}
+            : const <SyncCollection>{},
       );
       syncTrigger = SyncTrigger(syncEngine.run);
       resources.own(syncTrigger.dispose);
@@ -827,6 +874,29 @@ final class AppBootstrap {
       researchStateProvider: currentResearchStateProvider,
     );
     final lessonModes = buildLegacyLessonModeRegistry();
+    final learningTime = DriftLearningTimeRepository(
+      database,
+      owners: localOwners,
+      onLocalMutation: () async => notifyLocalMutation(),
+    );
+    ActiveLearningTimeController createActiveLearningTimeController() {
+      final timezoneId = resolvedLearningTimezoneId;
+      final location = timezone.getLocation(timezoneId);
+      return ActiveLearningTimeController(
+        repository: learningTime,
+        monotonicMicros: learningTimeMonotonicMicros,
+        nowUtc: () => DateTime.now().toUtc(),
+        timezoneContext: (occurredAtUtc) {
+          final local = timezone.TZDateTime.from(occurredAtUtc, location);
+          return LearningTimeZoneContext(
+            timezoneId: timezoneId,
+            utcOffsetMinutes: local.timeZoneOffset.inMinutes,
+          );
+        },
+        idleTimeout: activeLearningIdleTimeout,
+      );
+    }
+
     final exports = ExportUseCases(
       reader: DriftExportReader(database),
       store: exportStoreFactory(),
@@ -999,8 +1069,21 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       learning: learning,
       lessonModes: lessonModes,
-      createLessonController: (adapter) =>
-          UnifiedLessonController(learning: learning, adapter: adapter),
+      createLessonController: (adapter) => UnifiedLessonController(
+        learning: learning,
+        adapter: adapter,
+        activeLearningTime:
+            learningTimeCaptureRollout.allowsCapture &&
+                adapter is TrustworthyActiveEffortLessonModeAdapter
+            ? createActiveLearningTimeController()
+            : null,
+      ),
+      learningTime: learningTime,
+      learningTimeCaptureRollout: learningTimeCaptureRollout,
+      createActiveLearningTimeController:
+          learningTimeCaptureRollout.allowsCapture
+          ? createActiveLearningTimeController
+          : null,
       assessment: assessmentOverride,
       currentActivityEvidence: currentActivityEvidence,
       learningReconciliation: learningReconciliation,

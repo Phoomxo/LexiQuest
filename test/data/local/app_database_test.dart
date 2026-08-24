@@ -149,6 +149,86 @@ void main() {
 
     await expectLater(write, throwsA(isA<Exception>()));
   });
+
+  test(
+    'learning-time rows reject overlap and immutable field mutation',
+    () async {
+      await _insertOwner(database);
+      await database.customInsert('''
+      INSERT INTO learning_sessions(
+        id, owner_id, activity_type, state, started_at_utc_ms,
+        app_version, build_id
+      ) VALUES ('session-time', 'owner-1', 'quiz', 'active', 1, 'test', 'test')
+    ''');
+      await database.customInsert(
+        "INSERT INTO local_owners(id, created_at_utc_ms) "
+        "VALUES ('owner-2', 2)",
+      );
+      await database.customInsert('''
+      INSERT INTO learning_time_segments(
+        id, owner_id, session_id, active_start_offset_ms,
+        active_duration_ms, started_at_utc_ms, ended_at_utc_ms,
+        timezone_id, timezone_offset_minutes, capture_source
+      ) VALUES (
+        'segment-time-1', 'owner-1', 'session-time', 0, 1000,
+        10, 5, 'Asia/Bangkok', 420, 'automaticLesson'
+      )
+    ''');
+
+      await expectLater(
+        database.customInsert('''
+        INSERT INTO learning_time_segments(
+          id, owner_id, session_id, active_start_offset_ms,
+          active_duration_ms, started_at_utc_ms, ended_at_utc_ms,
+          timezone_id, timezone_offset_minutes, capture_source
+        ) VALUES (
+          'segment-time-overlap', 'owner-1', 'session-time', 500, 1000,
+          20, 15, 'Asia/Bangkok', 420, 'automaticLesson'
+        )
+      '''),
+        throwsA(isA<Exception>()),
+      );
+      await expectLater(
+        database.customUpdate(
+          'UPDATE learning_time_segments SET active_duration_ms = 2000 '
+          "WHERE id = 'segment-time-1'",
+        ),
+        throwsA(isA<Exception>()),
+      );
+      await expectLater(
+        database.customUpdate(
+          "UPDATE learning_time_segments SET id = 'segment-time-renamed' "
+          "WHERE id = 'segment-time-1'",
+        ),
+        throwsA(isA<Exception>()),
+      );
+      await expectLater(
+        database.customUpdate(
+          "UPDATE learning_time_segments SET owner_id = 'owner-2' "
+          "WHERE id = 'segment-time-1'",
+        ),
+        throwsA(isA<Exception>()),
+      );
+      await expectLater(
+        database.customInsert('''
+        INSERT INTO learning_time_segments(
+          id, owner_id, session_id, active_start_offset_ms,
+          active_duration_ms, started_at_utc_ms, ended_at_utc_ms,
+          timezone_id, timezone_offset_minutes, capture_source
+        ) VALUES (
+          'segment-time-too-long', 'owner-1', 'session-time', 1000, 300001,
+          20, 15, 'Asia/Bangkok', 420, 'automaticLesson'
+        )
+      '''),
+        throwsA(isA<Exception>()),
+      );
+      expect(
+        (await database.select(database.learningTimeSegments).getSingle())
+            .activeDurationMs,
+        1000,
+      );
+    },
+  );
 }
 
 Future<void> _insertOwner(AppDatabase database) async {

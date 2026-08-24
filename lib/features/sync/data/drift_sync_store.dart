@@ -44,6 +44,8 @@ final class DriftSyncStore implements SyncStore {
         const SavedLearningItemSyncRollout.off(),
     this.contentQualityReportSyncRollout =
         const ContentQualityReportSyncRollout.off(),
+    this.learningTimeSegmentSyncRollout =
+        const LearningTimeSegmentSyncRollout.off(),
     this.consentRegistry = const NoOpConsentRegistry(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
@@ -62,6 +64,7 @@ final class DriftSyncStore implements SyncStore {
   final ResearchCollectionSyncRollout researchSyncRollout;
   final SavedLearningItemSyncRollout savedLearningItemSyncRollout;
   final ContentQualityReportSyncRollout contentQualityReportSyncRollout;
+  final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final ConsentRegistry consentRegistry;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
@@ -909,6 +912,15 @@ final class DriftSyncStore implements SyncStore {
             cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
         expectedEntityId: cloudEntity.entityId,
       );
+    } else if (cloudEntity.collection == SyncCollection.learningTimeSegments) {
+      _requireImmutableEntity(cloudEntity, SyncCollection.learningTimeSegments);
+      LearningTimeSegmentSyncPayloadContract.requireCanonical(
+        payload: cloudEntity.payload,
+        isDeleted: cloudEntity.isDeleted,
+        clientUpdatedAtUtcMs:
+            cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        expectedEntityId: cloudEntity.entityId,
+      );
     }
 
     return database.transaction(() async {
@@ -946,7 +958,8 @@ final class DriftSyncStore implements SyncStore {
           cloudEntity.collection == SyncCollection.achievementUnlocks ||
           cloudEntity.collection == SyncCollection.experimentAssignments ||
           cloudEntity.collection == SyncCollection.assessmentRuns ||
-          cloudEntity.collection == SyncCollection.contentQualityReports) {
+          cloudEntity.collection == SyncCollection.contentQualityReports ||
+          cloudEntity.collection == SyncCollection.learningTimeSegments) {
         await _resolveImmutableConflict(
           operation: operation,
           claimedPayload: mutation.payload,
@@ -1018,6 +1031,7 @@ final class DriftSyncStore implements SyncStore {
         case SyncCollection.experimentAssignments:
         case SyncCollection.assessmentRuns:
         case SyncCollection.contentQualityReports:
+        case SyncCollection.learningTimeSegments:
           throw const InvalidSyncPayloadFailure();
         case SyncCollection.srsStates:
           // Resolve mutable cache state without overriding local answer evidence.
@@ -1181,6 +1195,8 @@ final class DriftSyncStore implements SyncStore {
               await _applySavedLearningItem(canonicalOwnerId, entity);
             case SyncCollection.contentQualityReports:
               await _applyContentQualityReport(canonicalOwnerId, entity);
+            case SyncCollection.learningTimeSegments:
+              await _applyLearningTimeSegment(canonicalOwnerId, entity);
           }
         }
 
@@ -1228,6 +1244,10 @@ final class DriftSyncStore implements SyncStore {
     if (operation.entityType ==
         SyncCollection.contentQualityReports.entityType) {
       return _contentQualityReportUploadAllowed(operation.ownerId);
+    }
+    if (operation.entityType ==
+        SyncCollection.learningTimeSegments.entityType) {
+      return learningTimeSegmentSyncRollout.allowsClaims;
     }
     if (operation.entityType ==
         SyncCollection.experimentAssignments.entityType) {
@@ -2029,6 +2049,49 @@ final class DriftSyncStore implements SyncStore {
           clientUpdatedAtUtc: _utc(report.submittedAtUtcMs),
           payload: payload,
         );
+      case 'learningTimeSegment':
+        final segment =
+            await (database.select(database.learningTimeSegments)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
+        if (segment == null ||
+            !learningTimeSegmentSyncRollout.allowsClaims ||
+            operation.operationKind != SyncOperationKind.upsert.name ||
+            operation.payloadVersion != 1 ||
+            operation.baseRevision != 0 ||
+            baseRevision != 0 ||
+            _operationRevision(operation) != 1) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final payload = _learningTimeSegmentPayload(segment);
+        LearningTimeSegmentSyncPayloadContract.requireCanonical(
+          payload: payload,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: segment.endedAtUtcMs,
+          expectedEntityId: segment.id,
+        );
+        final operationId =
+            LearningTimeSegmentSyncPayloadContract.canonicalOperationId(
+              segment.id,
+            );
+        if (operation.operationId != operationId) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        return PushMutation(
+          operationId: operationId,
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.learningTimeSegments,
+          entityId: segment.id,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(segment.endedAtUtcMs),
+          payload: payload,
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2114,6 +2177,9 @@ final class DriftSyncStore implements SyncStore {
         return;
       case 'contentQualityReport':
         // Immutable report receipt is the acknowledged outbox operation.
+        return;
+      case 'learningTimeSegment':
+        // Immutable active-time receipt is the acknowledged outbox operation.
         return;
       case 'savedLearningItem':
         await (database.update(database.savedLearningItems)..where(
@@ -2269,6 +2335,15 @@ final class DriftSyncStore implements SyncStore {
                 ))
                 .getSingle();
         return _contentQualityReportPayload(report);
+      case 'learningTimeSegment':
+        final segment =
+            await (database.select(database.learningTimeSegments)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return _learningTimeSegmentPayload(segment);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2690,6 +2765,139 @@ final class DriftSyncStore implements SyncStore {
             submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
           ),
         );
+  }
+
+  Future<void> _applyLearningTimeSegment(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
+    _requireImmutableEntity(entity, SyncCollection.learningTimeSegments);
+    LearningTimeSegmentSyncPayloadContract.requireCanonical(
+      payload: entity.payload,
+      isDeleted: entity.isDeleted,
+      clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      expectedEntityId: entity.entityId,
+    );
+    final payload = entity.payload;
+    final existing = await (database.select(
+      database.learningTimeSegments,
+    )..where((row) => row.id.equals(entity.entityId))).getSingleOrNull();
+    if (existing != null) {
+      if (existing.ownerId != ownerId) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _learningTimeSegmentPayload(existing),
+      );
+      return;
+    }
+    final sessionId = payload['sessionId']! as String;
+    final session = await (database.select(
+      database.learningSessions,
+    )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
+    if (session != null && session.ownerId != ownerId) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    if (session == null) {
+      await database
+          .into(database.learningSessions)
+          .insert(
+            db.LearningSessionsCompanion.insert(
+              id: sessionId,
+              ownerId: ownerId,
+              activityType: 'syncedActiveTime',
+              state: 'syncedActiveTime',
+              startedAtUtcMs: payload['startedAtUtcMs']! as int,
+              appVersion: 'unknown',
+              buildId: 'synced',
+            ),
+          );
+    }
+    final collision = await _learningTimeSegmentRangeCollision(
+      ownerId: ownerId,
+      entityId: entity.entityId,
+      sessionId: sessionId,
+      activeStartOffsetMs: payload['activeStartOffsetMs']! as int,
+      activeDurationMs: payload['activeDurationMs']! as int,
+    );
+    if (collision != null) {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: collision,
+        resolvedAtUtc: entity.serverUpdatedAtUtc,
+      );
+      return;
+    }
+    try {
+      await database
+          .into(database.learningTimeSegments)
+          .insert(
+            db.LearningTimeSegmentsCompanion.insert(
+              id: entity.entityId,
+              ownerId: ownerId,
+              sessionId: sessionId,
+              activeStartOffsetMs: payload['activeStartOffsetMs']! as int,
+              activeDurationMs: payload['activeDurationMs']! as int,
+              startedAtUtcMs: payload['startedAtUtcMs']! as int,
+              endedAtUtcMs: payload['endedAtUtcMs']! as int,
+              timezoneId: payload['timezoneId']! as String,
+              timezoneOffsetMinutes: payload['timezoneOffsetMinutes']! as int,
+              captureSource: payload['captureSource']! as String,
+            ),
+          );
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  Future<Map<String, Object?>?> _learningTimeSegmentRangeCollision({
+    required String ownerId,
+    required String entityId,
+    required String sessionId,
+    required int activeStartOffsetMs,
+    required int activeDurationMs,
+  }) async {
+    final activeEndOffsetMs = activeStartOffsetMs + activeDurationMs;
+    final collision = await database
+        .customSelect(
+          '''
+          SELECT id, session_id, active_start_offset_ms, active_duration_ms,
+                 started_at_utc_ms, ended_at_utc_ms, timezone_id,
+                 timezone_offset_minutes, capture_source
+          FROM learning_time_segments
+          WHERE owner_id = ?
+            AND session_id = ?
+            AND id <> ?
+            AND active_start_offset_ms < ?
+            AND active_start_offset_ms + active_duration_ms > ?
+          ORDER BY active_start_offset_ms ASC, id ASC
+          LIMIT 1
+          ''',
+          variables: <Variable<Object>>[
+            Variable<String>(ownerId),
+            Variable<String>(sessionId),
+            Variable<String>(entityId),
+            Variable<int>(activeEndOffsetMs),
+            Variable<int>(activeStartOffsetMs),
+          ],
+          readsFrom: {database.learningTimeSegments},
+        )
+        .getSingleOrNull();
+    if (collision == null) return null;
+    return <String, Object?>{
+      'segmentId': collision.read<String>('id'),
+      'sessionId': collision.read<String>('session_id'),
+      'activeStartOffsetMs': collision.read<int>('active_start_offset_ms'),
+      'activeDurationMs': collision.read<int>('active_duration_ms'),
+      'startedAtUtcMs': collision.read<int>('started_at_utc_ms'),
+      'endedAtUtcMs': collision.read<int>('ended_at_utc_ms'),
+      'timezoneId': collision.read<String>('timezone_id'),
+      'timezoneOffsetMinutes': collision.read<int>('timezone_offset_minutes'),
+      'captureSource': collision.read<String>('capture_source'),
+    };
   }
 
   Future<db.SavedLearningItemRow?> _savedLearningItemByNaturalIdentity(
@@ -3631,13 +3839,16 @@ final class DriftSyncStore implements SyncStore {
     required Map<String, Object?> localPayload,
     required DateTime resolvedAtUtc,
   }) async {
+    final conflictId =
+        'conflict:immutable:${entity.collection.wireName}:'
+        '${entity.entityId}:${entity.revision}';
+    final localSnapshotJson = jsonEncode(localPayload);
+    final cloudSnapshotJson = jsonEncode(entity.payload);
     await database
         .into(database.syncConflicts)
         .insert(
           db.SyncConflictsCompanion.insert(
-            id:
-                'conflict:immutable:${entity.collection.wireName}:'
-                '${entity.entityId}:${entity.revision}',
+            id: conflictId,
             ownerId: ownerId,
             entityType: entity.collection.entityType,
             entityId: entity.entityId,
@@ -3645,12 +3856,28 @@ final class DriftSyncStore implements SyncStore {
             cloudRevision: entity.revision,
             resolutionPolicy: 'immutableEventId',
             outcome: 'quarantined',
-            localSnapshotJson: Value(jsonEncode(localPayload)),
-            cloudSnapshotJson: Value(jsonEncode(entity.payload)),
+            localSnapshotJson: Value(localSnapshotJson),
+            cloudSnapshotJson: Value(cloudSnapshotJson),
             resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
           ),
           mode: InsertMode.insertOrIgnore,
         );
+    final persisted = await (database.select(
+      database.syncConflicts,
+    )..where((row) => row.id.equals(conflictId))).getSingle();
+    if (persisted.ownerId != ownerId ||
+        persisted.entityType != entity.collection.entityType ||
+        persisted.entityId != entity.entityId ||
+        persisted.localRevision != 1 ||
+        persisted.cloudRevision != entity.revision ||
+        persisted.resolutionPolicy != 'immutableEventId' ||
+        persisted.outcome != 'quarantined' ||
+        persisted.localSnapshotJson != localSnapshotJson ||
+        persisted.cloudSnapshotJson != cloudSnapshotJson) {
+      throw StateError(
+        'immutable conflict identity replay changed semantic payload',
+      );
+    }
   }
 
   Future<void> _resolvePendingImmutableOutbox({
@@ -3766,6 +3993,7 @@ final class DriftSyncStore implements SyncStore {
       case SyncCollection.experimentAssignments:
       case SyncCollection.assessmentRuns:
       case SyncCollection.contentQualityReports:
+      case SyncCollection.learningTimeSegments:
         throw const InvalidSyncPayloadFailure();
     }
 
@@ -4100,6 +4328,20 @@ Map<String, Object?> _contentQualityReportPayload(
   'comment': report.comment,
   'submittedAtUtcMs': report.submittedAtUtcMs,
   'isDeleted': false,
+};
+
+Map<String, Object?> _learningTimeSegmentPayload(
+  db.LearningTimeSegmentRow segment,
+) => <String, Object?>{
+  'segmentId': segment.id,
+  'sessionId': segment.sessionId,
+  'activeStartOffsetMs': segment.activeStartOffsetMs,
+  'activeDurationMs': segment.activeDurationMs,
+  'startedAtUtcMs': segment.startedAtUtcMs,
+  'endedAtUtcMs': segment.endedAtUtcMs,
+  'timezoneId': segment.timezoneId,
+  'timezoneOffsetMinutes': segment.timezoneOffsetMinutes,
+  'captureSource': segment.captureSource,
 };
 
 Map<String, Object?> _rewardTransactionPayload(

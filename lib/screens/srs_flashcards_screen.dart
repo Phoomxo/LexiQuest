@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/domain/learning_models.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/voice/presentation/route_voice_session_mixin.dart';
@@ -48,7 +49,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
   PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lessonLifecycle;
   bool _completionCommitted = false;
+  bool _loadSettled = false;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
   bool get _persistenceLocked =>
@@ -73,6 +76,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   void didChangeDependencies() {
     super.didChangeDependencies();
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _lessonLifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     _voice = widget.voice ?? dependencies?.voice;
     refreshRouteVoiceSession();
     if (_load != null) return;
@@ -85,7 +89,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         _evidenceAdapter =
             widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
       }
-      _load = learning == null
+      final load = learning == null
           ? Future<QuizSession>.error(
               StateError('local learning dependency unavailable'),
             )
@@ -94,14 +98,30 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               StateError('current activity evidence dependency unavailable'),
             )
           : learning.startDueReview();
+      _load = _startLifecycle(load);
     }
     unawaited(_primeLoadedSession(_load!));
+  }
+
+  Future<QuizSession> _startLifecycle(Future<QuizSession> load) async {
+    final session = await load;
+    final startedAtUtc = session.startedAtUtc;
+    if (!_isCompatibilityDeck && !session.isEmpty && startedAtUtc != null) {
+      await _lessonLifecycle?.start(
+        sessionId: session.id,
+        startedAtUtc: startedAtUtc,
+        itemCount: session.questions.length,
+      );
+    }
+    return session;
   }
 
   Future<void> _primeLoadedSession(Future<QuizSession> load) async {
     try {
       final session = await load;
-      if (!mounted || session.isEmpty) return;
+      if (!mounted) return;
+      _loadSettled = true;
+      if (session.isEmpty) return;
       _session = session;
       _questionStartedAt = DateTime.now();
       await _playAudio();
@@ -109,6 +129,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       // FutureBuilder renders the typed local-unavailable state from the
       // original load future. This observer must not create an unhandled
       // derived Future when loading fails.
+      if (mounted) setState(() => _loadSettled = true);
     }
   }
 
@@ -160,6 +181,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   void _flipCard() {
     if (_actionLocked) return;
+    _lessonLifecycle?.recordInteraction();
     if (_isFlipped) {
       _controller.reverse();
     } else {
@@ -170,6 +192,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Future<void> _rateItem(bool isCorrect) async {
     if (_actionLocked) return;
+    _lessonLifecycle?.recordInteraction();
     PendingCurrentActivityEvidence? pending;
     if (!_isCompatibilityDeck) {
       final existing = _pendingEvidence;
@@ -230,10 +253,19 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
 
   Future<void> _retrySessionClose() async {
     final pending = _pendingSessionClose;
-    if (pending == null || !pending.requiresRetry || _saving) return;
+    if (pending == null || _saving) return;
     setState(() => _saving = true);
     try {
-      await pending.retry();
+      final lifecycle = _lessonLifecycle;
+      if (lifecycle == null) {
+        if (pending.requiresRetry) {
+          await pending.retry();
+        } else {
+          await pending.finish();
+        }
+      } else {
+        await lifecycle.complete(pending);
+      }
       _pendingSessionClose = null;
       await _completeReview();
     } catch (_) {
@@ -267,7 +299,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         sessionId: _session!.id,
       );
       _pendingEvidence = null;
-      await pending.finish();
+      final lifecycle = _lessonLifecycle;
+      if (lifecycle == null) {
+        await pending.finish();
+      } else {
+        await lifecycle.complete(pending);
+      }
       _pendingSessionClose = null;
       await _completeReview();
     } catch (_) {
@@ -306,7 +343,17 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: !_persistenceLocked,
+      canPop:
+          !_persistenceLocked &&
+          (_isCompatibilityDeck ||
+              (_loadSettled &&
+                  (_session == null ||
+                      _session!.isEmpty ||
+                      _completionCommitted))),
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop || _persistenceLocked || _isCompatibilityDeck) return;
+        unawaited(_abandonAndPop());
+      },
       child: Scaffold(
         appBar: AppBar(title: const Text('ทบทวน SRS')),
         body: FutureBuilder<QuizSession>(
@@ -327,6 +374,18 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         ),
       ),
     );
+  }
+
+  Future<void> _abandonAndPop() async {
+    if (_saving || _completionCommitted) return;
+    setState(() => _saving = true);
+    try {
+      await _lessonLifecycle?.abandon();
+    } catch (_) {
+      _showSaveFailure();
+      return;
+    }
+    if (mounted) Navigator.of(context).pop();
   }
 
   Widget _buildCard() {
@@ -382,7 +441,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
               onPressed: _retryEvidence,
               child: const Text('Retry saved review'),
             )
-          else if (_pendingSessionClose?.requiresRetry ?? false)
+          else if (_pendingSessionClose != null)
             FilledButton(
               key: const ValueKey<String>('current-evidence-retry'),
               onPressed: _retrySessionClose,

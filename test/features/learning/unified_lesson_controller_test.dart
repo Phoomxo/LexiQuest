@@ -31,6 +31,9 @@ import 'package:vocab_learning_app/features/review/domain/content_quality_report
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
@@ -42,6 +45,342 @@ import '../../support/inert_research_dependencies.dart';
 import '../../support/test_quest_use_cases.dart';
 
 void main() {
+  test(
+    'certified lesson lifecycle writes only monotonic active segments',
+    () async {
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+      );
+
+      await fixture.controller.start(fixture.startCommand);
+      monotonicMicros = const Duration(seconds: 12).inMicroseconds;
+      await fixture.controller.pause(
+        fixture.now.subtract(const Duration(seconds: 1)),
+      );
+      monotonicMicros += const Duration(seconds: 2).inMicroseconds;
+      await fixture.controller.resume(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+      monotonicMicros += const Duration(seconds: 8).inMicroseconds;
+      await fixture.controller.complete(
+        fixture.now.add(const Duration(seconds: 9)),
+      );
+
+      expect(timeRepository.segments, hasLength(2));
+      expect(
+        timeRepository.segments.first.activeDuration,
+        const Duration(seconds: 12),
+      );
+      expect(
+        timeRepository.segments.last.activeStartOffset,
+        const Duration(seconds: 12),
+      );
+      expect(
+        timeRepository.segments.last.activeDuration,
+        const Duration(seconds: 8),
+      );
+    },
+  );
+
+  test(
+    'non-certified and recreational adapters cannot receive the time writer',
+    () async {
+      final fixture = await _fixture();
+      final activeTime = _activeTimeController(
+        _MemoryLearningTimeRepository(),
+        monotonicMicros: () => 0,
+      );
+
+      expect(
+        () => UnifiedLessonController(
+          learning: fixture.learning,
+          adapter: _Adapter(),
+          activeLearningTime: activeTime,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => const LegacyLessonModeAdapter(LessonMode.meaningQuiz).classify(
+          fixture
+              .submission(evidenceClass: EvidenceClass.recreational)
+              .response,
+          fixture.submission(evidenceClass: EvidenceClass.recreational).support,
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
+    'time start failure remains isolated and the durable session is abandoned',
+    () async {
+      final timeRepository = _MemoryLearningTimeRepository()
+        ..failActiveDuration = true;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => 0,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+      );
+
+      await fixture.controller.start(fixture.startCommand);
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(fixture.controller.lastActiveLearningTimeFailure, isNotNull);
+      fixture.controller.noteActiveLearningInteraction(
+        fixture.now.add(const Duration(milliseconds: 500)),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(fixture.controller.lastActiveLearningTimeFailure, isNotNull);
+      await fixture.controller.abandon(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+
+      final session =
+          await (fixture.database.select(fixture.database.learningSessions)
+                ..where((row) => row.id.equals(fixture.startCommand.sessionId)))
+              .getSingle();
+      expect(session.state, 'abandoned');
+      expect(fixture.repository.scopedAbandonCalls, 1);
+      expect(fixture.controller.lastActiveLearningTimeFailure, isNotNull);
+    },
+  );
+
+  test('time append failure freezes completion until exact retry', () async {
+    final timeRepository = _MemoryLearningTimeRepository();
+    var monotonicMicros = 0;
+    final activeTime = _activeTimeController(
+      timeRepository,
+      monotonicMicros: () => monotonicMicros,
+    );
+    final fixture = await _fixture(
+      adapter: _ActiveEffortAdapter(),
+      activeLearningTime: activeTime,
+    );
+    await fixture.controller.start(fixture.startCommand);
+    monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+    timeRepository.failNextAppend = true;
+
+    await expectLater(
+      fixture.controller.complete(fixture.now.add(const Duration(seconds: 5))),
+      throwsStateError,
+    );
+
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.repository.finishCalls, 0);
+    expect(fixture.controller.lastActiveLearningTimeFailure, isNotNull);
+    expect(timeRepository.segments, isEmpty);
+
+    monotonicMicros = const Duration(minutes: 1).inMicroseconds;
+    await fixture.controller.complete(
+      fixture.now.add(const Duration(minutes: 1)),
+    );
+
+    expect(fixture.controller.state.status, LessonSessionStatus.completed);
+    expect(fixture.repository.finishCalls, 1);
+    expect(fixture.controller.lastActiveLearningTimeFailure, isNull);
+    expect(timeRepository.segments, hasLength(1));
+    expect(
+      timeRepository.segments.single.activeDuration,
+      const Duration(seconds: 5),
+    );
+  });
+
+  test('time append failure freezes abandonment until exact retry', () async {
+    final timeRepository = _MemoryLearningTimeRepository();
+    var monotonicMicros = 0;
+    final activeTime = _activeTimeController(
+      timeRepository,
+      monotonicMicros: () => monotonicMicros,
+    );
+    final fixture = await _fixture(
+      adapter: _ActiveEffortAdapter(),
+      activeLearningTime: activeTime,
+    );
+    await fixture.controller.start(fixture.startCommand);
+    monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+    timeRepository.failNextAppend = true;
+
+    await expectLater(
+      fixture.controller.abandon(fixture.now.add(const Duration(seconds: 5))),
+      throwsStateError,
+    );
+
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.repository.scopedAbandonCalls, 0);
+    expect(fixture.controller.lastActiveLearningTimeFailure, isNotNull);
+    expect(timeRepository.segments, isEmpty);
+
+    monotonicMicros = const Duration(minutes: 1).inMicroseconds;
+    await fixture.controller.abandon(
+      fixture.now.add(const Duration(minutes: 1)),
+    );
+
+    expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    expect(fixture.repository.scopedAbandonCalls, 1);
+    expect(fixture.controller.lastActiveLearningTimeFailure, isNull);
+    expect(timeRepository.segments, hasLength(1));
+    expect(
+      timeRepository.segments.single.activeDuration,
+      const Duration(seconds: 5),
+    );
+  });
+
+  test('failed canonical completion does not count retry-wait time', () async {
+    final timeRepository = _MemoryLearningTimeRepository();
+    var monotonicMicros = 0;
+    final activeTime = _activeTimeController(
+      timeRepository,
+      monotonicMicros: () => monotonicMicros,
+    );
+    final fixture = await _fixture(
+      adapter: _ActiveEffortAdapter(),
+      activeLearningTime: activeTime,
+    );
+    await fixture.controller.start(fixture.startCommand);
+    monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+    fixture.repository.failNextFinish = true;
+
+    await expectLater(
+      fixture.controller.complete(fixture.now.add(const Duration(seconds: 5))),
+      throwsStateError,
+    );
+    expect(activeTime.state, ActiveLearningTimeState.finished);
+    expect(timeRepository.segments, hasLength(1));
+    expect(fixture.controller.terminalMutationInFlight, isTrue);
+    await expectLater(
+      fixture.controller.submit(fixture.submission()),
+      throwsStateError,
+    );
+    await expectLater(
+      fixture.controller.pause(fixture.now.add(const Duration(seconds: 6))),
+      throwsStateError,
+    );
+    await expectLater(
+      fixture.controller.abandon(fixture.now.add(const Duration(seconds: 6))),
+      throwsStateError,
+    );
+    expect(fixture.repository.recordCalls, 0);
+    expect(fixture.repository.scopedAbandonCalls, 0);
+
+    monotonicMicros = const Duration(minutes: 2).inMicroseconds;
+    await fixture.controller.complete(
+      fixture.now.add(const Duration(minutes: 2)),
+    );
+
+    expect(fixture.controller.state.status, LessonSessionStatus.completed);
+    expect(fixture.controller.terminalMutationInFlight, isFalse);
+    expect(fixture.repository.finishCalls, 2);
+    expect(timeRepository.segments, hasLength(1));
+    expect(
+      timeRepository.segments.single.activeDuration,
+      const Duration(seconds: 5),
+    );
+  });
+
+  test(
+    'failed captured completion keeps the exact close fenced until retry',
+    () async {
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      final close = fixture.learning.captureSessionClose(
+        sessionId: fixture.startCommand.sessionId,
+      );
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      fixture.repository.failNextFinish = true;
+
+      await expectLater(
+        fixture.controller.completeCapturedSession(
+          close,
+          fixture.now.add(const Duration(seconds: 5)),
+        ),
+        throwsStateError,
+      );
+
+      expect(activeTime.state, ActiveLearningTimeState.finished);
+      expect(fixture.controller.terminalMutationInFlight, isTrue);
+      await expectLater(
+        fixture.controller.submit(fixture.submission()),
+        throwsStateError,
+      );
+      await expectLater(
+        fixture.controller.completeCapturedSession(
+          fixture.learning.captureSessionClose(
+            sessionId: fixture.startCommand.sessionId,
+          ),
+          fixture.now.add(const Duration(seconds: 6)),
+        ),
+        throwsStateError,
+      );
+
+      monotonicMicros = const Duration(minutes: 2).inMicroseconds;
+      await fixture.controller.completeCapturedSession(
+        close,
+        fixture.now.add(const Duration(minutes: 2)),
+      );
+
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      expect(fixture.controller.terminalMutationInFlight, isFalse);
+      expect(fixture.repository.finishCalls, 2);
+      expect(fixture.repository.recordCalls, 0);
+      expect(timeRepository.segments, hasLength(1));
+      expect(
+        timeRepository.segments.single.activeDuration,
+        const Duration(seconds: 5),
+      );
+    },
+  );
+
+  test('outer mutation queue preserves pause intent monotonic time', () async {
+    final timeRepository = _MemoryLearningTimeRepository();
+    var monotonicMicros = 0;
+    final activeTime = _activeTimeController(
+      timeRepository,
+      monotonicMicros: () => monotonicMicros,
+    );
+    final fixture = await _fixture(
+      adapter: _ActiveEffortAdapter(),
+      blockRecord: true,
+      activeLearningTime: activeTime,
+    );
+    await fixture.controller.start(fixture.startCommand);
+    final submission = fixture.controller.submit(fixture.submission());
+    await fixture.repository.recordStarted.future;
+
+    monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+    final pause = fixture.controller.pause(
+      fixture.now.add(const Duration(seconds: 10)),
+    );
+    monotonicMicros = const Duration(minutes: 1).inMicroseconds;
+    fixture.repository.releaseRecord();
+    await submission;
+    await pause;
+
+    expect(fixture.controller.state.status, LessonSessionStatus.paused);
+    expect(timeRepository.segments, hasLength(1));
+    expect(
+      timeRepository.segments.single.activeDuration,
+      const Duration(seconds: 10),
+    );
+  });
+
   test(
     'moves planned active paused active completed through legal transitions',
     () async {
@@ -557,6 +896,27 @@ void main() {
     expect(find.text('lesson body'), findsOneWidget);
   });
 
+  testWidgets('inactive lifecycle excludes time while input is unavailable', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    await fixture.controller.start(fixture.startCommand);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+    await tester.pump();
+
+    expect(fixture.controller.state.status, LessonSessionStatus.paused);
+  });
+
   testWidgets(
     'initial paused or hidden mount reconciles without a lifecycle event',
     (tester) async {
@@ -691,7 +1051,7 @@ void main() {
     },
   );
 
-  testWidgets('failed completion signals one deferred background pause', (
+  testWidgets('failed completion stays fenced across lifecycle changes', (
     tester,
   ) async {
     final fixture = await _fixture(blockFinish: true, failFinish: true);
@@ -730,13 +1090,11 @@ void main() {
     await tester.pump();
 
     expect(fixture.controller.hintState, isNull);
-    expect(statusAfterFailure, LessonSessionStatus.paused);
+    expect(statusAfterFailure, LessonSessionStatus.active);
     expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.controller.terminalMutationInFlight, isTrue);
     expect(fixture.repository.finishCalls, 1);
-    expect(transitions, <LessonSessionStatus>[
-      LessonSessionStatus.paused,
-      LessonSessionStatus.active,
-    ]);
+    expect(transitions, isEmpty);
   });
 
   testWidgets('failed abandon signals one deferred background pause', (
@@ -1587,6 +1945,7 @@ Future<_Fixture> _fixture({
   bool failFinish = false,
   bool blockAbandon = false,
   bool failAbandon = false,
+  ActiveLearningTimeController? activeLearningTime,
 }) async {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -1648,6 +2007,7 @@ Future<_Fixture> _fixture({
     learning: learning,
     adapter: modeAdapter,
     hints: hints,
+    activeLearningTime: activeLearningTime,
   );
   return _Fixture(
     database: database,
@@ -1682,6 +2042,69 @@ final class _Adapter implements LessonModeAdapter {
   @override
   Future<LessonItem> next(LessonCursor cursor) async =>
       LessonItem(id: 'item-${cursor.index}');
+}
+
+final class _ActiveEffortAdapter
+    implements TrustworthyActiveEffortLessonModeAdapter {
+  @override
+  LessonMode get mode => LessonMode.meaningQuiz;
+
+  @override
+  EvidenceContext classify(LessonResponse response, LessonSupport support) =>
+      support.evidenceContext;
+
+  @override
+  Future<LessonItem> next(LessonCursor cursor) async =>
+      LessonItem(id: 'active-item-${cursor.index}');
+}
+
+ActiveLearningTimeController _activeTimeController(
+  LearningTimeRepository repository, {
+  required int Function() monotonicMicros,
+}) => ActiveLearningTimeController(
+  repository: repository,
+  monotonicMicros: monotonicMicros,
+  nowUtc: () => DateTime.utc(2026, 8, 24, 9),
+  timezoneContext: (_) => const LearningTimeZoneContext(
+    timezoneId: 'Asia/Bangkok',
+    utcOffsetMinutes: 420,
+  ),
+);
+
+final class _MemoryLearningTimeRepository implements LearningTimeRepository {
+  final segments = <LearningTimeSegment>[];
+  bool failActiveDuration = false;
+  bool failNextAppend = false;
+
+  @override
+  Future<void> append(LearningTimeSegment segment) async {
+    if (failNextAppend) {
+      failNextAppend = false;
+      throw StateError('injected time append failure');
+    }
+    final existing = segments.where((candidate) => candidate.id == segment.id);
+    if (existing.isNotEmpty) {
+      if (existing.single != segment) throw StateError('time replay mismatch');
+      return;
+    }
+    segments.add(segment);
+  }
+
+  @override
+  Future<Duration> activeDuration(String sessionId) async {
+    if (failActiveDuration) {
+      failActiveDuration = false;
+      throw StateError('injected time start failure');
+    }
+    return Duration(
+      milliseconds: segments
+          .where((segment) => segment.sessionId == sessionId)
+          .fold<int>(
+            0,
+            (sum, segment) => sum + segment.activeDuration.inMilliseconds,
+          ),
+    );
+  }
 }
 
 final class _HintAdapter implements HintSupportingLessonModeAdapter {
@@ -1743,6 +2166,7 @@ final class _CountingRepository
   RecordAnswerCommand? lastRecordCommand;
   final List<RecordAnswerCommand> recordCommands = <RecordAnswerCommand>[];
   bool _lostAckSent = false;
+  bool failNextFinish = false;
 
   void releaseRecord() {
     if (!_recordRelease.isCompleted) _recordRelease.complete();
@@ -1788,6 +2212,10 @@ final class _CountingRepository
     finishCalls += 1;
     if (!finishStarted.isCompleted) finishStarted.complete();
     if (blockFinish) await _finishRelease.future;
+    if (failNextFinish) {
+      failNextFinish = false;
+      throw StateError('injected finish failure');
+    }
     if (failFinish) throw StateError('finish failed');
     return delegate.finishSession(
       ownerId: ownerId,

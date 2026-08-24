@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../features/progress/domain/progress_models.dart';
+import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
@@ -114,7 +116,29 @@ class _WeaknessBody extends StatelessWidget {
                       name: 'learning/weakness-srs',
                       builder: (_) => ProductionFeatureGate(
                         feature: Feature.srs,
-                        builder: (_) => const SrsFlashcardsScreen(),
+                        builder: (context) {
+                          final dependencies = AppDependenciesScope.maybeOf(
+                            context,
+                          );
+                          final registration = dependencies?.lessonModes?.find(
+                            LessonMode.flashcard,
+                          );
+                          final createController =
+                              dependencies?.createLessonController;
+                          if (registration == null ||
+                              createController == null) {
+                            return const ProductionFeatureUnavailable(
+                              feature: Feature.srs,
+                              reason: ProductionFeatureUnavailableReason
+                                  .missingDependency,
+                            );
+                          }
+                          return UnifiedLessonModeHost(
+                            adapter: registration.adapter,
+                            createController: createController,
+                            builder: (_) => const SrsFlashcardsScreen(),
+                          );
+                        },
                       ),
                     ),
                   ),

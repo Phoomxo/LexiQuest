@@ -297,6 +297,35 @@ v17 database.
 
 ---
 
+### v18 — Trustworthy Active Learning-Time Segments
+**Reserved:** 2026-08-24
+**Implemented:** 2026-08-24
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added `learning_time_segments` as the single owner-scoped durable authority for
+active learning effort. Each immutable segment is pinned to a canonical
+`learning_sessions` row and stores UTC start/end occurrence context, IANA
+timezone ID and offset, cumulative active offset, and duration derived from a
+process-monotonic clock. Wall-clock subtraction is never used as effort.
+Session offsets are unique and overlap is rejected by both the repository and
+SQLite guard. Automatic capture closes on pause, background, idle, completion,
+and abandonment; an interrupted open interval is discarded rather than
+reconstructed from untrusted wall time, while the next process resumes from
+the durable monotonic offset.
+
+The owner-scoped table participates in guest upgrade, exact lifecycle export
+and delete, and immutable local-first outbox synchronization. Cloud claims are
+disabled until the exact v1 Firestore rules revision is separately deployed.
+The table raises the named inventory from 39 to 40.
+
+**Migration safety:** v17→v18 creates one empty table and preserves all 39 v17
+tables and rows. Rollback is forward-only: disabling automatic capture or
+cloud delivery retains closed segments for export/delete, and older binaries
+must not open a v18 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -316,6 +345,7 @@ v17 database.
 | 2026-08-23 | Reserved and implemented v15 immutable assessment runs with lifecycle, export, and revisioned-sync coverage. | LexiQuest integration |
 | 2026-08-24 | Implemented v16 versioned content manifests, learning packs, device-local download state, and versioned learner vocabulary metadata. | LexiQuest integration |
 | 2026-08-24 | Reserved and implemented v17 saved learning intent plus the f21 content-report lifecycle table. | LexiQuest integration |
+| 2026-08-24 | Reserved and implemented v18 trustworthy active learning-time segments with monotonic duration. | LexiQuest integration |
 
 ---
 

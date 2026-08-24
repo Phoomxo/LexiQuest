@@ -25412,6 +25412,671 @@ class ContentQualityReportsCompanion
   }
 }
 
+class $LearningTimeSegmentsTable extends LearningTimeSegments
+    with TableInfo<$LearningTimeSegmentsTable, LearningTimeSegmentRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningTimeSegmentsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _sessionIdMeta = const VerificationMeta(
+    'sessionId',
+  );
+  @override
+  late final GeneratedColumn<String> sessionId = GeneratedColumn<String>(
+    'session_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_sessions (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _activeStartOffsetMsMeta =
+      const VerificationMeta('activeStartOffsetMs');
+  @override
+  late final GeneratedColumn<int> activeStartOffsetMs = GeneratedColumn<int>(
+    'active_start_offset_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (active_start_offset_ms >= 0)',
+  );
+  static const VerificationMeta _activeDurationMsMeta = const VerificationMeta(
+    'activeDurationMs',
+  );
+  @override
+  late final GeneratedColumn<int> activeDurationMs = GeneratedColumn<int>(
+    'active_duration_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (active_duration_ms > 0)',
+  );
+  static const VerificationMeta _startedAtUtcMsMeta = const VerificationMeta(
+    'startedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> startedAtUtcMs = GeneratedColumn<int>(
+    'started_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (started_at_utc_ms >= 0)',
+  );
+  static const VerificationMeta _endedAtUtcMsMeta = const VerificationMeta(
+    'endedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> endedAtUtcMs = GeneratedColumn<int>(
+    'ended_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints: 'NOT NULL CHECK (ended_at_utc_ms >= 0)',
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneOffsetMinutesMeta =
+      const VerificationMeta('timezoneOffsetMinutes');
+  @override
+  late final GeneratedColumn<int> timezoneOffsetMinutes = GeneratedColumn<int>(
+    'timezone_offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (timezone_offset_minutes >= -840 AND timezone_offset_minutes <= 840)',
+  );
+  static const VerificationMeta _captureSourceMeta = const VerificationMeta(
+    'captureSource',
+  );
+  @override
+  late final GeneratedColumn<String> captureSource = GeneratedColumn<String>(
+    'capture_source',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    sessionId,
+    activeStartOffsetMs,
+    activeDurationMs,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    captureSource,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_time_segments';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningTimeSegmentRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('session_id')) {
+      context.handle(
+        _sessionIdMeta,
+        sessionId.isAcceptableOrUnknown(data['session_id']!, _sessionIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sessionIdMeta);
+    }
+    if (data.containsKey('active_start_offset_ms')) {
+      context.handle(
+        _activeStartOffsetMsMeta,
+        activeStartOffsetMs.isAcceptableOrUnknown(
+          data['active_start_offset_ms']!,
+          _activeStartOffsetMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activeStartOffsetMsMeta);
+    }
+    if (data.containsKey('active_duration_ms')) {
+      context.handle(
+        _activeDurationMsMeta,
+        activeDurationMs.isAcceptableOrUnknown(
+          data['active_duration_ms']!,
+          _activeDurationMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_activeDurationMsMeta);
+    }
+    if (data.containsKey('started_at_utc_ms')) {
+      context.handle(
+        _startedAtUtcMsMeta,
+        startedAtUtcMs.isAcceptableOrUnknown(
+          data['started_at_utc_ms']!,
+          _startedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_startedAtUtcMsMeta);
+    }
+    if (data.containsKey('ended_at_utc_ms')) {
+      context.handle(
+        _endedAtUtcMsMeta,
+        endedAtUtcMs.isAcceptableOrUnknown(
+          data['ended_at_utc_ms']!,
+          _endedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_endedAtUtcMsMeta);
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneIdMeta);
+    }
+    if (data.containsKey('timezone_offset_minutes')) {
+      context.handle(
+        _timezoneOffsetMinutesMeta,
+        timezoneOffsetMinutes.isAcceptableOrUnknown(
+          data['timezone_offset_minutes']!,
+          _timezoneOffsetMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneOffsetMinutesMeta);
+    }
+    if (data.containsKey('capture_source')) {
+      context.handle(
+        _captureSourceMeta,
+        captureSource.isAcceptableOrUnknown(
+          data['capture_source']!,
+          _captureSourceMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_captureSourceMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {sessionId, activeStartOffsetMs},
+  ];
+  @override
+  LearningTimeSegmentRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningTimeSegmentRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      sessionId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_id'],
+      )!,
+      activeStartOffsetMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}active_start_offset_ms'],
+      )!,
+      activeDurationMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}active_duration_ms'],
+      )!,
+      startedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}started_at_utc_ms'],
+      )!,
+      endedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}ended_at_utc_ms'],
+      )!,
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      )!,
+      timezoneOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timezone_offset_minutes'],
+      )!,
+      captureSource: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}capture_source'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningTimeSegmentsTable createAlias(String alias) {
+    return $LearningTimeSegmentsTable(attachedDatabase, alias);
+  }
+}
+
+class LearningTimeSegmentRow extends DataClass
+    implements Insertable<LearningTimeSegmentRow> {
+  final String id;
+  final String ownerId;
+  final String sessionId;
+  final int activeStartOffsetMs;
+  final int activeDurationMs;
+  final int startedAtUtcMs;
+  final int endedAtUtcMs;
+  final String timezoneId;
+  final int timezoneOffsetMinutes;
+  final String captureSource;
+  const LearningTimeSegmentRow({
+    required this.id,
+    required this.ownerId,
+    required this.sessionId,
+    required this.activeStartOffsetMs,
+    required this.activeDurationMs,
+    required this.startedAtUtcMs,
+    required this.endedAtUtcMs,
+    required this.timezoneId,
+    required this.timezoneOffsetMinutes,
+    required this.captureSource,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['session_id'] = Variable<String>(sessionId);
+    map['active_start_offset_ms'] = Variable<int>(activeStartOffsetMs);
+    map['active_duration_ms'] = Variable<int>(activeDurationMs);
+    map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs);
+    map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs);
+    map['timezone_id'] = Variable<String>(timezoneId);
+    map['timezone_offset_minutes'] = Variable<int>(timezoneOffsetMinutes);
+    map['capture_source'] = Variable<String>(captureSource);
+    return map;
+  }
+
+  LearningTimeSegmentsCompanion toCompanion(bool nullToAbsent) {
+    return LearningTimeSegmentsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      sessionId: Value(sessionId),
+      activeStartOffsetMs: Value(activeStartOffsetMs),
+      activeDurationMs: Value(activeDurationMs),
+      startedAtUtcMs: Value(startedAtUtcMs),
+      endedAtUtcMs: Value(endedAtUtcMs),
+      timezoneId: Value(timezoneId),
+      timezoneOffsetMinutes: Value(timezoneOffsetMinutes),
+      captureSource: Value(captureSource),
+    );
+  }
+
+  factory LearningTimeSegmentRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningTimeSegmentRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      sessionId: serializer.fromJson<String>(json['sessionId']),
+      activeStartOffsetMs: serializer.fromJson<int>(
+        json['activeStartOffsetMs'],
+      ),
+      activeDurationMs: serializer.fromJson<int>(json['activeDurationMs']),
+      startedAtUtcMs: serializer.fromJson<int>(json['startedAtUtcMs']),
+      endedAtUtcMs: serializer.fromJson<int>(json['endedAtUtcMs']),
+      timezoneId: serializer.fromJson<String>(json['timezoneId']),
+      timezoneOffsetMinutes: serializer.fromJson<int>(
+        json['timezoneOffsetMinutes'],
+      ),
+      captureSource: serializer.fromJson<String>(json['captureSource']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'sessionId': serializer.toJson<String>(sessionId),
+      'activeStartOffsetMs': serializer.toJson<int>(activeStartOffsetMs),
+      'activeDurationMs': serializer.toJson<int>(activeDurationMs),
+      'startedAtUtcMs': serializer.toJson<int>(startedAtUtcMs),
+      'endedAtUtcMs': serializer.toJson<int>(endedAtUtcMs),
+      'timezoneId': serializer.toJson<String>(timezoneId),
+      'timezoneOffsetMinutes': serializer.toJson<int>(timezoneOffsetMinutes),
+      'captureSource': serializer.toJson<String>(captureSource),
+    };
+  }
+
+  LearningTimeSegmentRow copyWith({
+    String? id,
+    String? ownerId,
+    String? sessionId,
+    int? activeStartOffsetMs,
+    int? activeDurationMs,
+    int? startedAtUtcMs,
+    int? endedAtUtcMs,
+    String? timezoneId,
+    int? timezoneOffsetMinutes,
+    String? captureSource,
+  }) => LearningTimeSegmentRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    sessionId: sessionId ?? this.sessionId,
+    activeStartOffsetMs: activeStartOffsetMs ?? this.activeStartOffsetMs,
+    activeDurationMs: activeDurationMs ?? this.activeDurationMs,
+    startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+    endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+    timezoneId: timezoneId ?? this.timezoneId,
+    timezoneOffsetMinutes: timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+    captureSource: captureSource ?? this.captureSource,
+  );
+  LearningTimeSegmentRow copyWithCompanion(LearningTimeSegmentsCompanion data) {
+    return LearningTimeSegmentRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      sessionId: data.sessionId.present ? data.sessionId.value : this.sessionId,
+      activeStartOffsetMs: data.activeStartOffsetMs.present
+          ? data.activeStartOffsetMs.value
+          : this.activeStartOffsetMs,
+      activeDurationMs: data.activeDurationMs.present
+          ? data.activeDurationMs.value
+          : this.activeDurationMs,
+      startedAtUtcMs: data.startedAtUtcMs.present
+          ? data.startedAtUtcMs.value
+          : this.startedAtUtcMs,
+      endedAtUtcMs: data.endedAtUtcMs.present
+          ? data.endedAtUtcMs.value
+          : this.endedAtUtcMs,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      timezoneOffsetMinutes: data.timezoneOffsetMinutes.present
+          ? data.timezoneOffsetMinutes.value
+          : this.timezoneOffsetMinutes,
+      captureSource: data.captureSource.present
+          ? data.captureSource.value
+          : this.captureSource,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeSegmentRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('activeStartOffsetMs: $activeStartOffsetMs, ')
+          ..write('activeDurationMs: $activeDurationMs, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('captureSource: $captureSource')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    sessionId,
+    activeStartOffsetMs,
+    activeDurationMs,
+    startedAtUtcMs,
+    endedAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    captureSource,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningTimeSegmentRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.sessionId == this.sessionId &&
+          other.activeStartOffsetMs == this.activeStartOffsetMs &&
+          other.activeDurationMs == this.activeDurationMs &&
+          other.startedAtUtcMs == this.startedAtUtcMs &&
+          other.endedAtUtcMs == this.endedAtUtcMs &&
+          other.timezoneId == this.timezoneId &&
+          other.timezoneOffsetMinutes == this.timezoneOffsetMinutes &&
+          other.captureSource == this.captureSource);
+}
+
+class LearningTimeSegmentsCompanion
+    extends UpdateCompanion<LearningTimeSegmentRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> sessionId;
+  final Value<int> activeStartOffsetMs;
+  final Value<int> activeDurationMs;
+  final Value<int> startedAtUtcMs;
+  final Value<int> endedAtUtcMs;
+  final Value<String> timezoneId;
+  final Value<int> timezoneOffsetMinutes;
+  final Value<String> captureSource;
+  final Value<int> rowid;
+  const LearningTimeSegmentsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.sessionId = const Value.absent(),
+    this.activeStartOffsetMs = const Value.absent(),
+    this.activeDurationMs = const Value.absent(),
+    this.startedAtUtcMs = const Value.absent(),
+    this.endedAtUtcMs = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.timezoneOffsetMinutes = const Value.absent(),
+    this.captureSource = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningTimeSegmentsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String sessionId,
+    required int activeStartOffsetMs,
+    required int activeDurationMs,
+    required int startedAtUtcMs,
+    required int endedAtUtcMs,
+    required String timezoneId,
+    required int timezoneOffsetMinutes,
+    required String captureSource,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sessionId = Value(sessionId),
+       activeStartOffsetMs = Value(activeStartOffsetMs),
+       activeDurationMs = Value(activeDurationMs),
+       startedAtUtcMs = Value(startedAtUtcMs),
+       endedAtUtcMs = Value(endedAtUtcMs),
+       timezoneId = Value(timezoneId),
+       timezoneOffsetMinutes = Value(timezoneOffsetMinutes),
+       captureSource = Value(captureSource);
+  static Insertable<LearningTimeSegmentRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? sessionId,
+    Expression<int>? activeStartOffsetMs,
+    Expression<int>? activeDurationMs,
+    Expression<int>? startedAtUtcMs,
+    Expression<int>? endedAtUtcMs,
+    Expression<String>? timezoneId,
+    Expression<int>? timezoneOffsetMinutes,
+    Expression<String>? captureSource,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (sessionId != null) 'session_id': sessionId,
+      if (activeStartOffsetMs != null)
+        'active_start_offset_ms': activeStartOffsetMs,
+      if (activeDurationMs != null) 'active_duration_ms': activeDurationMs,
+      if (startedAtUtcMs != null) 'started_at_utc_ms': startedAtUtcMs,
+      if (endedAtUtcMs != null) 'ended_at_utc_ms': endedAtUtcMs,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (timezoneOffsetMinutes != null)
+        'timezone_offset_minutes': timezoneOffsetMinutes,
+      if (captureSource != null) 'capture_source': captureSource,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningTimeSegmentsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? sessionId,
+    Value<int>? activeStartOffsetMs,
+    Value<int>? activeDurationMs,
+    Value<int>? startedAtUtcMs,
+    Value<int>? endedAtUtcMs,
+    Value<String>? timezoneId,
+    Value<int>? timezoneOffsetMinutes,
+    Value<String>? captureSource,
+    Value<int>? rowid,
+  }) {
+    return LearningTimeSegmentsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      sessionId: sessionId ?? this.sessionId,
+      activeStartOffsetMs: activeStartOffsetMs ?? this.activeStartOffsetMs,
+      activeDurationMs: activeDurationMs ?? this.activeDurationMs,
+      startedAtUtcMs: startedAtUtcMs ?? this.startedAtUtcMs,
+      endedAtUtcMs: endedAtUtcMs ?? this.endedAtUtcMs,
+      timezoneId: timezoneId ?? this.timezoneId,
+      timezoneOffsetMinutes:
+          timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      captureSource: captureSource ?? this.captureSource,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (sessionId.present) {
+      map['session_id'] = Variable<String>(sessionId.value);
+    }
+    if (activeStartOffsetMs.present) {
+      map['active_start_offset_ms'] = Variable<int>(activeStartOffsetMs.value);
+    }
+    if (activeDurationMs.present) {
+      map['active_duration_ms'] = Variable<int>(activeDurationMs.value);
+    }
+    if (startedAtUtcMs.present) {
+      map['started_at_utc_ms'] = Variable<int>(startedAtUtcMs.value);
+    }
+    if (endedAtUtcMs.present) {
+      map['ended_at_utc_ms'] = Variable<int>(endedAtUtcMs.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (timezoneOffsetMinutes.present) {
+      map['timezone_offset_minutes'] = Variable<int>(
+        timezoneOffsetMinutes.value,
+      );
+    }
+    if (captureSource.present) {
+      map['capture_source'] = Variable<String>(captureSource.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningTimeSegmentsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('sessionId: $sessionId, ')
+          ..write('activeStartOffsetMs: $activeStartOffsetMs, ')
+          ..write('activeDurationMs: $activeDurationMs, ')
+          ..write('startedAtUtcMs: $startedAtUtcMs, ')
+          ..write('endedAtUtcMs: $endedAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('captureSource: $captureSource, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -25486,6 +26151,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $SavedLearningItemsTable(this);
   late final $ContentQualityReportsTable contentQualityReports =
       $ContentQualityReportsTable(this);
+  late final $LearningTimeSegmentsTable learningTimeSegments =
+      $LearningTimeSegmentsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -25530,6 +26197,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     speechEvidence,
     savedLearningItems,
     contentQualityReports,
+    learningTimeSegments,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -25569,6 +26237,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('speech_evidence', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_sessions',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('learning_time_segments', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -26188,6 +26863,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _contentQualityReportsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $LearningTimeSegmentsTable,
+    List<LearningTimeSegmentRow>
+  >
+  _learningTimeSegmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimeSegments,
+        aliasName: 'local_owners__id__learning_time_segments__owner_id',
+      );
+
+  $$LearningTimeSegmentsTableProcessedTableManager
+  get learningTimeSegmentsRefs {
+    final manager = $$LearningTimeSegmentsTableTableManager(
+      $_db,
+      $_db.learningTimeSegments,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimeSegmentsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -26960,6 +27660,31 @@ class $$LocalOwnersTableFilterComposer
                     $removeJoinBuilderFromRootComposer,
               ),
         );
+    return f(composer);
+  }
+
+  Expression<bool> learningTimeSegmentsRefs(
+    Expression<bool> Function($$LearningTimeSegmentsTableFilterComposer f) f,
+  ) {
+    final $$LearningTimeSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningTimeSegments,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
     return f(composer);
   }
 }
@@ -27776,6 +28501,32 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> learningTimeSegmentsRefs<T extends Object>(
+    Expression<T> Function($$LearningTimeSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningTimeSegmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimeSegments,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeSegmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeSegments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -27821,6 +28572,7 @@ class $$LocalOwnersTableTableManager
             bool speechEvidenceRefs,
             bool savedLearningItemsRefs,
             bool contentQualityReportsRefs,
+            bool learningTimeSegmentsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -27909,6 +28661,7 @@ class $$LocalOwnersTableTableManager
                 speechEvidenceRefs = false,
                 savedLearningItemsRefs = false,
                 contentQualityReportsRefs = false,
+                learningTimeSegmentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -27942,6 +28695,7 @@ class $$LocalOwnersTableTableManager
                     if (speechEvidenceRefs) db.speechEvidence,
                     if (savedLearningItemsRefs) db.savedLearningItems,
                     if (contentQualityReportsRefs) db.contentQualityReports,
+                    if (learningTimeSegmentsRefs) db.learningTimeSegments,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -28555,6 +29309,27 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningTimeSegmentsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningTimeSegmentRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningTimeSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimeSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -28605,6 +29380,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool speechEvidenceRefs,
         bool savedLearningItemsRefs,
         bool contentQualityReportsRefs,
+        bool learningTimeSegmentsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -29549,6 +30325,31 @@ final class $$LearningSessionsTableReferences
       manager.$state.copyWith(prefetchedData: cache),
     );
   }
+
+  static MultiTypedResultKey<
+    $LearningTimeSegmentsTable,
+    List<LearningTimeSegmentRow>
+  >
+  _learningTimeSegmentsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningTimeSegments,
+        aliasName: 'learning_sessions__id__learning_time_segments__session_id',
+      );
+
+  $$LearningTimeSegmentsTableProcessedTableManager
+  get learningTimeSegmentsRefs {
+    final manager = $$LearningTimeSegmentsTableTableManager(
+      $_db,
+      $_db.learningTimeSegments,
+    ).filter((f) => f.sessionId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningTimeSegmentsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
 }
 
 class $$LearningSessionsTableFilterComposer
@@ -29699,6 +30500,31 @@ class $$LearningSessionsTableFilterComposer
           }) => $$SpeechEvidenceTableFilterComposer(
             $db: $db,
             $table: $db.speechEvidence,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningTimeSegmentsRefs(
+    Expression<bool> Function($$LearningTimeSegmentsTableFilterComposer f) f,
+  ) {
+    final $$LearningTimeSegmentsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningTimeSegments,
+      getReferencedColumn: (t) => t.sessionId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningTimeSegmentsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningTimeSegments,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -29940,6 +30766,32 @@ class $$LearningSessionsTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> learningTimeSegmentsRefs<T extends Object>(
+    Expression<T> Function($$LearningTimeSegmentsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningTimeSegmentsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningTimeSegments,
+          getReferencedColumn: (t) => t.sessionId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningTimeSegmentsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningTimeSegments,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LearningSessionsTableTableManager
@@ -29960,6 +30812,7 @@ class $$LearningSessionsTableTableManager
             bool assessmentRunsRefs,
             bool answerAttemptsRefs,
             bool speechEvidenceRefs,
+            bool learningTimeSegmentsRefs,
           })
         > {
   $$LearningSessionsTableTableManager(
@@ -30045,6 +30898,7 @@ class $$LearningSessionsTableTableManager
                 assessmentRunsRefs = false,
                 answerAttemptsRefs = false,
                 speechEvidenceRefs = false,
+                learningTimeSegmentsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -30052,6 +30906,7 @@ class $$LearningSessionsTableTableManager
                     if (assessmentRunsRefs) db.assessmentRuns,
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (speechEvidenceRefs) db.speechEvidence,
+                    if (learningTimeSegmentsRefs) db.learningTimeSegments,
                   ],
                   addJoins:
                       <
@@ -30152,6 +31007,27 @@ class $$LearningSessionsTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningTimeSegmentsRefs)
+                        await $_getPrefetchedData<
+                          LearningSession,
+                          $LearningSessionsTable,
+                          LearningTimeSegmentRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningSessionsTableReferences
+                              ._learningTimeSegmentsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningSessionsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningTimeSegmentsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.sessionId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -30177,6 +31053,7 @@ typedef $$LearningSessionsTableProcessedTableManager =
         bool assessmentRunsRefs,
         bool answerAttemptsRefs,
         bool speechEvidenceRefs,
+        bool learningTimeSegmentsRefs,
       })
     >;
 typedef $$AssessmentRunsTableCreateCompanionBuilder =
@@ -47414,6 +48291,540 @@ typedef $$ContentQualityReportsTableProcessedTableManager =
       ContentQualityReportRow,
       PrefetchHooks Function({bool ownerId})
     >;
+typedef $$LearningTimeSegmentsTableCreateCompanionBuilder =
+    LearningTimeSegmentsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String sessionId,
+      required int activeStartOffsetMs,
+      required int activeDurationMs,
+      required int startedAtUtcMs,
+      required int endedAtUtcMs,
+      required String timezoneId,
+      required int timezoneOffsetMinutes,
+      required String captureSource,
+      Value<int> rowid,
+    });
+typedef $$LearningTimeSegmentsTableUpdateCompanionBuilder =
+    LearningTimeSegmentsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> sessionId,
+      Value<int> activeStartOffsetMs,
+      Value<int> activeDurationMs,
+      Value<int> startedAtUtcMs,
+      Value<int> endedAtUtcMs,
+      Value<String> timezoneId,
+      Value<int> timezoneOffsetMinutes,
+      Value<String> captureSource,
+      Value<int> rowid,
+    });
+
+final class $$LearningTimeSegmentsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningTimeSegmentsTable,
+          LearningTimeSegmentRow
+        > {
+  $$LearningTimeSegmentsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('learning_time_segments__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningSessionsTable _sessionIdTable(_$AppDatabase db) => db
+      .learningSessions
+      .createAlias('learning_time_segments__session_id__learning_sessions__id');
+
+  $$LearningSessionsTableProcessedTableManager get sessionId {
+    final $_column = $_itemColumn<String>('session_id')!;
+
+    final manager = $$LearningSessionsTableTableManager(
+      $_db,
+      $_db.learningSessions,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_sessionIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningTimeSegmentsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get activeStartOffsetMs => $composableBuilder(
+    column: $table.activeStartOffsetMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get activeDurationMs => $composableBuilder(
+    column: $table.activeDurationMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get captureSource => $composableBuilder(
+    column: $table.captureSource,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableFilterComposer get sessionId {
+    final $$LearningSessionsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get activeStartOffsetMs => $composableBuilder(
+    column: $table.activeStartOffsetMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get activeDurationMs => $composableBuilder(
+    column: $table.activeDurationMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get captureSource => $composableBuilder(
+    column: $table.captureSource,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableOrderingComposer get sessionId {
+    final $$LearningSessionsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningTimeSegmentsTable> {
+  $$LearningTimeSegmentsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<int> get activeStartOffsetMs => $composableBuilder(
+    column: $table.activeStartOffsetMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get activeDurationMs => $composableBuilder(
+    column: $table.activeDurationMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get startedAtUtcMs => $composableBuilder(
+    column: $table.startedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get endedAtUtcMs => $composableBuilder(
+    column: $table.endedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get captureSource => $composableBuilder(
+    column: $table.captureSource,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningSessionsTableAnnotationComposer get sessionId {
+    final $$LearningSessionsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.sessionId,
+      referencedTable: $db.learningSessions,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningSessionsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningSessions,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningTimeSegmentsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningTimeSegmentsTable,
+          LearningTimeSegmentRow,
+          $$LearningTimeSegmentsTableFilterComposer,
+          $$LearningTimeSegmentsTableOrderingComposer,
+          $$LearningTimeSegmentsTableAnnotationComposer,
+          $$LearningTimeSegmentsTableCreateCompanionBuilder,
+          $$LearningTimeSegmentsTableUpdateCompanionBuilder,
+          (LearningTimeSegmentRow, $$LearningTimeSegmentsTableReferences),
+          LearningTimeSegmentRow,
+          PrefetchHooks Function({bool ownerId, bool sessionId})
+        > {
+  $$LearningTimeSegmentsTableTableManager(
+    _$AppDatabase db,
+    $LearningTimeSegmentsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningTimeSegmentsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningTimeSegmentsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$LearningTimeSegmentsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> sessionId = const Value.absent(),
+                Value<int> activeStartOffsetMs = const Value.absent(),
+                Value<int> activeDurationMs = const Value.absent(),
+                Value<int> startedAtUtcMs = const Value.absent(),
+                Value<int> endedAtUtcMs = const Value.absent(),
+                Value<String> timezoneId = const Value.absent(),
+                Value<int> timezoneOffsetMinutes = const Value.absent(),
+                Value<String> captureSource = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeSegmentsCompanion(
+                id: id,
+                ownerId: ownerId,
+                sessionId: sessionId,
+                activeStartOffsetMs: activeStartOffsetMs,
+                activeDurationMs: activeDurationMs,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                captureSource: captureSource,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String sessionId,
+                required int activeStartOffsetMs,
+                required int activeDurationMs,
+                required int startedAtUtcMs,
+                required int endedAtUtcMs,
+                required String timezoneId,
+                required int timezoneOffsetMinutes,
+                required String captureSource,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningTimeSegmentsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                sessionId: sessionId,
+                activeStartOffsetMs: activeStartOffsetMs,
+                activeDurationMs: activeDurationMs,
+                startedAtUtcMs: startedAtUtcMs,
+                endedAtUtcMs: endedAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                captureSource: captureSource,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningTimeSegmentsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, sessionId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (sessionId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.sessionId,
+                                referencedTable:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._sessionIdTable(db),
+                                referencedColumn:
+                                    $$LearningTimeSegmentsTableReferences
+                                        ._sessionIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningTimeSegmentsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningTimeSegmentsTable,
+      LearningTimeSegmentRow,
+      $$LearningTimeSegmentsTableFilterComposer,
+      $$LearningTimeSegmentsTableOrderingComposer,
+      $$LearningTimeSegmentsTableAnnotationComposer,
+      $$LearningTimeSegmentsTableCreateCompanionBuilder,
+      $$LearningTimeSegmentsTableUpdateCompanionBuilder,
+      (LearningTimeSegmentRow, $$LearningTimeSegmentsTableReferences),
+      LearningTimeSegmentRow,
+      PrefetchHooks Function({bool ownerId, bool sessionId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -47505,4 +48916,6 @@ class $AppDatabaseManager {
       $$SavedLearningItemsTableTableManager(_db, _db.savedLearningItems);
   $$ContentQualityReportsTableTableManager get contentQualityReports =>
       $$ContentQualityReportsTableTableManager(_db, _db.contentQualityReports);
+  $$LearningTimeSegmentsTableTableManager get learningTimeSegments =>
+      $$LearningTimeSegmentsTableTableManager(_db, _db.learningTimeSegments);
 }

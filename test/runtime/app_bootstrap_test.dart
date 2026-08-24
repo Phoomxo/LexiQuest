@@ -6,6 +6,7 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/config/research_runtime_config.dart';
@@ -44,6 +45,8 @@ import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
@@ -56,6 +59,8 @@ import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dar
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/runtime/runtime_feature_override_store.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
@@ -497,6 +502,11 @@ void main() {
       final store = dependencies.syncEngine!.store as DriftSyncStore;
 
       expect(store.payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
+      expect(store.learningTimeSegmentSyncRollout.allowsClaims, isFalse);
+      expect(
+        dependencies.syncEngine!.optionalPullCollections,
+        isNot(contains(SyncCollection.learningTimeSegments)),
+      );
       expect(
         store.projections.evidenceDecisions.rolloutModeProvider,
         same(dependencies.evidencePolicyRolloutModeProvider),
@@ -548,6 +558,62 @@ void main() {
       expect(lessonController.state.status, LessonSessionStatus.planned);
       lessonController.dispose();
     });
+
+    test(
+      'learning-time sync bootstrap is exact-revision gated and pull-aware',
+      () async {
+        for (final testCase
+            in <({LearningTimeSegmentSyncRollout rollout, bool expected})>[
+              (
+                rollout: const LearningTimeSegmentSyncRollout.off(),
+                expected: false,
+              ),
+              (
+                rollout: const LearningTimeSegmentSyncRollout.v1(
+                  deployedRulesRevision: 'not-deployed',
+                ),
+                expected: false,
+              ),
+              (
+                rollout: const LearningTimeSegmentSyncRollout.v1(
+                  deployedRulesRevision: learningTimeSegmentV1RulesRevision,
+                ),
+                expected: true,
+              ),
+            ]) {
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            syncGatewayFactory: () => _BootstrapSyncGateway(testCase.rollout),
+            learningTimeSegmentSyncRollout: testCase.rollout,
+          ).initialize();
+          final store = dependencies.syncEngine!.store as DriftSyncStore;
+          final gateway =
+              dependencies.syncEngine!.gateway
+                  as LearningTimeSegmentSyncRolloutGateway;
+
+          expect(
+            store.learningTimeSegmentSyncRollout.allowsClaims,
+            testCase.expected,
+          );
+          expect(
+            dependencies.syncEngine!.optionalPullCollections.contains(
+              SyncCollection.learningTimeSegments,
+            ),
+            testCase.expected,
+          );
+          expect(
+            identical(gateway.learningTimeSegmentSyncRollout, testCase.rollout),
+            isTrue,
+          );
+          await dependencies.dispose();
+        }
+      },
+    );
 
     test('marks all components ready and retains the exact config', () async {
       final expectedConfig = _validConfig();
@@ -1892,6 +1958,181 @@ void main() {
     );
 
     test(
+      'production lesson factory persists one trustworthy monotonic segment',
+      () async {
+        var monotonicMicros = 1000;
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          learningTimezoneId: () => 'Asia/Bangkok',
+          learningTimeMonotonicMicros: () => monotonicMicros,
+          learningTimeCaptureRollout:
+              const LearningTimeCaptureRollout.internal(),
+        );
+        final dependencies = await bootstrap.initialize();
+        final owner = await dependencies.localOwners!.getOrCreateActiveOwner();
+        await database
+            .into(database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'bootstrap-time-session',
+                ownerId: owner.id,
+                activityType: 'meaning-quiz',
+                state: 'active',
+                startedAtUtcMs: DateTime.utc(
+                  2026,
+                  8,
+                  24,
+                  9,
+                ).millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'bootstrap-time',
+              ),
+            );
+        final adapter = dependencies.lessonModes!
+            .find(LessonMode.meaningQuiz)!
+            .adapter;
+        final controller = dependencies.createLessonController!(adapter);
+
+        expect(controller.activeLearningTime, isNotNull);
+        await controller.start(
+          LessonStartCommand(
+            sessionId: 'bootstrap-time-session',
+            mode: LessonMode.meaningQuiz,
+            itemCount: 1,
+            startedAtUtc: DateTime.utc(2026, 8, 24, 9),
+          ),
+        );
+        monotonicMicros += const Duration(seconds: 7).inMicroseconds;
+        await controller.pause(DateTime.utc(2026, 8, 24, 8, 59, 50));
+
+        final segments = await database
+            .select(database.learningTimeSegments)
+            .get();
+        final outbox = await (database.select(
+          database.outboxOperations,
+        )..where((row) => row.entityType.equals('learningTimeSegment'))).get();
+        expect(segments, hasLength(1));
+        expect(segments.single.ownerId, owner.id);
+        expect(segments.single.activeDurationMs, 7000);
+        expect(
+          segments.single.startedAtUtcMs,
+          greaterThan(segments.single.endedAtUtcMs),
+        );
+        expect(segments.single.timezoneId, 'Asia/Bangkok');
+        expect(segments.single.timezoneOffsetMinutes, 420);
+        expect(outbox, hasLength(1));
+        expect(outbox.single.entityId, segments.single.id);
+        controller.dispose();
+      },
+    );
+
+    test('learning-time capture remains implemented-off by default', () async {
+      final dependencies = await AppBootstrap(
+        createDatabase: _testDatabase,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+      ).initialize();
+      final adapter = dependencies.lessonModes!
+          .find(LessonMode.meaningQuiz)!
+          .adapter;
+      final controller = dependencies.createLessonController!(adapter);
+
+      expect(dependencies.learningTimeCaptureRollout.allowsCapture, isFalse);
+      expect(dependencies.createActiveLearningTimeController, isNull);
+      expect(controller.activeLearningTime, isNull);
+      controller.dispose();
+    });
+
+    testWidgets(
+      'real quiz route captures lifecycle effort and abandons on exit',
+      (tester) async {
+        var monotonicMicros = 0;
+        final database = _testDatabase();
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          learningTimeMonotonicMicros: () => monotonicMicros,
+          learningTimeCaptureRollout:
+              const LearningTimeCaptureRollout.internal(),
+        ).initialize();
+        final category = await dependencies.vocabulary!.createCategory(
+          'Time capture',
+        );
+        await dependencies.vocabulary!.createWord(
+          CreateWordCommand(
+            categoryId: category.id,
+            spelling: 'durable',
+            meaning: 'lasting',
+            partOfSpeech: 'adjective',
+          ),
+        );
+
+        await tester.pumpWidget(
+          AppDependenciesScope(
+            dependencies: dependencies,
+            child: const MaterialApp(home: ChooseModeScreen()),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+        await tester.pumpAndSettle();
+        expect(find.byType(QuizScreen), findsOneWidget);
+
+        monotonicMicros += const Duration(seconds: 7).inMicroseconds;
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await tester.pumpAndSettle();
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pumpAndSettle();
+        monotonicMicros += const Duration(seconds: 2).inMicroseconds;
+        await tester.pageBack();
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('ออก'));
+        await tester.pumpAndSettle();
+
+        final sessions = await database.select(database.learningSessions).get();
+        final segments = await database
+            .select(database.learningTimeSegments)
+            .get();
+        final timeOutbox = await (database.select(
+          database.outboxOperations,
+        )..where((row) => row.entityType.equals('learningTimeSegment'))).get();
+        expect(sessions, hasLength(1));
+        expect(sessions.single.state, 'abandoned');
+        expect(segments, hasLength(2));
+        expect(
+          segments.fold<int>(0, (sum, row) => sum + row.activeDurationMs),
+          9000,
+        );
+        expect(timeOutbox, hasLength(2));
+        expect(await database.select(database.srsStates).get(), isEmpty);
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          isEmpty,
+        );
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+      },
+    );
+
+    test(
       'default learning timezone is canonical and reconciles eligible streak',
       () async {
         final database = _testDatabase();
@@ -2670,7 +2911,16 @@ final class _BootstrapResearchStateProvider
   );
 }
 
-final class _BootstrapSyncGateway implements SyncGateway {
+final class _BootstrapSyncGateway
+    implements SyncGateway, LearningTimeSegmentSyncRolloutGateway {
+  _BootstrapSyncGateway([
+    this.learningTimeSegmentSyncRollout =
+        const LearningTimeSegmentSyncRollout.off(),
+  ]);
+
+  @override
+  final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
+
   int policyFetches = 0;
 
   @override

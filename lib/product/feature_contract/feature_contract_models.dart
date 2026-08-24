@@ -120,6 +120,7 @@ enum ActivationKind {
 enum DomainAuthority {
   vocabulary,
   responseEvidence,
+  activeLearningTime,
   masterySrs,
   assessment,
   streak,

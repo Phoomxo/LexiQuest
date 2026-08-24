@@ -65,6 +65,9 @@ const vocabularyWriterAuthorityProfileId = AuthorityProfileId(
 const responseEvidenceWriterAuthorityProfileId = AuthorityProfileId(
   'authority.writer.response-evidence',
 );
+const activeLearningTimeWriterAuthorityProfileId = AuthorityProfileId(
+  'authority.writer.active-learning-time',
+);
 const masterySrsWriterAuthorityProfileId = AuthorityProfileId(
   'authority.writer.mastery-srs',
 );
@@ -108,6 +111,13 @@ final Map<AuthorityProfileId, AuthorityCompatibilityProfile> authorityProfiles =
               id: responseEvidenceWriterAuthorityProfileId,
               writableAuthorities: const <DomainAuthority>{
                 DomainAuthority.responseEvidence,
+              },
+            ),
+        activeLearningTimeWriterAuthorityProfileId:
+            AuthorityCompatibilityProfile._(
+              id: activeLearningTimeWriterAuthorityProfileId,
+              writableAuthorities: const <DomainAuthority>{
+                DomainAuthority.activeLearningTime,
               },
             ),
         masterySrsWriterAuthorityProfileId: AuthorityCompatibilityProfile._(
@@ -161,6 +171,8 @@ final Map<DomainAuthority, AuthorityProfileId> singleWriterAuthorityMatrix =
         DomainAuthority.vocabulary: vocabularyWriterAuthorityProfileId,
         DomainAuthority.responseEvidence:
             responseEvidenceWriterAuthorityProfileId,
+        DomainAuthority.activeLearningTime:
+            activeLearningTimeWriterAuthorityProfileId,
         DomainAuthority.masterySrs: masterySrsWriterAuthorityProfileId,
         DomainAuthority.assessment: assessmentWriterAuthorityProfileId,
         DomainAuthority.streak: streakWriterAuthorityProfileId,

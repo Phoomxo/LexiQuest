@@ -9,12 +9,17 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
 
@@ -89,6 +94,179 @@ void main() {
       }
       fail('Widget did not appear after $maxPumps bounded pumps: $finder');
     }
+
+    Future<void> pumpInitialization(WidgetTester tester) async {
+      for (var index = 0; index < 20; index++) {
+        await tester.pump(const Duration(milliseconds: 10));
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 1)),
+        );
+      }
+    }
+
+    testWidgets(
+      'progress-load failure abandons the durable session and hides learning actions',
+      (tester) async {
+        final handle = (await tester.runAsync(
+          learning.startAssociativeReadingSessionHandle,
+        ))!;
+        final failingLearning = LearningUseCases(
+          owners: owners,
+          repository: _FailingProgressLearningRepository(
+            DriftLearningRepository(database),
+          ),
+          generateId: () => 'reading-failure-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 9, 10, 1),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'associative-reading-load-failure',
+          ),
+        );
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: AssociativeReadingSessionScreen(
+              cefrLevel: 'B2',
+              targetWords: const ['resilient'],
+              targetWordIds: const {'resilient': 'word-resilient'},
+              passageText: 'A resilient learner keeps trying.',
+              learning: failingLearning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: failingLearning,
+              ),
+              associativeLearning: associativeLearning,
+              sessionId: handle.id,
+              sessionStartedAtUtc: handle.startedAtUtc,
+            ),
+          ),
+        );
+        await pumpInitialization(tester);
+
+        expect(
+          find.byKey(
+            const ValueKey<String>(
+              'associative-reading-initialization-failure',
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Stage 1: Supported Reading'), findsNothing);
+        expect(find.text('Complete & Continue'), findsNothing);
+        expect(find.byType(TextField), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.inactive,
+        );
+        await pumpInitialization(tester);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.readingEvents).get(),
+          ))!,
+          isEmpty,
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.readingProgressEntries).get(),
+          ))!,
+          isEmpty,
+        );
+        final stored = (await tester.runAsync(
+          () => (database.select(
+            database.learningSessions,
+          )..where((row) => row.id.equals(handle.id))).getSingle(),
+        ))!;
+        expect(stored.state, 'abandoned');
+      },
+    );
+
+    testWidgets(
+      'lifecycle-start failure abandons the durable session and hides learning actions',
+      (tester) async {
+        final handle = (await tester.runAsync(
+          learning.startAssociativeReadingSessionHandle,
+        ))!;
+        final adapter = buildLegacyLessonModeRegistry()
+            .find(LessonMode.associativeReading)!
+            .adapter;
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: adapter,
+        );
+        await tester.runAsync(
+          () => controller.start(
+            LessonStartCommand(
+              mode: LessonMode.associativeReading,
+              sessionId: 'session:already-active',
+              startedAtUtc: handle.startedAtUtc,
+              itemCount: 1,
+            ),
+          ),
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: controller,
+              nowUtc: () => handle.startedAtUtc,
+              builder: (_) => AssociativeReadingSessionScreen(
+                cefrLevel: 'B2',
+                targetWords: const ['resilient'],
+                targetWordIds: const {'resilient': 'word-resilient'},
+                passageText: 'A resilient learner keeps trying.',
+                learning: learning,
+                evidenceAdapter: CurrentActivityEvidenceAdapter(
+                  learning: learning,
+                ),
+                associativeLearning: associativeLearning,
+                sessionId: handle.id,
+                sessionStartedAtUtc: handle.startedAtUtc,
+              ),
+            ),
+          ),
+        );
+        await pumpInitialization(tester);
+
+        expect(
+          find.byKey(
+            const ValueKey<String>(
+              'associative-reading-initialization-failure',
+            ),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('Stage 1: Supported Reading'), findsNothing);
+        expect(find.text('Complete & Continue'), findsNothing);
+        expect(find.byType(TextField), findsNothing);
+        tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+        await pumpInitialization(tester);
+        tester.binding.handleAppLifecycleStateChanged(
+          AppLifecycleState.resumed,
+        );
+        await tester.pump();
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.readingEvents).get(),
+          ))!,
+          isEmpty,
+        );
+        expect(
+          (await tester.runAsync(
+            () => database.select(database.readingProgressEntries).get(),
+          ))!,
+          isEmpty,
+        );
+        final stored = (await tester.runAsync(
+          () => (database.select(
+            database.learningSessions,
+          )..where((row) => row.id.equals(handle.id))).getSingle(),
+        ))!;
+        expect(stored.state, 'abandoned');
+      },
+    );
 
     testWidgets('Renders stages and progresses through 6 stages', (
       WidgetTester tester,
@@ -545,7 +723,16 @@ void main() {
         expect(repository.completedProgressCommands, isEmpty);
         expect(repository.finishCalls, hasLength(1));
         expect(repository.answerCommands, hasLength(1));
-        expect(tester.widget<FilledButton>(finish).onPressed, isNull);
+        expect(
+          tester
+              .widget<FilledButton>(
+                find.byKey(
+                  const ValueKey<String>('current-session-close-retry'),
+                ),
+              )
+              .onPressed,
+          isNull,
+        );
         staleFinishHandler();
         await tester.pump(const Duration(milliseconds: 1));
         expect(repository.finishCalls, hasLength(1));
@@ -786,7 +973,11 @@ void main() {
           isTrue,
           reason: 'frozen association inputs must not diverge before retry',
         );
-        expect(tester.widget<PopScope>(find.byType(PopScope)).canPop, isFalse);
+        final popScope = find.byWidgetPredicate(
+          (widget) => widget is PopScope,
+          description: 'associative reading PopScope',
+        );
+        expect(tester.widget<PopScope<Object?>>(popScope).canPop, isFalse);
         final retry = find.byKey(
           const ValueKey<String>('current-association-retry'),
         );
@@ -1036,6 +1227,41 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
       score: 1,
     );
   }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _FailingProgressLearningRepository
+    implements LearningRepository, LearningSessionLifecycleRepository {
+  _FailingProgressLearningRepository(this._delegate);
+
+  final DriftLearningRepository _delegate;
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) => Future<ReadingProgressSnapshot?>.error(
+    StateError('simulated reading-progress load failure'),
+  );
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) => _delegate.saveReadingProgress(command);
+
+  @override
+  Future<LearningSessionSummary> abandonSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) => _delegate.abandonSession(
+    ownerId: ownerId,
+    sessionId: sessionId,
+    abandonedAtUtc: abandonedAtUtc,
+  );
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

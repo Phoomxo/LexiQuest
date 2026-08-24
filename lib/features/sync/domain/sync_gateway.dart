@@ -14,3 +14,7 @@ abstract interface class SyncGateway {
 
   Future<CloudSyncPolicy> fetchPolicy();
 }
+
+abstract interface class LearningTimeSegmentSyncRolloutGateway {
+  LearningTimeSegmentSyncRollout get learningTimeSegmentSyncRollout;
+}

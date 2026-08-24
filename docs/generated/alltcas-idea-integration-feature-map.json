@@ -1,9 +1,9 @@
 {
   "schemaVersion": 1,
-  "revision": "1.1.0",
+  "revision": "1.2.0",
   "baselineCommit": "61a4fec",
   "generatorVersion": "1.0.0",
-  "semanticHash": "40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27",
+  "semanticHash": "c6a772993afa6cc2d78f3eb11687d615192ef6ff52581fa882826180f90afee7",
   "records": [
     {
       "id": "f01",
@@ -724,7 +724,9 @@
       "coverage": "newCapability",
       "researchRole": "measurement",
       "runtimeFeatures": [],
-      "dependencies": [],
+      "dependencies": [
+        "f24"
+      ],
       "authorityDependencies": [],
       "authorityProfileId": "authority.read-only",
       "evidenceProfileId": "evidence.none",
@@ -751,17 +753,21 @@
       "runtimeFeatures": [],
       "dependencies": [
         "f05",
-        "f23"
+        "f17",
+        "f19",
+        "f20",
+        "f21"
       ],
       "authorityDependencies": [
+        "activeLearningTime",
         "responseEvidence"
       ],
-      "authorityProfileId": "authority.writer.response-evidence",
+      "authorityProfileId": "authority.writer.active-learning-time",
       "evidenceProfileId": "evidence.none",
       "lifecycleProfileId": "lifecycle.partial",
-      "activationProfileId": "activation.always-on-foundation",
+      "activationProfileId": "activation.runtime-flagged",
       "rolloutProfileId": "rollout.controlled",
-      "rollbackProfileId": "rollback.metadata-only",
+      "rollbackProfileId": "rollback.runtime-flag",
       "productionEntryIds": [],
       "verificationRefs": [
         "test/architecture/alltcas_idea_feature_contract_test.dart"

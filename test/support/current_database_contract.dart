@@ -42,6 +42,7 @@ const currentDatabaseTableInventory = <String>{
   'speech_evidence',
   'saved_learning_items',
   'content_quality_reports',
+  'learning_time_segments',
 };
 
 Future<Set<String>> currentDatabaseTableNames(AppDatabase database) {

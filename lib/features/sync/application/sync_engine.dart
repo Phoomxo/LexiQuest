@@ -54,6 +54,7 @@ final class SyncEngine {
     required this.backoff,
     required this.nowUtc,
     required this.generateLeaseToken,
+    this.optionalPullCollections = const <SyncCollection>{},
     this.jitter = _zeroJitter,
     this.heartbeatDelay = _defaultHeartbeatDelay,
     this.requestTimeout = const Duration(seconds: 30),
@@ -87,6 +88,7 @@ final class SyncEngine {
   final SyncBackoff backoff;
   final SyncUtcNow nowUtc;
   final SyncLeaseTokenGenerator generateLeaseToken;
+  final Set<SyncCollection> optionalPullCollections;
   final SyncJitterSource jitter;
   final SyncHeartbeatDelay heartbeatDelay;
   final Duration requestTimeout;
@@ -288,7 +290,10 @@ final class SyncEngine {
       }
 
       if (!providerUnavailable && !permanentFailure && gateOwned) {
-        for (final collection in _pullOrder) {
+        for (final collection in <SyncCollection>{
+          ..._pullOrder,
+          ...optionalPullCollections,
+        }) {
           if (!gateOwned) break;
           try {
             final checkpoint = await store.readCheckpoint(owner.id, collection);

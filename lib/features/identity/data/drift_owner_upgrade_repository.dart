@@ -20,6 +20,7 @@ import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
+import '../../time_tracking/domain/learning_time_segment.dart';
 import '../domain/owner_upgrade.dart';
 
 typedef OwnerUpgradeUtcNow = DateTime Function();
@@ -2618,6 +2619,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityType: 'contentQualityReport',
         createOutboxWhenMissing: false,
       ),
+      _RehomeSpecification(
+        table: 'learning_time_segments',
+        entityType: 'learningTimeSegment',
+      ),
     ]) {
       final rows = await _database
           .customSelect(
@@ -2676,6 +2681,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             revision: revision,
           );
           baseRevision = revision - 1;
+        } else if (specification.entityType == 'learningTimeSegment') {
+          operationId = LearningTimeSegment.canonicalOperationId(entityId);
         } else {
           final generated = _requiredId(generateConflictId(), 'operationId');
           operationId = _requiredId('rehome:$generated', 'operationId');

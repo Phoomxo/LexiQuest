@@ -27,6 +27,9 @@ import 'package:vocab_learning_app/features/rewards/application/reward_use_cases
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/rewards/domain/economy_transaction_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
@@ -316,6 +319,120 @@ QuestDefinition _correctAnswerQuest({
 
 void main() {
   setUpAll(tz.initializeTimeZones);
+
+  test(
+    'automatic active time restart keeps durable offset and drops unknown open time',
+    () async {
+      final directory = await Directory.systemTemp.createTemp(
+        'lexiquest-learning-time-restart-',
+      );
+      final path = '${directory.path}${Platform.pathSeparator}lexiquest.sqlite';
+      AppDatabase? database;
+      final wallStart = DateTime.utc(2026, 8, 24, 9);
+      var monotonicMicros = 0;
+      ActiveLearningTimeController createController(
+        DriftLearningTimeRepository repository,
+      ) => ActiveLearningTimeController(
+        repository: repository,
+        monotonicMicros: () => monotonicMicros,
+        nowUtc: () => wallStart,
+        timezoneContext: (_) => const LearningTimeZoneContext(
+          timezoneId: 'Asia/Bangkok',
+          utcOffsetMinutes: 420,
+        ),
+      );
+      try {
+        database = _openDatabase(path);
+        final owners = _owners(database, () => wallStart);
+        final owner = await owners.getOrCreateActiveOwner();
+        await database
+            .into(database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'restart-time-session',
+                ownerId: owner.id,
+                activityType: 'meaning-quiz',
+                state: 'active',
+                startedAtUtcMs: wallStart.millisecondsSinceEpoch,
+                appVersion: '1.0.0',
+                buildId: 'f24-restart',
+              ),
+            );
+        final first = createController(
+          DriftLearningTimeRepository(database, owners: owners),
+        );
+        await first.start(
+          sessionId: 'restart-time-session',
+          occurredAtUtc: wallStart,
+        );
+        monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+        await first.pause(
+          occurredAtUtc: wallStart.subtract(const Duration(seconds: 5)),
+        );
+        await first.resume(
+          occurredAtUtc: wallStart.add(const Duration(seconds: 1)),
+        );
+        monotonicMicros += const Duration(hours: 1).inMicroseconds;
+        first.dispose();
+        await database.close();
+        database = null;
+
+        database = _openDatabase(path);
+        final restartedOwners = _owners(database, () => wallStart);
+        monotonicMicros = const Duration(hours: 2).inMicroseconds;
+        final restartedRepository = DriftLearningTimeRepository(
+          database,
+          owners: restartedOwners,
+        );
+        final restarted = createController(restartedRepository);
+        await restarted.start(
+          sessionId: 'restart-time-session',
+          occurredAtUtc: wallStart.add(const Duration(hours: 2)),
+        );
+        monotonicMicros += const Duration(seconds: 5).inMicroseconds;
+        await restarted.finish(
+          occurredAtUtc: wallStart.add(const Duration(hours: 2, seconds: 5)),
+        );
+
+        final segments = await database
+            .select(database.learningTimeSegments)
+            .get();
+        expect(segments, hasLength(2));
+        expect(segments.map((segment) => segment.activeStartOffsetMs), [
+          0,
+          10000,
+        ]);
+        expect(segments.map((segment) => segment.activeDurationMs), [
+          10000,
+          5000,
+        ]);
+        expect(
+          await restartedRepository.activeDuration('restart-time-session'),
+          const Duration(seconds: 15),
+        );
+        expect(
+          await (database.select(database.outboxOperations)
+                ..where((row) => row.entityType.equals('learningTimeSegment')))
+              .get(),
+          hasLength(2),
+        );
+        expect(await database.select(database.srsStates).get(), isEmpty);
+        expect(
+          await database.select(database.questObjectiveProgress).get(),
+          isEmpty,
+        );
+        expect(
+          await database.select(database.pointsLedgerEntries).get(),
+          isEmpty,
+        );
+        restarted.dispose();
+      } finally {
+        await database?.close();
+        if (await directory.exists()) await directory.delete(recursive: true);
+      }
+    },
+    timeout: const Timeout(Duration(seconds: 60)),
+  );
 
   test(
     'production learning projections survive a file-backed restart',

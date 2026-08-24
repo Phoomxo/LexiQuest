@@ -65,6 +65,7 @@ void main() {
     OwnerOperationGate? ownerGate,
     SyncHeartbeatDelay? heartbeatDelay,
     Duration requestTimeout = const Duration(seconds: 30),
+    Set<SyncCollection> optionalPullCollections = const <SyncCollection>{},
   }) {
     return SyncEngine(
       owners: owners,
@@ -83,6 +84,7 @@ void main() {
       generateLeaseToken: () => 'lease-${++leaseCounter}',
       heartbeatDelay: heartbeatDelay ?? Future<void>.delayed,
       requestTimeout: requestTimeout,
+      optionalPullCollections: optionalPullCollections,
     );
   }
 
@@ -805,8 +807,34 @@ void main() {
     );
   });
 
-  test('each sync collection is pulled exactly once per run', () async {
+  test('default pull omits optional rollout collections', () async {
     final result = await engine().run();
+
+    expect(result.status, SyncRunStatus.completed);
+    final expectedCollections = SyncCollection.values
+        .where(
+          (collection) => collection != SyncCollection.learningTimeSegments,
+        )
+        .toList(growable: false);
+    expect(gateway.pulledCollections, hasLength(expectedCollections.length));
+    for (final collection in expectedCollections) {
+      expect(
+        gateway.pulledCollections.where((value) => value == collection),
+        hasLength(1),
+      );
+    }
+    expect(
+      gateway.pulledCollections,
+      isNot(contains(SyncCollection.learningTimeSegments)),
+    );
+  });
+
+  test('enabled optional collection is pulled exactly once', () async {
+    final result = await engine(
+      optionalPullCollections: const <SyncCollection>{
+        SyncCollection.learningTimeSegments,
+      },
+    ).run();
 
     expect(result.status, SyncRunStatus.completed);
     expect(gateway.pulledCollections, hasLength(SyncCollection.values.length));

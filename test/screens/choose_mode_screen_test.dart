@@ -90,7 +90,7 @@ void main() {
   );
 
   testWidgets(
-    'every production mode creates one controller-backed shell on its stable route',
+    'every production mode reaches one controller-backed shell on its stable route',
     (tester) async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -115,6 +115,16 @@ void main() {
         vocabulary: DriftVocabularyRepository(database),
         generateId: () => 'choose-mode-vocabulary-id',
         nowUtc: () => now,
+      );
+      await owners.getOrCreateActiveOwner();
+      final category = await vocabulary.createCategory('Reading');
+      await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'durable',
+          meaning: 'able to last',
+          partOfSpeech: 'adjective',
+        ),
       );
       final modes = buildLegacyLessonModeRegistry();
       final research = InertResearchDependencies(database);
@@ -159,7 +169,7 @@ void main() {
         (
           entryId: 'home/learn/associative-reading',
           mode: LessonMode.associativeReading,
-          routeName: 'learning/associative-reading',
+          routeName: 'learning/associative-reading/session',
         ),
         (
           entryId: 'home/learn/quiz',
@@ -176,6 +186,13 @@ void main() {
         await tester.tap(find.byKey(ValueKey<String>(routeCase.entryId)));
         await tester.pumpAndSettle();
 
+        if (routeCase.mode == LessonMode.associativeReading) {
+          expect(controllerBuilds, 0);
+          expect(find.byType(UnifiedLessonShell), findsNothing);
+          await tester.tap(find.text('Start reading'));
+          await tester.pumpAndSettle();
+        }
+
         expect(controllerBuilds, index + 1);
         expect(find.byType(UnifiedLessonShell), findsOneWidget);
         final shell = tester.widget<UnifiedLessonShell>(
@@ -190,14 +207,7 @@ void main() {
         final controller = shell.controller!;
         expect(controller.state.mode, routeCase.mode);
         if (routeCase.mode == LessonMode.meaningQuiz) {
-          await controller.start(
-            LessonStartCommand(
-              mode: routeCase.mode,
-              sessionId: 'session:production-route',
-              startedAtUtc: now,
-              itemCount: 1,
-            ),
-          );
+          expect(controller.state.status, LessonSessionStatus.active);
 
           tester.binding.handleAppLifecycleStateChanged(
             AppLifecycleState.paused,
@@ -213,6 +223,10 @@ void main() {
 
         Navigator.of(tester.element(find.byType(UnifiedLessonShell))).pop();
         await tester.pumpAndSettle();
+        if (routeCase.mode == LessonMode.associativeReading) {
+          Navigator.of(tester.element(find.text('Start reading'))).pop();
+          await tester.pumpAndSettle();
+        }
       }
     },
   );

@@ -8,18 +8,22 @@ import 'migration_v14_to_v15_test.dart' as fixture;
 
 void main() {
   test(
-    'frozen v16 upgrades add only saved items and report lifecycle tables',
+    'frozen v16 upgrades through saved/report and active-time tables',
     () async {
       final database = AppDatabase(
         NativeDatabase.memory(setup: createSchemaSixteenFixture),
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 17);
-      expect(currentDatabaseTableInventory, hasLength(39));
+      expect(AppDatabase.currentSchemaVersion, 18);
+      expect(currentDatabaseTableInventory, hasLength(40));
       expect(
         currentDatabaseTableInventory.difference(schemaSixteenInventory),
-        const {'saved_learning_items', 'content_quality_reports'},
+        const {
+          'saved_learning_items',
+          'content_quality_reports',
+          'learning_time_segments',
+        },
       );
       await expectCurrentDatabaseContract(database);
 
@@ -34,6 +38,7 @@ void main() {
       );
       expect(await _count(database, 'saved_learning_items'), 0);
       expect(await _count(database, 'content_quality_reports'), 0);
+      expect(await _count(database, 'learning_time_segments'), 0);
     },
   );
 
@@ -97,6 +102,7 @@ void main() {
 final schemaSixteenInventory = currentDatabaseTableInventory.difference(const {
   'saved_learning_items',
   'content_quality_reports',
+  'learning_time_segments',
 });
 
 /// Frozen v16 fixture: v15 plus the four immutable-content tables and columns.

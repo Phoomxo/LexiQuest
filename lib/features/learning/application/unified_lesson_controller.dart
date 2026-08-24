@@ -4,8 +4,10 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
+import '../../time_tracking/application/active_learning_time_controller.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/evidence_context.dart';
+import '../domain/evidence_eligibility_policy.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
@@ -21,6 +23,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     required LearningUseCases learning,
     required LessonModeAdapter adapter,
     HintUseCases? hints,
+    ActiveLearningTimeController? activeLearningTime,
   }) {
     final hintAdapter = adapter is HintSupportingLessonModeAdapter
         ? adapter
@@ -44,15 +47,33 @@ final class UnifiedLessonController extends ChangeNotifier {
     final resolvedHints = hintAdapter == null
         ? null
         : hints ?? HintUseCases(policy: hintAdapter.hintPolicy);
-    return UnifiedLessonController._(learning, adapter, resolvedHints);
+    if (activeLearningTime != null &&
+        adapter is! TrustworthyActiveEffortLessonModeAdapter) {
+      throw ArgumentError.value(
+        adapter,
+        'adapter',
+        'active learning time requires a trustworthy-effort adapter',
+      );
+    }
+    return UnifiedLessonController._(
+      learning,
+      adapter,
+      resolvedHints,
+      activeLearningTime,
+    );
   }
 
-  UnifiedLessonController._(this._learning, this._adapter, this._hints)
-    : _state = LessonSessionState.planned(_adapter.mode);
+  UnifiedLessonController._(
+    this._learning,
+    this._adapter,
+    this._hints,
+    this._activeLearningTime,
+  ) : _state = LessonSessionState.planned(_adapter.mode);
 
   final LearningUseCases _learning;
   final LessonModeAdapter _adapter;
   final HintUseCases? _hints;
+  final ActiveLearningTimeController? _activeLearningTime;
   LessonSessionState _state;
   AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
@@ -60,13 +81,23 @@ final class UnifiedLessonController extends ChangeNotifier {
   PendingLearningSessionClose? _pendingClose;
   Future<void>? _pauseInFlight;
   Future<void>? _completionInFlight;
+  Future<LearningSessionSummary>? _capturedCompletionInFlight;
   Future<void>? _abandonInFlight;
+  PendingLearningSessionClose? _terminalClosePending;
   Future<void> _mutationTail = Future<void>.value();
   bool _disposed = false;
+  Object? _lastActiveLearningTimeFailure;
 
   LessonSessionState get state => _state;
   AnswerFeedback? get feedback => _feedback;
   HintState? get hintState => _hints?.state;
+  ActiveLearningTimeController? get activeLearningTime => _activeLearningTime;
+  Object? get lastActiveLearningTimeFailure => _lastActiveLearningTimeFailure;
+  bool get terminalMutationInFlight =>
+      _completionInFlight != null ||
+      _capturedCompletionInFlight != null ||
+      _abandonInFlight != null ||
+      _terminalClosePending != null;
   bool get canRevealHint {
     final hint = _hints?.state;
     return !_disposed &&
@@ -76,7 +107,9 @@ final class UnifiedLessonController extends ChangeNotifier {
         _state.status == LessonSessionStatus.active &&
         _pauseInFlight == null &&
         _completionInFlight == null &&
+        _capturedCompletionInFlight == null &&
         _abandonInFlight == null &&
+        _terminalClosePending == null &&
         !_hasUncommittedSubmission;
   }
 
@@ -99,7 +132,7 @@ final class UnifiedLessonController extends ChangeNotifier {
 
   Future<void> start(LessonStartCommand command) {
     if (_disposed) return _disposedError<void>();
-    return _serialize<void>(() {
+    return _serialize<void>(() async {
       _requireStatus(LessonSessionStatus.planned, 'start');
       if (command.mode != _adapter.mode) {
         throw StateError('Lesson mode does not match the resolved adapter.');
@@ -112,6 +145,20 @@ final class UnifiedLessonController extends ChangeNotifier {
           'itemCount',
           'must be nonnegative',
         );
+      }
+      final activeTime = _activeLearningTime;
+      if (activeTime != null) {
+        try {
+          await activeTime.start(
+            sessionId: sessionId,
+            occurredAtUtc: startedAtUtc,
+          );
+          _lastActiveLearningTimeFailure = null;
+        } catch (error) {
+          // Time capture is an isolated measurement projection. A local time
+          // failure must fail closed without orphaning the durable lesson.
+          _lastActiveLearningTimeFailure = error;
+        }
       }
       _setState(
         LessonSessionState(
@@ -133,10 +180,19 @@ final class UnifiedLessonController extends ChangeNotifier {
       final inFlight = _pauseInFlight;
       if (inFlight != null) return inFlight;
       _requireNoTerminalMutation('pause');
+      final activeTime = _activeLearningTime;
+      final timeOccurrence =
+          activeTime != null &&
+              activeTime.state != ActiveLearningTimeState.inactive
+          ? activeTime.observe(occurredAt)
+          : null;
       late final Future<void> future;
       future =
-          _serialize<void>(() {
+          _serialize<void>(() async {
             _requireStatus(LessonSessionStatus.active, 'pause');
+            if (activeTime != null && timeOccurrence != null) {
+              await activeTime.pauseObserved(timeOccurrence);
+            }
             _transition(LessonSessionStatus.paused, occurredAt);
           }).whenComplete(() {
             if (identical(_pauseInFlight, future)) {
@@ -157,8 +213,17 @@ final class UnifiedLessonController extends ChangeNotifier {
       _requireNotDisposed();
       final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
       _requireNoTerminalMutation('resume');
-      return _serialize<void>(() {
+      final activeTime = _activeLearningTime;
+      final timeOccurrence =
+          activeTime != null &&
+              activeTime.state != ActiveLearningTimeState.inactive
+          ? activeTime.observe(occurredAt)
+          : null;
+      return _serialize<void>(() async {
         _requireStatus(LessonSessionStatus.paused, 'resume');
+        if (activeTime != null && timeOccurrence != null) {
+          await activeTime.resumeObserved(timeOccurrence);
+        }
         _transition(LessonSessionStatus.active, occurredAt);
       });
     } catch (error, stackTrace) {
@@ -234,6 +299,15 @@ final class UnifiedLessonController extends ChangeNotifier {
         submission.support,
       );
       classifiedEvidence.validate();
+      if (_activeLearningTime != null &&
+          !EvidenceProjectionDecision.resolve(
+            context: classifiedEvidence,
+            projection: LearningProjection.activeLearningEffort,
+          ).isEligible) {
+        throw StateError(
+          'Trustworthy active-effort adapter produced ineligible evidence.',
+        );
+      }
       final hints = _hints;
       final evidenceContext =
           _adapter is HintSupportingLessonModeAdapter && hints != null
@@ -262,22 +336,37 @@ final class UnifiedLessonController extends ChangeNotifier {
   Future<void> complete(DateTime occurredAtUtc) {
     try {
       _requireNotDisposed();
-      _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+      final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
       final inFlight = _completionInFlight;
       if (inFlight != null) return inFlight;
       if (_abandonInFlight != null) {
         throw StateError('Cannot complete while abandon is pending.');
       }
+      if (_capturedCompletionInFlight != null) {
+        throw StateError(
+          'Cannot complete while captured completion is pending.',
+        );
+      }
+      final activeTime = _activeLearningTime;
+      final timeOccurrence =
+          activeTime != null &&
+              activeTime.state != ActiveLearningTimeState.inactive
+          ? activeTime.observe(occurredAt)
+          : null;
       late final Future<void> future;
       future =
           _serialize<void>(() async {
             if (_state.status == LessonSessionStatus.completed) return;
             _requireStatus(LessonSessionStatus.active, 'complete');
             _requireNoUncommittedSubmission('complete');
-            final close = _pendingClose ??= _learning.captureSessionClose(
-              sessionId: _state.sessionId!,
-            );
-            await _finish(close, occurredAtUtc);
+            final terminalClose = _terminalClosePending;
+            final close =
+                terminalClose ??
+                (_pendingClose ??= _learning.captureSessionClose(
+                  sessionId: _state.sessionId!,
+                ));
+            _pendingClose ??= close;
+            await _finish(close, occurredAt, timeOccurrence);
           }).whenComplete(() {
             if (identical(_completionInFlight, future)) {
               _completionInFlight = null;
@@ -292,6 +381,49 @@ final class UnifiedLessonController extends ChangeNotifier {
     }
   }
 
+  Future<LearningSessionSummary> completeCapturedSession(
+    PendingLearningSessionClose close,
+    DateTime occurredAtUtc,
+  ) {
+    try {
+      _requireNotDisposed();
+      final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+      final inFlight = _capturedCompletionInFlight;
+      if (inFlight != null) return inFlight;
+      if (_completionInFlight != null || _abandonInFlight != null) {
+        throw StateError('Cannot complete while a terminal action is pending.');
+      }
+      if (close.sessionId != _state.sessionId) {
+        throw StateError(
+          'Captured close does not belong to the active session.',
+        );
+      }
+      final activeTime = _activeLearningTime;
+      final timeOccurrence =
+          activeTime != null &&
+              activeTime.state != ActiveLearningTimeState.inactive
+          ? activeTime.observe(occurredAt)
+          : null;
+      late final Future<LearningSessionSummary> future;
+      future =
+          _serialize<LearningSessionSummary>(() async {
+            _requireStatus(LessonSessionStatus.active, 'complete');
+            _requireNoUncommittedSubmission('complete');
+            return _finish(close, occurredAt, timeOccurrence);
+          }).whenComplete(() {
+            if (identical(_capturedCompletionInFlight, future)) {
+              _capturedCompletionInFlight = null;
+              _notifyAvailabilityChanged();
+            }
+          });
+      _capturedCompletionInFlight = future;
+      _notifyAvailabilityChanged();
+      return future;
+    } catch (error, stackTrace) {
+      return Future<LearningSessionSummary>.error(error, stackTrace);
+    }
+  }
+
   Future<void> abandon(DateTime occurredAtUtc) {
     try {
       _requireNotDisposed();
@@ -301,9 +433,13 @@ final class UnifiedLessonController extends ChangeNotifier {
       }
       final inFlight = _abandonInFlight;
       if (inFlight != null) return inFlight;
-      if (_completionInFlight != null) {
-        throw StateError('Cannot abandon while completion is pending.');
-      }
+      _requireNoTerminalMutation('abandon');
+      final activeTime = _activeLearningTime;
+      final timeOccurrence =
+          activeTime != null &&
+              activeTime.state != ActiveLearningTimeState.inactive
+          ? activeTime.observe(occurredAt)
+          : null;
       late final Future<void> future;
       future =
           _serialize<void>(() async {
@@ -322,7 +458,7 @@ final class UnifiedLessonController extends ChangeNotifier {
               );
             }
             _requireNoUncommittedSubmission('abandon');
-            await _abandon(occurredAt);
+            await _abandon(occurredAt, timeOccurrence);
           }).whenComplete(() {
             if (identical(_abandonInFlight, future)) {
               _abandonInFlight = null;
@@ -395,23 +531,75 @@ final class UnifiedLessonController extends ChangeNotifier {
     return result;
   }
 
-  Future<void> _finish(
+  Future<LearningSessionSummary> _finish(
     PendingLearningSessionClose close,
     DateTime occurredAtUtc,
+    LearningTimeObservation? timeOccurrence,
   ) async {
+    final terminalClose = _terminalClosePending;
+    if (terminalClose != null && !identical(terminalClose, close)) {
+      throw StateError(
+        'The exact failed session close must be retried before another close.',
+      );
+    }
+    _terminalClosePending = close;
+    final activeTime = _activeLearningTime;
+    if (activeTime != null && timeOccurrence != null) {
+      try {
+        await activeTime.finishObserved(timeOccurrence);
+        _lastActiveLearningTimeFailure = null;
+      } catch (error) {
+        _lastActiveLearningTimeFailure = error;
+        rethrow;
+      }
+    }
+    final LearningSessionSummary summary;
     if (close.requiresRetry) {
-      await close.retry();
+      summary = await close.retry();
     } else {
-      await close.finish();
+      summary = await close.finish();
     }
     _transition(LessonSessionStatus.completed, occurredAtUtc);
+    if (identical(_terminalClosePending, close)) {
+      _terminalClosePending = null;
+    }
+    return summary;
   }
 
-  Future<void> _abandon(DateTime occurredAtUtc) async {
-    await _learning.abandonSession(
-      sessionId: _state.sessionId!,
-      abandonedAtUtc: occurredAtUtc,
-    );
+  Future<void> _abandon(
+    DateTime occurredAtUtc,
+    LearningTimeObservation? timeOccurrence,
+  ) async {
+    final activeTime = _activeLearningTime;
+    final previousTimeState = activeTime?.state;
+    var timeFinished = false;
+    if (activeTime != null && timeOccurrence != null) {
+      try {
+        await activeTime.finishObserved(timeOccurrence);
+        _lastActiveLearningTimeFailure = null;
+        timeFinished = true;
+      } catch (error) {
+        _lastActiveLearningTimeFailure = error;
+        rethrow;
+      }
+    }
+    try {
+      await _learning.abandonSession(
+        sessionId: _state.sessionId!,
+        abandonedAtUtc: occurredAtUtc,
+      );
+    } catch (_) {
+      if (activeTime != null &&
+          timeFinished &&
+          previousTimeState != null &&
+          previousTimeState != ActiveLearningTimeState.inactive) {
+        await activeTime.restoreAfterFailedTerminal(
+          previousState: previousTimeState,
+          occurredAtUtc: occurredAtUtc,
+        );
+      }
+      rethrow;
+    }
     _transition(LessonSessionStatus.abandoned, occurredAtUtc);
   }
 
@@ -427,12 +615,44 @@ final class UnifiedLessonController extends ChangeNotifier {
     return result.future;
   }
 
+  Future<void> recordActiveLearningInteraction(DateTime occurredAtUtc) {
+    if (_disposed) return _disposedError<void>();
+    final controller = _activeLearningTime;
+    if (controller == null) return Future<void>.value();
+    return controller.recordInteraction(occurredAtUtc: occurredAtUtc);
+  }
+
+  void noteActiveLearningInteraction(DateTime occurredAtUtc) {
+    final controller = _activeLearningTime;
+    if (_disposed || controller == null) return;
+    unawaited(
+      recordActiveLearningInteraction(occurredAtUtc).then<void>(
+        (_) {
+          if (controller.state != ActiveLearningTimeState.inactive) {
+            _lastActiveLearningTimeFailure = null;
+          }
+        },
+        onError: (Object error, StackTrace _) {
+          _lastActiveLearningTimeFailure = error;
+        },
+      ),
+    );
+  }
+
   void _requireNoTerminalMutation(String action) {
     if (_completionInFlight != null) {
       throw StateError('Cannot $action while completion is pending.');
     }
+    if (_capturedCompletionInFlight != null) {
+      throw StateError('Cannot $action while captured completion is pending.');
+    }
     if (_abandonInFlight != null) {
       throw StateError('Cannot $action while abandon is pending.');
+    }
+    if (_terminalClosePending != null) {
+      throw StateError(
+        'Cannot $action while session completion requires an exact retry.',
+      );
     }
   }
 
@@ -499,6 +719,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _activeLearningTime?.dispose();
     super.dispose();
   }
 }

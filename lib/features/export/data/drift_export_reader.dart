@@ -101,6 +101,28 @@ final class ExportSavedLearningItemRow {
   final bool isSaved;
 }
 
+final class ExportLearningTimeSegmentRow {
+  const ExportLearningTimeSegmentRow({
+    required this.sessionId,
+    required this.activeStartOffsetMs,
+    required this.activeDurationMs,
+    required this.startedAtUtc,
+    required this.endedAtUtc,
+    required this.timezoneId,
+    required this.timezoneOffsetMinutes,
+    required this.captureSource,
+  });
+
+  final String sessionId;
+  final int activeStartOffsetMs;
+  final int activeDurationMs;
+  final DateTime startedAtUtc;
+  final DateTime endedAtUtc;
+  final String timezoneId;
+  final int timezoneOffsetMinutes;
+  final String captureSource;
+}
+
 final class ExportDataSet {
   const ExportDataSet({
     required this.vocabulary,
@@ -146,6 +168,39 @@ final class DriftExportReader {
             isUtc: true,
           ),
           isSaved: !row.isDeleted,
+        ),
+      ),
+    );
+  }
+
+  Future<List<ExportLearningTimeSegmentRow>> loadLearningTimeSegments(
+    String ownerId,
+  ) async {
+    final rows =
+        await (database.select(database.learningTimeSegments)
+              ..where((row) => row.ownerId.equals(ownerId))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.startedAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
+            .get();
+    return List<ExportLearningTimeSegmentRow>.unmodifiable(
+      rows.map(
+        (row) => ExportLearningTimeSegmentRow(
+          sessionId: row.sessionId,
+          activeStartOffsetMs: row.activeStartOffsetMs,
+          activeDurationMs: row.activeDurationMs,
+          startedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.startedAtUtcMs,
+            isUtc: true,
+          ),
+          endedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.endedAtUtcMs,
+            isUtc: true,
+          ),
+          timezoneId: row.timezoneId,
+          timezoneOffsetMinutes: row.timezoneOffsetMinutes,
+          captureSource: row.captureSource,
         ),
       ),
     );

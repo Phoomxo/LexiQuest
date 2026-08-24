@@ -58,6 +58,7 @@ void main() {
           SyncCollection.assessmentRuns: <int>{1},
           SyncCollection.savedLearningItems: <int>{1},
           SyncCollection.contentQualityReports: <int>{1},
+          SyncCollection.learningTimeSegments: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -469,6 +470,98 @@ void main() {
       );
       expect(deviceA.length, lessThanOrEqualTo(256));
     });
+  });
+
+  group('learning time segment sync v1', () {
+    const sessionId = 'session:meaning:1';
+    const payload = <String, Object?>{
+      'segmentId':
+          'learning-time-segment:9a70e812eeb18306d6d05bd1dd35799f86f04fcb26f50481b5de0e91664a135f',
+      'sessionId': sessionId,
+      'activeStartOffsetMs': 0,
+      'activeDurationMs': 300000,
+      'startedAtUtcMs': 2000,
+      'endedAtUtcMs': 1000,
+      'timezoneId': 'Asia/Bangkok',
+      'timezoneOffsetMinutes': 420,
+      'captureSource': 'automaticLesson',
+    };
+
+    test('claims remain off until the exact rules revision is deployed', () {
+      expect(const LearningTimeSegmentSyncRollout.off().allowsClaims, isFalse);
+      expect(
+        const LearningTimeSegmentSyncRollout.v1(
+          deployedRulesRevision: legacyFirestoreRulesRevision,
+        ).allowsClaims,
+        isFalse,
+      );
+      expect(
+        const LearningTimeSegmentSyncRollout.v1(
+          deployedRulesRevision: learningTimeSegmentV1RulesRevision,
+        ).allowsClaims,
+        isTrue,
+      );
+    });
+
+    test(
+      'payload is exact immutable and duration never derives from wall time',
+      () {
+        final canonicalId =
+            LearningTimeSegmentSyncPayloadContract.canonicalEntityId(
+              sessionId: sessionId,
+              activeStartOffsetMs: 0,
+              captureSource: 'automaticLesson',
+            );
+        final exact = <String, Object?>{...payload, 'segmentId': canonicalId};
+
+        expect(
+          () => LearningTimeSegmentSyncPayloadContract.requireCanonical(
+            payload: exact,
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 1000,
+            expectedEntityId: canonicalId,
+          ),
+          returnsNormally,
+        );
+        for (final invalid in <Map<String, Object?>>[
+          <String, Object?>{...exact, 'extra': true},
+          <String, Object?>{...exact}..remove('timezoneId'),
+          <String, Object?>{
+            ...exact,
+            'segmentId': 'learning-time-segment:wrong',
+          },
+          <String, Object?>{...exact, 'activeStartOffsetMs': -1},
+          <String, Object?>{...exact, 'activeDurationMs': 0},
+          <String, Object?>{...exact, 'activeDurationMs': 300001},
+          <String, Object?>{...exact, 'startedAtUtcMs': -1},
+          <String, Object?>{...exact, 'endedAtUtcMs': 999},
+          <String, Object?>{...exact, 'timezoneId': ' Asia/Bangkok'},
+          <String, Object?>{...exact, 'timezoneId': 'Mars/Olympus'},
+          <String, Object?>{...exact, 'timezoneOffsetMinutes': 0},
+          <String, Object?>{...exact, 'timezoneOffsetMinutes': 841},
+          <String, Object?>{...exact, 'captureSource': 'recreational'},
+        ]) {
+          expect(
+            () => LearningTimeSegmentSyncPayloadContract.requireCanonical(
+              payload: invalid,
+              isDeleted: false,
+              clientUpdatedAtUtcMs: 1000,
+              expectedEntityId: canonicalId,
+            ),
+            throwsA(isA<InvalidSyncPayloadFailure>()),
+          );
+        }
+        expect(
+          () => LearningTimeSegmentSyncPayloadContract.requireCanonical(
+            payload: exact,
+            isDeleted: true,
+            clientUpdatedAtUtcMs: 1000,
+            expectedEntityId: canonicalId,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      },
+    );
   });
 
   group('content quality report sync v1', () {

@@ -32,6 +32,9 @@ import '../features/review/domain/learner_intent.dart';
 import '../features/review/domain/learner_intent_repository.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
+import '../features/time_tracking/application/active_learning_time_controller.dart';
+import '../features/time_tracking/application/learning_time_capture_rollout.dart';
+import '../features/time_tracking/domain/learning_time_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/vocabulary/application/import_vocabulary.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
@@ -71,6 +74,10 @@ final class AppDependencies {
     this.learning,
     this.lessonModes,
     this.createLessonController,
+    this.learningTime,
+    this.learningTimeCaptureRollout =
+        const LearningTimeCaptureRollout.implementedOff(),
+    this.createActiveLearningTimeController,
     this.assessment,
     this.currentActivityEvidence,
     this.learningReconciliation,
@@ -120,6 +127,9 @@ final class AppDependencies {
   final LearningUseCases? learning;
   final LessonModeRegistry? lessonModes;
   final UnifiedLessonControllerFactory? createLessonController;
+  final LearningTimeRepository? learningTime;
+  final LearningTimeCaptureRollout learningTimeCaptureRollout;
+  final ActiveLearningTimeControllerFactory? createActiveLearningTimeController;
   final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;

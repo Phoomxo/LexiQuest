@@ -4,15 +4,23 @@ import '../domain/evidence_context.dart';
 import '../domain/lesson_mode.dart';
 import 'lesson_mode_registry.dart';
 
-final class LegacyLessonModeAdapter implements LessonModeAdapter {
+final class LegacyLessonModeAdapter
+    implements TrustworthyActiveEffortLessonModeAdapter {
   const LegacyLessonModeAdapter(this.mode);
 
   @override
   final LessonMode mode;
 
   @override
-  EvidenceContext classify(LessonResponse response, LessonSupport support) =>
-      support.evidenceContext;
+  EvidenceContext classify(LessonResponse response, LessonSupport support) {
+    final context = support.evidenceContext;
+    if (context.evidenceClass == EvidenceClass.recreational) {
+      throw StateError(
+        'Recreational evidence cannot use an active-effort lesson adapter.',
+      );
+    }
+    return context;
+  }
 
   @override
   Future<LessonItem> next(LessonCursor cursor) => Future<LessonItem>.error(

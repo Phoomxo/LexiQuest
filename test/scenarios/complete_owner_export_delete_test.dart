@@ -24,7 +24,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v17 lifecycle classifies owner and non-owner tables exactly once',
+    'current v18 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -45,7 +45,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(39),
+        hasLength(40),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -57,7 +57,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(29),
+        hasLength(30),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -124,6 +124,12 @@ void main() {
       expect(assessmentRunIndex, greaterThanOrEqualTo(0));
       expect(
         assessmentRunIndex,
+        lessThan(
+          ownerLifecyclePhysicalDeletionOrder.indexOf('learning_sessions'),
+        ),
+      );
+      expect(
+        ownerLifecyclePhysicalDeletionOrder.indexOf('learning_time_segments'),
         lessThan(
           ownerLifecyclePhysicalDeletionOrder.indexOf('learning_sessions'),
         ),
@@ -234,6 +240,25 @@ void main() {
         'reasonCode',
         'comment',
         'submittedAtUtc',
+      });
+      final learningTime = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'learning_time_segments',
+      );
+      expect(learningTime.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        learningTime.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(learningTime.allowedExportFields.toSet(), {
+        'recordCount',
+        'sessionId',
+        'activeStartOffsetMs',
+        'activeDurationMs',
+        'startedAtUtc',
+        'endedAtUtc',
+        'timezoneId',
+        'timezoneOffsetMinutes',
+        'captureSource',
       });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
@@ -616,7 +641,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(39));
+      expect(archiveTables, hasLength(40));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -651,6 +676,7 @@ void main() {
         'learningDays',
         'savedLearningItems',
         'contentQualityReports',
+        'learningTimeSegments',
       ]) {
         final descriptor = ownerLifecycleManifest.singleWhere(
           (entry) => entry.alias == alias,
@@ -670,6 +696,16 @@ void main() {
           reason: '$alias must materialize its complete personal allowlist',
         );
       }
+      final learningTimeArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'learningTimeSegments');
+      final learningTimeRecord =
+          (learningTimeArchive['records'] as List<dynamic>)
+              .cast<Map<String, dynamic>>()
+              .where((record) => !record.containsKey('recordCount'))
+              .single;
+      expect(learningTimeRecord['timezoneId'], 'Asia/Bangkok');
+      expect(learningTimeRecord['timezoneOffsetMinutes'], 420);
       final assignmentArchive = archiveTables
           .cast<Map<String, dynamic>>()
           .singleWhere((entry) => entry['alias'] == 'experimentAssignments');
@@ -889,11 +925,11 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 32);
+      expect(deleted, 33);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v17 retains exactly one row for every direct-owner lifecycle entry,
+      // v18 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 32);
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 33);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
@@ -1023,6 +1059,14 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     "INSERT INTO learning_sessions VALUES "
     "('a:session', 'owner-a', 'quiz', 'completed', 10, 20, 1, 0, 100, "
     "'1', '1')",
+  );
+  await database.customInsert(
+    'INSERT INTO learning_time_segments '
+    '(id, owner_id, session_id, active_start_offset_ms, active_duration_ms, '
+    'started_at_utc_ms, ended_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, capture_source) VALUES '
+    "('a:time-segment', 'owner-a', 'a:session', 0, 7000, 9000, 8000, "
+    "'Asia/Bangkok', 420, 'automaticLesson')",
   );
   await database.customInsert(
     'INSERT INTO assessment_runs '

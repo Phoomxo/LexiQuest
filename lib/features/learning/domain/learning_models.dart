@@ -41,6 +41,13 @@ final class QuizSession {
   bool get isEmpty => questions.isEmpty;
 }
 
+final class LearningSessionHandle {
+  const LearningSessionHandle({required this.id, required this.startedAtUtc});
+
+  final String id;
+  final DateTime startedAtUtc;
+}
+
 final class LearningSessionDraft {
   const LearningSessionDraft({
     required this.id,

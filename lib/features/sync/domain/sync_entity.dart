@@ -8,6 +8,7 @@ import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../research/domain/research_protocol_mode_catalog.dart';
 import '../../review/domain/content_quality_report.dart';
+import '../../time_tracking/domain/learning_time_segment.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
@@ -19,6 +20,7 @@ const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
 const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
 const String contentQualityReportV1RulesRevision =
     'content-quality-report-v1-r1';
+const String learningTimeSegmentV1RulesRevision = 'learning-time-segment-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -50,6 +52,9 @@ enum SyncCollection {
 
   /// Immutable learner-submitted quality report pinned to content revision.
   contentQualityReports,
+
+  /// Immutable monotonic active-effort segment with separate wall context.
+  learningTimeSegments,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -65,6 +70,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.assessmentRuns => 'assessment_runs',
     SyncCollection.savedLearningItems => 'saved_learning_items',
     SyncCollection.contentQualityReports => 'content_quality_reports',
+    SyncCollection.learningTimeSegments => 'learning_time_segments',
   };
 
   String get entityType => switch (this) {
@@ -79,6 +85,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.assessmentRuns => 'assessmentRun',
     SyncCollection.savedLearningItems => 'savedLearningItem',
     SyncCollection.contentQualityReports => 'contentQualityReport',
+    SyncCollection.learningTimeSegments => 'learningTimeSegment',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -92,6 +99,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.assessmentRuns => const <int>{1},
     SyncCollection.savedLearningItems => const <int>{1},
     SyncCollection.contentQualityReports => const <int>{1},
+    SyncCollection.learningTimeSegments => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -136,7 +144,134 @@ final class SyncPayloadRollout {
     SyncCollection.savedLearningItems => collection.defaultWritePayloadVersion,
     SyncCollection.contentQualityReports =>
       collection.defaultWritePayloadVersion,
+    SyncCollection.learningTimeSegments =>
+      collection.defaultWritePayloadVersion,
   };
+}
+
+/// Deploy-safe gate for the immutable learning-time collection.
+final class LearningTimeSegmentSyncRollout {
+  const LearningTimeSegmentSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '';
+
+  const LearningTimeSegmentSyncRollout.v1({required this.deployedRulesRevision})
+    : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+
+  bool get allowsClaims =>
+      enabled && deployedRulesRevision == learningTimeSegmentV1RulesRevision;
+}
+
+abstract final class LearningTimeSegmentSyncPayloadContract {
+  static const int maximumActiveDurationMs = 300000;
+  static const int maximumActiveOffsetMs = 315576000000;
+  static const Set<String> keys = <String>{
+    'segmentId',
+    'sessionId',
+    'activeStartOffsetMs',
+    'activeDurationMs',
+    'startedAtUtcMs',
+    'endedAtUtcMs',
+    'timezoneId',
+    'timezoneOffsetMinutes',
+    'captureSource',
+  };
+  static const Set<String> captureSources = <String>{
+    'automaticLesson',
+    'focusTimer',
+  };
+
+  static String canonicalEntityId({
+    required String sessionId,
+    required int activeStartOffsetMs,
+    required String captureSource,
+  }) {
+    final source = LearningTimeCaptureSource.values
+        .where((candidate) => candidate.name == captureSource)
+        .firstOrNull;
+    if (source == null) throw const InvalidSyncPayloadFailure();
+    return LearningTimeSegment.canonicalId(
+      sessionId: sessionId,
+      activeStartOffsetMs: activeStartOffsetMs,
+      captureSource: source,
+    );
+  }
+
+  static String canonicalOperationId(String segmentId) =>
+      LearningTimeSegment.canonicalOperationId(segmentId);
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+    String? expectedEntityId,
+  }) {
+    try {
+      if (payload.length != keys.length ||
+          !payload.keys.every(keys.contains) ||
+          isDeleted) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final segmentId = payload['segmentId'];
+      final sessionId = payload['sessionId'];
+      final activeStartOffsetMs = payload['activeStartOffsetMs'];
+      final activeDurationMs = payload['activeDurationMs'];
+      final startedAtUtcMs = payload['startedAtUtcMs'];
+      final endedAtUtcMs = payload['endedAtUtcMs'];
+      final timezoneId = payload['timezoneId'];
+      final timezoneOffsetMinutes = payload['timezoneOffsetMinutes'];
+      final captureSource = payload['captureSource'];
+      if (segmentId is! String ||
+          !_canonicalText(segmentId, maximumLength: 128) ||
+          sessionId is! String ||
+          !_canonicalText(sessionId, maximumLength: 256) ||
+          activeStartOffsetMs is! int ||
+          activeStartOffsetMs < 0 ||
+          activeStartOffsetMs > maximumActiveOffsetMs ||
+          activeDurationMs is! int ||
+          activeDurationMs <= 0 ||
+          activeDurationMs > maximumActiveDurationMs ||
+          startedAtUtcMs is! int ||
+          startedAtUtcMs < 0 ||
+          endedAtUtcMs is! int ||
+          endedAtUtcMs < 0 ||
+          endedAtUtcMs != clientUpdatedAtUtcMs ||
+          timezoneId is! String ||
+          timezoneOffsetMinutes is! int ||
+          timezoneOffsetMinutes < -840 ||
+          timezoneOffsetMinutes > 840 ||
+          captureSource is! String ||
+          !captureSources.contains(captureSource)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearningTimeSegment.requireCanonicalTimezoneContext(
+        timezoneId: timezoneId,
+        utcOffsetMinutes: timezoneOffsetMinutes,
+        occurredAtUtcMs: startedAtUtcMs,
+      );
+      final canonicalId = canonicalEntityId(
+        sessionId: sessionId,
+        activeStartOffsetMs: activeStartOffsetMs,
+        captureSource: captureSource,
+      );
+      if (segmentId != canonicalId ||
+          (expectedEntityId != null && expectedEntityId != canonicalId)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static bool _canonicalText(String value, {required int maximumLength}) =>
+      value.isNotEmpty &&
+      value == value.trim() &&
+      value.runes.length <= maximumLength;
 }
 
 /// Deployment gate for the separately deployed saved-item rules contract.
@@ -796,7 +931,7 @@ abstract final class AssessmentRunSyncPayloadContract {
           !const <String>{'pre', 'post'}.contains(phase) ||
           experimentVersion <= 0 ||
           consentVersion <= 0 ||
-          !const <int>{15, 16, 17}.contains(databaseSchemaVersion) ||
+          !const <int>{15, 16, 17, 18}.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
           !supportedFeatureContractIdentities.any(
