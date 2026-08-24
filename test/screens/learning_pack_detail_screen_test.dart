@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyWord;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -15,12 +16,23 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/review/application/learner_intent_use_cases.dart';
+import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/learning_pack_detail_screen.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
+
+import '../support/inert_research_dependencies.dart';
+import '../support/test_quest_use_cases.dart';
 
 void main() {
   testWidgets(
@@ -113,6 +125,104 @@ void main() {
       expect(find.byType(RichLexicalCard), findsNothing);
     },
   );
+
+  testWidgets(
+    'production pack detail save is idempotent and does not mutate weakness',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime.utc(2026, 8, 24, 10);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'detail-save-owner',
+        nowUtc: () => now,
+      );
+      await owners.getOrCreateActiveOwner();
+      final repository = DriftLearnerIntentRepository(
+        database,
+        owners: owners,
+        nowUtc: () => now,
+      );
+      var nextId = 0;
+      final bookmark = LearnerIntentUseCases(
+        repository: repository,
+        generateId: () => 'detail-save-${++nextId}',
+        nowUtc: () => now,
+      ).bookmark;
+      final weaknessCountBefore = await database
+          .select(database.srsStates)
+          .get()
+          .then((rows) => rows.length);
+
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(
+            database,
+            learnerIntents: repository,
+            bookmarkLearningItem: bookmark,
+          ),
+          child: MaterialApp(
+            home: LearningPackDetailScreen(
+              packId: 'pack:travel',
+              revision: 2,
+              useCases: _useCases(database),
+              vocabulary: _vocabulary(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Save for review').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save for review').first);
+      await tester.pumpAndSettle();
+
+      final saved = await database.select(database.savedLearningItems).get();
+      final outbox = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityType.equals('savedLearningItem'))).get();
+      final weaknessCountAfter = await database
+          .select(database.srsStates)
+          .get()
+          .then((rows) => rows.length);
+      expect(saved, hasLength(1));
+      expect(saved.single.contentType, ContentType.lexicalMetadata.name);
+      expect(saved.single.contentId, 'word:station');
+      expect(saved.single.contentRevision, 1);
+      expect(outbox, hasLength(1));
+      expect(weaknessCountAfter, weaknessCountBefore);
+    },
+  );
+}
+
+AppDependencies _dependencies(
+  AppDatabase database, {
+  required LearnerIntentRepository learnerIntents,
+  required BookmarkLearningItemAction bookmarkLearningItem,
+}) {
+  final research = InertResearchDependencies(database);
+  return AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.ready,
+      supabase: RuntimeAvailability.ready,
+      backends: RuntimeAvailability.ready,
+    ),
+    config: null,
+    guestSessionService: _GuestSession(),
+    quest: testQuestUseCases(),
+    features: const BuildFeatureRegistry.allEnabled(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
+    learnerIntents: learnerIntents,
+    bookmarkLearningItem: bookmarkLearningItem,
+  );
 }
 
 VocabularyUseCases _vocabulary() => VocabularyUseCases(
@@ -183,6 +293,12 @@ final class _Owner implements LocalOwnerRepository {
     String ownerId,
     String firebaseUid,
   ) => getOrCreateActiveOwner();
+}
+
+final class _GuestSession implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'detail-save');
 }
 
 final class _PinnedVocabulary implements VocabularyRepository {

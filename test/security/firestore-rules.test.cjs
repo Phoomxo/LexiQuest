@@ -1,4 +1,5 @@
 const { after, before, beforeEach, describe, it } = require('node:test');
+const { createHash } = require('node:crypto');
 const fs = require('node:fs');
 const path = require('node:path');
 const {
@@ -504,6 +505,56 @@ async function seedFieldAssessmentRun({
       lastOperationId: `seed:${entityId}:${revision}`,
     });
   });
+}
+
+function fieldSavedLearningItemPayload(overrides = {}) {
+  return {
+    contentType: 'lexicalMetadata',
+    contentId: 'word:station',
+    contentRevision: 3,
+    savedAtUtcMs: 5000,
+    updatedAtUtcMs: 5000,
+    isDeleted: false,
+    ...overrides,
+  };
+}
+
+function fieldSavedLearningItemEntityId(payload = fieldSavedLearningItemPayload()) {
+  const identity = `${payload.contentType}|${payload.contentId}|${payload.contentRevision}`;
+  return `saved-learning-item:${createHash('sha256').update(identity, 'utf8').digest('hex')}`;
+}
+
+function writeFieldSavedLearningItem(db, {
+  uid = alice,
+  payload = fieldSavedLearningItemPayload(),
+  entityId = fieldSavedLearningItemEntityId(payload),
+  operationId = 'saved-operation-1',
+  revision = 1,
+  baseRevision = 0,
+  schemaVersion = 1,
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'saved_learning_items', entityId), {
+    schemaVersion,
+    entityId,
+    payload,
+    revision,
+    isDeleted: payload.isDeleted,
+    clientUpdatedAtUtcMs: payload.updatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion,
+    operationId,
+    entityType: 'savedLearningItem',
+    entityId,
+    operationKind: payload.isDeleted ? 'delete' : 'upsert',
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
 }
 
 before(async () => {
@@ -1755,7 +1806,7 @@ describe('assessment_runs revisioned research contract', () => {
     )));
   });
 
-  it('accepts assessment evidence pinned to current database schema v16', async () => {
+  it('accepts assessment evidence pinned to current database schema v17', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-v16';
     await assertSucceeds(
@@ -1775,7 +1826,7 @@ describe('assessment_runs revisioned research contract', () => {
         payload: fieldAssessmentRunPayload({
           runId: 'assessment-run-v16',
           assignmentId,
-          databaseSchemaVersion: 16,
+          databaseSchemaVersion: 17,
         }),
       }),
     );
@@ -2371,6 +2422,93 @@ describe('assessment_runs revisioned research contract', () => {
       'assessment_runs',
       'assessment-run-delete',
     )));
+  });
+});
+
+describe('saved_learning_items exact mutable intent contract', () => {
+  it('allows an owner save followed by a revisioned tombstone', async () => {
+    const db = authDb();
+    const entityId = fieldSavedLearningItemEntityId();
+    await assertSucceeds(writeFieldSavedLearningItem(db, { entityId }));
+    await assertSucceeds(getDoc(doc(
+      db, 'field_users', alice, 'saved_learning_items', entityId,
+    )));
+    await assertSucceeds(writeFieldSavedLearningItem(db, {
+      entityId,
+      operationId: 'saved-operation-2',
+      revision: 2,
+      baseRevision: 1,
+      payload: fieldSavedLearningItemPayload({
+        updatedAtUtcMs: 6000,
+        isDeleted: true,
+      }),
+    }));
+    await assertFails(writeFieldSavedLearningItem(db, {
+      entityId,
+      operationId: 'saved-operation-identity-mutation',
+      revision: 3,
+      baseRevision: 2,
+      payload: fieldSavedLearningItemPayload({
+        contentId: 'word:different',
+        updatedAtUtcMs: 7000,
+      }),
+    }));
+    await assertFails(writeFieldSavedLearningItem(db, {
+      entityId,
+      operationId: 'saved-operation-saved-time-mutation',
+      revision: 3,
+      baseRevision: 2,
+      payload: fieldSavedLearningItemPayload({
+        savedAtUtcMs: 5001,
+        updatedAtUtcMs: 7000,
+        isDeleted: true,
+      }),
+    }));
+  });
+
+  it('denies cross-owner writes and physical deletion', async () => {
+    await assertFails(writeFieldSavedLearningItem(authDb(bob), { uid: alice }));
+    const db = authDb();
+    await assertSucceeds(writeFieldSavedLearningItem(db));
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'saved_learning_items',
+      fieldSavedLearningItemEntityId(),
+    )));
+  });
+
+  it('rejects non-exact keys types identity revisions and timestamps', async () => {
+    const db = authDb();
+    const canonical = fieldSavedLearningItemPayload();
+    const missingRevision = { ...canonical };
+    delete missingRevision.contentRevision;
+    const cases = [
+      { ...canonical, extra: true },
+      missingRevision,
+      { ...canonical, contentType: 'unknown' },
+      { ...canonical, contentId: '  ' },
+      { ...canonical, contentRevision: 0 },
+      { ...canonical, savedAtUtcMs: -1 },
+      { ...canonical, updatedAtUtcMs: 4999 },
+      { ...canonical, isDeleted: 'false' },
+    ];
+    for (const [index, payload] of cases.entries()) {
+      await assertFails(writeFieldSavedLearningItem(db, {
+        entityId: fieldSavedLearningItemEntityId(payload),
+        operationId: `saved-invalid-operation-${index}`,
+        payload,
+      }));
+    }
+    await assertFails(writeFieldSavedLearningItem(db, {
+      operationId: 'saved-v2-operation',
+      schemaVersion: 2,
+    }));
+    await assertFails(writeFieldSavedLearningItem(db, {
+      entityId: 'device-local-id',
+      operationId: 'saved-noncanonical-id-operation',
+    }));
   });
 });
 

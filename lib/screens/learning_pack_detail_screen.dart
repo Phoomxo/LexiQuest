@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning_packs/application/learning_pack_detail_use_cases.dart';
+import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/learning_packs/domain/learning_pack_detail.dart';
+import '../features/review/domain/learner_intent.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
@@ -92,7 +94,13 @@ final class _LearningPackDetailScreenState
           );
         }
         final data = snapshot.requireData;
-        return _DetailBody(view: data.view, words: data.words);
+        return _DetailBody(
+          view: data.view,
+          words: data.words,
+          bookmarkLearningItem: AppDependenciesScope.maybeOf(
+            context,
+          )?.bookmarkLearningItem,
+        );
       },
     );
   }
@@ -134,10 +142,15 @@ final class LearningPackDetailUnavailable extends StatelessWidget {
 }
 
 final class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.view, required this.words});
+  const _DetailBody({
+    required this.view,
+    required this.words,
+    required this.bookmarkLearningItem,
+  });
 
   final LearningPackDetailView view;
   final List<VocabularyWord> words;
+  final BookmarkLearningItemAction? bookmarkLearningItem;
 
   @override
   Widget build(BuildContext context) {
@@ -170,7 +183,16 @@ final class _DetailBody extends StatelessWidget {
           Text('Practice attempts: ${view.progress.sampleSize}'),
           const SizedBox(height: 24),
           const Text('Pinned vocabulary references'),
-          for (final word in words) RichLexicalCard(word: word),
+          for (final word in words)
+            RichLexicalCard(
+              word: word,
+              bookmarkIdentity: ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: word.id,
+                revision: word.contentRevision,
+              ),
+              onBookmark: bookmarkLearningItem,
+            ),
           const SizedBox(height: 24),
           const Text('Activities'),
           for (final activity in view.activities)

@@ -8,51 +8,50 @@ import 'migration_v13_to_v14_test.dart' as inventory_fixture;
 import 'migration_v14_to_v15_test.dart' as fixture;
 
 void main() {
-  test(
-    'frozen v15 fixture upgrades add only the four v16 content tables',
-    () async {
-      final database = AppDatabase(
-        NativeDatabase.memory(setup: fixture.createSchemaFifteenFixture),
-      );
-      addTearDown(database.close);
+  test('frozen v15 upgrades through the four v16 and two v17 tables', () async {
+    final database = AppDatabase(
+      NativeDatabase.memory(setup: fixture.createSchemaFifteenFixture),
+    );
+    addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 16);
-      final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
-        15,
-      );
-      expect(v15Inventory, hasLength(33));
-      expect(currentDatabaseTableInventory, hasLength(37));
-      expect(currentDatabaseTableInventory.difference(v15Inventory), {
-        'learning_packs',
-        'learning_pack_items',
-        'content_manifests',
-        'content_download_states',
-      });
-      await expectCurrentDatabaseContract(database);
+    expect(AppDatabase.currentSchemaVersion, 17);
+    final v15Inventory = inventory_fixture.migrationInventoryForSchemaVersion(
+      15,
+    );
+    expect(v15Inventory, hasLength(33));
+    expect(currentDatabaseTableInventory, hasLength(39));
+    expect(currentDatabaseTableInventory.difference(v15Inventory), {
+      'learning_packs',
+      'learning_pack_items',
+      'content_manifests',
+      'content_download_states',
+      'saved_learning_items',
+      'content_quality_reports',
+    });
+    await expectCurrentDatabaseContract(database);
 
-      for (final sentinel in fixture.migrationV15Sentinels.entries) {
-        expect(
-          await _count(database, sentinel.key),
-          1,
-          reason: '${sentinel.key} lost its frozen v15 sentinel row',
-        );
-        expect(
-          await _read<String>(
-            database,
-            'SELECT ${sentinel.value.column} FROM ${sentinel.key}',
-            sentinel.value.column,
-          ),
-          sentinel.value.value,
-          reason: '${sentinel.key} changed its frozen v15 sentinel row',
-        );
-      }
-      for (final table in currentDatabaseTableInventory.difference(
-        v15Inventory,
-      )) {
-        expect(await _count(database, table), 0, reason: table);
-      }
-    },
-  );
+    for (final sentinel in fixture.migrationV15Sentinels.entries) {
+      expect(
+        await _count(database, sentinel.key),
+        1,
+        reason: '${sentinel.key} lost its frozen v15 sentinel row',
+      );
+      expect(
+        await _read<String>(
+          database,
+          'SELECT ${sentinel.value.column} FROM ${sentinel.key}',
+          sentinel.value.column,
+        ),
+        sentinel.value.value,
+        reason: '${sentinel.key} changed its frozen v15 sentinel row',
+      );
+    }
+    for (final table in currentDatabaseTableInventory.difference(
+      v15Inventory,
+    )) {
+      expect(await _count(database, table), 0, reason: table);
+    }
+  });
 
   test(
     'v15 learner words gain explicit legacy-safe content identity',

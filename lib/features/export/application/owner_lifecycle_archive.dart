@@ -9,6 +9,7 @@ import '../../../runtime/download_counter.dart';
 import '../../../runtime/runtime_flag_namespaces.dart';
 import '../../ai_tutor/domain/ai_tutor_contracts.dart';
 import '../../device_model/domain/model_lifecycle.dart';
+import '../data/drift_export_reader.dart';
 import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
@@ -148,6 +149,8 @@ final class OwnerLifecycleArchiveExporter {
       'research_consents' => _researchConsents(ownerId),
       'experiment_assignments' => _experimentAssignments(ownerId),
       'assessment_runs' => _assessmentRuns(ownerId),
+      'saved_learning_items' => _savedLearningItems(ownerId),
+      'content_quality_reports' => _contentQualityReports(ownerId),
       'vocabulary_categories' => _vocabularyCategories(ownerId),
       'vocabulary_words' => _vocabularyWords(ownerId),
       'vocabulary_imports' => _vocabularyImports(ownerId),
@@ -342,6 +345,50 @@ final class OwnerLifecycleArchiveExporter {
       });
     }
     return records;
+  }
+
+  Future<List<Map<String, Object?>>> _savedLearningItems(String ownerId) async {
+    final rows = await DriftExportReader(
+      database,
+    ).loadSavedLearningItems(ownerId);
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'contentType': _safeLabel(row.contentType),
+          'contentId': _safeLabel(row.contentId),
+          'contentRevision': row.contentRevision,
+          'savedAtUtc': row.savedAtUtc.toIso8601String(),
+          'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
+          'isSaved': row.isSaved,
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _contentQualityReports(
+    String ownerId,
+  ) async {
+    final rows = await database
+        .customSelect(
+          'SELECT content_type, content_id, content_revision, reason_code, '
+          'comment, submitted_at_utc_ms FROM content_quality_reports '
+          'WHERE owner_id = ? ORDER BY submitted_at_utc_ms, id',
+          variables: [Variable<String>(ownerId)],
+          readsFrom: {database.contentQualityReports},
+        )
+        .get();
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'contentType': _safeLabel(row.read<String>('content_type')),
+          'contentId': _safeLabel(row.read<String>('content_id')),
+          'contentRevision': row.read<int>('content_revision'),
+          'reasonCode': _safeLabel(row.read<String>('reason_code')),
+          'comment': row.readNullable<String>('comment'),
+          'submittedAtUtc': _iso(row.read<int>('submitted_at_utc_ms')),
+        },
+    ];
   }
 
   Future<List<Map<String, Object?>>> _controlledAssessmentResponses({

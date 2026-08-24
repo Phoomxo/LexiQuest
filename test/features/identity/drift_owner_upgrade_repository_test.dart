@@ -101,6 +101,69 @@ void main() {
     expect(ownerUpgradeInventory, actual);
   });
 
+  test(
+    'merge resolves saved natural-key collisions and moves report lifecycle',
+    () async {
+      await database.customInsert('''
+      INSERT INTO saved_learning_items(
+        id, owner_id, content_type, content_id, content_revision,
+        saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+        is_deleted
+      ) VALUES
+        ('saved:guest', 'guest-owner', 'lexicalMetadata', 'word:station', 3,
+         10, 30, 2, 0, 1),
+        ('saved:account', 'account-owner', 'lexicalMetadata', 'word:station', 3,
+         5, 20, 4, 4, 0)
+    ''');
+      await database.customInsert('''
+      INSERT INTO content_quality_reports(
+        id, owner_id, content_type, content_id, content_revision,
+        reason_code, comment, submitted_at_utc_ms
+      ) VALUES (
+        'report:guest', 'guest-owner', 'lexicalMetadata', 'word:station', 3,
+        'incorrectMeaning', NULL, 15
+      )
+    ''');
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final saved = await database.customSelect('''
+      SELECT owner_id, saved_at_utc_ms, local_revision, cloud_revision,
+             is_deleted
+      FROM saved_learning_items
+    ''').get();
+      expect(saved, hasLength(1));
+      expect(saved.single.read<String>('owner_id'), 'account-owner');
+      expect(saved.single.read<int>('saved_at_utc_ms'), 5);
+      expect(saved.single.read<int>('is_deleted'), 1);
+      expect(saved.single.read<int>('local_revision'), 5);
+      expect(saved.single.read<int>('cloud_revision'), 4);
+      final savedOutbox = await database.customSelect('''
+      SELECT base_revision, operation_kind, state
+      FROM outbox_operations
+      WHERE entity_type = 'savedLearningItem'
+        AND entity_id = 'saved:account'
+    ''').getSingle();
+      expect(savedOutbox.read<int>('base_revision'), 4);
+      expect(savedOutbox.read<String>('operation_kind'), 'delete');
+      expect(savedOutbox.read<String>('state'), 'pending');
+      expect(
+        await database
+            .customSelect('''
+            SELECT owner_id FROM content_quality_reports
+            WHERE id = 'report:guest'
+          ''')
+            .map((row) => row.read<String>('owner_id'))
+            .getSingle(),
+        'account-owner',
+      );
+    },
+  );
+
   test('content tables have explicit non-owner lifecycle classifications', () {
     final packaged = ownerLifecycleManifest
         .where(
@@ -2843,6 +2906,21 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "cloud_revision, is_deleted, created_at_utc_ms, updated_at_utc_ms) "
     "VALUES ('word-1', 'guest-owner', 'category-1', 'station', 'station', "
     "'สถานี', 'สถานี', 'noun', 'manual', 0, 1, 0, 0, 10, 10)",
+  );
+  await database.customInsert(
+    'INSERT INTO saved_learning_items '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision, '
+    'is_deleted) VALUES '
+    "('saved-1', 'guest-owner', 'lexicalMetadata', 'word-1', 1, "
+    '10, 10, 1, 0, 0)',
+  );
+  await database.customInsert(
+    'INSERT INTO content_quality_reports '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'reason_code, comment, submitted_at_utc_ms) VALUES '
+    "('report-1', 'guest-owner', 'lexicalMetadata', 'word-1', 1, "
+    "'incorrectMeaning', NULL, 10)",
   );
   await database.customInsert(
     "INSERT INTO vocabulary_imports VALUES "

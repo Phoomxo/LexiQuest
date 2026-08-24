@@ -3,6 +3,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 
 void main() {
   testWidgets(
@@ -102,14 +104,54 @@ void main() {
     expect(find.byType(AnimatedSwitcher), findsNothing);
     expect(find.text('Not quite'), findsOneWidget);
   });
+
+  testWidgets('bookmark action carries the answered content revision', (
+    tester,
+  ) async {
+    ContentIdentity? bookmarked;
+    await tester.pumpWidget(
+      _FeedbackHarness(
+        feedback: AnswerFeedback.fromCommittedResult(
+          result: const AnswerRecordResult(
+            inserted: true,
+            isCorrect: false,
+            srs: null,
+          ),
+          context: const AnswerFeedbackContext(
+            canonicalCorrectAnswer: 'station',
+          ),
+        ),
+        bookmarkIdentity: _bookmarkIdentity,
+        onBookmark: (identity) async => bookmarked = identity,
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Save for review'));
+    await tester.pump();
+    expect(bookmarked, _bookmarkIdentity);
+  });
 }
 
+const _bookmarkIdentity = ContentIdentity(
+  type: ContentType.lexicalMetadata,
+  id: 'word:station',
+  revision: 4,
+);
+
 final class _FeedbackHarness extends StatelessWidget {
-  const _FeedbackHarness({required this.feedback, this.onRetry, this.onNext});
+  const _FeedbackHarness({
+    required this.feedback,
+    this.onRetry,
+    this.onNext,
+    this.bookmarkIdentity,
+    this.onBookmark,
+  });
 
   final AnswerFeedback feedback;
   final VoidCallback? onRetry;
   final VoidCallback? onNext;
+  final ContentIdentity? bookmarkIdentity;
+  final BookmarkLearningItemAction? onBookmark;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -118,6 +160,8 @@ final class _FeedbackHarness extends StatelessWidget {
         feedback: feedback,
         onRetry: onRetry,
         onNext: onNext,
+        bookmarkIdentity: bookmarkIdentity,
+        onBookmark: onBookmark,
       ),
     ),
   );

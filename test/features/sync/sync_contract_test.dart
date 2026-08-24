@@ -56,6 +56,7 @@ void main() {
           SyncCollection.achievementUnlocks: <int>{1},
           SyncCollection.experimentAssignments: <int>{1},
           SyncCollection.assessmentRuns: <int>{1},
+          SyncCollection.savedLearningItems: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -386,6 +387,86 @@ void main() {
         ),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('saved learning item sync v1', () {
+    test('claims remain off until the exact rules revision is deployed', () {
+      expect(const SavedLearningItemSyncRollout.off().allowsClaims, isFalse);
+      expect(
+        const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: legacyFirestoreRulesRevision,
+        ).allowsClaims,
+        isFalse,
+      );
+      expect(
+        const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: savedLearningItemV1RulesRevision,
+        ).allowsClaims,
+        isTrue,
+      );
+    });
+
+    test('payload is exact canonical and binds tombstone and update time', () {
+      const payload = <String, Object?>{
+        'contentType': 'lexicalMetadata',
+        'contentId': 'word:station',
+        'contentRevision': 3,
+        'savedAtUtcMs': 10,
+        'updatedAtUtcMs': 20,
+        'isDeleted': false,
+      };
+      expect(
+        () => SavedLearningItemSyncPayloadContract.requireCanonical(
+          payload: payload,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: 20,
+        ),
+        returnsNormally,
+      );
+      for (final invalid in <Map<String, Object?>>[
+        <String, Object?>{...payload, 'extra': true},
+        <String, Object?>{...payload}..remove('contentRevision'),
+        <String, Object?>{...payload, 'contentType': 'unknown'},
+        <String, Object?>{...payload, 'contentRevision': 0},
+        <String, Object?>{...payload, 'updatedAtUtcMs': 19},
+        <String, Object?>{...payload, 'isDeleted': true},
+      ]) {
+        expect(
+          () => SavedLearningItemSyncPayloadContract.requireCanonical(
+            payload: invalid,
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 20,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      }
+    });
+
+    test('cloud operation ids bind one exact local mutation', () {
+      String operationId(String localOperationId) =>
+          SavedLearningItemSyncPayloadContract.canonicalOperationId(
+            localOperationId: localOperationId,
+            contentType: 'lexicalMetadata',
+            contentId: 'word:station',
+            contentRevision: 3,
+            operationKind: SyncOperationKind.upsert,
+            baseRevision: 0,
+            localRevision: 1,
+            savedAtUtcMs: 10,
+            updatedAtUtcMs: 10,
+          );
+
+      final deviceA = operationId('savedLearningItem:device-a:1');
+      final deviceB = operationId('savedLearningItem:device-b:1');
+
+      expect(deviceA, operationId('savedLearningItem:device-a:1'));
+      expect(deviceA, isNot(deviceB));
+      expect(
+        deviceA,
+        matches(RegExp(r'^saved-learning-operation:[0-9a-f]{64}$')),
+      );
+      expect(deviceA.length, lessThanOrEqualTo(256));
     });
   });
 

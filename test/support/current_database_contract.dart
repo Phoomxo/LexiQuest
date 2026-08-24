@@ -40,6 +40,8 @@ const currentDatabaseTableInventory = <String>{
   'associative_memory_states',
   'ai_usage_events',
   'speech_evidence',
+  'saved_learning_items',
+  'content_quality_reports',
 };
 
 Future<Set<String>> currentDatabaseTableNames(AppDatabase database) {

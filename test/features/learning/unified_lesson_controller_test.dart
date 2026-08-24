@@ -20,7 +20,19 @@ import 'package:vocab_learning_app/features/learning/domain/lesson_session_state
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/application/learner_intent_use_cases.dart';
+import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
+import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/services/guest_session_service.dart';
+
+import '../../support/inert_research_dependencies.dart';
+import '../../support/test_quest_use_cases.dart';
 
 void main() {
   test(
@@ -209,6 +221,65 @@ void main() {
         ),
         throwsStateError,
       );
+      expect(fixture.repository.recordCalls, 1);
+    },
+  );
+
+  test(
+    'rejects a bookmark identity that is not the submitted lexical item',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+
+      await expectLater(
+        fixture.controller.submit(
+          fixture.submission(
+            bookmarkIdentity: const ContentIdentity(
+              type: ContentType.learningPack,
+              id: 'pack:wrong',
+              revision: 1,
+            ),
+          ),
+        ),
+        throwsArgumentError,
+      );
+
+      expect(fixture.repository.recordCalls, 0);
+      expect(fixture.controller.feedback, isNull);
+    },
+  );
+
+  test(
+    'rejects bookmark revision changes on a committed evidence replay',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      const sourceEvidenceId = 'bookmark-replay-evidence';
+
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: sourceEvidenceId,
+          bookmarkIdentity: ContentIdentity(
+            type: ContentType.lexicalMetadata,
+            id: fixture.wordId,
+            revision: 1,
+          ),
+        ),
+      );
+      await expectLater(
+        fixture.controller.submit(
+          fixture.submission(
+            sourceEvidenceId: sourceEvidenceId,
+            bookmarkIdentity: ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: fixture.wordId,
+              revision: 2,
+            ),
+          ),
+        ),
+        throwsStateError,
+      );
+
       expect(fixture.repository.recordCalls, 1);
     },
   );
@@ -872,7 +943,79 @@ void main() {
     expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
     expect(find.text('Not quite'), findsOneWidget);
     expect(find.text('Correct answer: บทเรียน'), findsOneWidget);
+    expect(find.text('Save for review'), findsNothing);
   });
+
+  testWidgets(
+    'production lesson shell save is idempotent and does not mutate weakness',
+    (tester) async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.controller.submit(
+        fixture.submission(
+          bookmarkIdentity: ContentIdentity(
+            type: ContentType.lexicalMetadata,
+            id: fixture.wordId,
+            revision: 1,
+          ),
+        ),
+      );
+      final repository = DriftLearnerIntentRepository(
+        fixture.database,
+        owners: fixture.owners,
+        nowUtc: () => fixture.now,
+      );
+      var nextId = 0;
+      final bookmark = LearnerIntentUseCases(
+        repository: repository,
+        generateId: () => 'lesson-save-${++nextId}',
+        nowUtc: () => fixture.now,
+      ).bookmark;
+      final weaknessCountBefore = await fixture.database
+          .select(fixture.database.srsStates)
+          .get()
+          .then((rows) => rows.length);
+
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _bookmarkDependencies(
+            fixture.database,
+            learnerIntents: repository,
+            bookmarkLearningItem: bookmark,
+          ),
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('Save for review'), findsOneWidget);
+      await tester.tap(find.text('Save for review'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Save for review'));
+      await tester.pumpAndSettle();
+
+      final saved = await fixture.database
+          .select(fixture.database.savedLearningItems)
+          .get();
+      final outbox = await (fixture.database.select(
+        fixture.database.outboxOperations,
+      )..where((row) => row.entityType.equals('savedLearningItem'))).get();
+      final weaknessCountAfter = await fixture.database
+          .select(fixture.database.srsStates)
+          .get()
+          .then((rows) => rows.length);
+      expect(saved, hasLength(1));
+      expect(saved.single.contentType, ContentType.lexicalMetadata.name);
+      expect(saved.single.contentId, fixture.wordId);
+      expect(saved.single.contentRevision, 1);
+      expect(outbox, hasLength(1));
+      expect(weaknessCountAfter, weaknessCountBefore);
+    },
+  );
 
   test(
     'one-argument production factory composes isolated typed hint use cases',
@@ -1236,9 +1379,44 @@ void main() {
   );
 }
 
+AppDependencies _bookmarkDependencies(
+  AppDatabase database, {
+  required LearnerIntentRepository learnerIntents,
+  required BookmarkLearningItemAction bookmarkLearningItem,
+}) {
+  final research = InertResearchDependencies(database);
+  return AppDependencies(
+    initialRoute: AppRoute.home,
+    runtimeStatus: const AppRuntimeStatus(
+      localData: RuntimeAvailability.ready,
+      firebase: RuntimeAvailability.ready,
+      supabase: RuntimeAvailability.ready,
+      backends: RuntimeAvailability.ready,
+    ),
+    config: null,
+    guestSessionService: _GuestSession(),
+    quest: testQuestUseCases(),
+    experiments: research.experiments,
+    consents: research.consents,
+    experimentAssignments: research.experimentAssignments,
+    assignedLearningEventContext: research.assignedLearningEventContext,
+    evidencePolicyRolloutModeProvider:
+        research.evidencePolicyRolloutModeProvider,
+    learnerIntents: learnerIntents,
+    bookmarkLearningItem: bookmarkLearningItem,
+  );
+}
+
+final class _GuestSession implements GuestSessionService {
+  @override
+  Future<GuestSessionResult> start() async =>
+      const GuestSessionStarted(uid: 'lesson-save');
+}
+
 final class _Fixture {
   const _Fixture({
     required this.database,
+    required this.owners,
     required this.repository,
     required this.learning,
     required this.adapter,
@@ -1249,6 +1427,7 @@ final class _Fixture {
   });
 
   final AppDatabase database;
+  final DriftLocalOwnerRepository owners;
   final _CountingRepository repository;
   final LearningUseCases learning;
   final LessonModeAdapter adapter;
@@ -1261,6 +1440,7 @@ final class _Fixture {
     String sourceEvidenceId = 'evidence-1',
     bool isCorrect = true,
     String canonicalCorrectAnswer = 'บทเรียน',
+    ContentIdentity? bookmarkIdentity,
     EvidenceClass evidenceClass = EvidenceClass.recognition,
     int declaredHintLevel = 0,
   }) => LessonSubmission(
@@ -1275,6 +1455,7 @@ final class _Fixture {
       attemptNumber: 1,
       feedbackContext: AnswerFeedbackContext(
         canonicalCorrectAnswer: canonicalCorrectAnswer,
+        bookmarkIdentity: bookmarkIdentity,
       ),
     ),
     support: LessonSupport(
@@ -1362,6 +1543,7 @@ Future<_Fixture> _fixture({
   );
   return _Fixture(
     database: database,
+    owners: owners,
     repository: repository,
     learning: learning,
     adapter: modeAdapter,

@@ -33,7 +33,7 @@ final class ClaimedSyncOperation {
   final PushMutation mutation;
 
   /// Durable local outbox identity. It may differ from the cloud operation ID
-  /// when an owner-bound assignment is translated to a Firebase namespace.
+  /// when a local entity is translated to its canonical cloud namespace.
   final String localOperationId;
 }
 

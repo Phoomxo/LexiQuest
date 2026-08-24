@@ -266,6 +266,37 @@ manifest identity, and older binaries must not open a v16 database.
 
 ---
 
+### v17 — Saved Learning Intent and Content Report Lifecycle Reservation
+**Reserved:** 2026-08-24
+**Implemented:** 2026-08-24
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added `saved_learning_items` as owner-scoped, revisioned learner intent keyed
+uniquely by owner plus immutable content type, content ID, and content revision.
+Save replay is idempotent; unsave is retained as a syncable tombstone. Saved
+intent does not write SRS, weakness, score, quest, streak, or effort evidence.
+Cloud payload v1 remains disabled until the exact Firestore rules revision is
+separately deployed. Writers derive one deterministic cloud document ID from
+the immutable content-identity tuple. Each immutable cloud operation receipt
+uses a fixed-length digest that also binds the exact local operation and wire
+mutation envelope, preventing distinct device intents from sharing a receipt.
+Pull coalesces any legacy device-local ID by the same natural key before
+applying a revision.
+
+Added `content_quality_reports` only as the f21 lifecycle/schema reservation so
+owner upgrade, export, withdrawal, and deletion cannot omit it. No report
+repository, use case, sync writer, or UI is introduced by v17/f20.
+
+The two owner-scoped tables raise the named inventory from 37 to 39.
+
+**Migration safety:** v16→v17 only creates two empty tables; all 37 v16 tables
+and rows remain intact. Rollback is forward-only: disabling bookmark actions or
+saved-item sync does not erase local intent, and older binaries must not open a
+v17 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -284,6 +315,7 @@ manifest identity, and older binaries must not open a v16 database.
 | 2026-08-23 | Reserved and implemented v14 immutable experiment assignment with lifecycle coverage. | LexiQuest integration |
 | 2026-08-23 | Reserved and implemented v15 immutable assessment runs with lifecycle, export, and revisioned-sync coverage. | LexiQuest integration |
 | 2026-08-24 | Implemented v16 versioned content manifests, learning packs, device-local download state, and versioned learner vocabulary metadata. | LexiQuest integration |
+| 2026-08-24 | Reserved and implemented v17 saved learning intent plus the f21 content-report lifecycle table. | LexiQuest integration |
 
 ---
 

@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../application/unified_lesson_controller.dart';
 import '../domain/lesson_session_state.dart';
+import '../../../runtime/app_dependencies.dart';
 import 'answer_feedback_panel.dart';
 import 'hint_panel.dart';
 
@@ -182,6 +183,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final controller = widget.controller;
     if (controller == null) return widget.builder(context);
     final hintState = controller.hintState;
+    final bookmarkLearningItem = AppDependenciesScope.maybeOf(
+      context,
+    )?.bookmarkLearningItem;
     return Semantics(
       container: true,
       label: 'Lesson ${controller.state.status.name}',
@@ -196,7 +200,11 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
               enabled: controller.canRevealHint,
             ),
           if (controller.feedback case final feedback?)
-            AnswerFeedbackPanel(feedback: feedback),
+            AnswerFeedbackPanel(
+              feedback: feedback,
+              bookmarkIdentity: feedback.bookmarkIdentity,
+              onBookmark: bookmarkLearningItem,
+            ),
           Expanded(child: Builder(builder: widget.builder)),
         ],
       ),

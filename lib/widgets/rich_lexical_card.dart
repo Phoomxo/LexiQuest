@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning_packs/domain/content_manifest.dart';
+import '../features/review/domain/learner_intent.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 
 /// Accessible, optional presentation of verified lexical metadata.
@@ -7,10 +9,18 @@ import '../features/vocabulary/domain/vocabulary_word.dart';
 /// The card neither fetches content nor records learning evidence. Its input is
 /// a vocabulary word already resolved by the canonical vocabulary authority.
 final class RichLexicalCard extends StatefulWidget {
-  const RichLexicalCard({super.key, required this.word, this.onPlayAudio});
+  const RichLexicalCard({
+    super.key,
+    required this.word,
+    this.onPlayAudio,
+    this.bookmarkIdentity,
+    this.onBookmark,
+  });
 
   final VocabularyWord word;
   final VoidCallback? onPlayAudio;
+  final ContentIdentity? bookmarkIdentity;
+  final BookmarkLearningItemAction? onBookmark;
 
   @override
   State<RichLexicalCard> createState() => _RichLexicalCardState();
@@ -24,6 +34,14 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
     final word = widget.word;
     final metadata = word.richMetadata;
     final entryLabel = _entryLabel(word);
+    final bookmark = switch ((widget.bookmarkIdentity, widget.onBookmark)) {
+      (final identity?, final action?)
+          when identity.type == ContentType.lexicalMetadata &&
+              identity.id == word.id &&
+              identity.revision == word.contentRevision =>
+        (identity: identity, action: action),
+      _ => null,
+    };
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -50,6 +68,22 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
               ),
             ),
             const SizedBox(height: 8),
+            if (bookmark case final contract?) ...[
+              Semantics(
+                container: true,
+                explicitChildNodes: true,
+                button: true,
+                label: 'Save for review',
+                child: ExcludeSemantics(
+                  child: OutlinedButton.icon(
+                    onPressed: () => contract.action(contract.identity),
+                    icon: const Icon(Icons.bookmark_add_outlined),
+                    label: const Text('Save for review'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (metadata == null)
               const Text('Additional lexical details are unavailable.')
             else ...[

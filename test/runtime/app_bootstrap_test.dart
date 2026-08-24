@@ -590,6 +590,16 @@ void main() {
       expect(voiceBuilds, 1);
       expect(dependencies.localDataEraser, isNotNull);
       expect(dependencies.featureControls, isNotNull);
+      expect(
+        dependencies.learnerIntents,
+        isNotNull,
+        reason: 'bookmark actions require the production learner intent port',
+      );
+      expect(
+        dependencies.bookmarkLearningItem,
+        isNotNull,
+        reason: 'bookmark UI requires the composed typed production action',
+      );
       final ownerArchive = await dependencies.exports!.prepare(
         format: ExportFormat.ownerArchiveJson,
         selection: const ExportSelection(

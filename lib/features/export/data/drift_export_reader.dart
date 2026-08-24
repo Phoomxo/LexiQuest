@@ -83,6 +83,24 @@ final class ExportReadingRow {
   final DateTime updatedAtUtc;
 }
 
+final class ExportSavedLearningItemRow {
+  const ExportSavedLearningItemRow({
+    required this.contentType,
+    required this.contentId,
+    required this.contentRevision,
+    required this.savedAtUtc,
+    required this.updatedAtUtc,
+    required this.isSaved,
+  });
+
+  final String contentType;
+  final String contentId;
+  final int contentRevision;
+  final DateTime savedAtUtc;
+  final DateTime updatedAtUtc;
+  final bool isSaved;
+}
+
 final class ExportDataSet {
   const ExportDataSet({
     required this.vocabulary,
@@ -101,6 +119,37 @@ final class DriftExportReader {
   const DriftExportReader(this.database);
 
   final AppDatabase database;
+
+  Future<List<ExportSavedLearningItemRow>> loadSavedLearningItems(
+    String ownerId,
+  ) async {
+    final rows =
+        await (database.select(database.savedLearningItems)
+              ..where((row) => row.ownerId.equals(ownerId))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.savedAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
+            .get();
+    return List<ExportSavedLearningItemRow>.unmodifiable(
+      rows.map(
+        (row) => ExportSavedLearningItemRow(
+          contentType: row.contentType,
+          contentId: row.contentId,
+          contentRevision: row.contentRevision,
+          savedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.savedAtUtcMs,
+            isUtc: true,
+          ),
+          updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.updatedAtUtcMs,
+            isUtc: true,
+          ),
+          isSaved: !row.isDeleted,
+        ),
+      ),
+    );
+  }
 
   Future<ExportDataSet> loadActiveSnapshot({
     required bool vocabulary,

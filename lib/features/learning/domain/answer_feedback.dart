@@ -1,13 +1,18 @@
 import 'learning_models.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 
 enum AnswerFeedbackAction { retry, next }
 
 /// Reviewed display context captured with the learner's immutable submission.
 /// It is presentation-only and never becomes evidence or a persisted score.
 final class AnswerFeedbackContext {
-  const AnswerFeedbackContext({required this.canonicalCorrectAnswer});
+  const AnswerFeedbackContext({
+    required this.canonicalCorrectAnswer,
+    this.bookmarkIdentity,
+  });
 
   final String canonicalCorrectAnswer;
+  final ContentIdentity? bookmarkIdentity;
 
   /// Produces the immutable display value that is safe to retain with a
   /// pending submission before any evidence write begins.
@@ -20,7 +25,22 @@ final class AnswerFeedbackContext {
         'must not be blank',
       );
     }
-    return AnswerFeedbackContext(canonicalCorrectAnswer: correctAnswer);
+    final identity = bookmarkIdentity;
+    if (identity != null &&
+        (identity.id.isEmpty ||
+            identity.id != identity.id.trim() ||
+            identity.id.runes.length > 256 ||
+            identity.revision <= 0)) {
+      throw ArgumentError.value(
+        identity,
+        'bookmarkIdentity',
+        'must contain canonical nonblank id and positive revision',
+      );
+    }
+    return AnswerFeedbackContext(
+      canonicalCorrectAnswer: correctAnswer,
+      bookmarkIdentity: identity,
+    );
   }
 }
 
@@ -34,16 +54,19 @@ final class AnswerFeedback {
     return AnswerFeedback._(
       isCorrect: result.isCorrect,
       canonicalCorrectAnswer: frozenContext.canonicalCorrectAnswer,
+      bookmarkIdentity: frozenContext.bookmarkIdentity,
     );
   }
 
   const AnswerFeedback._({
     required this.isCorrect,
     required this.canonicalCorrectAnswer,
+    required this.bookmarkIdentity,
   });
 
   final bool isCorrect;
   final String canonicalCorrectAnswer;
+  final ContentIdentity? bookmarkIdentity;
 
   AnswerFeedbackAction get nextAction =>
       isCorrect ? AnswerFeedbackAction.next : AnswerFeedbackAction.retry;

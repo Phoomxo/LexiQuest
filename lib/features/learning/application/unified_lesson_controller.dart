@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
@@ -194,6 +195,16 @@ final class UnifiedLessonController extends ChangeNotifier {
       }
       submission.support.evidenceContext.validate();
       final feedbackContext = submission.response.feedbackContext.normalized();
+      final bookmarkIdentity = feedbackContext.bookmarkIdentity;
+      if (bookmarkIdentity != null &&
+          (bookmarkIdentity.type != ContentType.lexicalMetadata ||
+              bookmarkIdentity.id != response.wordId)) {
+        throw ArgumentError.value(
+          bookmarkIdentity,
+          'feedbackContext.bookmarkIdentity',
+          'must be the submitted lexical content identity',
+        );
+      }
       final intentFingerprint = _SubmissionIntentFingerprint.from(
         submission,
         feedbackContext: feedbackContext,
@@ -530,6 +541,9 @@ final class _SubmissionFingerprint {
         'attemptNumber': response.attemptNumber,
         'providerProvenance': response.providerProvenance,
         'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
+        'bookmarkIdentity': _bookmarkIdentityJson(
+          feedbackContext.bookmarkIdentity,
+        ),
         'evidenceContext': evidenceContext.toJson(),
       }),
     );
@@ -565,6 +579,9 @@ final class _SubmissionIntentFingerprint {
         'attemptNumber': response.attemptNumber,
         'providerProvenance': response.providerProvenance,
         'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
+        'bookmarkIdentity': _bookmarkIdentityJson(
+          feedbackContext.bookmarkIdentity,
+        ),
         'declaredEvidenceContext': submission.support.evidenceContext.toJson(),
       }),
     );
@@ -579,3 +596,12 @@ final class _SubmissionIntentFingerprint {
   @override
   int get hashCode => value.hashCode;
 }
+
+Map<String, Object?>? _bookmarkIdentityJson(ContentIdentity? identity) =>
+    identity == null
+    ? null
+    : <String, Object?>{
+        'type': identity.type.name,
+        'id': identity.id,
+        'revision': identity.revision,
+      };

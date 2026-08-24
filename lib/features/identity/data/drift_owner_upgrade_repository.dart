@@ -170,6 +170,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          conflicts += await _mergeSavedLearningItems(
+            source.id,
+            target.id,
+            upgradedAt,
+          );
           await _mergeAssessmentRuns(source.id, target.id);
           await _mergeExperimentAssignments(source.id, target.id);
           conflicts += await _discardNaturalKeyDuplicates(
@@ -503,6 +508,147 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         variables: [Variable<String>(guestId)],
         updates: {_database.vocabularyWords},
       );
+    }
+    return collisions.length;
+  }
+
+  Future<int> _mergeSavedLearningItems(
+    String sourceId,
+    String targetId,
+    int resolvedAt,
+  ) async {
+    final collisions = await _database
+        .customSelect(
+          '''
+      SELECT guest.id AS guest_id, target.id AS target_id,
+             guest.saved_at_utc_ms AS guest_saved_at,
+             guest.updated_at_utc_ms AS guest_updated_at,
+             guest.local_revision AS guest_local_revision,
+             guest.cloud_revision AS guest_cloud_revision,
+             guest.is_deleted AS guest_is_deleted,
+             target.saved_at_utc_ms AS target_saved_at,
+             target.updated_at_utc_ms AS target_updated_at,
+             target.local_revision AS target_local_revision,
+             target.cloud_revision AS target_cloud_revision,
+             target.is_deleted AS target_is_deleted
+      FROM saved_learning_items AS guest
+      JOIN saved_learning_items AS target
+        ON target.owner_id = ?
+       AND target.content_type = guest.content_type
+       AND target.content_id = guest.content_id
+       AND target.content_revision = guest.content_revision
+      WHERE guest.owner_id = ?
+      ORDER BY guest.id
+      ''',
+          variables: [Variable<String>(targetId), Variable<String>(sourceId)],
+          readsFrom: {_database.savedLearningItems},
+        )
+        .get();
+    for (final collision in collisions) {
+      final guestId = collision.read<String>('guest_id');
+      final targetItemId = collision.read<String>('target_id');
+      final guestUpdated = collision.read<int>('guest_updated_at');
+      final targetUpdated = collision.read<int>('target_updated_at');
+      final guestRevision = collision.read<int>('guest_local_revision');
+      final targetRevision = collision.read<int>('target_local_revision');
+      final guestDeleted = collision.read<bool>('guest_is_deleted');
+      final targetDeleted = collision.read<bool>('target_is_deleted');
+      final guestWins =
+          guestUpdated > targetUpdated ||
+          (guestUpdated == targetUpdated && guestRevision > targetRevision) ||
+          (guestUpdated == targetUpdated &&
+              guestRevision == targetRevision &&
+              guestDeleted &&
+              !targetDeleted);
+
+      if (guestWins) {
+        final targetCloudRevision = collision.read<int>(
+          'target_cloud_revision',
+        );
+        final mergedRevision =
+            <int>[
+              guestRevision,
+              targetRevision,
+              targetCloudRevision,
+            ].reduce((left, right) => left > right ? left : right) +
+            1;
+        await (_database.update(
+          _database.savedLearningItems,
+        )..where((row) => row.id.equals(targetItemId))).write(
+          db.SavedLearningItemsCompanion(
+            updatedAtUtcMs: Value(guestUpdated),
+            localRevision: Value(mergedRevision),
+            isDeleted: Value(guestDeleted),
+          ),
+        );
+        await (_database.update(_database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(targetId) &
+                  row.entityType.equals('savedLearningItem') &
+                  row.entityId.equals(targetItemId) &
+                  row.state.isNotIn(const <String>[
+                    'acknowledged',
+                    'superseded',
+                    'conflictResolved',
+                  ]),
+            ))
+            .write(
+              const db.OutboxOperationsCompanion(
+                state: Value('superseded'),
+                nextAttemptAtUtcMs: Value(null),
+                leaseToken: Value(null),
+                leaseExpiresAtUtcMs: Value(null),
+                failureCode: Value('guestUpgradeNewerIntent'),
+              ),
+            );
+        await _database
+            .into(_database.outboxOperations)
+            .insert(
+              db.OutboxOperationsCompanion.insert(
+                operationId: 'savedLearningItem:$targetItemId:$mergedRevision',
+                ownerId: targetId,
+                entityType: 'savedLearningItem',
+                entityId: targetItemId,
+                operationKind: guestDeleted ? 'delete' : 'upsert',
+                baseRevision: Value(targetCloudRevision),
+                createdAtUtcMs: resolvedAt,
+              ),
+              mode: InsertMode.insertOrIgnore,
+            );
+      }
+
+      await _retireDuplicateOutbox(sourceId, 'savedLearningItem', guestId);
+      await _remapEntityReferences(
+        sourceId,
+        'savedLearningItem',
+        guestId,
+        targetItemId,
+      );
+      await _recordMergeConflict(
+        ownerId: targetId,
+        entityType: 'savedLearningItem',
+        entityId: targetItemId,
+        localSnapshot: <String, Object?>{
+          'id': guestId,
+          'updatedAtUtcMs': guestUpdated,
+          'localRevision': guestRevision,
+          'isDeleted': guestDeleted,
+        },
+        targetSnapshot: <String, Object?>{
+          'id': targetItemId,
+          'updatedAtUtcMs': targetUpdated,
+          'localRevision': targetRevision,
+          'isDeleted': targetDeleted,
+        },
+        resolutionPolicy: _GuestUpgradeConflictPolicy.latestSavedIntent,
+        outcome: guestWins
+            ? _GuestUpgradeConflictOutcome.guestRetained
+            : _GuestUpgradeConflictOutcome.targetRetained,
+        resolvedAt: resolvedAt,
+      );
+      await (_database.delete(
+        _database.savedLearningItems,
+      )..where((row) => row.id.equals(guestId))).go();
     }
     return collisions.length;
   }
@@ -2419,6 +2565,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       ),
     );
     await (_database.update(
+      _database.savedLearningItems,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.SavedLearningItemsCompanion(
+        cloudRevision: Value(0),
+        lastAcknowledgedAtUtcMs: Value(null),
+        serverUpdatedAtUtcMs: Value(null),
+      ),
+    );
+    await (_database.update(
       _database.syncCheckpoints,
     )..where((row) => row.ownerId.equals(ownerId))).write(
       const db.SyncCheckpointsCompanion(
@@ -2452,6 +2607,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       _RehomeSpecification(
         table: 'achievement_unlocks',
         entityType: 'achievementUnlock',
+      ),
+      _RehomeSpecification(
+        table: 'saved_learning_items',
+        entityType: 'savedLearningItem',
+        hasSoftDelete: true,
       ),
     ]) {
       final rows = await _database
@@ -2787,6 +2947,7 @@ abstract final class _GuestUpgradeConflictPolicy {
   static const rankedQuest = 'guestUpgradeRankedQuest';
   static const rankedQuestObjective = 'guestUpgradeRankedQuestObjective';
   static const preserveBoth = 'guestUpgradePreserveBoth';
+  static const latestSavedIntent = 'guestUpgradeLatestSavedIntent';
 }
 
 abstract final class _GuestUpgradeConflictOutcome {

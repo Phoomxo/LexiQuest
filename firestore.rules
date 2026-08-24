@@ -136,6 +136,49 @@ service cloud.firestore {
         && payload.updatedAtUtcMs >= payload.createdAtUtcMs;
     }
 
+    function fieldSavedLearningItemPayloadOk() {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'contentType', 'contentId', 'contentRevision', 'savedAtUtcMs',
+          'updatedAtUtcMs', 'isDeleted'
+        ])
+        && payload.contentType in [
+             'learningPack', 'lexicalMetadata', 'assessmentForm',
+             'offlineArtifact'
+           ]
+        && payload.contentId is string
+        && payload.contentId.size() > 0
+        && payload.contentId.size() <= 256
+        && payload.contentId.matches('^\\S(.*\\S)?$')
+        && payload.contentRevision is int
+        && payload.contentRevision > 0
+        && payload.savedAtUtcMs is int
+        && payload.savedAtUtcMs >= 0
+        && payload.updatedAtUtcMs is int
+        && payload.updatedAtUtcMs >= payload.savedAtUtcMs
+        && payload.updatedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && payload.isDeleted is bool
+        && payload.isDeleted == request.resource.data.isDeleted;
+    }
+
+    function fieldSavedLearningItemIdentityStable() {
+      let before = resource.data.payload;
+      let after = request.resource.data.payload;
+      return after.contentType == before.contentType
+        && after.contentId == before.contentId
+        && after.contentRevision == before.contentRevision
+        && after.savedAtUtcMs == before.savedAtUtcMs;
+    }
+
+    function fieldSavedLearningItemCanonicalId(itemId) {
+      let payload = request.resource.data.payload;
+      let identity = payload.contentType + '|' + payload.contentId + '|'
+        + string(payload.contentRevision);
+      return itemId == 'saved-learning-item:'
+        + hashing.sha256(identity.toUtf8()).toHexString().lower();
+    }
+
     function fieldWordCategoryExists(uid) {
       return existsAfter(
         /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
@@ -562,7 +605,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion in [15, 16]
+        && payload.databaseSchemaVersion in [15, 16, 17]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && payload.featureContractRevision == '1.0.0'
@@ -689,7 +732,7 @@ service cloud.firestore {
         && request.resource.data.entityType in [
              'category', 'word', 'attempt', 'readingEvent',
              'rewardTransaction', 'srsState', 'achievementUnlock',
-             'experimentAssignment', 'assessmentRun'
+             'experimentAssignment', 'assessmentRun', 'savedLearningItem'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -722,6 +765,21 @@ service cloud.firestore {
       let entityId = request.resource.data.entityId;
       let beforePath =
         /databases/$(database)/documents/field_users/$(uid)/words/$(entityId);
+      let entity = getAfter(beforePath).data;
+      return ((!exists(beforePath)
+               && request.resource.data.baseRevision == 0)
+              || (exists(beforePath)
+                  && get(beforePath).data.revision
+                     == request.resource.data.baseRevision))
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == request.resource.data.resultingRevision;
+    }
+
+    function fieldOperationMatchesSavedLearningItem(uid) {
+      let entityId = request.resource.data.entityId;
+      let beforePath =
+        /databases/$(database)/documents/field_users/$(uid)/saved_learning_items/$(entityId);
       let entity = getAfter(beforePath).data;
       return ((!exists(beforePath)
                && request.resource.data.baseRevision == 0)
@@ -880,17 +938,19 @@ service cloud.firestore {
             ? fieldOperationMatchesCategory(uid)
             : entityType == 'word'
               ? fieldOperationMatchesWord(uid)
-              : entityType == 'attempt'
-                ? fieldOperationMatchesAttempt(uid)
-                : entityType == 'readingEvent'
-                  ? fieldOperationMatchesReadingEvent(uid)
-                  : entityType == 'rewardTransaction'
-                    ? fieldOperationMatchesRewardTransaction(uid)
-                    : entityType == 'srsState'
-                      ? fieldOperationMatchesSrsState(uid)
-                      : entityType == 'achievementUnlock'
-                        ? fieldOperationMatchesAchievementUnlock(uid)
-                        : false;
+              : entityType == 'savedLearningItem'
+                ? fieldOperationMatchesSavedLearningItem(uid)
+                : entityType == 'attempt'
+                  ? fieldOperationMatchesAttempt(uid)
+                  : entityType == 'readingEvent'
+                    ? fieldOperationMatchesReadingEvent(uid)
+                    : entityType == 'rewardTransaction'
+                      ? fieldOperationMatchesRewardTransaction(uid)
+                      : entityType == 'srsState'
+                        ? fieldOperationMatchesSrsState(uid)
+                        : entityType == 'achievementUnlock'
+                          ? fieldOperationMatchesAchievementUnlock(uid)
+                          : false;
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
@@ -1104,6 +1164,22 @@ service cloud.firestore {
           && fieldEntityEnvelopeOk(runId)
           && fieldAssessmentRunTerminalUpdateOk(runId)
           && fieldAssessmentRunOperationLinkOk(uid, runId);
+        allow delete: if false;
+      }
+
+      match /saved_learning_items/{itemId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(itemId)
+          && fieldSavedLearningItemPayloadOk()
+          && fieldSavedLearningItemCanonicalId(itemId)
+          && fieldOperationLinksEntity(uid, 'savedLearningItem', itemId);
+        allow update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(itemId)
+          && fieldSavedLearningItemPayloadOk()
+          && fieldSavedLearningItemCanonicalId(itemId)
+          && fieldSavedLearningItemIdentityStable()
+          && fieldOperationLinksEntity(uid, 'savedLearningItem', itemId);
         allow delete: if false;
       }
 

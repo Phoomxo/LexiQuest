@@ -15,11 +15,14 @@ final class FirestoreSyncGateway implements SyncGateway {
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
     UtcClock? utcClock,
+    SavedLearningItemSyncRollout savedLearningItemRollout =
+        const SavedLearningItemSyncRollout.off(),
   }) => FirestoreSyncGateway._(
     firestore,
     auth,
     utcClock ?? _systemUtcClock,
     const FirestoreSyncPreflight(),
+    savedLearningItemRollout,
   );
 
   FirestoreSyncGateway._(
@@ -27,17 +30,23 @@ final class FirestoreSyncGateway implements SyncGateway {
     this._auth,
     this._utcClock,
     this._preflight,
+    this._savedLearningItemRollout,
   );
 
   final FirebaseFirestore _firestore;
   final FirebaseAuth _auth;
   final UtcClock _utcClock;
   final FirestoreSyncPreflight _preflight;
+  final SavedLearningItemSyncRollout _savedLearningItemRollout;
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
     if (_auth.currentUser?.uid != mutation.firebaseUid) {
       throw const UnauthenticatedSyncFailure();
+    }
+    if (mutation.collection == SyncCollection.savedLearningItems &&
+        !_savedLearningItemRollout.allowsClaims) {
+      throw const PermissionDeniedSyncFailure();
     }
 
     final user = _firestore.collection('field_users').doc(mutation.firebaseUid);
@@ -139,6 +148,10 @@ final class FirestoreSyncGateway implements SyncGateway {
     }
     if (limit < 1 || limit > 100) {
       throw const InvalidSyncPayloadFailure();
+    }
+    if (collection == SyncCollection.savedLearningItems &&
+        !_savedLearningItemRollout.allowsClaims) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
     }
 
     Query<Map<String, dynamic>> query = _firestore
@@ -287,6 +300,20 @@ final class FirestoreSyncPreflight {
         clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
       );
       _requireCanonicalAssessmentAssignmentId(runPayload);
+    } else if (collection == SyncCollection.savedLearningItems) {
+      final savedPayload = payload;
+      if (savedPayload == null ||
+          entityId == null ||
+          isDeleted == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      SavedLearningItemSyncPayloadContract.requireCanonical(
+        payload: savedPayload,
+        isDeleted: isDeleted,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
+        expectedEntityId: entityId,
+      );
     }
     return beginTransaction();
   }
@@ -390,6 +417,14 @@ final class FirestoreSyncCodec {
           clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
         );
         _requireCanonicalAssessmentAssignmentId(canonicalPayload);
+      } else if (collection == SyncCollection.savedLearningItems) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        SavedLearningItemSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+          expectedEntityId: entityId,
+        );
       }
       return SyncEntity(
         collection: collection,
@@ -416,7 +451,8 @@ final class FirestoreSyncCodec {
     required PushMutation expectedMutation,
   }) {
     if (expectedMutation.collection == SyncCollection.experimentAssignments ||
-        expectedMutation.collection == SyncCollection.assessmentRuns) {
+        expectedMutation.collection == SyncCollection.assessmentRuns ||
+        expectedMutation.collection == SyncCollection.savedLearningItems) {
       _requireExactKeys(data, _operationEnvelopeKeys);
     }
     if (_requiredInt(data, 'schemaVersion') !=
@@ -478,6 +514,19 @@ final class FirestoreSyncCodec {
             mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
       );
       _requireCanonicalAssessmentAssignmentId(mutation.payload);
+      return;
+    }
+    if (mutation.collection == SyncCollection.savedLearningItems) {
+      if (mutation.payloadVersion != 1) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      SavedLearningItemSyncPayloadContract.requireCanonical(
+        payload: mutation.payload,
+        isDeleted: mutation.operationKind == SyncOperationKind.delete,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        expectedEntityId: mutation.entityId,
+      );
       return;
     }
     if (mutation.collection != SyncCollection.experimentAssignments) return;

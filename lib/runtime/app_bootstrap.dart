@@ -75,6 +75,8 @@ import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
+import '../features/review/application/learner_intent_use_cases.dart';
+import '../features/review/data/drift_learner_intent_repository.dart';
 import '../features/rewards/domain/economy_transaction_policy.dart';
 import '../features/rewards/domain/reward_models.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
@@ -570,6 +572,18 @@ final class AppBootstrap {
       }
     }
 
+    final learnerIntents = DriftLearnerIntentRepository(
+      database,
+      owners: localOwners,
+      nowUtc: () => DateTime.now().toUtc(),
+      onLocalMutation: () async => notifyLocalMutation(),
+    );
+    final bookmarkLearningItem = LearnerIntentUseCases(
+      repository: learnerIntents,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    ).bookmark;
+
     GuestSessionService exposedGuestSession = guestSessionService;
     if (bindGuestOwnership) {
       final ownerBindingGuestSession = OwnerBindingGuestSessionService(
@@ -981,6 +995,8 @@ final class AppBootstrap {
       studyPlanning: studyPlanning,
       progress: progress,
       rewards: rewards,
+      learnerIntents: learnerIntents,
+      bookmarkLearningItem: bookmarkLearningItem,
       exports: exports,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,

@@ -67,6 +67,7 @@ final class SyncEngine {
   static const List<SyncCollection> _pullOrder = <SyncCollection>[
     SyncCollection.categories,
     SyncCollection.words,
+    SyncCollection.savedLearningItems,
     SyncCollection.experimentAssignments,
     SyncCollection.assessmentRuns,
     SyncCollection.attempts,

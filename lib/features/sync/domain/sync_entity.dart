@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
@@ -13,6 +15,7 @@ const String vocabularyWordV2RulesRevision = 'vocabulary-word-v2-r1';
 const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
 const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
+const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -38,6 +41,9 @@ enum SyncCollection {
   /// Revisioned assessment-run audit state. Controlled responses remain in
   /// canonical AnswerAttempts and are never duplicated in this collection.
   assessmentRuns,
+
+  /// Mutable bookmark intent pinned to an immutable content revision.
+  savedLearningItems,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -51,6 +57,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.achievementUnlocks => 'achievement_unlocks',
     SyncCollection.experimentAssignments => 'experiment_assignments',
     SyncCollection.assessmentRuns => 'assessment_runs',
+    SyncCollection.savedLearningItems => 'saved_learning_items',
   };
 
   String get entityType => switch (this) {
@@ -63,6 +70,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.achievementUnlocks => 'achievementUnlock',
     SyncCollection.experimentAssignments => 'experimentAssignment',
     SyncCollection.assessmentRuns => 'assessmentRun',
+    SyncCollection.savedLearningItems => 'savedLearningItem',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -74,6 +82,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.achievementUnlocks ||
     SyncCollection.experimentAssignments ||
     SyncCollection.assessmentRuns => const <int>{1},
+    SyncCollection.savedLearningItems => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -115,7 +124,138 @@ final class SyncPayloadRollout {
     SyncCollection.achievementUnlocks ||
     SyncCollection.experimentAssignments ||
     SyncCollection.assessmentRuns => collection.defaultWritePayloadVersion,
+    SyncCollection.savedLearningItems => collection.defaultWritePayloadVersion,
   };
+}
+
+/// Deployment gate for the separately deployed saved-item rules contract.
+final class SavedLearningItemSyncRollout {
+  const SavedLearningItemSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '';
+
+  const SavedLearningItemSyncRollout.v1({required this.deployedRulesRevision})
+    : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+
+  bool get allowsClaims =>
+      enabled && deployedRulesRevision == savedLearningItemV1RulesRevision;
+}
+
+abstract final class SavedLearningItemSyncPayloadContract {
+  static const Set<String> keys = <String>{
+    'contentType',
+    'contentId',
+    'contentRevision',
+    'savedAtUtcMs',
+    'updatedAtUtcMs',
+    'isDeleted',
+  };
+
+  static const Set<String> contentTypes = <String>{
+    'learningPack',
+    'lexicalMetadata',
+    'assessmentForm',
+    'offlineArtifact',
+  };
+
+  static String canonicalEntityId({
+    required String contentType,
+    required String contentId,
+    required int contentRevision,
+  }) {
+    final identityBytes = utf8.encode(
+      '$contentType|$contentId|$contentRevision',
+    );
+    return 'saved-learning-item:${sha256.convert(identityBytes)}';
+  }
+
+  static String canonicalOperationId({
+    required String localOperationId,
+    required String contentType,
+    required String contentId,
+    required int contentRevision,
+    required SyncOperationKind operationKind,
+    required int baseRevision,
+    required int localRevision,
+    required int savedAtUtcMs,
+    required int updatedAtUtcMs,
+  }) {
+    final canonicalLocalOperationId = localOperationId.trim();
+    if (canonicalLocalOperationId.isEmpty ||
+        baseRevision < 0 ||
+        localRevision <= baseRevision ||
+        savedAtUtcMs < 0 ||
+        updatedAtUtcMs < savedAtUtcMs) {
+      throw ArgumentError('saved operation identity must be canonical');
+    }
+    final exactMutationIdentity = jsonEncode(<Object?>[
+      1,
+      canonicalLocalOperationId,
+      canonicalEntityId(
+        contentType: contentType,
+        contentId: contentId,
+        contentRevision: contentRevision,
+      ),
+      operationKind.name,
+      baseRevision,
+      localRevision,
+      savedAtUtcMs,
+      updatedAtUtcMs,
+    ]);
+    return 'saved-learning-operation:'
+        '${sha256.convert(utf8.encode(exactMutationIdentity))}';
+  }
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+    String? expectedEntityId,
+  }) {
+    try {
+      final contentType = payload['contentType'];
+      final contentId = payload['contentId'];
+      final contentRevision = payload['contentRevision'];
+      final savedAtUtcMs = payload['savedAtUtcMs'];
+      final updatedAtUtcMs = payload['updatedAtUtcMs'];
+      final payloadIsDeleted = payload['isDeleted'];
+      if (payload.length != keys.length ||
+          !payload.keys.every(keys.contains) ||
+          contentType is! String ||
+          !contentTypes.contains(contentType) ||
+          contentId is! String ||
+          contentId.isEmpty ||
+          contentId != contentId.trim() ||
+          contentId.runes.length > 256 ||
+          contentRevision is! int ||
+          contentRevision <= 0 ||
+          savedAtUtcMs is! int ||
+          savedAtUtcMs < 0 ||
+          updatedAtUtcMs is! int ||
+          updatedAtUtcMs < savedAtUtcMs ||
+          updatedAtUtcMs != clientUpdatedAtUtcMs ||
+          payloadIsDeleted is! bool ||
+          payloadIsDeleted != isDeleted) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      if (expectedEntityId != null &&
+          expectedEntityId !=
+              canonicalEntityId(
+                contentType: contentType,
+                contentId: contentId,
+                contentRevision: contentRevision,
+              )) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
 }
 
 abstract final class VocabularyWordSyncPayloadContract {
@@ -511,7 +651,7 @@ abstract final class AssessmentRunSyncPayloadContract {
           !const <String>{'pre', 'post'}.contains(phase) ||
           experimentVersion <= 0 ||
           consentVersion <= 0 ||
-          !const <int>{15, 16}.contains(databaseSchemaVersion) ||
+          !const <int>{15, 16, 17}.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
           !supportedFeatureContractIdentities.any(

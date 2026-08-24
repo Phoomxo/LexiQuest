@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
 
@@ -79,6 +80,39 @@ void main() {
       );
     },
   );
+
+  testWidgets('bookmark action receives the pinned lexical content identity', (
+    tester,
+  ) async {
+    ContentIdentity? bookmarked;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Scaffold(
+          body: RichLexicalCard(
+            word: _word(),
+            bookmarkIdentity: const ContentIdentity(
+              type: ContentType.lexicalMetadata,
+              id: 'word:station',
+              revision: 1,
+            ),
+            onBookmark: (identity) async => bookmarked = identity,
+          ),
+        ),
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Save for review'));
+    await tester.pump();
+
+    expect(
+      bookmarked,
+      const ContentIdentity(
+        type: ContentType.lexicalMetadata,
+        id: 'word:station',
+        revision: 1,
+      ),
+    );
+  });
 
   testWidgets(
     'supports 200 percent text without overflow and optional audio callback',

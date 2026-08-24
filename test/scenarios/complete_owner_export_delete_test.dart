@@ -24,7 +24,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v16 lifecycle classifies owner and non-owner tables exactly once',
+    'current v17 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -45,7 +45,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(37),
+        hasLength(39),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -57,7 +57,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(27),
+        hasLength(29),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -200,6 +200,40 @@ void main() {
         'completedAtUtc',
         'abandonedAtUtc',
         'controlledResponses',
+      });
+      final savedItems = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'saved_learning_items',
+      );
+      expect(savedItems.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        savedItems.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(savedItems.allowedExportFields.toSet(), {
+        'recordCount',
+        'contentType',
+        'contentId',
+        'contentRevision',
+        'savedAtUtc',
+        'updatedAtUtc',
+        'isSaved',
+      });
+      final qualityReports = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'content_quality_reports',
+      );
+      expect(qualityReports.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        qualityReports.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(qualityReports.allowedExportFields.toSet(), {
+        'recordCount',
+        'contentType',
+        'contentId',
+        'contentRevision',
+        'reasonCode',
+        'comment',
+        'submittedAtUtc',
       });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
@@ -582,7 +616,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(37));
+      expect(archiveTables, hasLength(39));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -615,6 +649,8 @@ void main() {
         'srsStates',
         'streakState',
         'learningDays',
+        'savedLearningItems',
+        'contentQualityReports',
       ]) {
         final descriptor = ownerLifecycleManifest.singleWhere(
           (entry) => entry.alias == alias,
@@ -853,11 +889,11 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 30);
+      expect(deleted, 32);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v15 retains exactly one immutable assignment and its assessment run
-      // for owner-b after owner-a is erased.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 30);
+      // v17 retains exactly one row for every direct-owner lifecycle entry,
+      // including one immutable assignment and its assessment run.
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 32);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
@@ -1139,6 +1175,20 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     "('a:speech', 'owner-a', 'a:session', 'a:word', 'meaning', 'station', "
     "'raw-participant-SENTINEL-A', 'en-US', 'fake-stt', 'levenshtein', "
     '100, 1, 0.95, 1, 20, 500)',
+  );
+  await database.customInsert(
+    'INSERT INTO saved_learning_items '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision, '
+    'is_deleted) VALUES '
+    "('a:saved', 'owner-a', 'lexicalMetadata', 'a:word', 1, 20, 20, 1, 0, 0)",
+  );
+  await database.customInsert(
+    'INSERT INTO content_quality_reports '
+    '(id, owner_id, content_type, content_id, content_revision, reason_code, '
+    'comment, submitted_at_utc_ms) VALUES '
+    "('a:report', 'owner-a', 'lexicalMetadata', 'a:word', 1, "
+    "'incorrectMeaning', 'Needs review', 20)",
   );
   await database.customInsert(
     'INSERT INTO runtime_flags '

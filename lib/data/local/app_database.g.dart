@@ -24102,6 +24102,1316 @@ class SpeechEvidenceCompanion extends UpdateCompanion<SpeechEvidenceData> {
   }
 }
 
+class $SavedLearningItemsTable extends SavedLearningItems
+    with TableInfo<$SavedLearningItemsTable, SavedLearningItemRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SavedLearningItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
+    'contentType',
+  );
+  @override
+  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
+    'content_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentIdMeta = const VerificationMeta(
+    'contentId',
+  );
+  @override
+  late final GeneratedColumn<String> contentId = GeneratedColumn<String>(
+    'content_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> contentRevision = GeneratedColumn<int>(
+    'content_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _savedAtUtcMsMeta = const VerificationMeta(
+    'savedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> savedAtUtcMs = GeneratedColumn<int>(
+    'saved_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    contentType,
+    contentId,
+    contentRevision,
+    savedAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'saved_learning_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SavedLearningItemRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('content_type')) {
+      context.handle(
+        _contentTypeMeta,
+        contentType.isAcceptableOrUnknown(
+          data['content_type']!,
+          _contentTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentTypeMeta);
+    }
+    if (data.containsKey('content_id')) {
+      context.handle(
+        _contentIdMeta,
+        contentId.isAcceptableOrUnknown(data['content_id']!, _contentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentIdMeta);
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentRevisionMeta);
+    }
+    if (data.containsKey('saved_at_utc_ms')) {
+      context.handle(
+        _savedAtUtcMsMeta,
+        savedAtUtcMs.isAcceptableOrUnknown(
+          data['saved_at_utc_ms']!,
+          _savedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_savedAtUtcMsMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {ownerId, contentType, contentId, contentRevision},
+  ];
+  @override
+  SavedLearningItemRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SavedLearningItemRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      contentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_type'],
+      )!,
+      contentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_id'],
+      )!,
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}content_revision'],
+      )!,
+      savedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}saved_at_utc_ms'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+    );
+  }
+
+  @override
+  $SavedLearningItemsTable createAlias(String alias) {
+    return $SavedLearningItemsTable(attachedDatabase, alias);
+  }
+}
+
+class SavedLearningItemRow extends DataClass
+    implements Insertable<SavedLearningItemRow> {
+  final String id;
+  final String ownerId;
+  final String contentType;
+  final String contentId;
+  final int contentRevision;
+  final int savedAtUtcMs;
+  final int updatedAtUtcMs;
+  final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
+  final bool isDeleted;
+  const SavedLearningItemRow({
+    required this.id,
+    required this.ownerId,
+    required this.contentType,
+    required this.contentId,
+    required this.contentRevision,
+    required this.savedAtUtcMs,
+    required this.updatedAtUtcMs,
+    required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
+    required this.isDeleted,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['content_type'] = Variable<String>(contentType);
+    map['content_id'] = Variable<String>(contentId);
+    map['content_revision'] = Variable<int>(contentRevision);
+    map['saved_at_utc_ms'] = Variable<int>(savedAtUtcMs);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    return map;
+  }
+
+  SavedLearningItemsCompanion toCompanion(bool nullToAbsent) {
+    return SavedLearningItemsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      contentType: Value(contentType),
+      contentId: Value(contentId),
+      contentRevision: Value(contentRevision),
+      savedAtUtcMs: Value(savedAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
+      isDeleted: Value(isDeleted),
+    );
+  }
+
+  factory SavedLearningItemRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SavedLearningItemRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      contentType: serializer.fromJson<String>(json['contentType']),
+      contentId: serializer.fromJson<String>(json['contentId']),
+      contentRevision: serializer.fromJson<int>(json['contentRevision']),
+      savedAtUtcMs: serializer.fromJson<int>(json['savedAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'contentType': serializer.toJson<String>(contentType),
+      'contentId': serializer.toJson<String>(contentId),
+      'contentRevision': serializer.toJson<int>(contentRevision),
+      'savedAtUtcMs': serializer.toJson<int>(savedAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+    };
+  }
+
+  SavedLearningItemRow copyWith({
+    String? id,
+    String? ownerId,
+    String? contentType,
+    String? contentId,
+    int? contentRevision,
+    int? savedAtUtcMs,
+    int? updatedAtUtcMs,
+    int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+    bool? isDeleted,
+  }) => SavedLearningItemRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    contentType: contentType ?? this.contentType,
+    contentId: contentId ?? this.contentId,
+    contentRevision: contentRevision ?? this.contentRevision,
+    savedAtUtcMs: savedAtUtcMs ?? this.savedAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
+    isDeleted: isDeleted ?? this.isDeleted,
+  );
+  SavedLearningItemRow copyWithCompanion(SavedLearningItemsCompanion data) {
+    return SavedLearningItemRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
+      contentId: data.contentId.present ? data.contentId.value : this.contentId,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      savedAtUtcMs: data.savedAtUtcMs.present
+          ? data.savedAtUtcMs.value
+          : this.savedAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedLearningItemRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('savedAtUtcMs: $savedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    contentType,
+    contentId,
+    contentRevision,
+    savedAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SavedLearningItemRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.contentType == this.contentType &&
+          other.contentId == this.contentId &&
+          other.contentRevision == this.contentRevision &&
+          other.savedAtUtcMs == this.savedAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
+          other.isDeleted == this.isDeleted);
+}
+
+class SavedLearningItemsCompanion
+    extends UpdateCompanion<SavedLearningItemRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> contentType;
+  final Value<String> contentId;
+  final Value<int> contentRevision;
+  final Value<int> savedAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
+  final Value<bool> isDeleted;
+  final Value<int> rowid;
+  const SavedLearningItemsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.contentId = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.savedAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SavedLearningItemsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String contentType,
+    required String contentId,
+    required int contentRevision,
+    required int savedAtUtcMs,
+    required int updatedAtUtcMs,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       contentType = Value(contentType),
+       contentId = Value(contentId),
+       contentRevision = Value(contentRevision),
+       savedAtUtcMs = Value(savedAtUtcMs),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<SavedLearningItemRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? contentType,
+    Expression<String>? contentId,
+    Expression<int>? contentRevision,
+    Expression<int>? savedAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
+    Expression<bool>? isDeleted,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (contentType != null) 'content_type': contentType,
+      if (contentId != null) 'content_id': contentId,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (savedAtUtcMs != null) 'saved_at_utc_ms': savedAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SavedLearningItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? contentType,
+    Value<String>? contentId,
+    Value<int>? contentRevision,
+    Value<int>? savedAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
+    Value<bool>? isDeleted,
+    Value<int>? rowid,
+  }) {
+    return SavedLearningItemsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      contentType: contentType ?? this.contentType,
+      contentId: contentId ?? this.contentId,
+      contentRevision: contentRevision ?? this.contentRevision,
+      savedAtUtcMs: savedAtUtcMs ?? this.savedAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
+      isDeleted: isDeleted ?? this.isDeleted,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (contentType.present) {
+      map['content_type'] = Variable<String>(contentType.value);
+    }
+    if (contentId.present) {
+      map['content_id'] = Variable<String>(contentId.value);
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<int>(contentRevision.value);
+    }
+    if (savedAtUtcMs.present) {
+      map['saved_at_utc_ms'] = Variable<int>(savedAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SavedLearningItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('savedAtUtcMs: $savedAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContentQualityReportsTable extends ContentQualityReports
+    with TableInfo<$ContentQualityReportsTable, ContentQualityReportRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContentQualityReportsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
+    'contentType',
+  );
+  @override
+  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
+    'content_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentIdMeta = const VerificationMeta(
+    'contentId',
+  );
+  @override
+  late final GeneratedColumn<String> contentId = GeneratedColumn<String>(
+    'content_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> contentRevision = GeneratedColumn<int>(
+    'content_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reasonCodeMeta = const VerificationMeta(
+    'reasonCode',
+  );
+  @override
+  late final GeneratedColumn<String> reasonCode = GeneratedColumn<String>(
+    'reason_code',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _commentMeta = const VerificationMeta(
+    'comment',
+  );
+  @override
+  late final GeneratedColumn<String> comment = GeneratedColumn<String>(
+    'comment',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _submittedAtUtcMsMeta = const VerificationMeta(
+    'submittedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> submittedAtUtcMs = GeneratedColumn<int>(
+    'submitted_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    contentType,
+    contentId,
+    contentRevision,
+    reasonCode,
+    comment,
+    submittedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'content_quality_reports';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContentQualityReportRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('content_type')) {
+      context.handle(
+        _contentTypeMeta,
+        contentType.isAcceptableOrUnknown(
+          data['content_type']!,
+          _contentTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentTypeMeta);
+    }
+    if (data.containsKey('content_id')) {
+      context.handle(
+        _contentIdMeta,
+        contentId.isAcceptableOrUnknown(data['content_id']!, _contentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentIdMeta);
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentRevisionMeta);
+    }
+    if (data.containsKey('reason_code')) {
+      context.handle(
+        _reasonCodeMeta,
+        reasonCode.isAcceptableOrUnknown(data['reason_code']!, _reasonCodeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_reasonCodeMeta);
+    }
+    if (data.containsKey('comment')) {
+      context.handle(
+        _commentMeta,
+        comment.isAcceptableOrUnknown(data['comment']!, _commentMeta),
+      );
+    }
+    if (data.containsKey('submitted_at_utc_ms')) {
+      context.handle(
+        _submittedAtUtcMsMeta,
+        submittedAtUtcMs.isAcceptableOrUnknown(
+          data['submitted_at_utc_ms']!,
+          _submittedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_submittedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  ContentQualityReportRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContentQualityReportRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      contentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_type'],
+      )!,
+      contentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_id'],
+      )!,
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}content_revision'],
+      )!,
+      reasonCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}reason_code'],
+      )!,
+      comment: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}comment'],
+      ),
+      submittedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}submitted_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $ContentQualityReportsTable createAlias(String alias) {
+    return $ContentQualityReportsTable(attachedDatabase, alias);
+  }
+}
+
+class ContentQualityReportRow extends DataClass
+    implements Insertable<ContentQualityReportRow> {
+  final String id;
+  final String ownerId;
+  final String contentType;
+  final String contentId;
+  final int contentRevision;
+  final String reasonCode;
+  final String? comment;
+  final int submittedAtUtcMs;
+  const ContentQualityReportRow({
+    required this.id,
+    required this.ownerId,
+    required this.contentType,
+    required this.contentId,
+    required this.contentRevision,
+    required this.reasonCode,
+    this.comment,
+    required this.submittedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['content_type'] = Variable<String>(contentType);
+    map['content_id'] = Variable<String>(contentId);
+    map['content_revision'] = Variable<int>(contentRevision);
+    map['reason_code'] = Variable<String>(reasonCode);
+    if (!nullToAbsent || comment != null) {
+      map['comment'] = Variable<String>(comment);
+    }
+    map['submitted_at_utc_ms'] = Variable<int>(submittedAtUtcMs);
+    return map;
+  }
+
+  ContentQualityReportsCompanion toCompanion(bool nullToAbsent) {
+    return ContentQualityReportsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      contentType: Value(contentType),
+      contentId: Value(contentId),
+      contentRevision: Value(contentRevision),
+      reasonCode: Value(reasonCode),
+      comment: comment == null && nullToAbsent
+          ? const Value.absent()
+          : Value(comment),
+      submittedAtUtcMs: Value(submittedAtUtcMs),
+    );
+  }
+
+  factory ContentQualityReportRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContentQualityReportRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      contentType: serializer.fromJson<String>(json['contentType']),
+      contentId: serializer.fromJson<String>(json['contentId']),
+      contentRevision: serializer.fromJson<int>(json['contentRevision']),
+      reasonCode: serializer.fromJson<String>(json['reasonCode']),
+      comment: serializer.fromJson<String?>(json['comment']),
+      submittedAtUtcMs: serializer.fromJson<int>(json['submittedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'contentType': serializer.toJson<String>(contentType),
+      'contentId': serializer.toJson<String>(contentId),
+      'contentRevision': serializer.toJson<int>(contentRevision),
+      'reasonCode': serializer.toJson<String>(reasonCode),
+      'comment': serializer.toJson<String?>(comment),
+      'submittedAtUtcMs': serializer.toJson<int>(submittedAtUtcMs),
+    };
+  }
+
+  ContentQualityReportRow copyWith({
+    String? id,
+    String? ownerId,
+    String? contentType,
+    String? contentId,
+    int? contentRevision,
+    String? reasonCode,
+    Value<String?> comment = const Value.absent(),
+    int? submittedAtUtcMs,
+  }) => ContentQualityReportRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    contentType: contentType ?? this.contentType,
+    contentId: contentId ?? this.contentId,
+    contentRevision: contentRevision ?? this.contentRevision,
+    reasonCode: reasonCode ?? this.reasonCode,
+    comment: comment.present ? comment.value : this.comment,
+    submittedAtUtcMs: submittedAtUtcMs ?? this.submittedAtUtcMs,
+  );
+  ContentQualityReportRow copyWithCompanion(
+    ContentQualityReportsCompanion data,
+  ) {
+    return ContentQualityReportRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
+      contentId: data.contentId.present ? data.contentId.value : this.contentId,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      reasonCode: data.reasonCode.present
+          ? data.reasonCode.value
+          : this.reasonCode,
+      comment: data.comment.present ? data.comment.value : this.comment,
+      submittedAtUtcMs: data.submittedAtUtcMs.present
+          ? data.submittedAtUtcMs.value
+          : this.submittedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentQualityReportRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('reasonCode: $reasonCode, ')
+          ..write('comment: $comment, ')
+          ..write('submittedAtUtcMs: $submittedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    contentType,
+    contentId,
+    contentRevision,
+    reasonCode,
+    comment,
+    submittedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContentQualityReportRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.contentType == this.contentType &&
+          other.contentId == this.contentId &&
+          other.contentRevision == this.contentRevision &&
+          other.reasonCode == this.reasonCode &&
+          other.comment == this.comment &&
+          other.submittedAtUtcMs == this.submittedAtUtcMs);
+}
+
+class ContentQualityReportsCompanion
+    extends UpdateCompanion<ContentQualityReportRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> contentType;
+  final Value<String> contentId;
+  final Value<int> contentRevision;
+  final Value<String> reasonCode;
+  final Value<String?> comment;
+  final Value<int> submittedAtUtcMs;
+  final Value<int> rowid;
+  const ContentQualityReportsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.contentId = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.reasonCode = const Value.absent(),
+    this.comment = const Value.absent(),
+    this.submittedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContentQualityReportsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String contentType,
+    required String contentId,
+    required int contentRevision,
+    required String reasonCode,
+    this.comment = const Value.absent(),
+    required int submittedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       contentType = Value(contentType),
+       contentId = Value(contentId),
+       contentRevision = Value(contentRevision),
+       reasonCode = Value(reasonCode),
+       submittedAtUtcMs = Value(submittedAtUtcMs);
+  static Insertable<ContentQualityReportRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? contentType,
+    Expression<String>? contentId,
+    Expression<int>? contentRevision,
+    Expression<String>? reasonCode,
+    Expression<String>? comment,
+    Expression<int>? submittedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (contentType != null) 'content_type': contentType,
+      if (contentId != null) 'content_id': contentId,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (reasonCode != null) 'reason_code': reasonCode,
+      if (comment != null) 'comment': comment,
+      if (submittedAtUtcMs != null) 'submitted_at_utc_ms': submittedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContentQualityReportsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? contentType,
+    Value<String>? contentId,
+    Value<int>? contentRevision,
+    Value<String>? reasonCode,
+    Value<String?>? comment,
+    Value<int>? submittedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return ContentQualityReportsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      contentType: contentType ?? this.contentType,
+      contentId: contentId ?? this.contentId,
+      contentRevision: contentRevision ?? this.contentRevision,
+      reasonCode: reasonCode ?? this.reasonCode,
+      comment: comment ?? this.comment,
+      submittedAtUtcMs: submittedAtUtcMs ?? this.submittedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (contentType.present) {
+      map['content_type'] = Variable<String>(contentType.value);
+    }
+    if (contentId.present) {
+      map['content_id'] = Variable<String>(contentId.value);
+    }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<int>(contentRevision.value);
+    }
+    if (reasonCode.present) {
+      map['reason_code'] = Variable<String>(reasonCode.value);
+    }
+    if (comment.present) {
+      map['comment'] = Variable<String>(comment.value);
+    }
+    if (submittedAtUtcMs.present) {
+      map['submitted_at_utc_ms'] = Variable<int>(submittedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentQualityReportsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('reasonCode: $reasonCode, ')
+          ..write('comment: $comment, ')
+          ..write('submittedAtUtcMs: $submittedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -24172,6 +25482,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $AssociativeMemoryStatesTable(this);
   late final $AiUsageEventsTable aiUsageEvents = $AiUsageEventsTable(this);
   late final $SpeechEvidenceTable speechEvidence = $SpeechEvidenceTable(this);
+  late final $SavedLearningItemsTable savedLearningItems =
+      $SavedLearningItemsTable(this);
+  late final $ContentQualityReportsTable contentQualityReports =
+      $ContentQualityReportsTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -24214,6 +25528,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     associativeMemoryStates,
     aiUsageEvents,
     speechEvidence,
+    savedLearningItems,
+    contentQualityReports,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -24824,6 +26140,55 @@ final class $$LocalOwnersTableReferences
     ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
 
     final cache = $_typedResult.readTableOrNull(_speechEvidenceRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SavedLearningItemsTable,
+    List<SavedLearningItemRow>
+  >
+  _savedLearningItemsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.savedLearningItems,
+        aliasName: 'local_owners__id__saved_learning_items__owner_id',
+      );
+
+  $$SavedLearningItemsTableProcessedTableManager get savedLearningItemsRefs {
+    final manager = $$SavedLearningItemsTableTableManager(
+      $_db,
+      $_db.savedLearningItems,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _savedLearningItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ContentQualityReportsTable,
+    List<ContentQualityReportRow>
+  >
+  _contentQualityReportsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.contentQualityReports,
+        aliasName: 'local_owners__id__content_quality_reports__owner_id',
+      );
+
+  $$ContentQualityReportsTableProcessedTableManager
+  get contentQualityReportsRefs {
+    final manager = $$ContentQualityReportsTableTableManager(
+      $_db,
+      $_db.contentQualityReports,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _contentQualityReportsRefsTable($_db),
+    );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -25544,6 +26909,57 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> savedLearningItemsRefs(
+    Expression<bool> Function($$SavedLearningItemsTableFilterComposer f) f,
+  ) {
+    final $$SavedLearningItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.savedLearningItems,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$SavedLearningItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.savedLearningItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contentQualityReportsRefs(
+    Expression<bool> Function($$ContentQualityReportsTableFilterComposer f) f,
+  ) {
+    final $$ContentQualityReportsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.contentQualityReports,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ContentQualityReportsTableFilterComposer(
+                $db: $db,
+                $table: $db.contentQualityReports,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 }
@@ -26308,6 +27724,58 @@ class $$LocalOwnersTableAnnotationComposer
     );
     return f(composer);
   }
+
+  Expression<T> savedLearningItemsRefs<T extends Object>(
+    Expression<T> Function($$SavedLearningItemsTableAnnotationComposer a) f,
+  ) {
+    final $$SavedLearningItemsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.savedLearningItems,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SavedLearningItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.savedLearningItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
+  Expression<T> contentQualityReportsRefs<T extends Object>(
+    Expression<T> Function($$ContentQualityReportsTableAnnotationComposer a) f,
+  ) {
+    final $$ContentQualityReportsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.contentQualityReports,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ContentQualityReportsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.contentQualityReports,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -26351,6 +27819,8 @@ class $$LocalOwnersTableTableManager
             bool associativeMemoryStatesRefs,
             bool aiUsageEventsRefs,
             bool speechEvidenceRefs,
+            bool savedLearningItemsRefs,
+            bool contentQualityReportsRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -26437,6 +27907,8 @@ class $$LocalOwnersTableTableManager
                 associativeMemoryStatesRefs = false,
                 aiUsageEventsRefs = false,
                 speechEvidenceRefs = false,
+                savedLearningItemsRefs = false,
+                contentQualityReportsRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -26468,6 +27940,8 @@ class $$LocalOwnersTableTableManager
                     if (associativeMemoryStatesRefs) db.associativeMemoryStates,
                     if (aiUsageEventsRefs) db.aiUsageEvents,
                     if (speechEvidenceRefs) db.speechEvidence,
+                    if (savedLearningItemsRefs) db.savedLearningItems,
+                    if (contentQualityReportsRefs) db.contentQualityReports,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -27039,6 +28513,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (savedLearningItemsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          SavedLearningItemRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._savedLearningItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).savedLearningItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contentQualityReportsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          ContentQualityReportRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._contentQualityReportsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contentQualityReportsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -27087,6 +28603,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool associativeMemoryStatesRefs,
         bool aiUsageEventsRefs,
         bool speechEvidenceRefs,
+        bool savedLearningItemsRefs,
+        bool contentQualityReportsRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -45010,6 +46528,892 @@ typedef $$SpeechEvidenceTableProcessedTableManager =
       SpeechEvidenceData,
       PrefetchHooks Function({bool ownerId, bool sessionId, bool wordId})
     >;
+typedef $$SavedLearningItemsTableCreateCompanionBuilder =
+    SavedLearningItemsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String contentType,
+      required String contentId,
+      required int contentRevision,
+      required int savedAtUtcMs,
+      required int updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+typedef $$SavedLearningItemsTableUpdateCompanionBuilder =
+    SavedLearningItemsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> contentType,
+      Value<String> contentId,
+      Value<int> contentRevision,
+      Value<int> savedAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+
+final class $$SavedLearningItemsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SavedLearningItemsTable,
+          SavedLearningItemRow
+        > {
+  $$SavedLearningItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('saved_learning_items__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SavedLearningItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $SavedLearningItemsTable> {
+  $$SavedLearningItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get savedAtUtcMs => $composableBuilder(
+    column: $table.savedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedLearningItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SavedLearningItemsTable> {
+  $$SavedLearningItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get savedAtUtcMs => $composableBuilder(
+    column: $table.savedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedLearningItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SavedLearningItemsTable> {
+  $$SavedLearningItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentId =>
+      $composableBuilder(column: $table.contentId, builder: (column) => column);
+
+  GeneratedColumn<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get savedAtUtcMs => $composableBuilder(
+    column: $table.savedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SavedLearningItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SavedLearningItemsTable,
+          SavedLearningItemRow,
+          $$SavedLearningItemsTableFilterComposer,
+          $$SavedLearningItemsTableOrderingComposer,
+          $$SavedLearningItemsTableAnnotationComposer,
+          $$SavedLearningItemsTableCreateCompanionBuilder,
+          $$SavedLearningItemsTableUpdateCompanionBuilder,
+          (SavedLearningItemRow, $$SavedLearningItemsTableReferences),
+          SavedLearningItemRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$SavedLearningItemsTableTableManager(
+    _$AppDatabase db,
+    $SavedLearningItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SavedLearningItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$SavedLearningItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$SavedLearningItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<String> contentId = const Value.absent(),
+                Value<int> contentRevision = const Value.absent(),
+                Value<int> savedAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SavedLearningItemsCompanion(
+                id: id,
+                ownerId: ownerId,
+                contentType: contentType,
+                contentId: contentId,
+                contentRevision: contentRevision,
+                savedAtUtcMs: savedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String contentType,
+                required String contentId,
+                required int contentRevision,
+                required int savedAtUtcMs,
+                required int updatedAtUtcMs,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SavedLearningItemsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                contentType: contentType,
+                contentId: contentId,
+                contentRevision: contentRevision,
+                savedAtUtcMs: savedAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SavedLearningItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$SavedLearningItemsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$SavedLearningItemsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SavedLearningItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SavedLearningItemsTable,
+      SavedLearningItemRow,
+      $$SavedLearningItemsTableFilterComposer,
+      $$SavedLearningItemsTableOrderingComposer,
+      $$SavedLearningItemsTableAnnotationComposer,
+      $$SavedLearningItemsTableCreateCompanionBuilder,
+      $$SavedLearningItemsTableUpdateCompanionBuilder,
+      (SavedLearningItemRow, $$SavedLearningItemsTableReferences),
+      SavedLearningItemRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
+typedef $$ContentQualityReportsTableCreateCompanionBuilder =
+    ContentQualityReportsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String contentType,
+      required String contentId,
+      required int contentRevision,
+      required String reasonCode,
+      Value<String?> comment,
+      required int submittedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$ContentQualityReportsTableUpdateCompanionBuilder =
+    ContentQualityReportsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> contentType,
+      Value<String> contentId,
+      Value<int> contentRevision,
+      Value<String> reasonCode,
+      Value<String?> comment,
+      Value<int> submittedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$ContentQualityReportsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ContentQualityReportsTable,
+          ContentQualityReportRow
+        > {
+  $$ContentQualityReportsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('content_quality_reports__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContentQualityReportsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContentQualityReportsTable> {
+  $$ContentQualityReportsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reasonCode => $composableBuilder(
+    column: $table.reasonCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get submittedAtUtcMs => $composableBuilder(
+    column: $table.submittedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentQualityReportsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContentQualityReportsTable> {
+  $$ContentQualityReportsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reasonCode => $composableBuilder(
+    column: $table.reasonCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get comment => $composableBuilder(
+    column: $table.comment,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get submittedAtUtcMs => $composableBuilder(
+    column: $table.submittedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentQualityReportsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContentQualityReportsTable> {
+  $$ContentQualityReportsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentId =>
+      $composableBuilder(column: $table.contentId, builder: (column) => column);
+
+  GeneratedColumn<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get reasonCode => $composableBuilder(
+    column: $table.reasonCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get comment =>
+      $composableBuilder(column: $table.comment, builder: (column) => column);
+
+  GeneratedColumn<int> get submittedAtUtcMs => $composableBuilder(
+    column: $table.submittedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentQualityReportsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContentQualityReportsTable,
+          ContentQualityReportRow,
+          $$ContentQualityReportsTableFilterComposer,
+          $$ContentQualityReportsTableOrderingComposer,
+          $$ContentQualityReportsTableAnnotationComposer,
+          $$ContentQualityReportsTableCreateCompanionBuilder,
+          $$ContentQualityReportsTableUpdateCompanionBuilder,
+          (ContentQualityReportRow, $$ContentQualityReportsTableReferences),
+          ContentQualityReportRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$ContentQualityReportsTableTableManager(
+    _$AppDatabase db,
+    $ContentQualityReportsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContentQualityReportsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ContentQualityReportsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ContentQualityReportsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<String> contentId = const Value.absent(),
+                Value<int> contentRevision = const Value.absent(),
+                Value<String> reasonCode = const Value.absent(),
+                Value<String?> comment = const Value.absent(),
+                Value<int> submittedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentQualityReportsCompanion(
+                id: id,
+                ownerId: ownerId,
+                contentType: contentType,
+                contentId: contentId,
+                contentRevision: contentRevision,
+                reasonCode: reasonCode,
+                comment: comment,
+                submittedAtUtcMs: submittedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String contentType,
+                required String contentId,
+                required int contentRevision,
+                required String reasonCode,
+                Value<String?> comment = const Value.absent(),
+                required int submittedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => ContentQualityReportsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                contentType: contentType,
+                contentId: contentId,
+                contentRevision: contentRevision,
+                reasonCode: reasonCode,
+                comment: comment,
+                submittedAtUtcMs: submittedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContentQualityReportsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$ContentQualityReportsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$ContentQualityReportsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContentQualityReportsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContentQualityReportsTable,
+      ContentQualityReportRow,
+      $$ContentQualityReportsTableFilterComposer,
+      $$ContentQualityReportsTableOrderingComposer,
+      $$ContentQualityReportsTableAnnotationComposer,
+      $$ContentQualityReportsTableCreateCompanionBuilder,
+      $$ContentQualityReportsTableUpdateCompanionBuilder,
+      (ContentQualityReportRow, $$ContentQualityReportsTableReferences),
+      ContentQualityReportRow,
+      PrefetchHooks Function({bool ownerId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -45097,4 +47501,8 @@ class $AppDatabaseManager {
       $$AiUsageEventsTableTableManager(_db, _db.aiUsageEvents);
   $$SpeechEvidenceTableTableManager get speechEvidence =>
       $$SpeechEvidenceTableTableManager(_db, _db.speechEvidence);
+  $$SavedLearningItemsTableTableManager get savedLearningItems =>
+      $$SavedLearningItemsTableTableManager(_db, _db.savedLearningItems);
+  $$ContentQualityReportsTableTableManager get contentQualityReports =>
+      $$ContentQualityReportsTableTableManager(_db, _db.contentQualityReports);
 }

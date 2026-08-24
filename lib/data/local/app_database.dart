@@ -13,6 +13,7 @@ import 'tables/motivation_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/research_tables.dart';
+import 'tables/review_tables.dart';
 import 'tables/runtime_tables.dart';
 import 'tables/speech_evidence_tables.dart';
 import 'tables/sync_tables.dart';
@@ -59,10 +60,12 @@ part 'app_database.g.dart';
     AssociativeMemoryStates,
     AiUsageEvents,
     SpeechEvidence,
+    SavedLearningItems,
+    ContentQualityReports,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 16;
+  static const int currentSchemaVersion = 17;
 
   AppDatabase(super.executor);
 
@@ -235,6 +238,14 @@ final class AppDatabase extends _$AppDatabase {
           vocabularyWords,
           vocabularyWords.contentPublicationState,
         );
+      }
+      if (from < 17) {
+        if (!await _tableExists('saved_learning_items')) {
+          await migrator.createTable(savedLearningItems);
+        }
+        if (!await _tableExists('content_quality_reports')) {
+          await migrator.createTable(contentQualityReports);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -468,6 +479,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('speech_evidence')) {
       await migrator.createTable(speechEvidence);
+    }
+    if (!await _tableExists('saved_learning_items')) {
+      await migrator.createTable(savedLearningItems);
+    }
+    if (!await _tableExists('content_quality_reports')) {
+      await migrator.createTable(contentQualityReports);
     }
   }
 

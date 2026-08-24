@@ -76,6 +76,25 @@ void main() {
     expect(artifact.schemaVersion, 1);
   });
 
+  test(
+    'saved intent reader exports pinned revision and tombstone state',
+    () async {
+      final rows = await DriftExportReader(
+        database,
+      ).loadSavedLearningItems('local:owner');
+
+      expect(rows, hasLength(1));
+      expect(rows.single.contentType, 'lexicalMetadata');
+      expect(rows.single.contentId, 'word-1');
+      expect(rows.single.contentRevision, 1);
+      expect(
+        rows.single.savedAtUtc,
+        DateTime.fromMillisecondsSinceEpoch(4, isUtc: true),
+      );
+      expect(rows.single.isSaved, isTrue);
+    },
+  );
+
   test('CSV and Anki neutralize spreadsheet formulas', () async {
     await database.customUpdate(
       "UPDATE vocabulary_words SET spelling = '=2+2', meaning = '@SUM(1,1)' "
@@ -464,7 +483,10 @@ void main() {
       final envelope =
           jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
       final content = envelope['content'] as Map<String, dynamic>;
-      expect(content['tables'], hasLength(currentDatabaseTableInventory));
+      expect(
+        content['tables'],
+        hasLength(currentDatabaseTableInventory.length),
+      );
       expect(content['archiveSchemaVersion'], 1);
       expect(content['algorithmVersion'], 1);
       expect(
@@ -487,6 +509,7 @@ void main() {
       );
       final word = (vocabulary['records'] as List<dynamic>)
           .cast<Map<String, dynamic>>()
+          .where((record) => !record.containsKey('recordCount'))
           .single;
       expect(word['contentRevision'], 1);
       expect(word['contentProvenance'], 'userAuthored');
@@ -948,5 +971,13 @@ Future<void> _seed(AppDatabase database) async {
     "(id, owner_id, document_id, document_revision, last_position, "
     "is_completed, updated_at_utc_ms) "
     "VALUES ('reading-1', 'local:owner', 'doc-1', 1, 5, 0, 3)",
+  );
+  await database.customInsert(
+    'INSERT INTO saved_learning_items '
+    '(id, owner_id, content_type, content_id, content_revision, '
+    'saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision, '
+    'is_deleted) VALUES '
+    "('saved-1', 'local:owner', 'lexicalMetadata', 'word-1', 1, "
+    '4, 4, 1, 0, 0)',
   );
 }

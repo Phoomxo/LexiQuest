@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:crypto/crypto.dart';
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -119,6 +119,7 @@ void main() {
         SyncCollection.achievementUnlocks,
         SyncCollection.experimentAssignments,
         SyncCollection.assessmentRuns,
+        SyncCollection.savedLearningItems,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
@@ -126,6 +127,8 @@ void main() {
         final entityId = switch (collection) {
           SyncCollection.experimentAssignments => _canonicalAssignmentId(),
           SyncCollection.assessmentRuns => 'assessment-run-pre',
+          SyncCollection.savedLearningItems =>
+            _savedLearningItemCloudEntityId(),
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
@@ -140,6 +143,9 @@ void main() {
           SyncCollection.assessmentRuns => _assessmentRunPayload(
             assignmentId: _canonicalAssignmentId(),
             startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
+          SyncCollection.savedLearningItems => _savedLearningItemPayload(
+            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
@@ -171,6 +177,75 @@ void main() {
         expect(decoded.payloadVersion, 1, reason: collection.name);
         expect(decoded.payload, payload, reason: collection.name);
       }
+    });
+
+    test('saved item codec binds exact payload tombstone and timestamp', () {
+      final payload = _savedLearningItemPayload(
+        updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        isDeleted: true,
+      );
+      final mutation = PushMutation(
+        operationId: 'savedLearningItem:saved-1:2',
+        firebaseUid: 'firebase-user-1',
+        collection: SyncCollection.savedLearningItems,
+        entityId: _savedLearningItemCloudEntityId(),
+        operationKind: SyncOperationKind.delete,
+        payloadVersion: 1,
+        baseRevision: 1,
+        localRevision: 2,
+        clientUpdatedAtUtc: clientUpdatedAt,
+        payload: payload,
+      );
+
+      final encoded = FirestoreSyncCodec.encodeEntity(
+        mutation,
+        serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+      );
+      expect(
+        FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.savedLearningItems,
+          documentId: mutation.entityId,
+          data: encoded,
+        ).payload,
+        payload,
+      );
+      expect(
+        () => FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.savedLearningItems,
+          documentId: mutation.entityId,
+          data: <String, Object?>{
+            ...encoded,
+            'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch + 1,
+          },
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(
+        () => FirestoreSyncCodec.encodeEntity(
+          PushMutation(
+            operationId: 'savedLearningItem:noncanonical:2',
+            firebaseUid: 'firebase-user-1',
+            collection: SyncCollection.savedLearningItems,
+            entityId: 'saved-1',
+            operationKind: SyncOperationKind.delete,
+            payloadVersion: 1,
+            baseRevision: 1,
+            localRevision: 2,
+            clientUpdatedAtUtc: clientUpdatedAt,
+            payload: payload,
+          ),
+          serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(
+        () => FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.savedLearningItems,
+          documentId: 'saved-1',
+          data: <String, Object?>{...encoded, 'entityId': 'saved-1'},
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
     });
 
     test('experiment assignment uses one exact v1 wire contract', () {
@@ -825,6 +900,27 @@ void main() {
         expect(transactions, 0);
       },
     );
+
+    test('rejects a noncanonical saved id before a transaction', () async {
+      const preflight = FirestoreSyncPreflight();
+      var transactions = 0;
+
+      await expectLater(
+        preflight.beforeTransaction<void>(
+          collection: SyncCollection.savedLearningItems,
+          payloadVersion: 1,
+          payload: _savedLearningItemPayload(updatedAtUtcMs: 2000),
+          entityId: 'device-local-id',
+          isDeleted: false,
+          clientUpdatedAtUtcMs: 2000,
+          beginTransaction: () async {
+            transactions += 1;
+          },
+        ),
+        throwsA(isA<InvalidSyncPayloadFailure>()),
+      );
+      expect(transactions, 0);
+    });
   });
 
   group('FirestoreSyncErrorMapper', () {
@@ -1108,6 +1204,551 @@ void main() {
         VocabularyWordSyncPayloadContract.payloadV1Keys,
       );
     });
+
+    test(
+      'saved tombstone claims are off by default and coalesce when enabled',
+      () async {
+        await database.customInsert('''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES (
+          'saved-1', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          1000, 2000, 2, 0, 1
+        )
+      ''');
+        await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES
+          ('savedLearningItem:saved-1:1', 'owner-1', 'savedLearningItem',
+           'saved-1', 'upsert', 1, 0, 'pending', 0, 1000),
+          ('savedLearningItem:saved-1:2', 'owner-1', 'savedLearningItem',
+           'saved-1', 'delete', 1, 1, 'pending', 0, 2000)
+      ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 11);
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: 'f20-saved-rollout',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+
+        final offClaims = await DriftSyncStore(database).claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f20-off-lease',
+          ownerGateToken: 'f20-saved-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+        expect(offClaims, isEmpty);
+
+        final enabled = DriftSyncStore(
+          database,
+          savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+            deployedRulesRevision: savedLearningItemV1RulesRevision,
+          ),
+        );
+        final claims = await enabled.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f20-on-lease',
+          ownerGateToken: 'f20-saved-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+
+        expect(claims, hasLength(1));
+        expect(
+          claims.single.mutation.collection,
+          SyncCollection.savedLearningItems,
+        );
+        expect(claims.single.mutation.operationKind, SyncOperationKind.delete);
+        expect(claims.single.mutation.baseRevision, 0);
+        expect(claims.single.mutation.localRevision, 2);
+        expect(
+          claims.single.mutation.entityId,
+          _savedLearningItemCloudEntityId(),
+        );
+        expect(
+          claims.single.mutation.payload,
+          _savedLearningItemPayload(updatedAtUtcMs: 2000, isDeleted: true),
+        );
+      },
+    );
+
+    test(
+      'saved retries reconstruct the exact attempted intent revision',
+      () async {
+        await database.customInsert('''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES
+          ('saved-retry-upsert', 'owner-1', 'lexicalMetadata',
+           'word:retry-upsert', 1, 1000, 2000, 2, 0, 1),
+          ('saved-retry-delete', 'owner-1', 'lexicalMetadata',
+           'word:retry-delete', 1, 1000, 3000, 3, 1, 0)
+      ''');
+        await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES
+          ('savedLearningItem:saved-retry-upsert:1', 'owner-1',
+           'savedLearningItem', 'saved-retry-upsert', 'upsert', 1, 0,
+           'retryWaiting', 1, 1000),
+          ('savedLearningItem:saved-retry-upsert:2', 'owner-1',
+           'savedLearningItem', 'saved-retry-upsert', 'delete', 1, 1,
+           'pending', 0, 2000),
+          ('savedLearningItem:saved-retry-delete:2', 'owner-1',
+           'savedLearningItem', 'saved-retry-delete', 'delete', 1, 1,
+           'retryWaiting', 1, 2000),
+          ('savedLearningItem:saved-retry-delete:3', 'owner-1',
+           'savedLearningItem', 'saved-retry-delete', 'upsert', 1, 2,
+           'pending', 0, 3000)
+      ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 12);
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: 'f20-saved-retry-rollout',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final store = DriftSyncStore(
+          database,
+          savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+            deployedRulesRevision: savedLearningItemV1RulesRevision,
+          ),
+        );
+
+        final claims = await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 2,
+          leaseToken: 'f20-saved-retry-lease',
+          ownerGateToken: 'f20-saved-retry-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+
+        expect(claims, hasLength(2));
+        final upsert = claims.singleWhere(
+          (claim) => claim.localOperationId.endsWith('retry-upsert:1'),
+        );
+        expect(upsert.mutation.operationKind, SyncOperationKind.upsert);
+        expect(upsert.mutation.baseRevision, 0);
+        expect(upsert.mutation.localRevision, 1);
+        expect(upsert.mutation.clientUpdatedAtUtc.millisecondsSinceEpoch, 1000);
+        expect(
+          upsert.mutation.entityId,
+          _savedLearningItemCloudEntityId(
+            contentId: 'word:retry-upsert',
+            contentRevision: 1,
+          ),
+        );
+        expect(
+          upsert.mutation.payload,
+          _savedLearningItemPayload(
+            contentId: 'word:retry-upsert',
+            contentRevision: 1,
+            updatedAtUtcMs: 1000,
+          ),
+        );
+
+        final delete = claims.singleWhere(
+          (claim) => claim.localOperationId.endsWith('retry-delete:2'),
+        );
+        expect(delete.mutation.operationKind, SyncOperationKind.delete);
+        expect(delete.mutation.baseRevision, 1);
+        expect(delete.mutation.localRevision, 2);
+        expect(delete.mutation.clientUpdatedAtUtc.millisecondsSinceEpoch, 2000);
+        expect(
+          delete.mutation.entityId,
+          _savedLearningItemCloudEntityId(
+            contentId: 'word:retry-delete',
+            contentRevision: 1,
+          ),
+        );
+        expect(
+          delete.mutation.payload,
+          _savedLearningItemPayload(
+            contentId: 'word:retry-delete',
+            contentRevision: 1,
+            updatedAtUtcMs: 2000,
+            isDeleted: true,
+          ),
+        );
+      },
+    );
+
+    test('saved pull coalesces a canonical cloud id by natural key', () async {
+      await database.customInsert('''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES (
+          'device-local-id', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          1000, 1000, 3, 0, 0
+        )
+      ''');
+      await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES
+          ('savedLearningItem:device-local-id:1', 'owner-1',
+           'savedLearningItem', 'device-local-id', 'upsert', 1, 0,
+           'conflictResolved', 1, 1000),
+          ('savedLearningItem:device-local-id:2', 'owner-1',
+           'savedLearningItem', 'device-local-id', 'delete', 1, 0,
+           'conflictResolved', 1, 1000),
+          ('savedLearningItem:device-local-id:3', 'owner-1',
+           'savedLearningItem', 'device-local-id', 'upsert', 1, 0,
+           'pending', 0, 1000)
+      ''');
+      final serverUpdatedAtUtc = DateTime.utc(2026, 8, 24, 12, 30);
+      final canonicalEntityId = _savedLearningItemCloudEntityId();
+      final store = DriftSyncStore(
+        database,
+        savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: savedLearningItemV1RulesRevision,
+        ),
+      );
+
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.savedLearningItems,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.savedLearningItems,
+              entityId: canonicalEntityId,
+              revision: 1,
+              isDeleted: true,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: serverUpdatedAtUtc,
+              payload: _savedLearningItemPayload(
+                updatedAtUtcMs: 2000,
+                isDeleted: true,
+              ),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: serverUpdatedAtUtc,
+            documentId: canonicalEntityId,
+          ),
+          hasMore: false,
+        ),
+      );
+
+      final rows = await database.customSelect('''
+        SELECT id, local_revision, cloud_revision, is_deleted
+        FROM saved_learning_items
+      ''').get();
+      expect(rows, hasLength(1));
+      expect(rows.single.read<String>('id'), 'device-local-id');
+      expect(rows.single.read<int>('local_revision'), 3);
+      expect(rows.single.read<int>('cloud_revision'), 1);
+      expect(rows.single.read<int>('is_deleted'), 1);
+      final outbox = await database.customSelect('''
+        SELECT state, failure_code FROM outbox_operations
+        WHERE operation_id = 'savedLearningItem:device-local-id:3'
+      ''').getSingle();
+      expect(outbox.read<String>('state'), 'conflictResolved');
+      expect(outbox.read<String>('failure_code'), 'cloudWins');
+    });
+
+    test(
+      'saved conflict preserves and rebases a newer queued intent',
+      () async {
+        await database.customInsert('''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES (
+          'device-local-id', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          1000, 2000, 10, 8, 1
+        )
+      ''');
+        await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES
+          ('savedLearningItem:device-local-id:9', 'owner-1',
+           'savedLearningItem', 'device-local-id', 'upsert', 1, 8,
+           'retryWaiting', 1, 2000),
+          ('savedLearningItem:device-local-id:10', 'owner-1',
+           'savedLearningItem', 'device-local-id', 'delete', 1, 9,
+           'pending', 0, 2000)
+      ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 13);
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: 'f20-saved-conflict-rollout',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final store = DriftSyncStore(
+          database,
+          savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+            deployedRulesRevision: savedLearningItemV1RulesRevision,
+          ),
+        );
+        final claim = (await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f20-saved-conflict-lease',
+          ownerGateToken: 'f20-saved-conflict-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        )).single;
+        final attempted = (await store.beginAttempt(
+          claim: claim,
+          ownerGateToken: 'f20-saved-conflict-rollout',
+          nowUtc: nowUtc,
+        ))!;
+        final canonicalEntityId = _savedLearningItemCloudEntityId();
+
+        expect(
+          await store.resolvePushConflict(
+            claim: attempted,
+            ownerGateToken: 'f20-saved-conflict-rollout',
+            cloudEntity: SyncEntity(
+              collection: SyncCollection.savedLearningItems,
+              entityId: canonicalEntityId,
+              revision: 9,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                1500,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+              payload: _savedLearningItemPayload(updatedAtUtcMs: 1500),
+            ),
+            resolvedAtUtc: nowUtc.add(const Duration(seconds: 2)),
+          ),
+          isTrue,
+        );
+
+        final row = await database.customSelect('''
+        SELECT saved_at_utc_ms, updated_at_utc_ms, local_revision,
+               cloud_revision, is_deleted
+        FROM saved_learning_items
+      ''').getSingle();
+        expect(row.read<int>('saved_at_utc_ms'), 1000);
+        expect(row.read<int>('updated_at_utc_ms'), 2000);
+        expect(row.read<int>('local_revision'), 10);
+        expect(row.read<int>('cloud_revision'), 9);
+        expect(row.read<int>('is_deleted'), 1);
+        final outbox = await database.customSelect('''
+        SELECT operation_id, state, base_revision FROM outbox_operations
+      ''').get();
+        final attemptedRow = outbox.singleWhere(
+          (entry) => entry.read<String>('operation_id').endsWith(':9'),
+        );
+        final queuedRow = outbox.singleWhere(
+          (entry) => entry.read<String>('operation_id').endsWith(':10'),
+        );
+        expect(attemptedRow.read<String>('state'), 'conflictResolved');
+        expect(queuedRow.read<String>('state'), 'pending');
+        expect(queuedRow.read<int>('base_revision'), 9);
+
+        final rebased = (await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f20-saved-rebased-lease',
+          ownerGateToken: 'f20-saved-conflict-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc.add(const Duration(seconds: 3)),
+        )).single;
+        expect(rebased.mutation.operationKind, SyncOperationKind.delete);
+        expect(rebased.mutation.baseRevision, 9);
+        expect(rebased.mutation.localRevision, 10);
+        expect(rebased.mutation.entityId, canonicalEntityId);
+        expect(
+          rebased.mutation.payload,
+          _savedLearningItemPayload(updatedAtUtcMs: 2000, isDeleted: true),
+        );
+      },
+    );
+
+    test('saved coalescing orders equal-time revisions numerically', () async {
+      await database.customInsert('''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES (
+          'saved-equal-time', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          1000, 2000, 10, 8, 1
+        )
+      ''');
+      await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES
+          ('savedLearningItem:saved-equal-time:9', 'owner-1',
+           'savedLearningItem', 'saved-equal-time', 'upsert', 1, 8,
+           'pending', 0, 2000),
+          ('savedLearningItem:saved-equal-time:10', 'owner-1',
+           'savedLearningItem', 'saved-equal-time', 'delete', 1, 9,
+           'pending', 0, 2000)
+      ''');
+      final nowUtc = DateTime.utc(2026, 8, 24, 14);
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'f20-saved-equal-time-rollout',
+          nowUtc: nowUtc,
+          leaseDuration: const Duration(minutes: 5),
+        ),
+        isTrue,
+      );
+      final store = DriftSyncStore(
+        database,
+        savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: savedLearningItemV1RulesRevision,
+        ),
+      );
+
+      final claim = (await store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-user-1',
+        limit: 1,
+        leaseToken: 'f20-saved-equal-time-lease',
+        ownerGateToken: 'f20-saved-equal-time-rollout',
+        leaseDuration: const Duration(minutes: 1),
+        nowUtc: nowUtc,
+      )).single;
+
+      expect(claim.localOperationId, endsWith(':10'));
+      expect(claim.mutation.operationKind, SyncOperationKind.delete);
+      expect(claim.mutation.baseRevision, 8);
+      expect(claim.mutation.localRevision, 10);
+    });
+
+    test('saved wire operation id is bounded for a long local id', () async {
+      final localEntityId = 'x' * 256;
+      final localOperationId = 'savedLearningItem:$localEntityId:1';
+      await database.customInsert(
+        '''
+        INSERT INTO saved_learning_items(
+          id, owner_id, content_type, content_id, content_revision,
+          saved_at_utc_ms, updated_at_utc_ms, local_revision, cloud_revision,
+          is_deleted
+        ) VALUES (
+          ?, 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          1000, 1000, 1, 0, 0
+        )
+      ''',
+        variables: <Variable<Object>>[Variable<String>(localEntityId)],
+      );
+      await database.customInsert(
+        '''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES (
+          ?, 'owner-1', 'savedLearningItem', ?, 'upsert', 1, 0,
+          'pending', 0, 1000
+        )
+      ''',
+        variables: <Variable<Object>>[
+          Variable<String>(localOperationId),
+          Variable<String>(localEntityId),
+        ],
+      );
+      final nowUtc = DateTime.utc(2026, 8, 24, 15);
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'f20-saved-long-id-rollout',
+          nowUtc: nowUtc,
+          leaseDuration: const Duration(minutes: 5),
+        ),
+        isTrue,
+      );
+      final store = DriftSyncStore(
+        database,
+        savedLearningItemSyncRollout: const SavedLearningItemSyncRollout.v1(
+          deployedRulesRevision: savedLearningItemV1RulesRevision,
+        ),
+      );
+
+      final claim = (await store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-user-1',
+        limit: 1,
+        leaseToken: 'f20-saved-long-id-lease',
+        ownerGateToken: 'f20-saved-long-id-rollout',
+        leaseDuration: const Duration(minutes: 1),
+        nowUtc: nowUtc,
+      )).single;
+
+      expect(claim.localOperationId, localOperationId);
+      expect(claim.localOperationId.length, greaterThan(256));
+      expect(
+        claim.mutation.operationId,
+        matches(RegExp(r'^saved-learning-operation:[0-9a-f]{64}$')),
+      );
+      expect(claim.mutation.operationId.length, lessThanOrEqualTo(256));
+      expect(claim.mutation.entityId, _savedLearningItemCloudEntityId());
+
+      final attempted = (await store.beginAttempt(
+        claim: claim,
+        ownerGateToken: 'f20-saved-long-id-rollout',
+        nowUtc: nowUtc.add(const Duration(seconds: 1)),
+      ))!;
+      expect(
+        await store.acknowledge(
+          operationId: attempted.localOperationId,
+          leaseToken: attempted.leaseToken,
+          ownerGateToken: 'f20-saved-long-id-rollout',
+          nowUtc: nowUtc.add(const Duration(seconds: 2)),
+          acknowledgement: PushAcknowledged(
+            operationId: attempted.localOperationId,
+            resultingRevision: 1,
+            acknowledgedAtUtc: nowUtc.add(const Duration(seconds: 2)),
+          ),
+        ),
+        isTrue,
+      );
+      final outbox = await database
+          .customSelect(
+            'SELECT state FROM outbox_operations WHERE operation_id = ?',
+            variables: <Variable<Object>>[Variable<String>(localOperationId)],
+          )
+          .getSingle();
+      expect(outbox.read<String>('state'), 'acknowledged');
+    });
   });
 }
 
@@ -1297,6 +1938,28 @@ Map<String, Object?> _attemptPayloadV2(EvidenceContext context) =>
       'evidenceClass': context.evidenceClass.name,
       'evidenceContext': context.toJson(),
     };
+
+Map<String, Object?> _savedLearningItemPayload({
+  String contentType = 'lexicalMetadata',
+  String contentId = 'word:station',
+  int contentRevision = 3,
+  required int updatedAtUtcMs,
+  bool isDeleted = false,
+}) => <String, Object?>{
+  'contentType': contentType,
+  'contentId': contentId,
+  'contentRevision': contentRevision,
+  'savedAtUtcMs': 1000,
+  'updatedAtUtcMs': updatedAtUtcMs,
+  'isDeleted': isDeleted,
+};
+
+String _savedLearningItemCloudEntityId({
+  String contentType = 'lexicalMetadata',
+  String contentId = 'word:station',
+  int contentRevision = 3,
+}) =>
+    'saved-learning-item:${sha256.convert(utf8.encode('$contentType|$contentId|$contentRevision'))}';
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.independentRecall,
