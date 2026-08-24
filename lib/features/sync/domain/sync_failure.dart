@@ -43,6 +43,15 @@ final class PermissionDeniedSyncFailure extends SyncFailure {
     : super(SyncFailureCode.permissionDenied, retryable: false);
 }
 
+/// A report upload was revoked at the final provider boundary.
+///
+/// This is distinct from a provider permission failure: the local report and
+/// its pending outbox work remain durable and must not consume an attempt.
+final class ContentReportConsentWithdrawnSyncFailure extends SyncFailure {
+  const ContentReportConsentWithdrawnSyncFailure()
+    : super(SyncFailureCode.permissionDenied, retryable: false);
+}
+
 final class InvalidSyncPayloadFailure extends SyncFailure {
   const InvalidSyncPayloadFailure()
     : super(SyncFailureCode.invalidPayload, retryable: false);

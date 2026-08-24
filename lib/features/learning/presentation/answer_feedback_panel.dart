@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
+import '../../review/domain/content_quality_report.dart';
 import '../../review/domain/learner_intent.dart';
+import '../../review/presentation/content_report_sheet.dart';
 import '../domain/answer_feedback.dart';
 
 final class AnswerFeedbackPanel extends StatelessWidget {
@@ -12,6 +14,8 @@ final class AnswerFeedbackPanel extends StatelessWidget {
     this.onNext,
     this.bookmarkIdentity,
     this.onBookmark,
+    this.reportIdentity,
+    this.onReport,
   });
 
   final AnswerFeedback feedback;
@@ -19,12 +23,22 @@ final class AnswerFeedbackPanel extends StatelessWidget {
   final VoidCallback? onNext;
   final ContentIdentity? bookmarkIdentity;
   final BookmarkLearningItemAction? onBookmark;
+  final ContentIdentity? reportIdentity;
+  final ReportContentAction? onReport;
 
   @override
   Widget build(BuildContext context) {
     final isCorrect = feedback.isCorrect;
     final callback = isCorrect ? onNext : onRetry;
     final icon = isCorrect ? Icons.check_circle : Icons.cancel;
+    final report = switch ((reportIdentity, onReport)) {
+      (final identity?, final action?)
+          when identity.id.isNotEmpty &&
+              identity.id == identity.id.trim() &&
+              identity.revision > 0 =>
+        (identity: identity, action: action),
+      _ => null,
+    };
     return Semantics(
       key: const ValueKey<String>('answer-feedback-panel'),
       container: true,
@@ -69,6 +83,26 @@ final class AnswerFeedbackPanel extends StatelessWidget {
                     ),
                   ),
                 ],
+              if (report case final contract?) ...[
+                const SizedBox(height: 12),
+                Semantics(
+                  container: true,
+                  explicitChildNodes: true,
+                  button: true,
+                  label: 'Report content',
+                  child: ExcludeSemantics(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _showContentReport(
+                        context,
+                        identity: contract.identity,
+                        action: contract.action,
+                      ),
+                      icon: const Icon(Icons.flag_outlined),
+                      label: const Text('Report content'),
+                    ),
+                  ),
+                ),
+              ],
               const SizedBox(height: 12),
               if (callback != null)
                 FilledButton(
@@ -83,4 +117,20 @@ final class AnswerFeedbackPanel extends StatelessWidget {
       ),
     );
   }
+}
+
+Future<void> _showContentReport(
+  BuildContext context, {
+  required ContentIdentity identity,
+  required ReportContentAction action,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => ContentReportSheet(
+      identity: identity,
+      onSubmit: ({required reason, comment}) =>
+          action(identity: identity, reason: reason, comment: comment),
+    ),
+  );
 }

@@ -4,6 +4,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
@@ -21,14 +22,20 @@ import 'package:vocab_learning_app/features/learning/presentation/answer_feedbac
 import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/application/content_report_use_cases.dart';
 import 'package:vocab_learning_app/features/review/application/learner_intent_use_cases.dart';
+import 'package:vocab_learning_app/features/review/data/drift_content_quality_report_repository.dart';
 import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report_repository.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../../support/inert_research_dependencies.dart';
@@ -1017,6 +1024,103 @@ void main() {
     },
   );
 
+  testWidgets(
+    'production lesson feedback report is single-flight and isolated from learning',
+    (tester) async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.controller.submit(
+        fixture.submission(
+          bookmarkIdentity: ContentIdentity(
+            type: ContentType.lexicalMetadata,
+            id: fixture.wordId,
+            revision: 1,
+          ),
+        ),
+      );
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      await DriftResearchConsentRepository(fixture.database).decide(
+        ownerId: owner.id,
+        version: 1,
+        accepted: true,
+        decidedAtUtc: fixture.now.subtract(const Duration(minutes: 1)),
+      );
+      final repository = DriftContentQualityReportRepository(
+        fixture.database,
+        owners: fixture.owners,
+        consentRegistry: DriftConsentRegistry(fixture.database),
+        uploadPolicy: const ContentReportUploadPolicy.v1(
+          deployedRulesRevision: contentQualityReportV1RulesRevision,
+          consentVersion: 1,
+        ),
+      );
+      var nextId = 0;
+      final report = ContentReportUseCases(
+        repository: repository,
+        generateId: () => 'lesson-report-${++nextId}',
+        nowUtc: () => fixture.now,
+      ).report;
+      final before = (
+        content: await fixture.database
+            .select(fixture.database.vocabularyWords)
+            .get(),
+        attempts: await fixture.database
+            .select(fixture.database.answerAttempts)
+            .get(),
+        weakness: await fixture.database
+            .select(fixture.database.srsStates)
+            .get(),
+      );
+
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _bookmarkDependencies(
+            fixture.database,
+            contentQualityReports: repository,
+            reportContent: report,
+          ),
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.text('Report content'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Answer problem'));
+      await tester.pump();
+      await tester.tap(find.text('Submit report'));
+      await tester.tap(find.text('Submit report'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      final reports = await fixture.database
+          .select(fixture.database.contentQualityReports)
+          .get();
+      final outbox = await (fixture.database.select(
+        fixture.database.outboxOperations,
+      )..where((row) => row.entityType.equals('contentQualityReport'))).get();
+      expect(reports, hasLength(1));
+      expect(reports.single.contentId, fixture.wordId);
+      expect(reports.single.contentRevision, 1);
+      expect(outbox, hasLength(1));
+      expect(
+        await fixture.database.select(fixture.database.vocabularyWords).get(),
+        before.content,
+      );
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        before.attempts,
+      );
+      expect(
+        await fixture.database.select(fixture.database.srsStates).get(),
+        before.weakness,
+      );
+    },
+  );
+
   test(
     'one-argument production factory composes isolated typed hint use cases',
     () async {
@@ -1381,8 +1485,10 @@ void main() {
 
 AppDependencies _bookmarkDependencies(
   AppDatabase database, {
-  required LearnerIntentRepository learnerIntents,
-  required BookmarkLearningItemAction bookmarkLearningItem,
+  LearnerIntentRepository? learnerIntents,
+  BookmarkLearningItemAction? bookmarkLearningItem,
+  ContentQualityReportRepository? contentQualityReports,
+  ReportContentAction? reportContent,
 }) {
   final research = InertResearchDependencies(database);
   return AppDependencies(
@@ -1404,6 +1510,8 @@ AppDependencies _bookmarkDependencies(
         research.evidencePolicyRolloutModeProvider,
     learnerIntents: learnerIntents,
     bookmarkLearningItem: bookmarkLearningItem,
+    contentQualityReports: contentQualityReports,
+    reportContent: reportContent,
   );
 }
 

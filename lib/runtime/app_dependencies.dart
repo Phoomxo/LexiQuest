@@ -26,6 +26,8 @@ import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
+import '../features/review/domain/content_quality_report.dart';
+import '../features/review/domain/content_quality_report_repository.dart';
 import '../features/review/domain/learner_intent.dart';
 import '../features/review/domain/learner_intent_repository.dart';
 import '../features/sync/application/sync_engine.dart';
@@ -78,6 +80,8 @@ final class AppDependencies {
     this.rewards,
     this.learnerIntents,
     this.bookmarkLearningItem,
+    this.contentQualityReports,
+    this.reportContent,
     this.vocabulary,
     this.vocabularyImporter,
     this.deviceModels,
@@ -125,6 +129,8 @@ final class AppDependencies {
   final RewardUseCases? rewards;
   final LearnerIntentRepository? learnerIntents;
   final BookmarkLearningItemAction? bookmarkLearningItem;
+  final ContentQualityReportRepository? contentQualityReports;
+  final ReportContentAction? reportContent;
   final VocabularyUseCases? vocabulary;
   final ImportVocabulary? vocabularyImporter;
   final DeviceModelUseCases? deviceModels;

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning_packs/domain/content_manifest.dart';
+import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/learner_intent.dart';
+import '../features/review/presentation/content_report_sheet.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 
 /// Accessible, optional presentation of verified lexical metadata.
@@ -15,12 +17,16 @@ final class RichLexicalCard extends StatefulWidget {
     this.onPlayAudio,
     this.bookmarkIdentity,
     this.onBookmark,
+    this.reportIdentity,
+    this.onReport,
   });
 
   final VocabularyWord word;
   final VoidCallback? onPlayAudio;
   final ContentIdentity? bookmarkIdentity;
   final BookmarkLearningItemAction? onBookmark;
+  final ContentIdentity? reportIdentity;
+  final ReportContentAction? onReport;
 
   @override
   State<RichLexicalCard> createState() => _RichLexicalCardState();
@@ -35,6 +41,14 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
     final metadata = word.richMetadata;
     final entryLabel = _entryLabel(word);
     final bookmark = switch ((widget.bookmarkIdentity, widget.onBookmark)) {
+      (final identity?, final action?)
+          when identity.type == ContentType.lexicalMetadata &&
+              identity.id == word.id &&
+              identity.revision == word.contentRevision =>
+        (identity: identity, action: action),
+      _ => null,
+    };
+    final report = switch ((widget.reportIdentity, widget.onReport)) {
       (final identity?, final action?)
           when identity.type == ContentType.lexicalMetadata &&
               identity.id == word.id &&
@@ -84,6 +98,26 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
               ),
               const SizedBox(height: 8),
             ],
+            if (report case final contract?) ...[
+              Semantics(
+                container: true,
+                explicitChildNodes: true,
+                button: true,
+                label: 'Report content',
+                child: ExcludeSemantics(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _showContentReport(
+                      context,
+                      identity: contract.identity,
+                      action: contract.action,
+                    ),
+                    icon: const Icon(Icons.flag_outlined),
+                    label: const Text('Report content'),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+            ],
             if (metadata == null)
               const Text('Additional lexical details are unavailable.')
             else ...[
@@ -123,6 +157,22 @@ final class _RichLexicalCardState extends State<RichLexicalCard> {
     return 'Lexical entry: ${word.spelling}. Meaning: ${word.meaning}. '
         'Part of speech: ${word.partOfSpeech}.${cefr == null ? '' : ' CEFR: $cefr.'}';
   }
+}
+
+Future<void> _showContentReport(
+  BuildContext context, {
+  required ContentIdentity identity,
+  required ReportContentAction action,
+}) {
+  return showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    builder: (_) => ContentReportSheet(
+      identity: identity,
+      onSubmit: ({required reason, comment}) =>
+          action(identity: identity, reason: reason, comment: comment),
+    ),
+  );
 }
 
 final class _RichDetails extends StatelessWidget {

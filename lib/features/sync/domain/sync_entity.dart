@@ -7,6 +7,7 @@ import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../research/domain/research_protocol_mode_catalog.dart';
+import '../../review/domain/content_quality_report.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
@@ -16,6 +17,8 @@ const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
 const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
 const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
+const String contentQualityReportV1RulesRevision =
+    'content-quality-report-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -44,6 +47,9 @@ enum SyncCollection {
 
   /// Mutable bookmark intent pinned to an immutable content revision.
   savedLearningItems,
+
+  /// Immutable learner-submitted quality report pinned to content revision.
+  contentQualityReports,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -58,6 +64,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.experimentAssignments => 'experiment_assignments',
     SyncCollection.assessmentRuns => 'assessment_runs',
     SyncCollection.savedLearningItems => 'saved_learning_items',
+    SyncCollection.contentQualityReports => 'content_quality_reports',
   };
 
   String get entityType => switch (this) {
@@ -71,6 +78,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.experimentAssignments => 'experimentAssignment',
     SyncCollection.assessmentRuns => 'assessmentRun',
     SyncCollection.savedLearningItems => 'savedLearningItem',
+    SyncCollection.contentQualityReports => 'contentQualityReport',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -83,6 +91,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.experimentAssignments ||
     SyncCollection.assessmentRuns => const <int>{1},
     SyncCollection.savedLearningItems => const <int>{1},
+    SyncCollection.contentQualityReports => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -125,6 +134,8 @@ final class SyncPayloadRollout {
     SyncCollection.experimentAssignments ||
     SyncCollection.assessmentRuns => collection.defaultWritePayloadVersion,
     SyncCollection.savedLearningItems => collection.defaultWritePayloadVersion,
+    SyncCollection.contentQualityReports =>
+      collection.defaultWritePayloadVersion,
   };
 }
 
@@ -256,6 +267,140 @@ abstract final class SavedLearningItemSyncPayloadContract {
       throw const InvalidSyncPayloadFailure();
     }
   }
+}
+
+/// Deployment and consent-version gate for report upload claims.
+final class ContentQualityReportSyncRollout {
+  const ContentQualityReportSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '',
+      consentVersion = 0;
+
+  const ContentQualityReportSyncRollout.v1({
+    required this.deployedRulesRevision,
+    required this.consentVersion,
+  }) : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+  final int consentVersion;
+
+  bool get allowsClaims =>
+      enabled &&
+      deployedRulesRevision == contentQualityReportV1RulesRevision &&
+      consentVersion > 0;
+}
+
+abstract final class ContentQualityReportSyncPayloadContract {
+  static const Set<String> keys = <String>{
+    'reportId',
+    'contentType',
+    'contentId',
+    'contentRevision',
+    'reasonCode',
+    'comment',
+    'submittedAtUtcMs',
+    'isDeleted',
+  };
+
+  static const Set<String> contentTypes = <String>{
+    'learningPack',
+    'lexicalMetadata',
+    'assessmentForm',
+    'offlineArtifact',
+  };
+
+  static const Set<String> reasonCodes = <String>{
+    'text',
+    'audio',
+    'answer',
+    'explanation',
+  };
+
+  static String canonicalEntityId({required String reportId}) {
+    _requireCanonicalText(reportId);
+    return 'content-quality-report:${sha256.convert(utf8.encode(reportId))}';
+  }
+
+  static String canonicalOperationId({
+    required String localOperationId,
+    required String reportId,
+    required int submittedAtUtcMs,
+  }) {
+    final canonicalLocalOperationId = localOperationId.trim();
+    if (canonicalLocalOperationId.isEmpty ||
+        canonicalLocalOperationId.runes.length > 256 ||
+        submittedAtUtcMs < 0) {
+      throw ArgumentError('content report operation identity is invalid');
+    }
+    final identity =
+        'v1|${canonicalEntityId(reportId: reportId)}|'
+        '$submittedAtUtcMs';
+    return 'content-quality-operation:'
+        '${sha256.convert(utf8.encode(identity))}';
+  }
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+    String? expectedEntityId,
+  }) {
+    try {
+      final reportId = payload['reportId'];
+      final contentType = payload['contentType'];
+      final contentId = payload['contentId'];
+      final contentRevision = payload['contentRevision'];
+      final reasonCode = payload['reasonCode'];
+      final comment = payload['comment'];
+      final submittedAtUtcMs = payload['submittedAtUtcMs'];
+      final payloadIsDeleted = payload['isDeleted'];
+      if (payload.length != keys.length ||
+          !payload.keys.every(keys.contains) ||
+          reportId is! String ||
+          !_isCanonicalText(reportId) ||
+          contentType is! String ||
+          !contentTypes.contains(contentType) ||
+          contentId is! String ||
+          !_isCanonicalText(contentId) ||
+          contentRevision is! int ||
+          contentRevision <= 0 ||
+          reasonCode is! String ||
+          !reasonCodes.contains(reasonCode) ||
+          (comment != null && comment is! String) ||
+          submittedAtUtcMs is! int ||
+          submittedAtUtcMs < 0 ||
+          submittedAtUtcMs != clientUpdatedAtUtcMs ||
+          payloadIsDeleted is! bool ||
+          payloadIsDeleted ||
+          isDeleted ||
+          payloadIsDeleted != isDeleted) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      if (comment case final String value) {
+        if (canonicalContentReportComment(value) != value) {
+          throw const InvalidSyncPayloadFailure();
+        }
+      }
+      if (expectedEntityId != null &&
+          expectedEntityId != canonicalEntityId(reportId: reportId)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static void _requireCanonicalText(String value) {
+    if (!_isCanonicalText(value)) {
+      throw ArgumentError.value(value, 'value', 'must be canonical text');
+    }
+  }
+
+  static bool _isCanonicalText(String value) =>
+      isCanonicalContentReportIdentityText(value);
 }
 
 abstract final class VocabularyWordSyncPayloadContract {

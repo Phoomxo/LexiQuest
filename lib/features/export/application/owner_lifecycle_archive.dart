@@ -13,6 +13,7 @@ import '../data/drift_export_reader.dart';
 import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../review/domain/content_quality_report.dart';
 
 final class OwnerLifecycleArchiveArtifact {
   const OwnerLifecycleArchiveArtifact({
@@ -385,7 +386,10 @@ final class OwnerLifecycleArchiveExporter {
           'contentId': _safeLabel(row.read<String>('content_id')),
           'contentRevision': row.read<int>('content_revision'),
           'reasonCode': _safeLabel(row.read<String>('reason_code')),
-          'comment': row.readNullable<String>('comment'),
+          'comment': switch (row.readNullable<String>('comment')) {
+            final value? => redactContentReportSecrets(value),
+            null => null,
+          },
           'submittedAtUtc': _iso(row.read<int>('submitted_at_utc_ms')),
         },
     ];

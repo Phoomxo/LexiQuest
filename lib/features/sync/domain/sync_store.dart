@@ -11,12 +11,16 @@ final class ClaimedSyncOperation {
     required String releaseState,
     required PushMutation mutation,
     String? localOperationId,
+    int? releaseAttemptCount,
+    DateTime? releaseLastAttemptAtUtc,
   }) : this._(
          leaseToken: leaseToken,
          attemptCount: attemptCount,
          releaseState: releaseState,
          mutation: mutation,
          localOperationId: localOperationId ?? mutation.operationId,
+         releaseAttemptCount: releaseAttemptCount ?? attemptCount,
+         releaseLastAttemptAtUtc: releaseLastAttemptAtUtc,
        );
 
   const ClaimedSyncOperation._({
@@ -25,6 +29,8 @@ final class ClaimedSyncOperation {
     required this.releaseState,
     required this.mutation,
     required this.localOperationId,
+    required this.releaseAttemptCount,
+    required this.releaseLastAttemptAtUtc,
   });
 
   final String leaseToken;
@@ -35,6 +41,11 @@ final class ClaimedSyncOperation {
   /// Durable local outbox identity. It may differ from the cloud operation ID
   /// when a local entity is translated to its canonical cloud namespace.
   final String localOperationId;
+
+  /// Exact pre-reservation state used only when a final consent fence revokes
+  /// a report before any provider transaction starts.
+  final int releaseAttemptCount;
+  final DateTime? releaseLastAttemptAtUtc;
 }
 
 abstract interface class SyncStore {
@@ -80,6 +91,12 @@ abstract interface class SyncStore {
   });
 
   Future<bool> releaseClaim({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  });
+
+  Future<bool> cancelContentReportAttemptForConsentWithdrawal({
     required ClaimedSyncOperation claim,
     required String ownerGateToken,
     required DateTime nowUtc,

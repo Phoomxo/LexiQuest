@@ -7,6 +7,7 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
@@ -16,6 +17,7 @@ import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
   group('FirestoreSyncCodec', () {
@@ -120,6 +122,7 @@ void main() {
         SyncCollection.experimentAssignments,
         SyncCollection.assessmentRuns,
         SyncCollection.savedLearningItems,
+        SyncCollection.contentQualityReports,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
@@ -129,6 +132,8 @@ void main() {
           SyncCollection.assessmentRuns => 'assessment-run-pre',
           SyncCollection.savedLearningItems =>
             _savedLearningItemCloudEntityId(),
+          SyncCollection.contentQualityReports =>
+            _contentQualityReportCloudEntityId(),
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
@@ -147,10 +152,19 @@ void main() {
           SyncCollection.savedLearningItems => _savedLearningItemPayload(
             updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
+          SyncCollection.contentQualityReports => _contentQualityReportPayload(
+            submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
         final mutation = PushMutation(
-          operationId: 'operation:${collection.entityType}:v1',
+          operationId: collection == SyncCollection.contentQualityReports
+              ? ContentQualityReportSyncPayloadContract.canonicalOperationId(
+                  localOperationId: 'contentQualityReport:generic:v1',
+                  reportId: payload['reportId']! as String,
+                  submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
+                )
+              : 'operation:${collection.entityType}:v1',
           firebaseUid: 'firebase-user-1',
           collection: collection,
           entityId: entityId,
@@ -246,6 +260,68 @@ void main() {
         ),
         throwsA(isA<InvalidSyncPayloadFailure>()),
       );
+    });
+
+    test('content report codec is exact immutable and secret-free', () {
+      final payload = _contentQualityReportPayload(
+        submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+      );
+      final mutation = PushMutation(
+        operationId:
+            ContentQualityReportSyncPayloadContract.canonicalOperationId(
+              localOperationId: 'contentQualityReport:report:station:audio:1',
+              reportId: 'report:station:audio',
+              submittedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+        firebaseUid: 'firebase-user-1',
+        collection: SyncCollection.contentQualityReports,
+        entityId: _contentQualityReportCloudEntityId(),
+        operationKind: SyncOperationKind.upsert,
+        payloadVersion: 1,
+        baseRevision: 0,
+        localRevision: 1,
+        clientUpdatedAtUtc: clientUpdatedAt,
+        payload: payload,
+      );
+
+      final encoded = FirestoreSyncCodec.encodeEntity(
+        mutation,
+        serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+      );
+      expect(
+        FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.contentQualityReports,
+          documentId: mutation.entityId,
+          data: encoded,
+        ).payload,
+        payload,
+      );
+      for (final invalid in <Map<String, Object?>>[
+        <String, Object?>{
+          ...payload,
+          'comment': 'providerToken=provider-secret-SENTINEL',
+        },
+        <String, Object?>{...payload, 'isDeleted': true},
+      ]) {
+        expect(
+          () => FirestoreSyncCodec.encodeEntity(
+            PushMutation(
+              operationId: 'content-quality-operation:invalid',
+              firebaseUid: 'firebase-user-1',
+              collection: SyncCollection.contentQualityReports,
+              entityId: mutation.entityId,
+              operationKind: SyncOperationKind.upsert,
+              payloadVersion: 1,
+              baseRevision: 0,
+              localRevision: 1,
+              clientUpdatedAtUtc: clientUpdatedAt,
+              payload: invalid,
+            ),
+            serverTimestamp: Timestamp.fromDate(serverUpdatedAt),
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      }
     });
 
     test('experiment assignment uses one exact v1 wire contract', () {
@@ -921,6 +997,33 @@ void main() {
       );
       expect(transactions, 0);
     });
+
+    test(
+      'rechecks report consent immediately before the Firestore transaction',
+      () async {
+        const preflight = FirestoreSyncPreflight();
+        var transactions = 0;
+
+        await expectLater(
+          preflight.beforeTransaction<void>(
+            collection: SyncCollection.contentQualityReports,
+            payloadVersion: 1,
+            payload: _contentQualityReportPayload(submittedAtUtcMs: 2000),
+            entityId: _contentQualityReportCloudEntityId(),
+            firebaseUid: 'firebase-user-1',
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 2000,
+            authorizeContentQualityReportPush: () async => false,
+            beginTransaction: () async {
+              transactions += 1;
+            },
+          ),
+          throwsA(isA<ContentReportConsentWithdrawnSyncFailure>()),
+        );
+
+        expect(transactions, 0);
+      },
+    );
   });
 
   group('FirestoreSyncErrorMapper', () {
@@ -1282,6 +1385,251 @@ void main() {
           claims.single.mutation.payload,
           _savedLearningItemPayload(updatedAtUtcMs: 2000, isDeleted: true),
         );
+      },
+    );
+
+    test(
+      'content report queued before consent withdrawal stays pending without retry',
+      () async {
+        final consent = DriftResearchConsentRepository(database);
+        await consent.decide(
+          ownerId: 'owner-1',
+          version: 1,
+          accepted: true,
+          decidedAtUtc: DateTime.utc(2026, 8, 24, 10),
+        );
+        await database.customInsert('''
+          INSERT INTO content_quality_reports(
+            id, owner_id, content_type, content_id, content_revision,
+            reason_code, comment, submitted_at_utc_ms
+          ) VALUES (
+            'report-queued', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+            'audio', 'Pronunciation is unclear', 2000
+          )
+        ''');
+        await database.customInsert('''
+          INSERT INTO outbox_operations(
+            operation_id, owner_id, entity_type, entity_id, operation_kind,
+            payload_version, base_revision, state, attempt_count,
+            created_at_utc_ms
+          ) VALUES (
+            'contentQualityReport:report-queued:1', 'owner-1',
+            'contentQualityReport', 'report-queued', 'upsert', 1, 0,
+            'pending', 0, 2000
+          )
+        ''');
+        await consent.decide(
+          ownerId: 'owner-1',
+          version: 1,
+          accepted: false,
+          decidedAtUtc: DateTime.utc(2026, 8, 24, 10, 1),
+        );
+        final nowUtc = DateTime.utc(2026, 8, 24, 10, 2);
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: 'f21-report-rollout',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+
+        final claims =
+            await DriftSyncStore(
+              database,
+              consentRegistry: DriftConsentRegistry(database),
+              contentQualityReportSyncRollout:
+                  const ContentQualityReportSyncRollout.v1(
+                    deployedRulesRevision: contentQualityReportV1RulesRevision,
+                    consentVersion: 1,
+                  ),
+            ).claimPending(
+              ownerId: 'owner-1',
+              firebaseUid: 'firebase-user-1',
+              limit: 1,
+              leaseToken: 'f21-report-lease',
+              ownerGateToken: 'f21-report-rollout',
+              leaseDuration: const Duration(minutes: 1),
+              nowUtc: nowUtc,
+            );
+
+        expect(claims, isEmpty);
+        final outbox = await database.customSelect('''
+          SELECT state, attempt_count FROM outbox_operations
+          WHERE operation_id = 'contentQualityReport:report-queued:1'
+        ''').getSingle();
+        expect(outbox.read<String>('state'), 'pending');
+        expect(outbox.read<int>('attempt_count'), 0);
+      },
+    );
+
+    test(
+      'content report claim emits one exact immutable canonical mutation',
+      () async {
+        await DriftResearchConsentRepository(database).decide(
+          ownerId: 'owner-1',
+          version: 1,
+          accepted: true,
+          decidedAtUtc: DateTime.utc(2026, 8, 24, 10),
+        );
+        await database.customInsert('''
+        INSERT INTO content_quality_reports(
+          id, owner_id, content_type, content_id, content_revision,
+          reason_code, comment, submitted_at_utc_ms
+        ) VALUES (
+          'report-claim', 'owner-1', 'lexicalMetadata', 'word:station', 3,
+          'audio', 'Pronunciation is unclear', 2000
+        )
+      ''');
+        const localOperationId = 'contentQualityReport:report-claim:1';
+        await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES (
+          '$localOperationId', 'owner-1', 'contentQualityReport',
+          'report-claim', 'upsert', 1, 0, 'pending', 0, 2000
+        )
+      ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 10, 2);
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: 'f21-report-claim-rollout',
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final store = DriftSyncStore(
+          database,
+          consentRegistry: DriftConsentRegistry(database),
+          contentQualityReportSyncRollout:
+              const ContentQualityReportSyncRollout.v1(
+                deployedRulesRevision: contentQualityReportV1RulesRevision,
+                consentVersion: 1,
+              ),
+        );
+
+        final claim = (await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f21-report-claim-lease',
+          ownerGateToken: 'f21-report-claim-rollout',
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        )).single;
+
+        final expectedPayload = _contentQualityReportPayload(
+          reportId: 'report-claim',
+          submittedAtUtcMs: 2000,
+        );
+        expect(claim.mutation.collection, SyncCollection.contentQualityReports);
+        expect(claim.mutation.operationKind, SyncOperationKind.upsert);
+        expect(claim.mutation.baseRevision, 0);
+        expect(claim.mutation.localRevision, 1);
+        expect(claim.mutation.payload, expectedPayload);
+        expect(
+          claim.mutation.entityId,
+          ContentQualityReportSyncPayloadContract.canonicalEntityId(
+            reportId: 'report-claim',
+          ),
+        );
+        expect(
+          claim.mutation.operationId,
+          ContentQualityReportSyncPayloadContract.canonicalOperationId(
+            localOperationId: localOperationId,
+            reportId: 'report-claim',
+            submittedAtUtcMs: 2000,
+          ),
+        );
+      },
+    );
+
+    test(
+      'content report withdrawal after claim releases without an attempt',
+      () async {
+        final consent = DriftResearchConsentRepository(database);
+        await consent.decide(
+          ownerId: 'owner-1',
+          version: 1,
+          accepted: true,
+          decidedAtUtc: DateTime.utc(2026, 8, 24, 10),
+        );
+        await database.customInsert('''
+          INSERT INTO content_quality_reports(
+            id, owner_id, content_type, content_id, content_revision,
+            reason_code, comment, submitted_at_utc_ms
+          ) VALUES (
+            'report-withdraw-after-claim', 'owner-1', 'lexicalMetadata',
+            'word:station', 3, 'audio', null, 2000
+          )
+        ''');
+        const localOperationId =
+            'contentQualityReport:report-withdraw-after-claim:1';
+        await database.customInsert('''
+          INSERT INTO outbox_operations(
+            operation_id, owner_id, entity_type, entity_id, operation_kind,
+            payload_version, base_revision, state, attempt_count,
+            created_at_utc_ms
+          ) VALUES (
+            '$localOperationId', 'owner-1', 'contentQualityReport',
+            'report-withdraw-after-claim', 'upsert', 1, 0, 'pending', 0, 2000
+          )
+        ''');
+        final nowUtc = DateTime.utc(2026, 8, 24, 10, 2);
+        const gateToken = 'f21-report-withdraw-after-claim';
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: gateToken,
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+        final store = DriftSyncStore(
+          database,
+          consentRegistry: DriftConsentRegistry(database),
+          contentQualityReportSyncRollout:
+              const ContentQualityReportSyncRollout.v1(
+                deployedRulesRevision: contentQualityReportV1RulesRevision,
+                consentVersion: 1,
+              ),
+        );
+        final claim = (await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f21-report-withdraw-after-claim-lease',
+          ownerGateToken: gateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        )).single;
+
+        await consent.decide(
+          ownerId: 'owner-1',
+          version: 1,
+          accepted: false,
+          decidedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+        );
+
+        expect(
+          await store.beginAttempt(
+            claim: claim,
+            ownerGateToken: gateToken,
+            nowUtc: nowUtc.add(const Duration(seconds: 2)),
+          ),
+          isNull,
+        );
+        final outbox = await database.customSelect('''
+          SELECT state, attempt_count, lease_token
+          FROM outbox_operations
+          WHERE operation_id = '$localOperationId'
+        ''').getSingle();
+        expect(outbox.read<String>('state'), 'pending');
+        expect(outbox.read<int>('attempt_count'), 0);
+        expect(outbox.readNullable<String>('lease_token'), isNull);
       },
     );
 
@@ -1960,6 +2308,24 @@ String _savedLearningItemCloudEntityId({
   int contentRevision = 3,
 }) =>
     'saved-learning-item:${sha256.convert(utf8.encode('$contentType|$contentId|$contentRevision'))}';
+
+Map<String, Object?> _contentQualityReportPayload({
+  String reportId = 'report:station:audio',
+  required int submittedAtUtcMs,
+}) => <String, Object?>{
+  'reportId': reportId,
+  'contentType': 'lexicalMetadata',
+  'contentId': 'word:station',
+  'contentRevision': 3,
+  'reasonCode': 'audio',
+  'comment': 'Pronunciation is unclear',
+  'submittedAtUtcMs': submittedAtUtcMs,
+  'isDeleted': false,
+};
+
+String _contentQualityReportCloudEntityId({
+  String reportId = 'report:station:audio',
+}) => 'content-quality-report:${sha256.convert(utf8.encode(reportId))}';
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(
   evidenceClass: EvidenceClass.independentRecall,

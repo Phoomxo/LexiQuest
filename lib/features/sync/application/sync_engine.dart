@@ -68,6 +68,7 @@ final class SyncEngine {
     SyncCollection.categories,
     SyncCollection.words,
     SyncCollection.savedLearningItems,
+    SyncCollection.contentQualityReports,
     SyncCollection.experimentAssignments,
     SyncCollection.assessmentRuns,
     SyncCollection.attempts,
@@ -221,6 +222,19 @@ final class SyncEngine {
               }
           }
           if (!gateOwned) break;
+        } on ContentReportConsentWithdrawnSyncFailure {
+          final cancelled = await store
+              .cancelContentReportAttemptForConsentWithdrawal(
+                claim: claim,
+                ownerGateToken: runLeaseToken,
+                nowUtc: _currentUtc(),
+              );
+          if (!cancelled) {
+            gateOwned = false;
+            failures++;
+            releaseFrom = index + 1;
+            break;
+          }
         } on SyncFailure catch (failure) {
           failures++;
           if (failure.retryable) {

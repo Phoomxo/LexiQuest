@@ -4,6 +4,7 @@ import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 
 void main() {
@@ -130,6 +131,64 @@ void main() {
     await tester.pump();
     expect(bookmarked, _bookmarkIdentity);
   });
+
+  testWidgets('report action carries only the committed content revision', (
+    tester,
+  ) async {
+    ContentIdentity? reportedIdentity;
+    ContentReportReason? reportedReason;
+    await tester.pumpWidget(
+      _FeedbackHarness(
+        feedback: AnswerFeedback.fromCommittedResult(
+          result: const AnswerRecordResult(
+            inserted: true,
+            isCorrect: false,
+            srs: null,
+          ),
+          context: const AnswerFeedbackContext(
+            canonicalCorrectAnswer: 'station',
+          ),
+        ),
+        reportIdentity: _bookmarkIdentity,
+        onReport: ({required identity, required reason, comment}) async {
+          reportedIdentity = identity;
+          reportedReason = reason;
+        },
+      ),
+    );
+
+    await tester.tap(find.bySemanticsLabel('Report content'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Answer problem'));
+    await tester.pump();
+    await tester.tap(find.text('Submit report'));
+    await tester.pumpAndSettle();
+
+    expect(reportedIdentity, _bookmarkIdentity);
+    expect(reportedReason, ContentReportReason.answer);
+  });
+
+  testWidgets('report action is hidden without a committed content identity', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _FeedbackHarness(
+        feedback: AnswerFeedback.fromCommittedResult(
+          result: const AnswerRecordResult(
+            inserted: true,
+            isCorrect: false,
+            srs: null,
+          ),
+          context: const AnswerFeedbackContext(
+            canonicalCorrectAnswer: 'station',
+          ),
+        ),
+        onReport: ({required identity, required reason, comment}) async {},
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Report content'), findsNothing);
+  });
 }
 
 const _bookmarkIdentity = ContentIdentity(
@@ -145,6 +204,8 @@ final class _FeedbackHarness extends StatelessWidget {
     this.onNext,
     this.bookmarkIdentity,
     this.onBookmark,
+    this.reportIdentity,
+    this.onReport,
   });
 
   final AnswerFeedback feedback;
@@ -152,6 +213,8 @@ final class _FeedbackHarness extends StatelessWidget {
   final VoidCallback? onNext;
   final ContentIdentity? bookmarkIdentity;
   final BookmarkLearningItemAction? onBookmark;
+  final ContentIdentity? reportIdentity;
+  final ReportContentAction? onReport;
 
   @override
   Widget build(BuildContext context) => MaterialApp(
@@ -162,6 +225,8 @@ final class _FeedbackHarness extends StatelessWidget {
         onNext: onNext,
         bookmarkIdentity: bookmarkIdentity,
         onBookmark: onBookmark,
+        reportIdentity: reportIdentity,
+        onReport: onReport,
       ),
     ),
   );

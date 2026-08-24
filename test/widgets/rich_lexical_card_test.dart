@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
@@ -112,6 +113,96 @@ void main() {
         revision: 1,
       ),
     );
+  });
+
+  testWidgets(
+    'report action requires and carries the pinned lexical revision',
+    (tester) async {
+      ContentIdentity? reportedIdentity;
+      ContentReportReason? reportedReason;
+      String? reportedComment;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: RichLexicalCard(
+              word: _word(),
+              reportIdentity: const ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: 'word:station',
+                revision: 1,
+              ),
+              onReport: ({required identity, required reason, comment}) async {
+                reportedIdentity = identity;
+                reportedReason = reason;
+                reportedComment = comment;
+              },
+            ),
+          ),
+        ),
+      );
+
+      await tester.tap(find.bySemanticsLabel('Report content'));
+      await tester.pumpAndSettle();
+      expect(find.text('Revision 1'), findsOneWidget);
+      await tester.tap(find.text('Audio problem'));
+      await tester.enterText(
+        find.byType(TextField),
+        'Pronunciation is unclear',
+      );
+      await tester.tap(find.text('Submit report'));
+      await tester.pumpAndSettle();
+
+      expect(
+        reportedIdentity,
+        const ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: 'word:station',
+          revision: 1,
+        ),
+      );
+      expect(reportedReason, ContentReportReason.audio);
+      expect(reportedComment, 'Pronunciation is unclear');
+    },
+  );
+
+  testWidgets('report action hides for missing or mismatched identity', (
+    tester,
+  ) async {
+    Future<void> report({
+      required ContentIdentity identity,
+      required ContentReportReason reason,
+      String? comment,
+    }) async {}
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ListView(
+          children: <Widget>[
+            RichLexicalCard(word: _word(), onReport: report),
+            RichLexicalCard(
+              word: _word(),
+              reportIdentity: const ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: 'word:different',
+                revision: 1,
+              ),
+              onReport: report,
+            ),
+            RichLexicalCard(
+              word: _word(),
+              reportIdentity: const ContentIdentity(
+                type: ContentType.lexicalMetadata,
+                id: 'word:station',
+                revision: 2,
+              ),
+              onReport: report,
+            ),
+          ],
+        ),
+      ),
+    );
+
+    expect(find.bySemanticsLabel('Report content'), findsNothing);
   });
 
   testWidgets(

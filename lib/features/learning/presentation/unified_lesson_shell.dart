@@ -183,9 +183,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final controller = widget.controller;
     if (controller == null) return widget.builder(context);
     final hintState = controller.hintState;
-    final bookmarkLearningItem = AppDependenciesScope.maybeOf(
-      context,
-    )?.bookmarkLearningItem;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
+    final reportContent = dependencies?.reportContent;
     return Semantics(
       container: true,
       label: 'Lesson ${controller.state.status.name}',
@@ -204,6 +204,8 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
               feedback: feedback,
               bookmarkIdentity: feedback.bookmarkIdentity,
               onBookmark: bookmarkLearningItem,
+              reportIdentity: feedback.bookmarkIdentity,
+              onReport: reportContent,
             ),
           Expanded(child: Builder(builder: widget.builder)),
         ],

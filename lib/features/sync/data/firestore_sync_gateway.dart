@@ -9,6 +9,8 @@ import '../domain/sync_gateway.dart';
 import '../domain/sync_result.dart';
 
 typedef UtcClock = DateTime Function();
+typedef ContentQualityReportPushAuthorizer =
+    Future<bool> Function(PushMutation mutation);
 
 final class FirestoreSyncGateway implements SyncGateway {
   factory FirestoreSyncGateway({
@@ -17,12 +19,18 @@ final class FirestoreSyncGateway implements SyncGateway {
     UtcClock? utcClock,
     SavedLearningItemSyncRollout savedLearningItemRollout =
         const SavedLearningItemSyncRollout.off(),
+    ContentQualityReportSyncRollout contentQualityReportRollout =
+        const ContentQualityReportSyncRollout.off(),
+    ContentQualityReportPushAuthorizer contentQualityReportPushAuthorizer =
+        _denyContentQualityReportPush,
   }) => FirestoreSyncGateway._(
     firestore,
     auth,
     utcClock ?? _systemUtcClock,
     const FirestoreSyncPreflight(),
     savedLearningItemRollout,
+    contentQualityReportRollout,
+    contentQualityReportPushAuthorizer,
   );
 
   FirestoreSyncGateway._(
@@ -31,6 +39,8 @@ final class FirestoreSyncGateway implements SyncGateway {
     this._utcClock,
     this._preflight,
     this._savedLearningItemRollout,
+    this._contentQualityReportRollout,
+    this._contentQualityReportPushAuthorizer,
   );
 
   final FirebaseFirestore _firestore;
@@ -38,6 +48,8 @@ final class FirestoreSyncGateway implements SyncGateway {
   final UtcClock _utcClock;
   final FirestoreSyncPreflight _preflight;
   final SavedLearningItemSyncRollout _savedLearningItemRollout;
+  final ContentQualityReportSyncRollout _contentQualityReportRollout;
+  final ContentQualityReportPushAuthorizer _contentQualityReportPushAuthorizer;
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
@@ -46,6 +58,10 @@ final class FirestoreSyncGateway implements SyncGateway {
     }
     if (mutation.collection == SyncCollection.savedLearningItems &&
         !_savedLearningItemRollout.allowsClaims) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    if (mutation.collection == SyncCollection.contentQualityReports &&
+        !_contentQualityReportRollout.allowsClaims) {
       throw const PermissionDeniedSyncFailure();
     }
 
@@ -66,6 +82,8 @@ final class FirestoreSyncGateway implements SyncGateway {
             isDeleted: mutation.operationKind == SyncOperationKind.delete,
             clientUpdatedAtUtcMs:
                 mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+            authorizeContentQualityReportPush: () =>
+                _contentQualityReportPushAuthorizer(mutation),
             beginTransaction: () => _firestore
                 .runTransaction<_TransactionPushResult>((transaction) async {
                   final operationSnapshot = await transaction.get(operation);
@@ -151,6 +169,10 @@ final class FirestoreSyncGateway implements SyncGateway {
     }
     if (collection == SyncCollection.savedLearningItems &&
         !_savedLearningItemRollout.allowsClaims) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+    if (collection == SyncCollection.contentQualityReports &&
+        !_contentQualityReportRollout.allowsClaims) {
       return PullPage(changes: const [], nextCursor: after, hasMore: false);
     }
 
@@ -241,6 +263,7 @@ final class FirestoreSyncPreflight {
     String? firebaseUid,
     bool? isDeleted,
     int? clientUpdatedAtUtcMs,
+    Future<bool> Function()? authorizeContentQualityReportPush,
     required Future<T> Function() beginTransaction,
   }) async {
     collection.requireSupportedPayloadVersion(payloadVersion);
@@ -314,10 +337,30 @@ final class FirestoreSyncPreflight {
         clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
         expectedEntityId: entityId,
       );
+    } else if (collection == SyncCollection.contentQualityReports) {
+      final reportPayload = payload;
+      if (reportPayload == null ||
+          entityId == null ||
+          isDeleted == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      ContentQualityReportSyncPayloadContract.requireCanonical(
+        payload: reportPayload,
+        isDeleted: isDeleted,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
+        expectedEntityId: entityId,
+      );
+      if (authorizeContentQualityReportPush == null ||
+          !await authorizeContentQualityReportPush()) {
+        throw const ContentReportConsentWithdrawnSyncFailure();
+      }
     }
     return beginTransaction();
   }
 }
+
+Future<bool> _denyContentQualityReportPush(PushMutation _) async => false;
 
 final class FirestoreSyncCodec {
   const FirestoreSyncCodec._();
@@ -425,6 +468,19 @@ final class FirestoreSyncCodec {
           clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
           expectedEntityId: entityId,
         );
+      } else if (collection == SyncCollection.contentQualityReports) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        final revision = _requiredInt(data, 'revision');
+        final deleted = _requiredBool(data, 'isDeleted');
+        ContentQualityReportSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          isDeleted: deleted,
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+          expectedEntityId: entityId,
+        );
+        if (revision != 1 || deleted) {
+          throw const InvalidSyncPayloadFailure();
+        }
       }
       return SyncEntity(
         collection: collection,
@@ -452,7 +508,8 @@ final class FirestoreSyncCodec {
   }) {
     if (expectedMutation.collection == SyncCollection.experimentAssignments ||
         expectedMutation.collection == SyncCollection.assessmentRuns ||
-        expectedMutation.collection == SyncCollection.savedLearningItems) {
+        expectedMutation.collection == SyncCollection.savedLearningItems ||
+        expectedMutation.collection == SyncCollection.contentQualityReports) {
       _requireExactKeys(data, _operationEnvelopeKeys);
     }
     if (_requiredInt(data, 'schemaVersion') !=
@@ -527,6 +584,32 @@ final class FirestoreSyncCodec {
             mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
         expectedEntityId: mutation.entityId,
       );
+      return;
+    }
+    if (mutation.collection == SyncCollection.contentQualityReports) {
+      if (mutation.payloadVersion != 1 ||
+          mutation.operationKind != SyncOperationKind.upsert ||
+          mutation.baseRevision != 0 ||
+          mutation.localRevision != 1) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      ContentQualityReportSyncPayloadContract.requireCanonical(
+        payload: mutation.payload,
+        isDeleted: false,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        expectedEntityId: mutation.entityId,
+      );
+      final reportId = mutation.payload['reportId']! as String;
+      final submittedAtUtcMs = mutation.payload['submittedAtUtcMs']! as int;
+      if (mutation.operationId !=
+          ContentQualityReportSyncPayloadContract.canonicalOperationId(
+            localOperationId: mutation.operationId,
+            reportId: reportId,
+            submittedAtUtcMs: submittedAtUtcMs,
+          )) {
+        throw const InvalidSyncPayloadFailure();
+      }
       return;
     }
     if (mutation.collection != SyncCollection.experimentAssignments) return;

@@ -36,6 +36,7 @@ import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
@@ -599,6 +600,37 @@ void main() {
         dependencies.bookmarkLearningItem,
         isNotNull,
         reason: 'bookmark UI requires the composed typed production action',
+      );
+      expect(
+        dependencies.contentQualityReports,
+        isNotNull,
+        reason: 'report actions require an independent production repository',
+      );
+      expect(
+        dependencies.reportContent,
+        isNotNull,
+        reason: 'report UI requires the composed typed production action',
+      );
+      await dependencies.reportContent!(
+        identity: const ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: 'word:bootstrap-report',
+          revision: 1,
+        ),
+        reason: ContentReportReason.text,
+      );
+      expect(
+        await dependencies.database!
+            .select(dependencies.database!.contentQualityReports)
+            .get(),
+        hasLength(1),
+      );
+      expect(
+        await (dependencies.database!.select(
+          dependencies.database!.outboxOperations,
+        )..where((row) => row.entityType.equals('contentQualityReport'))).get(),
+        isEmpty,
+        reason: 'report upload remains fail-closed by production default',
       );
       final ownerArchive = await dependencies.exports!.prepare(
         format: ExportFormat.ownerArchiveJson,

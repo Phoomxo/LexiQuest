@@ -42,6 +42,8 @@ final class DriftSyncStore implements SyncStore {
     this.researchSyncRollout = const ResearchCollectionSyncRollout.off(),
     this.savedLearningItemSyncRollout =
         const SavedLearningItemSyncRollout.off(),
+    this.contentQualityReportSyncRollout =
+        const ContentQualityReportSyncRollout.off(),
     this.consentRegistry = const NoOpConsentRegistry(),
   }) : projections = DriftLearningProjectionRebuilder(
          database,
@@ -59,6 +61,7 @@ final class DriftSyncStore implements SyncStore {
   final SyncPayloadRollout payloadRollout;
   final ResearchCollectionSyncRollout researchSyncRollout;
   final SavedLearningItemSyncRollout savedLearningItemSyncRollout;
+  final ContentQualityReportSyncRollout contentQualityReportSyncRollout;
   final ConsentRegistry consentRegistry;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
@@ -351,6 +354,13 @@ final class DriftSyncStore implements SyncStore {
               leaseToken: canonicalLeaseToken,
               attemptCount: selected.attemptCount,
               releaseState: _releaseStateFor(selected),
+              releaseAttemptCount: selected.attemptCount,
+              releaseLastAttemptAtUtc: selected.lastAttemptAtUtcMs == null
+                  ? null
+                  : DateTime.fromMillisecondsSinceEpoch(
+                      selected.lastAttemptAtUtcMs!,
+                      isUtc: true,
+                    ),
               localOperationId: selected.operationId,
               mutation: await _reconstructMutation(
                 selected,
@@ -388,6 +398,39 @@ final class DriftSyncStore implements SyncStore {
           operation.attemptCount >= maxSendReservations) {
         return null;
       }
+      if (operation.entityType ==
+              SyncCollection.contentQualityReports.entityType &&
+          !await _contentQualityReportUploadAllowed(operation.ownerId)) {
+        await database.customUpdate(
+          '''
+          UPDATE outbox_operations
+          SET state = ?, lease_token = NULL, lease_expires_at_utc_ms = NULL
+          WHERE operation_id = ?
+            AND state = 'inFlight'
+            AND lease_token = ?
+            AND attempt_count = ?
+            AND EXISTS (
+              SELECT 1 FROM runtime_flags
+              WHERE "key" = ?
+                AND bool_value = 1
+                AND source = ?
+                AND expires_at_utc_ms IS NOT NULL
+                AND expires_at_utc_ms > ?
+            )
+          ''',
+          variables: [
+            Variable<String>(claim.releaseState),
+            Variable<String>(operation.operationId),
+            Variable<String>(claim.leaseToken),
+            Variable<int>(operation.attemptCount),
+            const Variable<String>(DriftOwnerOperationGate.gateKey),
+            Variable<String>(canonicalOwnerGateToken),
+            Variable<int>(nowUtc.millisecondsSinceEpoch),
+          ],
+          updates: {database.outboxOperations},
+        );
+        return null;
+      }
       final reservedCount = operation.attemptCount + 1;
       final changed = await database.customUpdate(
         '''
@@ -423,6 +466,8 @@ final class DriftSyncStore implements SyncStore {
         leaseToken: claim.leaseToken,
         attemptCount: reservedCount,
         releaseState: claim.releaseState,
+        releaseAttemptCount: claim.releaseAttemptCount,
+        releaseLastAttemptAtUtc: claim.releaseLastAttemptAtUtc,
         localOperationId: claim.localOperationId,
         mutation: claim.mutation,
       );
@@ -460,6 +505,62 @@ final class DriftSyncStore implements SyncStore {
         Variable<String>(claim.releaseState),
         Variable<String>(claim.localOperationId),
         Variable<String>(claim.leaseToken),
+        const Variable<String>(DriftOwnerOperationGate.gateKey),
+        Variable<String>(canonicalOwnerGateToken),
+        Variable<int>(nowUtc.millisecondsSinceEpoch),
+      ],
+      updates: {database.outboxOperations},
+    );
+    return changed == 1;
+  }
+
+  @override
+  Future<bool> cancelContentReportAttemptForConsentWithdrawal({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) async {
+    final canonicalOwnerGateToken = _requiredId(
+      ownerGateToken,
+      'ownerGateToken',
+    );
+    _requireUtc(nowUtc, 'nowUtc');
+    if (claim.mutation.collection != SyncCollection.contentQualityReports ||
+        claim.attemptCount != claim.releaseAttemptCount + 1 ||
+        claim.releaseAttemptCount < 0) {
+      return false;
+    }
+    final changed = await database.customUpdate(
+      '''
+      UPDATE outbox_operations
+      SET state = ?,
+          attempt_count = ?,
+          last_attempt_at_utc_ms = ?,
+          lease_token = NULL,
+          lease_expires_at_utc_ms = NULL,
+          failure_code = NULL
+      WHERE operation_id = ?
+        AND entity_type = ?
+        AND state = 'inFlight'
+        AND lease_token = ?
+        AND attempt_count = ?
+        AND EXISTS (
+          SELECT 1 FROM runtime_flags
+          WHERE "key" = ?
+            AND bool_value = 1
+            AND source = ?
+            AND expires_at_utc_ms IS NOT NULL
+            AND expires_at_utc_ms > ?
+        )
+      ''',
+      variables: <Variable<Object>>[
+        Variable<String>(claim.releaseState),
+        Variable<int>(claim.releaseAttemptCount),
+        Variable<int>(claim.releaseLastAttemptAtUtc?.millisecondsSinceEpoch),
+        Variable<String>(claim.localOperationId),
+        Variable<String>(SyncCollection.contentQualityReports.entityType),
+        Variable<String>(claim.leaseToken),
+        Variable<int>(claim.attemptCount),
         const Variable<String>(DriftOwnerOperationGate.gateKey),
         Variable<String>(canonicalOwnerGateToken),
         Variable<int>(nowUtc.millisecondsSinceEpoch),
@@ -796,6 +897,18 @@ final class DriftSyncStore implements SyncStore {
         cloudEntity,
         expectedFirebaseUid: mutation.firebaseUid,
       );
+    } else if (cloudEntity.collection == SyncCollection.contentQualityReports) {
+      _requireImmutableEntity(
+        cloudEntity,
+        SyncCollection.contentQualityReports,
+      );
+      ContentQualityReportSyncPayloadContract.requireCanonical(
+        payload: cloudEntity.payload,
+        isDeleted: cloudEntity.isDeleted,
+        clientUpdatedAtUtcMs:
+            cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        expectedEntityId: cloudEntity.entityId,
+      );
     }
 
     return database.transaction(() async {
@@ -832,7 +945,8 @@ final class DriftSyncStore implements SyncStore {
           cloudEntity.collection == SyncCollection.rewardTransactions ||
           cloudEntity.collection == SyncCollection.achievementUnlocks ||
           cloudEntity.collection == SyncCollection.experimentAssignments ||
-          cloudEntity.collection == SyncCollection.assessmentRuns) {
+          cloudEntity.collection == SyncCollection.assessmentRuns ||
+          cloudEntity.collection == SyncCollection.contentQualityReports) {
         await _resolveImmutableConflict(
           operation: operation,
           claimedPayload: mutation.payload,
@@ -903,6 +1017,7 @@ final class DriftSyncStore implements SyncStore {
         case SyncCollection.achievementUnlocks:
         case SyncCollection.experimentAssignments:
         case SyncCollection.assessmentRuns:
+        case SyncCollection.contentQualityReports:
           throw const InvalidSyncPayloadFailure();
         case SyncCollection.srsStates:
           // Resolve mutable cache state without overriding local answer evidence.
@@ -1064,6 +1179,8 @@ final class DriftSyncStore implements SyncStore {
               await _applyAssessmentRun(canonicalOwnerId, entity);
             case SyncCollection.savedLearningItems:
               await _applySavedLearningItem(canonicalOwnerId, entity);
+            case SyncCollection.contentQualityReports:
+              await _applyContentQualityReport(canonicalOwnerId, entity);
           }
         }
 
@@ -1109,6 +1226,10 @@ final class DriftSyncStore implements SyncStore {
       return savedLearningItemSyncRollout.allowsClaims;
     }
     if (operation.entityType ==
+        SyncCollection.contentQualityReports.entityType) {
+      return _contentQualityReportUploadAllowed(operation.ownerId);
+    }
+    if (operation.entityType ==
         SyncCollection.experimentAssignments.entityType) {
       return _catalogAllowsExperimentAssignmentClaim(
         operation,
@@ -1148,6 +1269,17 @@ final class DriftSyncStore implements SyncStore {
           unavailableAsNull: true,
         ) !=
         null;
+  }
+
+  Future<bool> _contentQualityReportUploadAllowed(String ownerId) async {
+    if (!contentQualityReportSyncRollout.allowsClaims) return false;
+    final consent = await consentRegistry.snapshot(
+      purpose: ConsentPurpose.researchDataUpload,
+      ownerId: ownerId,
+      consentVersion: contentQualityReportSyncRollout.consentVersion,
+    );
+    return consent.state == ConsentState.granted &&
+        consent.withdrawalUtc == null;
   }
 
   Future<void> _normalizeLegacySrsOutbox({
@@ -1852,6 +1984,51 @@ final class DriftSyncStore implements SyncStore {
           clientUpdatedAtUtc: _utc(updatedAtUtcMs),
           payload: payload,
         );
+      case 'contentQualityReport':
+        final report =
+            await (database.select(database.contentQualityReports)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingleOrNull();
+        if (report == null ||
+            !await _contentQualityReportUploadAllowed(operation.ownerId) ||
+            operation.operationKind != SyncOperationKind.upsert.name ||
+            operation.payloadVersion != 1 ||
+            operation.baseRevision != 0 ||
+            baseRevision != 0 ||
+            _operationRevision(operation) != 1) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final payload = _contentQualityReportPayload(report);
+        final cloudEntityId =
+            ContentQualityReportSyncPayloadContract.canonicalEntityId(
+              reportId: report.id,
+            );
+        ContentQualityReportSyncPayloadContract.requireCanonical(
+          payload: payload,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: report.submittedAtUtcMs,
+          expectedEntityId: cloudEntityId,
+        );
+        return PushMutation(
+          operationId:
+              ContentQualityReportSyncPayloadContract.canonicalOperationId(
+                localOperationId: operation.operationId,
+                reportId: report.id,
+                submittedAtUtcMs: report.submittedAtUtcMs,
+              ),
+          firebaseUid: firebaseUid,
+          collection: SyncCollection.contentQualityReports,
+          entityId: cloudEntityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: _utc(report.submittedAtUtcMs),
+          payload: payload,
+        );
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -1934,6 +2111,9 @@ final class DriftSyncStore implements SyncStore {
         return;
       case 'assessmentRun':
         // Revision receipts live in the ordered durable outbox operations.
+        return;
+      case 'contentQualityReport':
+        // Immutable report receipt is the acknowledged outbox operation.
         return;
       case 'savedLearningItem':
         await (database.update(database.savedLearningItems)..where(
@@ -2080,6 +2260,15 @@ final class DriftSyncStore implements SyncStore {
                 ))
                 .getSingle();
         return _savedLearningItemPayload(item);
+      case 'contentQualityReport':
+        final report =
+            await (database.select(database.contentQualityReports)..where(
+                  (row) =>
+                      row.id.equals(operation.entityId) &
+                      row.ownerId.equals(operation.ownerId),
+                ))
+                .getSingle();
+        return _contentQualityReportPayload(report);
       default:
         throw const InvalidSyncPayloadFailure();
     }
@@ -2457,6 +2646,50 @@ final class DriftSyncStore implements SyncStore {
         ),
       ),
     );
+  }
+
+  Future<void> _applyContentQualityReport(
+    String ownerId,
+    SyncEntity entity,
+  ) async {
+    _requireImmutableEntity(entity, SyncCollection.contentQualityReports);
+    ContentQualityReportSyncPayloadContract.requireCanonical(
+      payload: entity.payload,
+      isDeleted: entity.isDeleted,
+      clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      expectedEntityId: entity.entityId,
+    );
+    final payload = entity.payload;
+    final reportId = payload['reportId']! as String;
+    final existing = await (database.select(
+      database.contentQualityReports,
+    )..where((row) => row.id.equals(reportId))).getSingleOrNull();
+    if (existing != null) {
+      if (existing.ownerId != ownerId) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      await _handleExistingImmutable(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: _contentQualityReportPayload(existing),
+        additionalEntityId: reportId,
+      );
+      return;
+    }
+    await database
+        .into(database.contentQualityReports)
+        .insert(
+          db.ContentQualityReportsCompanion.insert(
+            id: reportId,
+            ownerId: ownerId,
+            contentType: payload['contentType']! as String,
+            contentId: payload['contentId']! as String,
+            contentRevision: payload['contentRevision']! as int,
+            reasonCode: payload['reasonCode']! as String,
+            comment: Value(payload['comment'] as String?),
+            submittedAtUtcMs: payload['submittedAtUtcMs']! as int,
+          ),
+        );
   }
 
   Future<db.SavedLearningItemRow?> _savedLearningItemByNaturalIdentity(
@@ -3333,12 +3566,14 @@ final class DriftSyncStore implements SyncStore {
     required String ownerId,
     required SyncEntity entity,
     required Map<String, Object?> localPayload,
+    String? additionalEntityId,
   }) async {
     if (_jsonEquivalent(localPayload, entity.payload)) {
       await _resolvePendingImmutableOutbox(
         ownerId: ownerId,
         entity: entity,
         failureCode: 'identicalCloudEvidence',
+        additionalEntityId: additionalEntityId,
       );
       return;
     }
@@ -3530,6 +3765,7 @@ final class DriftSyncStore implements SyncStore {
       case SyncCollection.achievementUnlocks:
       case SyncCollection.experimentAssignments:
       case SyncCollection.assessmentRuns:
+      case SyncCollection.contentQualityReports:
         throw const InvalidSyncPayloadFailure();
     }
 
@@ -3851,6 +4087,19 @@ Map<String, Object?> _savedLearningItemPayload(
   'savedAtUtcMs': item.savedAtUtcMs,
   'updatedAtUtcMs': updatedAtUtcMs ?? item.updatedAtUtcMs,
   'isDeleted': isDeleted ?? item.isDeleted,
+};
+
+Map<String, Object?> _contentQualityReportPayload(
+  db.ContentQualityReportRow report,
+) => <String, Object?>{
+  'reportId': report.id,
+  'contentType': report.contentType,
+  'contentId': report.contentId,
+  'contentRevision': report.contentRevision,
+  'reasonCode': report.reasonCode,
+  'comment': report.comment,
+  'submittedAtUtcMs': report.submittedAtUtcMs,
+  'isDeleted': false,
 };
 
 Map<String, Object?> _rewardTransactionPayload(

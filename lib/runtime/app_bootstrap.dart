@@ -76,6 +76,8 @@ import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/review/application/learner_intent_use_cases.dart';
+import '../features/review/application/content_report_use_cases.dart';
+import '../features/review/data/drift_content_quality_report_repository.dart';
 import '../features/review/data/drift_learner_intent_repository.dart';
 import '../features/rewards/domain/economy_transaction_policy.dart';
 import '../features/rewards/domain/reward_models.dart';
@@ -583,6 +585,17 @@ final class AppBootstrap {
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
     ).bookmark;
+    final contentQualityReports = DriftContentQualityReportRepository(
+      database,
+      owners: localOwners,
+      consentRegistry: consentRegistry,
+      onLocalMutation: () async => notifyLocalMutation(),
+    );
+    final reportContent = ContentReportUseCases(
+      repository: contentQualityReports,
+      generateId: idGenerator.v4,
+      nowUtc: () => DateTime.now().toUtc(),
+    ).report;
 
     GuestSessionService exposedGuestSession = guestSessionService;
     if (bindGuestOwnership) {
@@ -997,6 +1010,8 @@ final class AppBootstrap {
       rewards: rewards,
       learnerIntents: learnerIntents,
       bookmarkLearningItem: bookmarkLearningItem,
+      contentQualityReports: contentQualityReports,
+      reportContent: reportContent,
       exports: exports,
       vocabulary: vocabulary,
       vocabularyImporter: vocabularyImporter,

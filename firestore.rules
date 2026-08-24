@@ -179,6 +179,65 @@ service cloud.firestore {
         + hashing.sha256(identity.toUtf8()).toHexString().lower();
     }
 
+    function fieldContentQualityReportCommentHasOnlyCanonicalRedactions(comment) {
+      let scrubbed = comment.replace(
+        '(?i:providertoken|providerkey|providersecret|deviceid|deviceidentifier|devicetoken)[:=]\\[redacted\\]([,;\\s]|$)',
+        ''
+      );
+      return !scrubbed.lower().matches(
+        '.*(providertoken|providerkey|providersecret|deviceid|deviceidentifier|devicetoken)\\s*[:=].*'
+      );
+    }
+
+    function fieldContentQualityReportPayloadOk(reportId) {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'reportId', 'contentType', 'contentId', 'contentRevision',
+          'reasonCode', 'comment', 'submittedAtUtcMs', 'isDeleted'
+        ])
+        && payload.reportId is string
+        && payload.reportId.size() > 0
+        && payload.reportId.size() <= 256
+        && payload.reportId.matches('^\\S(.*\\S)?$')
+        && !payload.reportId.matches('.*[\\x00-\\x1f\\x7f-\\x9f].*')
+        && reportId == 'content-quality-report:'
+             + hashing.sha256(payload.reportId.toUtf8())
+                 .toHexString().lower()
+        && payload.contentType in [
+             'learningPack', 'lexicalMetadata', 'assessmentForm',
+             'offlineArtifact'
+           ]
+        && payload.contentId is string
+        && payload.contentId.size() > 0
+        && payload.contentId.size() <= 256
+        && payload.contentId.matches('^\\S(.*\\S)?$')
+        && !payload.contentId.matches('.*[\\x00-\\x1f\\x7f-\\x9f].*')
+        && payload.contentRevision is int
+        && payload.contentRevision > 0
+        && payload.reasonCode in [
+             'text', 'audio', 'answer', 'explanation'
+           ]
+        && (payload.comment == null
+            || (payload.comment is string
+                && payload.comment.size() > 0
+                && payload.comment.size() <= 500
+                && payload.comment.matches('^\\S([^\\r\\n]*\\S)?$')
+                && !payload.comment.matches(
+                     '.*[\\x00-\\x1f\\x7f-\\x9f].*'
+                   )
+                && fieldContentQualityReportCommentHasOnlyCanonicalRedactions(
+                     payload.comment
+                   )))
+        && payload.submittedAtUtcMs is int
+        && payload.submittedAtUtcMs >= 0
+        && payload.submittedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && payload.isDeleted is bool
+        && !payload.isDeleted
+        && !request.resource.data.isDeleted
+        && request.resource.data.revision == 1;
+    }
+
     function fieldWordCategoryExists(uid) {
       return existsAfter(
         /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
@@ -732,7 +791,8 @@ service cloud.firestore {
         && request.resource.data.entityType in [
              'category', 'word', 'attempt', 'readingEvent',
              'rewardTransaction', 'srsState', 'achievementUnlock',
-             'experimentAssignment', 'assessmentRun', 'savedLearningItem'
+             'experimentAssignment', 'assessmentRun', 'savedLearningItem',
+             'contentQualityReport'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -789,6 +849,29 @@ service cloud.firestore {
         && entity.entityId == entityId
         && entity.lastOperationId == request.resource.data.operationId
         && entity.revision == request.resource.data.resultingRevision;
+    }
+
+    function fieldOperationMatchesContentQualityReport(uid) {
+      let entityId = request.resource.data.entityId;
+      let entityPath =
+        /databases/$(database)/documents/field_users/$(uid)/content_quality_reports/$(entityId);
+      let entity = getAfter(entityPath).data;
+      let operationIdentity = 'v1|' + entityId + '|'
+        + string(entity.payload.submittedAtUtcMs);
+      return !exists(entityPath)
+        && request.resource.data.schemaVersion == 1
+        && request.resource.data.operationId
+             == 'content-quality-operation:'
+                  + hashing.sha256(operationIdentity.toUtf8())
+                      .toHexString().lower()
+        && request.resource.data.operationKind == 'upsert'
+        && request.resource.data.baseRevision == 0
+        && request.resource.data.resultingRevision == 1
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.schemaVersion == 1
+        && entity.revision == 1
+        && !entity.isDeleted;
     }
 
     function fieldOperationMatchesAttempt(uid) {
@@ -940,17 +1023,19 @@ service cloud.firestore {
               ? fieldOperationMatchesWord(uid)
               : entityType == 'savedLearningItem'
                 ? fieldOperationMatchesSavedLearningItem(uid)
-                : entityType == 'attempt'
-                  ? fieldOperationMatchesAttempt(uid)
-                  : entityType == 'readingEvent'
-                    ? fieldOperationMatchesReadingEvent(uid)
-                    : entityType == 'rewardTransaction'
-                      ? fieldOperationMatchesRewardTransaction(uid)
-                      : entityType == 'srsState'
-                        ? fieldOperationMatchesSrsState(uid)
-                        : entityType == 'achievementUnlock'
-                          ? fieldOperationMatchesAchievementUnlock(uid)
-                          : false;
+                : entityType == 'contentQualityReport'
+                  ? fieldOperationMatchesContentQualityReport(uid)
+                  : entityType == 'attempt'
+                    ? fieldOperationMatchesAttempt(uid)
+                    : entityType == 'readingEvent'
+                      ? fieldOperationMatchesReadingEvent(uid)
+                      : entityType == 'rewardTransaction'
+                        ? fieldOperationMatchesRewardTransaction(uid)
+                        : entityType == 'srsState'
+                          ? fieldOperationMatchesSrsState(uid)
+                          : entityType == 'achievementUnlock'
+                            ? fieldOperationMatchesAchievementUnlock(uid)
+                            : false;
     }
 
     // True when the categories/{categoryId} document is owned by the signed-in
@@ -1181,6 +1266,19 @@ service cloud.firestore {
           && fieldSavedLearningItemIdentityStable()
           && fieldOperationLinksEntity(uid, 'savedLearningItem', itemId);
         allow delete: if false;
+      }
+
+      match /content_quality_reports/{reportId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(reportId)
+          && fieldContentQualityReportPayloadOk(reportId)
+          && fieldOperationLinksEntity(
+               uid,
+               'contentQualityReport',
+               reportId
+             );
+        allow update, delete: if false;
       }
 
       // ── P2.6: Quest, streak, events, speech evidence sync rules ───────

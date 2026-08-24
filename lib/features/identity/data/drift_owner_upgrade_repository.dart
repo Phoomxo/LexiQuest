@@ -2613,6 +2613,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         entityType: 'savedLearningItem',
         hasSoftDelete: true,
       ),
+      _RehomeSpecification(
+        table: 'content_quality_reports',
+        entityType: 'contentQualityReport',
+        createOutboxWhenMissing: false,
+      ),
     ]) {
       final rows = await _database
           .customSelect(
@@ -2639,6 +2644,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           updates: {_database.outboxOperations},
         );
         if (changed > 0) continue;
+        if (!specification.createOutboxWhenMissing) continue;
         var baseRevision = 0;
         late final String operationId;
         if (specification.entityType == 'srsState') {
@@ -3060,12 +3066,14 @@ final class _RehomeSpecification {
     required this.entityType,
     this.hasSoftDelete = false,
     this.entityIdColumn = 'id',
+    this.createOutboxWhenMissing = true,
   });
 
   final String table;
   final String entityType;
   final bool hasSoftDelete;
   final String entityIdColumn;
+  final bool createOutboxWhenMissing;
 }
 
 int _compareQuestState({

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyWord;
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
@@ -17,15 +18,21 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/review/application/learner_intent_use_cases.dart';
+import 'package:vocab_learning_app/features/review/application/content_report_use_cases.dart';
+import 'package:vocab_learning_app/features/review/data/drift_content_quality_report_repository.dart';
 import 'package:vocab_learning_app/features/review/data/drift_learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
+import 'package:vocab_learning_app/features/review/domain/content_quality_report_repository.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/learning_pack_detail_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -194,12 +201,98 @@ void main() {
       expect(weaknessCountAfter, weaknessCountBefore);
     },
   );
+
+  testWidgets(
+    'production pack detail report is single-flight and does not mutate learning',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final now = DateTime.utc(2026, 8, 24, 10);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'detail-report-owner',
+        nowUtc: () => now,
+      );
+      final owner = await owners.getOrCreateActiveOwner();
+      await DriftResearchConsentRepository(database).decide(
+        ownerId: owner.id,
+        version: 1,
+        accepted: true,
+        decidedAtUtc: now.subtract(const Duration(minutes: 1)),
+      );
+      final repository = DriftContentQualityReportRepository(
+        database,
+        owners: owners,
+        consentRegistry: DriftConsentRegistry(database),
+        uploadPolicy: const ContentReportUploadPolicy.v1(
+          deployedRulesRevision: contentQualityReportV1RulesRevision,
+          consentVersion: 1,
+        ),
+      );
+      var nextId = 0;
+      final report = ContentReportUseCases(
+        repository: repository,
+        generateId: () => 'detail-report-${++nextId}',
+        nowUtc: () => now,
+      ).report;
+      final before = (
+        content: await database.select(database.vocabularyWords).get(),
+        weakness: await database.select(database.srsStates).get(),
+      );
+
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _dependencies(
+            database,
+            contentQualityReports: repository,
+            reportContent: report,
+          ),
+          child: MaterialApp(
+            home: LearningPackDetailScreen(
+              packId: 'pack:travel',
+              revision: 2,
+              useCases: _useCases(database),
+              vocabulary: _vocabulary(),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Report content').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Text problem'));
+      await tester.pump();
+      await tester.tap(find.text('Submit report'));
+      await tester.tap(find.text('Submit report'), warnIfMissed: false);
+      await tester.pumpAndSettle();
+
+      final reports = await database
+          .select(database.contentQualityReports)
+          .get();
+      final outbox = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityType.equals('contentQualityReport'))).get();
+      expect(reports, hasLength(1));
+      expect(reports.single.contentType, ContentType.lexicalMetadata.name);
+      expect(reports.single.contentId, 'word:station');
+      expect(reports.single.contentRevision, 1);
+      expect(outbox, hasLength(1));
+      expect(
+        await database.select(database.vocabularyWords).get(),
+        before.content,
+      );
+      expect(await database.select(database.srsStates).get(), before.weakness);
+    },
+  );
 }
 
 AppDependencies _dependencies(
   AppDatabase database, {
-  required LearnerIntentRepository learnerIntents,
-  required BookmarkLearningItemAction bookmarkLearningItem,
+  LearnerIntentRepository? learnerIntents,
+  BookmarkLearningItemAction? bookmarkLearningItem,
+  ContentQualityReportRepository? contentQualityReports,
+  ReportContentAction? reportContent,
 }) {
   final research = InertResearchDependencies(database);
   return AppDependencies(
@@ -222,6 +315,8 @@ AppDependencies _dependencies(
         research.evidencePolicyRolloutModeProvider,
     learnerIntents: learnerIntents,
     bookmarkLearningItem: bookmarkLearningItem,
+    contentQualityReports: contentQualityReports,
+    reportContent: reportContent,
   );
 }
 

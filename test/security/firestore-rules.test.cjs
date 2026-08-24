@@ -557,6 +557,70 @@ function writeFieldSavedLearningItem(db, {
   return batch.commit();
 }
 
+function fieldContentQualityReportPayload(overrides = {}) {
+  return {
+    reportId: 'report:station:audio',
+    contentType: 'lexicalMetadata',
+    contentId: 'word:station',
+    contentRevision: 3,
+    reasonCode: 'audio',
+    comment: 'Pronunciation is unclear',
+    submittedAtUtcMs: 7000,
+    isDeleted: false,
+    ...overrides,
+  };
+}
+
+function fieldContentQualityReportEntityId(
+  payload = fieldContentQualityReportPayload(),
+) {
+  return `content-quality-report:${createHash('sha256')
+    .update(payload.reportId, 'utf8').digest('hex')}`;
+}
+
+function fieldContentQualityReportOperationId(
+  payload = fieldContentQualityReportPayload(),
+) {
+  const entityId = fieldContentQualityReportEntityId(payload);
+  const identity = `v1|${entityId}|${payload.submittedAtUtcMs}`;
+  return `content-quality-operation:${createHash('sha256')
+    .update(identity, 'utf8').digest('hex')}`;
+}
+
+function writeFieldContentQualityReport(db, {
+  uid = alice,
+  payload = fieldContentQualityReportPayload(),
+  entityId = fieldContentQualityReportEntityId(payload),
+  operationId = fieldContentQualityReportOperationId(payload),
+  revision = 1,
+  baseRevision = 0,
+  schemaVersion = 1,
+  clientUpdatedAtUtcMs = payload.submittedAtUtcMs,
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'content_quality_reports', entityId), {
+    schemaVersion,
+    entityId,
+    payload,
+    revision,
+    isDeleted: payload.isDeleted,
+    clientUpdatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion,
+    operationId,
+    entityType: 'contentQualityReport',
+    entityId,
+    operationKind: payload.isDeleted ? 'delete' : 'upsert',
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -2508,6 +2572,145 @@ describe('saved_learning_items exact mutable intent contract', () => {
     await assertFails(writeFieldSavedLearningItem(db, {
       entityId: 'device-local-id',
       operationId: 'saved-noncanonical-id-operation',
+    }));
+  });
+});
+
+describe('content_quality_reports exact immutable consent-bound contract', () => {
+  it('allows one exact owner report including a null optional comment', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldContentQualityReport(db));
+    const nullComment = fieldContentQualityReportPayload({
+      reportId: 'report:station:text',
+      reasonCode: 'text',
+      comment: null,
+      submittedAtUtcMs: 7001,
+    });
+    await assertSucceeds(writeFieldContentQualityReport(db, {
+      payload: nullComment,
+      operationId: fieldContentQualityReportOperationId(nullComment),
+    }));
+  });
+
+  it('allows canonical redacted labels while rejecting raw secret values', async () => {
+    const db = authDb();
+    const canonicalComments = [
+      'providerToken=[redacted]',
+      'Audio issue; deviceId=[redacted]',
+      'providerSecret:[redacted]; deviceIdentifier=[redacted]',
+      'provider providerKey=[redacted] Token=ordinary',
+      'xproviderToken=[redacted]',
+    ];
+    for (const [index, comment] of canonicalComments.entries()) {
+      const payload = fieldContentQualityReportPayload({
+        reportId: `report:redacted:${index}`,
+        comment,
+        submittedAtUtcMs: 7010 + index,
+      });
+      await assertSucceeds(writeFieldContentQualityReport(db, {
+        payload,
+        operationId: fieldContentQualityReportOperationId(payload),
+      }));
+    }
+
+    for (const [index, comment] of [
+      'providerToken=raw-provider-secret',
+      'Audio issue; deviceId=raw-device-secret',
+      'providerSecret:[redacted]; deviceIdentifier=raw-device-secret',
+      'providerToken=[redacted]raw-suffix',
+      'providerToken = [redacted]',
+      'providerToken= [redacted]',
+      'providerToken=[REDACTED]',
+      'DEVICEID=[Redacted]',
+    ].entries()) {
+      const payload = fieldContentQualityReportPayload({
+        reportId: `report:raw-secret:${index}`,
+        comment,
+        submittedAtUtcMs: 7020 + index,
+      });
+      await assertFails(writeFieldContentQualityReport(db, {
+        payload,
+        operationId: fieldContentQualityReportOperationId(payload),
+      }));
+    }
+  });
+
+  it('denies cross-owner writes physical deletion revision and tombstone', async () => {
+    await assertFails(writeFieldContentQualityReport(authDb(bob), { uid: alice }));
+    const db = authDb();
+    const entityId = fieldContentQualityReportEntityId();
+    await assertSucceeds(writeFieldContentQualityReport(db, { entityId }));
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'content_quality_reports',
+      entityId,
+    )));
+    await assertFails(writeFieldContentQualityReport(db, {
+      entityId,
+      operationId: fieldContentQualityReportOperationId(),
+      revision: 2,
+      baseRevision: 1,
+    }));
+    const tombstone = fieldContentQualityReportPayload({ isDeleted: true });
+    await assertFails(writeFieldContentQualityReport(db, {
+      payload: tombstone,
+      operationId: fieldContentQualityReportOperationId(tombstone),
+    }));
+  });
+
+  it('rejects non-exact identity reason comment time and secret payloads', async () => {
+    const db = authDb();
+    const canonical = fieldContentQualityReportPayload();
+    const missingRevision = { ...canonical };
+    delete missingRevision.contentRevision;
+    const cases = [
+      { ...canonical, extra: true },
+      missingRevision,
+      { ...canonical, reportId: ' report:station:audio' },
+      { ...canonical, reportId: 'report:\nstation:audio' },
+      { ...canonical, contentType: 'unknown' },
+      { ...canonical, contentId: ' word:station' },
+      { ...canonical, contentId: 'word:\tstation' },
+      { ...canonical, contentRevision: 0 },
+      { ...canonical, reasonCode: 'other' },
+      { ...canonical, comment: '' },
+      { ...canonical, comment: ' padded ' },
+      { ...canonical, comment: 'line one\nline two' },
+      { ...canonical, comment: 'interior\tcontrol' },
+      { ...canonical, comment: 'interior\u0085control' },
+      { ...canonical, comment: 'ก'.repeat(501) },
+      { ...canonical, comment: 'providerToken=provider-secret-SENTINEL' },
+      { ...canonical, comment: 'PROVIDERTOKEN=provider-secret-SENTINEL' },
+      { ...canonical, comment: 'deviceId=device-secret-SENTINEL' },
+      { ...canonical, submittedAtUtcMs: -1 },
+      { ...canonical, isDeleted: 'false' },
+    ];
+    for (const [index, payload] of cases.entries()) {
+      await assertFails(writeFieldContentQualityReport(db, {
+        payload,
+        entityId: fieldContentQualityReportEntityId(payload),
+        operationId: fieldContentQualityReportOperationId(payload),
+      }));
+    }
+    await assertFails(writeFieldContentQualityReport(db, {
+      clientUpdatedAtUtcMs: canonical.submittedAtUtcMs + 1,
+      operationId: fieldContentQualityReportOperationId(canonical),
+    }));
+    await assertFails(writeFieldContentQualityReport(db, {
+      entityId: 'device-local-report-id',
+      operationId: fieldContentQualityReportOperationId(canonical),
+    }));
+    await assertFails(writeFieldContentQualityReport(db, {
+      schemaVersion: 2,
+      operationId: fieldContentQualityReportOperationId(canonical),
+    }));
+    await assertFails(writeFieldContentQualityReport(db, {
+      operationId: 'device-local-operation-id',
+    }));
+    await assertFails(writeFieldContentQualityReport(db, {
+      operationId: `content-quality-operation:${'0'.repeat(64)}`,
     }));
   });
 });

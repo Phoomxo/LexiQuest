@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -19,6 +20,7 @@ import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_store.dart';
+import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 
 void main() {
   late AppDatabase database;
@@ -209,6 +211,70 @@ void main() {
     expect(operation.acknowledgedAtUtcMs, isNull);
     expect(gateway.appliedOperationIds, isEmpty);
   });
+
+  test(
+    'withdrawal at the push fence restores an unattempted pending report',
+    () async {
+      await DriftResearchConsentRepository(database).decide(
+        ownerId: 'owner-a',
+        version: 1,
+        accepted: true,
+        decidedAtUtc: nowUtc,
+      );
+      await database.customInsert('''
+        INSERT INTO content_quality_reports(
+          id, owner_id, content_type, content_id, content_revision,
+          reason_code, comment, submitted_at_utc_ms
+        ) VALUES (
+          'report:push-fence', 'owner-a', 'lexicalMetadata', 'word:station',
+          3, 'audio', NULL, 2000
+        )
+      ''');
+      await database.customInsert('''
+        INSERT INTO outbox_operations(
+          operation_id, owner_id, entity_type, entity_id, operation_kind,
+          payload_version, base_revision, state, attempt_count,
+          created_at_utc_ms
+        ) VALUES (
+          'contentQualityReport:report:push-fence:1', 'owner-a',
+          'contentQualityReport', 'report:push-fence', 'upsert', 1, 0,
+          'pending', 0, 2000
+        )
+      ''');
+      store = DriftSyncStore(
+        database,
+        consentRegistry: DriftConsentRegistry(database),
+        contentQualityReportSyncRollout:
+            const ContentQualityReportSyncRollout.v1(
+              deployedRulesRevision: contentQualityReportV1RulesRevision,
+              consentVersion: 1,
+            ),
+      );
+      gateway.onPush = (_) async {
+        await DriftResearchConsentRepository(database).decide(
+          ownerId: 'owner-a',
+          version: 1,
+          accepted: false,
+          decidedAtUtc: nowUtc.add(const Duration(seconds: 1)),
+        );
+        throw const ContentReportConsentWithdrawnSyncFailure();
+      };
+
+      final result = await engine().run();
+      final operation = await database
+          .select(database.outboxOperations)
+          .getSingle();
+
+      expect(result.status, SyncRunStatus.completed);
+      expect(result.failures, 0);
+      expect(operation.state, 'pending');
+      expect(operation.attemptCount, 0);
+      expect(operation.lastAttemptAtUtcMs, isNull);
+      expect(operation.leaseToken, isNull);
+      expect(operation.failureCode, isNull);
+      expect(gateway.appliedOperationIds, isEmpty);
+    },
+  );
 
   test(
     'mismatched acknowledgement cannot clear its outbox operation',
@@ -1038,6 +1104,17 @@ final class _CloudIdentitySyncStore implements SyncStore {
   );
 
   @override
+  Future<bool> cancelContentReportAttemptForConsentWithdrawal({
+    required ClaimedSyncOperation claim,
+    required String ownerGateToken,
+    required DateTime nowUtc,
+  }) => delegate.cancelContentReportAttemptForConsentWithdrawal(
+    claim: claim,
+    ownerGateToken: ownerGateToken,
+    nowUtc: nowUtc,
+  );
+
+  @override
   Future<bool> resolvePushConflict({
     required ClaimedSyncOperation claim,
     required String ownerGateToken,
@@ -1082,6 +1159,8 @@ final class _CloudIdentitySyncStore implements SyncStore {
       leaseToken: claim.leaseToken,
       attemptCount: claim.attemptCount,
       releaseState: claim.releaseState,
+      releaseAttemptCount: claim.releaseAttemptCount,
+      releaseLastAttemptAtUtc: claim.releaseLastAttemptAtUtc,
       localOperationId: localOperationId,
       mutation: PushMutation(
         operationId: cloudOperationId,

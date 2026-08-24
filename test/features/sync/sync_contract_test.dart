@@ -57,6 +57,7 @@ void main() {
           SyncCollection.experimentAssignments: <int>{1},
           SyncCollection.assessmentRuns: <int>{1},
           SyncCollection.savedLearningItems: <int>{1},
+          SyncCollection.contentQualityReports: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -468,6 +469,133 @@ void main() {
       );
       expect(deviceA.length, lessThanOrEqualTo(256));
     });
+  });
+
+  group('content quality report sync v1', () {
+    const payload = <String, Object?>{
+      'reportId': 'report:station:audio',
+      'contentType': 'lexicalMetadata',
+      'contentId': 'word:station',
+      'contentRevision': 3,
+      'reasonCode': 'audio',
+      'comment': 'Pronunciation is unclear',
+      'submittedAtUtcMs': 20,
+      'isDeleted': false,
+    };
+
+    test(
+      'claims require exact rules revision and positive consent version',
+      () {
+        expect(
+          const ContentQualityReportSyncRollout.off().allowsClaims,
+          isFalse,
+        );
+        expect(
+          const ContentQualityReportSyncRollout.v1(
+            deployedRulesRevision: legacyFirestoreRulesRevision,
+            consentVersion: 1,
+          ).allowsClaims,
+          isFalse,
+        );
+        expect(
+          const ContentQualityReportSyncRollout.v1(
+            deployedRulesRevision: contentQualityReportV1RulesRevision,
+            consentVersion: 0,
+          ).allowsClaims,
+          isFalse,
+        );
+        expect(
+          const ContentQualityReportSyncRollout.v1(
+            deployedRulesRevision: contentQualityReportV1RulesRevision,
+            consentVersion: 1,
+          ).allowsClaims,
+          isTrue,
+        );
+      },
+    );
+
+    test('collection and payload bind exact immutable report authority', () {
+      expect(
+        SyncCollection.contentQualityReports.wireName,
+        'content_quality_reports',
+      );
+      expect(
+        SyncCollection.contentQualityReports.entityType,
+        'contentQualityReport',
+      );
+      expect(
+        () => ContentQualityReportSyncPayloadContract.requireCanonical(
+          payload: payload,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: 20,
+          expectedEntityId:
+              ContentQualityReportSyncPayloadContract.canonicalEntityId(
+                reportId: 'report:station:audio',
+              ),
+        ),
+        returnsNormally,
+      );
+    });
+
+    test(
+      'rejects extra missing noncanonical secret and tombstone payloads',
+      () {
+        final overlong = List<String>.filled(501, 'ก').join();
+        for (final invalid in <Map<String, Object?>>[
+          <String, Object?>{...payload, 'extra': true},
+          <String, Object?>{...payload}..remove('contentRevision'),
+          <String, Object?>{...payload, 'reportId': 'report:\ninvalid'},
+          <String, Object?>{...payload, 'contentType': 'unknown'},
+          <String, Object?>{...payload, 'contentId': ' word:station'},
+          <String, Object?>{...payload, 'contentId': 'word:\tstation'},
+          <String, Object?>{...payload, 'contentRevision': 0},
+          <String, Object?>{...payload, 'reasonCode': 'other'},
+          <String, Object?>{...payload, 'comment': ''},
+          <String, Object?>{...payload, 'comment': ' padded '},
+          <String, Object?>{...payload, 'comment': 'line one\nline two'},
+          <String, Object?>{...payload, 'comment': overlong},
+          <String, Object?>{
+            ...payload,
+            'comment': 'providerToken=provider-secret-SENTINEL',
+          },
+          <String, Object?>{
+            ...payload,
+            'comment': 'deviceId=device-secret-SENTINEL',
+          },
+          <String, Object?>{...payload, 'submittedAtUtcMs': 19},
+          <String, Object?>{...payload, 'isDeleted': true},
+        ]) {
+          expect(
+            () => ContentQualityReportSyncPayloadContract.requireCanonical(
+              payload: invalid,
+              isDeleted: false,
+              clientUpdatedAtUtcMs: 20,
+            ),
+            throwsA(isA<InvalidSyncPayloadFailure>()),
+          );
+        }
+      },
+    );
+
+    test(
+      'canonical cloud id hides and deterministically binds local report id',
+      () {
+        final first = ContentQualityReportSyncPayloadContract.canonicalEntityId(
+          reportId: 'report:station:audio',
+        );
+        expect(first, isNot(contains('report:station:audio')));
+        expect(
+          first,
+          ContentQualityReportSyncPayloadContract.canonicalEntityId(
+            reportId: 'report:station:audio',
+          ),
+        );
+        expect(
+          first,
+          matches(RegExp(r'^content-quality-report:[0-9a-f]{64}$')),
+        );
+      },
+    );
   });
 
   group('privacy-safe failures and policy', () {

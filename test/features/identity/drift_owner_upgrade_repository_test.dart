@@ -161,6 +161,14 @@ void main() {
             .getSingle(),
         'account-owner',
       );
+      expect(
+        await database.customSelect('''
+          SELECT operation_id FROM outbox_operations
+          WHERE entity_type = 'contentQualityReport'
+        ''').get(),
+        isEmpty,
+        reason: 'owner upgrade must not opt a local-only report into upload',
+      );
     },
   );
 
@@ -1668,6 +1676,11 @@ void main() {
                   row.failureCode == null,
             ),
         isTrue,
+      );
+      expect(
+        rehomedOutbox.where((row) => row.entityType == 'contentQualityReport'),
+        isEmpty,
+        reason: 'local-only reports remain local-only after owner rehome',
       );
       expect(
         rehomedOutbox
