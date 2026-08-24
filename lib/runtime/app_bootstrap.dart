@@ -58,6 +58,7 @@ import '../features/learning/domain/evidence_eligibility_policy.dart';
 import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/learning_packs/data/drift_learning_pack_repository.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
+import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -141,6 +142,36 @@ SpeechRecognitionGateway _productionSpeechRecognitionGateway() =>
     PluginSpeechRecognitionGateway();
 ResearchRuntimeConfig _legacyResearchRuntimeConfig() =>
     ResearchRuntimeConfig.legacySafe();
+
+const int _maxBundledLexicalMetadataBytes = 8 * 1024;
+final RegExp _bundledLexicalWordId = RegExp(r'^word:[a-z0-9][a-z0-9_-]{0,95}$');
+
+/// Loads only bounded, packaged lexical artifacts from their canonical path.
+/// Missing, malformed, or non-lexical identities deliberately resolve to null
+/// so the content-manifest repository fails closed before presentation.
+Future<Uint8List?> _productionContentArtifactBytes(
+  ContentIdentity identity,
+) async {
+  final path = _bundledLexicalMetadataAssetPath(identity);
+  if (path == null) return null;
+  try {
+    final bytes = await rootBundle.load(path);
+    if (bytes.lengthInBytes > _maxBundledLexicalMetadataBytes) return null;
+    return bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
+  } on Object {
+    return null;
+  }
+}
+
+String? _bundledLexicalMetadataAssetPath(ContentIdentity identity) {
+  if (identity.type != ContentType.lexicalMetadata ||
+      identity.revision <= 0 ||
+      !_bundledLexicalWordId.hasMatch(identity.id)) {
+    return null;
+  }
+  final wordKey = identity.id.substring('word:'.length);
+  return 'assets/content/lexical_metadata/$wordKey/r${identity.revision}.json';
+}
 
 Future<void> Function() _retainAsyncDisposer(Future<void> Function() value) =>
     value;
@@ -272,6 +303,7 @@ final class AppBootstrap {
     this.researchStateProvider,
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
     this.assessmentOverride,
+    ContentArtifactBytesLoader? loadContentArtifactBytes,
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -289,7 +321,9 @@ final class AppBootstrap {
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
        aiNowUtc = aiNowUtc ?? _aiSystemNowUtc,
-       learningTimezoneId = learningTimezoneId ?? _systemLearningTimezoneId;
+       learningTimezoneId = learningTimezoneId ?? _systemLearningTimezoneId,
+       loadContentArtifactBytes =
+           loadContentArtifactBytes ?? _productionContentArtifactBytes;
 
   factory AppBootstrap.production() {
     return AppBootstrap(
@@ -334,6 +368,7 @@ final class AppBootstrap {
   final SpeechRecognitionGatewayFactory speechRecognitionGatewayFactory;
   final ManagedAiTutorBuilder buildAiTutor;
   final ManagedVoiceBuilder buildVoice;
+  final ContentArtifactBytesLoader loadContentArtifactBytes;
   Future<AppDependencies>? _initialization;
 
   Future<AppDependencies> initialize() {
@@ -552,14 +587,20 @@ final class AppBootstrap {
       resources.own(ownerBindingGuestSession.dispose);
       exposedGuestSession = ownerBindingGuestSession;
     }
+    final contentManifests = DriftContentManifestRepository(
+      database,
+      loadArtifactBytes: loadContentArtifactBytes,
+    );
     final vocabulary = VocabularyUseCases(
       owners: localOwners,
-      vocabulary: DriftVocabularyRepository(database),
+      vocabulary: DriftVocabularyRepository(
+        database,
+        contentManifests: contentManifests,
+      ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
-    final contentManifests = DriftContentManifestRepository(database);
     final vocabularyImporter = ImportVocabulary(
       owners: localOwners,
       repository: DriftVocabularyImportRepository(database),

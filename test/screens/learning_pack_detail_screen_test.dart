@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:drift/native.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide VocabularyWord;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -14,8 +15,12 @@ import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/learning_pack_detail_screen.dart';
+import 'package:vocab_learning_app/widgets/rich_lexical_card.dart';
 
 void main() {
   testWidgets(
@@ -29,6 +34,7 @@ void main() {
             packId: 'pack:travel',
             revision: 2,
             useCases: _useCases(database),
+            vocabulary: _vocabulary(),
           ),
         ),
       );
@@ -38,8 +44,10 @@ void main() {
         find.bySemanticsLabel('Travel basics, A1, revision 2'),
         findsOneWidget,
       );
-      expect(find.text('word:station'), findsOneWidget);
-      expect(find.text('word:market'), findsOneWidget);
+      expect(find.byType(RichLexicalCard), findsNWidgets(2));
+      expect(find.text('station'), findsOneWidget);
+      expect(find.text('market'), findsOneWidget);
+      expect(find.text('Completed sessions: 0'), findsOneWidget);
       await tester.scrollUntilVisible(
         find.text('Meaning quiz'),
         200,
@@ -56,7 +64,6 @@ void main() {
         find.bySemanticsLabel('Associative reading: Available'),
         findsOneWidget,
       );
-      expect(find.text('Completed sessions: 0'), findsOneWidget);
     },
   );
 
@@ -85,7 +92,35 @@ void main() {
       expect(find.text('word:station'), findsNothing);
     },
   );
+
+  testWidgets(
+    'fails closed when canonical vocabulary authority is unavailable',
+    (tester) async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: LearningPackDetailScreen(
+            packId: 'pack:travel',
+            revision: 2,
+            useCases: _useCases(database),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(LearningPackDetailUnavailable), findsOneWidget);
+      expect(find.byType(RichLexicalCard), findsNothing);
+    },
+  );
 }
+
+VocabularyUseCases _vocabulary() => VocabularyUseCases(
+  owners: _Owner(),
+  vocabulary: _PinnedVocabulary(),
+  generateId: () => 'unused',
+  nowUtc: () => DateTime.utc(2026, 8, 24),
+);
 
 LearningPackDetailUseCases _useCases(
   AppDatabase database, {
@@ -148,4 +183,38 @@ final class _Owner implements LocalOwnerRepository {
     String ownerId,
     String firebaseUid,
   ) => getOrCreateActiveOwner();
+}
+
+final class _PinnedVocabulary implements VocabularyRepository {
+  @override
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds) async {
+    final ids = wordIds.toList(growable: false);
+    if (ids.any((id) => id != 'word:station' && id != 'word:market')) {
+      throw StateError('Unknown pinned vocabulary identity.');
+    }
+    return ids
+        .map(
+          (id) => VocabularyWord(
+            id: id,
+            ownerId: 'packaged-owner',
+            categoryId: 'category:pack',
+            spelling: id == 'word:station' ? 'station' : 'market',
+            normalizedSpelling: id == 'word:station' ? 'station' : 'market',
+            meaning: id == 'word:station' ? 'สถานี' : 'ตลาด',
+            normalizedMeaning: id == 'word:station' ? 'สถานี' : 'ตลาด',
+            partOfSpeech: 'noun',
+            cefrLevel: 'A1',
+            source: 'pack:v2',
+            isGlobal: true,
+            localRevision: 1,
+            isDeleted: false,
+            createdAtUtc: DateTime.utc(2026, 8, 24),
+            updatedAtUtc: DateTime.utc(2026, 8, 24),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }

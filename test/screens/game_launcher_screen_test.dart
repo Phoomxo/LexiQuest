@@ -282,6 +282,10 @@ final class _VocabularyRepositoryFake implements VocabularyRepository {
   }
 
   @override
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds) =>
+      Future<List<VocabularyWord>>.error(UnimplementedError());
+
+  @override
   Stream<List<VocabularyCategory>> watchCategories(String ownerId) =>
       const Stream.empty();
 

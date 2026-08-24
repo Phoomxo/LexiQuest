@@ -1,7 +1,12 @@
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' hide isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_category.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_failure.dart';
@@ -269,4 +274,316 @@ void main() {
     expect(updated.read<String>('content_review_state'), 'unreviewed');
     expect(updated.read<String>('content_publication_state'), 'private');
   });
+
+  test(
+    'pinned reads preserve requested order and attach only verified lexical metadata',
+    () async {
+      await _insertPackagedVocabularyWord(
+        database,
+        id: 'word:station',
+        spelling: 'station',
+        meaning: 'สถานี',
+      );
+      await _insertPackagedVocabularyWord(
+        database,
+        id: 'word:market',
+        spelling: 'market',
+        meaning: 'ตลาด',
+      );
+      final resolver = _LexicalArtifactResolver(<String, Uint8List>{
+        'word:station': Uint8List.fromList(
+          utf8.encode(
+            jsonEncode(<String, Object?>{
+              'schemaVersion': 1,
+              'wordId': 'word:station',
+              'contentRevision': 1,
+              'ipa': '/ˈsteɪ.ʃən/',
+              'examples': <String>['The station is near the market.'],
+              'synonyms': <String>['terminal'],
+              'antonyms': <String>[],
+              'audio': <String, Object?>{
+                'language': 'en',
+                'assetId': 'audio:station:en',
+              },
+            }),
+          ),
+        ),
+      });
+      final pinned = DriftVocabularyRepository(
+        database,
+        contentManifests: resolver,
+      );
+      final before = await database.customSelect('''
+            SELECT (SELECT COUNT(*) FROM vocabulary_words) AS word_count,
+                   (SELECT COUNT(*) FROM sqlite_master
+                     WHERE type = 'table' AND name = 'lexical_metadata')
+                     AS lexical_table_count
+          ''').getSingle();
+
+      final words = await pinned.readPinnedByIds(const [
+        'word:market',
+        'word:station',
+      ]);
+
+      expect(words.map((word) => word.id), ['word:market', 'word:station']);
+      expect(words.first.richMetadata, isNull);
+      expect(words.last.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
+      expect(words.last.richMetadata!.synonyms, const ['terminal']);
+      expect(words.last.richMetadata!.audio!.assetId, 'audio:station:en');
+      final after = await database.customSelect('''
+            SELECT (SELECT COUNT(*) FROM vocabulary_words) AS word_count,
+                   (SELECT COUNT(*) FROM sqlite_master
+                     WHERE type = 'table' AND name = 'lexical_metadata')
+                     AS lexical_table_count
+          ''').getSingle();
+      expect(after.read<int>('word_count'), before.read<int>('word_count'));
+      expect(
+        after.read<int>('lexical_table_count'),
+        before.read<int>('lexical_table_count'),
+      );
+    },
+  );
+
+  test(
+    'malformed, unbounded, or checksum-mismatched metadata falls back to core words',
+    () async {
+      await _insertPackagedVocabularyWord(
+        database,
+        id: 'word:station',
+        spelling: 'station',
+        meaning: 'สถานี',
+      );
+      final malformed = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': Uint8List.fromList(utf8.encode('{"wordId":true}')),
+        }),
+      );
+      final checksumMismatch = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(
+          const <String, Uint8List>{},
+          failure: const ContentQualityFailure(
+            ContentQualityFailureCode.checksumMismatch,
+          ),
+        ),
+      );
+      final revisionMismatch = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': Uint8List.fromList(
+            utf8.encode(
+              jsonEncode(<String, Object?>{
+                'schemaVersion': 1,
+                'wordId': 'word:station',
+                'contentRevision': 2,
+                'ipa': null,
+                'examples': <String>[],
+                'synonyms': <String>[],
+                'antonyms': <String>[],
+                'audio': null,
+              }),
+            ),
+          ),
+        }),
+      );
+      final oversized = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': _maximalValidLexicalArtifact(),
+        }),
+      );
+      final overNested = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': _overNestedLexicalArtifact(),
+        }),
+      );
+
+      expect(
+        (await malformed.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+      expect(
+        (await checksumMismatch.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+      expect(
+        (await revisionMismatch.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+      expect(
+        (await oversized.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+      expect(
+        (await overNested.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+    },
+  );
+
+  test(
+    'pinned reads fail closed for unknown ids and never enrich user-authored words',
+    () async {
+      await repository.createCategory(category());
+      await repository.createWord(word(1));
+
+      await expectLater(
+        repository.readPinnedByIds(const ['word:unknown']),
+        throwsA(isA<VocabularyNotFoundFailure>()),
+      );
+      final userWord = (await repository.readPinnedByIds(const [
+        'word-1',
+      ])).single;
+      expect(userWord.richMetadata, isNull);
+      expect(userWord.contentProvenance, ContentProvenance.userAuthored);
+      expect(userWord.contentReviewState, ContentReviewState.unreviewed);
+      expect(userWord.contentPublicationState, ContentPublicationState.private);
+    },
+  );
+}
+
+Uint8List _maximalValidLexicalArtifact() {
+  final values = List<String>.generate(
+    8,
+    (index) => '${index.toString().padLeft(3, '0')}${'x' * 397}',
+    growable: false,
+  );
+  return Uint8List.fromList(
+    utf8.encode(
+      jsonEncode(<String, Object?>{
+        'schemaVersion': 1,
+        'wordId': 'word:station',
+        'contentRevision': 1,
+        'ipa': null,
+        'examples': values,
+        'synonyms': values,
+        'antonyms': values,
+        'audio': null,
+      }),
+    ),
+  );
+}
+
+Uint8List _overNestedLexicalArtifact() {
+  Object nested = const <Object>[];
+  for (var depth = 0; depth < 12; depth += 1) {
+    nested = <Object>[nested];
+  }
+  return Uint8List.fromList(
+    utf8.encode(
+      jsonEncode(<String, Object?>{
+        'schemaVersion': 1,
+        'wordId': 'word:station',
+        'contentRevision': 1,
+        'ipa': null,
+        'examples': nested,
+        'synonyms': <String>[],
+        'antonyms': <String>[],
+        'audio': null,
+      }),
+    ),
+  );
+}
+
+Future<void> _insertPackagedVocabularyWord(
+  AppDatabase database, {
+  required String id,
+  required String spelling,
+  required String meaning,
+}) async {
+  await database.customInsert(
+    "INSERT OR IGNORE INTO local_owners(id, account_state, "
+    "created_at_utc_ms, is_active) VALUES "
+    "('packaged-owner', 'localGuest', 1, 0)",
+  );
+  await database.customInsert(
+    "INSERT OR IGNORE INTO vocabulary_categories "
+    "(id, owner_id, name, normalized_name, created_at_utc_ms, "
+    "updated_at_utc_ms) VALUES "
+    "('category:pack', 'packaged-owner', 'Pack', 'pack', 1, 1)",
+  );
+  final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
+    categoryId: 'category:pack',
+    spelling: spelling,
+    normalizedSpelling: spelling,
+    meaning: meaning,
+    normalizedMeaning: meaning,
+    partOfSpeech: 'noun',
+    cefrLevel: 'A1',
+    source: 'pack:v1',
+    isGlobal: true,
+  );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: id,
+          ownerId: 'packaged-owner',
+          categoryId: 'category:pack',
+          spelling: spelling,
+          normalizedSpelling: spelling,
+          meaning: meaning,
+          normalizedMeaning: meaning,
+          partOfSpeech: 'noun',
+          cefrLevel: const Value('A1'),
+          source: const Value('pack:v1'),
+          isGlobal: const Value(true),
+          contentRevision: const Value(1),
+          contentChecksumSha256: Value(checksum),
+          contentProvenance: const Value('packaged'),
+          contentReviewState: const Value('approved'),
+          contentPublicationState: const Value('published'),
+          createdAtUtcMs: 1,
+          updatedAtUtcMs: 1,
+        ),
+      );
+}
+
+final class _LexicalArtifactResolver implements ContentManifestRepository {
+  _LexicalArtifactResolver(this.artifacts, {this.failure});
+
+  final Map<String, Uint8List> artifacts;
+  final ContentQualityFailure? failure;
+
+  @override
+  Future<VerifiedContentManifest> requireVerified(
+    ContentIdentity identity,
+  ) async {
+    final error = failure;
+    if (error != null) throw error;
+    final bytes = artifacts[identity.id];
+    if (bytes == null) {
+      throw const ContentQualityFailure(
+        ContentQualityFailureCode.missingReference,
+      );
+    }
+    return VerifiedContentManifest(
+      manifest: ContentManifest(
+        storageId: 'manifest:${identity.id}:${identity.revision}',
+        identity: identity,
+        checksumSha256: sha256.convert(bytes).toString(),
+        byteLength: bytes.length,
+        provenance: ContentProvenance.packaged,
+        sourceUri: 'asset://lexical/${identity.id}.json',
+        reviewState: ContentReviewState.approved,
+        publicationState: ContentPublicationState.published,
+        createdAtUtc: DateTime.utc(2026, 8, 24),
+        reviewedAtUtc: DateTime.utc(2026, 8, 24, 1),
+        publishedAtUtc: DateTime.utc(2026, 8, 24, 2),
+      ),
+      bytes: bytes,
+    );
+  }
 }

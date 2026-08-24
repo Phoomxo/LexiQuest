@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
@@ -27,6 +28,8 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_policy_roll
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
@@ -2179,6 +2182,41 @@ void main() {
         await dependencies.dispose();
       },
     );
+
+    test(
+      'composes verified bundled lexical bytes into pinned vocabulary reads',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final bytes = _verifiedLexicalArtifactBytes();
+        await _seedPackagedLexicalArtifact(database, bytes);
+        final requested = <ContentIdentity>[];
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          loadContentArtifactBytes: (identity) async {
+            requested.add(identity);
+            return identity == _lexicalIdentity ? bytes : null;
+          },
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await bootstrap.initialize();
+          final words = await dependencies.vocabulary!.readPinnedByIds(const [
+            'word:station',
+          ]);
+
+          expect(requested, const [_lexicalIdentity]);
+          expect(words.single.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
+          expect(words.single.richMetadata!.audio!.assetId, 'audio:station:en');
+        } finally {
+          await dependencies?.dispose();
+        }
+      },
+    );
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -2207,6 +2245,103 @@ void main() {
       },
     );
   });
+}
+
+const _lexicalIdentity = ContentIdentity(
+  type: ContentType.lexicalMetadata,
+  id: 'word:station',
+  revision: 1,
+);
+
+Uint8List _verifiedLexicalArtifactBytes() => Uint8List.fromList(
+  utf8.encode(
+    jsonEncode(<String, Object?>{
+      'schemaVersion': 1,
+      'wordId': _lexicalIdentity.id,
+      'contentRevision': _lexicalIdentity.revision,
+      'ipa': '/ˈsteɪ.ʃən/',
+      'examples': <String>['The station is near the market.'],
+      'synonyms': <String>['terminal'],
+      'antonyms': <String>[],
+      'audio': <String, Object?>{
+        'language': 'en',
+        'assetId': 'audio:station:en',
+      },
+    }),
+  ),
+);
+
+Future<void> _seedPackagedLexicalArtifact(
+  AppDatabase database,
+  Uint8List bytes,
+) async {
+  const createdAt = 1;
+  final wordChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+    categoryId: 'category:pack',
+    spelling: 'station',
+    normalizedSpelling: 'station',
+    meaning: 'สถานี',
+    normalizedMeaning: 'สถานี',
+    partOfSpeech: 'noun',
+    cefrLevel: 'A1',
+    source: 'pack:v1',
+    isGlobal: true,
+  );
+  await database.customInsert(
+    "INSERT INTO local_owners(id, account_state, created_at_utc_ms, is_active) "
+    "VALUES ('packaged-owner', 'localGuest', $createdAt, 0)",
+  );
+  await database.customInsert(
+    "INSERT INTO vocabulary_categories "
+    "(id, owner_id, name, normalized_name, created_at_utc_ms, "
+    "updated_at_utc_ms) VALUES "
+    "('category:pack', 'packaged-owner', 'Pack', 'pack', $createdAt, $createdAt)",
+  );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: _lexicalIdentity.id,
+          ownerId: 'packaged-owner',
+          categoryId: 'category:pack',
+          spelling: 'station',
+          normalizedSpelling: 'station',
+          meaning: 'สถานี',
+          normalizedMeaning: 'สถานี',
+          partOfSpeech: 'noun',
+          cefrLevel: const Value('A1'),
+          source: const Value('pack:v1'),
+          isGlobal: const Value(true),
+          contentRevision: Value(_lexicalIdentity.revision),
+          contentChecksumSha256: Value(wordChecksum),
+          contentProvenance: Value(ContentProvenance.packaged.name),
+          contentReviewState: Value(ContentReviewState.approved.name),
+          contentPublicationState: Value(
+            ContentPublicationState.published.name,
+          ),
+          createdAtUtcMs: createdAt,
+          updatedAtUtcMs: createdAt,
+        ),
+      );
+  await database
+      .into(database.contentManifests)
+      .insert(
+        ContentManifestsCompanion.insert(
+          id: 'manifest:lexical:station:r1',
+          contentType: _lexicalIdentity.type.name,
+          contentId: _lexicalIdentity.id,
+          revision: _lexicalIdentity.revision,
+          checksumSha256: sha256.convert(bytes).toString(),
+          byteLength: bytes.length,
+          provenance: ContentProvenance.packaged.name,
+          sourceUri: 'asset://lexical-metadata/station/r1.json',
+          reviewState: ContentReviewState.approved.name,
+          publicationState: ContentPublicationState.published.name,
+          createdAtUtcMs: createdAt,
+          reviewedAtUtcMs: const Value(2),
+          publishedAtUtcMs: const Value(3),
+        ),
+      );
 }
 
 AssessmentUseCases _buildInjectedAssessment(AppDatabase database) {

@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../learning_packs/domain/content_manifest.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../domain/vocabulary_category.dart';
 import '../domain/vocabulary_failure.dart';
@@ -8,11 +9,12 @@ import '../domain/vocabulary_repository.dart';
 import '../domain/vocabulary_word.dart';
 
 final class DriftVocabularyRepository implements VocabularyRepository {
-  DriftVocabularyRepository(this.database);
+  DriftVocabularyRepository(this.database, {this.contentManifests});
 
   static const int categoryWordLimit = 50;
 
   final db.AppDatabase database;
+  final ContentManifestRepository? contentManifests;
 
   @override
   Stream<List<VocabularyCategory>> watchCategories(String ownerId) {
@@ -53,6 +55,35 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       ..orderBy([(row) => OrderingTerm.asc(row.normalizedSpelling)]);
     final rows = await query.get();
     return rows.map(_wordToDomain).toList(growable: false);
+  }
+
+  @override
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds) async {
+    final ids = <String>[];
+    final seen = <String>{};
+    for (final rawId in wordIds) {
+      if (!_isCanonicalId(rawId) || !seen.add(rawId)) {
+        throw const VocabularyNotFoundFailure();
+      }
+      ids.add(rawId);
+    }
+    if (ids.isEmpty) return const <VocabularyWord>[];
+
+    final rows = await (database.select(
+      database.vocabularyWords,
+    )..where((row) => row.id.isIn(ids) & row.isDeleted.equals(false))).get();
+    final byId = <String, db.VocabularyWord>{
+      for (final row in rows) row.id: row,
+    };
+    if (byId.length != ids.length || ids.any((id) => !byId.containsKey(id))) {
+      throw const VocabularyNotFoundFailure();
+    }
+    final words = <VocabularyWord>[];
+    for (final id in ids) {
+      final core = _wordToDomain(byId[id]!);
+      words.add(await _withVerifiedRichMetadata(core));
+    }
+    return List.unmodifiable(words);
   }
 
   @override
@@ -262,7 +293,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         revision: 1,
         nowUtc: word.updatedAtUtc,
       );
-      return word.copyWith(localRevision: 1);
+      return _wordToDomain((await _wordById(word.id))!);
     });
   }
 
@@ -312,10 +343,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         revision: revision,
         nowUtc: word.updatedAtUtc,
       );
-      return word.copyWith(
-        localRevision: revision,
-        updatedAtUtc: word.updatedAtUtc,
-      );
+      return _wordToDomain((await _wordById(word.id))!);
     });
   }
 
@@ -486,8 +514,72 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       isDeleted: row.isDeleted,
       createdAtUtc: _fromEpoch(row.createdAtUtcMs),
       updatedAtUtc: _fromEpoch(row.updatedAtUtcMs),
+      contentRevision: row.contentRevision,
+      contentChecksumSha256: row.contentChecksumSha256,
+      contentProvenance: _provenance(row.contentProvenance),
+      contentReviewState: _reviewState(row.contentReviewState),
+      contentPublicationState: _publicationState(row.contentPublicationState),
     );
   }
+
+  Future<VocabularyWord> _withVerifiedRichMetadata(VocabularyWord core) async {
+    final manifests = contentManifests;
+    if (manifests == null || !_isRichMetadataEligible(core)) return core;
+    final identity = ContentIdentity(
+      type: ContentType.lexicalMetadata,
+      id: core.id,
+      revision: core.contentRevision,
+    );
+    try {
+      final verified = await manifests.requireVerified(identity);
+      final manifest = verified.manifest;
+      if (manifest.identity != identity ||
+          manifest.provenance != ContentProvenance.packaged ||
+          manifest.reviewState != ContentReviewState.approved ||
+          manifest.publicationState != ContentPublicationState.published) {
+        return core;
+      }
+      return core.copyWith(
+        richMetadata: RichLexicalMetadata.fromVerifiedArtifact(
+          bytes: verified.bytes,
+          wordId: core.id,
+          contentRevision: core.contentRevision,
+        ),
+      );
+    } on Object {
+      // Rich metadata is optional presentation context. Any failed quality or
+      // parse check quarantines only that optional artifact, never core words.
+      return core;
+    }
+  }
+
+  bool _isRichMetadataEligible(VocabularyWord word) {
+    final checksum = word.contentChecksumSha256;
+    return word.isGlobal &&
+        word.contentRevision > 0 &&
+        checksum != null &&
+        word.contentProvenance == ContentProvenance.packaged &&
+        word.contentReviewState == ContentReviewState.approved &&
+        word.contentPublicationState == ContentPublicationState.published &&
+        checksum == _contentChecksum(word);
+  }
+
+  ContentProvenance _provenance(String raw) => switch (raw) {
+    'packaged' => ContentProvenance.packaged,
+    _ => ContentProvenance.userAuthored,
+  };
+
+  ContentReviewState _reviewState(String raw) => switch (raw) {
+    'approved' => ContentReviewState.approved,
+    'rejected' => ContentReviewState.rejected,
+    _ => ContentReviewState.unreviewed,
+  };
+
+  ContentPublicationState _publicationState(String raw) => switch (raw) {
+    'published' => ContentPublicationState.published,
+    'retired' => ContentPublicationState.retired,
+    _ => ContentPublicationState.private,
+  };
 
   DateTime _fromEpoch(int value) =>
       DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
@@ -510,4 +602,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
       throw ArgumentError.value(value, 'timestamp', 'must be UTC');
     }
   }
+
+  bool _isCanonicalId(String value) =>
+      value.isNotEmpty && value == value.trim() && value.runes.length <= 256;
 }

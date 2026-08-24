@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 
 import '../features/learning_packs/application/learning_pack_detail_use_cases.dart';
 import '../features/learning_packs/domain/learning_pack_detail.dart';
+import '../features/vocabulary/application/vocabulary_use_cases.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../runtime/app_dependencies.dart';
+import '../widgets/rich_lexical_card.dart';
 
 /// Read-only child surface for one catalog-selected pack revision.
 final class LearningPackDetailScreen extends StatefulWidget {
@@ -11,11 +14,13 @@ final class LearningPackDetailScreen extends StatefulWidget {
     required this.packId,
     required this.revision,
     this.useCases,
+    this.vocabulary,
   });
 
   final String packId;
   final int revision;
   final LearningPackDetailUseCases? useCases;
+  final VocabularyUseCases? vocabulary;
 
   @override
   State<LearningPackDetailScreen> createState() =>
@@ -24,37 +29,55 @@ final class LearningPackDetailScreen extends StatefulWidget {
 
 final class _LearningPackDetailScreenState
     extends State<LearningPackDetailScreen> {
-  late Future<LearningPackDetailView> _detail;
+  late Future<_DetailScreenData> _detail;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
     final supplied = widget.useCases;
     if (supplied != null) {
-      _detail = supplied.loadVersion(widget.packId, widget.revision);
+      _detail = _load(supplied, vocabulary);
       return;
     }
-    final dependencies = AppDependenciesScope.maybeOf(context);
     final planning = dependencies?.studyPlanning;
     if (planning == null) {
-      _detail = Future<LearningPackDetailView>.error(
+      _detail = Future<_DetailScreenData>.error(
         StateError('StudyPlanningUseCases is unavailable'),
       );
       return;
     }
-    _detail = LearningPackDetailUseCases(
-      packs: planning.packs,
-      progress: planning.progress,
-      lessonModes: dependencies?.lessonModes,
-      features: dependencies?.features,
-      hasComposedDependency: (feature) =>
-          dependencies?.hasComposedDependencyFor(feature) ?? false,
-    ).loadVersion(widget.packId, widget.revision);
+    _detail = _load(
+      LearningPackDetailUseCases(
+        packs: planning.packs,
+        progress: planning.progress,
+        lessonModes: dependencies?.lessonModes,
+        features: dependencies?.features,
+        hasComposedDependency: (feature) =>
+            dependencies?.hasComposedDependencyFor(feature) ?? false,
+      ),
+      vocabulary,
+    );
+  }
+
+  Future<_DetailScreenData> _load(
+    LearningPackDetailUseCases useCases,
+    VocabularyUseCases? vocabulary,
+  ) async {
+    final view = await useCases.loadVersion(widget.packId, widget.revision);
+    if (vocabulary == null) {
+      throw StateError('VocabularyUseCases is unavailable');
+    }
+    final words = await vocabulary.readPinnedByIds(
+      view.detail.vocabularyWordIds,
+    );
+    return _DetailScreenData(view: view, words: words);
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<LearningPackDetailView>(
+    return FutureBuilder<_DetailScreenData>(
       future: _detail,
       builder: (context, snapshot) {
         if (snapshot.connectionState != ConnectionState.done) {
@@ -68,7 +91,8 @@ final class _LearningPackDetailScreenState
             revision: widget.revision,
           );
         }
-        return _DetailBody(view: snapshot.requireData);
+        final data = snapshot.requireData;
+        return _DetailBody(view: data.view, words: data.words);
       },
     );
   }
@@ -110,14 +134,14 @@ final class LearningPackDetailUnavailable extends StatelessWidget {
 }
 
 final class _DetailBody extends StatelessWidget {
-  const _DetailBody({required this.view});
+  const _DetailBody({required this.view, required this.words});
 
   final LearningPackDetailView view;
+  final List<VocabularyWord> words;
 
   @override
   Widget build(BuildContext context) {
-    final detail = view.detail;
-    final summary = detail.summary;
+    final summary = view.detail.summary;
     return Scaffold(
       appBar: AppBar(title: const Text('Learning pack detail')),
       body: ListView(
@@ -146,12 +170,7 @@ final class _DetailBody extends StatelessWidget {
           Text('Practice attempts: ${view.progress.sampleSize}'),
           const SizedBox(height: 24),
           const Text('Pinned vocabulary references'),
-          for (final wordId in detail.vocabularyWordIds)
-            Semantics(
-              container: true,
-              label: 'Canonical vocabulary item: $wordId',
-              child: ExcludeSemantics(child: ListTile(title: Text(wordId))),
-            ),
+          for (final word in words) RichLexicalCard(word: word),
           const SizedBox(height: 24),
           const Text('Activities'),
           for (final activity in view.activities)
@@ -169,4 +188,11 @@ final class _DetailBody extends StatelessWidget {
       ),
     );
   }
+}
+
+final class _DetailScreenData {
+  const _DetailScreenData({required this.view, required this.words});
+
+  final LearningPackDetailView view;
+  final List<VocabularyWord> words;
 }

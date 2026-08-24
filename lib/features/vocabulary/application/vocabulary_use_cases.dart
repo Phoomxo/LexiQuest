@@ -84,6 +84,11 @@ final class VocabularyUseCases {
     );
   }
 
+  /// Reads immutable pack-pinned vocabulary identities without creating an
+  /// owner or introducing a second vocabulary authority.
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds) =>
+      vocabulary.readPinnedByIds(wordIds);
+
   /// Returns up to [limit] random words from the active owner's vocabulary.
   /// Used by game screens (Word Scramble, Dictation, Boss Battle, etc.)
   /// that need content injection. Returns empty list if no words exist.

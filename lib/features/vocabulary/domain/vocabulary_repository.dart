@@ -9,6 +9,10 @@ abstract interface class VocabularyRepository {
   /// Returns all non-deleted words for [ownerId] across all categories.
   Future<List<VocabularyWord>> listAllWords(String ownerId);
 
+  /// Reads exactly the requested canonical word identities, in request order.
+  /// Unknown, deleted, duplicate, or malformed identities fail closed.
+  Future<List<VocabularyWord>> readPinnedByIds(Iterable<String> wordIds);
+
   Future<VocabularyCategory> createCategory(VocabularyCategory category);
 
   Future<VocabularyCategory> renameCategory({
