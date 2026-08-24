@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -32,6 +33,11 @@ void main() {
             feature: Feature.quiz,
             entryId: 'home/learn/quiz',
             routeName: 'learning/definition-quiz',
+          ),
+          LessonMode.cloze: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'learning/cloze',
           ),
           LessonMode.flashcard: (
             feature: Feature.srs,
@@ -70,7 +76,8 @@ void main() {
         productionFeatureContract[registration.feature]!.productionEntryId,
         registration.productionEntryId,
       );
-      if (registration.mode == LessonMode.definitionQuiz) {
+      if (registration.mode == LessonMode.definitionQuiz ||
+          registration.mode == LessonMode.cloze) {
         expect(registration.adapter, isA<HintSupportingLessonModeAdapter>());
       } else {
         expect(
@@ -99,6 +106,12 @@ void main() {
           .adapter,
       isA<DefinitionQuizModeAdapter>(),
     );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.cloze)
+          .adapter,
+      isA<ClozeModeAdapter>(),
+    );
   });
 
   test(
@@ -113,8 +126,11 @@ void main() {
           .toList(growable: false);
       final adapter = _HintBoundaryAdapter();
 
-      expect(hintRegistrations, hasLength(1));
-      expect(hintRegistrations.single.mode, LessonMode.definitionQuiz);
+      expect(hintRegistrations, hasLength(2));
+      expect(hintRegistrations.map((entry) => entry.mode).toSet(), <LessonMode>{
+        LessonMode.definitionQuiz,
+        LessonMode.cloze,
+      });
       expect(adapter, isA<LessonModeAdapter>());
       expect(adapter.hintPolicy.maximumHintLevel, 2);
       expect(registrations, hasLength(LessonMode.values.length));
@@ -227,6 +243,67 @@ void main() {
     );
   });
 
+  test('cloze adapter owns input-specific pinned classification', () {
+    const adapter = ClozeModeAdapter();
+    LessonResponse response(String promptMode) => LessonResponse(
+      sourceEvidenceId: 'cloze-boundary-$promptMode',
+      occurredAtUtc: DateTime.utc(2026, 8, 26),
+      sessionId: 'cloze-session',
+      wordId: 'cloze-word',
+      promptMode: promptMode,
+      isCorrect: true,
+      responseTimeMs: 250,
+      attemptNumber: 1,
+      feedbackContext: const AnswerFeedbackContext(
+        canonicalCorrectAnswer: 'answer',
+      ),
+    );
+    EvidenceContext context(
+      EvidenceClass evidenceClass,
+      int hintLevel,
+    ) => EvidenceContext.legacyCompatibility(
+      evidenceClass: evidenceClass,
+      skillId: 'cloze-context',
+      hintLevel: hintLevel,
+      contentRevision:
+          'lexical-cloze:cloze-word@1:'
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      engagementAllowed: true,
+    );
+
+    final selected = context(EvidenceClass.recognition, 0);
+    final typed = context(EvidenceClass.independentRecall, 0);
+    final guided = context(EvidenceClass.guidedPractice, 1);
+    expect(
+      adapter.classify(
+        response('clozeSelected'),
+        LessonSupport(evidenceContext: selected),
+      ),
+      same(selected),
+    );
+    expect(
+      adapter.classify(
+        response('clozeTyped'),
+        LessonSupport(evidenceContext: typed),
+      ),
+      same(typed),
+    );
+    expect(
+      adapter.classify(
+        response('clozeTyped'),
+        LessonSupport(evidenceContext: guided),
+      ),
+      same(guided),
+    );
+    expect(
+      () => adapter.classify(
+        response('clozeSelected'),
+        LessonSupport(evidenceContext: typed),
+      ),
+      throwsStateError,
+    );
+  });
+
   test(
     'registry rejects alternate adapters competing for one delivery path',
     () {
@@ -293,7 +370,8 @@ void main() {
 
       for (final registration in buildLessonModeRegistry().registrations) {
         if (registration.mode == LessonMode.flashcard ||
-            registration.mode == LessonMode.definitionQuiz) {
+            registration.mode == LessonMode.definitionQuiz ||
+            registration.mode == LessonMode.cloze) {
           continue;
         }
         expect(

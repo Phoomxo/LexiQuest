@@ -1,4 +1,5 @@
 import '../../learning/application/definition_quiz_mode_adapter.dart';
+import '../../learning/application/cloze_mode_adapter.dart';
 import '../../learning/application/lesson_mode_registry.dart';
 import '../../learning/domain/lesson_mode.dart';
 import '../../progress/application/progress_use_cases.dart';
@@ -79,10 +80,17 @@ final class LearningPackDetailUseCases {
         delivery.dependencyId.trim().isNotEmpty &&
         registration.productionEntryId == delivery.productionEntryId;
     if (!productionReady) return false;
-    if (registration.mode != LessonMode.definitionQuiz) return true;
+    if (registration.mode != LessonMode.definitionQuiz &&
+        registration.mode != LessonMode.cloze) {
+      return true;
+    }
     final adapter = registration.adapter;
     final reader = readPinnedVocabulary;
-    if (adapter is! DefinitionQuizModeAdapter || reader == null) return false;
+    if (reader == null ||
+        (adapter is! DefinitionQuizModeAdapter &&
+            adapter is! ClozeModeAdapter)) {
+      return false;
+    }
     try {
       final words = await reader(detail.vocabularyWordIds);
       final requestedIds = detail.vocabularyWordIds.toSet();
@@ -92,7 +100,13 @@ final class LearningPackDetailUseCases {
           !returnedIds.containsAll(requestedIds)) {
         return false;
       }
-      return adapter.hasDeliverableReviewedDefinition(words);
+      return switch (registration.mode) {
+        LessonMode.definitionQuiz when adapter is DefinitionQuizModeAdapter =>
+          adapter.hasDeliverableReviewedDefinition(words),
+        LessonMode.cloze when adapter is ClozeModeAdapter =>
+          adapter.hasDeliverableReviewedExample(words),
+        _ => false,
+      };
     } on Object {
       return false;
     }

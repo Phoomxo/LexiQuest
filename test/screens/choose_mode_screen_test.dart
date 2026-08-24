@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -34,6 +35,7 @@ import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -69,7 +71,11 @@ void main() {
         find.byKey(const ValueKey<String>('home/learn/quiz/definition')),
         findsOneWidget,
       );
-      expect(find.byType(ListTile), findsNWidgets(4));
+      expect(
+        find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
+        findsOneWidget,
+      );
+      expect(find.byType(ListTile), findsNWidgets(5));
 
       await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
       await tester.pumpAndSettle();
@@ -206,6 +212,11 @@ void main() {
           routeName: 'learning/definition-quiz',
         ),
         (
+          entryId: 'home/learn/quiz/cloze',
+          mode: LessonMode.cloze,
+          routeName: 'learning/cloze',
+        ),
+        (
           entryId: 'home/learn/srs',
           mode: LessonMode.flashcard,
           routeName: 'learning/srs',
@@ -277,6 +288,18 @@ void main() {
           expect(
             tester
                 .widget<DefinitionQuizScreen>(find.byType(DefinitionQuizScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.cloze) {
+          expect(modes.find(routeCase.mode)!.adapter, isA<ClozeModeAdapter>());
+          expect(
+            tester
+                .widget<FillInTheBlanksScreen>(
+                  find.byType(FillInTheBlanksScreen),
+                )
                 .modeAdapter,
             same(modes.find(routeCase.mode)!.adapter),
           );
@@ -373,6 +396,50 @@ void main() {
 
       expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
       expect(find.byType(DefinitionQuizScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.finished,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
+    },
+  );
+
+  testWidgets(
+    'Cloze emergency-off closes its durable session and F24 at acceptance cutoff',
+    (tester) async {
+      final harness = await _SrsGateHarness.create();
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(FillInTheBlanksScreen), findsOneWidget);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.active,
+      );
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+      harness.features.emergencyOff(Feature.quiz);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(FillInTheBlanksScreen), findsNothing);
       expect(harness.repository.abandonCalls, 1);
       final sessions = await harness.database
           .select(harness.database.learningSessions)
@@ -559,6 +626,51 @@ void main() {
           .select(harness.database.learningSessions)
           .get();
       expect(sessions, hasLength(2));
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.inactive,
+      );
+      expect(
+        await harness.database
+            .select(harness.database.learningTimeSegments)
+            .get(),
+        isEmpty,
+      );
+    },
+  );
+
+  testWidgets(
+    'Cloze off during delayed initialization compensates before screen attach',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(delayQuiz: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
+      );
+      await tester.pump();
+      await tester.runAsync(
+        () => harness.repository.quizEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+
+      harness.features.emergencyOff(Feature.quiz);
+      harness.repository.quizRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(FillInTheBlanksScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
       expect(sessions.where((session) => session.state == 'active'), isEmpty);
       expect(
         sessions.where((session) => session.state == 'abandoned'),

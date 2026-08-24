@@ -2,6 +2,7 @@ import '../../../runtime/production_feature_contract.dart';
 import '../../../runtime/registries/feature.dart';
 import '../domain/lesson_mode.dart';
 import 'definition_quiz_mode_adapter.dart';
+import 'cloze_mode_adapter.dart';
 import 'flashcard_mode_adapter.dart';
 import 'legacy_lesson_mode_adapters.dart';
 import 'meaning_quiz_mode_adapter.dart';
@@ -114,6 +115,11 @@ LessonModeRegistry buildLessonModeRegistry() {
       adapter: const DefinitionQuizModeAdapter(),
       feature: Feature.quiz,
       routeName: 'learning/definition-quiz',
+    ),
+    registration(
+      adapter: const ClozeModeAdapter(),
+      feature: Feature.quiz,
+      routeName: 'learning/cloze',
     ),
     registration(
       adapter: const FlashcardModeAdapter(),

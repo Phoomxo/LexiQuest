@@ -182,6 +182,7 @@ void main() {
 
       expect(view.activities.map((activity) => activity.mode).toList(), const [
         LessonMode.associativeReading,
+        LessonMode.cloze,
         LessonMode.definitionQuiz,
         LessonMode.flashcard,
         LessonMode.meaningQuiz,
@@ -275,6 +276,68 @@ void main() {
   );
 
   test(
+    'cloze is unavailable without one qualifying reviewed example',
+    () async {
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 1,
+        title: 'Travel basics',
+        wordIds: const ['word:station'],
+      );
+      final missing = _definitionPackDetailUseCases(
+        database,
+        readPinnedVocabulary: (_) async => <VocabularyWord>[_definitionWord()],
+      );
+      final ambiguous = _definitionPackDetailUseCases(
+        database,
+        readPinnedVocabulary: (_) async => <VocabularyWord>[
+          _definitionWord(
+            examples: const <String>[
+              'The station and another station are nearby.',
+            ],
+          ),
+        ],
+      );
+
+      expect(
+        _clozeAvailability(await missing.loadVersion('pack:travel', 1)),
+        LearningPackActivityAvailability.unavailable,
+      );
+      expect(
+        _clozeAvailability(await ambiguous.loadVersion('pack:travel', 1)),
+        LearningPackActivityAvailability.unavailable,
+      );
+    },
+  );
+
+  test(
+    'cloze is available with one qualifying pinned reviewed example',
+    () async {
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 1,
+        title: 'Travel basics',
+        wordIds: const ['word:station'],
+      );
+      final useCases = _definitionPackDetailUseCases(
+        database,
+        readPinnedVocabulary: (_) async => <VocabularyWord>[
+          _definitionWord(
+            examples: const <String>['The station closes at midnight.'],
+          ),
+        ],
+      );
+
+      expect(
+        _clozeAvailability(await useCases.loadVersion('pack:travel', 1)),
+        LearningPackActivityAvailability.available,
+      );
+    },
+  );
+
+  test(
     'requires a full production delivery before advertising a registered activity',
     () async {
       await _insertVerifiedPack(
@@ -360,7 +423,16 @@ LearningPackActivityAvailability _definitionAvailability(
     .singleWhere((activity) => activity.mode == LessonMode.definitionQuiz)
     .availability;
 
-VocabularyWord _definitionWord({String? definition}) {
+LearningPackActivityAvailability _clozeAvailability(
+  LearningPackDetailView view,
+) => view.activities
+    .singleWhere((activity) => activity.mode == LessonMode.cloze)
+    .availability;
+
+VocabularyWord _definitionWord({
+  String? definition,
+  List<String> examples = const <String>[],
+}) {
   final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
     categoryId: 'category:pack',
     spelling: 'station',
@@ -392,10 +464,11 @@ VocabularyWord _definitionWord({String? definition}) {
     contentProvenance: ContentProvenance.packaged,
     contentReviewState: ContentReviewState.approved,
     contentPublicationState: ContentPublicationState.published,
-    richMetadata: definition == null
+    richMetadata: definition == null && examples.isEmpty
         ? null
         : RichLexicalMetadata(
             englishDefinition: definition,
+            examples: examples,
             verifiedArtifactChecksumSha256:
                 'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
           ),

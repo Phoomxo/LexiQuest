@@ -40,6 +40,7 @@ final class LearningPackActivity {
     LessonMode.associativeReading => 'Associative reading',
     LessonMode.meaningQuiz => 'Meaning quiz',
     LessonMode.definitionQuiz => 'Definition quiz',
+    LessonMode.cloze => 'Cloze test',
     LessonMode.flashcard => 'Flashcards',
   };
 }

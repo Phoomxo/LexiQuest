@@ -11,6 +11,8 @@ enum CurrentActivityInput {
   meaningMultipleChoice,
   meaningToWordMultipleChoice,
   definitionMultipleChoice,
+  clozeSelected,
+  clozeTyped,
   srsRecall,
   typedRecall,
   associativeRecall,
@@ -25,7 +27,8 @@ HintEvidenceClassification classifyCurrentActivityEvidence(
   required int hintLevel,
 }) {
   final declaration = _declarationFor(input);
-  if (input == CurrentActivityInput.definitionMultipleChoice &&
+  if ((input == CurrentActivityInput.definitionMultipleChoice ||
+          input == CurrentActivityInput.clozeSelected) &&
       hintLevel != 0) {
     return HintEvidenceClassification(
       evidenceClass: EvidenceClass.guidedPractice,
@@ -176,9 +179,11 @@ final class CurrentActivityEvidenceAdapter {
     String? providerProvenance,
     int hintLevel = 0,
   }) {
-    if (input == CurrentActivityInput.definitionMultipleChoice) {
+    if (input == CurrentActivityInput.definitionMultipleChoice ||
+        input == CurrentActivityInput.clozeSelected ||
+        input == CurrentActivityInput.clozeTyped) {
       throw StateError(
-        'Definition recognition requires a verified lexical artifact pin.',
+        'This activity requires a verified lexical artifact pin.',
       );
     }
     final declaration = _declarationFor(input);
@@ -250,6 +255,72 @@ final class CurrentActivityEvidenceAdapter {
       providerProvenance:
           'reviewed-lexical-definition:$contentRevision:$checksumSha256',
       hintLevel: hintLevel,
+    );
+  }
+
+  /// Captures one reviewed, revision-pinned cloze occurrence. The adapter
+  /// owns response scoring and assistance classification; this gateway owns
+  /// the sole canonical evidence write.
+  PendingCurrentActivityEvidence captureCloze({
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required int contentRevision,
+    required String checksumSha256,
+    required bool typed,
+    required HintEvidenceClassification classification,
+  }) {
+    if (contentRevision <= 0) {
+      throw ArgumentError.value(
+        contentRevision,
+        'contentRevision',
+        'must be positive',
+      );
+    }
+    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(checksumSha256)) {
+      throw ArgumentError.value(
+        checksumSha256,
+        'checksumSha256',
+        'must be lowercase SHA-256',
+      );
+    }
+    final expectedUnassisted = typed
+        ? EvidenceClass.independentRecall
+        : EvidenceClass.recognition;
+    final validUnassisted =
+        classification.hintLevel == 0 &&
+        classification.evidenceClass == expectedUnassisted;
+    final validAssisted =
+        classification.hintLevel > 0 &&
+        classification.evidenceClass == EvidenceClass.guidedPractice;
+    if ((!validUnassisted && !validAssisted) || classification.hintLevel < 0) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must match the cloze input and assistance snapshot',
+      );
+    }
+    return _capture(
+      input: typed
+          ? CurrentActivityInput.clozeTyped
+          : CurrentActivityInput.clozeSelected,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: classification.evidenceClass,
+        skillId: 'cloze-context',
+        promptMode: typed ? 'clozeTyped' : 'clozeSelected',
+        contentRevision:
+            'lexical-cloze:$wordId@$contentRevision:$checksumSha256',
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance:
+          'reviewed-lexical-example:$contentRevision:$checksumSha256',
+      hintLevel: classification.hintLevel,
     );
   }
 
@@ -553,6 +624,16 @@ _CurrentActivityDeclaration _declarationFor(CurrentActivityInput input) {
         skillId: 'definition-recognition',
         promptMode: 'definitionChoice',
       ),
+    CurrentActivityInput.clozeSelected => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.recognition,
+      skillId: 'cloze-context',
+      promptMode: 'clozeSelected',
+    ),
+    CurrentActivityInput.clozeTyped => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'cloze-context',
+      promptMode: 'clozeTyped',
+    ),
     CurrentActivityInput.srsRecall => const _CurrentActivityDeclaration(
       evidenceClass: EvidenceClass.independentRecall,
       skillId: 'srs-recall',

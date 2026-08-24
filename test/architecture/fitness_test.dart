@@ -824,6 +824,9 @@ void main() {
       const expectedActivities = <String>{
         'meaningMultipleChoice',
         'meaningToWordMultipleChoice',
+        'definitionMultipleChoice',
+        'clozeSelected',
+        'clozeTyped',
         'srsRecall',
         'typedRecall',
         'associativeRecall',

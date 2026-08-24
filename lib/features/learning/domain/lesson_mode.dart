@@ -1,13 +1,20 @@
 import 'answer_feedback.dart';
 import 'evidence_context.dart';
 
-enum LessonMode { associativeReading, meaningQuiz, definitionQuiz, flashcard }
+enum LessonMode {
+  associativeReading,
+  meaningQuiz,
+  definitionQuiz,
+  cloze,
+  flashcard,
+}
 
 extension LessonModeIdentity on LessonMode {
   String get id => switch (this) {
     LessonMode.associativeReading => 'associative-reading',
     LessonMode.meaningQuiz => 'meaning-quiz',
     LessonMode.definitionQuiz => 'definition-quiz',
+    LessonMode.cloze => 'cloze',
     LessonMode.flashcard => 'flashcard',
   };
 }

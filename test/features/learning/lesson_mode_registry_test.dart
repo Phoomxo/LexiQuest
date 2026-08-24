@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
@@ -19,9 +20,10 @@ void main() {
         LessonMode.associativeReading,
         LessonMode.meaningQuiz,
         LessonMode.definitionQuiz,
+        LessonMode.cloze,
         LessonMode.flashcard,
       });
-      expect(registrations, hasLength(4));
+      expect(registrations, hasLength(5));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -30,6 +32,7 @@ void main() {
           LessonMode.associativeReading: Feature.reading,
           LessonMode.meaningQuiz: Feature.quiz,
           LessonMode.definitionQuiz: Feature.quiz,
+          LessonMode.cloze: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
         },
       );
@@ -45,6 +48,7 @@ void main() {
         registry.find(LessonMode.definitionQuiz)!.adapter,
         isA<DefinitionQuizModeAdapter>(),
       );
+      expect(registry.find(LessonMode.cloze)!.adapter, isA<ClozeModeAdapter>());
       for (final entry in registrations) {
         expect(
           entry.productionEntryId,
@@ -60,6 +64,7 @@ void main() {
           LessonMode.associativeReading: 'learning/associative-reading',
           LessonMode.meaningQuiz: 'learning/quiz',
           LessonMode.definitionQuiz: 'learning/definition-quiz',
+          LessonMode.cloze: 'learning/cloze',
           LessonMode.flashcard: 'learning/srs',
         },
       );

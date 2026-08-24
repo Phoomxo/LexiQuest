@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/flashcard_mode_adapter.dart';
+import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -12,6 +13,7 @@ import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'associative_reading_launcher_screen.dart';
 import 'definition_quiz_screen.dart';
+import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
 import 'srs_flashcards_screen.dart';
 
@@ -58,6 +60,20 @@ class ChooseModeScreen extends StatelessWidget {
             ),
           if (features?.isVisible(Feature.quiz) == true)
             _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/cloze'),
+              icon: Icons.space_bar_outlined,
+              title: 'Cloze Test',
+              subtitle: 'Choose or type a word in a reviewed sentence.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.cloze,
+                (_, adapter) => FillInTheBlanksScreen(
+                  modeAdapter: adapter as ClozeModeAdapter,
+                ),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true)
+            _LearningTile(
               key: const ValueKey<String>('home/learn/quiz/definition'),
               icon: Icons.menu_book_outlined,
               title: 'Definition Quiz',
@@ -87,7 +103,7 @@ class ChooseModeScreen extends StatelessWidget {
           const Padding(
             padding: EdgeInsets.only(top: 20),
             child: Text(
-              'เกม Sentence Scramble และ Fill in the Blank จะเปิดในรุ่นถัดไป',
+              'เกม Sentence Scramble จะเปิดในรุ่นถัดไป',
               textAlign: TextAlign.center,
             ),
           ),
@@ -128,6 +144,12 @@ class ChooseModeScreen extends StatelessWidget {
         registration.adapter is! DefinitionQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This definition quiz is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    if (mode == LessonMode.cloze && registration.adapter is! ClozeModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This cloze mode is unavailable.')),
       );
       return Future<void>.value();
     }
