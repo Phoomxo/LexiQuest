@@ -1,28 +1,27 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/unified_lesson_controller.dart';
+import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'associative_reading_launcher_screen.dart';
-import 'game_launcher_screen.dart';
-import 'mastery_dashboard_screen.dart';
-import 'phonetic_explorer_screen.dart';
 import 'quiz_screen.dart';
-import 'select_category_for_quiz.dart';
-import 'shadowing_challenge_screen.dart';
-import '../navigation/app_routes.dart';
 import 'srs_flashcards_screen.dart';
-import 'weakness_clinic_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
-  const ChooseModeScreen({super.key, this.featureRegistry});
+  const ChooseModeScreen({super.key, this.featureRegistry, this.lessonModes});
 
   final FeatureRegistry? featureRegistry;
+  final LessonModeRegistry? lessonModes;
 
   @override
   Widget build(BuildContext context) {
-    final features =
-        featureRegistry ?? AppDependenciesScope.maybeOf(context)?.features;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final features = featureRegistry ?? dependencies?.features;
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
       body: ListView(
@@ -35,10 +34,9 @@ class ChooseModeScreen extends StatelessWidget {
               title: 'Associative Reading',
               subtitle:
                   'Build durable memory cues from words in your vocabulary.',
-              onTap: () => _push(
+              onTap: () => _openMode(
                 context,
-                Feature.reading,
-                'learning/associative-reading',
+                LessonMode.associativeReading,
                 (_) => const AssociativeReadingLauncherScreen(),
               ),
             ),
@@ -48,19 +46,11 @@ class ChooseModeScreen extends StatelessWidget {
               icon: Icons.quiz_outlined,
               title: 'Quiz จากคลังคำศัพท์',
               subtitle: 'คำตอบ คะแนน และกำหนดทบทวนจะบันทึกในเครื่อง',
-              onTap: () => _push(
+              onTap: () => _openMode(
                 context,
-                Feature.quiz,
-                'learning/quiz',
+                LessonMode.meaningQuiz,
                 (_) => const QuizScreen(),
               ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              icon: Icons.category_outlined,
-              title: 'Quiz ตามหมวดหมู่',
-              subtitle: 'เลือกจากหมวดหมู่ที่บันทึกในเครื่อง',
-              onTap: () => _openCategoryQuiz(context),
             ),
           if (features?.isVisible(Feature.srs) == true)
             _LearningTile(
@@ -68,96 +58,10 @@ class ChooseModeScreen extends StatelessWidget {
               icon: Icons.event_repeat_outlined,
               title: 'ทบทวนคำศัพท์ที่ถึงกำหนด',
               subtitle: 'แสดงเฉพาะคำที่คำนวณจากประวัติคำตอบจริง',
-              onTap: () => _push(
+              onTap: () => _openMode(
                 context,
-                Feature.srs,
-                'learning/srs',
+                LessonMode.flashcard,
                 (_) => const SrsFlashcardsScreen(),
-              ),
-            ),
-          if (features?.isVisible(Feature.mastery) == true)
-            _LearningTile(
-              icon: Icons.analytics_outlined,
-              title: 'ภาพรวมการเรียน',
-              subtitle: 'สถิติพร้อมจำนวนตัวอย่างจากข้อมูลจริง',
-              onTap: () => _push(
-                context,
-                Feature.mastery,
-                'learning/mastery',
-                (_) => const MasteryDashboardScreen(),
-              ),
-            ),
-          if (features?.isVisible(Feature.weakness) == true)
-            _LearningTile(
-              icon: Icons.healing_outlined,
-              title: 'ฝึกจุดอ่อน',
-              subtitle: 'คัดคำจากคำตอบผิดและสถานะ SRS จริง',
-              onTap: () => _push(
-                context,
-                Feature.weakness,
-                'learning/weakness',
-                (_) => const WeaknessClinicScreen(),
-              ),
-            ),
-          if (features?.isVisible(Feature.speechPractice) == true)
-            _LearningTile(
-              icon: Icons.record_voice_over_outlined,
-              title: 'Shadowing Challenge',
-              subtitle: 'ฝึกพูดตามแบบอย่าง',
-              onTap: () => _push(
-                context,
-                Feature.speechPractice,
-                'practice/shadowing',
-                (_) => const ShadowingChallengeScreen(),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              icon: Icons.shuffle_on_outlined,
-              title: 'Word Scramble',
-              subtitle: 'เรียงตัวอักษรให้ถูกต้องจากคำศัพท์ของคุณ',
-              onTap: () => _push(
-                context,
-                Feature.quiz,
-                'learning/game/word-scramble',
-                (_) =>
-                    const GameLauncherScreen(gameMode: GameMode.wordScramble),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              icon: Icons.mic_none_outlined,
-              title: 'Dictation',
-              subtitle: 'พิมพ์ตามที่ได้ยินจากคำศัพท์ของคุณ',
-              onTap: () => _push(
-                context,
-                Feature.quiz,
-                'learning/game/dictation',
-                (_) => const GameLauncherScreen(gameMode: GameMode.dictation),
-              ),
-            ),
-          if (features?.isVisible(Feature.quiz) == true)
-            _LearningTile(
-              icon: Icons.sports_esports_outlined,
-              title: 'Boss Battle',
-              subtitle: 'ประลองความรู้กับบอสจากคำศัพท์ของคุณ',
-              onTap: () => _push(
-                context,
-                Feature.quiz,
-                'learning/game/boss-battle',
-                (_) => const GameLauncherScreen(gameMode: GameMode.bossBattle),
-              ),
-            ),
-          if (features?.isVisible(Feature.speechPractice) == true)
-            _LearningTile(
-              icon: Icons.record_voice_over,
-              title: 'Phonetic Explorer',
-              subtitle: 'สำรวจสัทอักษรสากล (IPA)',
-              onTap: () => _push(
-                context,
-                Feature.speechPractice,
-                'practice/phonetic-explorer',
-                (_) => const PhoneticExplorerScreen(),
               ),
             ),
           const Padding(
@@ -172,45 +76,78 @@ class ChooseModeScreen extends StatelessWidget {
     );
   }
 
-  Future<void> _openCategoryQuiz(BuildContext context) async {
-    final categoryId = await AppNavigator.pushPage<String>(
-      context,
-      AppPage<String>(
-        name: 'learning/category-selector',
-        builder: (_) => ProductionFeatureGate(
-          feature: Feature.quiz,
-          registry: featureRegistry,
-          builder: (_) => const SelectCategoryForQuiz(),
-        ),
-      ),
-    );
-    if (categoryId != null && context.mounted) {
-      await _push(
-        context,
-        Feature.quiz,
-        'learning/category-quiz',
-        (_) => QuizScreen(categoryId: categoryId),
-      );
-    }
-  }
-
-  Future<void> _push(
+  Future<void> _openMode(
     BuildContext context,
-    Feature feature,
-    String routeName,
+    LessonMode mode,
     WidgetBuilder builder,
   ) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final modes = lessonModes ?? dependencies?.lessonModes;
+    final registration = modes?.find(mode);
+    if (registration == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This lesson mode is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    final features = featureRegistry ?? dependencies?.features;
     return AppNavigator.pushPage<void>(
       context,
       AppPage<void>(
-        name: routeName,
+        name: registration.routeName,
         builder: (_) => ProductionFeatureGate(
-          feature: feature,
-          registry: featureRegistry,
-          builder: builder,
+          feature: registration.feature,
+          registry: features,
+          builder: (_) {
+            final createController = dependencies?.createLessonController;
+            if (createController == null) {
+              return ProductionFeatureUnavailable(
+                feature: registration.feature,
+                reason: ProductionFeatureUnavailableReason.missingDependency,
+              );
+            }
+            return _ControllerBackedLessonMode(
+              adapter: registration.adapter,
+              createController: createController,
+              builder: builder,
+            );
+          },
         ),
       ),
     );
+  }
+}
+
+class _ControllerBackedLessonMode extends StatefulWidget {
+  const _ControllerBackedLessonMode({
+    required this.adapter,
+    required this.createController,
+    required this.builder,
+  });
+
+  final LessonModeAdapter adapter;
+  final UnifiedLessonControllerFactory createController;
+  final WidgetBuilder builder;
+
+  @override
+  State<_ControllerBackedLessonMode> createState() =>
+      _ControllerBackedLessonModeState();
+}
+
+class _ControllerBackedLessonModeState
+    extends State<_ControllerBackedLessonMode> {
+  late final UnifiedLessonController _controller = widget.createController(
+    widget.adapter,
+  );
+
+  @override
+  Widget build(BuildContext context) =>
+      UnifiedLessonShell(controller: _controller, builder: widget.builder);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

@@ -19,7 +19,10 @@ import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 
 final class DriftLearningRepository
-    implements LearningRepository, LearningEvidenceReplayRepository {
+    implements
+        LearningRepository,
+        LearningEvidenceReplayRepository,
+        LearningSessionLifecycleRepository {
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -740,6 +743,57 @@ final class DriftLearningRepository
     await (database.update(database.learningSessions)
           ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active')))
         .write(const db.LearningSessionsCompanion(state: Value('abandoned')));
+  }
+
+  @override
+  Future<LearningSessionSummary> abandonSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) {
+    final requiredOwnerId = _required(ownerId, 'ownerId');
+    final requiredSessionId = _required(sessionId, 'sessionId');
+    final terminalAt = _requiredUtc(abandonedAtUtc, 'abandonedAtUtc');
+    final terminalAtUtcMs = terminalAt.millisecondsSinceEpoch;
+    return database.transaction(() async {
+      final row =
+          await (database.select(database.learningSessions)..where(
+                (candidate) =>
+                    candidate.id.equals(requiredSessionId) &
+                    candidate.ownerId.equals(requiredOwnerId),
+              ))
+              .getSingleOrNull();
+      if (row == null) throw StateError('learning session not found');
+      if (row.state == 'abandoned') {
+        if (row.endedAtUtcMs == terminalAtUtcMs) return _rowToSummary(row);
+        throw StateError(
+          'learning session was abandoned with a different terminal time',
+        );
+      }
+      if (row.state != 'active') {
+        throw StateError('learning session is not active');
+      }
+      await (database.update(database.learningSessions)..where(
+            (candidate) =>
+                candidate.id.equals(requiredSessionId) &
+                candidate.ownerId.equals(requiredOwnerId) &
+                candidate.state.equals('active'),
+          ))
+          .write(
+            db.LearningSessionsCompanion(
+              state: const Value('abandoned'),
+              endedAtUtcMs: Value(terminalAtUtcMs),
+            ),
+          );
+      final updated =
+          await (database.select(database.learningSessions)..where(
+                (candidate) =>
+                    candidate.id.equals(requiredSessionId) &
+                    candidate.ownerId.equals(requiredOwnerId),
+              ))
+              .getSingle();
+      return _rowToSummary(updated);
+    });
   }
 
   @override

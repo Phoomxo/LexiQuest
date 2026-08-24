@@ -251,6 +251,112 @@ void main() {
   });
 
   test(
+    'session-scoped abandon preserves a recoverable peer and exact terminal time',
+    () async {
+      final startedAt = DateTime.utc(2026, 7, 30, 10);
+      for (final sessionId in <String>[
+        'session-abandon-a',
+        'session-active-b',
+      ]) {
+        await repository.startSession(
+          LearningSessionDraft(
+            id: sessionId,
+            ownerId: 'owner-1',
+            activityType: 'quiz',
+            startedAtUtc: startedAt,
+            appVersion: '1.0.0',
+            buildId: 'test',
+          ),
+        );
+      }
+      final abandonedAt = DateTime.utc(2026, 7, 30, 10, 2);
+
+      final first = await repository.abandonSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-abandon-a',
+        abandonedAtUtc: abandonedAt,
+      );
+      final replay = await repository.abandonSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-abandon-a',
+        abandonedAtUtc: abandonedAt,
+      );
+
+      expect(first.state, 'abandoned');
+      expect(first.endedAtUtc, abandonedAt);
+      expect(replay.state, first.state);
+      expect(replay.endedAtUtc, first.endedAtUtc);
+      final sessions = {
+        for (final row
+            in await database.select(database.learningSessions).get())
+          row.id: row,
+      };
+      expect(sessions['session-abandon-a']!.state, 'abandoned');
+      expect(
+        sessions['session-abandon-a']!.endedAtUtcMs,
+        abandonedAt.millisecondsSinceEpoch,
+      );
+      expect(sessions['session-active-b']!.state, 'active');
+      expect(sessions['session-active-b']!.endedAtUtcMs, equals(null));
+      await expectLater(
+        repository.abandonSession(
+          ownerId: 'owner-1',
+          sessionId: 'session-abandon-a',
+          abandonedAtUtc: abandonedAt.add(const Duration(seconds: 1)),
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
+    'session-scoped abandon rejects invalid identity and non-active state',
+    () async {
+      final startedAt = DateTime.utc(2026, 7, 30, 10);
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-abandon-validation',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: startedAt,
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+
+      await expectLater(
+        repository.abandonSession(
+          ownerId: 'wrong-owner',
+          sessionId: 'session-abandon-validation',
+          abandonedAtUtc: startedAt.add(const Duration(minutes: 1)),
+        ),
+        throwsStateError,
+      );
+      expect(
+        () => repository.abandonSession(
+          ownerId: 'owner-1',
+          sessionId: 'session-abandon-validation',
+          abandonedAtUtc: DateTime(2026, 7, 30, 10, 1),
+        ),
+        throwsArgumentError,
+      );
+      await repository.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-abandon-validation',
+        endedAtUtc: startedAt.add(const Duration(minutes: 2)),
+      );
+      await expectLater(
+        repository.abandonSession(
+          ownerId: 'owner-1',
+          sessionId: 'session-abandon-validation',
+          abandonedAtUtc: startedAt.add(const Duration(minutes: 3)),
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
     'out-of-order local attempts rebuild SRS in canonical event order',
     () async {
       await repository.startSession(

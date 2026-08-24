@@ -18,12 +18,15 @@ import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart
 import 'package:vocab_learning_app/features/export/domain/export_contracts.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
@@ -528,6 +531,18 @@ void main() {
         adapter.researchStateProvider,
         isA<BaselineCurrentActivityResearchStateProvider>(),
       );
+      final lessonModes = dependencies.lessonModes!;
+      expect(
+        lessonModes.registrations.map((entry) => entry.mode).toSet(),
+        LessonMode.values.toSet(),
+      );
+      expect(dependencies.createLessonController, isNotNull);
+      final lessonController = dependencies.createLessonController!(
+        lessonModes.find(LessonMode.meaningQuiz)!.adapter,
+      );
+      expect(lessonController, isA<UnifiedLessonController>());
+      expect(lessonController.state.status, LessonSessionStatus.planned);
+      lessonController.dispose();
     });
 
     test('marks all components ready and retains the exact config', () async {

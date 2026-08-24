@@ -6,6 +6,14 @@ abstract interface class LearningEvidenceReplayRepository {
   );
 }
 
+abstract interface class LearningSessionLifecycleRepository {
+  Future<LearningSessionSummary> abandonSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  });
+}
+
 abstract interface class LearningRepository {
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,

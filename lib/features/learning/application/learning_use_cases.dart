@@ -693,6 +693,29 @@ final class LearningUseCases {
     return captureSessionClose(sessionId: sessionId).finish();
   }
 
+  Future<LearningSessionSummary> abandonSession({
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) async {
+    final requiredSessionId = _requiredId(sessionId, 'sessionId');
+    final terminalAt = _requiredUtc(abandonedAtUtc, 'abandonedAtUtc');
+    if (repository is! LearningSessionLifecycleRepository) {
+      throw StateError(
+        'Learning repository does not support session-scoped abandon.',
+      );
+    }
+    final lifecycleRepository =
+        repository as LearningSessionLifecycleRepository;
+    final owner = await owners.getOrCreateActiveOwner();
+    final result = await lifecycleRepository.abandonSession(
+      ownerId: owner.id,
+      sessionId: requiredSessionId,
+      abandonedAtUtc: terminalAt,
+    );
+    onLocalMutation?.call();
+    return result;
+  }
+
   Future<LearningSessionSummary> _finishCapturedSessionClose({
     required String ownerId,
     required String sessionId,

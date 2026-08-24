@@ -13,6 +13,8 @@ import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
+import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/evidence_policy_rollout.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -62,6 +64,8 @@ final class AppDependencies {
     this.syncEngine,
     this.syncTrigger,
     this.learning,
+    this.lessonModes,
+    this.createLessonController,
     this.assessment,
     this.currentActivityEvidence,
     this.learningReconciliation,
@@ -104,6 +108,8 @@ final class AppDependencies {
   final SyncEngine? syncEngine;
   final SyncTrigger? syncTrigger;
   final LearningUseCases? learning;
+  final LessonModeRegistry? lessonModes;
+  final UnifiedLessonControllerFactory? createLessonController;
   final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;

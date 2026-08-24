@@ -146,6 +146,27 @@ void main() {
     },
   );
 
+  test('abandons only the selected active session', () async {
+    final first = await useCases.startQuiz(limit: 1);
+    final peer = await useCases.startQuiz(limit: 1);
+    final abandonedAt = now.add(const Duration(minutes: 1));
+
+    final summary = await useCases.abandonSession(
+      sessionId: first.id,
+      abandonedAtUtc: abandonedAt,
+    );
+
+    expect(summary.id, first.id);
+    expect(summary.state, 'abandoned');
+    expect(summary.endedAtUtc, abandonedAt);
+    final sessions = {
+      for (final row in await database.select(database.learningSessions).get())
+        row.id: row,
+    };
+    expect(sessions[first.id]!.state, 'abandoned');
+    expect(sessions[peer.id]!.state, 'active');
+  });
+
   test('recordEvidence reuses one source identity across retry', () async {
     final quiz = await useCases.startQuiz(categoryId: 'category-1', limit: 1);
     final occurredAtUtc = now.add(
