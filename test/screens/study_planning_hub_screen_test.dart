@@ -173,6 +173,11 @@ AppDependencies _dependencies(
 
 final class _Packs implements LearningPackRepository {
   @override
+  Future<Never> getVersion(String packId, int revision) => Future<Never>.error(
+    StateError('Catalog-only test repository has no pack-detail content.'),
+  );
+
+  @override
   Future<List<LearningPackSummary>> list(LearningPackFilter filter) async => [
     LearningPackSummary(
       packId: 'pack:travel',

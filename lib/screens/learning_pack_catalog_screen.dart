@@ -2,7 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/learning_pack.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/production_feature_gate.dart';
+import '../runtime/registries/feature.dart';
+import 'learning_pack_detail_screen.dart';
 
 /// Read-only catalog child of [StudyPlanningHubScreen].
 final class LearningPackCatalogScreen extends StatefulWidget {
@@ -66,14 +70,37 @@ final class _PackTile extends StatelessWidget {
 
   final LearningPackSummary pack;
 
+  void _open(BuildContext context) {
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: 'study-planning/catalog/detail',
+        builder: (_) => ProductionFeatureGate(
+          feature: Feature.studyPlanning,
+          registry: AppDependenciesScope.maybeOf(context)?.features,
+          builder: (_) => LearningPackDetailScreen(
+            packId: pack.packId,
+            revision: pack.revision,
+          ),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Semantics(
+      button: true,
       label:
           '${pack.title}, ${pack.cefrLevel}, ${pack.topic}, revision '
           '${pack.revision}',
+      onTap: () => _open(context),
       child: ExcludeSemantics(
         child: ListTile(
+          key: ValueKey<String>(
+            'learning-pack/open/${pack.packId}/${pack.revision}',
+          ),
+          onTap: () => _open(context),
           title: Text(pack.title),
           subtitle: Text(
             '${pack.cefrLevel} · ${pack.topic} · ${pack.skill} · '

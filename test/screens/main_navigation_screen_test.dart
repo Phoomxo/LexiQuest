@@ -438,6 +438,11 @@ final class _NavigationLearningRepository implements LearningRepository {
 
 final class _NavigationLearningPacks implements LearningPackRepository {
   @override
+  Future<Never> getVersion(String packId, int revision) => Future<Never>.error(
+    StateError('Navigation test repository has no pack-detail content.'),
+  );
+
+  @override
   Future<List<LearningPackSummary>> list(LearningPackFilter filter) async =>
       const [];
 }
