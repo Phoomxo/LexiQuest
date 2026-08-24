@@ -95,6 +95,9 @@ service cloud.firestore {
     }
 
     function fieldWordPayloadOk() {
+      // f04 stages vocabulary payload v2 in the client, but this deployed
+      // revision deliberately remains v1-only. The v2 writer is enabled only
+      // after the separately versioned rules rollout is confirmed exact.
       let payload = request.resource.data.payload;
       return payload.keys().hasOnly([
           'categoryId', 'spelling', 'normalizedSpelling', 'meaning',
@@ -559,7 +562,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion == 15
+        && payload.databaseSchemaVersion in [15, 16]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && payload.featureContractRevision == '1.0.0'

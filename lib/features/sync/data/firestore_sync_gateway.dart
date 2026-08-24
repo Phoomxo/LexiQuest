@@ -54,6 +54,7 @@ final class FirestoreSyncGateway implements SyncGateway {
             payload: mutation.payload,
             entityId: mutation.entityId,
             firebaseUid: mutation.firebaseUid,
+            isDeleted: mutation.operationKind == SyncOperationKind.delete,
             clientUpdatedAtUtcMs:
                 mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
             beginTransaction: () => _firestore
@@ -225,11 +226,26 @@ final class FirestoreSyncPreflight {
     Map<String, Object?>? payload,
     String? entityId,
     String? firebaseUid,
+    bool? isDeleted,
     int? clientUpdatedAtUtcMs,
     required Future<T> Function() beginTransaction,
   }) async {
     collection.requireSupportedPayloadVersion(payloadVersion);
-    if (collection == SyncCollection.attempts) {
+    if (collection == SyncCollection.words) {
+      final wordPayload = payload;
+      final payloadIsDeleted = wordPayload?['isDeleted'];
+      if (wordPayload == null ||
+          clientUpdatedAtUtcMs == null ||
+          payloadIsDeleted is! bool) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      VocabularyWordSyncPayloadContract.requireCanonical(
+        payloadVersion: payloadVersion,
+        payload: wordPayload,
+        isDeleted: isDeleted ?? payloadIsDeleted,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
+      );
+    } else if (collection == SyncCollection.attempts) {
       final attemptPayload = payload;
       if (attemptPayload == null) {
         throw const InvalidSyncPayloadFailure();
@@ -334,7 +350,15 @@ final class FirestoreSyncCodec {
     }
     try {
       final canonicalPayload = Map<String, Object?>.from(payload);
-      if (collection == SyncCollection.attempts) {
+      if (collection == SyncCollection.words) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        VocabularyWordSyncPayloadContract.requireCanonical(
+          payloadVersion: schemaVersion,
+          payload: canonicalPayload,
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+        );
+      } else if (collection == SyncCollection.attempts) {
         AnswerAttemptSyncPayloadContract.requireEvidenceContext(
           payloadVersion: schemaVersion,
           payload: canonicalPayload,
@@ -420,6 +444,16 @@ final class FirestoreSyncCodec {
   }
 
   static void _requireValidPayload(PushMutation mutation) {
+    if (mutation.collection == SyncCollection.words) {
+      VocabularyWordSyncPayloadContract.requireCanonical(
+        payloadVersion: mutation.payloadVersion,
+        payload: mutation.payload,
+        isDeleted: mutation.operationKind == SyncOperationKind.delete,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      );
+      return;
+    }
     if (mutation.collection == SyncCollection.attempts) {
       AnswerAttemptSyncPayloadContract.requireEvidenceContext(
         payloadVersion: mutation.payloadVersion,

@@ -5,6 +5,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 
+import '../support/current_database_contract.dart';
+
 void main() {
   test(
     'v12 attempts gain exact legacy evidence metadata without row loss',
@@ -33,6 +35,7 @@ void main() {
       );
 
       expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
+      await expectCurrentDatabaseContract(database);
       expect(attempt.read<String>('id'), 'attempt:v12');
       expect(
         attempt.read<String>('evidence_class'),

@@ -14,6 +14,8 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+
+import '../../support/current_database_contract.dart';
 import 'package:vocab_learning_app/features/consent/application/research_consent_use_cases.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -462,18 +464,34 @@ void main() {
       final envelope =
           jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
       final content = envelope['content'] as Map<String, dynamic>;
-      expect(content['tables'], hasLength(33));
+      expect(content['tables'], hasLength(currentDatabaseTableInventory));
       expect(content['archiveSchemaVersion'], 1);
       expect(content['algorithmVersion'], 1);
       expect(
         content['databaseSchemaVersion'],
         AppDatabase.currentSchemaVersion,
       );
-      expect(content['manifestEntryCount'], 33);
+      expect(
+        content['manifestEntryCount'],
+        currentDatabaseTableInventory.length,
+      );
       expect(artifact.schemaVersion, content['archiveSchemaVersion']);
       expect(artifact.algorithmVersion, content['algorithmVersion']);
       expect(artifact.recordCount, content['manifestEntryCount']);
       expect(artifact.sha256, isNotEmpty);
+
+      final tables = (content['tables'] as List<dynamic>)
+          .cast<Map<String, dynamic>>();
+      final vocabulary = tables.singleWhere(
+        (table) => table['alias'] == 'vocabularyWords',
+      );
+      final word = (vocabulary['records'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .single;
+      expect(word['contentRevision'], 1);
+      expect(word['contentProvenance'], 'userAuthored');
+      expect(word['contentReviewState'], 'unreviewed');
+      expect(word['contentPublicationState'], 'private');
 
       final saved = await exports.export(
         format: ExportFormat.ownerArchiveJson,

@@ -447,7 +447,9 @@ final class OwnerLifecycleArchiveExporter {
   Future<List<Map<String, Object?>>> _vocabularyWords(String ownerId) async {
     final rows = await database
         .customSelect(
-          'SELECT spelling, meaning, part_of_speech, cefr_level, source '
+          'SELECT spelling, meaning, part_of_speech, cefr_level, source, '
+          'content_revision, content_checksum_sha256, content_provenance, '
+          'content_review_state, content_publication_state '
           'FROM vocabulary_words WHERE owner_id = ? AND is_deleted = 0 '
           'ORDER BY spelling, meaning, id',
           variables: [Variable<String>(ownerId)],
@@ -463,6 +465,19 @@ final class OwnerLifecycleArchiveExporter {
           'partOfSpeech': row.read<String>('part_of_speech'),
           'cefrLevel': row.readNullable<String>('cefr_level'),
           'source': _vocabularySource(row.read<String>('source')),
+          'contentRevision': row.read<int>('content_revision'),
+          'contentChecksumSha256': row.readNullable<String>(
+            'content_checksum_sha256',
+          ),
+          'contentProvenance': _safeLabel(
+            row.read<String>('content_provenance'),
+          ),
+          'contentReviewState': _safeLabel(
+            row.read<String>('content_review_state'),
+          ),
+          'contentPublicationState': _safeLabel(
+            row.read<String>('content_publication_state'),
+          ),
         },
     ];
   }
@@ -884,7 +899,9 @@ final class OwnerLifecycleArchiveExporter {
         descriptor.tableName,
         ownerId,
       ),
-      OwnerLifecycleAuthority.global => 0,
+      OwnerLifecycleAuthority.global ||
+      OwnerLifecycleAuthority.packagedContent ||
+      OwnerLifecycleAuthority.deviceLocal => 0,
     };
     return [
       {'recordCount': count},

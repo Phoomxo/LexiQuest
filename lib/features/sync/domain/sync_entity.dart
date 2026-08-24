@@ -3,11 +3,13 @@ import 'dart:convert';
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
+import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../research/domain/research_protocol_mode_catalog.dart';
 import 'sync_failure.dart';
 
 const int currentCloudSyncPolicySchemaVersion = 1;
 const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
+const String vocabularyWordV2RulesRevision = 'vocabulary-word-v2-r1';
 const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
 const String assessmentRunV1RulesRevision = 'assessment-run-v1-r1';
@@ -64,9 +66,8 @@ extension SyncCollectionWireName on SyncCollection {
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
-    SyncCollection.attempts => const <int>{1, 2},
+    SyncCollection.words || SyncCollection.attempts => const <int>{1, 2},
     SyncCollection.categories ||
-    SyncCollection.words ||
     SyncCollection.readingEvents ||
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
@@ -88,16 +89,26 @@ extension SyncCollectionWireName on SyncCollection {
 }
 
 final class SyncPayloadRollout {
-  const SyncPayloadRollout.productionDefault() : answerAttemptWriteVersion = 1;
+  const SyncPayloadRollout.productionDefault()
+    : answerAttemptWriteVersion = 1,
+      vocabularyWordRulesRevision = legacyFirestoreRulesRevision;
 
-  const SyncPayloadRollout.answerAttemptV2() : answerAttemptWriteVersion = 2;
+  const SyncPayloadRollout.answerAttemptV2()
+    : answerAttemptWriteVersion = 2,
+      vocabularyWordRulesRevision = legacyFirestoreRulesRevision;
+
+  const SyncPayloadRollout.vocabularyWordV2({
+    required this.vocabularyWordRulesRevision,
+  }) : answerAttemptWriteVersion = 1;
 
   final int answerAttemptWriteVersion;
+  final String vocabularyWordRulesRevision;
 
   int writeVersionFor(SyncCollection collection) => switch (collection) {
     SyncCollection.attempts => answerAttemptWriteVersion,
+    SyncCollection.words =>
+      vocabularyWordRulesRevision == vocabularyWordV2RulesRevision ? 2 : 1,
     SyncCollection.categories ||
-    SyncCollection.words ||
     SyncCollection.readingEvents ||
     SyncCollection.rewardTransactions ||
     SyncCollection.srsStates ||
@@ -105,6 +116,146 @@ final class SyncPayloadRollout {
     SyncCollection.experimentAssignments ||
     SyncCollection.assessmentRuns => collection.defaultWritePayloadVersion,
   };
+}
+
+abstract final class VocabularyWordSyncPayloadContract {
+  static const Set<String> payloadV1Keys = <String>{
+    'categoryId',
+    'spelling',
+    'normalizedSpelling',
+    'meaning',
+    'normalizedMeaning',
+    'partOfSpeech',
+    'cefrLevel',
+    'source',
+    'isGlobal',
+    'isDeleted',
+    'createdAtUtcMs',
+    'updatedAtUtcMs',
+  };
+
+  static const Set<String> payloadV2Keys = <String>{
+    ...payloadV1Keys,
+    'contentRevision',
+    'contentChecksumSha256',
+    'contentProvenance',
+    'contentReviewState',
+    'contentPublicationState',
+  };
+
+  static void requireCanonical({
+    required int payloadVersion,
+    required Map<String, Object?> payload,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+  }) {
+    if (payloadVersion != 1 && payloadVersion != 2) {
+      throw const UnsupportedSyncSchemaFailure();
+    }
+    try {
+      final expectedKeys = payloadVersion == 1 ? payloadV1Keys : payloadV2Keys;
+      if (payload.length != expectedKeys.length ||
+          !payload.keys.every(expectedKeys.contains) ||
+          clientUpdatedAtUtcMs < 0) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      _requireLegacyShape(payload, isDeleted: isDeleted);
+      if (payloadVersion == 1) return;
+
+      for (final field in const <String>[
+        'categoryId',
+        'spelling',
+        'normalizedSpelling',
+        'meaning',
+        'normalizedMeaning',
+        'partOfSpeech',
+        'source',
+      ]) {
+        final value = payload[field]! as String;
+        if (value.isEmpty || value != value.trim()) {
+          throw const InvalidSyncPayloadFailure();
+        }
+      }
+      final cefrLevel = payload['cefrLevel'];
+      final updatedAtUtcMs = payload['updatedAtUtcMs'];
+      if ((cefrLevel != null &&
+              (cefrLevel is! String ||
+                  cefrLevel.isEmpty ||
+                  cefrLevel != cefrLevel.trim() ||
+                  cefrLevel.runes.length > 20)) ||
+          payload['isGlobal'] != false ||
+          updatedAtUtcMs != clientUpdatedAtUtcMs) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final contentRevision = payload['contentRevision'];
+      final checksum = payload['contentChecksumSha256'];
+      final expectedChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: payload['categoryId']! as String,
+        spelling: payload['spelling']! as String,
+        normalizedSpelling: payload['normalizedSpelling']! as String,
+        meaning: payload['meaning']! as String,
+        normalizedMeaning: payload['normalizedMeaning']! as String,
+        partOfSpeech: payload['partOfSpeech']! as String,
+        cefrLevel: cefrLevel as String?,
+        source: payload['source']! as String,
+        isGlobal: payload['isGlobal']! as bool,
+      );
+      if (contentRevision is! int ||
+          contentRevision <= 0 ||
+          checksum is! String ||
+          checksum != expectedChecksum ||
+          payload['contentProvenance'] != 'userAuthored' ||
+          payload['contentReviewState'] != 'unreviewed' ||
+          payload['contentPublicationState'] != 'private') {
+        throw const InvalidSyncPayloadFailure();
+      }
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static void _requireLegacyShape(
+    Map<String, Object?> payload, {
+    required bool isDeleted,
+  }) {
+    void requireText(
+      String field, {
+      required int maximumLength,
+      required bool allowEmpty,
+    }) {
+      final value = payload[field];
+      if (value is! String ||
+          (!allowEmpty && value.isEmpty) ||
+          value.runes.length > maximumLength) {
+        throw const InvalidSyncPayloadFailure();
+      }
+    }
+
+    requireText('categoryId', maximumLength: 256, allowEmpty: false);
+    requireText('spelling', maximumLength: 200, allowEmpty: false);
+    requireText('normalizedSpelling', maximumLength: 200, allowEmpty: false);
+    requireText('meaning', maximumLength: 1000, allowEmpty: false);
+    requireText('normalizedMeaning', maximumLength: 1000, allowEmpty: false);
+    requireText('partOfSpeech', maximumLength: 60, allowEmpty: true);
+    requireText('source', maximumLength: 60, allowEmpty: false);
+    final cefrLevel = payload['cefrLevel'];
+    final payloadIsDeleted = payload['isDeleted'];
+    final createdAtUtcMs = payload['createdAtUtcMs'];
+    final updatedAtUtcMs = payload['updatedAtUtcMs'];
+    if ((cefrLevel != null &&
+            (cefrLevel is! String || cefrLevel.runes.length > 20)) ||
+        payload['isGlobal'] is! bool ||
+        payloadIsDeleted is! bool ||
+        payloadIsDeleted != isDeleted ||
+        createdAtUtcMs is! int ||
+        createdAtUtcMs < 0 ||
+        updatedAtUtcMs is! int ||
+        updatedAtUtcMs < createdAtUtcMs) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
 }
 
 /// Delivery gate for immutable research collections.
@@ -360,7 +511,7 @@ abstract final class AssessmentRunSyncPayloadContract {
           !const <String>{'pre', 'post'}.contains(phase) ||
           experimentVersion <= 0 ||
           consentVersion <= 0 ||
-          databaseSchemaVersion != 15 ||
+          !const <int>{15, 16}.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
           !supportedFeatureContractIdentities.any(

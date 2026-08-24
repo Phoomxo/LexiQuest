@@ -1,12 +1,21 @@
+import 'dart:convert';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:crypto/crypto.dart';
+import 'package:drift/drift.dart' show Value;
+import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 
 void main() {
   group('FirestoreSyncCodec', () {
@@ -59,20 +68,9 @@ void main() {
           'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
           'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
           'lastOperationId': 'operation-7',
-          'payload': <String, Object?>{
-            'categoryId': 'category-1',
-            'spelling': 'station',
-            'normalizedSpelling': 'station',
-            'meaning': 'สถานี',
-            'normalizedMeaning': 'สถานี',
-            'partOfSpeech': 'noun',
-            'cefrLevel': null,
-            'source': 'manual',
-            'isGlobal': false,
-            'isDeleted': false,
-            'createdAtUtcMs': 1000,
-            'updatedAtUtcMs': 2000,
-          },
+          'payload': _wordPayloadV1(
+            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
         },
       );
 
@@ -81,6 +79,34 @@ void main() {
       expect(entity.payload['cefrLevel'], isNull);
       expect(entity.serverUpdatedAtUtc, serverUpdatedAt);
     });
+
+    test(
+      'decodes exact versioned vocabulary payloads without review inflation',
+      () {
+        final entity = FirestoreSyncCodec.decodeEntity(
+          collection: SyncCollection.words,
+          documentId: 'word-v2',
+          data: <String, Object?>{
+            'schemaVersion': 2,
+            'entityId': 'word-v2',
+            'revision': 2,
+            'isDeleted': false,
+            'clientUpdatedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+            'serverUpdatedAt': Timestamp.fromDate(serverUpdatedAt),
+            'lastOperationId': 'word-v2-operation',
+            'payload': _wordPayloadV2(
+              updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+            ),
+          },
+        );
+
+        expect(entity.payloadVersion, 2);
+        expect(entity.payload['contentRevision'], 2);
+        expect(entity.payload['contentProvenance'], 'userAuthored');
+        expect(entity.payload['contentReviewState'], 'unreviewed');
+        expect(entity.payload['contentPublicationState'], 'private');
+      },
+    );
 
     test('round-trips every declared collection generically at v1', () {
       const expectedCollections = <SyncCollection>{
@@ -103,6 +129,9 @@ void main() {
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
+          SyncCollection.words => _wordPayloadV1(
+            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
           SyncCollection.attempts => _attemptPayloadV1(),
           SyncCollection.experimentAssignments => _assignmentPayload(
             assignmentId: entityId,
@@ -585,9 +614,10 @@ void main() {
       );
     });
 
-    test('rejects payload v2 for every legacy-v1-only collection', () {
+    test('rejects payload v2 for every remaining v1-only collection', () {
       for (final collection in SyncCollection.values.where(
-        (value) => value != SyncCollection.attempts,
+        (value) =>
+            value != SyncCollection.attempts && value != SyncCollection.words,
       )) {
         expect(
           () => FirestoreSyncCodec.decodeEntity(
@@ -747,13 +777,38 @@ void main() {
     );
 
     test(
-      'rejects legacy collection v2 without starting a transaction',
+      'admits exact vocabulary v1/v2 and starts each transaction once',
+      () async {
+        const preflight = FirestoreSyncPreflight();
+        var transactions = 0;
+
+        for (final version in const <int>[1, 2]) {
+          final result = await preflight.beforeTransaction<int>(
+            collection: SyncCollection.words,
+            payloadVersion: version,
+            payload: version == 1 ? _wordPayloadV1() : _wordPayloadV2(),
+            clientUpdatedAtUtcMs: 2000,
+            beginTransaction: () async {
+              transactions += 1;
+              return version;
+            },
+          );
+          expect(result, version);
+        }
+
+        expect(transactions, 2);
+      },
+    );
+
+    test(
+      'rejects remaining legacy collection v2 without a transaction',
       () async {
         const preflight = FirestoreSyncPreflight();
         var transactions = 0;
 
         for (final collection in SyncCollection.values.where(
-          (value) => value != SyncCollection.attempts,
+          (value) =>
+              value != SyncCollection.attempts && value != SyncCollection.words,
         )) {
           await expectLater(
             preflight.beforeTransaction<void>(
@@ -807,7 +862,306 @@ void main() {
       },
     );
   });
+
+  group('DriftSyncStore vocabulary compatibility', () {
+    late AppDatabase database;
+
+    setUp(() async {
+      database = AppDatabase(NativeDatabase.memory());
+      await database.customInsert(
+        "INSERT INTO local_owners "
+        "(id, firebase_uid, account_state, created_at_utc_ms, is_active) "
+        "VALUES ('owner-1', 'firebase-user-1', 'firebaseBound', 1, 1)",
+      );
+      await database.customInsert(
+        "INSERT INTO vocabulary_categories "
+        "(id, owner_id, name, normalized_name, created_at_utc_ms, "
+        "updated_at_utc_ms) VALUES "
+        "('category-1', 'owner-1', 'Travel', 'travel', 1, 1)",
+      );
+    });
+
+    tearDown(() => database.close());
+
+    test('dual-reads legacy and versioned learner vocabulary', () async {
+      final store = DriftSyncStore(database);
+      final legacyServerTime = DateTime.utc(2026, 8, 24, 10, 1);
+      final versionedServerTime = DateTime.utc(2026, 8, 24, 10, 2);
+
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.words,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.words,
+              entityId: 'word-v1',
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: legacyServerTime,
+              payload: _wordPayloadV1(),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: legacyServerTime,
+            documentId: 'word-v1',
+          ),
+          hasMore: false,
+        ),
+      );
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.words,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.words,
+              entityId: 'word-v2',
+              revision: 2,
+              isDeleted: false,
+              payloadVersion: 2,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: versionedServerTime,
+              payload: _wordPayloadV2(),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: versionedServerTime,
+            documentId: 'word-v2',
+          ),
+          hasMore: false,
+        ),
+      );
+
+      final rows = await database.customSelect('''
+        SELECT id, content_revision, content_checksum_sha256,
+               content_provenance, content_review_state,
+               content_publication_state
+        FROM vocabulary_words ORDER BY id
+      ''').get();
+      expect(rows, hasLength(2));
+      expect(rows.first.read<String>('id'), 'word-v1');
+      expect(rows.first.read<int>('content_revision'), 1);
+      expect(
+        rows.first.readNullable<String>('content_checksum_sha256'),
+        isNull,
+      );
+      expect(rows.first.read<String>('content_provenance'), 'userAuthored');
+      expect(rows.first.read<String>('content_review_state'), 'unreviewed');
+      expect(rows.first.read<String>('content_publication_state'), 'private');
+      expect(rows.last.read<String>('id'), 'word-v2');
+      expect(rows.last.read<int>('content_revision'), 2);
+      expect(
+        rows.last.read<String>('content_checksum_sha256'),
+        _wordPayloadV2()['contentChecksumSha256'],
+      );
+    });
+
+    test('legacy pull cannot erase a versioned content identity', () async {
+      final store = DriftSyncStore(database);
+      final versioned = _wordPayloadV2();
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.words,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.words,
+              entityId: 'word-mixed',
+              revision: 2,
+              isDeleted: false,
+              payloadVersion: 2,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                2000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 24, 10, 2),
+              payload: versioned,
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: DateTime.utc(2026, 8, 24, 10, 2),
+            documentId: 'word-mixed',
+          ),
+          hasMore: false,
+        ),
+      );
+      final legacyUpdate = <String, Object?>{
+        ..._wordPayloadV1(updatedAtUtcMs: 3000),
+        'spelling': 'platform updated',
+        'normalizedSpelling': 'platform updated',
+        'meaning': 'ชานชาลาใหม่',
+        'normalizedMeaning': 'ชานชาลาใหม่',
+      };
+      await store.applyPullPage(
+        ownerId: 'owner-1',
+        collection: SyncCollection.words,
+        page: PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.words,
+              entityId: 'word-mixed',
+              revision: 3,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                3000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: DateTime.utc(2026, 8, 24, 10, 3),
+              payload: legacyUpdate,
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: DateTime.utc(2026, 8, 24, 10, 3),
+            documentId: 'word-mixed',
+          ),
+          hasMore: false,
+        ),
+      );
+
+      final row = await (database.select(
+        database.vocabularyWords,
+      )..where((word) => word.id.equals('word-mixed'))).getSingle();
+      expect(row.contentRevision, 3);
+      expect(
+        row.contentChecksumSha256,
+        _gatewayWordPayloadChecksum(legacyUpdate),
+      );
+      expect(row.contentProvenance, 'userAuthored');
+      expect(row.contentReviewState, 'unreviewed');
+      expect(row.contentPublicationState, 'private');
+    });
+
+    test('word v2 rollout keeps migrated null-checksum rows on v1', () async {
+      final legacy = _wordPayloadV1();
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: 'word-legacy-outbox',
+              ownerId: 'owner-1',
+              categoryId: legacy['categoryId']! as String,
+              spelling: legacy['spelling']! as String,
+              normalizedSpelling: legacy['normalizedSpelling']! as String,
+              meaning: legacy['meaning']! as String,
+              normalizedMeaning: legacy['normalizedMeaning']! as String,
+              partOfSpeech: legacy['partOfSpeech']! as String,
+              cefrLevel: Value(legacy['cefrLevel'] as String?),
+              source: Value(legacy['source']! as String),
+              isGlobal: Value(legacy['isGlobal']! as bool),
+              isDeleted: Value(legacy['isDeleted']! as bool),
+              createdAtUtcMs: legacy['createdAtUtcMs']! as int,
+              updatedAtUtcMs: legacy['updatedAtUtcMs']! as int,
+            ),
+          );
+      await database
+          .into(database.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId: 'word:word-legacy-outbox:1',
+              ownerId: 'owner-1',
+              entityType: 'word',
+              entityId: 'word-legacy-outbox',
+              operationKind: SyncOperationKind.upsert.name,
+              createdAtUtcMs: 2000,
+            ),
+          );
+      final nowUtc = DateTime.utc(2026, 8, 24, 10, 4);
+      expect(
+        await DriftOwnerOperationGate(database).tryAcquire(
+          token: 'f04-word-rollout',
+          nowUtc: nowUtc,
+          leaseDuration: const Duration(minutes: 5),
+        ),
+        isTrue,
+      );
+      final store = DriftSyncStore(
+        database,
+        payloadRollout: const SyncPayloadRollout.vocabularyWordV2(
+          vocabularyWordRulesRevision: vocabularyWordV2RulesRevision,
+        ),
+      );
+
+      final claims = await store.claimPending(
+        ownerId: 'owner-1',
+        firebaseUid: 'firebase-user-1',
+        limit: 1,
+        leaseToken: 'f04-word-lease',
+        ownerGateToken: 'f04-word-rollout',
+        leaseDuration: const Duration(minutes: 1),
+        nowUtc: nowUtc,
+      );
+
+      expect(claims, hasLength(1));
+      expect(claims.single.mutation.payloadVersion, 1);
+      expect(
+        claims.single.mutation.payload.keys.toSet(),
+        VocabularyWordSyncPayloadContract.payloadV1Keys,
+      );
+    });
+  });
 }
+
+Map<String, Object?> _wordPayloadV1({int updatedAtUtcMs = 2000}) =>
+    <String, Object?>{
+      'categoryId': 'category-1',
+      'spelling': 'station',
+      'normalizedSpelling': 'station',
+      'meaning': 'สถานี',
+      'normalizedMeaning': 'สถานี',
+      'partOfSpeech': 'noun',
+      'cefrLevel': null,
+      'source': 'manual',
+      'isGlobal': false,
+      'isDeleted': false,
+      'createdAtUtcMs': 1000,
+      'updatedAtUtcMs': updatedAtUtcMs,
+    };
+
+Map<String, Object?> _wordPayloadV2({int updatedAtUtcMs = 2000}) {
+  final content = <String, Object?>{
+    ..._wordPayloadV1(updatedAtUtcMs: updatedAtUtcMs),
+    'spelling': 'platform',
+    'normalizedSpelling': 'platform',
+    'meaning': 'ชานชาลา',
+    'normalizedMeaning': 'ชานชาลา',
+  };
+  return <String, Object?>{
+    ...content,
+    'contentRevision': 2,
+    'contentChecksumSha256': _gatewayWordPayloadChecksum(content),
+    'contentProvenance': 'userAuthored',
+    'contentReviewState': 'unreviewed',
+    'contentPublicationState': 'private',
+  };
+}
+
+String _gatewayWordPayloadChecksum(Map<String, Object?> payload) => sha256
+    .convert(
+      utf8.encode(
+        jsonEncode(<String, Object?>{
+          'categoryId': payload['categoryId'],
+          'spelling': payload['spelling'],
+          'normalizedSpelling': payload['normalizedSpelling'],
+          'meaning': payload['meaning'],
+          'normalizedMeaning': payload['normalizedMeaning'],
+          'partOfSpeech': payload['partOfSpeech'],
+          'cefrLevel': payload['cefrLevel'],
+          'source': payload['source'],
+          'isGlobal': payload['isGlobal'],
+        }),
+      ),
+    )
+    .toString();
 
 Map<String, Object?> _attemptPayloadV1() => <String, Object?>{
   'sessionId': 'session-1',

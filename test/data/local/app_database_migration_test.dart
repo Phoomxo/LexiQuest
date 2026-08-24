@@ -3,12 +3,15 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
+import '../../support/current_database_contract.dart';
+
 void main() {
   test('new databases use the current schema with product tables', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);
 
     expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
+    await expectCurrentDatabaseContract(database);
 
     final categoryColumns = await _columnNames(
       database,
@@ -139,7 +142,7 @@ void main() {
       expect(conflict.read<String>('outcome'), 'cloudWins');
       expect(conflict.readNullable<String>('local_snapshot_json'), isNull);
       expect(conflict.readNullable<String>('cloud_snapshot_json'), isNull);
-      expect(await _tableNames(database), containsAll(_expectedTables));
+      expect(await _tableNames(database), currentDatabaseTableInventory);
 
       await database
           .into(database.learningSessions)
@@ -211,7 +214,7 @@ void main() {
       );
       expect(event.read<String>('id'), 'reading:legacy');
       expect(event.read<int>('document_revision'), 1);
-      expect(await _tableNames(database), containsAll(_expectedTables));
+      expect(await _tableNames(database), currentDatabaseTableInventory);
     },
   );
 
@@ -242,30 +245,6 @@ void main() {
     },
   );
 }
-
-const _expectedTables = <String>{
-  'local_owners',
-  'research_consents',
-  'vocabulary_categories',
-  'vocabulary_words',
-  'vocabulary_imports',
-  'vocabulary_import_rows',
-  'learning_sessions',
-  'answer_attempts',
-  'srs_states',
-  'reading_progress_entries',
-  'reading_events',
-  'points_ledger_entries',
-  'achievement_unlocks',
-  'reward_transactions',
-  'owned_reward_items',
-  'equipped_reward_items',
-  'outbox_operations',
-  'sync_checkpoints',
-  'sync_conflicts',
-  'runtime_flags',
-  'model_downloads',
-};
 
 Future<Set<String>> _tableNames(AppDatabase database) async {
   final rows = await database

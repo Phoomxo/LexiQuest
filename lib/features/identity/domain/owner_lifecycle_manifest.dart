@@ -1,6 +1,13 @@
 import '../../../runtime/runtime_flag_namespaces.dart';
 
-enum OwnerLifecycleAuthority { root, directOwner, transitiveOwner, global }
+enum OwnerLifecycleAuthority {
+  root,
+  directOwner,
+  transitiveOwner,
+  global,
+  packagedContent,
+  deviceLocal,
+}
 
 enum OwnerLifecycleExportDisposition {
   redactedIdentity,
@@ -229,6 +236,11 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
       'partOfSpeech',
       'cefrLevel',
       'source',
+      'contentRevision',
+      'contentChecksumSha256',
+      'contentProvenance',
+      'contentReviewState',
+      'contentPublicationState',
     ],
   ),
   OwnerLifecycleTableDescriptor(
@@ -253,6 +265,38 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
     exportDisposition: OwnerLifecycleExportDisposition.aggregateOnly,
     deletionDisposition: OwnerLifecycleDeletionDisposition.deleteTransitive,
     allowedExportFields: ['recordCount'],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'content_manifests',
+    alias: 'packagedContentManifests',
+    authority: OwnerLifecycleAuthority.packagedContent,
+    exportDisposition: OwnerLifecycleExportDisposition.preservedGlobal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'learning_packs',
+    alias: 'packagedLearningPacks',
+    authority: OwnerLifecycleAuthority.packagedContent,
+    exportDisposition: OwnerLifecycleExportDisposition.preservedGlobal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'learning_pack_items',
+    alias: 'packagedLearningPackItems',
+    authority: OwnerLifecycleAuthority.packagedContent,
+    exportDisposition: OwnerLifecycleExportDisposition.preservedGlobal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [],
+  ),
+  OwnerLifecycleTableDescriptor(
+    tableName: 'content_download_states',
+    alias: 'deviceLocalContentDownloads',
+    authority: OwnerLifecycleAuthority.deviceLocal,
+    exportDisposition: OwnerLifecycleExportDisposition.preservedGlobal,
+    deletionDisposition: OwnerLifecycleDeletionDisposition.preserveGlobal,
+    allowedExportFields: [],
   ),
   OwnerLifecycleTableDescriptor(
     tableName: 'learning_sessions',

@@ -101,6 +101,81 @@ void main() {
     expect(ownerUpgradeInventory, actual);
   });
 
+  test('content tables have explicit non-owner lifecycle classifications', () {
+    final packaged = ownerLifecycleManifest
+        .where(
+          (entry) => const <String>{
+            'learning_packs',
+            'learning_pack_items',
+            'content_manifests',
+          }.contains(entry.tableName),
+        )
+        .toList(growable: false);
+    final downloads = ownerLifecycleManifest.singleWhere(
+      (entry) => entry.tableName == 'content_download_states',
+    );
+
+    expect(packaged, hasLength(3));
+    expect(packaged.map((entry) => entry.authority).toSet(), {
+      OwnerLifecycleAuthority.packagedContent,
+    });
+    expect(packaged.map((entry) => entry.deletionDisposition).toSet(), {
+      OwnerLifecycleDeletionDisposition.preserveGlobal,
+    });
+    expect(downloads.authority, OwnerLifecycleAuthority.deviceLocal);
+    expect(
+      downloads.deletionDisposition,
+      OwnerLifecycleDeletionDisposition.preserveGlobal,
+    );
+  });
+
+  test(
+    'anonymous owner upgrade preserves lexical content provenance',
+    () async {
+      await database.customInsert(
+        "INSERT INTO vocabulary_categories "
+        "(id, owner_id, name, normalized_name, created_at_utc_ms, "
+        "updated_at_utc_ms) VALUES "
+        "('category:content', 'guest-owner', 'Content', 'content', 1, 1)",
+      );
+      await database.customInsert(
+        "INSERT INTO vocabulary_words "
+        "(id, owner_id, category_id, spelling, normalized_spelling, meaning, "
+        "normalized_meaning, part_of_speech, content_revision, "
+        "content_checksum_sha256, content_provenance, content_review_state, "
+        "content_publication_state, created_at_utc_ms, updated_at_utc_ms) "
+        "VALUES ('word:content', 'guest-owner', 'category:content', 'station', "
+        "'station', 'station', 'station', 'noun', 3, "
+        "'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', "
+        "'userAuthored', 'unreviewed', 'private', 1, 1)",
+      );
+      await (database.delete(
+        database.localOwners,
+      )..where((row) => row.id.equals('account-owner'))).go();
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'content-user',
+      );
+
+      final row = await database.customSelect('''
+          SELECT owner_id, content_revision, content_checksum_sha256,
+                 content_provenance, content_review_state,
+                 content_publication_state
+          FROM vocabulary_words WHERE id = 'word:content'
+        ''').getSingle();
+      expect(row.read<String>('owner_id'), 'guest-owner');
+      expect(row.read<int>('content_revision'), 3);
+      expect(
+        row.read<String>('content_checksum_sha256'),
+        'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      );
+      expect(row.read<String>('content_provenance'), 'userAuthored');
+      expect(row.read<String>('content_review_state'), 'unreviewed');
+      expect(row.read<String>('content_publication_state'), 'private');
+    },
+  );
+
   test(
     'alreadyBound materializes legacy coins and reward projections before returning',
     () async {

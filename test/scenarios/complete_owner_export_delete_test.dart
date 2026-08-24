@@ -20,49 +20,17 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/runtime/download_counter.dart';
 
+import '../support/current_database_contract.dart';
+
 void main() {
   test(
-    'current v15 lifecycle covers assessment runs exactly once in FK-safe order',
+    'current v16 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
       await database.customSelect('SELECT 1').getSingle();
 
-      const exactCurrentSchemaTables = <String>{
-        'local_owners',
-        'research_consents',
-        'experiment_assignments',
-        'assessment_runs',
-        'vocabulary_categories',
-        'vocabulary_words',
-        'vocabulary_imports',
-        'vocabulary_import_rows',
-        'learning_sessions',
-        'answer_attempts',
-        'srs_states',
-        'reading_progress_entries',
-        'reading_events',
-        'points_ledger_entries',
-        'achievement_unlocks',
-        'reward_transactions',
-        'owned_reward_items',
-        'equipped_reward_items',
-        'outbox_operations',
-        'sync_checkpoints',
-        'sync_conflicts',
-        'runtime_flags',
-        'model_downloads',
-        'events_v2',
-        'quest_definitions',
-        'quest_instances',
-        'quest_objective_progress',
-        'streak_states',
-        'learning_day_log',
-        'association_records',
-        'associative_memory_states',
-        'ai_usage_events',
-        'speech_evidence',
-      };
+      const exactCurrentSchemaTables = currentDatabaseTableInventory;
       final liveTables = database.allTables
           .map((table) => table.actualTableName)
           .toSet();
@@ -77,7 +45,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(33),
+        hasLength(37),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -103,6 +71,18 @@ void main() {
           (entry) => entry.authority == OwnerLifecycleAuthority.global,
         ),
         hasLength(3),
+      );
+      expect(
+        ownerLifecycleManifest.where(
+          (entry) => entry.authority == OwnerLifecycleAuthority.packagedContent,
+        ),
+        hasLength(3),
+      );
+      expect(
+        ownerLifecycleManifest.where(
+          (entry) => entry.authority == OwnerLifecycleAuthority.deviceLocal,
+        ),
+        hasLength(1),
       );
 
       final pragmaDirectOwnerTables = <String>{};
@@ -602,7 +582,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(33));
+      expect(archiveTables, hasLength(37));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)

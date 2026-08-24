@@ -664,6 +664,7 @@ void main() {
       expect(dependencies.aiTutor, isNull);
       expect(dependencies.voice, isNotNull);
       expect(dependencies.vocabulary, isNotNull);
+      expect(dependencies.contentManifests, isNotNull);
       expect(dependencies.quest, isNotNull);
     });
 
@@ -695,6 +696,7 @@ void main() {
       expect(identical(dependencies.aiTutor, ai), isTrue);
       expect(dependencies.voice, isNull);
       expect(dependencies.vocabulary, isNotNull);
+      expect(dependencies.contentManifests, isNotNull);
       expect(dependencies.quest, isNotNull);
     });
 

@@ -2,11 +2,12 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
+import '../support/current_database_contract.dart';
 import 'migration_v13_to_v14_test.dart' as fixture;
 
 void main() {
   test(
-    'frozen v14 fixture upgrades to the named 33-table v15 inventory',
+    'frozen v14 fixture upgrades through the named current inventory',
     () async {
       final database = AppDatabase(
         NativeDatabase.memory(setup: fixture.createSchemaFourteenFixture),
@@ -15,18 +16,24 @@ void main() {
 
       expect(
         AppDatabase.currentSchemaVersion,
-        15,
-        reason: 'Task 12 owns the single v14-to-v15 schema advance.',
+        16,
+        reason: 'f04 owns the single v15-to-v16 schema advance.',
       );
       expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
 
       final v14Inventory = fixture.migrationInventoryForSchemaVersion(14);
-      final currentInventory = fixture.migrationInventoryForSchemaVersion(
-        AppDatabase.currentSchemaVersion,
-      );
+      final v15Inventory = fixture.migrationInventoryForSchemaVersion(15);
+      const currentInventory = currentDatabaseTableInventory;
       expect(v14Inventory, hasLength(32));
-      expect(currentInventory, hasLength(33));
-      expect(currentInventory.difference(v14Inventory), {'assessment_runs'});
+      expect(v15Inventory, hasLength(33));
+      expect(v15Inventory.difference(v14Inventory), {'assessment_runs'});
+      expect(currentInventory, hasLength(37));
+      expect(currentInventory.difference(v15Inventory), {
+        'learning_packs',
+        'learning_pack_items',
+        'content_manifests',
+        'content_download_states',
+      });
       expect(await _tableNames(database), currentInventory);
       expect(
         currentInventory.intersection(const <String>{
@@ -68,7 +75,7 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 15);
+      expect(AppDatabase.currentSchemaVersion, 16);
       expect(await _columnContract(database, 'assessment_runs'), const [
         (name: 'id', type: 'TEXT', notNull: true, primaryKey: true),
         (name: 'owner_id', type: 'TEXT', notNull: true, primaryKey: false),
@@ -199,6 +206,76 @@ void main() {
     },
   );
 }
+
+/// Frozen v15 fixture: every v14 table and sentinel plus assessment_runs.
+void createSchemaFifteenFixture(dynamic sqlite) {
+  fixture.createSchemaFourteenFixture(sqlite);
+  sqlite.execute('''
+    CREATE TABLE assessment_runs (
+      id TEXT NOT NULL PRIMARY KEY,
+      owner_id TEXT NOT NULL REFERENCES local_owners(id),
+      learning_session_id TEXT NOT NULL REFERENCES learning_sessions(id),
+      study_cycle_id TEXT NOT NULL,
+      phase TEXT NOT NULL,
+      state TEXT NOT NULL,
+      protocol_id TEXT NOT NULL,
+      protocol_version TEXT NOT NULL,
+      experiment_id TEXT NOT NULL,
+      experiment_version INTEGER NOT NULL,
+      assignment_id TEXT NOT NULL REFERENCES experiment_assignments(id),
+      cohort TEXT NOT NULL,
+      consent_version INTEGER NOT NULL,
+      consent_decided_at_utc_ms INTEGER NOT NULL,
+      instrument_id TEXT NOT NULL,
+      instrument_version TEXT NOT NULL,
+      form_id TEXT NOT NULL,
+      form_version TEXT NOT NULL,
+      instrument_checksum_sha256 TEXT NOT NULL,
+      form_checksum_sha256 TEXT NOT NULL,
+      app_version TEXT NOT NULL,
+      build_id TEXT NOT NULL,
+      database_schema_version INTEGER NOT NULL,
+      content_revision TEXT NOT NULL,
+      evidence_policy_version TEXT NOT NULL,
+      feature_contract_revision TEXT NOT NULL,
+      feature_contract_hash TEXT NOT NULL,
+      started_at_utc_ms INTEGER NOT NULL,
+      completed_at_utc_ms INTEGER,
+      abandoned_at_utc_ms INTEGER,
+      UNIQUE(learning_session_id),
+      UNIQUE(owner_id, study_cycle_id, phase)
+    )
+  ''');
+  sqlite.execute('''
+    INSERT INTO assessment_runs(
+      id, owner_id, learning_session_id, study_cycle_id, phase, state,
+      protocol_id, protocol_version, experiment_id, experiment_version,
+      assignment_id, cohort, consent_version, consent_decided_at_utc_ms,
+      instrument_id, instrument_version, form_id, form_version,
+      instrument_checksum_sha256, form_checksum_sha256, app_version, build_id,
+      database_schema_version, content_revision, evidence_policy_version,
+      feature_contract_revision, feature_contract_hash, started_at_utc_ms,
+      completed_at_utc_ms
+    ) VALUES (
+      'assessment-run:v15', 'owner:v13', 'session:v13', 'cycle:v15', 'pre',
+      'completed', 'protocol:v15', '1.0.0', 'experiment:v14', 1,
+      'assignment:v14', 'control', 1, 20, 'instrument:v15', '1.0.0',
+      'form:v15', '1.0.0',
+      '1111111111111111111111111111111111111111111111111111111111111111',
+      '2222222222222222222222222222222222222222222222222222222222222222',
+      '1.0.0', 'fixture-v15', 15, 'content:v15', 'legacy-v1',
+      'alltcas-8-44-v1',
+      '3333333333333333333333333333333333333333333333333333333333333333',
+      30, 31
+    )
+  ''');
+  sqlite.execute('PRAGMA user_version = 15');
+}
+
+const migrationV15Sentinels = <String, ({String column, String value})>{
+  ...fixture.migrationV14Sentinels,
+  'assessment_runs': (column: 'id', value: 'assessment-run:v15'),
+};
 
 Future<Set<String>> _tableNames(AppDatabase database) {
   return database

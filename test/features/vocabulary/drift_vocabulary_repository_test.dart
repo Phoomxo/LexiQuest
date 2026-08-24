@@ -229,4 +229,44 @@ void main() {
       throwsA(isA<VocabularyNotFoundFailure>()),
     );
   });
+
+  test('learner-authored words persist versioned private provenance', () async {
+    await repository.createCategory(category());
+    await repository.createWord(word(1));
+
+    final created = await database.customSelect('''
+          SELECT content_revision, content_checksum_sha256,
+                 content_provenance, content_review_state,
+                 content_publication_state
+          FROM vocabulary_words WHERE id = 'word-1'
+        ''').getSingle();
+    final createdChecksum = created.read<String>('content_checksum_sha256');
+    expect(created.read<int>('content_revision'), 1);
+    expect(createdChecksum, matches(RegExp(r'^[0-9a-f]{64}$')));
+    expect(created.read<String>('content_provenance'), 'userAuthored');
+    expect(created.read<String>('content_review_state'), 'unreviewed');
+    expect(created.read<String>('content_publication_state'), 'private');
+
+    await repository.updateWord(
+      word(1).copyWith(
+        spelling: 'Station',
+        normalizedSpelling: 'station',
+        updatedAtUtc: createdAt.add(const Duration(minutes: 1)),
+      ),
+    );
+    final updated = await database.customSelect('''
+          SELECT content_revision, content_checksum_sha256,
+                 content_provenance, content_review_state,
+                 content_publication_state
+          FROM vocabulary_words WHERE id = 'word-1'
+        ''').getSingle();
+    expect(updated.read<int>('content_revision'), 2);
+    expect(
+      updated.read<String>('content_checksum_sha256'),
+      isNot(createdChecksum),
+    );
+    expect(updated.read<String>('content_provenance'), 'userAuthored');
+    expect(updated.read<String>('content_review_state'), 'unreviewed');
+    expect(updated.read<String>('content_publication_state'), 'private');
+  });
 }

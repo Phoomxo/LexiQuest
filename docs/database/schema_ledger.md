@@ -225,6 +225,47 @@ a v15 database.
 
 ---
 
+### v16 — Versioned Content Manifest and Learning Pack Authority
+**Reserved:** 2026-08-14
+**Implemented:** 2026-08-24
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added four non-owner content tables: `content_manifests` is the immutable
+revision, SHA-256, byte-length, provenance, review, and publication authority;
+`learning_packs` pins one manifest and one pack revision;
+`learning_pack_items` stores only ordered references to canonical
+`vocabulary_words.id` values; and `content_download_states` stores
+device-local cache state without owning content identity. Manifest-backed pack
+reads fail closed on unknown references, noncanonical item order, checksum or
+byte-length mismatch, invalid provenance, unapproved review state, unpublished
+state, or conflicting metadata for an existing immutable revision. SQLite
+insert-conflict/update/delete triggers enforce manifest-revision immutability
+at persistence; pack bytes pin each lexical reference's canonical ID,
+revision, and checksum.
+
+The canonical `vocabulary_words` table gained `content_revision`,
+`content_checksum_sha256`, `content_provenance`, `content_review_state`, and
+`content_publication_state`. New learner-authored words receive explicit
+`userAuthored` / `unreviewed` / `private` metadata and deterministic SHA-256;
+legacy rows retain readable v1 defaults. Cloud vocabulary reads accept v1 and
+v2, while v2 writes remain gated on the exact separately deployed Firestore
+rules revision. During that rollout, migrated rows without a checksum continue
+to write v1; a newer legacy pull cannot erase an already-versioned identity.
+The current rules intentionally reject v2.
+
+The four new tables raise the named inventory from 33 to 37. Pack and manifest
+rows are packaged non-owner content preserved across owner deletion; download
+state is device-local; learner vocabulary remains owner-synced and participates
+in owner upgrade and archive handling.
+
+**Migration safety:** v15→v16 adds four tables and five columns with defaults;
+all 33 v15 tables, rows, foreign keys, and assessment/evidence identities are
+preserved. Rollback is forward-only: disabling content consumers does not erase
+manifest identity, and older binaries must not open a v16 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -242,6 +283,7 @@ a v15 database.
 | 2026-08-14 | Reserved and implemented v13 evidence metadata on canonical answer attempts. | LexiQuest integration |
 | 2026-08-23 | Reserved and implemented v14 immutable experiment assignment with lifecycle coverage. | LexiQuest integration |
 | 2026-08-23 | Reserved and implemented v15 immutable assessment runs with lifecycle, export, and revisioned-sync coverage. | LexiQuest integration |
+| 2026-08-24 | Implemented v16 versioned content manifests, learning packs, device-local download state, and versioned learner vocabulary metadata. | LexiQuest integration |
 
 ---
 

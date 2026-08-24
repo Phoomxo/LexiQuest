@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
@@ -45,7 +48,7 @@ void main() {
       () {
         const expected = <SyncCollection, Set<int>>{
           SyncCollection.categories: <int>{1},
-          SyncCollection.words: <int>{1},
+          SyncCollection.words: <int>{1, 2},
           SyncCollection.attempts: <int>{1, 2},
           SyncCollection.readingEvents: <int>{1},
           SyncCollection.rewardTransactions: <int>{1},
@@ -82,11 +85,23 @@ void main() {
           ),
           1,
         );
+        expect(
+          const SyncPayloadRollout.vocabularyWordV2(
+            vocabularyWordRulesRevision: vocabularyWordV2RulesRevision,
+          ).writeVersionFor(SyncCollection.words),
+          2,
+        );
+        expect(
+          const SyncPayloadRollout.vocabularyWordV2(
+            vocabularyWordRulesRevision: legacyFirestoreRulesRevision,
+          ).writeVersionFor(SyncCollection.words),
+          1,
+        );
       },
     );
 
     test(
-      'attempts accept payload v1 and v2 while legacy collections reject v2',
+      'attempts and words accept v1/v2 while legacy collections reject v2',
       () {
         PushMutation mutation(SyncCollection collection, int payloadVersion) =>
             PushMutation(
@@ -104,8 +119,11 @@ void main() {
 
         expect(mutation(SyncCollection.attempts, 1).payloadVersion, 1);
         expect(mutation(SyncCollection.attempts, 2).payloadVersion, 2);
+        expect(mutation(SyncCollection.words, 1).payloadVersion, 1);
+        expect(mutation(SyncCollection.words, 2).payloadVersion, 2);
         for (final collection in SyncCollection.values.where(
-          (value) => value != SyncCollection.attempts,
+          (value) =>
+              value != SyncCollection.attempts && value != SyncCollection.words,
         )) {
           expect(
             () => mutation(collection, 2),
@@ -116,17 +134,83 @@ void main() {
       },
     );
 
+    test('vocabulary v1/v2 payloads are exact and v2 is user-authored', () {
+      final legacy = <String, Object?>{
+        'categoryId': 'category:travel',
+        'spelling': 'station',
+        'normalizedSpelling': 'station',
+        'meaning': 'station',
+        'normalizedMeaning': 'station',
+        'partOfSpeech': 'noun',
+        'cefrLevel': 'A1',
+        'source': 'manual',
+        'isGlobal': true,
+        'isDeleted': false,
+        'createdAtUtcMs': 1,
+        'updatedAtUtcMs': 2,
+      };
+      final userAuthored = <String, Object?>{...legacy, 'isGlobal': false};
+      final versioned = <String, Object?>{
+        ...userAuthored,
+        'contentRevision': 2,
+        'contentChecksumSha256': _wordPayloadChecksum(userAuthored),
+        'contentProvenance': 'userAuthored',
+        'contentReviewState': 'unreviewed',
+        'contentPublicationState': 'private',
+      };
+
+      expect(
+        () => VocabularyWordSyncPayloadContract.requireCanonical(
+          payloadVersion: 1,
+          payload: legacy,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: 999,
+        ),
+        returnsNormally,
+      );
+      expect(
+        () => VocabularyWordSyncPayloadContract.requireCanonical(
+          payloadVersion: 2,
+          payload: versioned,
+          isDeleted: false,
+          clientUpdatedAtUtcMs: 2,
+        ),
+        returnsNormally,
+      );
+      for (final invalid in <Map<String, Object?>>[
+        <String, Object?>{...versioned, 'unexpected': true},
+        <String, Object?>{
+          ...versioned,
+          'contentChecksumSha256':
+              'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+        },
+        <String, Object?>{...versioned, 'contentProvenance': 'packaged'},
+        <String, Object?>{...versioned, 'contentReviewState': 'approved'},
+        <String, Object?>{...versioned, 'contentPublicationState': 'published'},
+      ]) {
+        expect(
+          () => VocabularyWordSyncPayloadContract.requireCanonical(
+            payloadVersion: 2,
+            payload: invalid,
+            isDeleted: false,
+            clientUpdatedAtUtcMs: 2,
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      }
+    });
+
     test('sync entity rejects unsupported payload versions per collection', () {
       expect(
         () => SyncEntity(
-          collection: SyncCollection.words,
-          entityId: 'word:station',
+          collection: SyncCollection.categories,
+          entityId: 'category:travel',
           revision: 1,
           isDeleted: false,
           payloadVersion: 2,
           clientUpdatedAtUtc: DateTime.utc(2026, 7, 30),
           serverUpdatedAtUtc: DateTime.utc(2026, 7, 30, 0, 1),
-          payload: const <String, Object?>{'spelling': 'station'},
+          payload: const <String, Object?>{'name': 'Travel'},
         ),
         throwsA(isA<UnsupportedSyncSchemaFailure>()),
       );
@@ -340,3 +424,21 @@ void main() {
     });
   });
 }
+
+String _wordPayloadChecksum(Map<String, Object?> payload) => sha256
+    .convert(
+      utf8.encode(
+        jsonEncode(<String, Object?>{
+          'categoryId': payload['categoryId'],
+          'spelling': payload['spelling'],
+          'normalizedSpelling': payload['normalizedSpelling'],
+          'meaning': payload['meaning'],
+          'normalizedMeaning': payload['normalizedMeaning'],
+          'partOfSpeech': payload['partOfSpeech'],
+          'cefrLevel': payload['cefrLevel'],
+          'source': payload['source'],
+          'isGlobal': payload['isGlobal'],
+        }),
+      ),
+    )
+    .toString();

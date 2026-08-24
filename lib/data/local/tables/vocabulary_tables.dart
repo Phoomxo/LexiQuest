@@ -37,6 +37,14 @@ class VocabularyWords extends Table {
   TextColumn get cefrLevel => text().nullable()();
   TextColumn get source => text().withDefault(const Constant('manual'))();
   BoolColumn get isGlobal => boolean().withDefault(const Constant(false))();
+  IntColumn get contentRevision => integer().withDefault(const Constant(1))();
+  TextColumn get contentChecksumSha256 => text().nullable()();
+  TextColumn get contentProvenance =>
+      text().withDefault(const Constant('userAuthored'))();
+  TextColumn get contentReviewState =>
+      text().withDefault(const Constant('unreviewed'))();
+  TextColumn get contentPublicationState =>
+      text().withDefault(const Constant('private'))();
   IntColumn get localRevision => integer().withDefault(const Constant(1))();
   IntColumn get cloudRevision => integer().withDefault(const Constant(0))();
   IntColumn get lastAcknowledgedAtUtcMs => integer().nullable()();

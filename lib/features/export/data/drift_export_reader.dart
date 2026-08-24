@@ -16,6 +16,11 @@ final class ExportVocabularyRow {
     required this.partOfSpeech,
     required this.cefrLevel,
     required this.source,
+    required this.contentRevision,
+    required this.contentChecksumSha256,
+    required this.contentProvenance,
+    required this.contentReviewState,
+    required this.contentPublicationState,
   });
 
   final String id;
@@ -25,6 +30,11 @@ final class ExportVocabularyRow {
   final String partOfSpeech;
   final String? cefrLevel;
   final String source;
+  final int contentRevision;
+  final String? contentChecksumSha256;
+  final String contentProvenance;
+  final String contentReviewState;
+  final String contentPublicationState;
 }
 
 final class ExportAttemptRow {
@@ -147,7 +157,10 @@ final class DriftExportReader {
               .customSelect(
                 '''
                 SELECT w.id, c.name AS category, w.spelling, w.meaning,
-                       w.part_of_speech, w.cefr_level, w.source
+                       w.part_of_speech, w.cefr_level, w.source,
+                       w.content_revision, w.content_checksum_sha256,
+                       w.content_provenance, w.content_review_state,
+                       w.content_publication_state
                 FROM vocabulary_words w
                 INNER JOIN vocabulary_categories c
                   ON c.id = w.category_id AND c.owner_id = w.owner_id
@@ -201,6 +214,15 @@ final class DriftExportReader {
               partOfSpeech: row.read<String>('part_of_speech'),
               cefrLevel: row.readNullable<String>('cefr_level'),
               source: row.read<String>('source'),
+              contentRevision: row.read<int>('content_revision'),
+              contentChecksumSha256: row.readNullable<String>(
+                'content_checksum_sha256',
+              ),
+              contentProvenance: row.read<String>('content_provenance'),
+              contentReviewState: row.read<String>('content_review_state'),
+              contentPublicationState: row.read<String>(
+                'content_publication_state',
+              ),
             ),
           )
           .toList(growable: false),

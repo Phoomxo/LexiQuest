@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../learning_packs/domain/content_quality_policy.dart';
 import '../domain/vocabulary_category.dart';
 import '../domain/vocabulary_failure.dart';
 import '../domain/vocabulary_repository.dart';
@@ -243,6 +244,11 @@ final class DriftVocabularyRepository implements VocabularyRepository {
               cefrLevel: Value(word.cefrLevel),
               source: Value(word.source),
               isGlobal: Value(word.isGlobal),
+              contentRevision: const Value(1),
+              contentChecksumSha256: Value(_contentChecksum(word)),
+              contentProvenance: const Value('userAuthored'),
+              contentReviewState: const Value('unreviewed'),
+              contentPublicationState: const Value('private'),
               localRevision: const Value(1),
               createdAtUtcMs: word.createdAtUtc.millisecondsSinceEpoch,
               updatedAtUtcMs: word.updatedAtUtc.millisecondsSinceEpoch,
@@ -275,6 +281,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
         throw const DuplicateVocabularyFailure();
       }
       final revision = current.localRevision + 1;
+      final contentRevision = current.contentRevision + 1;
       await (database.update(
         database.vocabularyWords,
       )..where((row) => row.id.equals(word.id))).write(
@@ -288,6 +295,11 @@ final class DriftVocabularyRepository implements VocabularyRepository {
           cefrLevel: Value(word.cefrLevel),
           source: Value(word.source),
           isGlobal: Value(word.isGlobal),
+          contentRevision: Value(contentRevision),
+          contentChecksumSha256: Value(_contentChecksum(word)),
+          contentProvenance: const Value('userAuthored'),
+          contentReviewState: const Value('unreviewed'),
+          contentPublicationState: const Value('private'),
           localRevision: Value(revision),
           updatedAtUtcMs: Value(word.updatedAtUtc.millisecondsSinceEpoch),
         ),
@@ -479,6 +491,19 @@ final class DriftVocabularyRepository implements VocabularyRepository {
 
   DateTime _fromEpoch(int value) =>
       DateTime.fromMillisecondsSinceEpoch(value, isUtc: true);
+
+  String _contentChecksum(VocabularyWord word) =>
+      ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: word.categoryId,
+        spelling: word.spelling,
+        normalizedSpelling: word.normalizedSpelling,
+        meaning: word.meaning,
+        normalizedMeaning: word.normalizedMeaning,
+        partOfSpeech: word.partOfSpeech,
+        cefrLevel: word.cefrLevel,
+        source: word.source,
+        isGlobal: word.isGlobal,
+      );
 
   void _requireUtc(DateTime value) {
     if (!value.isUtc) {

@@ -373,7 +373,17 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           '''
       SELECT guest.id AS guest_id, target.id AS target_id,
              guest.spelling AS guest_spelling,
-             target.spelling AS target_spelling
+             target.spelling AS target_spelling,
+             guest.content_revision AS guest_content_revision,
+             guest.content_checksum_sha256 AS guest_content_checksum,
+             guest.content_provenance AS guest_content_provenance,
+             guest.content_review_state AS guest_content_review_state,
+             guest.content_publication_state AS guest_content_publication_state,
+             target.content_revision AS target_content_revision,
+             target.content_checksum_sha256 AS target_content_checksum,
+             target.content_provenance AS target_content_provenance,
+             target.content_review_state AS target_content_review_state,
+             target.content_publication_state AS target_content_publication_state
       FROM vocabulary_words guest
       JOIN vocabulary_words target
         ON target.owner_id = ?
@@ -453,10 +463,36 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         localSnapshot: <String, Object?>{
           'id': guestId,
           'spelling': collision.read<String>('guest_spelling'),
+          'contentRevision': collision.read<int>('guest_content_revision'),
+          'contentChecksumSha256': collision.readNullable<String>(
+            'guest_content_checksum',
+          ),
+          'contentProvenance': collision.read<String>(
+            'guest_content_provenance',
+          ),
+          'contentReviewState': collision.read<String>(
+            'guest_content_review_state',
+          ),
+          'contentPublicationState': collision.read<String>(
+            'guest_content_publication_state',
+          ),
         },
         targetSnapshot: <String, Object?>{
           'id': targetWordId,
           'spelling': collision.read<String>('target_spelling'),
+          'contentRevision': collision.read<int>('target_content_revision'),
+          'contentChecksumSha256': collision.readNullable<String>(
+            'target_content_checksum',
+          ),
+          'contentProvenance': collision.read<String>(
+            'target_content_provenance',
+          ),
+          'contentReviewState': collision.read<String>(
+            'target_content_review_state',
+          ),
+          'contentPublicationState': collision.read<String>(
+            'target_content_publication_state',
+          ),
         },
         resolutionPolicy: _GuestUpgradeConflictPolicy.canonicalTarget,
         outcome: _GuestUpgradeConflictOutcome.targetRetained,

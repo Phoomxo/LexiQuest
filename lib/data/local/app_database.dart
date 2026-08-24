@@ -3,6 +3,8 @@ import 'package:drift_flutter/drift_flutter.dart';
 
 import 'tables/ai_usage_tables.dart';
 import 'tables/associative_tables.dart';
+import 'tables/content_download_tables.dart';
+import 'tables/content_tables.dart';
 import 'tables/event_tables.dart';
 import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
@@ -28,6 +30,10 @@ part 'app_database.g.dart';
     VocabularyWords,
     VocabularyImports,
     VocabularyImportRows,
+    ContentManifests,
+    LearningPacks,
+    LearningPackItems,
+    ContentDownloadStates,
     LearningSessions,
     AnswerAttempts,
     SrsStates,
@@ -56,7 +62,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 15;
+  static const int currentSchemaVersion = 16;
 
   AppDatabase(super.executor);
 
@@ -198,14 +204,97 @@ final class AppDatabase extends _$AppDatabase {
       if (from < 15 && !await _tableExists('assessment_runs')) {
         await migrator.createTable(assessmentRuns);
       }
+      if (from < 16) {
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
+          vocabularyWords,
+          vocabularyWords.contentRevision,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
+          vocabularyWords,
+          vocabularyWords.contentChecksumSha256,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
+          vocabularyWords,
+          vocabularyWords.contentProvenance,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
+          vocabularyWords,
+          vocabularyWords.contentReviewState,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'vocabulary_words',
+          vocabularyWords,
+          vocabularyWords.contentPublicationState,
+        );
+      }
     },
     beforeOpen: (details) async {
       await customStatement('PRAGMA foreign_keys = ON');
       await _createLearningIndexes();
       await _createEventIndexes();
       await _createAiUsageIndexes();
+      await _createContentManifestImmutabilityTriggers();
     },
   );
+
+  Future<void> _createContentManifestImmutabilityTriggers() async {
+    if (!await _tableExists('content_manifests')) return;
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS content_manifests_reject_conflicting_insert
+      BEFORE INSERT ON content_manifests
+      WHEN EXISTS (
+        SELECT 1
+        FROM content_manifests AS existing
+        WHERE (
+          existing.id = NEW.id OR (
+            existing.content_type = NEW.content_type AND
+            existing.content_id = NEW.content_id AND
+            existing.revision = NEW.revision
+          )
+        ) AND NOT (
+          existing.id IS NEW.id AND
+          existing.content_type IS NEW.content_type AND
+          existing.content_id IS NEW.content_id AND
+          existing.revision IS NEW.revision AND
+          existing.checksum_sha256 IS NEW.checksum_sha256 AND
+          existing.byte_length IS NEW.byte_length AND
+          existing.provenance IS NEW.provenance AND
+          existing.source_uri IS NEW.source_uri AND
+          existing.review_state IS NEW.review_state AND
+          existing.publication_state IS NEW.publication_state AND
+          existing.created_at_utc_ms IS NEW.created_at_utc_ms AND
+          existing.reviewed_at_utc_ms IS NEW.reviewed_at_utc_ms AND
+          existing.published_at_utc_ms IS NEW.published_at_utc_ms
+        )
+      )
+      BEGIN
+        SELECT RAISE(ABORT, 'content_manifest_revision_is_immutable');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS content_manifests_reject_update
+      BEFORE UPDATE ON content_manifests
+      BEGIN
+        SELECT RAISE(ABORT, 'content_manifest_revision_is_immutable');
+      END
+    ''');
+    await customStatement('''
+      CREATE TRIGGER IF NOT EXISTS content_manifests_reject_delete
+      BEFORE DELETE ON content_manifests
+      BEGIN
+        SELECT RAISE(ABORT, 'content_manifest_revision_is_immutable');
+      END
+    ''');
+  }
 
   Future<void> _createEventIndexes() async {
     final tables = await customSelect(
@@ -292,6 +381,18 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('vocabulary_import_rows')) {
       await migrator.createTable(vocabularyImportRows);
+    }
+    if (!await _tableExists('content_manifests')) {
+      await migrator.createTable(contentManifests);
+    }
+    if (!await _tableExists('learning_packs')) {
+      await migrator.createTable(learningPacks);
+    }
+    if (!await _tableExists('learning_pack_items')) {
+      await migrator.createTable(learningPackItems);
+    }
+    if (!await _tableExists('content_download_states')) {
+      await migrator.createTable(contentDownloadStates);
     }
     if (!await _tableExists('learning_sessions')) {
       await migrator.createTable(learningSessions);

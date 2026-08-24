@@ -14,6 +14,7 @@ import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/domain/evidence_policy_rollout.dart';
+import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
@@ -64,6 +65,7 @@ final class AppDependencies {
     this.assessment,
     this.currentActivityEvidence,
     this.learningReconciliation,
+    this.contentManifests,
     this.progress,
     this.rewards,
     this.vocabulary,
@@ -105,6 +107,7 @@ final class AppDependencies {
   final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;
+  final ContentManifestRepository? contentManifests;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;

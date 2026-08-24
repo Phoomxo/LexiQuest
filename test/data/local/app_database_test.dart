@@ -2,6 +2,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
+import '../../support/current_database_contract.dart';
+
 void main() {
   late AppDatabase database;
 
@@ -22,31 +24,7 @@ void main() {
         .get();
 
     expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
-    expect(
-      tableNames,
-      containsAll(<String>[
-        'local_owners',
-        'research_consents',
-        'vocabulary_categories',
-        'vocabulary_words',
-        'vocabulary_imports',
-        'vocabulary_import_rows',
-        'learning_sessions',
-        'answer_attempts',
-        'srs_states',
-        'reading_progress_entries',
-        'reading_events',
-        'points_ledger_entries',
-        'achievement_unlocks',
-        'reward_transactions',
-        'owned_reward_items',
-        'equipped_reward_items',
-        'outbox_operations',
-        'sync_checkpoints',
-        'sync_conflicts',
-        'model_downloads',
-      ]),
-    );
+    expect(tableNames.toSet(), currentDatabaseTableInventory);
   });
 
   test('foreign keys reject rows owned by an unknown local owner', () async {

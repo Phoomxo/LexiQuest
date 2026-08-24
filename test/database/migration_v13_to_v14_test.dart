@@ -2,6 +2,8 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 
+import '../support/current_database_contract.dart';
+
 void main() {
   test(
     'v13 fixture upgrades through named current schema while preserving the v14 boundary',
@@ -11,16 +13,14 @@ void main() {
       );
       addTearDown(database.close);
 
-      final expectedCurrentInventory = _inventoryForSchemaVersion(
-        AppDatabase.currentSchemaVersion,
-      );
+      const expectedCurrentInventory = currentDatabaseTableInventory;
       final actualInventory = await _tableNames(database);
 
       expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
       expect(
         AppDatabase.currentSchemaVersion,
-        15,
-        reason: 'Task 12 must advance the production schema to v15.',
+        16,
+        reason: 'f04 owns the single v15-to-v16 schema advance.',
       );
       expect(actualInventory, expectedCurrentInventory);
       expect(

@@ -112,12 +112,14 @@ function writeFieldWord(db, {
   entityId = 'word-1',
   operationId = 'word-operation-1',
   categoryId = 'category-1',
+  schemaVersion = 1,
+  payload,
 } = {}) {
   const batch = writeBatch(db);
   batch.set(doc(db, 'field_users', uid, 'words', entityId), {
-    schemaVersion: 1,
+    schemaVersion,
     entityId,
-    payload: {
+    payload: payload ?? {
       categoryId,
       spelling: 'station',
       normalizedSpelling: 'station',
@@ -138,7 +140,7 @@ function writeFieldWord(db, {
     lastOperationId: operationId,
   });
   batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
-    schemaVersion: 1,
+    schemaVersion,
     operationId,
     entityType: 'word',
     entityId,
@@ -815,6 +817,42 @@ describe('field sync ownership and atomic revision contract', () => {
     await assertSucceeds(writeFieldWord(db));
   });
 
+  it('keeps legacy vocabulary readable and rejects valid v2 before rules rollout', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldCategory(db));
+    await assertSucceeds(writeFieldWord(db));
+    await assertSucceeds(
+      getDoc(doc(db, 'field_users', alice, 'words', 'word-1')),
+    );
+    await assertFails(
+      writeFieldWord(db, {
+        entityId: 'word-v2',
+        operationId: 'word-v2-operation',
+        schemaVersion: 2,
+        payload: {
+          categoryId: 'category-1',
+          spelling: 'platform',
+          normalizedSpelling: 'platform',
+          meaning: 'ชานชาลา',
+          normalizedMeaning: 'ชานชาลา',
+          partOfSpeech: 'noun',
+          cefrLevel: 'A2',
+          source: 'manual',
+          isGlobal: false,
+          isDeleted: false,
+          createdAtUtcMs: 3000,
+          updatedAtUtcMs: 3000,
+          contentRevision: 1,
+          contentChecksumSha256:
+            'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+          contentProvenance: 'userAuthored',
+          contentReviewState: 'unreviewed',
+          contentPublicationState: 'private',
+        },
+      }),
+    );
+  });
+
   it('accepts immutable attempt and reading evidence with atomic acknowledgements', async () => {
     const db = authDb();
     await assertSucceeds(writeFieldLearningEvent(db));
@@ -863,7 +901,6 @@ describe('field sync ownership and atomic revision contract', () => {
     const db = authDb();
     const legacyCollections = [
       ['categories', 'category'],
-      ['words', 'word'],
       ['reading_events', 'readingEvent'],
       ['reward_transactions', 'rewardTransaction'],
       ['srs_states', 'srsState'],
@@ -1716,6 +1753,32 @@ describe('assessment_runs revisioned research contract', () => {
       'assessment_runs',
       ref.id,
     )));
+  });
+
+  it('accepts assessment evidence pinned to current database schema v16', async () => {
+    const db = authDb();
+    const assignmentId = 'experiment-assignment:assessment-cloud-v16';
+    await assertSucceeds(
+      writeFieldExperimentAssignment(db, {
+        entityId: assignmentId,
+        operationId: 'experiment-assignment-operation-assessment-v16',
+        payload: fieldExperimentAssignmentPayload({
+          assignmentId,
+          assignedAtUtcMs: 4600,
+        }),
+      }),
+    );
+    await assertSucceeds(
+      writeFieldAssessmentRun(db, {
+        entityId: 'assessment-run-v16',
+        operationId: 'assessmentRun:assessment-run-v16:1',
+        payload: fieldAssessmentRunPayload({
+          runId: 'assessment-run-v16',
+          assignmentId,
+          databaseSchemaVersion: 16,
+        }),
+      }),
+    );
   });
 
   it('allows only revision-two Completed or Abandoned terminal updates', async () => {

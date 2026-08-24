@@ -53,6 +53,7 @@ import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
+import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -554,6 +555,7 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    final contentManifests = DriftContentManifestRepository(database);
     final vocabularyImporter = ImportVocabulary(
       owners: localOwners,
       repository: DriftVocabularyImportRepository(database),
@@ -919,6 +921,7 @@ final class AppBootstrap {
       assessment: assessmentOverride,
       currentActivityEvidence: currentActivityEvidence,
       learningReconciliation: learningReconciliation,
+      contentManifests: contentManifests,
       progress: progress,
       rewards: rewards,
       exports: exports,

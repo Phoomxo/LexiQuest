@@ -19,6 +19,7 @@ import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/learning_event_context.dart';
 import '../../learning/domain/srs_operation_identity.dart';
+import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
@@ -1517,30 +1518,31 @@ final class DriftSyncStore implements SyncStore {
         if (word == null) {
           throw StateError('outbox word was not found');
         }
+        final payloadVersion = _vocabularyWordPayloadVersionFor(
+          word,
+          payloadRollout,
+        );
+        final payload = _vocabularyWordPayload(
+          word,
+          payloadVersion: payloadVersion,
+        );
+        VocabularyWordSyncPayloadContract.requireCanonical(
+          payloadVersion: payloadVersion,
+          payload: payload,
+          isDeleted: word.isDeleted,
+          clientUpdatedAtUtcMs: word.updatedAtUtcMs,
+        );
         return PushMutation(
           operationId: operation.operationId,
           firebaseUid: firebaseUid,
           collection: SyncCollection.words,
           entityId: word.id,
           operationKind: _operationKind(operation.operationKind),
-          payloadVersion: operation.payloadVersion,
+          payloadVersion: payloadVersion,
           baseRevision: baseRevision,
           localRevision: word.localRevision,
           clientUpdatedAtUtc: _utc(word.updatedAtUtcMs),
-          payload: <String, Object?>{
-            'categoryId': word.categoryId,
-            'spelling': word.spelling,
-            'normalizedSpelling': word.normalizedSpelling,
-            'meaning': word.meaning,
-            'normalizedMeaning': word.normalizedMeaning,
-            'partOfSpeech': word.partOfSpeech,
-            'cefrLevel': word.cefrLevel,
-            'source': word.source,
-            'isGlobal': word.isGlobal,
-            'isDeleted': word.isDeleted,
-            'createdAtUtcMs': word.createdAtUtcMs,
-            'updatedAtUtcMs': word.updatedAtUtcMs,
-          },
+          payload: payload,
         );
       case 'attempt':
         final attempt =
@@ -2027,34 +2029,83 @@ final class DriftSyncStore implements SyncStore {
     SyncEntity entity, {
     bool handlePendingConflict = true,
   }) async {
+    VocabularyWordSyncPayloadContract.requireCanonical(
+      payloadVersion: entity.payloadVersion,
+      payload: entity.payload,
+      isDeleted: entity.isDeleted,
+      clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
     if (handlePendingConflict && !await _preparePullApply(ownerId, entity)) {
       return;
     }
     final payload = entity.payload;
-    final spelling = _requiredString(payload, 'spelling');
-    final meaning = _requiredString(payload, 'meaning');
-    final createdAtUtcMs =
-        _optionalInt(payload, 'createdAtUtcMs') ??
-        entity.clientUpdatedAtUtc.millisecondsSinceEpoch;
+    final existing =
+        await (database.select(database.vocabularyWords)..where(
+              (word) =>
+                  word.id.equals(entity.entityId) &
+                  word.ownerId.equals(ownerId),
+            ))
+            .getSingleOrNull();
+    final categoryId = payload['categoryId']! as String;
+    final spelling = payload['spelling']! as String;
+    final normalizedSpelling = payload['normalizedSpelling']! as String;
+    final meaning = payload['meaning']! as String;
+    final normalizedMeaning = payload['normalizedMeaning']! as String;
+    final partOfSpeech = payload['partOfSpeech']! as String;
+    final cefrLevel = payload['cefrLevel'] as String?;
+    final source = payload['source']! as String;
+    final isGlobal = payload['isGlobal']! as bool;
+    final createdAtUtcMs = payload['createdAtUtcMs']! as int;
+    late final int contentRevision;
+    late final String? contentChecksumSha256;
+    if (entity.payloadVersion == 2) {
+      contentRevision = payload['contentRevision']! as int;
+      contentChecksumSha256 = payload['contentChecksumSha256']! as String;
+    } else if (existing?.contentChecksumSha256 != null) {
+      final existingVersioned = existing!;
+      if (existingVersioned.contentRevision <= 0) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final incomingChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: categoryId,
+        spelling: spelling,
+        normalizedSpelling: normalizedSpelling,
+        meaning: meaning,
+        normalizedMeaning: normalizedMeaning,
+        partOfSpeech: partOfSpeech,
+        cefrLevel: cefrLevel,
+        source: source,
+        isGlobal: isGlobal,
+      );
+      contentRevision =
+          existingVersioned.contentChecksumSha256 == incomingChecksum
+          ? existingVersioned.contentRevision
+          : existingVersioned.contentRevision + 1;
+      contentChecksumSha256 = incomingChecksum;
+    } else {
+      contentRevision = 1;
+      contentChecksumSha256 = null;
+    }
     await database
         .into(database.vocabularyWords)
         .insertOnConflictUpdate(
           db.VocabularyWordsCompanion.insert(
             id: entity.entityId,
             ownerId: ownerId,
-            categoryId: _requiredString(payload, 'categoryId'),
+            categoryId: categoryId,
             spelling: spelling,
-            normalizedSpelling:
-                _optionalString(payload, 'normalizedSpelling') ??
-                spelling.toLowerCase(),
+            normalizedSpelling: normalizedSpelling,
             meaning: meaning,
-            normalizedMeaning:
-                _optionalString(payload, 'normalizedMeaning') ??
-                meaning.toLowerCase(),
-            partOfSpeech: _requiredString(payload, 'partOfSpeech'),
-            cefrLevel: Value(_optionalString(payload, 'cefrLevel')),
-            source: Value(_optionalString(payload, 'source') ?? 'manual'),
-            isGlobal: Value(_optionalBool(payload, 'isGlobal') ?? false),
+            normalizedMeaning: normalizedMeaning,
+            partOfSpeech: partOfSpeech,
+            cefrLevel: Value(cefrLevel),
+            source: Value(source),
+            isGlobal: Value(isGlobal),
+            contentRevision: Value(contentRevision),
+            contentChecksumSha256: Value(contentChecksumSha256),
+            contentProvenance: const Value('userAuthored'),
+            contentReviewState: const Value('unreviewed'),
+            contentPublicationState: const Value('private'),
             localRevision: Value(entity.revision),
             cloudRevision: Value(entity.revision),
             lastAcknowledgedAtUtcMs: Value(
@@ -3096,6 +3147,11 @@ final class DriftSyncStore implements SyncStore {
           'spelling': current.spelling,
           'meaning': current.meaning,
           'partOfSpeech': current.partOfSpeech,
+          'contentRevision': current.contentRevision,
+          'contentChecksumSha256': current.contentChecksumSha256,
+          'contentProvenance': current.contentProvenance,
+          'contentReviewState': current.contentReviewState,
+          'contentPublicationState': current.contentPublicationState,
           'isDeleted': current.isDeleted,
           'updatedAtUtcMs': current.updatedAtUtcMs,
         };
@@ -3176,6 +3232,59 @@ final class DriftSyncStore implements SyncStore {
         );
     return true;
   }
+}
+
+Map<String, Object?> _vocabularyWordPayload(
+  db.VocabularyWord word, {
+  required int payloadVersion,
+}) {
+  final payload = <String, Object?>{
+    'categoryId': word.categoryId,
+    'spelling': word.spelling,
+    'normalizedSpelling': word.normalizedSpelling,
+    'meaning': word.meaning,
+    'normalizedMeaning': word.normalizedMeaning,
+    'partOfSpeech': word.partOfSpeech,
+    'cefrLevel': word.cefrLevel,
+    'source': word.source,
+    'isGlobal': word.isGlobal,
+    'isDeleted': word.isDeleted,
+    'createdAtUtcMs': word.createdAtUtcMs,
+    'updatedAtUtcMs': word.updatedAtUtcMs,
+  };
+  switch (payloadVersion) {
+    case 1:
+      return payload;
+    case 2:
+      return <String, Object?>{
+        ...payload,
+        'contentRevision': word.contentRevision,
+        'contentChecksumSha256': word.contentChecksumSha256,
+        'contentProvenance': word.contentProvenance,
+        'contentReviewState': word.contentReviewState,
+        'contentPublicationState': word.contentPublicationState,
+      };
+    default:
+      throw const UnsupportedSyncSchemaFailure();
+  }
+}
+
+int _vocabularyWordPayloadVersionFor(
+  db.VocabularyWord word,
+  SyncPayloadRollout payloadRollout,
+) {
+  if (payloadRollout.writeVersionFor(SyncCollection.words) != 2 ||
+      word.isGlobal) {
+    return 1;
+  }
+  if (word.contentChecksumSha256 != null) return 2;
+  if (word.contentRevision == 1 &&
+      word.contentProvenance == 'userAuthored' &&
+      word.contentReviewState == 'unreviewed' &&
+      word.contentPublicationState == 'private') {
+    return 1;
+  }
+  throw const InvalidSyncPayloadFailure();
 }
 
 Map<String, Object?> _attemptPayload(

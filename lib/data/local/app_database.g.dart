@@ -4697,6 +4697,66 @@ class $VocabularyWordsTable extends VocabularyWords
     ),
     defaultValue: const Constant(false),
   );
+  static const VerificationMeta _contentRevisionMeta = const VerificationMeta(
+    'contentRevision',
+  );
+  @override
+  late final GeneratedColumn<int> contentRevision = GeneratedColumn<int>(
+    'content_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _contentChecksumSha256Meta =
+      const VerificationMeta('contentChecksumSha256');
+  @override
+  late final GeneratedColumn<String> contentChecksumSha256 =
+      GeneratedColumn<String>(
+        'content_checksum_sha256',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _contentProvenanceMeta = const VerificationMeta(
+    'contentProvenance',
+  );
+  @override
+  late final GeneratedColumn<String> contentProvenance =
+      GeneratedColumn<String>(
+        'content_provenance',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('userAuthored'),
+      );
+  static const VerificationMeta _contentReviewStateMeta =
+      const VerificationMeta('contentReviewState');
+  @override
+  late final GeneratedColumn<String> contentReviewState =
+      GeneratedColumn<String>(
+        'content_review_state',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('unreviewed'),
+      );
+  static const VerificationMeta _contentPublicationStateMeta =
+      const VerificationMeta('contentPublicationState');
+  @override
+  late final GeneratedColumn<String> contentPublicationState =
+      GeneratedColumn<String>(
+        'content_publication_state',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+        defaultValue: const Constant('private'),
+      );
   static const VerificationMeta _localRevisionMeta = const VerificationMeta(
     'localRevision',
   );
@@ -4792,6 +4852,11 @@ class $VocabularyWordsTable extends VocabularyWords
     cefrLevel,
     source,
     isGlobal,
+    contentRevision,
+    contentChecksumSha256,
+    contentProvenance,
+    contentReviewState,
+    contentPublicationState,
     localRevision,
     cloudRevision,
     lastAcknowledgedAtUtcMs,
@@ -4898,6 +4963,51 @@ class $VocabularyWordsTable extends VocabularyWords
       context.handle(
         _isGlobalMeta,
         isGlobal.isAcceptableOrUnknown(data['is_global']!, _isGlobalMeta),
+      );
+    }
+    if (data.containsKey('content_revision')) {
+      context.handle(
+        _contentRevisionMeta,
+        contentRevision.isAcceptableOrUnknown(
+          data['content_revision']!,
+          _contentRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_checksum_sha256')) {
+      context.handle(
+        _contentChecksumSha256Meta,
+        contentChecksumSha256.isAcceptableOrUnknown(
+          data['content_checksum_sha256']!,
+          _contentChecksumSha256Meta,
+        ),
+      );
+    }
+    if (data.containsKey('content_provenance')) {
+      context.handle(
+        _contentProvenanceMeta,
+        contentProvenance.isAcceptableOrUnknown(
+          data['content_provenance']!,
+          _contentProvenanceMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_review_state')) {
+      context.handle(
+        _contentReviewStateMeta,
+        contentReviewState.isAcceptableOrUnknown(
+          data['content_review_state']!,
+          _contentReviewStateMeta,
+        ),
+      );
+    }
+    if (data.containsKey('content_publication_state')) {
+      context.handle(
+        _contentPublicationStateMeta,
+        contentPublicationState.isAcceptableOrUnknown(
+          data['content_publication_state']!,
+          _contentPublicationStateMeta,
+        ),
       );
     }
     if (data.containsKey('local_revision')) {
@@ -5021,6 +5131,26 @@ class $VocabularyWordsTable extends VocabularyWords
         DriftSqlType.bool,
         data['${effectivePrefix}is_global'],
       )!,
+      contentRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}content_revision'],
+      )!,
+      contentChecksumSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_checksum_sha256'],
+      ),
+      contentProvenance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_provenance'],
+      )!,
+      contentReviewState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_review_state'],
+      )!,
+      contentPublicationState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_publication_state'],
+      )!,
       localRevision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
@@ -5070,6 +5200,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
   final String? cefrLevel;
   final String source;
   final bool isGlobal;
+  final int contentRevision;
+  final String? contentChecksumSha256;
+  final String contentProvenance;
+  final String contentReviewState;
+  final String contentPublicationState;
   final int localRevision;
   final int cloudRevision;
   final int? lastAcknowledgedAtUtcMs;
@@ -5089,6 +5224,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     this.cefrLevel,
     required this.source,
     required this.isGlobal,
+    required this.contentRevision,
+    this.contentChecksumSha256,
+    required this.contentProvenance,
+    required this.contentReviewState,
+    required this.contentPublicationState,
     required this.localRevision,
     required this.cloudRevision,
     this.lastAcknowledgedAtUtcMs,
@@ -5113,6 +5253,15 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     }
     map['source'] = Variable<String>(source);
     map['is_global'] = Variable<bool>(isGlobal);
+    map['content_revision'] = Variable<int>(contentRevision);
+    if (!nullToAbsent || contentChecksumSha256 != null) {
+      map['content_checksum_sha256'] = Variable<String>(contentChecksumSha256);
+    }
+    map['content_provenance'] = Variable<String>(contentProvenance);
+    map['content_review_state'] = Variable<String>(contentReviewState);
+    map['content_publication_state'] = Variable<String>(
+      contentPublicationState,
+    );
     map['local_revision'] = Variable<int>(localRevision);
     map['cloud_revision'] = Variable<int>(cloudRevision);
     if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
@@ -5144,6 +5293,13 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           : Value(cefrLevel),
       source: Value(source),
       isGlobal: Value(isGlobal),
+      contentRevision: Value(contentRevision),
+      contentChecksumSha256: contentChecksumSha256 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(contentChecksumSha256),
+      contentProvenance: Value(contentProvenance),
+      contentReviewState: Value(contentReviewState),
+      contentPublicationState: Value(contentPublicationState),
       localRevision: Value(localRevision),
       cloudRevision: Value(cloudRevision),
       lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
@@ -5177,6 +5333,17 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       cefrLevel: serializer.fromJson<String?>(json['cefrLevel']),
       source: serializer.fromJson<String>(json['source']),
       isGlobal: serializer.fromJson<bool>(json['isGlobal']),
+      contentRevision: serializer.fromJson<int>(json['contentRevision']),
+      contentChecksumSha256: serializer.fromJson<String?>(
+        json['contentChecksumSha256'],
+      ),
+      contentProvenance: serializer.fromJson<String>(json['contentProvenance']),
+      contentReviewState: serializer.fromJson<String>(
+        json['contentReviewState'],
+      ),
+      contentPublicationState: serializer.fromJson<String>(
+        json['contentPublicationState'],
+      ),
       localRevision: serializer.fromJson<int>(json['localRevision']),
       cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
       lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
@@ -5205,6 +5372,15 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       'cefrLevel': serializer.toJson<String?>(cefrLevel),
       'source': serializer.toJson<String>(source),
       'isGlobal': serializer.toJson<bool>(isGlobal),
+      'contentRevision': serializer.toJson<int>(contentRevision),
+      'contentChecksumSha256': serializer.toJson<String?>(
+        contentChecksumSha256,
+      ),
+      'contentProvenance': serializer.toJson<String>(contentProvenance),
+      'contentReviewState': serializer.toJson<String>(contentReviewState),
+      'contentPublicationState': serializer.toJson<String>(
+        contentPublicationState,
+      ),
       'localRevision': serializer.toJson<int>(localRevision),
       'cloudRevision': serializer.toJson<int>(cloudRevision),
       'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
@@ -5229,6 +5405,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     Value<String?> cefrLevel = const Value.absent(),
     String? source,
     bool? isGlobal,
+    int? contentRevision,
+    Value<String?> contentChecksumSha256 = const Value.absent(),
+    String? contentProvenance,
+    String? contentReviewState,
+    String? contentPublicationState,
     int? localRevision,
     int? cloudRevision,
     Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -5248,6 +5429,14 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     cefrLevel: cefrLevel.present ? cefrLevel.value : this.cefrLevel,
     source: source ?? this.source,
     isGlobal: isGlobal ?? this.isGlobal,
+    contentRevision: contentRevision ?? this.contentRevision,
+    contentChecksumSha256: contentChecksumSha256.present
+        ? contentChecksumSha256.value
+        : this.contentChecksumSha256,
+    contentProvenance: contentProvenance ?? this.contentProvenance,
+    contentReviewState: contentReviewState ?? this.contentReviewState,
+    contentPublicationState:
+        contentPublicationState ?? this.contentPublicationState,
     localRevision: localRevision ?? this.localRevision,
     cloudRevision: cloudRevision ?? this.cloudRevision,
     lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
@@ -5281,6 +5470,21 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
       cefrLevel: data.cefrLevel.present ? data.cefrLevel.value : this.cefrLevel,
       source: data.source.present ? data.source.value : this.source,
       isGlobal: data.isGlobal.present ? data.isGlobal.value : this.isGlobal,
+      contentRevision: data.contentRevision.present
+          ? data.contentRevision.value
+          : this.contentRevision,
+      contentChecksumSha256: data.contentChecksumSha256.present
+          ? data.contentChecksumSha256.value
+          : this.contentChecksumSha256,
+      contentProvenance: data.contentProvenance.present
+          ? data.contentProvenance.value
+          : this.contentProvenance,
+      contentReviewState: data.contentReviewState.present
+          ? data.contentReviewState.value
+          : this.contentReviewState,
+      contentPublicationState: data.contentPublicationState.present
+          ? data.contentPublicationState.value
+          : this.contentPublicationState,
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
@@ -5317,6 +5521,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           ..write('cefrLevel: $cefrLevel, ')
           ..write('source: $source, ')
           ..write('isGlobal: $isGlobal, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('contentChecksumSha256: $contentChecksumSha256, ')
+          ..write('contentProvenance: $contentProvenance, ')
+          ..write('contentReviewState: $contentReviewState, ')
+          ..write('contentPublicationState: $contentPublicationState, ')
           ..write('localRevision: $localRevision, ')
           ..write('cloudRevision: $cloudRevision, ')
           ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
@@ -5329,7 +5538,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
   }
 
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     id,
     ownerId,
     categoryId,
@@ -5341,6 +5550,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     cefrLevel,
     source,
     isGlobal,
+    contentRevision,
+    contentChecksumSha256,
+    contentProvenance,
+    contentReviewState,
+    contentPublicationState,
     localRevision,
     cloudRevision,
     lastAcknowledgedAtUtcMs,
@@ -5348,7 +5562,7 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
     isDeleted,
     createdAtUtcMs,
     updatedAtUtcMs,
-  );
+  ]);
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
@@ -5364,6 +5578,11 @@ class VocabularyWord extends DataClass implements Insertable<VocabularyWord> {
           other.cefrLevel == this.cefrLevel &&
           other.source == this.source &&
           other.isGlobal == this.isGlobal &&
+          other.contentRevision == this.contentRevision &&
+          other.contentChecksumSha256 == this.contentChecksumSha256 &&
+          other.contentProvenance == this.contentProvenance &&
+          other.contentReviewState == this.contentReviewState &&
+          other.contentPublicationState == this.contentPublicationState &&
           other.localRevision == this.localRevision &&
           other.cloudRevision == this.cloudRevision &&
           other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
@@ -5385,6 +5604,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
   final Value<String?> cefrLevel;
   final Value<String> source;
   final Value<bool> isGlobal;
+  final Value<int> contentRevision;
+  final Value<String?> contentChecksumSha256;
+  final Value<String> contentProvenance;
+  final Value<String> contentReviewState;
+  final Value<String> contentPublicationState;
   final Value<int> localRevision;
   final Value<int> cloudRevision;
   final Value<int?> lastAcknowledgedAtUtcMs;
@@ -5405,6 +5629,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.cefrLevel = const Value.absent(),
     this.source = const Value.absent(),
     this.isGlobal = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.contentChecksumSha256 = const Value.absent(),
+    this.contentProvenance = const Value.absent(),
+    this.contentReviewState = const Value.absent(),
+    this.contentPublicationState = const Value.absent(),
     this.localRevision = const Value.absent(),
     this.cloudRevision = const Value.absent(),
     this.lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -5426,6 +5655,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     this.cefrLevel = const Value.absent(),
     this.source = const Value.absent(),
     this.isGlobal = const Value.absent(),
+    this.contentRevision = const Value.absent(),
+    this.contentChecksumSha256 = const Value.absent(),
+    this.contentProvenance = const Value.absent(),
+    this.contentReviewState = const Value.absent(),
+    this.contentPublicationState = const Value.absent(),
     this.localRevision = const Value.absent(),
     this.cloudRevision = const Value.absent(),
     this.lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -5456,6 +5690,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Expression<String>? cefrLevel,
     Expression<String>? source,
     Expression<bool>? isGlobal,
+    Expression<int>? contentRevision,
+    Expression<String>? contentChecksumSha256,
+    Expression<String>? contentProvenance,
+    Expression<String>? contentReviewState,
+    Expression<String>? contentPublicationState,
     Expression<int>? localRevision,
     Expression<int>? cloudRevision,
     Expression<int>? lastAcknowledgedAtUtcMs,
@@ -5477,6 +5716,14 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       if (cefrLevel != null) 'cefr_level': cefrLevel,
       if (source != null) 'source': source,
       if (isGlobal != null) 'is_global': isGlobal,
+      if (contentRevision != null) 'content_revision': contentRevision,
+      if (contentChecksumSha256 != null)
+        'content_checksum_sha256': contentChecksumSha256,
+      if (contentProvenance != null) 'content_provenance': contentProvenance,
+      if (contentReviewState != null)
+        'content_review_state': contentReviewState,
+      if (contentPublicationState != null)
+        'content_publication_state': contentPublicationState,
       if (localRevision != null) 'local_revision': localRevision,
       if (cloudRevision != null) 'cloud_revision': cloudRevision,
       if (lastAcknowledgedAtUtcMs != null)
@@ -5502,6 +5749,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     Value<String?>? cefrLevel,
     Value<String>? source,
     Value<bool>? isGlobal,
+    Value<int>? contentRevision,
+    Value<String?>? contentChecksumSha256,
+    Value<String>? contentProvenance,
+    Value<String>? contentReviewState,
+    Value<String>? contentPublicationState,
     Value<int>? localRevision,
     Value<int>? cloudRevision,
     Value<int?>? lastAcknowledgedAtUtcMs,
@@ -5523,6 +5775,13 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
       cefrLevel: cefrLevel ?? this.cefrLevel,
       source: source ?? this.source,
       isGlobal: isGlobal ?? this.isGlobal,
+      contentRevision: contentRevision ?? this.contentRevision,
+      contentChecksumSha256:
+          contentChecksumSha256 ?? this.contentChecksumSha256,
+      contentProvenance: contentProvenance ?? this.contentProvenance,
+      contentReviewState: contentReviewState ?? this.contentReviewState,
+      contentPublicationState:
+          contentPublicationState ?? this.contentPublicationState,
       localRevision: localRevision ?? this.localRevision,
       cloudRevision: cloudRevision ?? this.cloudRevision,
       lastAcknowledgedAtUtcMs:
@@ -5571,6 +5830,25 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
     if (isGlobal.present) {
       map['is_global'] = Variable<bool>(isGlobal.value);
     }
+    if (contentRevision.present) {
+      map['content_revision'] = Variable<int>(contentRevision.value);
+    }
+    if (contentChecksumSha256.present) {
+      map['content_checksum_sha256'] = Variable<String>(
+        contentChecksumSha256.value,
+      );
+    }
+    if (contentProvenance.present) {
+      map['content_provenance'] = Variable<String>(contentProvenance.value);
+    }
+    if (contentReviewState.present) {
+      map['content_review_state'] = Variable<String>(contentReviewState.value);
+    }
+    if (contentPublicationState.present) {
+      map['content_publication_state'] = Variable<String>(
+        contentPublicationState.value,
+      );
+    }
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
     }
@@ -5616,6 +5894,11 @@ class VocabularyWordsCompanion extends UpdateCompanion<VocabularyWord> {
           ..write('cefrLevel: $cefrLevel, ')
           ..write('source: $source, ')
           ..write('isGlobal: $isGlobal, ')
+          ..write('contentRevision: $contentRevision, ')
+          ..write('contentChecksumSha256: $contentChecksumSha256, ')
+          ..write('contentProvenance: $contentProvenance, ')
+          ..write('contentReviewState: $contentReviewState, ')
+          ..write('contentPublicationState: $contentPublicationState, ')
           ..write('localRevision: $localRevision, ')
           ..write('cloudRevision: $cloudRevision, ')
           ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
@@ -6847,6 +7130,2313 @@ class VocabularyImportRowsCompanion
           ..write('status: $status, ')
           ..write('failureCode: $failureCode, ')
           ..write('wordId: $wordId, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContentManifestsTable extends ContentManifests
+    with TableInfo<$ContentManifestsTable, ContentManifestRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContentManifestsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentTypeMeta = const VerificationMeta(
+    'contentType',
+  );
+  @override
+  late final GeneratedColumn<String> contentType = GeneratedColumn<String>(
+    'content_type',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentIdMeta = const VerificationMeta(
+    'contentId',
+  );
+  @override
+  late final GeneratedColumn<String> contentId = GeneratedColumn<String>(
+    'content_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _checksumSha256Meta = const VerificationMeta(
+    'checksumSha256',
+  );
+  @override
+  late final GeneratedColumn<String> checksumSha256 = GeneratedColumn<String>(
+    'checksum_sha256',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _byteLengthMeta = const VerificationMeta(
+    'byteLength',
+  );
+  @override
+  late final GeneratedColumn<int> byteLength = GeneratedColumn<int>(
+    'byte_length',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _provenanceMeta = const VerificationMeta(
+    'provenance',
+  );
+  @override
+  late final GeneratedColumn<String> provenance = GeneratedColumn<String>(
+    'provenance',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _sourceUriMeta = const VerificationMeta(
+    'sourceUri',
+  );
+  @override
+  late final GeneratedColumn<String> sourceUri = GeneratedColumn<String>(
+    'source_uri',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewStateMeta = const VerificationMeta(
+    'reviewState',
+  );
+  @override
+  late final GeneratedColumn<String> reviewState = GeneratedColumn<String>(
+    'review_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _publicationStateMeta = const VerificationMeta(
+    'publicationState',
+  );
+  @override
+  late final GeneratedColumn<String> publicationState = GeneratedColumn<String>(
+    'publication_state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _reviewedAtUtcMsMeta = const VerificationMeta(
+    'reviewedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> reviewedAtUtcMs = GeneratedColumn<int>(
+    'reviewed_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _publishedAtUtcMsMeta = const VerificationMeta(
+    'publishedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> publishedAtUtcMs = GeneratedColumn<int>(
+    'published_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    contentType,
+    contentId,
+    revision,
+    checksumSha256,
+    byteLength,
+    provenance,
+    sourceUri,
+    reviewState,
+    publicationState,
+    createdAtUtcMs,
+    reviewedAtUtcMs,
+    publishedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'content_manifests';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContentManifestRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('content_type')) {
+      context.handle(
+        _contentTypeMeta,
+        contentType.isAcceptableOrUnknown(
+          data['content_type']!,
+          _contentTypeMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentTypeMeta);
+    }
+    if (data.containsKey('content_id')) {
+      context.handle(
+        _contentIdMeta,
+        contentId.isAcceptableOrUnknown(data['content_id']!, _contentIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_contentIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('checksum_sha256')) {
+      context.handle(
+        _checksumSha256Meta,
+        checksumSha256.isAcceptableOrUnknown(
+          data['checksum_sha256']!,
+          _checksumSha256Meta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_checksumSha256Meta);
+    }
+    if (data.containsKey('byte_length')) {
+      context.handle(
+        _byteLengthMeta,
+        byteLength.isAcceptableOrUnknown(data['byte_length']!, _byteLengthMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_byteLengthMeta);
+    }
+    if (data.containsKey('provenance')) {
+      context.handle(
+        _provenanceMeta,
+        provenance.isAcceptableOrUnknown(data['provenance']!, _provenanceMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_provenanceMeta);
+    }
+    if (data.containsKey('source_uri')) {
+      context.handle(
+        _sourceUriMeta,
+        sourceUri.isAcceptableOrUnknown(data['source_uri']!, _sourceUriMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceUriMeta);
+    }
+    if (data.containsKey('review_state')) {
+      context.handle(
+        _reviewStateMeta,
+        reviewState.isAcceptableOrUnknown(
+          data['review_state']!,
+          _reviewStateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_reviewStateMeta);
+    }
+    if (data.containsKey('publication_state')) {
+      context.handle(
+        _publicationStateMeta,
+        publicationState.isAcceptableOrUnknown(
+          data['publication_state']!,
+          _publicationStateMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_publicationStateMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    if (data.containsKey('reviewed_at_utc_ms')) {
+      context.handle(
+        _reviewedAtUtcMsMeta,
+        reviewedAtUtcMs.isAcceptableOrUnknown(
+          data['reviewed_at_utc_ms']!,
+          _reviewedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('published_at_utc_ms')) {
+      context.handle(
+        _publishedAtUtcMsMeta,
+        publishedAtUtcMs.isAcceptableOrUnknown(
+          data['published_at_utc_ms']!,
+          _publishedAtUtcMsMeta,
+        ),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {contentType, contentId, revision},
+  ];
+  @override
+  ContentManifestRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContentManifestRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      contentType: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_type'],
+      )!,
+      contentId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      checksumSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}checksum_sha256'],
+      )!,
+      byteLength: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}byte_length'],
+      )!,
+      provenance: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}provenance'],
+      )!,
+      sourceUri: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_uri'],
+      )!,
+      reviewState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}review_state'],
+      )!,
+      publicationState: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}publication_state'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+      reviewedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}reviewed_at_utc_ms'],
+      ),
+      publishedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}published_at_utc_ms'],
+      ),
+    );
+  }
+
+  @override
+  $ContentManifestsTable createAlias(String alias) {
+    return $ContentManifestsTable(attachedDatabase, alias);
+  }
+}
+
+class ContentManifestRow extends DataClass
+    implements Insertable<ContentManifestRow> {
+  final String id;
+  final String contentType;
+  final String contentId;
+  final int revision;
+  final String checksumSha256;
+  final int byteLength;
+  final String provenance;
+  final String sourceUri;
+  final String reviewState;
+  final String publicationState;
+  final int createdAtUtcMs;
+  final int? reviewedAtUtcMs;
+  final int? publishedAtUtcMs;
+  const ContentManifestRow({
+    required this.id,
+    required this.contentType,
+    required this.contentId,
+    required this.revision,
+    required this.checksumSha256,
+    required this.byteLength,
+    required this.provenance,
+    required this.sourceUri,
+    required this.reviewState,
+    required this.publicationState,
+    required this.createdAtUtcMs,
+    this.reviewedAtUtcMs,
+    this.publishedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['content_type'] = Variable<String>(contentType);
+    map['content_id'] = Variable<String>(contentId);
+    map['revision'] = Variable<int>(revision);
+    map['checksum_sha256'] = Variable<String>(checksumSha256);
+    map['byte_length'] = Variable<int>(byteLength);
+    map['provenance'] = Variable<String>(provenance);
+    map['source_uri'] = Variable<String>(sourceUri);
+    map['review_state'] = Variable<String>(reviewState);
+    map['publication_state'] = Variable<String>(publicationState);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    if (!nullToAbsent || reviewedAtUtcMs != null) {
+      map['reviewed_at_utc_ms'] = Variable<int>(reviewedAtUtcMs);
+    }
+    if (!nullToAbsent || publishedAtUtcMs != null) {
+      map['published_at_utc_ms'] = Variable<int>(publishedAtUtcMs);
+    }
+    return map;
+  }
+
+  ContentManifestsCompanion toCompanion(bool nullToAbsent) {
+    return ContentManifestsCompanion(
+      id: Value(id),
+      contentType: Value(contentType),
+      contentId: Value(contentId),
+      revision: Value(revision),
+      checksumSha256: Value(checksumSha256),
+      byteLength: Value(byteLength),
+      provenance: Value(provenance),
+      sourceUri: Value(sourceUri),
+      reviewState: Value(reviewState),
+      publicationState: Value(publicationState),
+      createdAtUtcMs: Value(createdAtUtcMs),
+      reviewedAtUtcMs: reviewedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(reviewedAtUtcMs),
+      publishedAtUtcMs: publishedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(publishedAtUtcMs),
+    );
+  }
+
+  factory ContentManifestRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContentManifestRow(
+      id: serializer.fromJson<String>(json['id']),
+      contentType: serializer.fromJson<String>(json['contentType']),
+      contentId: serializer.fromJson<String>(json['contentId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      checksumSha256: serializer.fromJson<String>(json['checksumSha256']),
+      byteLength: serializer.fromJson<int>(json['byteLength']),
+      provenance: serializer.fromJson<String>(json['provenance']),
+      sourceUri: serializer.fromJson<String>(json['sourceUri']),
+      reviewState: serializer.fromJson<String>(json['reviewState']),
+      publicationState: serializer.fromJson<String>(json['publicationState']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+      reviewedAtUtcMs: serializer.fromJson<int?>(json['reviewedAtUtcMs']),
+      publishedAtUtcMs: serializer.fromJson<int?>(json['publishedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'contentType': serializer.toJson<String>(contentType),
+      'contentId': serializer.toJson<String>(contentId),
+      'revision': serializer.toJson<int>(revision),
+      'checksumSha256': serializer.toJson<String>(checksumSha256),
+      'byteLength': serializer.toJson<int>(byteLength),
+      'provenance': serializer.toJson<String>(provenance),
+      'sourceUri': serializer.toJson<String>(sourceUri),
+      'reviewState': serializer.toJson<String>(reviewState),
+      'publicationState': serializer.toJson<String>(publicationState),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+      'reviewedAtUtcMs': serializer.toJson<int?>(reviewedAtUtcMs),
+      'publishedAtUtcMs': serializer.toJson<int?>(publishedAtUtcMs),
+    };
+  }
+
+  ContentManifestRow copyWith({
+    String? id,
+    String? contentType,
+    String? contentId,
+    int? revision,
+    String? checksumSha256,
+    int? byteLength,
+    String? provenance,
+    String? sourceUri,
+    String? reviewState,
+    String? publicationState,
+    int? createdAtUtcMs,
+    Value<int?> reviewedAtUtcMs = const Value.absent(),
+    Value<int?> publishedAtUtcMs = const Value.absent(),
+  }) => ContentManifestRow(
+    id: id ?? this.id,
+    contentType: contentType ?? this.contentType,
+    contentId: contentId ?? this.contentId,
+    revision: revision ?? this.revision,
+    checksumSha256: checksumSha256 ?? this.checksumSha256,
+    byteLength: byteLength ?? this.byteLength,
+    provenance: provenance ?? this.provenance,
+    sourceUri: sourceUri ?? this.sourceUri,
+    reviewState: reviewState ?? this.reviewState,
+    publicationState: publicationState ?? this.publicationState,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+    reviewedAtUtcMs: reviewedAtUtcMs.present
+        ? reviewedAtUtcMs.value
+        : this.reviewedAtUtcMs,
+    publishedAtUtcMs: publishedAtUtcMs.present
+        ? publishedAtUtcMs.value
+        : this.publishedAtUtcMs,
+  );
+  ContentManifestRow copyWithCompanion(ContentManifestsCompanion data) {
+    return ContentManifestRow(
+      id: data.id.present ? data.id.value : this.id,
+      contentType: data.contentType.present
+          ? data.contentType.value
+          : this.contentType,
+      contentId: data.contentId.present ? data.contentId.value : this.contentId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      checksumSha256: data.checksumSha256.present
+          ? data.checksumSha256.value
+          : this.checksumSha256,
+      byteLength: data.byteLength.present
+          ? data.byteLength.value
+          : this.byteLength,
+      provenance: data.provenance.present
+          ? data.provenance.value
+          : this.provenance,
+      sourceUri: data.sourceUri.present ? data.sourceUri.value : this.sourceUri,
+      reviewState: data.reviewState.present
+          ? data.reviewState.value
+          : this.reviewState,
+      publicationState: data.publicationState.present
+          ? data.publicationState.value
+          : this.publicationState,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+      reviewedAtUtcMs: data.reviewedAtUtcMs.present
+          ? data.reviewedAtUtcMs.value
+          : this.reviewedAtUtcMs,
+      publishedAtUtcMs: data.publishedAtUtcMs.present
+          ? data.publishedAtUtcMs.value
+          : this.publishedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentManifestRow(')
+          ..write('id: $id, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('revision: $revision, ')
+          ..write('checksumSha256: $checksumSha256, ')
+          ..write('byteLength: $byteLength, ')
+          ..write('provenance: $provenance, ')
+          ..write('sourceUri: $sourceUri, ')
+          ..write('reviewState: $reviewState, ')
+          ..write('publicationState: $publicationState, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('reviewedAtUtcMs: $reviewedAtUtcMs, ')
+          ..write('publishedAtUtcMs: $publishedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    contentType,
+    contentId,
+    revision,
+    checksumSha256,
+    byteLength,
+    provenance,
+    sourceUri,
+    reviewState,
+    publicationState,
+    createdAtUtcMs,
+    reviewedAtUtcMs,
+    publishedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContentManifestRow &&
+          other.id == this.id &&
+          other.contentType == this.contentType &&
+          other.contentId == this.contentId &&
+          other.revision == this.revision &&
+          other.checksumSha256 == this.checksumSha256 &&
+          other.byteLength == this.byteLength &&
+          other.provenance == this.provenance &&
+          other.sourceUri == this.sourceUri &&
+          other.reviewState == this.reviewState &&
+          other.publicationState == this.publicationState &&
+          other.createdAtUtcMs == this.createdAtUtcMs &&
+          other.reviewedAtUtcMs == this.reviewedAtUtcMs &&
+          other.publishedAtUtcMs == this.publishedAtUtcMs);
+}
+
+class ContentManifestsCompanion extends UpdateCompanion<ContentManifestRow> {
+  final Value<String> id;
+  final Value<String> contentType;
+  final Value<String> contentId;
+  final Value<int> revision;
+  final Value<String> checksumSha256;
+  final Value<int> byteLength;
+  final Value<String> provenance;
+  final Value<String> sourceUri;
+  final Value<String> reviewState;
+  final Value<String> publicationState;
+  final Value<int> createdAtUtcMs;
+  final Value<int?> reviewedAtUtcMs;
+  final Value<int?> publishedAtUtcMs;
+  final Value<int> rowid;
+  const ContentManifestsCompanion({
+    this.id = const Value.absent(),
+    this.contentType = const Value.absent(),
+    this.contentId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.checksumSha256 = const Value.absent(),
+    this.byteLength = const Value.absent(),
+    this.provenance = const Value.absent(),
+    this.sourceUri = const Value.absent(),
+    this.reviewState = const Value.absent(),
+    this.publicationState = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.reviewedAtUtcMs = const Value.absent(),
+    this.publishedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContentManifestsCompanion.insert({
+    required String id,
+    required String contentType,
+    required String contentId,
+    required int revision,
+    required String checksumSha256,
+    required int byteLength,
+    required String provenance,
+    required String sourceUri,
+    required String reviewState,
+    required String publicationState,
+    required int createdAtUtcMs,
+    this.reviewedAtUtcMs = const Value.absent(),
+    this.publishedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       contentType = Value(contentType),
+       contentId = Value(contentId),
+       revision = Value(revision),
+       checksumSha256 = Value(checksumSha256),
+       byteLength = Value(byteLength),
+       provenance = Value(provenance),
+       sourceUri = Value(sourceUri),
+       reviewState = Value(reviewState),
+       publicationState = Value(publicationState),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<ContentManifestRow> custom({
+    Expression<String>? id,
+    Expression<String>? contentType,
+    Expression<String>? contentId,
+    Expression<int>? revision,
+    Expression<String>? checksumSha256,
+    Expression<int>? byteLength,
+    Expression<String>? provenance,
+    Expression<String>? sourceUri,
+    Expression<String>? reviewState,
+    Expression<String>? publicationState,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? reviewedAtUtcMs,
+    Expression<int>? publishedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (contentType != null) 'content_type': contentType,
+      if (contentId != null) 'content_id': contentId,
+      if (revision != null) 'revision': revision,
+      if (checksumSha256 != null) 'checksum_sha256': checksumSha256,
+      if (byteLength != null) 'byte_length': byteLength,
+      if (provenance != null) 'provenance': provenance,
+      if (sourceUri != null) 'source_uri': sourceUri,
+      if (reviewState != null) 'review_state': reviewState,
+      if (publicationState != null) 'publication_state': publicationState,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (reviewedAtUtcMs != null) 'reviewed_at_utc_ms': reviewedAtUtcMs,
+      if (publishedAtUtcMs != null) 'published_at_utc_ms': publishedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContentManifestsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? contentType,
+    Value<String>? contentId,
+    Value<int>? revision,
+    Value<String>? checksumSha256,
+    Value<int>? byteLength,
+    Value<String>? provenance,
+    Value<String>? sourceUri,
+    Value<String>? reviewState,
+    Value<String>? publicationState,
+    Value<int>? createdAtUtcMs,
+    Value<int?>? reviewedAtUtcMs,
+    Value<int?>? publishedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return ContentManifestsCompanion(
+      id: id ?? this.id,
+      contentType: contentType ?? this.contentType,
+      contentId: contentId ?? this.contentId,
+      revision: revision ?? this.revision,
+      checksumSha256: checksumSha256 ?? this.checksumSha256,
+      byteLength: byteLength ?? this.byteLength,
+      provenance: provenance ?? this.provenance,
+      sourceUri: sourceUri ?? this.sourceUri,
+      reviewState: reviewState ?? this.reviewState,
+      publicationState: publicationState ?? this.publicationState,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      reviewedAtUtcMs: reviewedAtUtcMs ?? this.reviewedAtUtcMs,
+      publishedAtUtcMs: publishedAtUtcMs ?? this.publishedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (contentType.present) {
+      map['content_type'] = Variable<String>(contentType.value);
+    }
+    if (contentId.present) {
+      map['content_id'] = Variable<String>(contentId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (checksumSha256.present) {
+      map['checksum_sha256'] = Variable<String>(checksumSha256.value);
+    }
+    if (byteLength.present) {
+      map['byte_length'] = Variable<int>(byteLength.value);
+    }
+    if (provenance.present) {
+      map['provenance'] = Variable<String>(provenance.value);
+    }
+    if (sourceUri.present) {
+      map['source_uri'] = Variable<String>(sourceUri.value);
+    }
+    if (reviewState.present) {
+      map['review_state'] = Variable<String>(reviewState.value);
+    }
+    if (publicationState.present) {
+      map['publication_state'] = Variable<String>(publicationState.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (reviewedAtUtcMs.present) {
+      map['reviewed_at_utc_ms'] = Variable<int>(reviewedAtUtcMs.value);
+    }
+    if (publishedAtUtcMs.present) {
+      map['published_at_utc_ms'] = Variable<int>(publishedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentManifestsCompanion(')
+          ..write('id: $id, ')
+          ..write('contentType: $contentType, ')
+          ..write('contentId: $contentId, ')
+          ..write('revision: $revision, ')
+          ..write('checksumSha256: $checksumSha256, ')
+          ..write('byteLength: $byteLength, ')
+          ..write('provenance: $provenance, ')
+          ..write('sourceUri: $sourceUri, ')
+          ..write('reviewState: $reviewState, ')
+          ..write('publicationState: $publicationState, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('reviewedAtUtcMs: $reviewedAtUtcMs, ')
+          ..write('publishedAtUtcMs: $publishedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningPacksTable extends LearningPacks
+    with TableInfo<$LearningPacksTable, LearningPackRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningPacksTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _packIdMeta = const VerificationMeta('packId');
+  @override
+  late final GeneratedColumn<String> packId = GeneratedColumn<String>(
+    'pack_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _revisionMeta = const VerificationMeta(
+    'revision',
+  );
+  @override
+  late final GeneratedColumn<int> revision = GeneratedColumn<int>(
+    'revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestIdMeta = const VerificationMeta(
+    'manifestId',
+  );
+  @override
+  late final GeneratedColumn<String> manifestId = GeneratedColumn<String>(
+    'manifest_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES content_manifests (id)',
+    ),
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _cefrLevelMeta = const VerificationMeta(
+    'cefrLevel',
+  );
+  @override
+  late final GeneratedColumn<String> cefrLevel = GeneratedColumn<String>(
+    'cefr_level',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _topicMeta = const VerificationMeta('topic');
+  @override
+  late final GeneratedColumn<String> topic = GeneratedColumn<String>(
+    'topic',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _skillMeta = const VerificationMeta('skill');
+  @override
+  late final GeneratedColumn<String> skill = GeneratedColumn<String>(
+    'skill',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _goalMeta = const VerificationMeta('goal');
+  @override
+  late final GeneratedColumn<String> goal = GeneratedColumn<String>(
+    'goal',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    packId,
+    revision,
+    manifestId,
+    title,
+    cefrLevel,
+    topic,
+    skill,
+    goal,
+    createdAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_packs';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningPackRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('pack_id')) {
+      context.handle(
+        _packIdMeta,
+        packId.isAcceptableOrUnknown(data['pack_id']!, _packIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_packIdMeta);
+    }
+    if (data.containsKey('revision')) {
+      context.handle(
+        _revisionMeta,
+        revision.isAcceptableOrUnknown(data['revision']!, _revisionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_revisionMeta);
+    }
+    if (data.containsKey('manifest_id')) {
+      context.handle(
+        _manifestIdMeta,
+        manifestId.isAcceptableOrUnknown(data['manifest_id']!, _manifestIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestIdMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('cefr_level')) {
+      context.handle(
+        _cefrLevelMeta,
+        cefrLevel.isAcceptableOrUnknown(data['cefr_level']!, _cefrLevelMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_cefrLevelMeta);
+    }
+    if (data.containsKey('topic')) {
+      context.handle(
+        _topicMeta,
+        topic.isAcceptableOrUnknown(data['topic']!, _topicMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_topicMeta);
+    }
+    if (data.containsKey('skill')) {
+      context.handle(
+        _skillMeta,
+        skill.isAcceptableOrUnknown(data['skill']!, _skillMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_skillMeta);
+    }
+    if (data.containsKey('goal')) {
+      context.handle(
+        _goalMeta,
+        goal.isAcceptableOrUnknown(data['goal']!, _goalMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_goalMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {packId, revision},
+    {manifestId},
+  ];
+  @override
+  LearningPackRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningPackRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      packId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}pack_id'],
+      )!,
+      revision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}revision'],
+      )!,
+      manifestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_id'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      cefrLevel: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}cefr_level'],
+      )!,
+      topic: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}topic'],
+      )!,
+      skill: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}skill'],
+      )!,
+      goal: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningPacksTable createAlias(String alias) {
+    return $LearningPacksTable(attachedDatabase, alias);
+  }
+}
+
+class LearningPackRow extends DataClass implements Insertable<LearningPackRow> {
+  final String id;
+  final String packId;
+  final int revision;
+  final String manifestId;
+  final String title;
+  final String cefrLevel;
+  final String topic;
+  final String skill;
+  final String goal;
+  final int createdAtUtcMs;
+  const LearningPackRow({
+    required this.id,
+    required this.packId,
+    required this.revision,
+    required this.manifestId,
+    required this.title,
+    required this.cefrLevel,
+    required this.topic,
+    required this.skill,
+    required this.goal,
+    required this.createdAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['pack_id'] = Variable<String>(packId);
+    map['revision'] = Variable<int>(revision);
+    map['manifest_id'] = Variable<String>(manifestId);
+    map['title'] = Variable<String>(title);
+    map['cefr_level'] = Variable<String>(cefrLevel);
+    map['topic'] = Variable<String>(topic);
+    map['skill'] = Variable<String>(skill);
+    map['goal'] = Variable<String>(goal);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    return map;
+  }
+
+  LearningPacksCompanion toCompanion(bool nullToAbsent) {
+    return LearningPacksCompanion(
+      id: Value(id),
+      packId: Value(packId),
+      revision: Value(revision),
+      manifestId: Value(manifestId),
+      title: Value(title),
+      cefrLevel: Value(cefrLevel),
+      topic: Value(topic),
+      skill: Value(skill),
+      goal: Value(goal),
+      createdAtUtcMs: Value(createdAtUtcMs),
+    );
+  }
+
+  factory LearningPackRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningPackRow(
+      id: serializer.fromJson<String>(json['id']),
+      packId: serializer.fromJson<String>(json['packId']),
+      revision: serializer.fromJson<int>(json['revision']),
+      manifestId: serializer.fromJson<String>(json['manifestId']),
+      title: serializer.fromJson<String>(json['title']),
+      cefrLevel: serializer.fromJson<String>(json['cefrLevel']),
+      topic: serializer.fromJson<String>(json['topic']),
+      skill: serializer.fromJson<String>(json['skill']),
+      goal: serializer.fromJson<String>(json['goal']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'packId': serializer.toJson<String>(packId),
+      'revision': serializer.toJson<int>(revision),
+      'manifestId': serializer.toJson<String>(manifestId),
+      'title': serializer.toJson<String>(title),
+      'cefrLevel': serializer.toJson<String>(cefrLevel),
+      'topic': serializer.toJson<String>(topic),
+      'skill': serializer.toJson<String>(skill),
+      'goal': serializer.toJson<String>(goal),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+    };
+  }
+
+  LearningPackRow copyWith({
+    String? id,
+    String? packId,
+    int? revision,
+    String? manifestId,
+    String? title,
+    String? cefrLevel,
+    String? topic,
+    String? skill,
+    String? goal,
+    int? createdAtUtcMs,
+  }) => LearningPackRow(
+    id: id ?? this.id,
+    packId: packId ?? this.packId,
+    revision: revision ?? this.revision,
+    manifestId: manifestId ?? this.manifestId,
+    title: title ?? this.title,
+    cefrLevel: cefrLevel ?? this.cefrLevel,
+    topic: topic ?? this.topic,
+    skill: skill ?? this.skill,
+    goal: goal ?? this.goal,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+  );
+  LearningPackRow copyWithCompanion(LearningPacksCompanion data) {
+    return LearningPackRow(
+      id: data.id.present ? data.id.value : this.id,
+      packId: data.packId.present ? data.packId.value : this.packId,
+      revision: data.revision.present ? data.revision.value : this.revision,
+      manifestId: data.manifestId.present
+          ? data.manifestId.value
+          : this.manifestId,
+      title: data.title.present ? data.title.value : this.title,
+      cefrLevel: data.cefrLevel.present ? data.cefrLevel.value : this.cefrLevel,
+      topic: data.topic.present ? data.topic.value : this.topic,
+      skill: data.skill.present ? data.skill.value : this.skill,
+      goal: data.goal.present ? data.goal.value : this.goal,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPackRow(')
+          ..write('id: $id, ')
+          ..write('packId: $packId, ')
+          ..write('revision: $revision, ')
+          ..write('manifestId: $manifestId, ')
+          ..write('title: $title, ')
+          ..write('cefrLevel: $cefrLevel, ')
+          ..write('topic: $topic, ')
+          ..write('skill: $skill, ')
+          ..write('goal: $goal, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    packId,
+    revision,
+    manifestId,
+    title,
+    cefrLevel,
+    topic,
+    skill,
+    goal,
+    createdAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningPackRow &&
+          other.id == this.id &&
+          other.packId == this.packId &&
+          other.revision == this.revision &&
+          other.manifestId == this.manifestId &&
+          other.title == this.title &&
+          other.cefrLevel == this.cefrLevel &&
+          other.topic == this.topic &&
+          other.skill == this.skill &&
+          other.goal == this.goal &&
+          other.createdAtUtcMs == this.createdAtUtcMs);
+}
+
+class LearningPacksCompanion extends UpdateCompanion<LearningPackRow> {
+  final Value<String> id;
+  final Value<String> packId;
+  final Value<int> revision;
+  final Value<String> manifestId;
+  final Value<String> title;
+  final Value<String> cefrLevel;
+  final Value<String> topic;
+  final Value<String> skill;
+  final Value<String> goal;
+  final Value<int> createdAtUtcMs;
+  final Value<int> rowid;
+  const LearningPacksCompanion({
+    this.id = const Value.absent(),
+    this.packId = const Value.absent(),
+    this.revision = const Value.absent(),
+    this.manifestId = const Value.absent(),
+    this.title = const Value.absent(),
+    this.cefrLevel = const Value.absent(),
+    this.topic = const Value.absent(),
+    this.skill = const Value.absent(),
+    this.goal = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningPacksCompanion.insert({
+    required String id,
+    required String packId,
+    required int revision,
+    required String manifestId,
+    required String title,
+    required String cefrLevel,
+    required String topic,
+    required String skill,
+    required String goal,
+    required int createdAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       packId = Value(packId),
+       revision = Value(revision),
+       manifestId = Value(manifestId),
+       title = Value(title),
+       cefrLevel = Value(cefrLevel),
+       topic = Value(topic),
+       skill = Value(skill),
+       goal = Value(goal),
+       createdAtUtcMs = Value(createdAtUtcMs);
+  static Insertable<LearningPackRow> custom({
+    Expression<String>? id,
+    Expression<String>? packId,
+    Expression<int>? revision,
+    Expression<String>? manifestId,
+    Expression<String>? title,
+    Expression<String>? cefrLevel,
+    Expression<String>? topic,
+    Expression<String>? skill,
+    Expression<String>? goal,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (packId != null) 'pack_id': packId,
+      if (revision != null) 'revision': revision,
+      if (manifestId != null) 'manifest_id': manifestId,
+      if (title != null) 'title': title,
+      if (cefrLevel != null) 'cefr_level': cefrLevel,
+      if (topic != null) 'topic': topic,
+      if (skill != null) 'skill': skill,
+      if (goal != null) 'goal': goal,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningPacksCompanion copyWith({
+    Value<String>? id,
+    Value<String>? packId,
+    Value<int>? revision,
+    Value<String>? manifestId,
+    Value<String>? title,
+    Value<String>? cefrLevel,
+    Value<String>? topic,
+    Value<String>? skill,
+    Value<String>? goal,
+    Value<int>? createdAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return LearningPacksCompanion(
+      id: id ?? this.id,
+      packId: packId ?? this.packId,
+      revision: revision ?? this.revision,
+      manifestId: manifestId ?? this.manifestId,
+      title: title ?? this.title,
+      cefrLevel: cefrLevel ?? this.cefrLevel,
+      topic: topic ?? this.topic,
+      skill: skill ?? this.skill,
+      goal: goal ?? this.goal,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (packId.present) {
+      map['pack_id'] = Variable<String>(packId.value);
+    }
+    if (revision.present) {
+      map['revision'] = Variable<int>(revision.value);
+    }
+    if (manifestId.present) {
+      map['manifest_id'] = Variable<String>(manifestId.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (cefrLevel.present) {
+      map['cefr_level'] = Variable<String>(cefrLevel.value);
+    }
+    if (topic.present) {
+      map['topic'] = Variable<String>(topic.value);
+    }
+    if (skill.present) {
+      map['skill'] = Variable<String>(skill.value);
+    }
+    if (goal.present) {
+      map['goal'] = Variable<String>(goal.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPacksCompanion(')
+          ..write('id: $id, ')
+          ..write('packId: $packId, ')
+          ..write('revision: $revision, ')
+          ..write('manifestId: $manifestId, ')
+          ..write('title: $title, ')
+          ..write('cefrLevel: $cefrLevel, ')
+          ..write('topic: $topic, ')
+          ..write('skill: $skill, ')
+          ..write('goal: $goal, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $LearningPackItemsTable extends LearningPackItems
+    with TableInfo<$LearningPackItemsTable, LearningPackItemRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningPackItemsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _learningPackIdMeta = const VerificationMeta(
+    'learningPackId',
+  );
+  @override
+  late final GeneratedColumn<String> learningPackId = GeneratedColumn<String>(
+    'learning_pack_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_packs (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _vocabularyWordIdMeta = const VerificationMeta(
+    'vocabularyWordId',
+  );
+  @override
+  late final GeneratedColumn<String> vocabularyWordId = GeneratedColumn<String>(
+    'vocabulary_word_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _positionMeta = const VerificationMeta(
+    'position',
+  );
+  @override
+  late final GeneratedColumn<int> position = GeneratedColumn<int>(
+    'position',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    learningPackId,
+    vocabularyWordId,
+    position,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_pack_items';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningPackItemRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('learning_pack_id')) {
+      context.handle(
+        _learningPackIdMeta,
+        learningPackId.isAcceptableOrUnknown(
+          data['learning_pack_id']!,
+          _learningPackIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_learningPackIdMeta);
+    }
+    if (data.containsKey('vocabulary_word_id')) {
+      context.handle(
+        _vocabularyWordIdMeta,
+        vocabularyWordId.isAcceptableOrUnknown(
+          data['vocabulary_word_id']!,
+          _vocabularyWordIdMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_vocabularyWordIdMeta);
+    }
+    if (data.containsKey('position')) {
+      context.handle(
+        _positionMeta,
+        position.isAcceptableOrUnknown(data['position']!, _positionMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_positionMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {learningPackId, position},
+    {learningPackId, vocabularyWordId},
+  ];
+  @override
+  LearningPackItemRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningPackItemRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      learningPackId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}learning_pack_id'],
+      )!,
+      vocabularyWordId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}vocabulary_word_id'],
+      )!,
+      position: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}position'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningPackItemsTable createAlias(String alias) {
+    return $LearningPackItemsTable(attachedDatabase, alias);
+  }
+}
+
+class LearningPackItemRow extends DataClass
+    implements Insertable<LearningPackItemRow> {
+  final String id;
+  final String learningPackId;
+  final String vocabularyWordId;
+  final int position;
+  const LearningPackItemRow({
+    required this.id,
+    required this.learningPackId,
+    required this.vocabularyWordId,
+    required this.position,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['learning_pack_id'] = Variable<String>(learningPackId);
+    map['vocabulary_word_id'] = Variable<String>(vocabularyWordId);
+    map['position'] = Variable<int>(position);
+    return map;
+  }
+
+  LearningPackItemsCompanion toCompanion(bool nullToAbsent) {
+    return LearningPackItemsCompanion(
+      id: Value(id),
+      learningPackId: Value(learningPackId),
+      vocabularyWordId: Value(vocabularyWordId),
+      position: Value(position),
+    );
+  }
+
+  factory LearningPackItemRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningPackItemRow(
+      id: serializer.fromJson<String>(json['id']),
+      learningPackId: serializer.fromJson<String>(json['learningPackId']),
+      vocabularyWordId: serializer.fromJson<String>(json['vocabularyWordId']),
+      position: serializer.fromJson<int>(json['position']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'learningPackId': serializer.toJson<String>(learningPackId),
+      'vocabularyWordId': serializer.toJson<String>(vocabularyWordId),
+      'position': serializer.toJson<int>(position),
+    };
+  }
+
+  LearningPackItemRow copyWith({
+    String? id,
+    String? learningPackId,
+    String? vocabularyWordId,
+    int? position,
+  }) => LearningPackItemRow(
+    id: id ?? this.id,
+    learningPackId: learningPackId ?? this.learningPackId,
+    vocabularyWordId: vocabularyWordId ?? this.vocabularyWordId,
+    position: position ?? this.position,
+  );
+  LearningPackItemRow copyWithCompanion(LearningPackItemsCompanion data) {
+    return LearningPackItemRow(
+      id: data.id.present ? data.id.value : this.id,
+      learningPackId: data.learningPackId.present
+          ? data.learningPackId.value
+          : this.learningPackId,
+      vocabularyWordId: data.vocabularyWordId.present
+          ? data.vocabularyWordId.value
+          : this.vocabularyWordId,
+      position: data.position.present ? data.position.value : this.position,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPackItemRow(')
+          ..write('id: $id, ')
+          ..write('learningPackId: $learningPackId, ')
+          ..write('vocabularyWordId: $vocabularyWordId, ')
+          ..write('position: $position')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode =>
+      Object.hash(id, learningPackId, vocabularyWordId, position);
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningPackItemRow &&
+          other.id == this.id &&
+          other.learningPackId == this.learningPackId &&
+          other.vocabularyWordId == this.vocabularyWordId &&
+          other.position == this.position);
+}
+
+class LearningPackItemsCompanion extends UpdateCompanion<LearningPackItemRow> {
+  final Value<String> id;
+  final Value<String> learningPackId;
+  final Value<String> vocabularyWordId;
+  final Value<int> position;
+  final Value<int> rowid;
+  const LearningPackItemsCompanion({
+    this.id = const Value.absent(),
+    this.learningPackId = const Value.absent(),
+    this.vocabularyWordId = const Value.absent(),
+    this.position = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningPackItemsCompanion.insert({
+    required String id,
+    required String learningPackId,
+    required String vocabularyWordId,
+    required int position,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       learningPackId = Value(learningPackId),
+       vocabularyWordId = Value(vocabularyWordId),
+       position = Value(position);
+  static Insertable<LearningPackItemRow> custom({
+    Expression<String>? id,
+    Expression<String>? learningPackId,
+    Expression<String>? vocabularyWordId,
+    Expression<int>? position,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (learningPackId != null) 'learning_pack_id': learningPackId,
+      if (vocabularyWordId != null) 'vocabulary_word_id': vocabularyWordId,
+      if (position != null) 'position': position,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningPackItemsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? learningPackId,
+    Value<String>? vocabularyWordId,
+    Value<int>? position,
+    Value<int>? rowid,
+  }) {
+    return LearningPackItemsCompanion(
+      id: id ?? this.id,
+      learningPackId: learningPackId ?? this.learningPackId,
+      vocabularyWordId: vocabularyWordId ?? this.vocabularyWordId,
+      position: position ?? this.position,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (learningPackId.present) {
+      map['learning_pack_id'] = Variable<String>(learningPackId.value);
+    }
+    if (vocabularyWordId.present) {
+      map['vocabulary_word_id'] = Variable<String>(vocabularyWordId.value);
+    }
+    if (position.present) {
+      map['position'] = Variable<int>(position.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningPackItemsCompanion(')
+          ..write('id: $id, ')
+          ..write('learningPackId: $learningPackId, ')
+          ..write('vocabularyWordId: $vocabularyWordId, ')
+          ..write('position: $position, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $ContentDownloadStatesTable extends ContentDownloadStates
+    with TableInfo<$ContentDownloadStatesTable, ContentDownloadStateRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $ContentDownloadStatesTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _manifestIdMeta = const VerificationMeta(
+    'manifestId',
+  );
+  @override
+  late final GeneratedColumn<String> manifestId = GeneratedColumn<String>(
+    'manifest_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES content_manifests (id)',
+    ),
+  );
+  static const VerificationMeta _stateMeta = const VerificationMeta('state');
+  @override
+  late final GeneratedColumn<String> state = GeneratedColumn<String>(
+    'state',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('notDownloaded'),
+  );
+  static const VerificationMeta _localPathMeta = const VerificationMeta(
+    'localPath',
+  );
+  @override
+  late final GeneratedColumn<String> localPath = GeneratedColumn<String>(
+    'local_path',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _downloadedBytesMeta = const VerificationMeta(
+    'downloadedBytes',
+  );
+  @override
+  late final GeneratedColumn<int> downloadedBytes = GeneratedColumn<int>(
+    'downloaded_bytes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _verifiedChecksumSha256Meta =
+      const VerificationMeta('verifiedChecksumSha256');
+  @override
+  late final GeneratedColumn<String> verifiedChecksumSha256 =
+      GeneratedColumn<String>(
+        'verified_checksum_sha256',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _failureCodeMeta = const VerificationMeta(
+    'failureCode',
+  );
+  @override
+  late final GeneratedColumn<String> failureCode = GeneratedColumn<String>(
+    'failure_code',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    manifestId,
+    state,
+    localPath,
+    downloadedBytes,
+    verifiedChecksumSha256,
+    failureCode,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'content_download_states';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<ContentDownloadStateRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('manifest_id')) {
+      context.handle(
+        _manifestIdMeta,
+        manifestId.isAcceptableOrUnknown(data['manifest_id']!, _manifestIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_manifestIdMeta);
+    }
+    if (data.containsKey('state')) {
+      context.handle(
+        _stateMeta,
+        state.isAcceptableOrUnknown(data['state']!, _stateMeta),
+      );
+    }
+    if (data.containsKey('local_path')) {
+      context.handle(
+        _localPathMeta,
+        localPath.isAcceptableOrUnknown(data['local_path']!, _localPathMeta),
+      );
+    }
+    if (data.containsKey('downloaded_bytes')) {
+      context.handle(
+        _downloadedBytesMeta,
+        downloadedBytes.isAcceptableOrUnknown(
+          data['downloaded_bytes']!,
+          _downloadedBytesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('verified_checksum_sha256')) {
+      context.handle(
+        _verifiedChecksumSha256Meta,
+        verifiedChecksumSha256.isAcceptableOrUnknown(
+          data['verified_checksum_sha256']!,
+          _verifiedChecksumSha256Meta,
+        ),
+      );
+    }
+    if (data.containsKey('failure_code')) {
+      context.handle(
+        _failureCodeMeta,
+        failureCode.isAcceptableOrUnknown(
+          data['failure_code']!,
+          _failureCodeMeta,
+        ),
+      );
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  List<Set<GeneratedColumn>> get uniqueKeys => [
+    {manifestId},
+  ];
+  @override
+  ContentDownloadStateRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return ContentDownloadStateRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      manifestId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}manifest_id'],
+      )!,
+      state: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}state'],
+      )!,
+      localPath: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}local_path'],
+      ),
+      downloadedBytes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}downloaded_bytes'],
+      )!,
+      verifiedChecksumSha256: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}verified_checksum_sha256'],
+      ),
+      failureCode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}failure_code'],
+      ),
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $ContentDownloadStatesTable createAlias(String alias) {
+    return $ContentDownloadStatesTable(attachedDatabase, alias);
+  }
+}
+
+class ContentDownloadStateRow extends DataClass
+    implements Insertable<ContentDownloadStateRow> {
+  final String id;
+  final String manifestId;
+  final String state;
+  final String? localPath;
+  final int downloadedBytes;
+  final String? verifiedChecksumSha256;
+  final String? failureCode;
+  final int updatedAtUtcMs;
+  const ContentDownloadStateRow({
+    required this.id,
+    required this.manifestId,
+    required this.state,
+    this.localPath,
+    required this.downloadedBytes,
+    this.verifiedChecksumSha256,
+    this.failureCode,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['manifest_id'] = Variable<String>(manifestId);
+    map['state'] = Variable<String>(state);
+    if (!nullToAbsent || localPath != null) {
+      map['local_path'] = Variable<String>(localPath);
+    }
+    map['downloaded_bytes'] = Variable<int>(downloadedBytes);
+    if (!nullToAbsent || verifiedChecksumSha256 != null) {
+      map['verified_checksum_sha256'] = Variable<String>(
+        verifiedChecksumSha256,
+      );
+    }
+    if (!nullToAbsent || failureCode != null) {
+      map['failure_code'] = Variable<String>(failureCode);
+    }
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  ContentDownloadStatesCompanion toCompanion(bool nullToAbsent) {
+    return ContentDownloadStatesCompanion(
+      id: Value(id),
+      manifestId: Value(manifestId),
+      state: Value(state),
+      localPath: localPath == null && nullToAbsent
+          ? const Value.absent()
+          : Value(localPath),
+      downloadedBytes: Value(downloadedBytes),
+      verifiedChecksumSha256: verifiedChecksumSha256 == null && nullToAbsent
+          ? const Value.absent()
+          : Value(verifiedChecksumSha256),
+      failureCode: failureCode == null && nullToAbsent
+          ? const Value.absent()
+          : Value(failureCode),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory ContentDownloadStateRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return ContentDownloadStateRow(
+      id: serializer.fromJson<String>(json['id']),
+      manifestId: serializer.fromJson<String>(json['manifestId']),
+      state: serializer.fromJson<String>(json['state']),
+      localPath: serializer.fromJson<String?>(json['localPath']),
+      downloadedBytes: serializer.fromJson<int>(json['downloadedBytes']),
+      verifiedChecksumSha256: serializer.fromJson<String?>(
+        json['verifiedChecksumSha256'],
+      ),
+      failureCode: serializer.fromJson<String?>(json['failureCode']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'manifestId': serializer.toJson<String>(manifestId),
+      'state': serializer.toJson<String>(state),
+      'localPath': serializer.toJson<String?>(localPath),
+      'downloadedBytes': serializer.toJson<int>(downloadedBytes),
+      'verifiedChecksumSha256': serializer.toJson<String?>(
+        verifiedChecksumSha256,
+      ),
+      'failureCode': serializer.toJson<String?>(failureCode),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  ContentDownloadStateRow copyWith({
+    String? id,
+    String? manifestId,
+    String? state,
+    Value<String?> localPath = const Value.absent(),
+    int? downloadedBytes,
+    Value<String?> verifiedChecksumSha256 = const Value.absent(),
+    Value<String?> failureCode = const Value.absent(),
+    int? updatedAtUtcMs,
+  }) => ContentDownloadStateRow(
+    id: id ?? this.id,
+    manifestId: manifestId ?? this.manifestId,
+    state: state ?? this.state,
+    localPath: localPath.present ? localPath.value : this.localPath,
+    downloadedBytes: downloadedBytes ?? this.downloadedBytes,
+    verifiedChecksumSha256: verifiedChecksumSha256.present
+        ? verifiedChecksumSha256.value
+        : this.verifiedChecksumSha256,
+    failureCode: failureCode.present ? failureCode.value : this.failureCode,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  ContentDownloadStateRow copyWithCompanion(
+    ContentDownloadStatesCompanion data,
+  ) {
+    return ContentDownloadStateRow(
+      id: data.id.present ? data.id.value : this.id,
+      manifestId: data.manifestId.present
+          ? data.manifestId.value
+          : this.manifestId,
+      state: data.state.present ? data.state.value : this.state,
+      localPath: data.localPath.present ? data.localPath.value : this.localPath,
+      downloadedBytes: data.downloadedBytes.present
+          ? data.downloadedBytes.value
+          : this.downloadedBytes,
+      verifiedChecksumSha256: data.verifiedChecksumSha256.present
+          ? data.verifiedChecksumSha256.value
+          : this.verifiedChecksumSha256,
+      failureCode: data.failureCode.present
+          ? data.failureCode.value
+          : this.failureCode,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentDownloadStateRow(')
+          ..write('id: $id, ')
+          ..write('manifestId: $manifestId, ')
+          ..write('state: $state, ')
+          ..write('localPath: $localPath, ')
+          ..write('downloadedBytes: $downloadedBytes, ')
+          ..write('verifiedChecksumSha256: $verifiedChecksumSha256, ')
+          ..write('failureCode: $failureCode, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    manifestId,
+    state,
+    localPath,
+    downloadedBytes,
+    verifiedChecksumSha256,
+    failureCode,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is ContentDownloadStateRow &&
+          other.id == this.id &&
+          other.manifestId == this.manifestId &&
+          other.state == this.state &&
+          other.localPath == this.localPath &&
+          other.downloadedBytes == this.downloadedBytes &&
+          other.verifiedChecksumSha256 == this.verifiedChecksumSha256 &&
+          other.failureCode == this.failureCode &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class ContentDownloadStatesCompanion
+    extends UpdateCompanion<ContentDownloadStateRow> {
+  final Value<String> id;
+  final Value<String> manifestId;
+  final Value<String> state;
+  final Value<String?> localPath;
+  final Value<int> downloadedBytes;
+  final Value<String?> verifiedChecksumSha256;
+  final Value<String?> failureCode;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const ContentDownloadStatesCompanion({
+    this.id = const Value.absent(),
+    this.manifestId = const Value.absent(),
+    this.state = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.downloadedBytes = const Value.absent(),
+    this.verifiedChecksumSha256 = const Value.absent(),
+    this.failureCode = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  ContentDownloadStatesCompanion.insert({
+    required String id,
+    required String manifestId,
+    this.state = const Value.absent(),
+    this.localPath = const Value.absent(),
+    this.downloadedBytes = const Value.absent(),
+    this.verifiedChecksumSha256 = const Value.absent(),
+    this.failureCode = const Value.absent(),
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       manifestId = Value(manifestId),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<ContentDownloadStateRow> custom({
+    Expression<String>? id,
+    Expression<String>? manifestId,
+    Expression<String>? state,
+    Expression<String>? localPath,
+    Expression<int>? downloadedBytes,
+    Expression<String>? verifiedChecksumSha256,
+    Expression<String>? failureCode,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (manifestId != null) 'manifest_id': manifestId,
+      if (state != null) 'state': state,
+      if (localPath != null) 'local_path': localPath,
+      if (downloadedBytes != null) 'downloaded_bytes': downloadedBytes,
+      if (verifiedChecksumSha256 != null)
+        'verified_checksum_sha256': verifiedChecksumSha256,
+      if (failureCode != null) 'failure_code': failureCode,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  ContentDownloadStatesCompanion copyWith({
+    Value<String>? id,
+    Value<String>? manifestId,
+    Value<String>? state,
+    Value<String?>? localPath,
+    Value<int>? downloadedBytes,
+    Value<String?>? verifiedChecksumSha256,
+    Value<String?>? failureCode,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return ContentDownloadStatesCompanion(
+      id: id ?? this.id,
+      manifestId: manifestId ?? this.manifestId,
+      state: state ?? this.state,
+      localPath: localPath ?? this.localPath,
+      downloadedBytes: downloadedBytes ?? this.downloadedBytes,
+      verifiedChecksumSha256:
+          verifiedChecksumSha256 ?? this.verifiedChecksumSha256,
+      failureCode: failureCode ?? this.failureCode,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (manifestId.present) {
+      map['manifest_id'] = Variable<String>(manifestId.value);
+    }
+    if (state.present) {
+      map['state'] = Variable<String>(state.value);
+    }
+    if (localPath.present) {
+      map['local_path'] = Variable<String>(localPath.value);
+    }
+    if (downloadedBytes.present) {
+      map['downloaded_bytes'] = Variable<int>(downloadedBytes.value);
+    }
+    if (verifiedChecksumSha256.present) {
+      map['verified_checksum_sha256'] = Variable<String>(
+        verifiedChecksumSha256.value,
+      );
+    }
+    if (failureCode.present) {
+      map['failure_code'] = Variable<String>(failureCode.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('ContentDownloadStatesCompanion(')
+          ..write('id: $id, ')
+          ..write('manifestId: $manifestId, ')
+          ..write('state: $state, ')
+          ..write('localPath: $localPath, ')
+          ..write('downloadedBytes: $downloadedBytes, ')
+          ..write('verifiedChecksumSha256: $verifiedChecksumSha256, ')
+          ..write('failureCode: $failureCode, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -21534,6 +24124,14 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $VocabularyImportsTable(this);
   late final $VocabularyImportRowsTable vocabularyImportRows =
       $VocabularyImportRowsTable(this);
+  late final $ContentManifestsTable contentManifests = $ContentManifestsTable(
+    this,
+  );
+  late final $LearningPacksTable learningPacks = $LearningPacksTable(this);
+  late final $LearningPackItemsTable learningPackItems =
+      $LearningPackItemsTable(this);
+  late final $ContentDownloadStatesTable contentDownloadStates =
+      $ContentDownloadStatesTable(this);
   late final $AnswerAttemptsTable answerAttempts = $AnswerAttemptsTable(this);
   late final $SrsStatesTable srsStates = $SrsStatesTable(this);
   late final $ReadingProgressEntriesTable readingProgressEntries =
@@ -21588,6 +24186,10 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     vocabularyWords,
     vocabularyImports,
     vocabularyImportRows,
+    contentManifests,
+    learningPacks,
+    learningPackItems,
+    contentDownloadStates,
     answerAttempts,
     srsStates,
     readingProgressEntries,
@@ -21621,6 +24223,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('vocabulary_import_rows', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_packs',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('learning_pack_items', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -27788,6 +30397,11 @@ typedef $$VocabularyWordsTableCreateCompanionBuilder =
       Value<String?> cefrLevel,
       Value<String> source,
       Value<bool> isGlobal,
+      Value<int> contentRevision,
+      Value<String?> contentChecksumSha256,
+      Value<String> contentProvenance,
+      Value<String> contentReviewState,
+      Value<String> contentPublicationState,
       Value<int> localRevision,
       Value<int> cloudRevision,
       Value<int?> lastAcknowledgedAtUtcMs,
@@ -27810,6 +30424,11 @@ typedef $$VocabularyWordsTableUpdateCompanionBuilder =
       Value<String?> cefrLevel,
       Value<String> source,
       Value<bool> isGlobal,
+      Value<int> contentRevision,
+      Value<String?> contentChecksumSha256,
+      Value<String> contentProvenance,
+      Value<String> contentReviewState,
+      Value<String> contentPublicationState,
       Value<int> localRevision,
       Value<int> cloudRevision,
       Value<int?> lastAcknowledgedAtUtcMs,
@@ -27970,6 +30589,31 @@ class $$VocabularyWordsTableFilterComposer
 
   ColumnFilters<bool> get isGlobal => $composableBuilder(
     column: $table.isGlobal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentChecksumSha256 => $composableBuilder(
+    column: $table.contentChecksumSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentProvenance => $composableBuilder(
+    column: $table.contentProvenance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentReviewState => $composableBuilder(
+    column: $table.contentReviewState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentPublicationState => $composableBuilder(
+    column: $table.contentPublicationState,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -28184,6 +30828,31 @@ class $$VocabularyWordsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentChecksumSha256 => $composableBuilder(
+    column: $table.contentChecksumSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentProvenance => $composableBuilder(
+    column: $table.contentProvenance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentReviewState => $composableBuilder(
+    column: $table.contentReviewState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentPublicationState => $composableBuilder(
+    column: $table.contentPublicationState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
     builder: (column) => ColumnOrderings(column),
@@ -28308,6 +30977,31 @@ class $$VocabularyWordsTableAnnotationComposer
 
   GeneratedColumn<bool> get isGlobal =>
       $composableBuilder(column: $table.isGlobal, builder: (column) => column);
+
+  GeneratedColumn<int> get contentRevision => $composableBuilder(
+    column: $table.contentRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentChecksumSha256 => $composableBuilder(
+    column: $table.contentChecksumSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentProvenance => $composableBuilder(
+    column: $table.contentProvenance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentReviewState => $composableBuilder(
+    column: $table.contentReviewState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentPublicationState => $composableBuilder(
+    column: $table.contentPublicationState,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
@@ -28512,6 +31206,11 @@ class $$VocabularyWordsTableTableManager
                 Value<String?> cefrLevel = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<bool> isGlobal = const Value.absent(),
+                Value<int> contentRevision = const Value.absent(),
+                Value<String?> contentChecksumSha256 = const Value.absent(),
+                Value<String> contentProvenance = const Value.absent(),
+                Value<String> contentReviewState = const Value.absent(),
+                Value<String> contentPublicationState = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
                 Value<int> cloudRevision = const Value.absent(),
                 Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -28532,6 +31231,11 @@ class $$VocabularyWordsTableTableManager
                 cefrLevel: cefrLevel,
                 source: source,
                 isGlobal: isGlobal,
+                contentRevision: contentRevision,
+                contentChecksumSha256: contentChecksumSha256,
+                contentProvenance: contentProvenance,
+                contentReviewState: contentReviewState,
+                contentPublicationState: contentPublicationState,
                 localRevision: localRevision,
                 cloudRevision: cloudRevision,
                 lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
@@ -28554,6 +31258,11 @@ class $$VocabularyWordsTableTableManager
                 Value<String?> cefrLevel = const Value.absent(),
                 Value<String> source = const Value.absent(),
                 Value<bool> isGlobal = const Value.absent(),
+                Value<int> contentRevision = const Value.absent(),
+                Value<String?> contentChecksumSha256 = const Value.absent(),
+                Value<String> contentProvenance = const Value.absent(),
+                Value<String> contentReviewState = const Value.absent(),
+                Value<String> contentPublicationState = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
                 Value<int> cloudRevision = const Value.absent(),
                 Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -28574,6 +31283,11 @@ class $$VocabularyWordsTableTableManager
                 cefrLevel: cefrLevel,
                 source: source,
                 isGlobal: isGlobal,
+                contentRevision: contentRevision,
+                contentChecksumSha256: contentChecksumSha256,
+                contentProvenance: contentProvenance,
+                contentReviewState: contentReviewState,
+                contentPublicationState: contentPublicationState,
                 localRevision: localRevision,
                 cloudRevision: cloudRevision,
                 lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
@@ -29814,6 +32528,1841 @@ typedef $$VocabularyImportRowsTableProcessedTableManager =
       (VocabularyImportRow, $$VocabularyImportRowsTableReferences),
       VocabularyImportRow,
       PrefetchHooks Function({bool importId})
+    >;
+typedef $$ContentManifestsTableCreateCompanionBuilder =
+    ContentManifestsCompanion Function({
+      required String id,
+      required String contentType,
+      required String contentId,
+      required int revision,
+      required String checksumSha256,
+      required int byteLength,
+      required String provenance,
+      required String sourceUri,
+      required String reviewState,
+      required String publicationState,
+      required int createdAtUtcMs,
+      Value<int?> reviewedAtUtcMs,
+      Value<int?> publishedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$ContentManifestsTableUpdateCompanionBuilder =
+    ContentManifestsCompanion Function({
+      Value<String> id,
+      Value<String> contentType,
+      Value<String> contentId,
+      Value<int> revision,
+      Value<String> checksumSha256,
+      Value<int> byteLength,
+      Value<String> provenance,
+      Value<String> sourceUri,
+      Value<String> reviewState,
+      Value<String> publicationState,
+      Value<int> createdAtUtcMs,
+      Value<int?> reviewedAtUtcMs,
+      Value<int?> publishedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$ContentManifestsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ContentManifestsTable,
+          ContentManifestRow
+        > {
+  $$ContentManifestsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static MultiTypedResultKey<$LearningPacksTable, List<LearningPackRow>>
+  _learningPacksRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.learningPacks,
+    aliasName: 'content_manifests__id__learning_packs__manifest_id',
+  );
+
+  $$LearningPacksTableProcessedTableManager get learningPacksRefs {
+    final manager = $$LearningPacksTableTableManager(
+      $_db,
+      $_db.learningPacks,
+    ).filter((f) => f.manifestId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_learningPacksRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $ContentDownloadStatesTable,
+    List<ContentDownloadStateRow>
+  >
+  _contentDownloadStatesRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.contentDownloadStates,
+        aliasName:
+            'content_manifests__id__content_download_states__manifest_id',
+      );
+
+  $$ContentDownloadStatesTableProcessedTableManager
+  get contentDownloadStatesRefs {
+    final manager = $$ContentDownloadStatesTableTableManager(
+      $_db,
+      $_db.contentDownloadStates,
+    ).filter((f) => f.manifestId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _contentDownloadStatesRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$ContentManifestsTableFilterComposer
+    extends Composer<_$AppDatabase, $ContentManifestsTable> {
+  $$ContentManifestsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get checksumSha256 => $composableBuilder(
+    column: $table.checksumSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get byteLength => $composableBuilder(
+    column: $table.byteLength,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get provenance => $composableBuilder(
+    column: $table.provenance,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceUri => $composableBuilder(
+    column: $table.sourceUri,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get publicationState => $composableBuilder(
+    column: $table.publicationState,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get reviewedAtUtcMs => $composableBuilder(
+    column: $table.reviewedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get publishedAtUtcMs => $composableBuilder(
+    column: $table.publishedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  Expression<bool> learningPacksRefs(
+    Expression<bool> Function($$LearningPacksTableFilterComposer f) f,
+  ) {
+    final $$LearningPacksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPacks,
+      getReferencedColumn: (t) => t.manifestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPacksTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> contentDownloadStatesRefs(
+    Expression<bool> Function($$ContentDownloadStatesTableFilterComposer f) f,
+  ) {
+    final $$ContentDownloadStatesTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.contentDownloadStates,
+          getReferencedColumn: (t) => t.manifestId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ContentDownloadStatesTableFilterComposer(
+                $db: $db,
+                $table: $db.contentDownloadStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ContentManifestsTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContentManifestsTable> {
+  $$ContentManifestsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentId => $composableBuilder(
+    column: $table.contentId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get checksumSha256 => $composableBuilder(
+    column: $table.checksumSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get byteLength => $composableBuilder(
+    column: $table.byteLength,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get provenance => $composableBuilder(
+    column: $table.provenance,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceUri => $composableBuilder(
+    column: $table.sourceUri,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get publicationState => $composableBuilder(
+    column: $table.publicationState,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get reviewedAtUtcMs => $composableBuilder(
+    column: $table.reviewedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get publishedAtUtcMs => $composableBuilder(
+    column: $table.publishedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+}
+
+class $$ContentManifestsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContentManifestsTable> {
+  $$ContentManifestsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get contentType => $composableBuilder(
+    column: $table.contentType,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get contentId =>
+      $composableBuilder(column: $table.contentId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get checksumSha256 => $composableBuilder(
+    column: $table.checksumSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get byteLength => $composableBuilder(
+    column: $table.byteLength,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get provenance => $composableBuilder(
+    column: $table.provenance,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get sourceUri =>
+      $composableBuilder(column: $table.sourceUri, builder: (column) => column);
+
+  GeneratedColumn<String> get reviewState => $composableBuilder(
+    column: $table.reviewState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get publicationState => $composableBuilder(
+    column: $table.publicationState,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get reviewedAtUtcMs => $composableBuilder(
+    column: $table.reviewedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get publishedAtUtcMs => $composableBuilder(
+    column: $table.publishedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  Expression<T> learningPacksRefs<T extends Object>(
+    Expression<T> Function($$LearningPacksTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPacksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPacks,
+      getReferencedColumn: (t) => t.manifestId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPacksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningPacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> contentDownloadStatesRefs<T extends Object>(
+    Expression<T> Function($$ContentDownloadStatesTableAnnotationComposer a) f,
+  ) {
+    final $$ContentDownloadStatesTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.contentDownloadStates,
+          getReferencedColumn: (t) => t.manifestId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$ContentDownloadStatesTableAnnotationComposer(
+                $db: $db,
+                $table: $db.contentDownloadStates,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$ContentManifestsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContentManifestsTable,
+          ContentManifestRow,
+          $$ContentManifestsTableFilterComposer,
+          $$ContentManifestsTableOrderingComposer,
+          $$ContentManifestsTableAnnotationComposer,
+          $$ContentManifestsTableCreateCompanionBuilder,
+          $$ContentManifestsTableUpdateCompanionBuilder,
+          (ContentManifestRow, $$ContentManifestsTableReferences),
+          ContentManifestRow,
+          PrefetchHooks Function({
+            bool learningPacksRefs,
+            bool contentDownloadStatesRefs,
+          })
+        > {
+  $$ContentManifestsTableTableManager(
+    _$AppDatabase db,
+    $ContentManifestsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContentManifestsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$ContentManifestsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$ContentManifestsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> contentType = const Value.absent(),
+                Value<String> contentId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> checksumSha256 = const Value.absent(),
+                Value<int> byteLength = const Value.absent(),
+                Value<String> provenance = const Value.absent(),
+                Value<String> sourceUri = const Value.absent(),
+                Value<String> reviewState = const Value.absent(),
+                Value<String> publicationState = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int?> reviewedAtUtcMs = const Value.absent(),
+                Value<int?> publishedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentManifestsCompanion(
+                id: id,
+                contentType: contentType,
+                contentId: contentId,
+                revision: revision,
+                checksumSha256: checksumSha256,
+                byteLength: byteLength,
+                provenance: provenance,
+                sourceUri: sourceUri,
+                reviewState: reviewState,
+                publicationState: publicationState,
+                createdAtUtcMs: createdAtUtcMs,
+                reviewedAtUtcMs: reviewedAtUtcMs,
+                publishedAtUtcMs: publishedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String contentType,
+                required String contentId,
+                required int revision,
+                required String checksumSha256,
+                required int byteLength,
+                required String provenance,
+                required String sourceUri,
+                required String reviewState,
+                required String publicationState,
+                required int createdAtUtcMs,
+                Value<int?> reviewedAtUtcMs = const Value.absent(),
+                Value<int?> publishedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentManifestsCompanion.insert(
+                id: id,
+                contentType: contentType,
+                contentId: contentId,
+                revision: revision,
+                checksumSha256: checksumSha256,
+                byteLength: byteLength,
+                provenance: provenance,
+                sourceUri: sourceUri,
+                reviewState: reviewState,
+                publicationState: publicationState,
+                createdAtUtcMs: createdAtUtcMs,
+                reviewedAtUtcMs: reviewedAtUtcMs,
+                publishedAtUtcMs: publishedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContentManifestsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({learningPacksRefs = false, contentDownloadStatesRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (learningPacksRefs) db.learningPacks,
+                    if (contentDownloadStatesRefs) db.contentDownloadStates,
+                  ],
+                  addJoins: null,
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (learningPacksRefs)
+                        await $_getPrefetchedData<
+                          ContentManifestRow,
+                          $ContentManifestsTable,
+                          LearningPackRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ContentManifestsTableReferences
+                              ._learningPacksRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ContentManifestsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPacksRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.manifestId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (contentDownloadStatesRefs)
+                        await $_getPrefetchedData<
+                          ContentManifestRow,
+                          $ContentManifestsTable,
+                          ContentDownloadStateRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$ContentManifestsTableReferences
+                              ._contentDownloadStatesRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$ContentManifestsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).contentDownloadStatesRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.manifestId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$ContentManifestsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContentManifestsTable,
+      ContentManifestRow,
+      $$ContentManifestsTableFilterComposer,
+      $$ContentManifestsTableOrderingComposer,
+      $$ContentManifestsTableAnnotationComposer,
+      $$ContentManifestsTableCreateCompanionBuilder,
+      $$ContentManifestsTableUpdateCompanionBuilder,
+      (ContentManifestRow, $$ContentManifestsTableReferences),
+      ContentManifestRow,
+      PrefetchHooks Function({
+        bool learningPacksRefs,
+        bool contentDownloadStatesRefs,
+      })
+    >;
+typedef $$LearningPacksTableCreateCompanionBuilder =
+    LearningPacksCompanion Function({
+      required String id,
+      required String packId,
+      required int revision,
+      required String manifestId,
+      required String title,
+      required String cefrLevel,
+      required String topic,
+      required String skill,
+      required String goal,
+      required int createdAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$LearningPacksTableUpdateCompanionBuilder =
+    LearningPacksCompanion Function({
+      Value<String> id,
+      Value<String> packId,
+      Value<int> revision,
+      Value<String> manifestId,
+      Value<String> title,
+      Value<String> cefrLevel,
+      Value<String> topic,
+      Value<String> skill,
+      Value<String> goal,
+      Value<int> createdAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$LearningPacksTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $LearningPacksTable, LearningPackRow> {
+  $$LearningPacksTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ContentManifestsTable _manifestIdTable(_$AppDatabase db) => db
+      .contentManifests
+      .createAlias('learning_packs__manifest_id__content_manifests__id');
+
+  $$ContentManifestsTableProcessedTableManager get manifestId {
+    final $_column = $_itemColumn<String>('manifest_id')!;
+
+    final manager = $$ContentManifestsTableTableManager(
+      $_db,
+      $_db.contentManifests,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_manifestIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$LearningPackItemsTable, List<LearningPackItemRow>>
+  _learningPackItemsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.learningPackItems,
+        aliasName: 'learning_packs__id__learning_pack_items__learning_pack_id',
+      );
+
+  $$LearningPackItemsTableProcessedTableManager get learningPackItemsRefs {
+    final manager = $$LearningPackItemsTableTableManager(
+      $_db,
+      $_db.learningPackItems,
+    ).filter((f) => f.learningPackId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _learningPackItemsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LearningPacksTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningPacksTable> {
+  $$LearningPacksTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get packId => $composableBuilder(
+    column: $table.packId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get cefrLevel => $composableBuilder(
+    column: $table.cefrLevel,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get topic => $composableBuilder(
+    column: $table.topic,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get skill => $composableBuilder(
+    column: $table.skill,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ContentManifestsTableFilterComposer get manifestId {
+    final $$ContentManifestsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableFilterComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> learningPackItemsRefs(
+    Expression<bool> Function($$LearningPackItemsTableFilterComposer f) f,
+  ) {
+    final $$LearningPackItemsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningPackItems,
+      getReferencedColumn: (t) => t.learningPackId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPackItemsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPackItems,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LearningPacksTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningPacksTable> {
+  $$LearningPacksTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get packId => $composableBuilder(
+    column: $table.packId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get revision => $composableBuilder(
+    column: $table.revision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get cefrLevel => $composableBuilder(
+    column: $table.cefrLevel,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get topic => $composableBuilder(
+    column: $table.topic,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get skill => $composableBuilder(
+    column: $table.skill,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get goal => $composableBuilder(
+    column: $table.goal,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ContentManifestsTableOrderingComposer get manifestId {
+    final $$ContentManifestsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableOrderingComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPacksTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningPacksTable> {
+  $$LearningPacksTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get packId =>
+      $composableBuilder(column: $table.packId, builder: (column) => column);
+
+  GeneratedColumn<int> get revision =>
+      $composableBuilder(column: $table.revision, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<String> get cefrLevel =>
+      $composableBuilder(column: $table.cefrLevel, builder: (column) => column);
+
+  GeneratedColumn<String> get topic =>
+      $composableBuilder(column: $table.topic, builder: (column) => column);
+
+  GeneratedColumn<String> get skill =>
+      $composableBuilder(column: $table.skill, builder: (column) => column);
+
+  GeneratedColumn<String> get goal =>
+      $composableBuilder(column: $table.goal, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$ContentManifestsTableAnnotationComposer get manifestId {
+    final $$ContentManifestsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> learningPackItemsRefs<T extends Object>(
+    Expression<T> Function($$LearningPackItemsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningPackItemsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.learningPackItems,
+          getReferencedColumn: (t) => t.learningPackId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$LearningPackItemsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.learningPackItems,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+}
+
+class $$LearningPacksTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningPacksTable,
+          LearningPackRow,
+          $$LearningPacksTableFilterComposer,
+          $$LearningPacksTableOrderingComposer,
+          $$LearningPacksTableAnnotationComposer,
+          $$LearningPacksTableCreateCompanionBuilder,
+          $$LearningPacksTableUpdateCompanionBuilder,
+          (LearningPackRow, $$LearningPacksTableReferences),
+          LearningPackRow,
+          PrefetchHooks Function({bool manifestId, bool learningPackItemsRefs})
+        > {
+  $$LearningPacksTableTableManager(_$AppDatabase db, $LearningPacksTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningPacksTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningPacksTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningPacksTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> packId = const Value.absent(),
+                Value<int> revision = const Value.absent(),
+                Value<String> manifestId = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<String> cefrLevel = const Value.absent(),
+                Value<String> topic = const Value.absent(),
+                Value<String> skill = const Value.absent(),
+                Value<String> goal = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPacksCompanion(
+                id: id,
+                packId: packId,
+                revision: revision,
+                manifestId: manifestId,
+                title: title,
+                cefrLevel: cefrLevel,
+                topic: topic,
+                skill: skill,
+                goal: goal,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String packId,
+                required int revision,
+                required String manifestId,
+                required String title,
+                required String cefrLevel,
+                required String topic,
+                required String skill,
+                required String goal,
+                required int createdAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPacksCompanion.insert(
+                id: id,
+                packId: packId,
+                revision: revision,
+                manifestId: manifestId,
+                title: title,
+                cefrLevel: cefrLevel,
+                topic: topic,
+                skill: skill,
+                goal: goal,
+                createdAtUtcMs: createdAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningPacksTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({manifestId = false, learningPackItemsRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (learningPackItemsRefs) db.learningPackItems,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (manifestId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.manifestId,
+                                    referencedTable:
+                                        $$LearningPacksTableReferences
+                                            ._manifestIdTable(db),
+                                    referencedColumn:
+                                        $$LearningPacksTableReferences
+                                            ._manifestIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (learningPackItemsRefs)
+                        await $_getPrefetchedData<
+                          LearningPackRow,
+                          $LearningPacksTable,
+                          LearningPackItemRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningPacksTableReferences
+                              ._learningPackItemsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningPacksTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningPackItemsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.learningPackId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LearningPacksTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningPacksTable,
+      LearningPackRow,
+      $$LearningPacksTableFilterComposer,
+      $$LearningPacksTableOrderingComposer,
+      $$LearningPacksTableAnnotationComposer,
+      $$LearningPacksTableCreateCompanionBuilder,
+      $$LearningPacksTableUpdateCompanionBuilder,
+      (LearningPackRow, $$LearningPacksTableReferences),
+      LearningPackRow,
+      PrefetchHooks Function({bool manifestId, bool learningPackItemsRefs})
+    >;
+typedef $$LearningPackItemsTableCreateCompanionBuilder =
+    LearningPackItemsCompanion Function({
+      required String id,
+      required String learningPackId,
+      required String vocabularyWordId,
+      required int position,
+      Value<int> rowid,
+    });
+typedef $$LearningPackItemsTableUpdateCompanionBuilder =
+    LearningPackItemsCompanion Function({
+      Value<String> id,
+      Value<String> learningPackId,
+      Value<String> vocabularyWordId,
+      Value<int> position,
+      Value<int> rowid,
+    });
+
+final class $$LearningPackItemsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $LearningPackItemsTable,
+          LearningPackItemRow
+        > {
+  $$LearningPackItemsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LearningPacksTable _learningPackIdTable(_$AppDatabase db) => db
+      .learningPacks
+      .createAlias('learning_pack_items__learning_pack_id__learning_packs__id');
+
+  $$LearningPacksTableProcessedTableManager get learningPackId {
+    final $_column = $_itemColumn<String>('learning_pack_id')!;
+
+    final manager = $$LearningPacksTableTableManager(
+      $_db,
+      $_db.learningPacks,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_learningPackIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$LearningPackItemsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningPackItemsTable> {
+  $$LearningPackItemsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get vocabularyWordId => $composableBuilder(
+    column: $table.vocabularyWordId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LearningPacksTableFilterComposer get learningPackId {
+    final $$LearningPacksTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningPackId,
+      referencedTable: $db.learningPacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPacksTableFilterComposer(
+            $db: $db,
+            $table: $db.learningPacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPackItemsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningPackItemsTable> {
+  $$LearningPackItemsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get vocabularyWordId => $composableBuilder(
+    column: $table.vocabularyWordId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get position => $composableBuilder(
+    column: $table.position,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LearningPacksTableOrderingComposer get learningPackId {
+    final $$LearningPacksTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningPackId,
+      referencedTable: $db.learningPacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPacksTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningPacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPackItemsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningPackItemsTable> {
+  $$LearningPackItemsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get vocabularyWordId => $composableBuilder(
+    column: $table.vocabularyWordId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get position =>
+      $composableBuilder(column: $table.position, builder: (column) => column);
+
+  $$LearningPacksTableAnnotationComposer get learningPackId {
+    final $$LearningPacksTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.learningPackId,
+      referencedTable: $db.learningPacks,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningPacksTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningPacks,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningPackItemsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningPackItemsTable,
+          LearningPackItemRow,
+          $$LearningPackItemsTableFilterComposer,
+          $$LearningPackItemsTableOrderingComposer,
+          $$LearningPackItemsTableAnnotationComposer,
+          $$LearningPackItemsTableCreateCompanionBuilder,
+          $$LearningPackItemsTableUpdateCompanionBuilder,
+          (LearningPackItemRow, $$LearningPackItemsTableReferences),
+          LearningPackItemRow,
+          PrefetchHooks Function({bool learningPackId})
+        > {
+  $$LearningPackItemsTableTableManager(
+    _$AppDatabase db,
+    $LearningPackItemsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningPackItemsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningPackItemsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningPackItemsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> learningPackId = const Value.absent(),
+                Value<String> vocabularyWordId = const Value.absent(),
+                Value<int> position = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPackItemsCompanion(
+                id: id,
+                learningPackId: learningPackId,
+                vocabularyWordId: vocabularyWordId,
+                position: position,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String learningPackId,
+                required String vocabularyWordId,
+                required int position,
+                Value<int> rowid = const Value.absent(),
+              }) => LearningPackItemsCompanion.insert(
+                id: id,
+                learningPackId: learningPackId,
+                vocabularyWordId: vocabularyWordId,
+                position: position,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningPackItemsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({learningPackId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (learningPackId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.learningPackId,
+                                referencedTable:
+                                    $$LearningPackItemsTableReferences
+                                        ._learningPackIdTable(db),
+                                referencedColumn:
+                                    $$LearningPackItemsTableReferences
+                                        ._learningPackIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$LearningPackItemsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningPackItemsTable,
+      LearningPackItemRow,
+      $$LearningPackItemsTableFilterComposer,
+      $$LearningPackItemsTableOrderingComposer,
+      $$LearningPackItemsTableAnnotationComposer,
+      $$LearningPackItemsTableCreateCompanionBuilder,
+      $$LearningPackItemsTableUpdateCompanionBuilder,
+      (LearningPackItemRow, $$LearningPackItemsTableReferences),
+      LearningPackItemRow,
+      PrefetchHooks Function({bool learningPackId})
+    >;
+typedef $$ContentDownloadStatesTableCreateCompanionBuilder =
+    ContentDownloadStatesCompanion Function({
+      required String id,
+      required String manifestId,
+      Value<String> state,
+      Value<String?> localPath,
+      Value<int> downloadedBytes,
+      Value<String?> verifiedChecksumSha256,
+      Value<String?> failureCode,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$ContentDownloadStatesTableUpdateCompanionBuilder =
+    ContentDownloadStatesCompanion Function({
+      Value<String> id,
+      Value<String> manifestId,
+      Value<String> state,
+      Value<String?> localPath,
+      Value<int> downloadedBytes,
+      Value<String?> verifiedChecksumSha256,
+      Value<String?> failureCode,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$ContentDownloadStatesTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $ContentDownloadStatesTable,
+          ContentDownloadStateRow
+        > {
+  $$ContentDownloadStatesTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $ContentManifestsTable _manifestIdTable(_$AppDatabase db) =>
+      db.contentManifests.createAlias(
+        'content_download_states__manifest_id__content_manifests__id',
+      );
+
+  $$ContentManifestsTableProcessedTableManager get manifestId {
+    final $_column = $_itemColumn<String>('manifest_id')!;
+
+    final manager = $$ContentManifestsTableTableManager(
+      $_db,
+      $_db.contentManifests,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_manifestIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$ContentDownloadStatesTableFilterComposer
+    extends Composer<_$AppDatabase, $ContentDownloadStatesTable> {
+  $$ContentDownloadStatesTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get verifiedChecksumSha256 => $composableBuilder(
+    column: $table.verifiedChecksumSha256,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$ContentManifestsTableFilterComposer get manifestId {
+    final $$ContentManifestsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableFilterComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentDownloadStatesTableOrderingComposer
+    extends Composer<_$AppDatabase, $ContentDownloadStatesTable> {
+  $$ContentDownloadStatesTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get state => $composableBuilder(
+    column: $table.state,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get localPath => $composableBuilder(
+    column: $table.localPath,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get verifiedChecksumSha256 => $composableBuilder(
+    column: $table.verifiedChecksumSha256,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$ContentManifestsTableOrderingComposer get manifestId {
+    final $$ContentManifestsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableOrderingComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentDownloadStatesTableAnnotationComposer
+    extends Composer<_$AppDatabase, $ContentDownloadStatesTable> {
+  $$ContentDownloadStatesTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get state =>
+      $composableBuilder(column: $table.state, builder: (column) => column);
+
+  GeneratedColumn<String> get localPath =>
+      $composableBuilder(column: $table.localPath, builder: (column) => column);
+
+  GeneratedColumn<int> get downloadedBytes => $composableBuilder(
+    column: $table.downloadedBytes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get verifiedChecksumSha256 => $composableBuilder(
+    column: $table.verifiedChecksumSha256,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get failureCode => $composableBuilder(
+    column: $table.failureCode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$ContentManifestsTableAnnotationComposer get manifestId {
+    final $$ContentManifestsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.manifestId,
+      referencedTable: $db.contentManifests,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$ContentManifestsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.contentManifests,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$ContentDownloadStatesTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $ContentDownloadStatesTable,
+          ContentDownloadStateRow,
+          $$ContentDownloadStatesTableFilterComposer,
+          $$ContentDownloadStatesTableOrderingComposer,
+          $$ContentDownloadStatesTableAnnotationComposer,
+          $$ContentDownloadStatesTableCreateCompanionBuilder,
+          $$ContentDownloadStatesTableUpdateCompanionBuilder,
+          (ContentDownloadStateRow, $$ContentDownloadStatesTableReferences),
+          ContentDownloadStateRow,
+          PrefetchHooks Function({bool manifestId})
+        > {
+  $$ContentDownloadStatesTableTableManager(
+    _$AppDatabase db,
+    $ContentDownloadStatesTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$ContentDownloadStatesTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$ContentDownloadStatesTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$ContentDownloadStatesTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> manifestId = const Value.absent(),
+                Value<String> state = const Value.absent(),
+                Value<String?> localPath = const Value.absent(),
+                Value<int> downloadedBytes = const Value.absent(),
+                Value<String?> verifiedChecksumSha256 = const Value.absent(),
+                Value<String?> failureCode = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => ContentDownloadStatesCompanion(
+                id: id,
+                manifestId: manifestId,
+                state: state,
+                localPath: localPath,
+                downloadedBytes: downloadedBytes,
+                verifiedChecksumSha256: verifiedChecksumSha256,
+                failureCode: failureCode,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String manifestId,
+                Value<String> state = const Value.absent(),
+                Value<String?> localPath = const Value.absent(),
+                Value<int> downloadedBytes = const Value.absent(),
+                Value<String?> verifiedChecksumSha256 = const Value.absent(),
+                Value<String?> failureCode = const Value.absent(),
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => ContentDownloadStatesCompanion.insert(
+                id: id,
+                manifestId: manifestId,
+                state: state,
+                localPath: localPath,
+                downloadedBytes: downloadedBytes,
+                verifiedChecksumSha256: verifiedChecksumSha256,
+                failureCode: failureCode,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$ContentDownloadStatesTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({manifestId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (manifestId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.manifestId,
+                                referencedTable:
+                                    $$ContentDownloadStatesTableReferences
+                                        ._manifestIdTable(db),
+                                referencedColumn:
+                                    $$ContentDownloadStatesTableReferences
+                                        ._manifestIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$ContentDownloadStatesTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $ContentDownloadStatesTable,
+      ContentDownloadStateRow,
+      $$ContentDownloadStatesTableFilterComposer,
+      $$ContentDownloadStatesTableOrderingComposer,
+      $$ContentDownloadStatesTableAnnotationComposer,
+      $$ContentDownloadStatesTableCreateCompanionBuilder,
+      $$ContentDownloadStatesTableUpdateCompanionBuilder,
+      (ContentDownloadStateRow, $$ContentDownloadStatesTableReferences),
+      ContentDownloadStateRow,
+      PrefetchHooks Function({bool manifestId})
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
     AnswerAttemptsCompanion Function({
@@ -40483,6 +45032,14 @@ class $AppDatabaseManager {
       $$VocabularyImportsTableTableManager(_db, _db.vocabularyImports);
   $$VocabularyImportRowsTableTableManager get vocabularyImportRows =>
       $$VocabularyImportRowsTableTableManager(_db, _db.vocabularyImportRows);
+  $$ContentManifestsTableTableManager get contentManifests =>
+      $$ContentManifestsTableTableManager(_db, _db.contentManifests);
+  $$LearningPacksTableTableManager get learningPacks =>
+      $$LearningPacksTableTableManager(_db, _db.learningPacks);
+  $$LearningPackItemsTableTableManager get learningPackItems =>
+      $$LearningPackItemsTableTableManager(_db, _db.learningPackItems);
+  $$ContentDownloadStatesTableTableManager get contentDownloadStates =>
+      $$ContentDownloadStatesTableTableManager(_db, _db.contentDownloadStates);
   $$AnswerAttemptsTableTableManager get answerAttempts =>
       $$AnswerAttemptsTableTableManager(_db, _db.answerAttempts);
   $$SrsStatesTableTableManager get srsStates =>
