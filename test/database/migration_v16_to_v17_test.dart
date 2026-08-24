@@ -15,14 +15,16 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 18);
-      expect(currentDatabaseTableInventory, hasLength(40));
+      expect(AppDatabase.currentSchemaVersion, 19);
+      expect(currentDatabaseTableInventory, hasLength(42));
       expect(
         currentDatabaseTableInventory.difference(schemaSixteenInventory),
         const {
           'saved_learning_items',
           'content_quality_reports',
           'learning_time_segments',
+          'learning_goals',
+          'study_reminders',
         },
       );
       await expectCurrentDatabaseContract(database);

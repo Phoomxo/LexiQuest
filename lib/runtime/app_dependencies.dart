@@ -8,6 +8,7 @@ import '../features/assessment/application/assessment_use_cases.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/device_model/application/device_model_use_cases.dart';
 import '../features/export/application/export_use_cases.dart';
+import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
@@ -85,6 +86,7 @@ final class AppDependencies {
     this.learningReconciliation,
     this.contentManifests,
     this.studyPlanning,
+    this.learningGoals,
     this.progress,
     this.rewards,
     this.learnerIntents,
@@ -138,6 +140,7 @@ final class AppDependencies {
   final LearningReconciliationScheduler? learningReconciliation;
   final ContentManifestRepository? contentManifests;
   final StudyPlanningUseCases? studyPlanning;
+  final LearningGoalUseCases? learningGoals;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final LearnerIntentRepository? learnerIntents;

@@ -59,6 +59,7 @@ void main() {
           SyncCollection.savedLearningItems: <int>{1},
           SyncCollection.contentQualityReports: <int>{1},
           SyncCollection.learningTimeSegments: <int>{1},
+          SyncCollection.learningGoals: <int>{1},
         };
 
         expect(expected.keys.toSet(), SyncCollection.values.toSet());
@@ -102,6 +103,52 @@ void main() {
         );
       },
     );
+
+    test('learning goal v1 is exact and rollout defaults off', () {
+      final payload = <String, Object?>{
+        'goalId': 'goal:ielts',
+        'kind': 'languageTest',
+        'title': 'IELTS practice target',
+        'deadlineAtUtcMs': DateTime.utc(2026, 9, 1, 5).millisecondsSinceEpoch,
+        'timezoneId': 'Asia/Bangkok',
+        'timezoneOffsetMinutes': 420,
+        'status': 'active',
+        'createdAtUtcMs': DateTime.utc(2026, 8, 25).millisecondsSinceEpoch,
+        'updatedAtUtcMs': DateTime.utc(2026, 8, 25).millisecondsSinceEpoch,
+        'isDeleted': false,
+      };
+      LearningGoalSyncPayloadContract.requireCanonical(
+        payload: payload,
+        isDeleted: false,
+        clientUpdatedAtUtcMs: payload['updatedAtUtcMs']! as int,
+        expectedEntityId: 'goal:ielts',
+      );
+      expect(const LearningGoalSyncRollout.off().allowsClaims, isFalse);
+      expect(
+        const LearningGoalSyncRollout.v1(
+          deployedRulesRevision: learningGoalV1RulesRevision,
+        ).allowsClaims,
+        isTrue,
+      );
+      for (final invalid in <Map<String, Object?>>[
+        {...payload, 'admissionScore': 80},
+        {...payload, 'kind': 'tcas'},
+        {...payload, 'title': ' IELTS practice target'},
+        {...payload, 'title': 'IELTS\u0085practice target'},
+        {...payload, 'timezoneOffsetMinutes': 0},
+        {...payload, 'updatedAtUtcMs': 1},
+      ]) {
+        expect(
+          () => LearningGoalSyncPayloadContract.requireCanonical(
+            payload: invalid,
+            isDeleted: false,
+            clientUpdatedAtUtcMs: payload['updatedAtUtcMs']! as int,
+            expectedEntityId: 'goal:ielts',
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      }
+    });
 
     test(
       'attempts and words accept v1/v2 while legacy collections reject v2',

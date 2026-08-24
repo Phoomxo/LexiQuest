@@ -13,7 +13,10 @@ typedef ContentQualityReportPushAuthorizer =
     Future<bool> Function(PushMutation mutation);
 
 final class FirestoreSyncGateway
-    implements SyncGateway, LearningTimeSegmentSyncRolloutGateway {
+    implements
+        SyncGateway,
+        LearningTimeSegmentSyncRolloutGateway,
+        LearningGoalSyncRolloutGateway {
   factory FirestoreSyncGateway({
     required FirebaseFirestore firestore,
     required FirebaseAuth auth,
@@ -24,6 +27,8 @@ final class FirestoreSyncGateway
         const ContentQualityReportSyncRollout.off(),
     LearningTimeSegmentSyncRollout learningTimeSegmentRollout =
         const LearningTimeSegmentSyncRollout.off(),
+    LearningGoalSyncRollout learningGoalRollout =
+        const LearningGoalSyncRollout.off(),
     ContentQualityReportPushAuthorizer contentQualityReportPushAuthorizer =
         _denyContentQualityReportPush,
   }) => FirestoreSyncGateway._(
@@ -34,6 +39,7 @@ final class FirestoreSyncGateway
     savedLearningItemRollout,
     contentQualityReportRollout,
     learningTimeSegmentRollout,
+    learningGoalRollout,
     contentQualityReportPushAuthorizer,
   );
 
@@ -45,6 +51,7 @@ final class FirestoreSyncGateway
     this._savedLearningItemRollout,
     this._contentQualityReportRollout,
     this._learningTimeSegmentRollout,
+    this._learningGoalRollout,
     this._contentQualityReportPushAuthorizer,
   );
 
@@ -55,11 +62,15 @@ final class FirestoreSyncGateway
   final SavedLearningItemSyncRollout _savedLearningItemRollout;
   final ContentQualityReportSyncRollout _contentQualityReportRollout;
   final LearningTimeSegmentSyncRollout _learningTimeSegmentRollout;
+  final LearningGoalSyncRollout _learningGoalRollout;
   final ContentQualityReportPushAuthorizer _contentQualityReportPushAuthorizer;
 
   @override
   LearningTimeSegmentSyncRollout get learningTimeSegmentSyncRollout =>
       _learningTimeSegmentRollout;
+
+  @override
+  LearningGoalSyncRollout get learningGoalSyncRollout => _learningGoalRollout;
 
   @override
   Future<PushResult> push(PushMutation mutation) async {
@@ -76,6 +87,10 @@ final class FirestoreSyncGateway
     }
     if (mutation.collection == SyncCollection.learningTimeSegments &&
         !_learningTimeSegmentRollout.allowsClaims) {
+      throw const PermissionDeniedSyncFailure();
+    }
+    if (mutation.collection == SyncCollection.learningGoals &&
+        !_learningGoalRollout.allowsClaims) {
       throw const PermissionDeniedSyncFailure();
     }
 
@@ -191,6 +206,10 @@ final class FirestoreSyncGateway
     }
     if (collection == SyncCollection.learningTimeSegments &&
         !_learningTimeSegmentRollout.allowsClaims) {
+      return PullPage(changes: const [], nextCursor: after, hasMore: false);
+    }
+    if (collection == SyncCollection.learningGoals &&
+        !_learningGoalRollout.allowsClaims) {
       return PullPage(changes: const [], nextCursor: after, hasMore: false);
     }
 
@@ -387,6 +406,20 @@ final class FirestoreSyncPreflight {
         clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
         expectedEntityId: entityId,
       );
+    } else if (collection == SyncCollection.learningGoals) {
+      final goalPayload = payload;
+      if (goalPayload == null ||
+          entityId == null ||
+          isDeleted == null ||
+          clientUpdatedAtUtcMs == null) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearningGoalSyncPayloadContract.requireCanonical(
+        payload: goalPayload,
+        isDeleted: isDeleted,
+        clientUpdatedAtUtcMs: clientUpdatedAtUtcMs,
+        expectedEntityId: entityId,
+      );
     }
     return beginTransaction();
   }
@@ -526,6 +559,14 @@ final class FirestoreSyncCodec {
         if (revision != 1 || deleted) {
           throw const InvalidSyncPayloadFailure();
         }
+      } else if (collection == SyncCollection.learningGoals) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        LearningGoalSyncPayloadContract.requireCanonical(
+          payload: canonicalPayload,
+          isDeleted: _requiredBool(data, 'isDeleted'),
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+          expectedEntityId: entityId,
+        );
       }
       return SyncEntity(
         collection: collection,
@@ -555,7 +596,8 @@ final class FirestoreSyncCodec {
         expectedMutation.collection == SyncCollection.assessmentRuns ||
         expectedMutation.collection == SyncCollection.savedLearningItems ||
         expectedMutation.collection == SyncCollection.contentQualityReports ||
-        expectedMutation.collection == SyncCollection.learningTimeSegments) {
+        expectedMutation.collection == SyncCollection.learningTimeSegments ||
+        expectedMutation.collection == SyncCollection.learningGoals) {
       _requireExactKeys(data, _operationEnvelopeKeys);
     }
     if (_requiredInt(data, 'schemaVersion') !=
@@ -678,6 +720,19 @@ final class FirestoreSyncCodec {
           )) {
         throw const InvalidSyncPayloadFailure();
       }
+      return;
+    }
+    if (mutation.collection == SyncCollection.learningGoals) {
+      if (mutation.payloadVersion != 1) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearningGoalSyncPayloadContract.requireCanonical(
+        payload: mutation.payload,
+        isDeleted: mutation.operationKind == SyncOperationKind.delete,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+        expectedEntityId: mutation.entityId,
+      );
       return;
     }
     if (mutation.collection != SyncCollection.experimentAssignments) return;

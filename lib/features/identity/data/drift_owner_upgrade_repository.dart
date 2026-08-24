@@ -2575,6 +2575,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       ),
     );
     await (_database.update(
+      _database.learningGoals,
+    )..where((row) => row.ownerId.equals(ownerId))).write(
+      const db.LearningGoalsCompanion(
+        cloudRevision: Value(0),
+        lastAcknowledgedAtUtcMs: Value(null),
+        serverUpdatedAtUtcMs: Value(null),
+      ),
+    );
+    await (_database.update(
       _database.syncCheckpoints,
     )..where((row) => row.ownerId.equals(ownerId))).write(
       const db.SyncCheckpointsCompanion(
@@ -2622,6 +2631,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       _RehomeSpecification(
         table: 'learning_time_segments',
         entityType: 'learningTimeSegment',
+      ),
+      _RehomeSpecification(
+        table: 'learning_goals',
+        entityType: 'learningGoal',
+        hasSoftDelete: true,
       ),
     ]) {
       final rows = await _database

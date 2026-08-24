@@ -277,6 +277,49 @@ service cloud.firestore {
         && !request.resource.data.isDeleted;
     }
 
+    function fieldLearningGoalPayloadOk(goalId) {
+      let payload = request.resource.data.payload;
+      return payload.keys().hasOnly([
+          'goalId', 'kind', 'title', 'deadlineAtUtcMs', 'timezoneId',
+          'timezoneOffsetMinutes', 'status', 'createdAtUtcMs',
+          'updatedAtUtcMs', 'isDeleted'
+        ])
+        && payload.keys().size() == 10
+        && payload.goalId == goalId
+        && payload.goalId is string
+        && payload.goalId.size() > 0
+        && payload.goalId.size() <= 256
+        && payload.goalId.matches('^\\S(.*\\S)?$')
+        && !payload.goalId.matches('.*[\\x00-\\x1f\\x7f-\\x9f].*')
+        && payload.kind in ['languageTest', 'course', 'personal']
+        && payload.title is string
+        && payload.title.size() > 0
+        && payload.title.size() <= 120
+        && payload.title.matches('^\\S([^\\r\\n]*\\S)?$')
+        && !payload.title.matches('.*[\\x00-\\x1f\\x7f-\\x9f].*')
+        && payload.deadlineAtUtcMs is int
+        && payload.deadlineAtUtcMs >= 0
+        && payload.timezoneId is string
+        && payload.timezoneId.matches('^(UTC|[A-Za-z][A-Za-z0-9._+\\-]{0,63}/[A-Za-z][A-Za-z0-9._+\\-]{0,63}(/[A-Za-z][A-Za-z0-9._+\\-]{0,63})?)$')
+        && payload.timezoneOffsetMinutes is int
+        && payload.timezoneOffsetMinutes >= -840
+        && payload.timezoneOffsetMinutes <= 840
+        && payload.status in ['active', 'completed', 'cancelled']
+        && payload.createdAtUtcMs is int
+        && payload.createdAtUtcMs >= 0
+        && payload.updatedAtUtcMs is int
+        && payload.updatedAtUtcMs >= payload.createdAtUtcMs
+        && payload.updatedAtUtcMs
+             == request.resource.data.clientUpdatedAtUtcMs
+        && payload.isDeleted is bool
+        && payload.isDeleted == request.resource.data.isDeleted;
+    }
+
+    function fieldLearningGoalCreatedAtStable() {
+      return request.resource.data.payload.createdAtUtcMs
+        == resource.data.payload.createdAtUtcMs;
+    }
+
     function fieldWordCategoryExists(uid) {
       return existsAfter(
         /databases/$(database)/documents/field_users/$(uid)/categories/$(request.resource.data.payload.categoryId)
@@ -703,7 +746,7 @@ service cloud.firestore {
         && payload.formChecksumSha256.matches('^[0-9a-f]{64}$')
         && fieldResearchIdentifierOk(payload.appVersion)
         && fieldResearchIdentifierOk(payload.buildId)
-        && payload.databaseSchemaVersion in [15, 16, 17, 18]
+        && payload.databaseSchemaVersion in [15, 16, 17, 18, 19]
         && fieldResearchIdentifierOk(payload.contentRevision)
         && payload.evidencePolicyVersion == 'learning-evidence-v1'
         && payload.featureContractRevision == '1.0.0'
@@ -831,7 +874,8 @@ service cloud.firestore {
              'category', 'word', 'attempt', 'readingEvent',
              'rewardTransaction', 'srsState', 'achievementUnlock',
              'experimentAssignment', 'assessmentRun', 'savedLearningItem',
-             'contentQualityReport', 'learningTimeSegment'
+             'contentQualityReport', 'learningTimeSegment',
+             'learningGoal'
            ]
         && request.resource.data.entityId is string
         && request.resource.data.entityId.size() > 0
@@ -933,6 +977,21 @@ service cloud.firestore {
         && entity.schemaVersion == 1
         && entity.revision == 1
         && !entity.isDeleted;
+    }
+
+    function fieldOperationMatchesLearningGoal(uid) {
+      let entityId = request.resource.data.entityId;
+      let beforePath =
+        /databases/$(database)/documents/field_users/$(uid)/learning_goals/$(entityId);
+      let entity = getAfter(beforePath).data;
+      return ((!exists(beforePath)
+               && request.resource.data.baseRevision == 0)
+              || (exists(beforePath)
+                  && get(beforePath).data.revision
+                     == request.resource.data.baseRevision))
+        && entity.entityId == entityId
+        && entity.lastOperationId == request.resource.data.operationId
+        && entity.revision == request.resource.data.resultingRevision;
     }
 
     function fieldOperationMatchesAttempt(uid) {
@@ -1088,6 +1147,8 @@ service cloud.firestore {
                   ? fieldOperationMatchesContentQualityReport(uid)
                   : entityType == 'learningTimeSegment'
                     ? fieldOperationMatchesLearningTimeSegment(uid)
+                    : entityType == 'learningGoal'
+                      ? fieldOperationMatchesLearningGoal(uid)
                   : entityType == 'attempt'
                     ? fieldOperationMatchesAttempt(uid)
                     : entityType == 'readingEvent'
@@ -1355,6 +1416,20 @@ service cloud.firestore {
                segmentId
              );
         allow update, delete: if false;
+      }
+
+      match /learning_goals/{goalId} {
+        allow read: if ownsFieldUser(uid);
+        allow create: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(goalId)
+          && fieldLearningGoalPayloadOk(goalId)
+          && fieldOperationLinksEntity(uid, 'learningGoal', goalId);
+        allow update: if ownsFieldUser(uid)
+          && fieldEntityEnvelopeOk(goalId)
+          && fieldLearningGoalPayloadOk(goalId)
+          && fieldLearningGoalCreatedAtStable()
+          && fieldOperationLinksEntity(uid, 'learningGoal', goalId);
+        allow delete: if false;
       }
 
       // ── P2.6: Quest, streak, events, speech evidence sync rules ───────

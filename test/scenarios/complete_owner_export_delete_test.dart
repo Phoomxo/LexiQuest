@@ -24,7 +24,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v18 lifecycle classifies owner and non-owner tables exactly once',
+    'current v19 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -45,7 +45,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(40),
+        hasLength(42),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -57,7 +57,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(30),
+        hasLength(32),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -260,6 +260,37 @@ void main() {
         'timezoneOffsetMinutes',
         'captureSource',
       });
+      final learningGoals = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'learning_goals',
+      );
+      expect(learningGoals.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        learningGoals.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(learningGoals.allowedExportFields.toSet(), {
+        'recordCount',
+        'kind',
+        'title',
+        'deadlineAtUtc',
+        'timezoneId',
+        'timezoneOffsetMinutes',
+        'status',
+        'createdAtUtc',
+        'updatedAtUtc',
+      });
+      final studyReminders = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'study_reminders',
+      );
+      expect(studyReminders.authority, OwnerLifecycleAuthority.directOwner);
+      expect(
+        studyReminders.deletionDisposition,
+        OwnerLifecycleDeletionDisposition.deleteDirect,
+      );
+      expect(
+        ownerLifecyclePhysicalDeletionOrder.indexOf('study_reminders'),
+        lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('learning_goals')),
+      );
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
       );
@@ -641,7 +672,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(40));
+      expect(archiveTables, hasLength(42));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -677,6 +708,7 @@ void main() {
         'savedLearningItems',
         'contentQualityReports',
         'learningTimeSegments',
+        'learningGoals',
       ]) {
         final descriptor = ownerLifecycleManifest.singleWhere(
           (entry) => entry.alias == alias,
@@ -706,6 +738,24 @@ void main() {
               .single;
       expect(learningTimeRecord['timezoneId'], 'Asia/Bangkok');
       expect(learningTimeRecord['timezoneOffsetMinutes'], 420);
+      final learningGoalArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'learningGoals');
+      final learningGoalRecord =
+          (learningGoalArchive['records'] as List<dynamic>)
+              .cast<Map<String, dynamic>>()
+              .where((record) => !record.containsKey('recordCount'))
+              .single;
+      expect(learningGoalRecord['kind'], 'languageTest');
+      expect(learningGoalRecord['title'], 'IELTS practice target');
+      expect(learningGoalRecord['timezoneId'], 'Asia/Bangkok');
+      expect(learningGoalRecord['timezoneOffsetMinutes'], 420);
+      final reminderArchive = archiveTables
+          .cast<Map<String, dynamic>>()
+          .singleWhere((entry) => entry['alias'] == 'studyReminders');
+      expect(reminderArchive['records'], [
+        {'recordCount': 1},
+      ]);
       final assignmentArchive = archiveTables
           .cast<Map<String, dynamic>>()
           .singleWhere((entry) => entry['alias'] == 'experimentAssignments');
@@ -925,11 +975,11 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 33);
+      expect(deleted, 35);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v18 retains exactly one row for every direct-owner lifecycle entry,
+      // v19 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 33);
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 35);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);
@@ -1067,6 +1117,21 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     'timezone_offset_minutes, capture_source) VALUES '
     "('a:time-segment', 'owner-a', 'a:session', 0, 7000, 9000, 8000, "
     "'Asia/Bangkok', 420, 'automaticLesson')",
+  );
+  await database.customInsert(
+    'INSERT INTO learning_goals '
+    '(id, owner_id, kind, title, deadline_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, status, created_at_utc_ms, updated_at_utc_ms) '
+    "VALUES ('a:goal', 'owner-a', 'languageTest', 'IELTS practice target', "
+    "1788238800000, 'Asia/Bangkok', 420, 'active', 20, 20)",
+  );
+  await database.customInsert(
+    'INSERT INTO study_reminders '
+    '(id, owner_id, goal_id, source_kind, scheduled_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, is_enabled, created_at_utc_ms, '
+    'updated_at_utc_ms) '
+    "VALUES ('a:reminder', 'owner-a', 'a:goal', 'goalDeadline', "
+    "1788152400000, 'Asia/Bangkok', 420, 0, 20, 20)",
   );
   await database.customInsert(
     'INSERT INTO assessment_runs '

@@ -326,6 +326,33 @@ must not open a v18 database.
 
 ---
 
+### v19 — Language Learning Goals and Reminder Reservation
+**Reserved:** 2026-08-25
+**Implemented:** 2026-08-25
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Added owner-scoped `learning_goals` as the typed language-test, course, and
+personal-learning deadline authority. Each goal pins UTC deadline occurrence,
+IANA timezone context and historical offset separately, and carries a bounded
+status plus local/cloud revisions for idempotent local-first updates. The
+contract contains no admission, TCAS, university, faculty, score, or
+application fields.
+
+Added owner-scoped `study_reminders` only as the f27 schema/lifecycle
+reservation. f26 adds no notification permission, scheduler, reminder writer,
+or production reminder entry. Goal sync payload v1 remains disabled until its
+exact Firestore rules revision is separately deployed.
+
+The two tables raise the named inventory from 40 to 42. Both participate in
+owner upgrade, export and explicit deletion.
+
+**Migration safety:** v18→v19 creates two empty tables and preserves all 40 v18
+tables and rows. Rollback is forward-only: disabling the child goal surface or
+goal sync does not erase stored goals, and older binaries must not open v19.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -346,6 +373,7 @@ must not open a v18 database.
 | 2026-08-24 | Implemented v16 versioned content manifests, learning packs, device-local download state, and versioned learner vocabulary metadata. | LexiQuest integration |
 | 2026-08-24 | Reserved and implemented v17 saved learning intent plus the f21 content-report lifecycle table. | LexiQuest integration |
 | 2026-08-24 | Reserved and implemented v18 trustworthy active learning-time segments with monotonic duration. | LexiQuest integration |
+| 2026-08-25 | Reserved and implemented v19 language-learning goals plus the f27 reminder lifecycle table. | LexiQuest integration |
 
 ---
 

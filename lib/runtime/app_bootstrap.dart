@@ -44,6 +44,8 @@ import '../features/export/application/owner_lifecycle_archive.dart';
 import '../features/export/data/drift_export_reader.dart';
 import '../features/export/data/file_selector_export_store.dart';
 import '../features/export/domain/export_contracts.dart';
+import '../features/goals/application/learning_goal_use_cases.dart';
+import '../features/goals/data/drift_learning_goal_repository.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
@@ -327,6 +329,7 @@ final class AppBootstrap {
     this.focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
+    this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
        cameraGatewayFactory = cameraGatewayFactory ?? _productionCameraGateway,
        speechRecognitionGatewayFactory =
@@ -353,6 +356,8 @@ final class AppBootstrap {
   factory AppBootstrap.production({
     LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
+    LearningGoalSyncRollout learningGoalSyncRollout =
+        const LearningGoalSyncRollout.off(),
   }) {
     return AppBootstrap(
       initializeFirebase: _initializeFirebaseProduction,
@@ -367,11 +372,13 @@ final class AppBootstrap {
         firestore: FirebaseFirestore.instance,
         auth: FirebaseAuth.instance,
         learningTimeSegmentRollout: learningTimeSegmentSyncRollout,
+        learningGoalRollout: learningGoalSyncRollout,
       ),
       accountGatewayFactory: () =>
           FirebaseAccountGateway(FirebaseAuth.instance),
       cloudSyncEnabled: productionCloudSyncEnabledByDefault,
       learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
+      learningGoalSyncRollout: learningGoalSyncRollout,
     );
   }
 
@@ -397,6 +404,7 @@ final class AppBootstrap {
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
   final FocusTimerRollout focusTimerRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
+  final LearningGoalSyncRollout learningGoalSyncRollout;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ExportArtifactStoreFactory exportStoreFactory;
   final CameraGatewayFactory cameraGatewayFactory;
@@ -588,6 +596,22 @@ final class AppBootstrap {
           );
         }
       }
+      if (learningGoalSyncRollout.enabled) {
+        if (gateway is! LearningGoalSyncRolloutGateway) {
+          throw StateError(
+            'Learning-goal sync rollout must be shared by store and gateway.',
+          );
+        }
+        final rolloutGateway = gateway as LearningGoalSyncRolloutGateway;
+        if (!identical(
+          rolloutGateway.learningGoalSyncRollout,
+          learningGoalSyncRollout,
+        )) {
+          throw StateError(
+            'Learning-goal sync rollout must be shared by store and gateway.',
+          );
+        }
+      }
       final policy = CloudSyncPolicyProvider(
         buildEnabled: cloudSyncEnabled,
         cache: DriftCloudPolicyCache(database),
@@ -603,6 +627,7 @@ final class AppBootstrap {
           payloadRollout: researchRuntimeConfig.syncPayloadRollout,
           consentRegistry: consentRegistry,
           learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
+          learningGoalSyncRollout: learningGoalSyncRollout,
         ),
         gateway: gateway,
         policyProvider: policy.call,
@@ -611,9 +636,12 @@ final class AppBootstrap {
         backoff: const SyncBackoff(),
         nowUtc: () => DateTime.now().toUtc(),
         generateLeaseToken: idGenerator.v4,
-        optionalPullCollections: learningTimeSegmentSyncRollout.allowsClaims
-            ? const <SyncCollection>{SyncCollection.learningTimeSegments}
-            : const <SyncCollection>{},
+        optionalPullCollections: <SyncCollection>{
+          if (learningTimeSegmentSyncRollout.allowsClaims)
+            SyncCollection.learningTimeSegments,
+          if (learningGoalSyncRollout.allowsClaims)
+            SyncCollection.learningGoals,
+        },
       );
       syncTrigger = SyncTrigger(syncEngine.run);
       resources.own(syncTrigger.dispose);
@@ -697,6 +725,15 @@ final class AppBootstrap {
         contentManifests: contentManifests,
       ),
       progress: progress,
+    );
+    final learningGoals = LearningGoalUseCases(
+      repository: DriftLearningGoalRepository(
+        database,
+        owners: localOwners,
+        onLocalMutation: () async => notifyLocalMutation(),
+      ),
+      nowUtc: () => DateTime.now().toUtc(),
+      generateId: () => 'goal:${idGenerator.v4()}',
     );
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
@@ -1111,6 +1148,7 @@ final class AppBootstrap {
       learningReconciliation: learningReconciliation,
       contentManifests: contentManifests,
       studyPlanning: studyPlanning,
+      learningGoals: learningGoals,
       progress: progress,
       rewards: rewards,
       learnerIntents: learnerIntents,

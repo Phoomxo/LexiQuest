@@ -2,9 +2,14 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/goals/data/drift_learning_goal_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/goals/application/learning_goal_use_cases.dart';
+import 'package:vocab_learning_app/features/goals/domain/learning_goal.dart';
+import 'package:vocab_learning_app/features/goals/domain/learning_goal_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
@@ -17,6 +22,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/learning_pack_catalog_screen.dart';
+import 'package:vocab_learning_app/screens/learning_goals_screen.dart';
 import 'package:vocab_learning_app/screens/main_navigation_screen.dart';
 import 'package:vocab_learning_app/screens/study_planning_hub_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -80,6 +86,30 @@ void main() {
     expect(find.byType(LearningPackCatalogScreen), findsOneWidget);
   });
 
+  testWidgets('the hub opens goals as a child without another main entry', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(database),
+        child: const MaterialApp(home: StudyPlanningHubScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('home/study-planning')),
+      findsNothing,
+    );
+    await tester.tap(
+      find.byKey(const ValueKey<String>('study-planning/open-goals')),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byType(LearningGoalsScreen), findsOneWidget);
+  });
+
   testWidgets('an open catalog child follows the live parent kill switch', (
     tester,
   ) async {
@@ -132,6 +162,133 @@ void main() {
     expect(find.byType(LearningPackCatalogScreen), findsNothing);
     expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
   });
+
+  testWidgets('emergency-off fences an already-open create overlay', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final registry = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    addTearDown(registry.dispose);
+    var saveAttempts = 0;
+    final goals = await _realGoalUseCases(
+      database,
+      onSaveAttempt: () => saveAttempts += 1,
+    );
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(
+          database,
+          features: registry,
+          learningGoals: goals,
+        ),
+        child: MaterialApp(
+          home: MainNavigationScreen(featureRegistry: registry),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home/study-planning')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('study-planning/open-goals')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('learning-goals/add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-goals/title')),
+      'IELTS practice target',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-goals/deadline')),
+      '2026-09-01T05:00:00Z',
+    );
+    await tester.enterText(
+      find.byKey(const ValueKey('learning-goals/timezone')),
+      'Asia/Bangkok',
+    );
+    final staleSubmit = tester
+        .widget<FilledButton>(
+          find.byKey(const ValueKey('learning-goals/create')),
+        )
+        .onPressed!;
+
+    registry.emergencyOff(Feature.studyPlanning);
+    staleSubmit();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+    expect(saveAttempts, 0);
+    expect(await database.select(database.learningGoals).get(), isEmpty);
+    expect(
+      (await database.select(database.outboxOperations).get()).where(
+        (row) => row.entityType == 'learningGoal',
+      ),
+      isEmpty,
+    );
+  });
+
+  testWidgets('emergency-off fences an already-open status overlay', (
+    tester,
+  ) async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    final registry = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    addTearDown(registry.dispose);
+    final goals = await _realGoalUseCases(database);
+    final goal = await goals.create(
+      kind: LearningGoalKind.languageTest,
+      title: 'IELTS practice target',
+      deadlineAtUtc: DateTime.utc(2026, 9, 1, 5),
+      timezone: const LearningGoalTimezoneContext(
+        timezoneId: 'Asia/Bangkok',
+        utcOffsetMinutes: 420,
+      ),
+    );
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _dependencies(
+          database,
+          features: registry,
+          learningGoals: goals,
+        ),
+        child: MaterialApp(
+          home: MainNavigationScreen(featureRegistry: registry),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('home/study-planning')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('study-planning/open-goals')));
+    await tester.pumpAndSettle();
+    final statusFinder = find.byKey(
+      ValueKey('learning-goal/${goal.id}/status'),
+    );
+    final staleSelection = tester
+        .widget<PopupMenuButton<LearningGoalStatus>>(statusFinder)
+        .onSelected!;
+    await tester.tap(statusFinder);
+    await tester.pumpAndSettle();
+
+    registry.emergencyOff(Feature.studyPlanning);
+    staleSelection(LearningGoalStatus.completed);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+    final row = await database.select(database.learningGoals).getSingle();
+    expect(row.status, 'active');
+    expect(row.localRevision, 1);
+    expect(
+      (await database.select(database.outboxOperations).get()).where(
+        (candidate) => candidate.entityType == 'learningGoal',
+      ),
+      hasLength(1),
+    );
+  });
 }
 
 Widget _catalogChild(BuildContext context) => const LearningPackCatalogScreen();
@@ -139,6 +296,7 @@ Widget _catalogChild(BuildContext context) => const LearningPackCatalogScreen();
 AppDependencies _dependencies(
   AppDatabase database, {
   FeatureRegistry features = const BuildFeatureRegistry.allEnabled(),
+  LearningGoalUseCases? learningGoals,
 }) {
   final research = InertResearchDependencies(database);
   final owner = _Owner();
@@ -168,7 +326,67 @@ AppDependencies _dependencies(
         nowUtc: () => DateTime.utc(2026, 8, 24),
       ),
     ),
+    learningGoals:
+        learningGoals ??
+        LearningGoalUseCases(
+          repository: _Goals(),
+          nowUtc: () => DateTime.utc(2026, 8, 25),
+          generateId: () => 'goal:test',
+        ),
   );
+}
+
+Future<LearningGoalUseCases> _realGoalUseCases(
+  AppDatabase database, {
+  void Function()? onSaveAttempt,
+}) async {
+  final owners = DriftLocalOwnerRepository(
+    database,
+    generateId: () => 'owner:study-planning-real',
+    nowUtc: () => DateTime.utc(2026, 8, 25),
+  );
+  await owners.getOrCreateActiveOwner();
+  final durableRepository = DriftLearningGoalRepository(
+    database,
+    owners: owners,
+  );
+  return LearningGoalUseCases(
+    repository: onSaveAttempt == null
+        ? durableRepository
+        : _ObservedGoals(durableRepository, onSaveAttempt),
+    nowUtc: () => DateTime.utc(2026, 8, 25, 12),
+    generateId: () => 'goal:real',
+  );
+}
+
+final class _ObservedGoals implements LearningGoalRepository {
+  const _ObservedGoals(this.delegate, this.onSaveAttempt);
+
+  final LearningGoalRepository delegate;
+  final void Function() onSaveAttempt;
+
+  @override
+  Future<List<LearningGoal>> list() => delegate.list();
+
+  @override
+  Future<void> save(
+    LearningGoal goal, {
+    LearningGoalMutationGuard? mutationAllowed,
+  }) {
+    onSaveAttempt();
+    return delegate.save(goal, mutationAllowed: mutationAllowed);
+  }
+}
+
+final class _Goals implements LearningGoalRepository {
+  @override
+  Future<List<LearningGoal>> list() async => const [];
+
+  @override
+  Future<void> save(
+    LearningGoal goal, {
+    LearningGoalMutationGuard? mutationAllowed,
+  }) async {}
 }
 
 final class _Packs implements LearningPackRepository {

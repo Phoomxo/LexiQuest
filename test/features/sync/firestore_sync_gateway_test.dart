@@ -124,6 +124,7 @@ void main() {
         SyncCollection.savedLearningItems,
         SyncCollection.contentQualityReports,
         SyncCollection.learningTimeSegments,
+        SyncCollection.learningGoals,
       };
       expect(SyncCollection.values.toSet(), expectedCollections);
 
@@ -136,6 +137,7 @@ void main() {
           SyncCollection.contentQualityReports =>
             _contentQualityReportCloudEntityId(),
           SyncCollection.learningTimeSegments => _learningTimeSegmentId(),
+          SyncCollection.learningGoals => 'goal:generic',
           _ => '${collection.entityType}-v1',
         };
         final payload = switch (collection) {
@@ -159,6 +161,10 @@ void main() {
           ),
           SyncCollection.learningTimeSegments => _learningTimeSegmentPayload(
             endedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+          ),
+          SyncCollection.learningGoals => _learningGoalPayload(
+            goalId: entityId,
+            updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
           _ => <String, Object?>{'collection': collection.wireName},
         };
@@ -469,6 +475,7 @@ void main() {
       final activePayload = _assessmentRunPayload(
         assignmentId: assignmentId,
         startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
+        databaseSchemaVersion: 19,
       );
       final active = _assessmentRunMutation(
         payload: activePayload,
@@ -498,6 +505,7 @@ void main() {
         state: AssessmentRunState.completed,
         startedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
         completedAtUtcMs: completedAt.millisecondsSinceEpoch,
+        databaseSchemaVersion: 19,
       );
       final terminal = _assessmentRunMutation(
         payload: terminalPayload,
@@ -1566,6 +1574,169 @@ void main() {
             startedAtUtcMs: 2000,
             endedAtUtcMs: 1000,
           ),
+        );
+      },
+    );
+
+    test(
+      'learning goal claims are deploy-gated and mutable pulls are idempotent',
+      () async {
+        const goalId = 'goal:sync';
+        await database.customInsert('''
+          INSERT INTO learning_goals(
+            id, owner_id, kind, title, deadline_at_utc_ms, timezone_id,
+            timezone_offset_minutes, status, created_at_utc_ms,
+            updated_at_utc_ms
+          ) VALUES (
+            '$goalId', 'owner-1', 'languageTest', 'IELTS practice target',
+            1788238800000, 'Asia/Bangkok', 420, 'active', 1000, 1000
+          )
+        ''');
+        await database.customInsert('''
+          INSERT INTO outbox_operations(
+            operation_id, owner_id, entity_type, entity_id, operation_kind,
+            payload_version, base_revision, state, attempt_count,
+            created_at_utc_ms
+          ) VALUES (
+            'learningGoal:$goalId:1', 'owner-1', 'learningGoal', '$goalId',
+            'upsert', 1, 0, 'pending', 0, 1000
+          )
+        ''');
+        final nowUtc = DateTime.utc(2026, 8, 25, 11);
+        const gateToken = 'f26-learning-goal-rollout';
+        expect(
+          await DriftOwnerOperationGate(database).tryAcquire(
+            token: gateToken,
+            nowUtc: nowUtc,
+            leaseDuration: const Duration(minutes: 5),
+          ),
+          isTrue,
+        );
+
+        expect(
+          await DriftSyncStore(database).claimPending(
+            ownerId: 'owner-1',
+            firebaseUid: 'firebase-user-1',
+            limit: 1,
+            leaseToken: 'f26-off-lease',
+            ownerGateToken: gateToken,
+            leaseDuration: const Duration(minutes: 1),
+            nowUtc: nowUtc,
+          ),
+          isEmpty,
+        );
+
+        final store = DriftSyncStore(
+          database,
+          learningGoalSyncRollout: const LearningGoalSyncRollout.v1(
+            deployedRulesRevision: learningGoalV1RulesRevision,
+          ),
+        );
+        final claims = await store.claimPending(
+          ownerId: 'owner-1',
+          firebaseUid: 'firebase-user-1',
+          limit: 1,
+          leaseToken: 'f26-on-lease',
+          ownerGateToken: gateToken,
+          leaseDuration: const Duration(minutes: 1),
+          nowUtc: nowUtc,
+        );
+        expect(claims, hasLength(1));
+        expect(claims.single.mutation.collection, SyncCollection.learningGoals);
+        expect(claims.single.mutation.entityId, goalId);
+        expect(
+          claims.single.mutation.payload,
+          _learningGoalPayload(goalId: goalId, updatedAtUtcMs: 1000),
+        );
+
+        const remoteGoalId = 'goal:remote';
+        final firstServerTime = nowUtc.add(const Duration(seconds: 1));
+        final firstPage = PullPage(
+          changes: <SyncEntity>[
+            SyncEntity(
+              collection: SyncCollection.learningGoals,
+              entityId: remoteGoalId,
+              revision: 1,
+              isDeleted: false,
+              payloadVersion: 1,
+              clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                1000,
+                isUtc: true,
+              ),
+              serverUpdatedAtUtc: firstServerTime,
+              payload: _learningGoalPayload(
+                goalId: remoteGoalId,
+                updatedAtUtcMs: 1000,
+              ),
+            ),
+          ],
+          nextCursor: SyncCursor(
+            serverUpdatedAtUtc: firstServerTime,
+            documentId: remoteGoalId,
+          ),
+          hasMore: false,
+        );
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningGoals,
+          page: firstPage,
+          ownerGateToken: gateToken,
+          nowUtc: nowUtc,
+        );
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningGoals,
+          page: firstPage,
+          ownerGateToken: gateToken,
+          nowUtc: nowUtc,
+        );
+
+        final secondServerTime = nowUtc.add(const Duration(seconds: 2));
+        await store.applyPullPage(
+          ownerId: 'owner-1',
+          collection: SyncCollection.learningGoals,
+          page: PullPage(
+            changes: <SyncEntity>[
+              SyncEntity(
+                collection: SyncCollection.learningGoals,
+                entityId: remoteGoalId,
+                revision: 2,
+                isDeleted: false,
+                payloadVersion: 1,
+                clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+                  2000,
+                  isUtc: true,
+                ),
+                serverUpdatedAtUtc: secondServerTime,
+                payload: _learningGoalPayload(
+                  goalId: remoteGoalId,
+                  createdAtUtcMs: 1000,
+                  updatedAtUtcMs: 2000,
+                  status: 'completed',
+                ),
+              ),
+            ],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: secondServerTime,
+              documentId: remoteGoalId,
+            ),
+            hasMore: false,
+          ),
+          ownerGateToken: gateToken,
+          nowUtc: nowUtc,
+        );
+        final remote = await (database.select(
+          database.learningGoals,
+        )..where((row) => row.id.equals(remoteGoalId))).getSingle();
+        expect(remote.ownerId, 'owner-1');
+        expect(remote.status, 'completed');
+        expect(remote.localRevision, 2);
+        expect(remote.cloudRevision, 2);
+        expect(
+          await (database.select(
+            database.learningGoals,
+          )..where((row) => row.id.equals(remoteGoalId))).get(),
+          hasLength(1),
         );
       },
     );
@@ -2653,6 +2824,7 @@ Map<String, Object?> _assessmentRunPayload({
   AssessmentRunState state = AssessmentRunState.active,
   int? completedAtUtcMs,
   int? abandonedAtUtcMs,
+  int databaseSchemaVersion = 15,
 }) => <String, Object?>{
   'runId': 'assessment-run-pre',
   'ownerId': 'firebase-user-1',
@@ -2678,7 +2850,7 @@ Map<String, Object?> _assessmentRunPayload({
       'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb',
   'appVersion': '1.0.0',
   'buildId': 'task-12-sync',
-  'databaseSchemaVersion': 15,
+  'databaseSchemaVersion': databaseSchemaVersion,
   'contentRevision': 'assessment-content-v1',
   'evidencePolicyVersion': 'learning-evidence-v1',
   'featureContractRevision': '1.0.0',
@@ -2786,6 +2958,25 @@ Map<String, Object?> _learningTimeSegmentPayload({
   'timezoneId': 'Asia/Bangkok',
   'timezoneOffsetMinutes': 420,
   'captureSource': captureSource,
+};
+
+Map<String, Object?> _learningGoalPayload({
+  required String goalId,
+  required int updatedAtUtcMs,
+  int? createdAtUtcMs,
+  String status = 'active',
+  bool isDeleted = false,
+}) => <String, Object?>{
+  'goalId': goalId,
+  'kind': 'languageTest',
+  'title': 'IELTS practice target',
+  'deadlineAtUtcMs': DateTime.utc(2026, 9, 1, 5).millisecondsSinceEpoch,
+  'timezoneId': 'Asia/Bangkok',
+  'timezoneOffsetMinutes': 420,
+  'status': status,
+  'createdAtUtcMs': createdAtUtcMs ?? updatedAtUtcMs,
+  'updatedAtUtcMs': updatedAtUtcMs,
+  'isDeleted': isDeleted,
 };
 
 EvidenceContext _declaredEvidenceContext() => EvidenceContext.forNewEvidence(

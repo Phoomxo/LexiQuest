@@ -158,6 +158,7 @@ final class OwnerLifecycleArchiveExporter {
       'vocabulary_imports' => _vocabularyImports(ownerId),
       'learning_sessions' => _learningSessions(ownerId),
       'learning_time_segments' => _learningTimeSegments(ownerId),
+      'learning_goals' => _learningGoals(ownerId),
       'answer_attempts' => _answerAttempts(ownerId),
       'srs_states' => _srsStates(ownerId),
       'reading_progress_entries' => _readingProgress(ownerId, documentAliases),
@@ -605,6 +606,28 @@ final class OwnerLifecycleArchiveExporter {
           ),
           'timezoneOffsetMinutes': row.timezoneOffsetMinutes,
           'captureSource': _safeLabel(row.captureSource),
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _learningGoals(String ownerId) async {
+    final rows = await DriftExportReader(database).loadLearningGoals(ownerId);
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'kind': _safeLabel(row.kind),
+          'title': _safePersonalText(row.title, maximumLength: 120),
+          'deadlineAtUtc': row.deadlineAtUtc.toIso8601String(),
+          'timezoneId': _safeTimezoneId(
+            row.timezoneId,
+            utcOffsetMinutes: row.timezoneOffsetMinutes,
+            occurredAtUtcMs: row.deadlineAtUtc.millisecondsSinceEpoch,
+          ),
+          'timezoneOffsetMinutes': row.timezoneOffsetMinutes,
+          'status': _safeLabel(row.status),
+          'createdAtUtc': row.createdAtUtc.toIso8601String(),
+          'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
         },
     ];
   }
@@ -1116,6 +1139,16 @@ String _safeLabel(String value) {
   if (canonical.isEmpty || canonical.length > 200) return 'redacted';
   if (!RegExp(r'^[A-Za-z0-9._:-]+$').hasMatch(canonical)) return 'redacted';
   return canonical;
+}
+
+String _safePersonalText(String value, {required int maximumLength}) {
+  if (value.isEmpty ||
+      value != value.trim() ||
+      value.runes.length > maximumLength ||
+      value.contains(RegExp(r'[\u0000-\u001f\u007f]'))) {
+    return 'redacted';
+  }
+  return value;
 }
 
 String _safeTimezoneId(

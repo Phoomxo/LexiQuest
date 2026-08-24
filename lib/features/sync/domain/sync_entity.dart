@@ -6,6 +6,7 @@ import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
+import '../../goals/domain/learning_goal.dart';
 import '../../research/domain/research_protocol_mode_catalog.dart';
 import '../../review/domain/content_quality_report.dart';
 import '../../time_tracking/domain/learning_time_segment.dart';
@@ -21,6 +22,7 @@ const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
 const String contentQualityReportV1RulesRevision =
     'content-quality-report-v1-r1';
 const String learningTimeSegmentV1RulesRevision = 'learning-time-segment-v1-r1';
+const String learningGoalV1RulesRevision = 'learning-goal-v1-r1';
 const String legacyFirestoreRulesRevision = 'legacy-v1';
 
 enum SyncCollection {
@@ -55,6 +57,9 @@ enum SyncCollection {
 
   /// Immutable monotonic active-effort segment with separate wall context.
   learningTimeSegments,
+
+  /// Mutable owner-scoped language-learning deadline intent.
+  learningGoals,
 }
 
 extension SyncCollectionWireName on SyncCollection {
@@ -71,6 +76,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.savedLearningItems => 'saved_learning_items',
     SyncCollection.contentQualityReports => 'content_quality_reports',
     SyncCollection.learningTimeSegments => 'learning_time_segments',
+    SyncCollection.learningGoals => 'learning_goals',
   };
 
   String get entityType => switch (this) {
@@ -86,6 +92,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.savedLearningItems => 'savedLearningItem',
     SyncCollection.contentQualityReports => 'contentQualityReport',
     SyncCollection.learningTimeSegments => 'learningTimeSegment',
+    SyncCollection.learningGoals => 'learningGoal',
   };
 
   Set<int> get supportedPayloadVersions => switch (this) {
@@ -100,6 +107,7 @@ extension SyncCollectionWireName on SyncCollection {
     SyncCollection.savedLearningItems => const <int>{1},
     SyncCollection.contentQualityReports => const <int>{1},
     SyncCollection.learningTimeSegments => const <int>{1},
+    SyncCollection.learningGoals => const <int>{1},
   };
 
   int get defaultWritePayloadVersion => 1;
@@ -146,6 +154,126 @@ final class SyncPayloadRollout {
       collection.defaultWritePayloadVersion,
     SyncCollection.learningTimeSegments =>
       collection.defaultWritePayloadVersion,
+    SyncCollection.learningGoals => collection.defaultWritePayloadVersion,
+  };
+}
+
+/// Deploy-safe gate for learning-goal payload v1.
+final class LearningGoalSyncRollout {
+  const LearningGoalSyncRollout.off()
+    : enabled = false,
+      deployedRulesRevision = '';
+
+  const LearningGoalSyncRollout.v1({required this.deployedRulesRevision})
+    : enabled = true;
+
+  final bool enabled;
+  final String deployedRulesRevision;
+
+  bool get allowsClaims =>
+      enabled && deployedRulesRevision == learningGoalV1RulesRevision;
+}
+
+abstract final class LearningGoalSyncPayloadContract {
+  static const Set<String> keys = <String>{
+    'goalId',
+    'kind',
+    'title',
+    'deadlineAtUtcMs',
+    'timezoneId',
+    'timezoneOffsetMinutes',
+    'status',
+    'createdAtUtcMs',
+    'updatedAtUtcMs',
+    'isDeleted',
+  };
+
+  static void requireCanonical({
+    required Map<String, Object?> payload,
+    required bool isDeleted,
+    required int clientUpdatedAtUtcMs,
+    String? expectedEntityId,
+  }) {
+    try {
+      if (payload.length != keys.length || !payload.keys.every(keys.contains)) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      final goalId = payload['goalId'];
+      final kind = payload['kind'];
+      final title = payload['title'];
+      final deadlineAtUtcMs = payload['deadlineAtUtcMs'];
+      final timezoneId = payload['timezoneId'];
+      final timezoneOffsetMinutes = payload['timezoneOffsetMinutes'];
+      final status = payload['status'];
+      final createdAtUtcMs = payload['createdAtUtcMs'];
+      final updatedAtUtcMs = payload['updatedAtUtcMs'];
+      final payloadIsDeleted = payload['isDeleted'];
+      if (goalId is! String ||
+          !_canonicalText(goalId, 256) ||
+          expectedEntityId != null && expectedEntityId != goalId ||
+          kind is! String ||
+          !_goalKinds.contains(kind) ||
+          title is! String ||
+          !_canonicalText(title, 120) ||
+          deadlineAtUtcMs is! int ||
+          deadlineAtUtcMs < 0 ||
+          timezoneId is! String ||
+          timezoneOffsetMinutes is! int ||
+          status is! String ||
+          !_goalStatuses.contains(status) ||
+          createdAtUtcMs is! int ||
+          createdAtUtcMs < 0 ||
+          updatedAtUtcMs is! int ||
+          updatedAtUtcMs < createdAtUtcMs ||
+          updatedAtUtcMs != clientUpdatedAtUtcMs ||
+          payloadIsDeleted is! bool ||
+          payloadIsDeleted != isDeleted) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      LearningGoal(
+        id: goalId,
+        kind: LearningGoalKindCodec.parse(kind),
+        title: title,
+        deadlineAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          deadlineAtUtcMs,
+          isUtc: true,
+        ),
+        timezone: LearningGoalTimezoneContext(
+          timezoneId: timezoneId,
+          utcOffsetMinutes: timezoneOffsetMinutes,
+        ),
+        status: LearningGoalStatusCodec.parse(status),
+        createdAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          createdAtUtcMs,
+          isUtc: true,
+        ),
+        updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+          updatedAtUtcMs,
+          isUtc: true,
+        ),
+      );
+    } on SyncFailure {
+      rethrow;
+    } catch (_) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static bool _canonicalText(String value, int maximumLength) =>
+      value.isNotEmpty &&
+      value == value.trim() &&
+      value.runes.length <= maximumLength &&
+      !value.contains(RegExp(r'[\u0000-\u001f\u007f-\u009f]'));
+
+  static const Set<String> _goalKinds = <String>{
+    'languageTest',
+    'course',
+    'personal',
+  };
+  static const Set<String> _goalStatuses = <String>{
+    'active',
+    'completed',
+    'cancelled',
   };
 }
 
@@ -931,7 +1059,7 @@ abstract final class AssessmentRunSyncPayloadContract {
           !const <String>{'pre', 'post'}.contains(phase) ||
           experimentVersion <= 0 ||
           consentVersion <= 0 ||
-          !const <int>{15, 16, 17, 18}.contains(databaseSchemaVersion) ||
+          !const <int>{15, 16, 17, 18, 19}.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||
           !supportedFeatureContractIdentities.any(

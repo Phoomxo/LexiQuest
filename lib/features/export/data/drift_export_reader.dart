@@ -123,6 +123,28 @@ final class ExportLearningTimeSegmentRow {
   final String captureSource;
 }
 
+final class ExportLearningGoalRow {
+  const ExportLearningGoalRow({
+    required this.kind,
+    required this.title,
+    required this.deadlineAtUtc,
+    required this.timezoneId,
+    required this.timezoneOffsetMinutes,
+    required this.status,
+    required this.createdAtUtc,
+    required this.updatedAtUtc,
+  });
+
+  final String kind;
+  final String title;
+  final DateTime deadlineAtUtc;
+  final String timezoneId;
+  final int timezoneOffsetMinutes;
+  final String status;
+  final DateTime createdAtUtc;
+  final DateTime updatedAtUtc;
+}
+
 final class ExportDataSet {
   const ExportDataSet({
     required this.vocabulary,
@@ -201,6 +223,40 @@ final class DriftExportReader {
           timezoneId: row.timezoneId,
           timezoneOffsetMinutes: row.timezoneOffsetMinutes,
           captureSource: row.captureSource,
+        ),
+      ),
+    );
+  }
+
+  Future<List<ExportLearningGoalRow>> loadLearningGoals(String ownerId) async {
+    final rows =
+        await (database.select(database.learningGoals)
+              ..where((row) => row.ownerId.equals(ownerId))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.deadlineAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
+            .get();
+    return List<ExportLearningGoalRow>.unmodifiable(
+      rows.map(
+        (row) => ExportLearningGoalRow(
+          kind: row.kind,
+          title: row.title,
+          deadlineAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.deadlineAtUtcMs,
+            isUtc: true,
+          ),
+          timezoneId: row.timezoneId,
+          timezoneOffsetMinutes: row.timezoneOffsetMinutes,
+          status: row.status,
+          createdAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.createdAtUtcMs,
+            isUtc: true,
+          ),
+          updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.updatedAtUtcMs,
+            isUtc: true,
+          ),
         ),
       ),
     );

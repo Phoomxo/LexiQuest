@@ -26077,6 +26077,1961 @@ class LearningTimeSegmentsCompanion
   }
 }
 
+class $LearningGoalsTable extends LearningGoals
+    with TableInfo<$LearningGoalsTable, LearningGoalRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $LearningGoalsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _kindMeta = const VerificationMeta('kind');
+  @override
+  late final GeneratedColumn<String> kind = GeneratedColumn<String>(
+    'kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _titleMeta = const VerificationMeta('title');
+  @override
+  late final GeneratedColumn<String> title = GeneratedColumn<String>(
+    'title',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _deadlineAtUtcMsMeta = const VerificationMeta(
+    'deadlineAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> deadlineAtUtcMs = GeneratedColumn<int>(
+    'deadline_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneOffsetMinutesMeta =
+      const VerificationMeta('timezoneOffsetMinutes');
+  @override
+  late final GeneratedColumn<int> timezoneOffsetMinutes = GeneratedColumn<int>(
+    'timezone_offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (timezone_offset_minutes >= -840 AND timezone_offset_minutes <= 840)',
+  );
+  static const VerificationMeta _statusMeta = const VerificationMeta('status');
+  @override
+  late final GeneratedColumn<String> status = GeneratedColumn<String>(
+    'status',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    kind,
+    title,
+    deadlineAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    status,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'learning_goals';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<LearningGoalRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('kind')) {
+      context.handle(
+        _kindMeta,
+        kind.isAcceptableOrUnknown(data['kind']!, _kindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_kindMeta);
+    }
+    if (data.containsKey('title')) {
+      context.handle(
+        _titleMeta,
+        title.isAcceptableOrUnknown(data['title']!, _titleMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_titleMeta);
+    }
+    if (data.containsKey('deadline_at_utc_ms')) {
+      context.handle(
+        _deadlineAtUtcMsMeta,
+        deadlineAtUtcMs.isAcceptableOrUnknown(
+          data['deadline_at_utc_ms']!,
+          _deadlineAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_deadlineAtUtcMsMeta);
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneIdMeta);
+    }
+    if (data.containsKey('timezone_offset_minutes')) {
+      context.handle(
+        _timezoneOffsetMinutesMeta,
+        timezoneOffsetMinutes.isAcceptableOrUnknown(
+          data['timezone_offset_minutes']!,
+          _timezoneOffsetMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneOffsetMinutesMeta);
+    }
+    if (data.containsKey('status')) {
+      context.handle(
+        _statusMeta,
+        status.isAcceptableOrUnknown(data['status']!, _statusMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_statusMeta);
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  LearningGoalRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return LearningGoalRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      kind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}kind'],
+      )!,
+      title: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}title'],
+      )!,
+      deadlineAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}deadline_at_utc_ms'],
+      )!,
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      )!,
+      timezoneOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timezone_offset_minutes'],
+      )!,
+      status: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}status'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+    );
+  }
+
+  @override
+  $LearningGoalsTable createAlias(String alias) {
+    return $LearningGoalsTable(attachedDatabase, alias);
+  }
+}
+
+class LearningGoalRow extends DataClass implements Insertable<LearningGoalRow> {
+  final String id;
+  final String ownerId;
+  final String kind;
+  final String title;
+  final int deadlineAtUtcMs;
+  final String timezoneId;
+  final int timezoneOffsetMinutes;
+  final String status;
+  final int createdAtUtcMs;
+  final int updatedAtUtcMs;
+  final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
+  final bool isDeleted;
+  const LearningGoalRow({
+    required this.id,
+    required this.ownerId,
+    required this.kind,
+    required this.title,
+    required this.deadlineAtUtcMs,
+    required this.timezoneId,
+    required this.timezoneOffsetMinutes,
+    required this.status,
+    required this.createdAtUtcMs,
+    required this.updatedAtUtcMs,
+    required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
+    required this.isDeleted,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    map['kind'] = Variable<String>(kind);
+    map['title'] = Variable<String>(title);
+    map['deadline_at_utc_ms'] = Variable<int>(deadlineAtUtcMs);
+    map['timezone_id'] = Variable<String>(timezoneId);
+    map['timezone_offset_minutes'] = Variable<int>(timezoneOffsetMinutes);
+    map['status'] = Variable<String>(status);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    return map;
+  }
+
+  LearningGoalsCompanion toCompanion(bool nullToAbsent) {
+    return LearningGoalsCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      kind: Value(kind),
+      title: Value(title),
+      deadlineAtUtcMs: Value(deadlineAtUtcMs),
+      timezoneId: Value(timezoneId),
+      timezoneOffsetMinutes: Value(timezoneOffsetMinutes),
+      status: Value(status),
+      createdAtUtcMs: Value(createdAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
+      isDeleted: Value(isDeleted),
+    );
+  }
+
+  factory LearningGoalRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return LearningGoalRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      kind: serializer.fromJson<String>(json['kind']),
+      title: serializer.fromJson<String>(json['title']),
+      deadlineAtUtcMs: serializer.fromJson<int>(json['deadlineAtUtcMs']),
+      timezoneId: serializer.fromJson<String>(json['timezoneId']),
+      timezoneOffsetMinutes: serializer.fromJson<int>(
+        json['timezoneOffsetMinutes'],
+      ),
+      status: serializer.fromJson<String>(json['status']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'kind': serializer.toJson<String>(kind),
+      'title': serializer.toJson<String>(title),
+      'deadlineAtUtcMs': serializer.toJson<int>(deadlineAtUtcMs),
+      'timezoneId': serializer.toJson<String>(timezoneId),
+      'timezoneOffsetMinutes': serializer.toJson<int>(timezoneOffsetMinutes),
+      'status': serializer.toJson<String>(status),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+    };
+  }
+
+  LearningGoalRow copyWith({
+    String? id,
+    String? ownerId,
+    String? kind,
+    String? title,
+    int? deadlineAtUtcMs,
+    String? timezoneId,
+    int? timezoneOffsetMinutes,
+    String? status,
+    int? createdAtUtcMs,
+    int? updatedAtUtcMs,
+    int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+    bool? isDeleted,
+  }) => LearningGoalRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    kind: kind ?? this.kind,
+    title: title ?? this.title,
+    deadlineAtUtcMs: deadlineAtUtcMs ?? this.deadlineAtUtcMs,
+    timezoneId: timezoneId ?? this.timezoneId,
+    timezoneOffsetMinutes: timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+    status: status ?? this.status,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
+    isDeleted: isDeleted ?? this.isDeleted,
+  );
+  LearningGoalRow copyWithCompanion(LearningGoalsCompanion data) {
+    return LearningGoalRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      kind: data.kind.present ? data.kind.value : this.kind,
+      title: data.title.present ? data.title.value : this.title,
+      deadlineAtUtcMs: data.deadlineAtUtcMs.present
+          ? data.deadlineAtUtcMs.value
+          : this.deadlineAtUtcMs,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      timezoneOffsetMinutes: data.timezoneOffsetMinutes.present
+          ? data.timezoneOffsetMinutes.value
+          : this.timezoneOffsetMinutes,
+      status: data.status.present ? data.status.value : this.status,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningGoalRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('deadlineAtUtcMs: $deadlineAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('status: $status, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    kind,
+    title,
+    deadlineAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    status,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is LearningGoalRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.kind == this.kind &&
+          other.title == this.title &&
+          other.deadlineAtUtcMs == this.deadlineAtUtcMs &&
+          other.timezoneId == this.timezoneId &&
+          other.timezoneOffsetMinutes == this.timezoneOffsetMinutes &&
+          other.status == this.status &&
+          other.createdAtUtcMs == this.createdAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
+          other.isDeleted == this.isDeleted);
+}
+
+class LearningGoalsCompanion extends UpdateCompanion<LearningGoalRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String> kind;
+  final Value<String> title;
+  final Value<int> deadlineAtUtcMs;
+  final Value<String> timezoneId;
+  final Value<int> timezoneOffsetMinutes;
+  final Value<String> status;
+  final Value<int> createdAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
+  final Value<bool> isDeleted;
+  final Value<int> rowid;
+  const LearningGoalsCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.kind = const Value.absent(),
+    this.title = const Value.absent(),
+    this.deadlineAtUtcMs = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.timezoneOffsetMinutes = const Value.absent(),
+    this.status = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  LearningGoalsCompanion.insert({
+    required String id,
+    required String ownerId,
+    required String kind,
+    required String title,
+    required int deadlineAtUtcMs,
+    required String timezoneId,
+    required int timezoneOffsetMinutes,
+    required String status,
+    required int createdAtUtcMs,
+    required int updatedAtUtcMs,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       kind = Value(kind),
+       title = Value(title),
+       deadlineAtUtcMs = Value(deadlineAtUtcMs),
+       timezoneId = Value(timezoneId),
+       timezoneOffsetMinutes = Value(timezoneOffsetMinutes),
+       status = Value(status),
+       createdAtUtcMs = Value(createdAtUtcMs),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<LearningGoalRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? kind,
+    Expression<String>? title,
+    Expression<int>? deadlineAtUtcMs,
+    Expression<String>? timezoneId,
+    Expression<int>? timezoneOffsetMinutes,
+    Expression<String>? status,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
+    Expression<bool>? isDeleted,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (kind != null) 'kind': kind,
+      if (title != null) 'title': title,
+      if (deadlineAtUtcMs != null) 'deadline_at_utc_ms': deadlineAtUtcMs,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (timezoneOffsetMinutes != null)
+        'timezone_offset_minutes': timezoneOffsetMinutes,
+      if (status != null) 'status': status,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  LearningGoalsCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String>? kind,
+    Value<String>? title,
+    Value<int>? deadlineAtUtcMs,
+    Value<String>? timezoneId,
+    Value<int>? timezoneOffsetMinutes,
+    Value<String>? status,
+    Value<int>? createdAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
+    Value<bool>? isDeleted,
+    Value<int>? rowid,
+  }) {
+    return LearningGoalsCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      kind: kind ?? this.kind,
+      title: title ?? this.title,
+      deadlineAtUtcMs: deadlineAtUtcMs ?? this.deadlineAtUtcMs,
+      timezoneId: timezoneId ?? this.timezoneId,
+      timezoneOffsetMinutes:
+          timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      status: status ?? this.status,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
+      isDeleted: isDeleted ?? this.isDeleted,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (kind.present) {
+      map['kind'] = Variable<String>(kind.value);
+    }
+    if (title.present) {
+      map['title'] = Variable<String>(title.value);
+    }
+    if (deadlineAtUtcMs.present) {
+      map['deadline_at_utc_ms'] = Variable<int>(deadlineAtUtcMs.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (timezoneOffsetMinutes.present) {
+      map['timezone_offset_minutes'] = Variable<int>(
+        timezoneOffsetMinutes.value,
+      );
+    }
+    if (status.present) {
+      map['status'] = Variable<String>(status.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('LearningGoalsCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('kind: $kind, ')
+          ..write('title: $title, ')
+          ..write('deadlineAtUtcMs: $deadlineAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('status: $status, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $StudyRemindersTable extends StudyReminders
+    with TableInfo<$StudyRemindersTable, StudyReminderRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $StudyRemindersTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _idMeta = const VerificationMeta('id');
+  @override
+  late final GeneratedColumn<String> id = GeneratedColumn<String>(
+    'id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id)',
+    ),
+  );
+  static const VerificationMeta _goalIdMeta = const VerificationMeta('goalId');
+  @override
+  late final GeneratedColumn<String> goalId = GeneratedColumn<String>(
+    'goal_id',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES learning_goals (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _sourceKindMeta = const VerificationMeta(
+    'sourceKind',
+  );
+  @override
+  late final GeneratedColumn<String> sourceKind = GeneratedColumn<String>(
+    'source_kind',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _scheduledAtUtcMsMeta = const VerificationMeta(
+    'scheduledAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> scheduledAtUtcMs = GeneratedColumn<int>(
+    'scheduled_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneIdMeta = const VerificationMeta(
+    'timezoneId',
+  );
+  @override
+  late final GeneratedColumn<String> timezoneId = GeneratedColumn<String>(
+    'timezone_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _timezoneOffsetMinutesMeta =
+      const VerificationMeta('timezoneOffsetMinutes');
+  @override
+  late final GeneratedColumn<int> timezoneOffsetMinutes = GeneratedColumn<int>(
+    'timezone_offset_minutes',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+    $customConstraints:
+        'NOT NULL CHECK (timezone_offset_minutes >= -840 AND timezone_offset_minutes <= 840)',
+  );
+  static const VerificationMeta _quietHoursStartMinutesMeta =
+      const VerificationMeta('quietHoursStartMinutes');
+  @override
+  late final GeneratedColumn<int> quietHoursStartMinutes = GeneratedColumn<int>(
+    'quiet_hours_start_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _quietHoursEndMinutesMeta =
+      const VerificationMeta('quietHoursEndMinutes');
+  @override
+  late final GeneratedColumn<int> quietHoursEndMinutes = GeneratedColumn<int>(
+    'quiet_hours_end_minutes',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isEnabledMeta = const VerificationMeta(
+    'isEnabled',
+  );
+  @override
+  late final GeneratedColumn<bool> isEnabled = GeneratedColumn<bool>(
+    'is_enabled',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_enabled" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  static const VerificationMeta _createdAtUtcMsMeta = const VerificationMeta(
+    'createdAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> createdAtUtcMs = GeneratedColumn<int>(
+    'created_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _localRevisionMeta = const VerificationMeta(
+    'localRevision',
+  );
+  @override
+  late final GeneratedColumn<int> localRevision = GeneratedColumn<int>(
+    'local_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(1),
+  );
+  static const VerificationMeta _cloudRevisionMeta = const VerificationMeta(
+    'cloudRevision',
+  );
+  @override
+  late final GeneratedColumn<int> cloudRevision = GeneratedColumn<int>(
+    'cloud_revision',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
+  static const VerificationMeta _lastAcknowledgedAtUtcMsMeta =
+      const VerificationMeta('lastAcknowledgedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> lastAcknowledgedAtUtcMs =
+      GeneratedColumn<int>(
+        'last_acknowledged_at_utc_ms',
+        aliasedName,
+        true,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _serverUpdatedAtUtcMsMeta =
+      const VerificationMeta('serverUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> serverUpdatedAtUtcMs = GeneratedColumn<int>(
+    'server_updated_at_utc_ms',
+    aliasedName,
+    true,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+  );
+  static const VerificationMeta _isDeletedMeta = const VerificationMeta(
+    'isDeleted',
+  );
+  @override
+  late final GeneratedColumn<bool> isDeleted = GeneratedColumn<bool>(
+    'is_deleted',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("is_deleted" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    id,
+    ownerId,
+    goalId,
+    sourceKind,
+    scheduledAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    quietHoursStartMinutes,
+    quietHoursEndMinutes,
+    isEnabled,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'study_reminders';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<StudyReminderRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('id')) {
+      context.handle(_idMeta, id.isAcceptableOrUnknown(data['id']!, _idMeta));
+    } else if (isInserting) {
+      context.missing(_idMeta);
+    }
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('goal_id')) {
+      context.handle(
+        _goalIdMeta,
+        goalId.isAcceptableOrUnknown(data['goal_id']!, _goalIdMeta),
+      );
+    }
+    if (data.containsKey('source_kind')) {
+      context.handle(
+        _sourceKindMeta,
+        sourceKind.isAcceptableOrUnknown(data['source_kind']!, _sourceKindMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_sourceKindMeta);
+    }
+    if (data.containsKey('scheduled_at_utc_ms')) {
+      context.handle(
+        _scheduledAtUtcMsMeta,
+        scheduledAtUtcMs.isAcceptableOrUnknown(
+          data['scheduled_at_utc_ms']!,
+          _scheduledAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_scheduledAtUtcMsMeta);
+    }
+    if (data.containsKey('timezone_id')) {
+      context.handle(
+        _timezoneIdMeta,
+        timezoneId.isAcceptableOrUnknown(data['timezone_id']!, _timezoneIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneIdMeta);
+    }
+    if (data.containsKey('timezone_offset_minutes')) {
+      context.handle(
+        _timezoneOffsetMinutesMeta,
+        timezoneOffsetMinutes.isAcceptableOrUnknown(
+          data['timezone_offset_minutes']!,
+          _timezoneOffsetMinutesMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_timezoneOffsetMinutesMeta);
+    }
+    if (data.containsKey('quiet_hours_start_minutes')) {
+      context.handle(
+        _quietHoursStartMinutesMeta,
+        quietHoursStartMinutes.isAcceptableOrUnknown(
+          data['quiet_hours_start_minutes']!,
+          _quietHoursStartMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('quiet_hours_end_minutes')) {
+      context.handle(
+        _quietHoursEndMinutesMeta,
+        quietHoursEndMinutes.isAcceptableOrUnknown(
+          data['quiet_hours_end_minutes']!,
+          _quietHoursEndMinutesMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_enabled')) {
+      context.handle(
+        _isEnabledMeta,
+        isEnabled.isAcceptableOrUnknown(data['is_enabled']!, _isEnabledMeta),
+      );
+    }
+    if (data.containsKey('created_at_utc_ms')) {
+      context.handle(
+        _createdAtUtcMsMeta,
+        createdAtUtcMs.isAcceptableOrUnknown(
+          data['created_at_utc_ms']!,
+          _createdAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_createdAtUtcMsMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    if (data.containsKey('local_revision')) {
+      context.handle(
+        _localRevisionMeta,
+        localRevision.isAcceptableOrUnknown(
+          data['local_revision']!,
+          _localRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('cloud_revision')) {
+      context.handle(
+        _cloudRevisionMeta,
+        cloudRevision.isAcceptableOrUnknown(
+          data['cloud_revision']!,
+          _cloudRevisionMeta,
+        ),
+      );
+    }
+    if (data.containsKey('last_acknowledged_at_utc_ms')) {
+      context.handle(
+        _lastAcknowledgedAtUtcMsMeta,
+        lastAcknowledgedAtUtcMs.isAcceptableOrUnknown(
+          data['last_acknowledged_at_utc_ms']!,
+          _lastAcknowledgedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('server_updated_at_utc_ms')) {
+      context.handle(
+        _serverUpdatedAtUtcMsMeta,
+        serverUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['server_updated_at_utc_ms']!,
+          _serverUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
+    if (data.containsKey('is_deleted')) {
+      context.handle(
+        _isDeletedMeta,
+        isDeleted.isAcceptableOrUnknown(data['is_deleted']!, _isDeletedMeta),
+      );
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {id};
+  @override
+  StudyReminderRow map(Map<String, dynamic> data, {String? tablePrefix}) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return StudyReminderRow(
+      id: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}id'],
+      )!,
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      goalId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}goal_id'],
+      ),
+      sourceKind: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}source_kind'],
+      )!,
+      scheduledAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}scheduled_at_utc_ms'],
+      )!,
+      timezoneId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}timezone_id'],
+      )!,
+      timezoneOffsetMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}timezone_offset_minutes'],
+      )!,
+      quietHoursStartMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quiet_hours_start_minutes'],
+      ),
+      quietHoursEndMinutes: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}quiet_hours_end_minutes'],
+      ),
+      isEnabled: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_enabled'],
+      )!,
+      createdAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}created_at_utc_ms'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+      localRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}local_revision'],
+      )!,
+      cloudRevision: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}cloud_revision'],
+      )!,
+      lastAcknowledgedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}last_acknowledged_at_utc_ms'],
+      ),
+      serverUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}server_updated_at_utc_ms'],
+      ),
+      isDeleted: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}is_deleted'],
+      )!,
+    );
+  }
+
+  @override
+  $StudyRemindersTable createAlias(String alias) {
+    return $StudyRemindersTable(attachedDatabase, alias);
+  }
+}
+
+class StudyReminderRow extends DataClass
+    implements Insertable<StudyReminderRow> {
+  final String id;
+  final String ownerId;
+  final String? goalId;
+  final String sourceKind;
+  final int scheduledAtUtcMs;
+  final String timezoneId;
+  final int timezoneOffsetMinutes;
+  final int? quietHoursStartMinutes;
+  final int? quietHoursEndMinutes;
+  final bool isEnabled;
+  final int createdAtUtcMs;
+  final int updatedAtUtcMs;
+  final int localRevision;
+  final int cloudRevision;
+  final int? lastAcknowledgedAtUtcMs;
+  final int? serverUpdatedAtUtcMs;
+  final bool isDeleted;
+  const StudyReminderRow({
+    required this.id,
+    required this.ownerId,
+    this.goalId,
+    required this.sourceKind,
+    required this.scheduledAtUtcMs,
+    required this.timezoneId,
+    required this.timezoneOffsetMinutes,
+    this.quietHoursStartMinutes,
+    this.quietHoursEndMinutes,
+    required this.isEnabled,
+    required this.createdAtUtcMs,
+    required this.updatedAtUtcMs,
+    required this.localRevision,
+    required this.cloudRevision,
+    this.lastAcknowledgedAtUtcMs,
+    this.serverUpdatedAtUtcMs,
+    required this.isDeleted,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['id'] = Variable<String>(id);
+    map['owner_id'] = Variable<String>(ownerId);
+    if (!nullToAbsent || goalId != null) {
+      map['goal_id'] = Variable<String>(goalId);
+    }
+    map['source_kind'] = Variable<String>(sourceKind);
+    map['scheduled_at_utc_ms'] = Variable<int>(scheduledAtUtcMs);
+    map['timezone_id'] = Variable<String>(timezoneId);
+    map['timezone_offset_minutes'] = Variable<int>(timezoneOffsetMinutes);
+    if (!nullToAbsent || quietHoursStartMinutes != null) {
+      map['quiet_hours_start_minutes'] = Variable<int>(quietHoursStartMinutes);
+    }
+    if (!nullToAbsent || quietHoursEndMinutes != null) {
+      map['quiet_hours_end_minutes'] = Variable<int>(quietHoursEndMinutes);
+    }
+    map['is_enabled'] = Variable<bool>(isEnabled);
+    map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['local_revision'] = Variable<int>(localRevision);
+    map['cloud_revision'] = Variable<int>(cloudRevision);
+    if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs,
+      );
+    }
+    if (!nullToAbsent || serverUpdatedAtUtcMs != null) {
+      map['server_updated_at_utc_ms'] = Variable<int>(serverUpdatedAtUtcMs);
+    }
+    map['is_deleted'] = Variable<bool>(isDeleted);
+    return map;
+  }
+
+  StudyRemindersCompanion toCompanion(bool nullToAbsent) {
+    return StudyRemindersCompanion(
+      id: Value(id),
+      ownerId: Value(ownerId),
+      goalId: goalId == null && nullToAbsent
+          ? const Value.absent()
+          : Value(goalId),
+      sourceKind: Value(sourceKind),
+      scheduledAtUtcMs: Value(scheduledAtUtcMs),
+      timezoneId: Value(timezoneId),
+      timezoneOffsetMinutes: Value(timezoneOffsetMinutes),
+      quietHoursStartMinutes: quietHoursStartMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quietHoursStartMinutes),
+      quietHoursEndMinutes: quietHoursEndMinutes == null && nullToAbsent
+          ? const Value.absent()
+          : Value(quietHoursEndMinutes),
+      isEnabled: Value(isEnabled),
+      createdAtUtcMs: Value(createdAtUtcMs),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+      localRevision: Value(localRevision),
+      cloudRevision: Value(cloudRevision),
+      lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(lastAcknowledgedAtUtcMs),
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs == null && nullToAbsent
+          ? const Value.absent()
+          : Value(serverUpdatedAtUtcMs),
+      isDeleted: Value(isDeleted),
+    );
+  }
+
+  factory StudyReminderRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return StudyReminderRow(
+      id: serializer.fromJson<String>(json['id']),
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      goalId: serializer.fromJson<String?>(json['goalId']),
+      sourceKind: serializer.fromJson<String>(json['sourceKind']),
+      scheduledAtUtcMs: serializer.fromJson<int>(json['scheduledAtUtcMs']),
+      timezoneId: serializer.fromJson<String>(json['timezoneId']),
+      timezoneOffsetMinutes: serializer.fromJson<int>(
+        json['timezoneOffsetMinutes'],
+      ),
+      quietHoursStartMinutes: serializer.fromJson<int?>(
+        json['quietHoursStartMinutes'],
+      ),
+      quietHoursEndMinutes: serializer.fromJson<int?>(
+        json['quietHoursEndMinutes'],
+      ),
+      isEnabled: serializer.fromJson<bool>(json['isEnabled']),
+      createdAtUtcMs: serializer.fromJson<int>(json['createdAtUtcMs']),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      localRevision: serializer.fromJson<int>(json['localRevision']),
+      cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
+      lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
+        json['lastAcknowledgedAtUtcMs'],
+      ),
+      serverUpdatedAtUtcMs: serializer.fromJson<int?>(
+        json['serverUpdatedAtUtcMs'],
+      ),
+      isDeleted: serializer.fromJson<bool>(json['isDeleted']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'id': serializer.toJson<String>(id),
+      'ownerId': serializer.toJson<String>(ownerId),
+      'goalId': serializer.toJson<String?>(goalId),
+      'sourceKind': serializer.toJson<String>(sourceKind),
+      'scheduledAtUtcMs': serializer.toJson<int>(scheduledAtUtcMs),
+      'timezoneId': serializer.toJson<String>(timezoneId),
+      'timezoneOffsetMinutes': serializer.toJson<int>(timezoneOffsetMinutes),
+      'quietHoursStartMinutes': serializer.toJson<int?>(quietHoursStartMinutes),
+      'quietHoursEndMinutes': serializer.toJson<int?>(quietHoursEndMinutes),
+      'isEnabled': serializer.toJson<bool>(isEnabled),
+      'createdAtUtcMs': serializer.toJson<int>(createdAtUtcMs),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'localRevision': serializer.toJson<int>(localRevision),
+      'cloudRevision': serializer.toJson<int>(cloudRevision),
+      'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
+        lastAcknowledgedAtUtcMs,
+      ),
+      'serverUpdatedAtUtcMs': serializer.toJson<int?>(serverUpdatedAtUtcMs),
+      'isDeleted': serializer.toJson<bool>(isDeleted),
+    };
+  }
+
+  StudyReminderRow copyWith({
+    String? id,
+    String? ownerId,
+    Value<String?> goalId = const Value.absent(),
+    String? sourceKind,
+    int? scheduledAtUtcMs,
+    String? timezoneId,
+    int? timezoneOffsetMinutes,
+    Value<int?> quietHoursStartMinutes = const Value.absent(),
+    Value<int?> quietHoursEndMinutes = const Value.absent(),
+    bool? isEnabled,
+    int? createdAtUtcMs,
+    int? updatedAtUtcMs,
+    int? localRevision,
+    int? cloudRevision,
+    Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+    Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+    bool? isDeleted,
+  }) => StudyReminderRow(
+    id: id ?? this.id,
+    ownerId: ownerId ?? this.ownerId,
+    goalId: goalId.present ? goalId.value : this.goalId,
+    sourceKind: sourceKind ?? this.sourceKind,
+    scheduledAtUtcMs: scheduledAtUtcMs ?? this.scheduledAtUtcMs,
+    timezoneId: timezoneId ?? this.timezoneId,
+    timezoneOffsetMinutes: timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+    quietHoursStartMinutes: quietHoursStartMinutes.present
+        ? quietHoursStartMinutes.value
+        : this.quietHoursStartMinutes,
+    quietHoursEndMinutes: quietHoursEndMinutes.present
+        ? quietHoursEndMinutes.value
+        : this.quietHoursEndMinutes,
+    isEnabled: isEnabled ?? this.isEnabled,
+    createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    localRevision: localRevision ?? this.localRevision,
+    cloudRevision: cloudRevision ?? this.cloudRevision,
+    lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
+        ? lastAcknowledgedAtUtcMs.value
+        : this.lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs: serverUpdatedAtUtcMs.present
+        ? serverUpdatedAtUtcMs.value
+        : this.serverUpdatedAtUtcMs,
+    isDeleted: isDeleted ?? this.isDeleted,
+  );
+  StudyReminderRow copyWithCompanion(StudyRemindersCompanion data) {
+    return StudyReminderRow(
+      id: data.id.present ? data.id.value : this.id,
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      goalId: data.goalId.present ? data.goalId.value : this.goalId,
+      sourceKind: data.sourceKind.present
+          ? data.sourceKind.value
+          : this.sourceKind,
+      scheduledAtUtcMs: data.scheduledAtUtcMs.present
+          ? data.scheduledAtUtcMs.value
+          : this.scheduledAtUtcMs,
+      timezoneId: data.timezoneId.present
+          ? data.timezoneId.value
+          : this.timezoneId,
+      timezoneOffsetMinutes: data.timezoneOffsetMinutes.present
+          ? data.timezoneOffsetMinutes.value
+          : this.timezoneOffsetMinutes,
+      quietHoursStartMinutes: data.quietHoursStartMinutes.present
+          ? data.quietHoursStartMinutes.value
+          : this.quietHoursStartMinutes,
+      quietHoursEndMinutes: data.quietHoursEndMinutes.present
+          ? data.quietHoursEndMinutes.value
+          : this.quietHoursEndMinutes,
+      isEnabled: data.isEnabled.present ? data.isEnabled.value : this.isEnabled,
+      createdAtUtcMs: data.createdAtUtcMs.present
+          ? data.createdAtUtcMs.value
+          : this.createdAtUtcMs,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+      localRevision: data.localRevision.present
+          ? data.localRevision.value
+          : this.localRevision,
+      cloudRevision: data.cloudRevision.present
+          ? data.cloudRevision.value
+          : this.cloudRevision,
+      lastAcknowledgedAtUtcMs: data.lastAcknowledgedAtUtcMs.present
+          ? data.lastAcknowledgedAtUtcMs.value
+          : this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: data.serverUpdatedAtUtcMs.present
+          ? data.serverUpdatedAtUtcMs.value
+          : this.serverUpdatedAtUtcMs,
+      isDeleted: data.isDeleted.present ? data.isDeleted.value : this.isDeleted,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyReminderRow(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('goalId: $goalId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('scheduledAtUtcMs: $scheduledAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('quietHoursStartMinutes: $quietHoursStartMinutes, ')
+          ..write('quietHoursEndMinutes: $quietHoursEndMinutes, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    ownerId,
+    goalId,
+    sourceKind,
+    scheduledAtUtcMs,
+    timezoneId,
+    timezoneOffsetMinutes,
+    quietHoursStartMinutes,
+    quietHoursEndMinutes,
+    isEnabled,
+    createdAtUtcMs,
+    updatedAtUtcMs,
+    localRevision,
+    cloudRevision,
+    lastAcknowledgedAtUtcMs,
+    serverUpdatedAtUtcMs,
+    isDeleted,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is StudyReminderRow &&
+          other.id == this.id &&
+          other.ownerId == this.ownerId &&
+          other.goalId == this.goalId &&
+          other.sourceKind == this.sourceKind &&
+          other.scheduledAtUtcMs == this.scheduledAtUtcMs &&
+          other.timezoneId == this.timezoneId &&
+          other.timezoneOffsetMinutes == this.timezoneOffsetMinutes &&
+          other.quietHoursStartMinutes == this.quietHoursStartMinutes &&
+          other.quietHoursEndMinutes == this.quietHoursEndMinutes &&
+          other.isEnabled == this.isEnabled &&
+          other.createdAtUtcMs == this.createdAtUtcMs &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.localRevision == this.localRevision &&
+          other.cloudRevision == this.cloudRevision &&
+          other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
+          other.serverUpdatedAtUtcMs == this.serverUpdatedAtUtcMs &&
+          other.isDeleted == this.isDeleted);
+}
+
+class StudyRemindersCompanion extends UpdateCompanion<StudyReminderRow> {
+  final Value<String> id;
+  final Value<String> ownerId;
+  final Value<String?> goalId;
+  final Value<String> sourceKind;
+  final Value<int> scheduledAtUtcMs;
+  final Value<String> timezoneId;
+  final Value<int> timezoneOffsetMinutes;
+  final Value<int?> quietHoursStartMinutes;
+  final Value<int?> quietHoursEndMinutes;
+  final Value<bool> isEnabled;
+  final Value<int> createdAtUtcMs;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> localRevision;
+  final Value<int> cloudRevision;
+  final Value<int?> lastAcknowledgedAtUtcMs;
+  final Value<int?> serverUpdatedAtUtcMs;
+  final Value<bool> isDeleted;
+  final Value<int> rowid;
+  const StudyRemindersCompanion({
+    this.id = const Value.absent(),
+    this.ownerId = const Value.absent(),
+    this.goalId = const Value.absent(),
+    this.sourceKind = const Value.absent(),
+    this.scheduledAtUtcMs = const Value.absent(),
+    this.timezoneId = const Value.absent(),
+    this.timezoneOffsetMinutes = const Value.absent(),
+    this.quietHoursStartMinutes = const Value.absent(),
+    this.quietHoursEndMinutes = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    this.createdAtUtcMs = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  StudyRemindersCompanion.insert({
+    required String id,
+    required String ownerId,
+    this.goalId = const Value.absent(),
+    required String sourceKind,
+    required int scheduledAtUtcMs,
+    required String timezoneId,
+    required int timezoneOffsetMinutes,
+    this.quietHoursStartMinutes = const Value.absent(),
+    this.quietHoursEndMinutes = const Value.absent(),
+    this.isEnabled = const Value.absent(),
+    required int createdAtUtcMs,
+    required int updatedAtUtcMs,
+    this.localRevision = const Value.absent(),
+    this.cloudRevision = const Value.absent(),
+    this.lastAcknowledgedAtUtcMs = const Value.absent(),
+    this.serverUpdatedAtUtcMs = const Value.absent(),
+    this.isDeleted = const Value.absent(),
+    this.rowid = const Value.absent(),
+  }) : id = Value(id),
+       ownerId = Value(ownerId),
+       sourceKind = Value(sourceKind),
+       scheduledAtUtcMs = Value(scheduledAtUtcMs),
+       timezoneId = Value(timezoneId),
+       timezoneOffsetMinutes = Value(timezoneOffsetMinutes),
+       createdAtUtcMs = Value(createdAtUtcMs),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<StudyReminderRow> custom({
+    Expression<String>? id,
+    Expression<String>? ownerId,
+    Expression<String>? goalId,
+    Expression<String>? sourceKind,
+    Expression<int>? scheduledAtUtcMs,
+    Expression<String>? timezoneId,
+    Expression<int>? timezoneOffsetMinutes,
+    Expression<int>? quietHoursStartMinutes,
+    Expression<int>? quietHoursEndMinutes,
+    Expression<bool>? isEnabled,
+    Expression<int>? createdAtUtcMs,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? localRevision,
+    Expression<int>? cloudRevision,
+    Expression<int>? lastAcknowledgedAtUtcMs,
+    Expression<int>? serverUpdatedAtUtcMs,
+    Expression<bool>? isDeleted,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (id != null) 'id': id,
+      if (ownerId != null) 'owner_id': ownerId,
+      if (goalId != null) 'goal_id': goalId,
+      if (sourceKind != null) 'source_kind': sourceKind,
+      if (scheduledAtUtcMs != null) 'scheduled_at_utc_ms': scheduledAtUtcMs,
+      if (timezoneId != null) 'timezone_id': timezoneId,
+      if (timezoneOffsetMinutes != null)
+        'timezone_offset_minutes': timezoneOffsetMinutes,
+      if (quietHoursStartMinutes != null)
+        'quiet_hours_start_minutes': quietHoursStartMinutes,
+      if (quietHoursEndMinutes != null)
+        'quiet_hours_end_minutes': quietHoursEndMinutes,
+      if (isEnabled != null) 'is_enabled': isEnabled,
+      if (createdAtUtcMs != null) 'created_at_utc_ms': createdAtUtcMs,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (localRevision != null) 'local_revision': localRevision,
+      if (cloudRevision != null) 'cloud_revision': cloudRevision,
+      if (lastAcknowledgedAtUtcMs != null)
+        'last_acknowledged_at_utc_ms': lastAcknowledgedAtUtcMs,
+      if (serverUpdatedAtUtcMs != null)
+        'server_updated_at_utc_ms': serverUpdatedAtUtcMs,
+      if (isDeleted != null) 'is_deleted': isDeleted,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  StudyRemindersCompanion copyWith({
+    Value<String>? id,
+    Value<String>? ownerId,
+    Value<String?>? goalId,
+    Value<String>? sourceKind,
+    Value<int>? scheduledAtUtcMs,
+    Value<String>? timezoneId,
+    Value<int>? timezoneOffsetMinutes,
+    Value<int?>? quietHoursStartMinutes,
+    Value<int?>? quietHoursEndMinutes,
+    Value<bool>? isEnabled,
+    Value<int>? createdAtUtcMs,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? localRevision,
+    Value<int>? cloudRevision,
+    Value<int?>? lastAcknowledgedAtUtcMs,
+    Value<int?>? serverUpdatedAtUtcMs,
+    Value<bool>? isDeleted,
+    Value<int>? rowid,
+  }) {
+    return StudyRemindersCompanion(
+      id: id ?? this.id,
+      ownerId: ownerId ?? this.ownerId,
+      goalId: goalId ?? this.goalId,
+      sourceKind: sourceKind ?? this.sourceKind,
+      scheduledAtUtcMs: scheduledAtUtcMs ?? this.scheduledAtUtcMs,
+      timezoneId: timezoneId ?? this.timezoneId,
+      timezoneOffsetMinutes:
+          timezoneOffsetMinutes ?? this.timezoneOffsetMinutes,
+      quietHoursStartMinutes:
+          quietHoursStartMinutes ?? this.quietHoursStartMinutes,
+      quietHoursEndMinutes: quietHoursEndMinutes ?? this.quietHoursEndMinutes,
+      isEnabled: isEnabled ?? this.isEnabled,
+      createdAtUtcMs: createdAtUtcMs ?? this.createdAtUtcMs,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      localRevision: localRevision ?? this.localRevision,
+      cloudRevision: cloudRevision ?? this.cloudRevision,
+      lastAcknowledgedAtUtcMs:
+          lastAcknowledgedAtUtcMs ?? this.lastAcknowledgedAtUtcMs,
+      serverUpdatedAtUtcMs: serverUpdatedAtUtcMs ?? this.serverUpdatedAtUtcMs,
+      isDeleted: isDeleted ?? this.isDeleted,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (id.present) {
+      map['id'] = Variable<String>(id.value);
+    }
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (goalId.present) {
+      map['goal_id'] = Variable<String>(goalId.value);
+    }
+    if (sourceKind.present) {
+      map['source_kind'] = Variable<String>(sourceKind.value);
+    }
+    if (scheduledAtUtcMs.present) {
+      map['scheduled_at_utc_ms'] = Variable<int>(scheduledAtUtcMs.value);
+    }
+    if (timezoneId.present) {
+      map['timezone_id'] = Variable<String>(timezoneId.value);
+    }
+    if (timezoneOffsetMinutes.present) {
+      map['timezone_offset_minutes'] = Variable<int>(
+        timezoneOffsetMinutes.value,
+      );
+    }
+    if (quietHoursStartMinutes.present) {
+      map['quiet_hours_start_minutes'] = Variable<int>(
+        quietHoursStartMinutes.value,
+      );
+    }
+    if (quietHoursEndMinutes.present) {
+      map['quiet_hours_end_minutes'] = Variable<int>(
+        quietHoursEndMinutes.value,
+      );
+    }
+    if (isEnabled.present) {
+      map['is_enabled'] = Variable<bool>(isEnabled.value);
+    }
+    if (createdAtUtcMs.present) {
+      map['created_at_utc_ms'] = Variable<int>(createdAtUtcMs.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (localRevision.present) {
+      map['local_revision'] = Variable<int>(localRevision.value);
+    }
+    if (cloudRevision.present) {
+      map['cloud_revision'] = Variable<int>(cloudRevision.value);
+    }
+    if (lastAcknowledgedAtUtcMs.present) {
+      map['last_acknowledged_at_utc_ms'] = Variable<int>(
+        lastAcknowledgedAtUtcMs.value,
+      );
+    }
+    if (serverUpdatedAtUtcMs.present) {
+      map['server_updated_at_utc_ms'] = Variable<int>(
+        serverUpdatedAtUtcMs.value,
+      );
+    }
+    if (isDeleted.present) {
+      map['is_deleted'] = Variable<bool>(isDeleted.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('StudyRemindersCompanion(')
+          ..write('id: $id, ')
+          ..write('ownerId: $ownerId, ')
+          ..write('goalId: $goalId, ')
+          ..write('sourceKind: $sourceKind, ')
+          ..write('scheduledAtUtcMs: $scheduledAtUtcMs, ')
+          ..write('timezoneId: $timezoneId, ')
+          ..write('timezoneOffsetMinutes: $timezoneOffsetMinutes, ')
+          ..write('quietHoursStartMinutes: $quietHoursStartMinutes, ')
+          ..write('quietHoursEndMinutes: $quietHoursEndMinutes, ')
+          ..write('isEnabled: $isEnabled, ')
+          ..write('createdAtUtcMs: $createdAtUtcMs, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('localRevision: $localRevision, ')
+          ..write('cloudRevision: $cloudRevision, ')
+          ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
+          ..write('serverUpdatedAtUtcMs: $serverUpdatedAtUtcMs, ')
+          ..write('isDeleted: $isDeleted, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
 abstract class _$AppDatabase extends GeneratedDatabase {
   _$AppDatabase(QueryExecutor e) : super(e);
   $AppDatabaseManager get managers => $AppDatabaseManager(this);
@@ -26153,6 +28108,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $ContentQualityReportsTable(this);
   late final $LearningTimeSegmentsTable learningTimeSegments =
       $LearningTimeSegmentsTable(this);
+  late final $LearningGoalsTable learningGoals = $LearningGoalsTable(this);
+  late final $StudyRemindersTable studyReminders = $StudyRemindersTable(this);
   @override
   Iterable<TableInfo<Table, Object?>> get allTables =>
       allSchemaEntities.whereType<TableInfo<Table, Object?>>();
@@ -26198,6 +28155,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     savedLearningItems,
     contentQualityReports,
     learningTimeSegments,
+    learningGoals,
+    studyReminders,
   ];
   @override
   StreamQueryUpdateRules get streamUpdateRules => const StreamQueryUpdateRules([
@@ -26244,6 +28203,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('learning_time_segments', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'learning_goals',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('study_reminders', kind: UpdateKind.delete)],
     ),
   ]);
 }
@@ -26889,6 +28855,42 @@ final class $$LocalOwnersTableReferences
     final cache = $_typedResult.readTableOrNull(
       _learningTimeSegmentsRefsTable($_db),
     );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$LearningGoalsTable, List<LearningGoalRow>>
+  _learningGoalsRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.learningGoals,
+    aliasName: 'local_owners__id__learning_goals__owner_id',
+  );
+
+  $$LearningGoalsTableProcessedTableManager get learningGoalsRefs {
+    final manager = $$LearningGoalsTableTableManager(
+      $_db,
+      $_db.learningGoals,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_learningGoalsRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<$StudyRemindersTable, List<StudyReminderRow>>
+  _studyRemindersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.studyReminders,
+    aliasName: 'local_owners__id__study_reminders__owner_id',
+  );
+
+  $$StudyRemindersTableProcessedTableManager get studyRemindersRefs {
+    final manager = $$StudyRemindersTableTableManager(
+      $_db,
+      $_db.studyReminders,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_studyRemindersRefsTable($_db));
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
     );
@@ -27679,6 +29681,56 @@ class $$LocalOwnersTableFilterComposer
           }) => $$LearningTimeSegmentsTableFilterComposer(
             $db: $db,
             $table: $db.learningTimeSegments,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> learningGoalsRefs(
+    Expression<bool> Function($$LearningGoalsTableFilterComposer f) f,
+  ) {
+    final $$LearningGoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningGoals,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningGoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<bool> studyRemindersRefs(
+    Expression<bool> Function($$StudyRemindersTableFilterComposer f) f,
+  ) {
+    final $$StudyRemindersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studyReminders,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudyRemindersTableFilterComposer(
+            $db: $db,
+            $table: $db.studyReminders,
             $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
             joinBuilder: joinBuilder,
             $removeJoinBuilderFromRootComposer:
@@ -28527,6 +30579,56 @@ class $$LocalOwnersTableAnnotationComposer
         );
     return f(composer);
   }
+
+  Expression<T> learningGoalsRefs<T extends Object>(
+    Expression<T> Function($$LearningGoalsTableAnnotationComposer a) f,
+  ) {
+    final $$LearningGoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.learningGoals,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningGoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+
+  Expression<T> studyRemindersRefs<T extends Object>(
+    Expression<T> Function($$StudyRemindersTableAnnotationComposer a) f,
+  ) {
+    final $$StudyRemindersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studyReminders,
+      getReferencedColumn: (t) => t.ownerId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudyRemindersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.studyReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
 }
 
 class $$LocalOwnersTableTableManager
@@ -28573,6 +30675,8 @@ class $$LocalOwnersTableTableManager
             bool savedLearningItemsRefs,
             bool contentQualityReportsRefs,
             bool learningTimeSegmentsRefs,
+            bool learningGoalsRefs,
+            bool studyRemindersRefs,
           })
         > {
   $$LocalOwnersTableTableManager(_$AppDatabase db, $LocalOwnersTable table)
@@ -28662,6 +30766,8 @@ class $$LocalOwnersTableTableManager
                 savedLearningItemsRefs = false,
                 contentQualityReportsRefs = false,
                 learningTimeSegmentsRefs = false,
+                learningGoalsRefs = false,
+                studyRemindersRefs = false,
               }) {
                 return PrefetchHooks(
                   db: db,
@@ -28696,6 +30802,8 @@ class $$LocalOwnersTableTableManager
                     if (savedLearningItemsRefs) db.savedLearningItems,
                     if (contentQualityReportsRefs) db.contentQualityReports,
                     if (learningTimeSegmentsRefs) db.learningTimeSegments,
+                    if (learningGoalsRefs) db.learningGoals,
+                    if (studyRemindersRefs) db.studyReminders,
                   ],
                   addJoins: null,
                   getPrefetchedDataCallback: (items) async {
@@ -29330,6 +31438,48 @@ class $$LocalOwnersTableTableManager
                               ),
                           typedResults: items,
                         ),
+                      if (learningGoalsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          LearningGoalRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._learningGoalsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).learningGoalsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (studyRemindersRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          StudyReminderRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._studyRemindersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studyRemindersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
                     ];
                   },
                 );
@@ -29381,6 +31531,8 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool savedLearningItemsRefs,
         bool contentQualityReportsRefs,
         bool learningTimeSegmentsRefs,
+        bool learningGoalsRefs,
+        bool studyRemindersRefs,
       })
     >;
 typedef $$ResearchConsentsTableCreateCompanionBuilder =
@@ -48825,6 +50977,1295 @@ typedef $$LearningTimeSegmentsTableProcessedTableManager =
       LearningTimeSegmentRow,
       PrefetchHooks Function({bool ownerId, bool sessionId})
     >;
+typedef $$LearningGoalsTableCreateCompanionBuilder =
+    LearningGoalsCompanion Function({
+      required String id,
+      required String ownerId,
+      required String kind,
+      required String title,
+      required int deadlineAtUtcMs,
+      required String timezoneId,
+      required int timezoneOffsetMinutes,
+      required String status,
+      required int createdAtUtcMs,
+      required int updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+typedef $$LearningGoalsTableUpdateCompanionBuilder =
+    LearningGoalsCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String> kind,
+      Value<String> title,
+      Value<int> deadlineAtUtcMs,
+      Value<String> timezoneId,
+      Value<int> timezoneOffsetMinutes,
+      Value<String> status,
+      Value<int> createdAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+
+final class $$LearningGoalsTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $LearningGoalsTable, LearningGoalRow> {
+  $$LearningGoalsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('learning_goals__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static MultiTypedResultKey<$StudyRemindersTable, List<StudyReminderRow>>
+  _studyRemindersRefsTable(_$AppDatabase db) => MultiTypedResultKey.fromTable(
+    db.studyReminders,
+    aliasName: 'learning_goals__id__study_reminders__goal_id',
+  );
+
+  $$StudyRemindersTableProcessedTableManager get studyRemindersRefs {
+    final manager = $$StudyRemindersTableTableManager(
+      $_db,
+      $_db.studyReminders,
+    ).filter((f) => f.goalId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(_studyRemindersRefsTable($_db));
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+}
+
+class $$LearningGoalsTableFilterComposer
+    extends Composer<_$AppDatabase, $LearningGoalsTable> {
+  $$LearningGoalsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<bool> studyRemindersRefs(
+    Expression<bool> Function($$StudyRemindersTableFilterComposer f) f,
+  ) {
+    final $$StudyRemindersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studyReminders,
+      getReferencedColumn: (t) => t.goalId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudyRemindersTableFilterComposer(
+            $db: $db,
+            $table: $db.studyReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LearningGoalsTableOrderingComposer
+    extends Composer<_$AppDatabase, $LearningGoalsTable> {
+  $$LearningGoalsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get kind => $composableBuilder(
+    column: $table.kind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get title => $composableBuilder(
+    column: $table.title,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get status => $composableBuilder(
+    column: $table.status,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$LearningGoalsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $LearningGoalsTable> {
+  $$LearningGoalsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get kind =>
+      $composableBuilder(column: $table.kind, builder: (column) => column);
+
+  GeneratedColumn<String> get title =>
+      $composableBuilder(column: $table.title, builder: (column) => column);
+
+  GeneratedColumn<int> get deadlineAtUtcMs => $composableBuilder(
+    column: $table.deadlineAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get status =>
+      $composableBuilder(column: $table.status, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  Expression<T> studyRemindersRefs<T extends Object>(
+    Expression<T> Function($$StudyRemindersTableAnnotationComposer a) f,
+  ) {
+    final $$StudyRemindersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.id,
+      referencedTable: $db.studyReminders,
+      getReferencedColumn: (t) => t.goalId,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$StudyRemindersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.studyReminders,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return f(composer);
+  }
+}
+
+class $$LearningGoalsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $LearningGoalsTable,
+          LearningGoalRow,
+          $$LearningGoalsTableFilterComposer,
+          $$LearningGoalsTableOrderingComposer,
+          $$LearningGoalsTableAnnotationComposer,
+          $$LearningGoalsTableCreateCompanionBuilder,
+          $$LearningGoalsTableUpdateCompanionBuilder,
+          (LearningGoalRow, $$LearningGoalsTableReferences),
+          LearningGoalRow,
+          PrefetchHooks Function({bool ownerId, bool studyRemindersRefs})
+        > {
+  $$LearningGoalsTableTableManager(_$AppDatabase db, $LearningGoalsTable table)
+    : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$LearningGoalsTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$LearningGoalsTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$LearningGoalsTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String> kind = const Value.absent(),
+                Value<String> title = const Value.absent(),
+                Value<int> deadlineAtUtcMs = const Value.absent(),
+                Value<String> timezoneId = const Value.absent(),
+                Value<int> timezoneOffsetMinutes = const Value.absent(),
+                Value<String> status = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningGoalsCompanion(
+                id: id,
+                ownerId: ownerId,
+                kind: kind,
+                title: title,
+                deadlineAtUtcMs: deadlineAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                status: status,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                required String kind,
+                required String title,
+                required int deadlineAtUtcMs,
+                required String timezoneId,
+                required int timezoneOffsetMinutes,
+                required String status,
+                required int createdAtUtcMs,
+                required int updatedAtUtcMs,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => LearningGoalsCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                kind: kind,
+                title: title,
+                deadlineAtUtcMs: deadlineAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                status: status,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$LearningGoalsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback:
+              ({ownerId = false, studyRemindersRefs = false}) {
+                return PrefetchHooks(
+                  db: db,
+                  explicitlyWatchedTables: [
+                    if (studyRemindersRefs) db.studyReminders,
+                  ],
+                  addJoins:
+                      <
+                        T extends TableManagerState<
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic,
+                          dynamic
+                        >
+                      >(state) {
+                        if (ownerId) {
+                          state =
+                              state.withJoin(
+                                    currentTable: table,
+                                    currentColumn: table.ownerId,
+                                    referencedTable:
+                                        $$LearningGoalsTableReferences
+                                            ._ownerIdTable(db),
+                                    referencedColumn:
+                                        $$LearningGoalsTableReferences
+                                            ._ownerIdTable(db)
+                                            .id,
+                                  )
+                                  as T;
+                        }
+
+                        return state;
+                      },
+                  getPrefetchedDataCallback: (items) async {
+                    return [
+                      if (studyRemindersRefs)
+                        await $_getPrefetchedData<
+                          LearningGoalRow,
+                          $LearningGoalsTable,
+                          StudyReminderRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LearningGoalsTableReferences
+                              ._studyRemindersRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LearningGoalsTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).studyRemindersRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.goalId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                    ];
+                  },
+                );
+              },
+        ),
+      );
+}
+
+typedef $$LearningGoalsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $LearningGoalsTable,
+      LearningGoalRow,
+      $$LearningGoalsTableFilterComposer,
+      $$LearningGoalsTableOrderingComposer,
+      $$LearningGoalsTableAnnotationComposer,
+      $$LearningGoalsTableCreateCompanionBuilder,
+      $$LearningGoalsTableUpdateCompanionBuilder,
+      (LearningGoalRow, $$LearningGoalsTableReferences),
+      LearningGoalRow,
+      PrefetchHooks Function({bool ownerId, bool studyRemindersRefs})
+    >;
+typedef $$StudyRemindersTableCreateCompanionBuilder =
+    StudyRemindersCompanion Function({
+      required String id,
+      required String ownerId,
+      Value<String?> goalId,
+      required String sourceKind,
+      required int scheduledAtUtcMs,
+      required String timezoneId,
+      required int timezoneOffsetMinutes,
+      Value<int?> quietHoursStartMinutes,
+      Value<int?> quietHoursEndMinutes,
+      Value<bool> isEnabled,
+      required int createdAtUtcMs,
+      required int updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+typedef $$StudyRemindersTableUpdateCompanionBuilder =
+    StudyRemindersCompanion Function({
+      Value<String> id,
+      Value<String> ownerId,
+      Value<String?> goalId,
+      Value<String> sourceKind,
+      Value<int> scheduledAtUtcMs,
+      Value<String> timezoneId,
+      Value<int> timezoneOffsetMinutes,
+      Value<int?> quietHoursStartMinutes,
+      Value<int?> quietHoursEndMinutes,
+      Value<bool> isEnabled,
+      Value<int> createdAtUtcMs,
+      Value<int> updatedAtUtcMs,
+      Value<int> localRevision,
+      Value<int> cloudRevision,
+      Value<int?> lastAcknowledgedAtUtcMs,
+      Value<int?> serverUpdatedAtUtcMs,
+      Value<bool> isDeleted,
+      Value<int> rowid,
+    });
+
+final class $$StudyRemindersTableReferences
+    extends
+        BaseReferences<_$AppDatabase, $StudyRemindersTable, StudyReminderRow> {
+  $$StudyRemindersTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) =>
+      db.localOwners.createAlias('study_reminders__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+
+  static $LearningGoalsTable _goalIdTable(_$AppDatabase db) => db.learningGoals
+      .createAlias('study_reminders__goal_id__learning_goals__id');
+
+  $$LearningGoalsTableProcessedTableManager? get goalId {
+    final $_column = $_itemColumn<String>('goal_id');
+    if ($_column == null) return null;
+    final manager = $$LearningGoalsTableTableManager(
+      $_db,
+      $_db.learningGoals,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_goalIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$StudyRemindersTableFilterComposer
+    extends Composer<_$AppDatabase, $StudyRemindersTable> {
+  $$StudyRemindersTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get scheduledAtUtcMs => $composableBuilder(
+    column: $table.scheduledAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quietHoursStartMinutes => $composableBuilder(
+    column: $table.quietHoursStartMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get quietHoursEndMinutes => $composableBuilder(
+    column: $table.quietHoursEndMinutes,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningGoalsTableFilterComposer get goalId {
+    final $$LearningGoalsTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.goalId,
+      referencedTable: $db.learningGoals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningGoalsTableFilterComposer(
+            $db: $db,
+            $table: $db.learningGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyRemindersTableOrderingComposer
+    extends Composer<_$AppDatabase, $StudyRemindersTable> {
+  $$StudyRemindersTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get id => $composableBuilder(
+    column: $table.id,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get scheduledAtUtcMs => $composableBuilder(
+    column: $table.scheduledAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quietHoursStartMinutes => $composableBuilder(
+    column: $table.quietHoursStartMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get quietHoursEndMinutes => $composableBuilder(
+    column: $table.quietHoursEndMinutes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isEnabled => $composableBuilder(
+    column: $table.isEnabled,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<bool> get isDeleted => $composableBuilder(
+    column: $table.isDeleted,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningGoalsTableOrderingComposer get goalId {
+    final $$LearningGoalsTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.goalId,
+      referencedTable: $db.learningGoals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningGoalsTableOrderingComposer(
+            $db: $db,
+            $table: $db.learningGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyRemindersTableAnnotationComposer
+    extends Composer<_$AppDatabase, $StudyRemindersTable> {
+  $$StudyRemindersTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get id =>
+      $composableBuilder(column: $table.id, builder: (column) => column);
+
+  GeneratedColumn<String> get sourceKind => $composableBuilder(
+    column: $table.sourceKind,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get scheduledAtUtcMs => $composableBuilder(
+    column: $table.scheduledAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get timezoneId => $composableBuilder(
+    column: $table.timezoneId,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get timezoneOffsetMinutes => $composableBuilder(
+    column: $table.timezoneOffsetMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quietHoursStartMinutes => $composableBuilder(
+    column: $table.quietHoursStartMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get quietHoursEndMinutes => $composableBuilder(
+    column: $table.quietHoursEndMinutes,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isEnabled =>
+      $composableBuilder(column: $table.isEnabled, builder: (column) => column);
+
+  GeneratedColumn<int> get createdAtUtcMs => $composableBuilder(
+    column: $table.createdAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get localRevision => $composableBuilder(
+    column: $table.localRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get cloudRevision => $composableBuilder(
+    column: $table.cloudRevision,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get lastAcknowledgedAtUtcMs => $composableBuilder(
+    column: $table.lastAcknowledgedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get serverUpdatedAtUtcMs => $composableBuilder(
+    column: $table.serverUpdatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get isDeleted =>
+      $composableBuilder(column: $table.isDeleted, builder: (column) => column);
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+
+  $$LearningGoalsTableAnnotationComposer get goalId {
+    final $$LearningGoalsTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.goalId,
+      referencedTable: $db.learningGoals,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LearningGoalsTableAnnotationComposer(
+            $db: $db,
+            $table: $db.learningGoals,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$StudyRemindersTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $StudyRemindersTable,
+          StudyReminderRow,
+          $$StudyRemindersTableFilterComposer,
+          $$StudyRemindersTableOrderingComposer,
+          $$StudyRemindersTableAnnotationComposer,
+          $$StudyRemindersTableCreateCompanionBuilder,
+          $$StudyRemindersTableUpdateCompanionBuilder,
+          (StudyReminderRow, $$StudyRemindersTableReferences),
+          StudyReminderRow,
+          PrefetchHooks Function({bool ownerId, bool goalId})
+        > {
+  $$StudyRemindersTableTableManager(
+    _$AppDatabase db,
+    $StudyRemindersTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$StudyRemindersTableFilterComposer($db: db, $table: table),
+          createOrderingComposer: () =>
+              $$StudyRemindersTableOrderingComposer($db: db, $table: table),
+          createComputedFieldComposer: () =>
+              $$StudyRemindersTableAnnotationComposer($db: db, $table: table),
+          updateCompanionCallback:
+              ({
+                Value<String> id = const Value.absent(),
+                Value<String> ownerId = const Value.absent(),
+                Value<String?> goalId = const Value.absent(),
+                Value<String> sourceKind = const Value.absent(),
+                Value<int> scheduledAtUtcMs = const Value.absent(),
+                Value<String> timezoneId = const Value.absent(),
+                Value<int> timezoneOffsetMinutes = const Value.absent(),
+                Value<int?> quietHoursStartMinutes = const Value.absent(),
+                Value<int?> quietHoursEndMinutes = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                Value<int> createdAtUtcMs = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StudyRemindersCompanion(
+                id: id,
+                ownerId: ownerId,
+                goalId: goalId,
+                sourceKind: sourceKind,
+                scheduledAtUtcMs: scheduledAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                quietHoursStartMinutes: quietHoursStartMinutes,
+                quietHoursEndMinutes: quietHoursEndMinutes,
+                isEnabled: isEnabled,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String id,
+                required String ownerId,
+                Value<String?> goalId = const Value.absent(),
+                required String sourceKind,
+                required int scheduledAtUtcMs,
+                required String timezoneId,
+                required int timezoneOffsetMinutes,
+                Value<int?> quietHoursStartMinutes = const Value.absent(),
+                Value<int?> quietHoursEndMinutes = const Value.absent(),
+                Value<bool> isEnabled = const Value.absent(),
+                required int createdAtUtcMs,
+                required int updatedAtUtcMs,
+                Value<int> localRevision = const Value.absent(),
+                Value<int> cloudRevision = const Value.absent(),
+                Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
+                Value<int?> serverUpdatedAtUtcMs = const Value.absent(),
+                Value<bool> isDeleted = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => StudyRemindersCompanion.insert(
+                id: id,
+                ownerId: ownerId,
+                goalId: goalId,
+                sourceKind: sourceKind,
+                scheduledAtUtcMs: scheduledAtUtcMs,
+                timezoneId: timezoneId,
+                timezoneOffsetMinutes: timezoneOffsetMinutes,
+                quietHoursStartMinutes: quietHoursStartMinutes,
+                quietHoursEndMinutes: quietHoursEndMinutes,
+                isEnabled: isEnabled,
+                createdAtUtcMs: createdAtUtcMs,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: localRevision,
+                cloudRevision: cloudRevision,
+                lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
+                serverUpdatedAtUtcMs: serverUpdatedAtUtcMs,
+                isDeleted: isDeleted,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$StudyRemindersTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false, goalId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable: $$StudyRemindersTableReferences
+                                    ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$StudyRemindersTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+                    if (goalId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.goalId,
+                                referencedTable: $$StudyRemindersTableReferences
+                                    ._goalIdTable(db),
+                                referencedColumn:
+                                    $$StudyRemindersTableReferences
+                                        ._goalIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$StudyRemindersTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $StudyRemindersTable,
+      StudyReminderRow,
+      $$StudyRemindersTableFilterComposer,
+      $$StudyRemindersTableOrderingComposer,
+      $$StudyRemindersTableAnnotationComposer,
+      $$StudyRemindersTableCreateCompanionBuilder,
+      $$StudyRemindersTableUpdateCompanionBuilder,
+      (StudyReminderRow, $$StudyRemindersTableReferences),
+      StudyReminderRow,
+      PrefetchHooks Function({bool ownerId, bool goalId})
+    >;
 
 class $AppDatabaseManager {
   final _$AppDatabase _db;
@@ -48918,4 +52359,8 @@ class $AppDatabaseManager {
       $$ContentQualityReportsTableTableManager(_db, _db.contentQualityReports);
   $$LearningTimeSegmentsTableTableManager get learningTimeSegments =>
       $$LearningTimeSegmentsTableTableManager(_db, _db.learningTimeSegments);
+  $$LearningGoalsTableTableManager get learningGoals =>
+      $$LearningGoalsTableTableManager(_db, _db.learningGoals);
+  $$StudyRemindersTableTableManager get studyReminders =>
+      $$StudyRemindersTableTableManager(_db, _db.studyReminders);
 }

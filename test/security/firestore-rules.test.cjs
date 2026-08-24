@@ -681,6 +681,56 @@ function writeFieldLearningTime(db, {
   return batch.commit();
 }
 
+function fieldLearningGoalPayload(overrides = {}) {
+  return {
+    goalId: 'goal:ielts',
+    kind: 'languageTest',
+    title: 'IELTS practice target',
+    deadlineAtUtcMs: 1788238800000,
+    timezoneId: 'Asia/Bangkok',
+    timezoneOffsetMinutes: 420,
+    status: 'active',
+    createdAtUtcMs: 1787616000000,
+    updatedAtUtcMs: 1787616000000,
+    isDeleted: false,
+    ...overrides,
+  };
+}
+
+function writeFieldLearningGoal(db, {
+  uid = alice,
+  payload = fieldLearningGoalPayload(),
+  entityId = payload.goalId,
+  operationId = `learningGoal:${entityId}:1`,
+  revision = 1,
+  baseRevision = 0,
+  operationKind = payload.isDeleted ? 'delete' : 'upsert',
+  clientUpdatedAtUtcMs = payload.updatedAtUtcMs,
+} = {}) {
+  const batch = writeBatch(db);
+  batch.set(doc(db, 'field_users', uid, 'learning_goals', entityId), {
+    schemaVersion: 1,
+    entityId,
+    payload,
+    revision,
+    isDeleted: payload.isDeleted,
+    clientUpdatedAtUtcMs,
+    serverUpdatedAt: serverTimestamp(),
+    lastOperationId: operationId,
+  });
+  batch.set(doc(db, 'field_users', uid, 'operations', operationId), {
+    schemaVersion: 1,
+    operationId,
+    entityType: 'learningGoal',
+    entityId,
+    operationKind,
+    baseRevision,
+    resultingRevision: revision,
+    acknowledgedAt: serverTimestamp(),
+  });
+  return batch.commit();
+}
+
 before(async () => {
   testEnv = await initializeTestEnvironment({
     projectId,
@@ -1930,7 +1980,7 @@ describe('assessment_runs revisioned research contract', () => {
     )));
   });
 
-  it('accepts assessment evidence pinned to current database schema v18', async () => {
+  it('accepts assessment evidence pinned to current database schema v19', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-v16';
     await assertSucceeds(
@@ -1950,7 +2000,7 @@ describe('assessment_runs revisioned research contract', () => {
         payload: fieldAssessmentRunPayload({
           runId: 'assessment-run-v16',
           assignmentId,
-          databaseSchemaVersion: 18,
+          databaseSchemaVersion: 19,
         }),
       }),
     );
@@ -2861,6 +2911,83 @@ describe('learning_time_segments exact immutable active-effort contract', () => 
     await assertFails(writeFieldLearningTime(db, {
       payload: canonical,
       operationId: `learning-time-operation:${'0'.repeat(64)}`,
+    }));
+  });
+});
+
+describe('learning_goals exact owner-scoped payload contract', () => {
+  it('allows exact create and revisioned status update', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningGoal(db));
+    const payload = fieldLearningGoalPayload({
+      status: 'completed',
+      updatedAtUtcMs: 1787702400000,
+    });
+    await assertSucceeds(writeFieldLearningGoal(db, {
+      payload,
+      operationId: 'learningGoal:goal:ielts:2',
+      revision: 2,
+      baseRevision: 1,
+    }));
+  });
+
+  it('rejects admission fields unknown enums bad time and cross owner', async () => {
+    const db = authDb();
+    const canonical = fieldLearningGoalPayload();
+    const cases = [
+      { ...canonical, admissionScore: 80 },
+      { ...canonical, tcasProgramId: 'program:1' },
+      { ...canonical, kind: 'universityAdmission' },
+      { ...canonical, status: 'unknown' },
+      { ...canonical, title: ' IELTS target' },
+      { ...canonical, title: 'IELTS\u0085practice target' },
+      { ...canonical, timezoneId: 'Asia Bangkok' },
+      { ...canonical, timezoneOffsetMinutes: 841 },
+      { ...canonical, updatedAtUtcMs: canonical.createdAtUtcMs - 1 },
+    ];
+    for (const payload of cases) {
+      await assertFails(writeFieldLearningGoal(db, { payload }));
+    }
+    await assertFails(writeFieldLearningGoal(authDb(bob), { uid: alice }));
+    await assertFails(writeFieldLearningGoal(db, {
+      clientUpdatedAtUtcMs: canonical.updatedAtUtcMs + 1,
+    }));
+  });
+
+  it('rejects C0 C1 and DEL controls in the canonical goal id', async () => {
+    const db = authDb();
+    const invalidGoalIds = [
+      'goal:c0\u0001',
+      'goal:c1\u0085',
+      'goal:del\u007f',
+    ];
+    for (const [index, goalId] of invalidGoalIds.entries()) {
+      await assertFails(writeFieldLearningGoal(db, {
+        payload: fieldLearningGoalPayload({ goalId }),
+        entityId: goalId,
+        operationId: `learningGoal:control-case-${index}:1`,
+      }));
+    }
+  });
+
+  it('rejects direct deletion and preserves created-at identity on update', async () => {
+    const db = authDb();
+    await assertSucceeds(writeFieldLearningGoal(db));
+    await assertFails(deleteDoc(doc(
+      db,
+      'field_users',
+      alice,
+      'learning_goals',
+      'goal:ielts',
+    )));
+    await assertFails(writeFieldLearningGoal(db, {
+      payload: fieldLearningGoalPayload({
+        createdAtUtcMs: 1,
+        updatedAtUtcMs: 1787702400000,
+      }),
+      operationId: 'learningGoal:goal:ielts:2',
+      revision: 2,
+      baseRevision: 1,
     }));
   });
 });

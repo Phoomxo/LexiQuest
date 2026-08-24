@@ -10,6 +10,7 @@ import 'tables/identity_tables.dart';
 import 'tables/learning_tables.dart';
 import 'tables/model_tables.dart';
 import 'tables/motivation_tables.dart';
+import 'tables/planning_tables.dart';
 import 'tables/progress_tables.dart';
 import 'tables/quest_tables.dart';
 import 'tables/research_tables.dart';
@@ -64,10 +65,12 @@ part 'app_database.g.dart';
     SavedLearningItems,
     ContentQualityReports,
     LearningTimeSegments,
+    LearningGoals,
+    StudyReminders,
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 18;
+  static const int currentSchemaVersion = 19;
 
   AppDatabase(super.executor);
 
@@ -251,6 +254,14 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 18 && !await _tableExists('learning_time_segments')) {
         await migrator.createTable(learningTimeSegments);
+      }
+      if (from < 19) {
+        if (!await _tableExists('learning_goals')) {
+          await migrator.createTable(learningGoals);
+        }
+        if (!await _tableExists('study_reminders')) {
+          await migrator.createTable(studyReminders);
+        }
       }
     },
     beforeOpen: (details) async {
@@ -547,6 +558,12 @@ final class AppDatabase extends _$AppDatabase {
     }
     if (!await _tableExists('learning_time_segments')) {
       await migrator.createTable(learningTimeSegments);
+    }
+    if (!await _tableExists('learning_goals')) {
+      await migrator.createTable(learningGoals);
+    }
+    if (!await _tableExists('study_reminders')) {
+      await migrator.createTable(studyReminders);
     }
   }
 

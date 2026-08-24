@@ -505,9 +505,14 @@ void main() {
 
       expect(store.payloadRollout.writeVersionFor(SyncCollection.attempts), 1);
       expect(store.learningTimeSegmentSyncRollout.allowsClaims, isFalse);
+      expect(store.learningGoalSyncRollout.allowsClaims, isFalse);
       expect(
         dependencies.syncEngine!.optionalPullCollections,
         isNot(contains(SyncCollection.learningTimeSegments)),
+      );
+      expect(
+        dependencies.syncEngine!.optionalPullCollections,
+        isNot(contains(SyncCollection.learningGoals)),
       );
       expect(
         store.projections.evidenceDecisions.rolloutModeProvider,
@@ -553,6 +558,7 @@ void main() {
         LessonMode.values.toSet(),
       );
       expect(dependencies.createLessonController, isNotNull);
+      expect(dependencies.learningGoals, isNotNull);
       final lessonController = dependencies.createLessonController!(
         lessonModes.find(LessonMode.meaningQuiz)!.adapter,
       );

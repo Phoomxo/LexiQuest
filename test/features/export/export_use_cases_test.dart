@@ -121,6 +121,20 @@ void main() {
     },
   );
 
+  test('learning goal export preserves typed deadline and timezone', () async {
+    final rows = await DriftExportReader(
+      database,
+    ).loadLearningGoals('local:owner');
+
+    expect(rows, hasLength(1));
+    expect(rows.single.kind, 'languageTest');
+    expect(rows.single.title, 'IELTS practice target');
+    expect(rows.single.deadlineAtUtc, DateTime.utc(2026, 9, 1, 5));
+    expect(rows.single.timezoneId, 'Asia/Bangkok');
+    expect(rows.single.timezoneOffsetMinutes, 420);
+    expect(rows.single.status, 'active');
+  });
+
   test('CSV and Anki neutralize spreadsheet formulas', () async {
     await database.customUpdate(
       "UPDATE vocabulary_words SET spelling = '=2+2', meaning = '@SUM(1,1)' "
@@ -563,6 +577,19 @@ void main() {
       expect(segment['endedAtUtc'], '1970-01-01T00:00:08.000Z');
       expect(segment['timezoneId'], 'Asia/Bangkok');
       expect(segment['timezoneOffsetMinutes'], 420);
+      final learningGoals = tables.singleWhere(
+        (table) => table['alias'] == 'learningGoals',
+      );
+      final goal = (learningGoals['records'] as List<dynamic>)
+          .cast<Map<String, dynamic>>()
+          .where((record) => !record.containsKey('recordCount'))
+          .single;
+      expect(goal['kind'], 'languageTest');
+      expect(goal['title'], 'IELTS practice target');
+      expect(goal['deadlineAtUtc'], '2026-09-01T05:00:00.000Z');
+      expect(goal['timezoneId'], 'Asia/Bangkok');
+      expect(goal['timezoneOffsetMinutes'], 420);
+      expect(goal['status'], 'active');
 
       final saved = await exports.export(
         format: ExportFormat.ownerArchiveJson,
@@ -1054,6 +1081,14 @@ Future<void> _seed(AppDatabase database) async {
     "(?, 'local:owner', 'session-1', 0, 7000, 9000, 8000, "
     "'Asia/Bangkok', 420, 'automaticLesson')",
     variables: [Variable<String>(segmentId)],
+  );
+  await database.customInsert(
+    'INSERT INTO learning_goals '
+    '(id, owner_id, kind, title, deadline_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, status, created_at_utc_ms, updated_at_utc_ms) '
+    "VALUES ('goal-1', 'local:owner', 'languageTest', "
+    "'IELTS practice target', 1788238800000, 'Asia/Bangkok', 420, "
+    "'active', 1, 1)",
   );
   await database.customInsert(
     "INSERT INTO answer_attempts "

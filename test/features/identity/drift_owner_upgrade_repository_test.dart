@@ -824,6 +824,20 @@ void main() {
       timeOutbox.operationId,
       LearningTimeSegment.canonicalOperationId(timeSegment.id),
     );
+    final goal = await database.select(database.learningGoals).getSingle();
+    final reminder = await database.select(database.studyReminders).getSingle();
+    final goalOutbox =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.entityType.equals('learningGoal') &
+                  row.entityId.equals(goal.id),
+            ))
+            .getSingle();
+    expect(goal.ownerId, 'account-owner');
+    expect(reminder.ownerId, 'account-owner');
+    expect(reminder.goalId, goal.id);
+    expect(goalOutbox.ownerId, 'account-owner');
+    expect(goalOutbox.operationKind, 'upsert');
   });
 
   test(
@@ -2975,6 +2989,22 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "(?, 'guest-owner', 'session-1', 0, 10, 10, 20, 'Asia/Bangkok', 420, "
     "'automaticLesson')",
     variables: [Variable<String>(learningTimeSegmentId)],
+  );
+  await database.customInsert(
+    'INSERT INTO learning_goals '
+    '(id, owner_id, kind, title, deadline_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, status, created_at_utc_ms, updated_at_utc_ms) '
+    "VALUES ('goal-1', 'guest-owner', 'languageTest', "
+    "'IELTS practice target', 1788238800000, 'Asia/Bangkok', 420, "
+    "'active', 10, 10)",
+  );
+  await database.customInsert(
+    'INSERT INTO study_reminders '
+    '(id, owner_id, goal_id, source_kind, scheduled_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, is_enabled, created_at_utc_ms, '
+    'updated_at_utc_ms) '
+    "VALUES ('reminder-1', 'guest-owner', 'goal-1', 'goalDeadline', "
+    "1788152400000, 'Asia/Bangkok', 420, 0, 10, 10)",
   );
   await _seedCompleteInventoryAssessmentRun(
     database,
