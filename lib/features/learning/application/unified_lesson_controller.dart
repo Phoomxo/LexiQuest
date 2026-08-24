@@ -5,9 +5,11 @@ import 'package:flutter/foundation.dart';
 
 import '../domain/answer_feedback.dart';
 import '../domain/evidence_context.dart';
+import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
+import 'hint_use_cases.dart';
 import 'learning_use_cases.dart';
 
 typedef UnifiedLessonControllerFactory =
@@ -17,18 +19,45 @@ final class UnifiedLessonController extends ChangeNotifier {
   factory UnifiedLessonController({
     required LearningUseCases learning,
     required LessonModeAdapter adapter,
-  }) => UnifiedLessonController._(learning, adapter);
+    HintUseCases? hints,
+  }) {
+    final hintAdapter = adapter is HintSupportingLessonModeAdapter
+        ? adapter
+        : null;
+    if (hintAdapter == null && hints != null) {
+      throw ArgumentError.value(
+        hints,
+        'hints',
+        'requires a hint-supporting lesson mode adapter',
+      );
+    }
+    if (hintAdapter != null &&
+        hints != null &&
+        hints.policy != hintAdapter.hintPolicy) {
+      throw ArgumentError.value(
+        hints.policy,
+        'hints',
+        'must use the policy declared by the lesson mode adapter',
+      );
+    }
+    final resolvedHints = hintAdapter == null
+        ? null
+        : hints ?? HintUseCases(policy: hintAdapter.hintPolicy);
+    return UnifiedLessonController._(learning, adapter, resolvedHints);
+  }
 
-  UnifiedLessonController._(this._learning, this._adapter)
+  UnifiedLessonController._(this._learning, this._adapter, this._hints)
     : _state = LessonSessionState.planned(_adapter.mode);
 
   final LearningUseCases _learning;
   final LessonModeAdapter _adapter;
+  final HintUseCases? _hints;
   LessonSessionState _state;
   AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
       <String, _PendingSubmission>{};
   PendingLearningSessionClose? _pendingClose;
+  Future<void>? _pauseInFlight;
   Future<void>? _completionInFlight;
   Future<void>? _abandonInFlight;
   Future<void> _mutationTail = Future<void>.value();
@@ -36,6 +65,36 @@ final class UnifiedLessonController extends ChangeNotifier {
 
   LessonSessionState get state => _state;
   AnswerFeedback? get feedback => _feedback;
+  HintState? get hintState => _hints?.state;
+  bool get canRevealHint {
+    final hint = _hints?.state;
+    return !_disposed &&
+        hint != null &&
+        hint.availability == HintAvailability.available &&
+        !hint.isExhausted &&
+        _state.status == LessonSessionStatus.active &&
+        _pauseInFlight == null &&
+        _completionInFlight == null &&
+        _abandonInFlight == null &&
+        !_hasUncommittedSubmission;
+  }
+
+  HintRevealResult revealNextHint() {
+    _requireNotDisposed();
+    if (_pauseInFlight != null) {
+      throw StateError('Cannot reveal a hint while pause is pending.');
+    }
+    _requireNoTerminalMutation('reveal a hint');
+    _requireStatus(LessonSessionStatus.active, 'reveal a hint');
+    _requireNoUncommittedSubmission('reveal a hint');
+    final hints = _hints;
+    if (hints == null) {
+      throw StateError('Hints are unavailable for this lesson mode.');
+    }
+    final result = hints.revealNext();
+    if (result.changed && !_disposed) notifyListeners();
+    return result;
+  }
 
   Future<void> start(LessonStartCommand command) {
     if (_disposed) return _disposedError<void>();
@@ -70,11 +129,23 @@ final class UnifiedLessonController extends ChangeNotifier {
     try {
       _requireNotDisposed();
       final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
+      final inFlight = _pauseInFlight;
+      if (inFlight != null) return inFlight;
       _requireNoTerminalMutation('pause');
-      return _serialize<void>(() {
-        _requireStatus(LessonSessionStatus.active, 'pause');
-        _transition(LessonSessionStatus.paused, occurredAt);
-      });
+      late final Future<void> future;
+      future =
+          _serialize<void>(() {
+            _requireStatus(LessonSessionStatus.active, 'pause');
+            _transition(LessonSessionStatus.paused, occurredAt);
+          }).whenComplete(() {
+            if (identical(_pauseInFlight, future)) {
+              _pauseInFlight = null;
+              _notifyAvailabilityChanged();
+            }
+          });
+      _pauseInFlight = future;
+      _notifyAvailabilityChanged();
+      return future;
     } catch (error, stackTrace) {
       return Future<void>.error(error, stackTrace);
     }
@@ -123,13 +194,19 @@ final class UnifiedLessonController extends ChangeNotifier {
       }
       submission.support.evidenceContext.validate();
       final feedbackContext = submission.response.feedbackContext.normalized();
-      final fingerprint = _SubmissionFingerprint.from(
+      final intentFingerprint = _SubmissionIntentFingerprint.from(
         submission,
         feedbackContext: feedbackContext,
       );
       final existing = _submissions[evidenceId];
       if (existing != null) {
-        if (existing.fingerprint != fingerprint) {
+        if (existing.intentFingerprint != intentFingerprint ||
+            existing.fingerprint !=
+                _SubmissionFingerprint.from(
+                  submission,
+                  feedbackContext: feedbackContext,
+                  evidenceContext: existing.evidenceContext,
+                )) {
           throw StateError(
             'Evidence identity $evidenceId was reused with different semantics.',
           );
@@ -140,17 +217,32 @@ final class UnifiedLessonController extends ChangeNotifier {
         if (inFlight != null) return inFlight;
         return _startSubmission(existing, submission.response);
       }
+      _requireNoUncommittedSubmission('submit new evidence');
+      final classifiedEvidence = _adapter.classify(
+        submission.response,
+        submission.support,
+      );
+      classifiedEvidence.validate();
+      final hints = _hints;
+      final evidenceContext =
+          _adapter is HintSupportingLessonModeAdapter && hints != null
+          ? HintPolicy.applyToEvidence(classifiedEvidence, hints.snapshot())
+          : classifiedEvidence;
       final pending = _PendingSubmission(
-        fingerprint: fingerprint,
-        evidenceContext: _adapter.classify(
-          submission.response,
-          submission.support,
+        intentFingerprint: intentFingerprint,
+        fingerprint: _SubmissionFingerprint.from(
+          submission,
+          feedbackContext: feedbackContext,
+          evidenceContext: evidenceContext,
         ),
+        evidenceContext: evidenceContext,
         feedbackContext: feedbackContext,
       );
       pending.evidenceContext.validate();
       _submissions[evidenceId] = pending;
-      return _startSubmission(pending, submission.response);
+      final future = _startSubmission(pending, submission.response);
+      _notifyAvailabilityChanged();
+      return future;
     } catch (error, stackTrace) {
       return Future<AnswerRecordResult>.error(error, stackTrace);
     }
@@ -178,9 +270,11 @@ final class UnifiedLessonController extends ChangeNotifier {
           }).whenComplete(() {
             if (identical(_completionInFlight, future)) {
               _completionInFlight = null;
+              _notifyAvailabilityChanged();
             }
           });
       _completionInFlight = future;
+      _notifyAvailabilityChanged();
       return future;
     } catch (error, stackTrace) {
       return Future<void>.error(error, stackTrace);
@@ -219,9 +313,13 @@ final class UnifiedLessonController extends ChangeNotifier {
             _requireNoUncommittedSubmission('abandon');
             await _abandon(occurredAt);
           }).whenComplete(() {
-            if (identical(_abandonInFlight, future)) _abandonInFlight = null;
+            if (identical(_abandonInFlight, future)) {
+              _abandonInFlight = null;
+              _notifyAvailabilityChanged();
+            }
           });
       _abandonInFlight = future;
+      _notifyAvailabilityChanged();
       return future;
     } catch (error, stackTrace) {
       return Future<void>.error(error, stackTrace);
@@ -249,6 +347,7 @@ final class UnifiedLessonController extends ChangeNotifier {
               pending.result == null &&
               identical(_submissions[response.sourceEvidenceId], pending)) {
             _submissions.remove(response.sourceEvidenceId);
+            _notifyAvailabilityChanged();
           }
         });
     pending.inFlight = future;
@@ -272,6 +371,7 @@ final class UnifiedLessonController extends ChangeNotifier {
       providerProvenance: response.providerProvenance,
     );
     pending.result = result;
+    _hints?.resetAfterCommittedEvidence();
     _feedback = AnswerFeedback.fromCommittedResult(
       result: result,
       context: pending.feedbackContext,
@@ -326,11 +426,18 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   void _requireNoUncommittedSubmission(String action) {
-    if (_submissions.values.any((submission) => submission.result == null)) {
+    if (_hasUncommittedSubmission) {
       throw StateError(
         'Cannot $action while accepted evidence requires a successful retry.',
       );
     }
+  }
+
+  bool get _hasUncommittedSubmission =>
+      _submissions.values.any((submission) => submission.result == null);
+
+  void _notifyAvailabilityChanged() {
+    if (!_disposed) notifyListeners();
   }
 
   void _requireStatus(LessonSessionStatus required, String action) {
@@ -387,11 +494,13 @@ final class UnifiedLessonController extends ChangeNotifier {
 
 final class _PendingSubmission {
   _PendingSubmission({
+    required this.intentFingerprint,
     required this.fingerprint,
     required this.evidenceContext,
     required this.feedbackContext,
   });
 
+  final _SubmissionIntentFingerprint intentFingerprint;
   final _SubmissionFingerprint fingerprint;
   final EvidenceContext evidenceContext;
   final AnswerFeedbackContext feedbackContext;
@@ -406,6 +515,7 @@ final class _SubmissionFingerprint {
   factory _SubmissionFingerprint.from(
     LessonSubmission submission, {
     required AnswerFeedbackContext feedbackContext,
+    required EvidenceContext evidenceContext,
   }) {
     final response = submission.response;
     return _SubmissionFingerprint(
@@ -420,7 +530,7 @@ final class _SubmissionFingerprint {
         'attemptNumber': response.attemptNumber,
         'providerProvenance': response.providerProvenance,
         'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
-        'evidenceContext': submission.support.evidenceContext.toJson(),
+        'evidenceContext': evidenceContext.toJson(),
       }),
     );
   }
@@ -430,6 +540,41 @@ final class _SubmissionFingerprint {
   @override
   bool operator ==(Object other) =>
       other is _SubmissionFingerprint && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
+}
+
+final class _SubmissionIntentFingerprint {
+  const _SubmissionIntentFingerprint(this.value);
+
+  factory _SubmissionIntentFingerprint.from(
+    LessonSubmission submission, {
+    required AnswerFeedbackContext feedbackContext,
+  }) {
+    final response = submission.response;
+    return _SubmissionIntentFingerprint(
+      jsonEncode(<String, Object?>{
+        'sourceEvidenceId': response.sourceEvidenceId,
+        'occurredAtUtc': response.occurredAtUtc.toIso8601String(),
+        'sessionId': response.sessionId,
+        'wordId': response.wordId,
+        'promptMode': response.promptMode,
+        'isCorrect': response.isCorrect,
+        'responseTimeMs': response.responseTimeMs,
+        'attemptNumber': response.attemptNumber,
+        'providerProvenance': response.providerProvenance,
+        'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
+        'declaredEvidenceContext': submission.support.evidenceContext.toJson(),
+      }),
+    );
+  }
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _SubmissionIntentFingerprint && other.value == value;
 
   @override
   int get hashCode => value.hashCode;

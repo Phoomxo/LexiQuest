@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -14,8 +15,10 @@ import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
+import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -368,6 +371,68 @@ void main() {
     },
   );
 
+  test('accepted pause synchronously excludes immediate hint reveal', () async {
+    final adapter = _HintAdapter();
+    final hints = HintUseCases(policy: adapter.hintPolicy);
+    final fixture = await _fixture(adapter: adapter, hints: hints);
+    await fixture.controller.start(fixture.startCommand);
+    Object? listenerRevealError;
+    var listenerSawPendingPause = false;
+    fixture.controller.addListener(() {
+      if (fixture.controller.state.status == LessonSessionStatus.active &&
+          !fixture.controller.canRevealHint) {
+        listenerSawPendingPause = true;
+        try {
+          fixture.controller.revealNextHint();
+        } catch (error) {
+          listenerRevealError = error;
+        }
+      }
+    });
+
+    final pause = fixture.controller.pause(fixture.now);
+
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.controller.canRevealHint, isFalse);
+    expect(fixture.controller.revealNextHint, throwsStateError);
+    expect(listenerSawPendingPause, isTrue);
+    expect(listenerRevealError, isA<StateError>());
+
+    await pause;
+    expect(fixture.controller.state.status, LessonSessionStatus.paused);
+    expect(hints.state.hintLevel, 0);
+  });
+
+  test('pause notification reentrancy reuses the accepted future', () async {
+    final adapter = _HintAdapter();
+    final hints = HintUseCases(policy: adapter.hintPolicy);
+    final fixture = await _fixture(adapter: adapter, hints: hints);
+    await fixture.controller.start(fixture.startCommand);
+    Future<void>? reentrantPause;
+    var pauseQueued = false;
+    fixture.controller.addListener(() {
+      if (!pauseQueued &&
+          fixture.controller.state.status == LessonSessionStatus.active &&
+          !fixture.controller.canRevealHint) {
+        pauseQueued = true;
+        reentrantPause = fixture.controller.pause(fixture.now);
+      }
+    });
+
+    final acceptedPause = fixture.controller.pause(fixture.now);
+    Object? reentrantError;
+    try {
+      await reentrantPause!;
+    } catch (error) {
+      reentrantError = error;
+    }
+    await acceptedPause;
+
+    expect(reentrantPause, same(acceptedPause));
+    expect(reentrantError, isNull);
+    expect(fixture.controller.state.status, LessonSessionStatus.paused);
+  });
+
   test(
     'dispose suppresses state notification but preserves an accepted durable write',
     () async {
@@ -378,6 +443,7 @@ void main() {
 
       final submit = fixture.controller.submit(fixture.submission());
       await fixture.repository.recordStarted.future;
+      notifications = 0;
       fixture.controller.dispose();
       fixture.repository.releaseRecord();
 
@@ -413,6 +479,380 @@ void main() {
     expect(find.text('lesson body'), findsOneWidget);
   });
 
+  testWidgets(
+    'initial paused or hidden mount reconciles without a lifecycle event',
+    (tester) async {
+      for (final initialState in <AppLifecycleState>[
+        AppLifecycleState.paused,
+        AppLifecycleState.hidden,
+      ]) {
+        final fixture = await _fixture();
+        await fixture.controller.start(fixture.startCommand);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              lifecycleStateReader: () => initialState,
+              nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        );
+        await tester.pump();
+
+        expect(fixture.controller.state.status, LessonSessionStatus.paused);
+        await tester.pumpWidget(const SizedBox.shrink());
+      }
+    },
+  );
+
+  testWidgets('initial foreground mount leaves an active lesson active', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    await fixture.controller.start(fixture.startCommand);
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          lifecycleStateReader: () => AppLifecycleState.resumed,
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+  });
+
+  testWidgets(
+    'foreground during a queued lifecycle pause resumes after the pause',
+    (tester) async {
+      final fixture = await _fixture(blockRecord: true);
+      await fixture.controller.start(fixture.startCommand);
+      final transitions = <LessonSessionStatus>[];
+      var lastStatus = fixture.controller.state.status;
+      fixture.controller.addListener(() {
+        final status = fixture.controller.state.status;
+        if (status != lastStatus) {
+          transitions.add(status);
+          lastStatus = status;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+            builder: (_) => const Text('lesson body'),
+          ),
+        ),
+      );
+      final submit = fixture.controller.submit(fixture.submission());
+      await fixture.repository.recordStarted.future;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      fixture.repository.releaseRecord();
+      await submit;
+      await tester.pumpAndSettle();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(transitions, <LessonSessionStatus>[
+        LessonSessionStatus.paused,
+        LessonSessionStatus.active,
+      ]);
+    },
+  );
+
+  testWidgets(
+    'terminal conflict does not self-reschedule lifecycle reconciliation',
+    (tester) async {
+      final fixture = await _fixture(blockFinish: true);
+      await fixture.controller.start(fixture.startCommand);
+      final transitions = <LessonSessionStatus>[];
+      var lastStatus = fixture.controller.state.status;
+      fixture.controller.addListener(() {
+        final status = fixture.controller.state.status;
+        if (status != lastStatus) {
+          transitions.add(status);
+          lastStatus = status;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+            builder: (_) => const Text('lesson body'),
+          ),
+        ),
+      );
+      final completion = fixture.controller.complete(
+        fixture.now.add(const Duration(seconds: 6)),
+      );
+      await fixture.repository.finishStarted.future;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      fixture.repository.releaseFinish();
+      await completion;
+      await tester.pump();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      expect(fixture.repository.finishCalls, 1);
+      expect(transitions, <LessonSessionStatus>[LessonSessionStatus.completed]);
+    },
+  );
+
+  testWidgets('failed completion signals one deferred background pause', (
+    tester,
+  ) async {
+    final fixture = await _fixture(blockFinish: true, failFinish: true);
+    await fixture.controller.start(fixture.startCommand);
+    final transitions = <LessonSessionStatus>[];
+    var lastStatus = fixture.controller.state.status;
+    fixture.controller.addListener(() {
+      final status = fixture.controller.state.status;
+      if (status != lastStatus) {
+        transitions.add(status);
+        lastStatus = status;
+      }
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+    final completion = fixture.controller.complete(
+      fixture.now.add(const Duration(seconds: 6)),
+    );
+    final completionExpectation = expectLater(completion, throwsStateError);
+    await fixture.repository.finishStarted.future;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+
+    fixture.repository.releaseFinish();
+    await completionExpectation;
+    await tester.pump();
+    final statusAfterFailure = fixture.controller.state.status;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(fixture.controller.hintState, isNull);
+    expect(statusAfterFailure, LessonSessionStatus.paused);
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.repository.finishCalls, 1);
+    expect(transitions, <LessonSessionStatus>[
+      LessonSessionStatus.paused,
+      LessonSessionStatus.active,
+    ]);
+  });
+
+  testWidgets('failed abandon signals one deferred background pause', (
+    tester,
+  ) async {
+    final fixture = await _fixture(blockAbandon: true, failAbandon: true);
+    await fixture.controller.start(fixture.startCommand);
+    final transitions = <LessonSessionStatus>[];
+    var lastStatus = fixture.controller.state.status;
+    fixture.controller.addListener(() {
+      final status = fixture.controller.state.status;
+      if (status != lastStatus) {
+        transitions.add(status);
+        lastStatus = status;
+      }
+    });
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+    final abandon = fixture.controller.abandon(
+      fixture.now.add(const Duration(seconds: 6)),
+    );
+    final abandonExpectation = expectLater(abandon, throwsStateError);
+    await fixture.repository.abandonStarted.future;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+    await tester.pump();
+
+    fixture.repository.releaseAbandon();
+    await abandonExpectation;
+    await tester.pump();
+    final statusAfterFailure = fixture.controller.state.status;
+    tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+    await tester.pump();
+
+    expect(fixture.controller.hintState, isNull);
+    expect(statusAfterFailure, LessonSessionStatus.paused);
+    expect(fixture.controller.state.status, LessonSessionStatus.active);
+    expect(fixture.repository.scopedAbandonCalls, 1);
+    expect(transitions, <LessonSessionStatus>[
+      LessonSessionStatus.paused,
+      LessonSessionStatus.active,
+    ]);
+  });
+
+  testWidgets(
+    'failed completion retains lifecycle pause ownership for foreground retry',
+    (tester) async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      final transitions = <LessonSessionStatus>[];
+      var lastStatus = fixture.controller.state.status;
+      fixture.controller.addListener(() {
+        final status = fixture.controller.state.status;
+        if (status != lastStatus) {
+          transitions.add(status);
+          lastStatus = status;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+            builder: (_) => const Text('lesson body'),
+          ),
+        ),
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      final completion = fixture.controller.complete(
+        fixture.now.add(const Duration(seconds: 6)),
+      );
+      final completionExpectation = expectLater(completion, throwsStateError);
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await completionExpectation;
+      await tester.pump();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(fixture.repository.finishCalls, 0);
+      expect(transitions, <LessonSessionStatus>[
+        LessonSessionStatus.paused,
+        LessonSessionStatus.active,
+      ]);
+    },
+  );
+
+  testWidgets(
+    'failed abandon retains lifecycle pause ownership for foreground retry',
+    (tester) async {
+      final fixture = await _fixture(blockAbandon: true, failAbandon: true);
+      await fixture.controller.start(fixture.startCommand);
+      final transitions = <LessonSessionStatus>[];
+      var lastStatus = fixture.controller.state.status;
+      fixture.controller.addListener(() {
+        final status = fixture.controller.state.status;
+        if (status != lastStatus) {
+          transitions.add(status);
+          lastStatus = status;
+        }
+      });
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            nowUtc: () => fixture.now.add(const Duration(seconds: 5)),
+            builder: (_) => const Text('lesson body'),
+          ),
+        ),
+      );
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      final abandon = fixture.controller.abandon(
+        fixture.now.add(const Duration(seconds: 6)),
+      );
+      final abandonExpectation = expectLater(abandon, throwsStateError);
+      await fixture.repository.abandonStarted.future;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      fixture.repository.releaseAbandon();
+      await abandonExpectation;
+      await tester.pump();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(fixture.repository.scopedAbandonCalls, 1);
+      expect(transitions, <LessonSessionStatus>[
+        LessonSessionStatus.paused,
+        LessonSessionStatus.active,
+      ]);
+    },
+  );
+
+  testWidgets(
+    'background intent survives controller replacement and stale completion',
+    (tester) async {
+      final first = await _fixture(blockRecord: true);
+      final replacement = await _fixture();
+      await first.controller.start(first.startCommand);
+      await replacement.controller.start(replacement.startCommand);
+      final replacementTransitions = <LessonSessionStatus>[];
+      var replacementStatus = replacement.controller.state.status;
+      replacement.controller.addListener(() {
+        final status = replacement.controller.state.status;
+        if (status != replacementStatus) {
+          replacementTransitions.add(status);
+          replacementStatus = status;
+        }
+      });
+      UnifiedLessonShell shell(UnifiedLessonController controller) =>
+          UnifiedLessonShell(
+            controller: controller,
+            nowUtc: () => first.now.add(const Duration(seconds: 5)),
+            builder: (_) => const Text('lesson body'),
+          );
+      await tester.pumpWidget(MaterialApp(home: shell(first.controller)));
+      final submit = first.controller.submit(first.submission());
+      await first.repository.recordStarted.future;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      await tester.pumpWidget(MaterialApp(home: shell(replacement.controller)));
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pump();
+      final replacementWhileBackgrounded = replacement.controller.state.status;
+
+      first.repository.releaseRecord();
+      await submit;
+      await tester.pump();
+      final firstAfterStaleCompletion = first.controller.state.status;
+      final replacementAfterStaleCompletion =
+          replacement.controller.state.status;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pump();
+      final replacementAfterForeground = replacement.controller.state.status;
+
+      expect(replacementWhileBackgrounded, LessonSessionStatus.paused);
+      expect(firstAfterStaleCompletion, LessonSessionStatus.paused);
+      expect(replacementAfterStaleCompletion, LessonSessionStatus.paused);
+      expect(replacementAfterForeground, LessonSessionStatus.active);
+      expect(replacementTransitions, <LessonSessionStatus>[
+        LessonSessionStatus.paused,
+        LessonSessionStatus.active,
+      ]);
+    },
+  );
+
   testWidgets('shell presents one panel for one committed answer result', (
     tester,
   ) async {
@@ -433,6 +873,300 @@ void main() {
     expect(find.text('Not quite'), findsOneWidget);
     expect(find.text('Correct answer: บทเรียน'), findsOneWidget);
   });
+
+  test(
+    'one-argument production factory composes isolated typed hint use cases',
+    () async {
+      final fixture = await _fixture();
+      UnifiedLessonController factory(LessonModeAdapter adapter) =>
+          UnifiedLessonController(learning: fixture.learning, adapter: adapter);
+      final UnifiedLessonControllerFactory productionFactory = factory;
+      final first = productionFactory(_HintAdapter());
+      final second = productionFactory(_HintAdapter());
+      await first.start(fixture.startCommand);
+      await second.start(fixture.startCommand);
+
+      first.revealNextHint();
+
+      expect(first.hintState!.hintLevel, 1);
+      expect(second.hintState!.hintLevel, 0);
+    },
+  );
+
+  testWidgets(
+    'shell invokes one typed hint transition without asking the adapter to classify',
+    (tester) async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(adapter: adapter, hints: hints);
+      await fixture.controller.start(fixture.startCommand);
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            builder: (_) => const Text('lesson body'),
+          ),
+        ),
+      );
+      await tester.tap(find.text('Show strategy'));
+      await tester.pump();
+
+      expect(find.byType(HintPanel), findsOneWidget);
+      expect(find.text('Look for the familiar word family.'), findsOneWidget);
+      expect(hints.state.hintLevel, 1);
+      expect(adapter.classifyCalls, 0);
+    },
+  );
+
+  testWidgets('shell disables hints while accepted evidence is uncommitted', (
+    tester,
+  ) async {
+    final adapter = _HintAdapter();
+    final hints = HintUseCases(policy: adapter.hintPolicy);
+    final fixture = await _fixture(
+      adapter: adapter,
+      hints: hints,
+      blockRecord: true,
+    );
+    await fixture.controller.start(fixture.startCommand);
+    fixture.controller.revealNextHint();
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+
+    final submit = fixture.controller.submit(
+      fixture.submission(
+        sourceEvidenceId: 'blocked-shell-response',
+        evidenceClass: EvidenceClass.independentRecall,
+      ),
+    );
+    await fixture.repository.recordStarted.future;
+    await tester.pump();
+
+    final blockedButton = tester.widget<FilledButton>(
+      find.widgetWithText(FilledButton, 'Reveal context'),
+    );
+    expect(blockedButton.onPressed, isNull);
+    expect(fixture.controller.canRevealHint, isFalse);
+
+    fixture.repository.releaseRecord();
+    await submit;
+    await tester.pump();
+    expect(fixture.controller.canRevealHint, isTrue);
+    expect(find.text('Show strategy'), findsOneWidget);
+  });
+
+  test(
+    'hint availability listeners cannot overtake an accepted submit',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(adapter: adapter, hints: hints);
+      await fixture.controller.start(fixture.startCommand);
+      late Future<void> pause;
+      var pauseQueued = false;
+      fixture.controller.addListener(() {
+        if (!pauseQueued && !fixture.controller.canRevealHint) {
+          pauseQueued = true;
+          pause = fixture.controller.pause(
+            fixture.now.add(const Duration(seconds: 1)),
+          );
+        }
+      });
+
+      final result = await fixture.controller.submit(fixture.submission());
+      await pause;
+
+      expect(result.inserted, isTrue);
+      expect(fixture.repository.recordCalls, 1);
+      expect(fixture.controller.state.status, LessonSessionStatus.paused);
+    },
+  );
+
+  test(
+    'controller replaces caller hint claims with actual shell-owned usage',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(adapter: adapter, hints: hints);
+      await fixture.controller.start(fixture.startCommand);
+
+      await fixture.controller.submit(
+        fixture.submission(
+          evidenceClass: EvidenceClass.independentRecall,
+          declaredHintLevel: 2,
+        ),
+      );
+
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.evidenceClass,
+        EvidenceClass.independentRecall,
+      );
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.hintLevel,
+        0,
+      );
+    },
+  );
+
+  test(
+    'committed evidence resets assistance before the next response',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(adapter: adapter, hints: hints);
+      await fixture.controller.start(fixture.startCommand);
+      fixture.controller.revealNextHint();
+
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'assisted-response',
+          evidenceClass: EvidenceClass.independentRecall,
+        ),
+      );
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'next-unassisted-response',
+          evidenceClass: EvidenceClass.independentRecall,
+        ),
+      );
+
+      expect(
+        fixture.repository.recordCommands.map(
+          (command) => command.evidenceContext.evidenceClass,
+        ),
+        <EvidenceClass>[
+          EvidenceClass.guidedPractice,
+          EvidenceClass.independentRecall,
+        ],
+      );
+      expect(
+        fixture.repository.recordCommands.map(
+          (command) => command.evidenceContext.hintLevel,
+        ),
+        <int>[1, 0],
+      );
+      expect(hints.state.hintLevel, 0);
+    },
+  );
+
+  test(
+    'a different response cannot inherit hints while accepted evidence is uncommitted',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(
+        adapter: adapter,
+        hints: hints,
+        blockRecord: true,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      fixture.controller.revealNextHint();
+
+      final first = fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'blocked-assisted-response',
+          evidenceClass: EvidenceClass.independentRecall,
+        ),
+      );
+      await fixture.repository.recordStarted.future;
+      final competing = fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'competing-response',
+          evidenceClass: EvidenceClass.independentRecall,
+        ),
+      );
+      final competingExpectation = expectLater(competing, throwsStateError);
+
+      fixture.repository.releaseRecord();
+      await first;
+      await competingExpectation;
+
+      expect(fixture.repository.recordCalls, 1);
+      expect(adapter.classifyCalls, 1);
+      expect(hints.state.hintLevel, 0);
+    },
+  );
+
+  test(
+    'lost-ACK retry keeps the accepted hint snapshot and rejects changed same-ID semantics',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(policy: adapter.hintPolicy);
+      final fixture = await _fixture(
+        adapter: adapter,
+        hints: hints,
+        failAfterFirstRecord: true,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      fixture.controller.revealNextHint();
+      final submission = fixture.submission(
+        sourceEvidenceId: 'hint-lost-ack',
+        evidenceClass: EvidenceClass.independentRecall,
+      );
+
+      await expectLater(
+        fixture.controller.submit(submission),
+        throwsStateError,
+      );
+      expect(fixture.controller.revealNextHint, throwsStateError);
+      final replay = await fixture.controller.submit(submission);
+
+      expect(replay.inserted, isFalse);
+      expect(adapter.classifyCalls, 1);
+      expect(fixture.repository.recordCalls, 1);
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.evidenceClass,
+        EvidenceClass.guidedPractice,
+      );
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.hintLevel,
+        1,
+      );
+      await expectLater(
+        fixture.controller.submit(
+          fixture.submission(
+            sourceEvidenceId: 'hint-lost-ack',
+            isCorrect: false,
+            evidenceClass: EvidenceClass.independentRecall,
+          ),
+        ),
+        throwsStateError,
+      );
+    },
+  );
+
+  test(
+    'unknown accepted hint state records conservative guided evidence',
+    () async {
+      final adapter = _HintAdapter();
+      final hints = HintUseCases(
+        policy: adapter.hintPolicy,
+        initialState: const HintState.unknown(),
+      );
+      final fixture = await _fixture(adapter: adapter, hints: hints);
+      await fixture.controller.start(fixture.startCommand);
+
+      await fixture.controller.submit(
+        fixture.submission(evidenceClass: EvidenceClass.independentRecall),
+      );
+
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.evidenceClass,
+        EvidenceClass.guidedPractice,
+      );
+      expect(
+        fixture.repository.lastRecordCommand!.evidenceContext.hintLevel,
+        2,
+      );
+    },
+  );
 
   testWidgets(
     'every registered adapter delivers one committed result to one panel without duplicate evidence',
@@ -506,6 +1240,7 @@ final class _Fixture {
   const _Fixture({
     required this.database,
     required this.repository,
+    required this.learning,
     required this.adapter,
     required this.controller,
     required this.startCommand,
@@ -515,6 +1250,7 @@ final class _Fixture {
 
   final AppDatabase database;
   final _CountingRepository repository;
+  final LearningUseCases learning;
   final LessonModeAdapter adapter;
   final UnifiedLessonController controller;
   final LessonStartCommand startCommand;
@@ -525,6 +1261,8 @@ final class _Fixture {
     String sourceEvidenceId = 'evidence-1',
     bool isCorrect = true,
     String canonicalCorrectAnswer = 'บทเรียน',
+    EvidenceClass evidenceClass = EvidenceClass.recognition,
+    int declaredHintLevel = 0,
   }) => LessonSubmission(
     response: LessonResponse(
       sourceEvidenceId: sourceEvidenceId,
@@ -541,9 +1279,9 @@ final class _Fixture {
     ),
     support: LessonSupport(
       evidenceContext: EvidenceContext.legacyCompatibility(
-        evidenceClass: EvidenceClass.recognition,
+        evidenceClass: evidenceClass,
         skillId: 'legacy-meaning-quiz',
-        hintLevel: 0,
+        hintLevel: declaredHintLevel,
         contentRevision: 'legacy-unknown',
         engagementAllowed: true,
       ),
@@ -553,9 +1291,13 @@ final class _Fixture {
 
 Future<_Fixture> _fixture({
   LessonModeAdapter? adapter,
+  HintUseCases? hints,
   bool failAfterFirstRecord = false,
   bool blockRecord = false,
   bool blockFinish = false,
+  bool failFinish = false,
+  bool blockAbandon = false,
+  bool failAbandon = false,
 }) async {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -599,6 +1341,9 @@ Future<_Fixture> _fixture({
     failAfterFirstRecord: failAfterFirstRecord,
     blockRecord: blockRecord,
     blockFinish: blockFinish,
+    failFinish: failFinish,
+    blockAbandon: blockAbandon,
+    failAbandon: failAbandon,
   );
   var nextId = 0;
   final learning = LearningUseCases(
@@ -613,10 +1358,12 @@ Future<_Fixture> _fixture({
   final controller = UnifiedLessonController(
     learning: learning,
     adapter: modeAdapter,
+    hints: hints,
   );
   return _Fixture(
     database: database,
     repository: repository,
+    learning: learning,
     adapter: modeAdapter,
     controller: controller,
     startCommand: LessonStartCommand(
@@ -647,6 +1394,29 @@ final class _Adapter implements LessonModeAdapter {
       LessonItem(id: 'item-${cursor.index}');
 }
 
+final class _HintAdapter implements HintSupportingLessonModeAdapter {
+  int classifyCalls = 0;
+
+  @override
+  HintPolicy get hintPolicy => HintPolicy.staged(
+    strategy: 'Look for the familiar word family.',
+    context: 'The sentence is about rail travel.',
+  );
+
+  @override
+  LessonMode get mode => LessonMode.meaningQuiz;
+
+  @override
+  EvidenceContext classify(LessonResponse response, LessonSupport support) {
+    classifyCalls += 1;
+    return support.evidenceContext;
+  }
+
+  @override
+  Future<LessonItem> next(LessonCursor cursor) async =>
+      LessonItem(id: 'hint-item-${cursor.index}');
+}
+
 final class _CountingRepository
     implements
         LearningRepository,
@@ -657,21 +1427,31 @@ final class _CountingRepository
     required this.failAfterFirstRecord,
     required this.blockRecord,
     required this.blockFinish,
+    required this.failFinish,
+    required this.blockAbandon,
+    required this.failAbandon,
   });
 
   final DriftLearningRepository delegate;
   final bool failAfterFirstRecord;
   final bool blockRecord;
   final bool blockFinish;
+  final bool failFinish;
+  final bool blockAbandon;
+  final bool failAbandon;
   final Completer<void> recordStarted = Completer<void>();
   final Completer<void> finishStarted = Completer<void>();
+  final Completer<void> abandonStarted = Completer<void>();
   final Completer<void> _recordRelease = Completer<void>();
   final Completer<void> _finishRelease = Completer<void>();
+  final Completer<void> _abandonRelease = Completer<void>();
   int recordCalls = 0;
   int replayCalls = 0;
   int finishCalls = 0;
   int scopedAbandonCalls = 0;
   int bulkAbandonCalls = 0;
+  RecordAnswerCommand? lastRecordCommand;
+  final List<RecordAnswerCommand> recordCommands = <RecordAnswerCommand>[];
   bool _lostAckSent = false;
 
   void releaseRecord() {
@@ -680,6 +1460,10 @@ final class _CountingRepository
 
   void releaseFinish() {
     if (!_finishRelease.isCompleted) _finishRelease.complete();
+  }
+
+  void releaseAbandon() {
+    if (!_abandonRelease.isCompleted) _abandonRelease.complete();
   }
 
   @override
@@ -693,6 +1477,8 @@ final class _CountingRepository
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     recordCalls += 1;
+    lastRecordCommand = command;
+    recordCommands.add(command);
     if (!recordStarted.isCompleted) recordStarted.complete();
     if (blockRecord) await _recordRelease.future;
     final result = await delegate.recordAnswer(command);
@@ -712,6 +1498,7 @@ final class _CountingRepository
     finishCalls += 1;
     if (!finishStarted.isCompleted) finishStarted.complete();
     if (blockFinish) await _finishRelease.future;
+    if (failFinish) throw StateError('finish failed');
     return delegate.finishSession(
       ownerId: ownerId,
       sessionId: sessionId,
@@ -730,8 +1517,11 @@ final class _CountingRepository
     required String ownerId,
     required String sessionId,
     required DateTime abandonedAtUtc,
-  }) {
+  }) async {
     scopedAbandonCalls += 1;
+    if (!abandonStarted.isCompleted) abandonStarted.complete();
+    if (blockAbandon) await _abandonRelease.future;
+    if (failAbandon) throw StateError('abandon failed');
     return delegate.abandonSession(
       ownerId: ownerId,
       sessionId: sessionId,

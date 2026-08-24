@@ -3,6 +3,7 @@ import 'package:vocab_learning_app/features/learning/application/legacy_lesson_m
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
@@ -60,8 +61,32 @@ void main() {
         productionFeatureContract[registration.feature]!.productionEntryId,
         registration.productionEntryId,
       );
+      expect(
+        registration.adapter,
+        isNot(isA<HintSupportingLessonModeAdapter>()),
+        reason: 'legacy activity screens cannot silently become hint authority',
+      );
     }
   });
+
+  test(
+    'hint capability is typed without adding a production delivery path',
+    () {
+      final registrations = buildLegacyLessonModeRegistry().registrations;
+      final hintRegistrations = registrations
+          .where(
+            (registration) =>
+                registration.adapter is HintSupportingLessonModeAdapter,
+          )
+          .toList(growable: false);
+      final adapter = _HintBoundaryAdapter();
+
+      expect(hintRegistrations, isEmpty);
+      expect(adapter, isA<LessonModeAdapter>());
+      expect(adapter.hintPolicy.maximumHintLevel, 2);
+      expect(registrations, hasLength(LessonMode.values.length));
+    },
+  );
 
   test(
     'registry rejects alternate adapters competing for one delivery path',
@@ -145,4 +170,23 @@ void main() {
       }
     },
   );
+}
+
+final class _HintBoundaryAdapter implements HintSupportingLessonModeAdapter {
+  @override
+  HintPolicy get hintPolicy => HintPolicy.staged(
+    strategy: 'Use the word family.',
+    context: 'Use the reviewed sentence.',
+  );
+
+  @override
+  LessonMode get mode => LessonMode.meaningQuiz;
+
+  @override
+  EvidenceContext classify(LessonResponse response, LessonSupport support) =>
+      support.evidenceContext;
+
+  @override
+  Future<LessonItem> next(LessonCursor cursor) async =>
+      LessonItem(id: 'boundary-${cursor.index}');
 }

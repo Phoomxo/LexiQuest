@@ -2,6 +2,7 @@ import '../../events/domain/event_envelope_v2.dart';
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_policy_rollout.dart';
+import '../domain/hint_policy.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import 'learning_use_cases.dart';
@@ -15,6 +16,17 @@ enum CurrentActivityInput {
   speakToText,
   shadowing,
   readingExposure,
+}
+
+HintEvidenceClassification classifyCurrentActivityEvidence(
+  CurrentActivityInput input, {
+  required int hintLevel,
+}) {
+  final declaration = _declarationFor(input);
+  return HintPolicy.classifyEvidence(
+    declaredClass: declaration.evidenceClass,
+    hint: HintUsageSnapshot.fromRecordedLevel(hintLevel),
+  );
 }
 
 /// One immutable, read-only research-state snapshot for an occurrence.
@@ -324,21 +336,25 @@ final class PendingCurrentActivityEvidence {
               'non-Legacy Ghost Duel protocol',
             );
           }
-          final evidenceClass =
+          final declaredEvidenceClass =
               evidenceClassOverride ?? _declaration.evidenceClass;
+          final hintClassification = HintPolicy.classifyEvidence(
+            declaredClass: declaredEvidenceClass,
+            hint: HintUsageSnapshot.fromRecordedLevel(_hintLevel),
+          );
           final evidenceContext =
               rolloutMode == EvidencePolicyRolloutMode.legacy
               ? EvidenceContext.legacyCompatibility(
-                  evidenceClass: evidenceClass,
+                  evidenceClass: hintClassification.evidenceClass,
                   skillId: _declaration.skillId,
-                  hintLevel: _hintLevel,
+                  hintLevel: hintClassification.hintLevel,
                   contentRevision: _declaration.contentRevision,
                   engagementAllowed: research.engagementAllowed,
                 )
               : EvidenceContext.forNewEvidence(
-                  evidenceClass: evidenceClass,
+                  evidenceClass: hintClassification.evidenceClass,
                   skillId: _declaration.skillId,
-                  hintLevel: _hintLevel,
+                  hintLevel: hintClassification.hintLevel,
                   contentRevision: _declaration.contentRevision,
                   rolloutMode: rolloutMode,
                   protocolId: research.protocolId,

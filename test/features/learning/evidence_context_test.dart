@@ -1,5 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
@@ -406,6 +408,69 @@ void main() {
         Map<String, Object?>.of(denied.toJson())..remove('engagementAllowed'),
       );
     });
+
+    test(
+      'actual assistance downgrades independent recall and preserves evidence metadata',
+      () {
+        final original = _legacyContext(engagementAllowed: true);
+
+        final assisted = HintPolicy.applyToEvidence(
+          original,
+          const HintUsageSnapshot.known(1),
+        );
+
+        expect(assisted.evidenceClass, EvidenceClass.guidedPractice);
+        expect(assisted.hintLevel, 1);
+        final expected = Map<String, Object?>.of(original.toJson())
+          ..['evidenceClass'] = EvidenceClass.guidedPractice.name
+          ..['hintLevel'] = 1;
+        expect(assisted.toJson(), expected);
+      },
+    );
+
+    test('unknown hint state fails closed to guided evidence', () {
+      final classified = HintPolicy.classifyEvidence(
+        declaredClass: EvidenceClass.independentRecall,
+        hint: const HintUsageSnapshot.unknown(),
+      );
+
+      expect(classified.evidenceClass, EvidenceClass.guidedPractice);
+      expect(classified.hintLevel, 2);
+    });
+
+    test('unavailable support does not downgrade independent recall', () {
+      final classified = HintPolicy.classifyEvidence(
+        declaredClass: EvidenceClass.independentRecall,
+        hint: const HintUsageSnapshot.unavailable(),
+      );
+
+      expect(classified.evidenceClass, EvidenceClass.independentRecall);
+      expect(classified.hintLevel, 0);
+    });
+
+    test(
+      'current activity evidence centrally downgrades assisted and unknown recall',
+      () {
+        for (final input in <CurrentActivityInput>[
+          CurrentActivityInput.srsRecall,
+          CurrentActivityInput.typedRecall,
+          CurrentActivityInput.associativeRecall,
+        ]) {
+          final unassisted = classifyCurrentActivityEvidence(
+            input,
+            hintLevel: 0,
+          );
+          expect(unassisted.evidenceClass, EvidenceClass.independentRecall);
+          expect(unassisted.hintLevel, 0);
+          final assisted = classifyCurrentActivityEvidence(input, hintLevel: 1);
+          expect(assisted.evidenceClass, EvidenceClass.guidedPractice);
+          expect(assisted.hintLevel, 1);
+          final unknown = classifyCurrentActivityEvidence(input, hintLevel: -1);
+          expect(unknown.evidenceClass, EvidenceClass.guidedPractice);
+          expect(unknown.hintLevel, 2);
+        }
+      },
+    );
   });
 }
 
