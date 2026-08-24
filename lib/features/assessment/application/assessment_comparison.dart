@@ -1,4 +1,5 @@
 import '../../learning/domain/evidence_context.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/assessment_instrument_catalog.dart';
 import '../domain/assessment_models.dart';
 import '../domain/assessment_repository.dart';
@@ -53,16 +54,23 @@ final class AssessmentOutcomeComparison {
 }
 
 final class AssessmentComparison {
-  const AssessmentComparison(this._repository, this._instrumentCatalog);
+  const AssessmentComparison(
+    this._repository,
+    this._instrumentCatalog,
+    this._contentManifests,
+  );
 
   final AssessmentRepository _repository;
   final AssessmentInstrumentCatalog _instrumentCatalog;
+  final ContentManifestRepository? _contentManifests;
 
   Future<AssessmentComparisonResult> compare({
     required String ownerId,
     required String studyCycleId,
+    required DateTime comparedAtUtc,
   }) async {
     try {
+      AssessmentRun.validateUtcTimestamp(comparedAtUtc, 'comparedAtUtc');
       final runs = await _repository.listRunsForStudyCycle(
         ownerId: ownerId,
         studyCycleId: studyCycleId,
@@ -72,9 +80,19 @@ final class AssessmentComparison {
       if (pre == null || post == null) {
         return const AssessmentComparisonMissingPair();
       }
-      if (!_compatibleRuns(pre, post)) {
+      if (!_compatibleRuns(pre, post, comparedAtUtc)) {
         return const AssessmentComparisonIncompatibleMetadata();
       }
+      final definition = _instrumentCatalog.lookup(
+        instrumentId: pre.instrumentId,
+        instrumentVersion: pre.instrumentVersion,
+        formId: pre.formId,
+        formVersion: pre.formVersion,
+      );
+      await requireVerifiedAssessmentForm(
+        definition: definition,
+        manifests: _contentManifests,
+      );
 
       final preEvidence = await _repository.listOutcomeEvidence(
         ownerId: ownerId,
@@ -126,7 +144,13 @@ AssessmentRun? _singleCompleted(
   return matching.single;
 }
 
-bool _compatibleRuns(AssessmentRun pre, AssessmentRun post) {
+bool _compatibleRuns(
+  AssessmentRun pre,
+  AssessmentRun post,
+  DateTime comparedAtUtc,
+) {
+  final preCompletedAtUtc = pre.completedAtUtc!;
+  final postCompletedAtUtc = post.completedAtUtc!;
   return pre.ownerId == post.ownerId &&
       pre.studyCycleId == post.studyCycleId &&
       pre.protocolId == post.protocolId &&
@@ -149,7 +173,10 @@ bool _compatibleRuns(AssessmentRun pre, AssessmentRun post) {
       pre.contentRevision == post.contentRevision &&
       pre.evidencePolicyVersion == post.evidencePolicyVersion &&
       pre.featureContractRevision == post.featureContractRevision &&
-      pre.featureContractHash == post.featureContractHash;
+      pre.featureContractHash == post.featureContractHash &&
+      !preCompletedAtUtc.isAfter(post.startedAtUtc) &&
+      !preCompletedAtUtc.isAfter(comparedAtUtc) &&
+      !postCompletedAtUtc.isAfter(comparedAtUtc);
 }
 
 bool _canonicalEvidence(
@@ -179,6 +206,9 @@ bool _canonicalEvidence(
       definition.formChecksumSha256 != run.formChecksumSha256) {
     return false;
   }
+  if (evidence.length != definition.items.length) return false;
+  final expectedItemIds = definition.items.map((item) => item.itemId).toSet();
+  final observedItemIds = <String>{};
   for (final item in evidence) {
     final context = item.evidenceContext;
     if (item.ownerId != run.ownerId ||
@@ -208,6 +238,7 @@ bool _canonicalEvidence(
         context.featureContractHash != run.featureContractHash) {
       return false;
     }
+    if (!observedItemIds.add(context.assessmentItemId!)) return false;
     final catalogItem = definition.item(context.assessmentItemId!);
     if (catalogItem.wordId != item.wordId ||
         catalogItem.promptMode != item.promptMode ||
@@ -222,7 +253,8 @@ bool _canonicalEvidence(
       return false;
     }
   }
-  return true;
+  return observedItemIds.length == expectedItemIds.length &&
+      observedItemIds.containsAll(expectedItemIds);
 }
 
 AssessmentOutcomeSummary _summarize(List<AssessmentOutcomeEvidence> evidence) {

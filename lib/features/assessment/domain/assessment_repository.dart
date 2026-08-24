@@ -3,6 +3,8 @@ import 'assessment_models.dart';
 
 typedef AssessmentActiveResponseWork<T> =
     Future<T> Function(AssessmentRun activeRun);
+typedef AssessmentCompletionAuthorityGuard =
+    Future<void> Function(AssessmentRun activeRun);
 
 final class AssessmentOutcomeEvidence {
   factory AssessmentOutcomeEvidence({
@@ -12,12 +14,20 @@ final class AssessmentOutcomeEvidence {
     required String wordId,
     required String promptMode,
     required bool isCorrect,
+    required int responseTimeMs,
     required DateTime occurredAtUtc,
     required String persistedEvidenceClass,
     required EvidenceContext evidenceContext,
   }) {
     AssessmentRun.validateCanonicalText(wordId, 'wordId');
     AssessmentRun.validateCanonicalText(promptMode, 'promptMode');
+    if (responseTimeMs < 0 || responseTimeMs > 0x7fffffff) {
+      throw ArgumentError.value(
+        responseTimeMs,
+        'responseTimeMs',
+        'must be a bounded nonnegative integer',
+      );
+    }
     AssessmentRun.validateUtcTimestamp(occurredAtUtc, 'occurredAtUtc');
     return AssessmentOutcomeEvidence._(
       sourceEvidenceId: sourceEvidenceId,
@@ -26,6 +36,7 @@ final class AssessmentOutcomeEvidence {
       wordId: wordId,
       promptMode: promptMode,
       isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
       occurredAtUtc: occurredAtUtc,
       persistedEvidenceClass: persistedEvidenceClass,
       evidenceContext: evidenceContext,
@@ -39,6 +50,7 @@ final class AssessmentOutcomeEvidence {
     required this.wordId,
     required this.promptMode,
     required this.isCorrect,
+    required this.responseTimeMs,
     required this.occurredAtUtc,
     required this.persistedEvidenceClass,
     required this.evidenceContext,
@@ -50,6 +62,7 @@ final class AssessmentOutcomeEvidence {
   final String wordId;
   final String promptMode;
   final bool isCorrect;
+  final int responseTimeMs;
   final DateTime occurredAtUtc;
   final String persistedEvidenceClass;
   final EvidenceContext evidenceContext;
@@ -63,6 +76,7 @@ abstract interface class AssessmentRepository {
   Future<AssessmentRun> complete({
     required String runId,
     required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
   });
 
   Future<AssessmentRun> abandon({

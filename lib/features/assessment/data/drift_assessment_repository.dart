@@ -190,6 +190,7 @@ final class DriftAssessmentRepository implements AssessmentRepository {
   Future<AssessmentRun> complete({
     required String runId,
     required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
   }) {
     return _serialize(
       runId,
@@ -197,6 +198,7 @@ final class DriftAssessmentRepository implements AssessmentRepository {
         runId: runId,
         terminalState: AssessmentRunState.completed,
         terminalAtUtc: completedAtUtc,
+        authorityGuard: authorityGuard,
       ),
     );
   }
@@ -277,7 +279,8 @@ final class DriftAssessmentRepository implements AssessmentRepository {
     return _database
         .customSelect(
           'SELECT id, owner_id, session_id, word_id, prompt_mode, is_correct, '
-          'occurred_at_utc_ms, evidence_class, evidence_context_json '
+          'response_time_ms, occurred_at_utc_ms, evidence_class, '
+          'evidence_context_json '
           'FROM answer_attempts '
           'WHERE owner_id = ? AND session_id = ? '
           'ORDER BY occurred_at_utc_ms, id',
@@ -302,6 +305,7 @@ final class DriftAssessmentRepository implements AssessmentRepository {
               wordId: row.read<String>('word_id'),
               promptMode: row.read<String>('prompt_mode'),
               isCorrect: row.read<bool>('is_correct'),
+              responseTimeMs: row.read<int>('response_time_ms'),
               occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
                 row.read<int>('occurred_at_utc_ms'),
                 isUtc: true,
@@ -361,6 +365,7 @@ final class DriftAssessmentRepository implements AssessmentRepository {
     required String runId,
     required AssessmentRunState terminalState,
     required DateTime terminalAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
   }) {
     AssessmentRun.validateRunId(runId);
     AssessmentRun.validateUtcTimestamp(terminalAtUtc, 'terminalAtUtc');
@@ -383,6 +388,12 @@ final class DriftAssessmentRepository implements AssessmentRepository {
       }
       if (existing.state != AssessmentRunState.active) {
         throw _conflict(runId, 'terminal assessment state cannot change');
+      }
+
+      if (terminalState == AssessmentRunState.completed) {
+        await _validateReferences(existing);
+        await _validateStartConsent(existing);
+        await authorityGuard?.call(existing);
       }
 
       final terminal = existing.withTerminalState(

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Variable;
@@ -19,8 +20,12 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
@@ -128,6 +133,17 @@ void main() {
           'form checksum mismatch': () =>
               AssessmentInstrumentCatalog(
                 entries: [_definition(formChecksum: _otherSha256)],
+              ).lookup(
+                instrumentId: _instrumentId,
+                instrumentVersion: _instrumentVersion,
+                formId: _formId,
+                formVersion: _formVersion,
+              ),
+          'form bytes do not bind prompt and scoring semantics': () =>
+              AssessmentInstrumentCatalog(
+                entries: [
+                  _definition(prompt: 'Tampered prompt', formBytes: _formBytes),
+                ],
               ).lookup(
                 instrumentId: _instrumentId,
                 instrumentVersion: _instrumentVersion,
@@ -248,6 +264,1018 @@ void main() {
       expect(await _count(harness.database, 'learning_sessions'), 1);
     },
   );
+
+  test(
+    'presentation hides scoring and records trustworthy active time only',
+    () async {
+      final wallClock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        definition: _definition(
+          responses: const {
+            'choice-b': AssessmentControlledResponse(
+              responseCode: 'incorrect',
+              isCorrect: false,
+            ),
+            'choice-a': AssessmentControlledResponse(
+              responseCode: 'correct',
+              isCorrect: true,
+            ),
+          },
+        ),
+        nowUtc: wallClock.call,
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: wallClock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await harness.database.customUpdate(
+        'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+        variables: const [Variable<String>(_ownerId)],
+      );
+
+      final presentation = await harness.useCases.beginPresentation(
+        _startCommand(),
+      );
+
+      expect(presentation.run.instrumentVersion, _instrumentVersion);
+      expect(presentation.run.formVersion, _formVersion);
+      expect(presentation.items, hasLength(1));
+      expect(presentation.items.single.itemId, _itemId);
+      expect(presentation.items.single.prompt, 'Choose the best meaning.');
+      expect(presentation.items.single.options, <String>[
+        'choice-a',
+        'choice-b',
+      ]);
+      expect(
+        presentation.items.single.toString().toLowerCase(),
+        isNot(anyOf(contains('correct'), contains('scoring'))),
+      );
+
+      monotonicMicros = const Duration(seconds: 12).inMicroseconds;
+      wallClock.value = _startedAtUtc.add(const Duration(seconds: 12));
+      final receipt = await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 12000,
+      );
+      expect(receipt.itemId, _itemId);
+      expect(receipt.inserted, isTrue);
+      expect(
+        receipt.toString().toLowerCase(),
+        isNot(anyOf(contains('correct'), contains('score'))),
+      );
+
+      monotonicMicros = const Duration(seconds: 13).inMicroseconds;
+      wallClock.value = _startedAtUtc.add(const Duration(seconds: 1));
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsStateError,
+      );
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+
+      monotonicMicros = const Duration(seconds: 20).inMicroseconds;
+      wallClock.value = _startedAtUtc.add(const Duration(seconds: 20));
+      await harness.useCases.pausePresentation(_runId);
+      monotonicMicros = const Duration(hours: 1, seconds: 20).inMicroseconds;
+      wallClock.value = _startedAtUtc.add(
+        const Duration(hours: 1, seconds: 20),
+      );
+      await harness.useCases.resumePresentation(_runId);
+      monotonicMicros = const Duration(hours: 1, seconds: 25).inMicroseconds;
+      wallClock.value = _startedAtUtc.add(
+        const Duration(hours: 1, seconds: 25),
+      );
+      final completion = await harness.useCases.completePresentation(_runId);
+
+      expect(completion.run.state, AssessmentRunState.completed);
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(
+        segments.fold<int>(0, (sum, row) => sum + row.activeDurationMs),
+        25000,
+      );
+      expect(
+        segments.every(
+          (row) =>
+              row.activeDurationMs <=
+              LearningTimeSegment.maximumActiveDuration.inMilliseconds,
+        ),
+        isTrue,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+    },
+  );
+
+  test(
+    'resuming a persisted active run reauthorizes before prompt exposure',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => 0,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await harness.useCases.start(_startCommand());
+      await harness.database.customUpdate(
+        'UPDATE research_consents SET consent_state = ?, '
+        'withdrawn_at_utc_ms = ? WHERE owner_id = ?',
+        variables: [
+          const Variable<String>('withdrawn'),
+          Variable<int>(_startedAtUtc.millisecondsSinceEpoch),
+          const Variable<String>(_ownerId),
+        ],
+      );
+
+      await expectLater(
+        harness.useCases.beginPresentation(_startCommand()),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 0);
+      expect(await _count(harness.database, 'learning_time_segments'), 0);
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+    },
+  );
+
+  test(
+    'background withdrawal fences resume and response without false effort',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.setPresentationForeground(
+        runId: _runId,
+        isForeground: false,
+      );
+      await _withdrawAssessmentConsent(harness.database, clock.value);
+
+      monotonicMicros = const Duration(hours: 1, seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(hours: 1, seconds: 5));
+      await expectLater(
+        harness.useCases.resumePresentation(_runId),
+        throwsStateError,
+      );
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+
+      expect(await _count(harness.database, 'answer_attempts'), 0);
+      expect(await _totalActiveDurationMs(harness.database), 5000);
+      final abandoned = await harness.useCases.abandonPresentation(_runId);
+      expect(abandoned.state, AssessmentRunState.abandoned);
+      expect(await _totalActiveDurationMs(harness.database), 5000);
+    },
+  );
+
+  test(
+    'background withdrawal fences completion and preserves prior evidence',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 5000,
+      );
+      monotonicMicros = const Duration(seconds: 6).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 6));
+      await harness.useCases.setPresentationForeground(
+        runId: _runId,
+        isForeground: false,
+      );
+      await _withdrawAssessmentConsent(harness.database, clock.value);
+
+      monotonicMicros = const Duration(hours: 1, seconds: 6).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(hours: 1, seconds: 6));
+      await expectLater(
+        harness.useCases.setPresentationForeground(
+          runId: _runId,
+          isForeground: true,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsStateError,
+      );
+
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+      final abandoned = await harness.useCases.abandonPresentation(_runId);
+      expect(abandoned.state, AssessmentRunState.abandoned);
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+    },
+  );
+
+  test(
+    'withdrawal at response write boundary stops capture without evidence',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      late _Harness harness;
+      late _BoundaryWithdrawalRepository boundary;
+      harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            boundary = _BoundaryWithdrawalRepository(
+              repository,
+              () => _withdrawAssessmentConsent(harness.database, clock.value),
+            ),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      boundary.armResponseWrite();
+
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 0);
+      monotonicMicros = const Duration(hours: 1, seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(hours: 1, seconds: 5));
+      await harness.useCases.detachPresentation(_runId);
+      expect(await _totalActiveDurationMs(harness.database), 5000);
+    },
+  );
+
+  test(
+    'withdrawal at completion boundary leaves the run active and bounded',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      late _Harness harness;
+      late _BoundaryWithdrawalRepository boundary;
+      harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            boundary = _BoundaryWithdrawalRepository(
+              repository,
+              () => _withdrawAssessmentConsent(harness.database, clock.value),
+            ),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 5000,
+      );
+      monotonicMicros = const Duration(seconds: 6).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 6));
+      boundary.armCompletionRead();
+
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsStateError,
+      );
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+      expect(
+        (await harness.useCases.abandonPresentation(_runId)).state,
+        AssessmentRunState.abandoned,
+      );
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+    },
+  );
+
+  test(
+    'withdrawal after resume authorization compensates the reopened capture',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      late _BoundaryRolloutModeProvider rolloutBoundary;
+      late _Harness harness;
+      harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRolloutModeProvider: (delegate) =>
+            rolloutBoundary = _BoundaryRolloutModeProvider(delegate),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.pausePresentation(_runId);
+      rolloutBoundary.afterNextResolution(
+        () => _withdrawAssessmentConsent(harness.database, clock.value),
+      );
+
+      monotonicMicros = const Duration(hours: 1, seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(hours: 1, seconds: 5));
+      await expectLater(
+        harness.useCases.resumePresentation(_runId),
+        throwsStateError,
+      );
+      monotonicMicros = const Duration(hours: 2, seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(hours: 2, seconds: 5));
+      await harness.useCases.detachPresentation(_runId);
+
+      expect(await _totalActiveDurationMs(harness.database), 5000);
+      expect(await _count(harness.database, 'answer_attempts'), 0);
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+    },
+  );
+
+  test(
+    'rollout cancellation inside completion await fences terminal commit',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      late _BoundaryRolloutModeProvider rolloutBoundary;
+      late _CompletionRolloutBoundaryRepository completionBoundary;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRolloutModeProvider: (delegate) =>
+            rolloutBoundary = _BoundaryRolloutModeProvider(delegate),
+        assessmentRepository: (repository) =>
+            completionBoundary = _CompletionRolloutBoundaryRepository(
+              repository,
+              rolloutBoundary.cancel,
+            ),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 5000,
+      );
+      monotonicMicros = const Duration(seconds: 6).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 6));
+      completionBoundary.arm();
+
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsStateError,
+      );
+
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+      expect(
+        (await harness.useCases.abandonPresentation(_runId)).state,
+        AssessmentRunState.abandoned,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(await _totalActiveDurationMs(harness.database), 6000);
+    },
+  );
+
+  test(
+    'failed response retains frozen payload and rejects a changed answer',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            _FailFirstResponseRepository(repository),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+
+      monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 10));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-b',
+          responseTimeMs: 99000,
+        ),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 0);
+
+      final receipt = await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 99000,
+      );
+      expect(receipt.inserted, isTrue);
+      final attempt =
+          (await harness.database.select(harness.database.answerAttempts).get())
+              .single;
+      expect(
+        attempt.occurredAtUtcMs,
+        _startedAtUtc.add(const Duration(seconds: 5)).millisecondsSinceEpoch,
+      );
+      expect(attempt.responseTimeMs, 5000);
+      expect(attempt.isCorrect, isTrue);
+    },
+  );
+
+  test(
+    'commit then ack loss retries the exact frozen attempt without duplicate',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            _CommitThenLoseAckRepository(repository),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+
+      monotonicMicros = const Duration(seconds: 15).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 15));
+      final receipt = await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 15000,
+      );
+      expect(receipt.inserted, isFalse);
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      final attempt =
+          (await harness.database.select(harness.database.answerAttempts).get())
+              .single;
+      expect(
+        attempt.occurredAtUtcMs,
+        _startedAtUtc.add(const Duration(seconds: 5)).millisecondsSinceEpoch,
+      );
+      expect(attempt.responseTimeMs, 5000);
+      expect(
+        (await harness.useCases.completePresentation(_runId)).run.state,
+        AssessmentRunState.completed,
+      );
+    },
+  );
+
+  test(
+    'commit then ack loss reconciles durable evidence immediately',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) => _CommitThenLoseAckRepository(
+          repository,
+          hideFirstReconciliation: false,
+        ),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+
+      final receipt = await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 5000,
+      );
+      expect(receipt.inserted, isFalse);
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(
+        (await harness.useCases.completePresentation(_runId)).run.state,
+        AssessmentRunState.completed,
+      );
+    },
+  );
+
+  test(
+    'lost acknowledgement with conflicting durable payload fails closed',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            _CommitThenLoseAckRepository(repository),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      await harness.database.customUpdate(
+        'UPDATE answer_attempts SET response_time_ms = ?',
+        variables: const [Variable<int>(5001)],
+      );
+
+      monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 10));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-b',
+          responseTimeMs: 10000,
+        ),
+        throwsStateError,
+      );
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsStateError,
+      );
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(
+        (await harness.database.select(harness.database.answerAttempts).get())
+            .single
+            .responseTimeMs,
+        5001,
+      );
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.active,
+      );
+    },
+  );
+
+  test(
+    'lost acknowledgement is recovered after presentation restart',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            _CommitThenLoseAckRepository(repository),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await _selectOnlyAssessmentOwner(harness.database);
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await expectLater(
+        harness.useCases.submitPresentedResponse(
+          runId: _runId,
+          itemId: _itemId,
+          submittedResponse: 'choice-a',
+          responseTimeMs: 5000,
+        ),
+        throwsStateError,
+      );
+      await harness.useCases.detachPresentation(_runId);
+
+      final restarted = harness.presentationUseCases(
+        nowUtc: clock.call,
+        createActiveLearningTimeController: () => ActiveLearningTimeController(
+          repository: DriftLearningTimeRepository(
+            harness.database,
+            owners: _Owners(_ownerId),
+          ),
+          monotonicMicros: () => monotonicMicros,
+          nowUtc: clock.call,
+          timezoneContext: (_) => const LearningTimeZoneContext(
+            timezoneId: 'UTC',
+            utcOffsetMinutes: 0,
+          ),
+          scheduleIdle: (_, _) => () {},
+        ),
+      );
+      final presentation = await restarted.beginPresentation(_startCommand());
+      expect(presentation.answeredItemIds, {_itemId});
+      expect(await _count(harness.database, 'answer_attempts'), 1);
+      expect(
+        (await restarted.completePresentation(_runId)).run.state,
+        AssessmentRunState.completed,
+      );
+    },
+  );
+
+  test('presentation rejects a later item whose wall clock regresses', () async {
+    final clock = _MutableClock(_startedAtUtc);
+    var monotonicMicros = 0;
+    final definition = _definition(includeSecondItem: true);
+    final harness = await _Harness.create(
+      definition: definition,
+      contentManifests: _AssessmentContentManifests(
+        checksumSha256: definition.formChecksumSha256,
+        bytes: definition.formBytes,
+      ),
+      nowUtc: clock.call,
+      createActiveLearningTimeController: (database) =>
+          ActiveLearningTimeController(
+            repository: DriftLearningTimeRepository(
+              database,
+              owners: _Owners(_ownerId),
+            ),
+            monotonicMicros: () => monotonicMicros,
+            nowUtc: clock.call,
+            timezoneContext: (_) => const LearningTimeZoneContext(
+              timezoneId: 'UTC',
+              utcOffsetMinutes: 0,
+            ),
+            scheduleIdle: (_, _) => () {},
+          ),
+    );
+    addTearDown(harness.close);
+    await harness.database.customUpdate(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      variables: const [Variable<String>(_ownerId)],
+    );
+    await harness.useCases.beginPresentation(_startCommand());
+    monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+    clock.value = _startedAtUtc.add(const Duration(seconds: 10));
+    await harness.useCases.submitPresentedResponse(
+      runId: _runId,
+      itemId: _itemId,
+      submittedResponse: 'choice-a',
+      responseTimeMs: 10000,
+    );
+
+    monotonicMicros = const Duration(seconds: 11).inMicroseconds;
+    clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+    await expectLater(
+      harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _secondItemId,
+        submittedResponse: 'choice-b',
+        responseTimeMs: 1000,
+      ),
+      throwsStateError,
+    );
+    expect(await _count(harness.database, 'answer_attempts'), 1);
+    await expectLater(
+      harness.useCases.completePresentation(_runId),
+      throwsStateError,
+    );
+  });
+
+  test(
+    'opposite terminal race never reopens presentation time capture',
+    () async {
+      final clock = _MutableClock(_startedAtUtc);
+      var monotonicMicros = 0;
+      final harness = await _Harness.create(
+        nowUtc: clock.call,
+        assessmentRepository: (repository) =>
+            _OppositeTerminalOnCompleteRepository(repository),
+        createActiveLearningTimeController: (database) =>
+            ActiveLearningTimeController(
+              repository: DriftLearningTimeRepository(
+                database,
+                owners: _Owners(_ownerId),
+              ),
+              monotonicMicros: () => monotonicMicros,
+              nowUtc: clock.call,
+              timezoneContext: (_) => const LearningTimeZoneContext(
+                timezoneId: 'UTC',
+                utcOffsetMinutes: 0,
+              ),
+              scheduleIdle: (_, _) => () {},
+            ),
+      );
+      addTearDown(harness.close);
+      await harness.database.customUpdate(
+        'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+        variables: const [Variable<String>(_ownerId)],
+      );
+      await harness.useCases.beginPresentation(_startCommand());
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 5));
+      await harness.useCases.submitPresentedResponse(
+        runId: _runId,
+        itemId: _itemId,
+        submittedResponse: 'choice-a',
+        responseTimeMs: 5000,
+      );
+
+      await expectLater(
+        harness.useCases.completePresentation(_runId),
+        throwsA(isA<AssessmentRunConflict>()),
+      );
+      monotonicMicros = const Duration(seconds: 15).inMicroseconds;
+      clock.value = _startedAtUtc.add(const Duration(seconds: 15));
+      await harness.useCases.detachPresentation(_runId);
+
+      expect(
+        (await harness.repository.getRun(_runId)).state,
+        AssessmentRunState.abandoned,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(
+        segments.fold<int>(0, (sum, row) => sum + row.activeDurationMs),
+        5000,
+      );
+    },
+  );
+
+  test(
+    'start fails closed when f04 form verification is unavailable',
+    () async {
+      final missing = await _Harness.create(includeContentManifests: false);
+      addTearDown(missing.close);
+      await expectLater(
+        missing.useCases.start(_startCommand()),
+        throwsStateError,
+      );
+      expect(await _count(missing.database, 'assessment_runs'), 0);
+
+      final mismatched = await _Harness.create(
+        contentManifests: _AssessmentContentManifests(
+          checksumSha256: _otherSha256,
+          bytes: _formBytes,
+        ),
+      );
+      addTearDown(mismatched.close);
+      await expectLater(
+        mismatched.useCases.start(_startCommand()),
+        throwsStateError,
+      );
+      expect(await _count(mismatched.database, 'assessment_runs'), 0);
+    },
+  );
+
+  test('comparison fails closed when owner authority is unavailable', () async {
+    final harness = await _Harness.create();
+    addTearDown(harness.close);
+
+    expect(
+      await harness.withOwners(_UnavailableOwners()).compare(_studyCycleId),
+      isA<AssessmentComparisonIncompatibleMetadata>(),
+    );
+  });
 
   test('same-intent start retry reuses durable time after reopen', () async {
     final directory = await Directory.systemTemp.createTemp(
@@ -859,6 +1887,16 @@ final class _Harness {
     AppDatabase? databaseOverride,
     bool seedFixture = true,
     DateTime Function()? nowUtc,
+    ContentManifestRepository? contentManifests,
+    bool includeContentManifests = true,
+    ActiveLearningTimeController Function(AppDatabase database)?
+    createActiveLearningTimeController,
+    AssessmentRepository Function(DriftAssessmentRepository repository)?
+    assessmentRepository,
+    EvidencePolicyRolloutModeProvider Function(
+      EvidencePolicyRolloutModeProvider delegate,
+    )?
+    assessmentRolloutModeProvider,
   }) async {
     final database = databaseOverride ?? AppDatabase(NativeDatabase.memory());
     if (seedFixture) {
@@ -956,6 +1994,8 @@ final class _Harness {
       protocolModeCatalog: protocolCatalog,
       currentActivityResearchStateProvider: eventContexts,
     );
+    final effectiveAssessmentRollout =
+        assessmentRolloutModeProvider?.call(rollout) ?? rollout;
     final owners = _Owners(_ownerId);
     final learning = LearningUseCases(
       owners: owners,
@@ -969,17 +2009,30 @@ final class _Harness {
       eventContextProvider: eventContexts,
     );
     final repository = DriftAssessmentRepository(database);
+    final effectiveAssessmentRepository =
+        assessmentRepository?.call(repository) ?? repository;
     final useCases = AssessmentUseCases(
       owners: owners,
-      repository: repository,
+      repository: effectiveAssessmentRepository,
       learning: learning,
       experimentRegistry: experiments,
       consentRegistry: consents,
-      rolloutModeProvider: rollout,
+      rolloutModeProvider: effectiveAssessmentRollout,
       protocolModeCatalog: protocolCatalog,
       instrumentCatalog: AssessmentInstrumentCatalog(
         entries: [definition ?? _definition()],
       ),
+      contentManifests: includeContentManifests
+          ? contentManifests ??
+                _AssessmentContentManifests(
+                  checksumSha256: _formSha256,
+                  bytes: _formBytes,
+                )
+          : null,
+      createActiveLearningTimeController:
+          createActiveLearningTimeController == null
+          ? null
+          : () => createActiveLearningTimeController(database),
       buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
       databaseSchemaVersion: AppDatabase.currentSchemaVersion,
       nowUtc: nowUtc ?? () => _startedAtUtc,
@@ -1007,6 +2060,10 @@ final class _Harness {
       rolloutModeProvider: rollout,
       protocolModeCatalog: protocolCatalog,
       instrumentCatalog: AssessmentInstrumentCatalog(entries: [definition]),
+      contentManifests: _AssessmentContentManifests(
+        checksumSha256: definition.formChecksumSha256,
+        bytes: definition.formBytes,
+      ),
       buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
       databaseSchemaVersion: AppDatabase.currentSchemaVersion,
       nowUtc: () => _startedAtUtc,
@@ -1023,6 +2080,10 @@ final class _Harness {
       rolloutModeProvider: rollout,
       protocolModeCatalog: protocolCatalog,
       instrumentCatalog: AssessmentInstrumentCatalog(entries: [_definition()]),
+      contentManifests: _AssessmentContentManifests(
+        checksumSha256: _formSha256,
+        bytes: _formBytes,
+      ),
       buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
       databaseSchemaVersion: AppDatabase.currentSchemaVersion,
       nowUtc: () => _startedAtUtc,
@@ -1039,11 +2100,38 @@ final class _Harness {
       rolloutModeProvider: rollout,
       protocolModeCatalog: protocolCatalog,
       instrumentCatalog: AssessmentInstrumentCatalog(entries: [_definition()]),
+      contentManifests: _AssessmentContentManifests(
+        checksumSha256: _formSha256,
+        bytes: _formBytes,
+      ),
       buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
       databaseSchemaVersion: AppDatabase.currentSchemaVersion,
       nowUtc: () => _startedAtUtc,
     );
   }
+
+  AssessmentUseCases presentationUseCases({
+    required DateTime Function() nowUtc,
+    required ActiveLearningTimeControllerFactory
+    createActiveLearningTimeController,
+  }) => AssessmentUseCases(
+    owners: owners,
+    repository: repository,
+    learning: learning,
+    experimentRegistry: experiments,
+    consentRegistry: consents,
+    rolloutModeProvider: rollout,
+    protocolModeCatalog: protocolCatalog,
+    instrumentCatalog: AssessmentInstrumentCatalog(entries: [_definition()]),
+    contentManifests: _AssessmentContentManifests(
+      checksumSha256: _formSha256,
+      bytes: _formBytes,
+    ),
+    createActiveLearningTimeController: createActiveLearningTimeController,
+    buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
+    databaseSchemaVersion: AppDatabase.currentSchemaVersion,
+    nowUtc: nowUtc,
+  );
 
   Future<void> close() => database.close();
 }
@@ -1078,13 +2166,66 @@ AssessmentInstrumentDefinition _definition({
   String instrumentVersion = _instrumentVersion,
   String formId = _formId,
   String formVersion = _formVersion,
+  String prompt = 'Choose the best meaning.',
+  List<int>? formBytes,
+  bool includeSecondItem = false,
   Map<String, AssessmentControlledResponse>? responses,
 }) {
+  final items = <AssessmentItemDefinition>[
+    AssessmentItemDefinition(
+      itemId: _itemId,
+      prompt: prompt,
+      wordId: _wordId,
+      promptMode: _promptMode,
+      scoringRuleVersion: _scoringRuleVersion,
+      responses:
+          responses ??
+          const <String, AssessmentControlledResponse>{
+            'choice-a': AssessmentControlledResponse(
+              responseCode: 'correct',
+              isCorrect: true,
+            ),
+            'choice-b': AssessmentControlledResponse(
+              responseCode: 'incorrect',
+              isCorrect: false,
+            ),
+          },
+    ),
+    if (includeSecondItem)
+      const AssessmentItemDefinition(
+        itemId: _secondItemId,
+        prompt: 'Choose the matching word.',
+        wordId: _wordId,
+        promptMode: _promptMode,
+        scoringRuleVersion: _scoringRuleVersion,
+        responses: {
+          'choice-a': AssessmentControlledResponse(
+            responseCode: 'correct',
+            isCorrect: true,
+          ),
+          'choice-b': AssessmentControlledResponse(
+            responseCode: 'incorrect',
+            isCorrect: false,
+          ),
+        },
+      ),
+  ];
+  final packagedFormBytes =
+      formBytes ??
+      AssessmentInstrumentDefinition.canonicalFormBytes(
+        instrumentId: instrumentId,
+        instrumentVersion: instrumentVersion,
+        formId: formId,
+        formVersion: formVersion,
+        formContentRevision: 1,
+        items: items,
+      );
   return AssessmentInstrumentDefinition(
     instrumentId: instrumentId,
     instrumentVersion: instrumentVersion,
     formId: formId,
     formVersion: formVersion,
+    formContentRevision: 1,
     sourceState: sourceState,
     reviewState: reviewState,
     protocolId: _protocolId,
@@ -1092,30 +2233,50 @@ AssessmentInstrumentDefinition _definition({
     experimentVersion: _experimentVersion,
     contentRevision: contentRevision,
     instrumentBytes: _instrumentBytes,
-    formBytes: _formBytes,
+    formBytes: packagedFormBytes,
     instrumentChecksumSha256: instrumentChecksum ?? _instrumentSha256,
-    formChecksumSha256: formChecksum ?? _formSha256,
-    items: [
-      AssessmentItemDefinition(
-        itemId: _itemId,
-        wordId: _wordId,
-        promptMode: _promptMode,
-        scoringRuleVersion: _scoringRuleVersion,
-        responses:
-            responses ??
-            const <String, AssessmentControlledResponse>{
-              'choice-a': AssessmentControlledResponse(
-                responseCode: 'correct',
-                isCorrect: true,
-              ),
-              'choice-b': AssessmentControlledResponse(
-                responseCode: 'incorrect',
-                isCorrect: false,
-              ),
-            },
-      ),
-    ],
+    formChecksumSha256:
+        formChecksum ?? sha256.convert(packagedFormBytes).toString(),
+    items: items,
   );
+}
+
+final class _AssessmentContentManifests implements ContentManifestRepository {
+  const _AssessmentContentManifests({
+    required this.checksumSha256,
+    required this.bytes,
+  });
+
+  final String checksumSha256;
+  final List<int> bytes;
+
+  @override
+  Future<VerifiedContentManifest> requireVerified(
+    ContentIdentity identity,
+  ) async => VerifiedContentManifest(
+    manifest: ContentManifest(
+      storageId: 'manifest-${identity.id}-${identity.revision}',
+      identity: identity,
+      checksumSha256: checksumSha256,
+      byteLength: bytes.length,
+      provenance: ContentProvenance.packaged,
+      sourceUri: 'asset://assessment/${identity.id}',
+      reviewState: ContentReviewState.approved,
+      publicationState: ContentPublicationState.published,
+      createdAtUtc: _consentDecidedAtUtc,
+      reviewedAtUtc: _consentDecidedAtUtc,
+      publishedAtUtc: _consentDecidedAtUtc,
+    ),
+    bytes: Uint8List.fromList(bytes),
+  );
+}
+
+final class _MutableClock {
+  _MutableClock(this.value);
+
+  DateTime value;
+
+  DateTime call() => value;
 }
 
 final class _WithdrawBeforeStartRepository implements AssessmentRepository {
@@ -1141,7 +2302,12 @@ final class _WithdrawBeforeStartRepository implements AssessmentRepository {
   Future<AssessmentRun> complete({
     required String runId,
     required DateTime completedAtUtc,
-  }) => _delegate.complete(runId: runId, completedAtUtc: completedAtUtc);
+    AssessmentCompletionAuthorityGuard? authorityGuard,
+  }) => _delegate.complete(
+    runId: runId,
+    completedAtUtc: completedAtUtc,
+    authorityGuard: authorityGuard,
+  );
 
   @override
   Future<AssessmentRun> abandon({
@@ -1188,6 +2354,319 @@ final class _WithdrawBeforeStartRepository implements AssessmentRepository {
   );
 }
 
+final class _OppositeTerminalOnCompleteRepository
+    implements AssessmentRepository {
+  _OppositeTerminalOnCompleteRepository(this._delegate);
+
+  final AssessmentRepository _delegate;
+
+  @override
+  Future<AssessmentRun> start(AssessmentRun run) => _delegate.start(run);
+
+  @override
+  Future<AssessmentRun> getRun(String runId) => _delegate.getRun(runId);
+
+  @override
+  Future<AssessmentRun> complete({
+    required String runId,
+    required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
+  }) async {
+    await _delegate.abandon(runId: runId, abandonedAtUtc: completedAtUtc);
+    throw AssessmentRunConflict(
+      runId: runId,
+      reason: 'concurrent writer abandoned the run',
+    );
+  }
+
+  @override
+  Future<AssessmentRun> abandon({
+    required String runId,
+    required DateTime abandonedAtUtc,
+  }) => _delegate.abandon(runId: runId, abandonedAtUtc: abandonedAtUtc);
+
+  @override
+  Future<AssessmentRun> requireActiveForResponse({
+    required String runId,
+    required DateTime occurredAtUtc,
+  }) => _delegate.requireActiveForResponse(
+    runId: runId,
+    occurredAtUtc: occurredAtUtc,
+  );
+
+  @override
+  Future<T> serializeActiveResponse<T>({
+    required String runId,
+    required DateTime occurredAtUtc,
+    required AssessmentActiveResponseWork<T> work,
+  }) => _delegate.serializeActiveResponse(
+    runId: runId,
+    occurredAtUtc: occurredAtUtc,
+    work: work,
+  );
+
+  @override
+  Future<List<AssessmentRun>> listRunsForStudyCycle({
+    required String ownerId,
+    required String studyCycleId,
+  }) => _delegate.listRunsForStudyCycle(
+    ownerId: ownerId,
+    studyCycleId: studyCycleId,
+  );
+
+  @override
+  Future<List<AssessmentOutcomeEvidence>> listOutcomeEvidence({
+    required String ownerId,
+    required String learningSessionId,
+  }) => _delegate.listOutcomeEvidence(
+    ownerId: ownerId,
+    learningSessionId: learningSessionId,
+  );
+}
+
+class _DelegatingAssessmentRepository implements AssessmentRepository {
+  _DelegatingAssessmentRepository(this.delegate);
+
+  final AssessmentRepository delegate;
+
+  @override
+  Future<AssessmentRun> start(AssessmentRun run) => delegate.start(run);
+
+  @override
+  Future<AssessmentRun> getRun(String runId) => delegate.getRun(runId);
+
+  @override
+  Future<AssessmentRun> complete({
+    required String runId,
+    required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
+  }) => delegate.complete(
+    runId: runId,
+    completedAtUtc: completedAtUtc,
+    authorityGuard: authorityGuard,
+  );
+
+  @override
+  Future<AssessmentRun> abandon({
+    required String runId,
+    required DateTime abandonedAtUtc,
+  }) => delegate.abandon(runId: runId, abandonedAtUtc: abandonedAtUtc);
+
+  @override
+  Future<AssessmentRun> requireActiveForResponse({
+    required String runId,
+    required DateTime occurredAtUtc,
+  }) => delegate.requireActiveForResponse(
+    runId: runId,
+    occurredAtUtc: occurredAtUtc,
+  );
+
+  @override
+  Future<T> serializeActiveResponse<T>({
+    required String runId,
+    required DateTime occurredAtUtc,
+    required AssessmentActiveResponseWork<T> work,
+  }) => delegate.serializeActiveResponse(
+    runId: runId,
+    occurredAtUtc: occurredAtUtc,
+    work: work,
+  );
+
+  @override
+  Future<List<AssessmentRun>> listRunsForStudyCycle({
+    required String ownerId,
+    required String studyCycleId,
+  }) => delegate.listRunsForStudyCycle(
+    ownerId: ownerId,
+    studyCycleId: studyCycleId,
+  );
+
+  @override
+  Future<List<AssessmentOutcomeEvidence>> listOutcomeEvidence({
+    required String ownerId,
+    required String learningSessionId,
+  }) => delegate.listOutcomeEvidence(
+    ownerId: ownerId,
+    learningSessionId: learningSessionId,
+  );
+}
+
+final class _BoundaryWithdrawalRepository
+    extends _DelegatingAssessmentRepository {
+  _BoundaryWithdrawalRepository(super.delegate, this._withdraw);
+
+  final Future<void> Function() _withdraw;
+  bool _withdrawAtResponseWrite = false;
+  bool _withdrawAtCompletionRead = false;
+
+  void armResponseWrite() => _withdrawAtResponseWrite = true;
+
+  void armCompletionRead() => _withdrawAtCompletionRead = true;
+
+  @override
+  Future<T> serializeActiveResponse<T>({
+    required String runId,
+    required DateTime occurredAtUtc,
+    required AssessmentActiveResponseWork<T> work,
+  }) async {
+    if (_withdrawAtResponseWrite) {
+      _withdrawAtResponseWrite = false;
+      await _withdraw();
+    }
+    return super.serializeActiveResponse(
+      runId: runId,
+      occurredAtUtc: occurredAtUtc,
+      work: work,
+    );
+  }
+
+  @override
+  Future<AssessmentRun> getRun(String runId) async {
+    if (_withdrawAtCompletionRead) {
+      _withdrawAtCompletionRead = false;
+      await _withdraw();
+    }
+    return super.getRun(runId);
+  }
+}
+
+final class _FailFirstResponseRepository
+    extends _DelegatingAssessmentRepository {
+  _FailFirstResponseRepository(super.delegate);
+
+  bool _failed = false;
+
+  @override
+  Future<T> serializeActiveResponse<T>({
+    required String runId,
+    required DateTime occurredAtUtc,
+    required AssessmentActiveResponseWork<T> work,
+  }) {
+    if (!_failed) {
+      _failed = true;
+      return Future<T>.error(StateError('response write failed'));
+    }
+    return super.serializeActiveResponse(
+      runId: runId,
+      occurredAtUtc: occurredAtUtc,
+      work: work,
+    );
+  }
+}
+
+final class _CommitThenLoseAckRepository
+    extends _DelegatingAssessmentRepository {
+  _CommitThenLoseAckRepository(
+    super.delegate, {
+    this.hideFirstReconciliation = true,
+  });
+
+  final bool hideFirstReconciliation;
+
+  bool _lostAcknowledgement = false;
+  bool _hidFirstReconciliation = false;
+
+  @override
+  Future<T> serializeActiveResponse<T>({
+    required String runId,
+    required DateTime occurredAtUtc,
+    required AssessmentActiveResponseWork<T> work,
+  }) async {
+    final result = await super.serializeActiveResponse(
+      runId: runId,
+      occurredAtUtc: occurredAtUtc,
+      work: work,
+    );
+    if (!_lostAcknowledgement) {
+      _lostAcknowledgement = true;
+      throw StateError('response acknowledgement was lost');
+    }
+    return result;
+  }
+
+  @override
+  Future<List<AssessmentOutcomeEvidence>> listOutcomeEvidence({
+    required String ownerId,
+    required String learningSessionId,
+  }) {
+    if (hideFirstReconciliation &&
+        _lostAcknowledgement &&
+        !_hidFirstReconciliation) {
+      _hidFirstReconciliation = true;
+      return Future<List<AssessmentOutcomeEvidence>>.error(
+        StateError('reconciliation read was unavailable'),
+      );
+    }
+    return super.listOutcomeEvidence(
+      ownerId: ownerId,
+      learningSessionId: learningSessionId,
+    );
+  }
+}
+
+final class _BoundaryRolloutModeProvider
+    implements EvidencePolicyRolloutModeProvider {
+  _BoundaryRolloutModeProvider(this._delegate);
+
+  final EvidencePolicyRolloutModeProvider _delegate;
+  Future<void> Function()? _afterNextResolution;
+  bool _cancelled = false;
+
+  void afterNextResolution(Future<void> Function() callback) {
+    if (_afterNextResolution != null) {
+      throw StateError('rollout boundary is already armed');
+    }
+    _afterNextResolution = callback;
+  }
+
+  void cancel() => _cancelled = true;
+
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext? evidenceContext,
+  }) async {
+    if (_cancelled) return EvidencePolicyRolloutMode.legacy;
+    final resolved = await _delegate.resolve(
+      ownerId: ownerId,
+      evidenceContext: evidenceContext,
+    );
+    final boundary = _afterNextResolution;
+    if (boundary != null) {
+      _afterNextResolution = null;
+      await boundary();
+    }
+    return resolved;
+  }
+}
+
+final class _CompletionRolloutBoundaryRepository
+    extends _DelegatingAssessmentRepository {
+  _CompletionRolloutBoundaryRepository(super.delegate, this._cancelRollout);
+
+  final void Function() _cancelRollout;
+  bool _armed = false;
+
+  void arm() => _armed = true;
+
+  @override
+  Future<AssessmentRun> complete({
+    required String runId,
+    required DateTime completedAtUtc,
+    AssessmentCompletionAuthorityGuard? authorityGuard,
+  }) {
+    if (_armed) {
+      _armed = false;
+      _cancelRollout();
+    }
+    return super.complete(
+      runId: runId,
+      completedAtUtc: completedAtUtc,
+      authorityGuard: authorityGuard,
+    );
+  }
+}
+
 final class _Owners implements LocalOwnerRepository {
   _Owners(this.ownerId);
 
@@ -1232,6 +2711,18 @@ final class _ChangingOwners implements LocalOwnerRepository {
     firebaseUid: firebaseUid,
     createdAtUtc: _consentDecidedAtUtc,
   );
+}
+
+final class _UnavailableOwners implements LocalOwnerRepository {
+  @override
+  Future<identity.LocalOwner> getOrCreateActiveOwner() =>
+      Future<identity.LocalOwner>.error(StateError('owner unavailable'));
+
+  @override
+  Future<identity.LocalOwner> bindFirebaseUid(
+    String ownerId,
+    String firebaseUid,
+  ) => Future<identity.LocalOwner>.error(StateError('owner unavailable'));
 }
 
 Future<void> _seedOwner(AppDatabase database, String ownerId) {
@@ -1283,6 +2774,33 @@ Future<int> _count(AppDatabase database, String tableName) {
       .map((row) => row.read<int>('count'))
       .getSingle();
 }
+
+Future<void> _selectOnlyAssessmentOwner(AppDatabase database) =>
+    database.customUpdate(
+      'UPDATE local_owners SET is_active = CASE WHEN id = ? THEN 1 ELSE 0 END',
+      variables: const [Variable<String>(_ownerId)],
+    );
+
+Future<void> _withdrawAssessmentConsent(
+  AppDatabase database,
+  DateTime withdrawnAtUtc,
+) => database.customUpdate(
+  'UPDATE research_consents SET consent_state = ?, withdrawn_at_utc_ms = ? '
+  'WHERE owner_id = ?',
+  variables: [
+    const Variable<String>('withdrawn'),
+    Variable<int>(withdrawnAtUtc.millisecondsSinceEpoch),
+    const Variable<String>(_ownerId),
+  ],
+);
+
+Future<int> _totalActiveDurationMs(AppDatabase database) => database
+    .customSelect(
+      'SELECT COALESCE(SUM(active_duration_ms), 0) AS total '
+      'FROM learning_time_segments',
+    )
+    .map((row) => row.read<int>('total'))
+    .getSingle();
 
 Future<List<String>> _assessmentOutboxOperationIds(
   AppDatabase database,
@@ -1385,6 +2903,7 @@ const _instrumentVersion = 'instrument-v1';
 const _formId = 'form-a';
 const _formVersion = 'form-v1';
 const _itemId = 'item-meaning-1';
+const _secondItemId = 'item-word-2';
 const _promptMode = 'assessmentResponse';
 const _scoringRuleVersion = 'score-v1';
 const _contentRevision = 'assessment-content-v1';
@@ -1392,7 +2911,32 @@ const _sourceEvidenceId = 'assessment-evidence-1';
 const _appVersion = '1.0.0';
 const _buildId = 'task-12-batch-2';
 const _instrumentBytes = <int>[1, 2, 3, 4, 5];
-const _formBytes = <int>[6, 7, 8, 9];
+final _formBytes = AssessmentInstrumentDefinition.canonicalFormBytes(
+  instrumentId: _instrumentId,
+  instrumentVersion: _instrumentVersion,
+  formId: _formId,
+  formVersion: _formVersion,
+  formContentRevision: 1,
+  items: const [
+    AssessmentItemDefinition(
+      itemId: _itemId,
+      prompt: 'Choose the best meaning.',
+      wordId: _wordId,
+      promptMode: _promptMode,
+      scoringRuleVersion: _scoringRuleVersion,
+      responses: {
+        'choice-a': AssessmentControlledResponse(
+          responseCode: 'correct',
+          isCorrect: true,
+        ),
+        'choice-b': AssessmentControlledResponse(
+          responseCode: 'incorrect',
+          isCorrect: false,
+        ),
+      },
+    ),
+  ],
+);
 const _otherSha256 =
     'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 final _instrumentSha256 = sha256.convert(_instrumentBytes).toString();

@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:crypto/crypto.dart';
+
+import '../../learning_packs/domain/content_manifest.dart';
 
 enum AssessmentCatalogSourceState { approved, unsupported }
 
@@ -17,6 +21,7 @@ final class AssessmentControlledResponse {
 final class AssessmentItemDefinition {
   const AssessmentItemDefinition({
     required this.itemId,
+    required this.prompt,
     required this.wordId,
     required this.promptMode,
     required this.scoringRuleVersion,
@@ -24,6 +29,7 @@ final class AssessmentItemDefinition {
   });
 
   final String itemId;
+  final String prompt;
   final String wordId;
   final String promptMode;
   final String scoringRuleVersion;
@@ -36,6 +42,7 @@ final class AssessmentInstrumentDefinition {
     required this.instrumentVersion,
     required this.formId,
     required this.formVersion,
+    required this.formContentRevision,
     required this.sourceState,
     required this.reviewState,
     required this.protocolId,
@@ -53,6 +60,7 @@ final class AssessmentInstrumentDefinition {
          items.map(
            (item) => AssessmentItemDefinition(
              itemId: item.itemId,
+             prompt: item.prompt,
              wordId: item.wordId,
              promptMode: item.promptMode,
              scoringRuleVersion: item.scoringRuleVersion,
@@ -67,6 +75,7 @@ final class AssessmentInstrumentDefinition {
   final String instrumentVersion;
   final String formId;
   final String formVersion;
+  final int formContentRevision;
   final AssessmentCatalogSourceState sourceState;
   final AssessmentCatalogReviewState reviewState;
   final String protocolId;
@@ -78,6 +87,46 @@ final class AssessmentInstrumentDefinition {
   final String instrumentChecksumSha256;
   final String formChecksumSha256;
   final List<AssessmentItemDefinition> items;
+
+  static List<int> canonicalFormBytes({
+    required String instrumentId,
+    required String instrumentVersion,
+    required String formId,
+    required String formVersion,
+    required int formContentRevision,
+    required List<AssessmentItemDefinition> items,
+  }) => utf8.encode(
+    jsonEncode(<String, Object>{
+      'schema': 'lexiquest.assessment-form.v1',
+      'instrumentId': instrumentId,
+      'instrumentVersion': instrumentVersion,
+      'formId': formId,
+      'formVersion': formVersion,
+      'formContentRevision': formContentRevision,
+      'items': items
+          .map(
+            (item) => <String, Object>{
+              'itemId': item.itemId,
+              'prompt': item.prompt,
+              'wordId': item.wordId,
+              'promptMode': item.promptMode,
+              'scoringRuleVersion': item.scoringRuleVersion,
+              'responses':
+                  (item.responses.entries.toList()
+                        ..sort((left, right) => left.key.compareTo(right.key)))
+                      .map(
+                        (entry) => <String, Object>{
+                          'input': entry.key,
+                          'responseCode': entry.value.responseCode,
+                          'isCorrect': entry.value.isCorrect,
+                        },
+                      )
+                      .toList(growable: false),
+            },
+          )
+          .toList(growable: false),
+    }),
+  );
 
   AssessmentItemDefinition item(String itemId) {
     _validateIdentifier(itemId, 'itemId');
@@ -163,6 +212,11 @@ void _validateDefinition(AssessmentInstrumentDefinition definition) {
       'experimentVersion must be positive.',
     );
   }
+  if (definition.formContentRevision <= 0) {
+    throw const AssessmentCatalogException(
+      'formContentRevision must be positive.',
+    );
+  }
   if (definition.sourceState != AssessmentCatalogSourceState.approved ||
       definition.reviewState != AssessmentCatalogReviewState.approved) {
     throw const AssessmentCatalogException(
@@ -188,6 +242,7 @@ void _validateDefinition(AssessmentInstrumentDefinition definition) {
   for (final item in definition.items) {
     for (final entry in <String, String>{
       'itemId': item.itemId,
+      'prompt': item.prompt,
       'wordId': item.wordId,
       'promptMode': item.promptMode,
       'scoringRuleVersion': item.scoringRuleVersion,
@@ -223,6 +278,46 @@ void _validateDefinition(AssessmentInstrumentDefinition definition) {
       responseSemantics[response.value.responseCode] = response.value.isCorrect;
     }
   }
+  final canonicalFormBytes = AssessmentInstrumentDefinition.canonicalFormBytes(
+    instrumentId: definition.instrumentId,
+    instrumentVersion: definition.instrumentVersion,
+    formId: definition.formId,
+    formVersion: definition.formVersion,
+    formContentRevision: definition.formContentRevision,
+    items: definition.items,
+  );
+  if (!_sameBytes(definition.formBytes, canonicalFormBytes)) {
+    throw const AssessmentCatalogException(
+      'Assessment form bytes do not bind the catalog semantics.',
+    );
+  }
+}
+
+Future<void> requireVerifiedAssessmentForm({
+  required AssessmentInstrumentDefinition definition,
+  required ContentManifestRepository? manifests,
+}) async {
+  if (manifests == null) {
+    throw StateError('Verified assessment-form content is unavailable.');
+  }
+  final identity = ContentIdentity(
+    type: ContentType.assessmentForm,
+    id: definition.formId,
+    revision: definition.formContentRevision,
+  );
+  final verified = await manifests.requireVerified(identity);
+  final manifest = verified.manifest;
+  if (manifest.identity != identity ||
+      manifest.checksumSha256 != definition.formChecksumSha256 ||
+      manifest.byteLength != definition.formBytes.length ||
+      verified.bytes.length != definition.formBytes.length) {
+    throw StateError('Verified assessment-form metadata is incompatible.');
+  }
+  for (var index = 0; index < definition.formBytes.length; index++) {
+    if (verified.bytes[index] != definition.formBytes[index]) {
+      throw StateError('Verified assessment-form bytes are incompatible.');
+    }
+  }
 }
 
 void _validatePackagedBytes(List<int> bytes, String checksum, String name) {
@@ -233,6 +328,14 @@ void _validatePackagedBytes(List<int> bytes, String checksum, String name) {
       sha256.convert(bytes).toString() != checksum) {
     throw AssessmentCatalogException('$name SHA-256 does not match bytes.');
   }
+}
+
+bool _sameBytes(List<int> left, List<int> right) {
+  if (left.length != right.length) return false;
+  for (var index = 0; index < left.length; index++) {
+    if (left[index] != right[index]) return false;
+  }
+  return true;
 }
 
 void _validateIdentifier(String value, String name) {

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Variable;
@@ -17,6 +18,7 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -246,7 +248,9 @@ void main() {
   test(
     'different or unsupported canonical attempt scoring identity is incompatible',
     () async {
-      final differentScoring = await _ComparisonHarness.create();
+      final differentScoring = await _ComparisonHarness.create(
+        includeSecondItem: true,
+      );
       addTearDown(differentScoring.close);
       await differentScoring.startAndComplete(
         runId: _preRunId,
@@ -255,6 +259,7 @@ void main() {
         sourceEvidenceId: 'evidence-pre-score-v1',
         submittedResponse: 'choice-a',
         itemId: _itemV1,
+        additionalItemId: _itemV2,
       );
       await differentScoring.startAndComplete(
         runId: _postRunId,
@@ -263,6 +268,7 @@ void main() {
         sourceEvidenceId: 'evidence-post-score-v2',
         submittedResponse: 'choice-a',
         itemId: _itemV2,
+        additionalItemId: _itemV1,
       );
       expect(
         await differentScoring.useCases.compare(_studyCycleId),
@@ -311,6 +317,122 @@ void main() {
       expect(ready.postOutcome.correctCount, 0);
     },
   );
+
+  test(
+    'comparison fails closed after consent withdrawal or assignment drift',
+    () async {
+      final withdrawn = await _ComparisonHarness.create();
+      addTearDown(withdrawn.close);
+      await withdrawn.createCompletedPair();
+      await withdrawn.database.customUpdate(
+        'UPDATE research_consents SET consent_state = ?, '
+        'withdrawn_at_utc_ms = ? WHERE owner_id = ?',
+        variables: [
+          const Variable<String>('withdrawn'),
+          Variable<int>(_postResponseAtUtc.millisecondsSinceEpoch),
+          const Variable<String>(_ownerId),
+        ],
+      );
+      expect(
+        await withdrawn.useCases.compare(_studyCycleId),
+        isA<AssessmentComparisonIncompatibleMetadata>(),
+      );
+
+      final assignmentDrift = await _ComparisonHarness.create();
+      addTearDown(assignmentDrift.close);
+      await assignmentDrift.createCompletedPair();
+      await assignmentDrift.database.customUpdate(
+        'UPDATE experiment_assignments SET cohort = ? WHERE owner_id = ?',
+        variables: const [
+          Variable<String>('drifted'),
+          Variable<String>(_ownerId),
+        ],
+      );
+      expect(
+        await assignmentDrift.useCases.compare(_studyCycleId),
+        isA<AssessmentComparisonIncompatibleMetadata>(),
+      );
+    },
+  );
+
+  test(
+    'comparison rejects incomplete forms and duplicate item evidence',
+    () async {
+      final incomplete = await _ComparisonHarness.create(
+        includeSecondItem: true,
+      );
+      addTearDown(incomplete.close);
+      await incomplete.createCompletedPair();
+      expect(
+        await incomplete.useCases.compare(_studyCycleId),
+        isA<AssessmentComparisonIncompatibleMetadata>(),
+      );
+
+      final duplicate = await _ComparisonHarness.create();
+      addTearDown(duplicate.close);
+      await duplicate.startAndComplete(
+        runId: _preRunId,
+        sessionId: _preSessionId,
+        phase: AssessmentPhase.pre,
+        sourceEvidenceId: 'evidence-pre-duplicate',
+        submittedResponse: 'choice-a',
+        duplicateResponses: 1,
+      );
+      await duplicate.startAndComplete(
+        runId: _postRunId,
+        sessionId: _postSessionId,
+        phase: AssessmentPhase.post,
+        sourceEvidenceId: 'evidence-post-duplicate',
+        submittedResponse: 'choice-b',
+      );
+      expect(
+        await duplicate.useCases.compare(_studyCycleId),
+        isA<AssessmentComparisonIncompatibleMetadata>(),
+      );
+    },
+  );
+
+  test('comparison rejects future and reversed pre-post chronology', () async {
+    final future = await _ComparisonHarness.create();
+    addTearDown(future.close);
+    await future.createCompletedPair();
+    future.now = _postResponseAtUtc;
+    expect(
+      await future.useCases.compare(_studyCycleId),
+      isA<AssessmentComparisonIncompatibleMetadata>(),
+    );
+
+    final reversed = await _ComparisonHarness.create();
+    addTearDown(reversed.close);
+    await reversed.createCompletedPair();
+    final reversedStart = _preStartedAtUtc.subtract(const Duration(minutes: 2));
+    final reversedEvidence = _preStartedAtUtc.subtract(
+      const Duration(seconds: 90),
+    );
+    final reversedCompletion = _preStartedAtUtc.subtract(
+      const Duration(minutes: 1),
+    );
+    await reversed.database.customUpdate(
+      'UPDATE assessment_runs SET started_at_utc_ms = ?, '
+      'completed_at_utc_ms = ? WHERE id = ?',
+      variables: [
+        Variable<int>(reversedStart.millisecondsSinceEpoch),
+        Variable<int>(reversedCompletion.millisecondsSinceEpoch),
+        const Variable<String>(_postRunId),
+      ],
+    );
+    await reversed.database.customUpdate(
+      'UPDATE answer_attempts SET occurred_at_utc_ms = ? WHERE id = ?',
+      variables: [
+        Variable<int>(reversedEvidence.millisecondsSinceEpoch),
+        const Variable<String>('evidence-post-ready'),
+      ],
+    );
+    expect(
+      await reversed.useCases.compare(_studyCycleId),
+      isA<AssessmentComparisonIncompatibleMetadata>(),
+    );
+  });
 }
 
 final class _ComparisonHarness {
@@ -327,7 +449,9 @@ final class _ComparisonHarness {
   DateTime get now => _clock.value;
   set now(DateTime value) => _clock.value = value;
 
-  static Future<_ComparisonHarness> create() async {
+  static Future<_ComparisonHarness> create({
+    bool includeSecondItem = false,
+  }) async {
     final database = AppDatabase(NativeDatabase.memory());
     await _seedCore(database);
     final experiments = DriftExperimentRegistry(
@@ -370,6 +494,9 @@ final class _ComparisonHarness {
       eventContextProvider: eventContexts,
     );
     final clock = _MutableClock(_preStartedAtUtc);
+    final definition = _instrumentDefinition(
+      includeSecondItem: includeSecondItem,
+    );
     return _ComparisonHarness(
       database: database,
       clock: clock,
@@ -381,9 +508,8 @@ final class _ComparisonHarness {
         consentRegistry: consents,
         rolloutModeProvider: rollout,
         protocolModeCatalog: protocolCatalog,
-        instrumentCatalog: AssessmentInstrumentCatalog(
-          entries: [_instrumentDefinition()],
-        ),
+        instrumentCatalog: AssessmentInstrumentCatalog(entries: [definition]),
+        contentManifests: _ContentManifests(definition.formBytes),
         buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
         databaseSchemaVersion: AppDatabase.currentSchemaVersion,
         nowUtc: clock.call,
@@ -398,6 +524,8 @@ final class _ComparisonHarness {
     required String sourceEvidenceId,
     required Object submittedResponse,
     String itemId = _itemV1,
+    String? additionalItemId,
+    int duplicateResponses = 0,
   }) async {
     now = phase == AssessmentPhase.pre ? _preStartedAtUtc : _postStartedAtUtc;
     await useCases.start(
@@ -414,6 +542,26 @@ final class _ComparisonHarness {
       responseTimeMs: 600,
       occurredAtUtc: responseAt,
     );
+    if (additionalItemId != null) {
+      await useCases.recordResponse(
+        runId: runId,
+        sourceEvidenceId: '$sourceEvidenceId-additional',
+        itemId: additionalItemId,
+        submittedResponse: submittedResponse,
+        responseTimeMs: 600,
+        occurredAtUtc: responseAt,
+      );
+    }
+    for (var duplicate = 0; duplicate < duplicateResponses; duplicate++) {
+      await useCases.recordResponse(
+        runId: runId,
+        sourceEvidenceId: '$sourceEvidenceId-duplicate-$duplicate',
+        itemId: itemId,
+        submittedResponse: submittedResponse,
+        responseTimeMs: 600,
+        occurredAtUtc: responseAt,
+      );
+    }
     now = responseAt.add(const Duration(minutes: 1));
     await useCases.complete(runId);
   }
@@ -459,57 +607,99 @@ AssessmentStartCommand _command({
   formVersion: _formVersion,
 );
 
-AssessmentInstrumentDefinition _instrumentDefinition() =>
-    AssessmentInstrumentDefinition(
-      instrumentId: _instrumentId,
-      instrumentVersion: _instrumentVersion,
-      formId: _formId,
-      formVersion: _formVersion,
-      sourceState: AssessmentCatalogSourceState.approved,
-      reviewState: AssessmentCatalogReviewState.approved,
-      protocolId: _protocolId,
-      experimentId: _experimentId,
-      experimentVersion: 1,
-      contentRevision: _contentRevision,
-      instrumentBytes: _instrumentBytes,
-      formBytes: _formBytes,
-      instrumentChecksumSha256: sha256.convert(_instrumentBytes).toString(),
-      formChecksumSha256: sha256.convert(_formBytes).toString(),
-      items: const [
-        AssessmentItemDefinition(
-          itemId: _itemV1,
-          wordId: _wordId,
-          promptMode: 'assessmentResponse',
-          scoringRuleVersion: 'score-v1',
-          responses: {
-            'choice-a': AssessmentControlledResponse(
-              responseCode: 'correct',
-              isCorrect: true,
-            ),
-            'choice-b': AssessmentControlledResponse(
-              responseCode: 'incorrect',
-              isCorrect: false,
-            ),
-          },
+AssessmentInstrumentDefinition _instrumentDefinition({
+  bool includeSecondItem = false,
+}) {
+  final items = <AssessmentItemDefinition>[
+    const AssessmentItemDefinition(
+      itemId: _itemV1,
+      prompt: 'Choose the best meaning.',
+      wordId: _wordId,
+      promptMode: 'assessmentResponse',
+      scoringRuleVersion: 'score-v1',
+      responses: {
+        'choice-a': AssessmentControlledResponse(
+          responseCode: 'correct',
+          isCorrect: true,
         ),
-        AssessmentItemDefinition(
-          itemId: _itemV2,
-          wordId: _wordId,
-          promptMode: 'assessmentResponse',
-          scoringRuleVersion: 'score-v2',
-          responses: {
-            'choice-a': AssessmentControlledResponse(
-              responseCode: 'correct',
-              isCorrect: true,
-            ),
-            'choice-b': AssessmentControlledResponse(
-              responseCode: 'incorrect',
-              isCorrect: false,
-            ),
-          },
+        'choice-b': AssessmentControlledResponse(
+          responseCode: 'incorrect',
+          isCorrect: false,
         ),
-      ],
-    );
+      },
+    ),
+    if (includeSecondItem)
+      const AssessmentItemDefinition(
+        itemId: _itemV2,
+        prompt: 'Choose the best meaning.',
+        wordId: _wordId,
+        promptMode: 'assessmentResponse',
+        scoringRuleVersion: 'score-v2',
+        responses: {
+          'choice-a': AssessmentControlledResponse(
+            responseCode: 'correct',
+            isCorrect: true,
+          ),
+          'choice-b': AssessmentControlledResponse(
+            responseCode: 'incorrect',
+            isCorrect: false,
+          ),
+        },
+      ),
+  ];
+  final formBytes = AssessmentInstrumentDefinition.canonicalFormBytes(
+    instrumentId: _instrumentId,
+    instrumentVersion: _instrumentVersion,
+    formId: _formId,
+    formVersion: _formVersion,
+    formContentRevision: 1,
+    items: items,
+  );
+  return AssessmentInstrumentDefinition(
+    instrumentId: _instrumentId,
+    instrumentVersion: _instrumentVersion,
+    formId: _formId,
+    formVersion: _formVersion,
+    formContentRevision: 1,
+    sourceState: AssessmentCatalogSourceState.approved,
+    reviewState: AssessmentCatalogReviewState.approved,
+    protocolId: _protocolId,
+    experimentId: _experimentId,
+    experimentVersion: 1,
+    contentRevision: _contentRevision,
+    instrumentBytes: _instrumentBytes,
+    formBytes: formBytes,
+    instrumentChecksumSha256: sha256.convert(_instrumentBytes).toString(),
+    formChecksumSha256: sha256.convert(formBytes).toString(),
+    items: items,
+  );
+}
+
+final class _ContentManifests implements ContentManifestRepository {
+  const _ContentManifests(this.bytes);
+
+  final List<int> bytes;
+
+  @override
+  Future<VerifiedContentManifest> requireVerified(
+    ContentIdentity identity,
+  ) async => VerifiedContentManifest(
+    manifest: ContentManifest(
+      storageId: 'manifest-form-a-r1',
+      identity: identity,
+      checksumSha256: sha256.convert(bytes).toString(),
+      byteLength: bytes.length,
+      provenance: ContentProvenance.packaged,
+      sourceUri: 'asset://assessment/form-a',
+      reviewState: ContentReviewState.approved,
+      publicationState: ContentPublicationState.published,
+      createdAtUtc: _consentAtUtc,
+      reviewedAtUtc: _consentAtUtc,
+      publishedAtUtc: _consentAtUtc,
+    ),
+    bytes: Uint8List.fromList(bytes),
+  );
+}
 
 Future<void> _seedCore(AppDatabase database) async {
   for (final owner in const [_ownerId, _foreignOwnerId]) {
@@ -755,7 +945,7 @@ const _contentRevision = 'assessment-content-v1';
 const _appVersion = '1.0.0';
 const _buildId = 'task-12-comparison';
 const _instrumentBytes = <int>[1, 2, 3];
-const _formBytes = <int>[4, 5, 6];
+final _formBytes = _instrumentDefinition().formBytes;
 const _otherSha256 =
     'ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff';
 final _consentAtUtc = DateTime.utc(2026, 8, 1, 8);

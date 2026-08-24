@@ -38,6 +38,101 @@ final class AssessmentResponseResult {
   final bool inserted;
 }
 
+/// The intentionally score-free item shape exposed to assessment UI.
+final class AssessmentPresentationItem {
+  factory AssessmentPresentationItem({
+    required String itemId,
+    required String prompt,
+    required List<String> options,
+  }) {
+    AssessmentRun.validateCanonicalText(itemId, 'itemId');
+    AssessmentRun.validateCanonicalText(prompt, 'prompt');
+    if (options.length < 2 || options.length > 64) {
+      throw ArgumentError.value(
+        options,
+        'options',
+        'must contain between two and 64 controlled responses',
+      );
+    }
+    final unique = <String>{};
+    for (final option in options) {
+      AssessmentRun.validateCanonicalText(option, 'option');
+      if (!unique.add(option)) {
+        throw ArgumentError.value(
+          options,
+          'options',
+          'must not contain duplicates',
+        );
+      }
+    }
+    return AssessmentPresentationItem._(
+      itemId: itemId,
+      prompt: prompt,
+      options: List<String>.unmodifiable(options),
+    );
+  }
+
+  const AssessmentPresentationItem._({
+    required this.itemId,
+    required this.prompt,
+    required this.options,
+  });
+
+  final String itemId;
+  final String prompt;
+  final List<String> options;
+}
+
+final class AssessmentPresentation {
+  factory AssessmentPresentation({
+    required AssessmentRun run,
+    required List<AssessmentPresentationItem> items,
+    required Set<String> answeredItemIds,
+  }) {
+    if (run.state != AssessmentRunState.active) {
+      throw ArgumentError.value(run.state, 'run.state', 'must be active');
+    }
+    if (items.isEmpty) {
+      throw ArgumentError.value(items, 'items', 'must not be empty');
+    }
+    final itemIds = items.map((item) => item.itemId).toSet();
+    if (itemIds.length != items.length ||
+        !itemIds.containsAll(answeredItemIds)) {
+      throw ArgumentError.value(
+        items,
+        'items',
+        'must be unique and contain every answered item',
+      );
+    }
+    return AssessmentPresentation._(
+      run: run,
+      items: List<AssessmentPresentationItem>.unmodifiable(items),
+      answeredItemIds: Set<String>.unmodifiable(answeredItemIds),
+    );
+  }
+
+  const AssessmentPresentation._({
+    required this.run,
+    required this.items,
+    required this.answeredItemIds,
+  });
+
+  final AssessmentRun run;
+  final List<AssessmentPresentationItem> items;
+  final Set<String> answeredItemIds;
+}
+
+/// A replay-safe acknowledgement that never discloses scoring semantics.
+final class AssessmentSubmissionReceipt {
+  const AssessmentSubmissionReceipt({
+    required this.itemId,
+    required this.inserted,
+  });
+
+  final String itemId;
+  final bool inserted;
+}
+
 final class AssessmentRun {
   factory AssessmentRun({
     required String id,

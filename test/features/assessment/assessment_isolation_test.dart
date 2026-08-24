@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Variable;
@@ -20,6 +21,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -252,6 +254,7 @@ final class _IsolationHarness {
         instrumentCatalog: AssessmentInstrumentCatalog(
           entries: [_instrumentDefinition()],
         ),
+        contentManifests: const _ContentManifests(),
         buildInfo: const AppBuildInfo(version: _appVersion, buildId: _buildId),
         databaseSchemaVersion: AppDatabase.currentSchemaVersion,
         nowUtc: clock.call,
@@ -649,6 +652,7 @@ AssessmentInstrumentDefinition _instrumentDefinition() =>
       instrumentVersion: _instrumentVersion,
       formId: _formId,
       formVersion: _formVersion,
+      formContentRevision: 1,
       sourceState: AssessmentCatalogSourceState.approved,
       reviewState: AssessmentCatalogReviewState.approved,
       protocolId: _protocolId,
@@ -662,6 +666,7 @@ AssessmentInstrumentDefinition _instrumentDefinition() =>
       items: const [
         AssessmentItemDefinition(
           itemId: _itemId,
+          prompt: 'Choose the best meaning.',
           wordId: _wordId,
           promptMode: 'assessmentResponse',
           scoringRuleVersion: _scoringRuleVersion,
@@ -678,6 +683,30 @@ AssessmentInstrumentDefinition _instrumentDefinition() =>
         ),
       ],
     );
+
+final class _ContentManifests implements ContentManifestRepository {
+  const _ContentManifests();
+
+  @override
+  Future<VerifiedContentManifest> requireVerified(
+    ContentIdentity identity,
+  ) async => VerifiedContentManifest(
+    manifest: ContentManifest(
+      storageId: 'manifest-form-a-r1',
+      identity: identity,
+      checksumSha256: sha256.convert(_formBytes).toString(),
+      byteLength: _formBytes.length,
+      provenance: ContentProvenance.packaged,
+      sourceUri: 'asset://assessment/form-a',
+      reviewState: ContentReviewState.approved,
+      publicationState: ContentPublicationState.published,
+      createdAtUtc: _consentAtUtc,
+      reviewedAtUtc: _consentAtUtc,
+      publishedAtUtc: _consentAtUtc,
+    ),
+    bytes: Uint8List.fromList(_formBytes),
+  );
+}
 
 final class _Owners implements LocalOwnerRepository {
   const _Owners();
@@ -734,7 +763,32 @@ const _evidenceId = 'assessment-evidence-isolation';
 const _appVersion = '1.0.0';
 const _buildId = 'task-12-isolation';
 const _instrumentBytes = <int>[1, 3, 5, 7];
-const _formBytes = <int>[2, 4, 6, 8];
+final _formBytes = AssessmentInstrumentDefinition.canonicalFormBytes(
+  instrumentId: _instrumentId,
+  instrumentVersion: _instrumentVersion,
+  formId: _formId,
+  formVersion: _formVersion,
+  formContentRevision: 1,
+  items: const [
+    AssessmentItemDefinition(
+      itemId: _itemId,
+      prompt: 'Choose the best meaning.',
+      wordId: _wordId,
+      promptMode: 'assessmentResponse',
+      scoringRuleVersion: _scoringRuleVersion,
+      responses: {
+        'choice-a': AssessmentControlledResponse(
+          responseCode: 'correct',
+          isCorrect: true,
+        ),
+        'choice-b': AssessmentControlledResponse(
+          responseCode: 'incorrect',
+          isCorrect: false,
+        ),
+      },
+    ),
+  ],
+);
 final _consentAtUtc = DateTime.utc(2026, 8, 1, 8);
 final _assignedAtUtc = DateTime.utc(2026, 8, 2, 8);
 final _sessionAtUtc = DateTime.utc(2026, 8, 14, 9, 59);
