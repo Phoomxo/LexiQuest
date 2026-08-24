@@ -13,6 +13,8 @@ final class RichLexicalMetadata {
   static const int maxJsonStructuralDepth = 4;
 
   RichLexicalMetadata({
+    this.englishDefinition,
+    this.verifiedArtifactChecksumSha256,
     this.ipa,
     Iterable<String> examples = const <String>[],
     Iterable<String> synonyms = const <String>[],
@@ -28,6 +30,12 @@ final class RichLexicalMetadata {
          antonyms.toList(growable: false),
        );
 
+  final String? englishDefinition;
+
+  /// SHA-256 of the verified lexical-metadata artifact these fields came
+  /// from. Presentation-only callers may omit it; evidence-producing modes
+  /// must fail closed when it is absent or malformed.
+  final String? verifiedArtifactChecksumSha256;
   final String? ipa;
   final List<String> examples;
   final List<String> synonyms;
@@ -40,6 +48,7 @@ final class RichLexicalMetadata {
     required Uint8List bytes,
     required String wordId,
     required int contentRevision,
+    String? verifiedArtifactChecksumSha256,
   }) {
     _preflightArtifact(bytes);
     Object? decoded;
@@ -51,27 +60,53 @@ final class RichLexicalMetadata {
       throw const FormatException('lexical metadata must be UTF-8 JSON');
     }
     if (decoded is! Map<Object?, Object?> ||
-        decoded.length != 8 ||
-        decoded.keys.any((key) => key is! String) ||
-        !decoded.keys.toSet().containsAll(const <String>{
-          'schemaVersion',
-          'wordId',
-          'contentRevision',
-          'ipa',
-          'examples',
-          'synonyms',
-          'antonyms',
-          'audio',
-        })) {
+        decoded.keys.any((key) => key is! String)) {
       throw const FormatException('invalid lexical metadata shape');
     }
-    if (decoded['schemaVersion'] != 1 ||
-        decoded['wordId'] != wordId ||
+    final schemaVersion = decoded['schemaVersion'];
+    final expectedKeys = switch (schemaVersion) {
+      1 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'audio',
+      },
+      2 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'audio',
+      },
+      _ => const <String>{},
+    };
+    if (expectedKeys.isEmpty ||
+        decoded.length != expectedKeys.length ||
+        decoded.keys.toSet().difference(expectedKeys).isNotEmpty) {
+      throw const FormatException('invalid lexical metadata shape');
+    }
+    if (decoded['wordId'] != wordId ||
         decoded['contentRevision'] != contentRevision) {
       throw const FormatException('lexical metadata identity mismatch');
     }
     final ipa = _optionalText(decoded['ipa'], 'ipa', maxLength: 160);
     return RichLexicalMetadata(
+      englishDefinition: schemaVersion == 2
+          ? _optionalText(
+              decoded['englishDefinition'],
+              'englishDefinition',
+              maxLength: 600,
+            )
+          : null,
+      verifiedArtifactChecksumSha256: verifiedArtifactChecksumSha256,
       ipa: ipa,
       examples: _textList(decoded['examples'], 'examples'),
       synonyms: _textList(decoded['synonyms'], 'synonyms'),

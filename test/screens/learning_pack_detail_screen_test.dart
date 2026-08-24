@@ -8,6 +8,9 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_detail_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
@@ -31,6 +34,7 @@ import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_reposit
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
@@ -42,6 +46,51 @@ import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
+  test(
+    'runtime quiz delivery requires the canonical evidence gateway',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final learning = LearningUseCases(
+        owners: _Owner(),
+        repository: DriftLearningRepository(database),
+        generateId: () => 'unused-learning-id',
+        nowUtc: () => DateTime.utc(2026, 8, 25),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'pack-detail'),
+      );
+
+      final missingGateway = _dependencies(database, learning: learning);
+      final complete = _dependencies(
+        database,
+        learning: learning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: learning,
+        ),
+      );
+      final otherLearning = LearningUseCases(
+        owners: _Owner(),
+        repository: DriftLearningRepository(database),
+        generateId: () => 'other-learning-id',
+        nowUtc: () => DateTime.utc(2026, 8, 25),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'pack-detail-other',
+        ),
+      );
+      final mismatchedGateway = _dependencies(
+        database,
+        learning: learning,
+        currentActivityEvidence: CurrentActivityEvidenceAdapter(
+          learning: otherLearning,
+        ),
+      );
+
+      expect(missingGateway.hasComposedDependencyFor(Feature.quiz), isFalse);
+      expect(mismatchedGateway.hasComposedDependencyFor(Feature.quiz), isFalse);
+      expect(complete.hasComposedDependencyFor(Feature.quiz), isTrue);
+    },
+  );
+
   testWidgets(
     'renders pinned content, canonical progress, and accessible activity availability',
     (tester) async {
@@ -289,6 +338,8 @@ void main() {
 
 AppDependencies _dependencies(
   AppDatabase database, {
+  LearningUseCases? learning,
+  CurrentActivityEvidenceAdapter? currentActivityEvidence,
   LearnerIntentRepository? learnerIntents,
   BookmarkLearningItemAction? bookmarkLearningItem,
   ContentQualityReportRepository? contentQualityReports,
@@ -317,6 +368,8 @@ AppDependencies _dependencies(
     bookmarkLearningItem: bookmarkLearningItem,
     contentQualityReports: contentQualityReports,
     reportContent: reportContent,
+    learning: learning,
+    currentActivityEvidence: currentActivityEvidence,
   );
 }
 

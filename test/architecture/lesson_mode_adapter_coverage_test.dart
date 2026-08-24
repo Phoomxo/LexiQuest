@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -27,6 +28,11 @@ void main() {
             entryId: 'home/learn/quiz',
             routeName: 'learning/quiz',
           ),
+          LessonMode.definitionQuiz: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'learning/definition-quiz',
+          ),
           LessonMode.flashcard: (
             feature: Feature.srs,
             entryId: 'home/learn/srs',
@@ -47,7 +53,8 @@ void main() {
       registrations
           .map((registration) => registration.productionEntryId)
           .toSet(),
-      hasLength(expected.length),
+      hasLength(expected.values.map((value) => value.feature).toSet().length),
+      reason: 'sibling quiz modes share the one broad Feature.quiz delivery',
     );
     expect(
       registrations.map((registration) => registration.routeName).toSet(),
@@ -63,11 +70,16 @@ void main() {
         productionFeatureContract[registration.feature]!.productionEntryId,
         registration.productionEntryId,
       );
-      expect(
-        registration.adapter,
-        isNot(isA<HintSupportingLessonModeAdapter>()),
-        reason: 'legacy activity screens cannot silently become hint authority',
-      );
+      if (registration.mode == LessonMode.definitionQuiz) {
+        expect(registration.adapter, isA<HintSupportingLessonModeAdapter>());
+      } else {
+        expect(
+          registration.adapter,
+          isNot(isA<HintSupportingLessonModeAdapter>()),
+          reason:
+              'non-hint modes cannot silently become their own hint authority',
+        );
+      }
     }
     expect(
       registrations
@@ -80,6 +92,12 @@ void main() {
           .singleWhere((entry) => entry.mode == LessonMode.meaningQuiz)
           .adapter,
       isA<MeaningQuizModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.definitionQuiz)
+          .adapter,
+      isA<DefinitionQuizModeAdapter>(),
     );
   });
 
@@ -95,7 +113,8 @@ void main() {
           .toList(growable: false);
       final adapter = _HintBoundaryAdapter();
 
-      expect(hintRegistrations, isEmpty);
+      expect(hintRegistrations, hasLength(1));
+      expect(hintRegistrations.single.mode, LessonMode.definitionQuiz);
       expect(adapter, isA<LessonModeAdapter>());
       expect(adapter.hintPolicy.maximumHintLevel, 2);
       expect(registrations, hasLength(LessonMode.values.length));
@@ -273,7 +292,10 @@ void main() {
       );
 
       for (final registration in buildLessonModeRegistry().registrations) {
-        if (registration.mode == LessonMode.flashcard) continue;
+        if (registration.mode == LessonMode.flashcard ||
+            registration.mode == LessonMode.definitionQuiz) {
+          continue;
+        }
         expect(
           registration.adapter.classify(
             response,

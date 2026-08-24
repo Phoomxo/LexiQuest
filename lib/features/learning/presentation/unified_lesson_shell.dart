@@ -7,6 +7,7 @@ import '../application/learning_use_cases.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
+import '../domain/hint_policy.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/production_feature_gate.dart';
 import '../../../runtime/registries/feature_registry.dart';
@@ -29,6 +30,12 @@ final class UnifiedLessonSessionLifecycle {
   final UnifiedLessonRouteLifecycle? _routeLifecycle;
 
   bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
+
+  HintUsageSnapshot snapshotHintUsage() =>
+      _controller.snapshotHintUsageForAcceptedEvidence();
+
+  void resetHintsAfterCommittedEvidence() =>
+      _controller.resetHintsAfterAcceptedEvidence();
 
   Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
     final routeLifecycle = _routeLifecycle;

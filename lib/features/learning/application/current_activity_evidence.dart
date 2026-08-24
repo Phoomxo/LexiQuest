@@ -10,6 +10,7 @@ import 'learning_use_cases.dart';
 enum CurrentActivityInput {
   meaningMultipleChoice,
   meaningToWordMultipleChoice,
+  definitionMultipleChoice,
   srsRecall,
   typedRecall,
   associativeRecall,
@@ -24,6 +25,13 @@ HintEvidenceClassification classifyCurrentActivityEvidence(
   required int hintLevel,
 }) {
   final declaration = _declarationFor(input);
+  if (input == CurrentActivityInput.definitionMultipleChoice &&
+      hintLevel != 0) {
+    return HintEvidenceClassification(
+      evidenceClass: EvidenceClass.guidedPractice,
+      hintLevel: hintLevel < 0 ? 2 : hintLevel,
+    );
+  }
   return HintPolicy.classifyEvidence(
     declaredClass: declaration.evidenceClass,
     hint: HintUsageSnapshot.fromRecordedLevel(hintLevel),
@@ -168,6 +176,11 @@ final class CurrentActivityEvidenceAdapter {
     String? providerProvenance,
     int hintLevel = 0,
   }) {
+    if (input == CurrentActivityInput.definitionMultipleChoice) {
+      throw StateError(
+        'Definition recognition requires a verified lexical artifact pin.',
+      );
+    }
     final declaration = _declarationFor(input);
     return _capture(
       input: input,
@@ -178,6 +191,64 @@ final class CurrentActivityEvidenceAdapter {
       responseTimeMs: responseTimeMs,
       attemptNumber: attemptNumber,
       providerProvenance: providerProvenance,
+      hintLevel: hintLevel,
+    );
+  }
+
+  /// Captures a reviewed, version-pinned definition-recognition occurrence.
+  /// The hint snapshot is resolved by the shell-owned f19 authority before
+  /// this immutable pending command is created.
+  PendingCurrentActivityEvidence captureDefinitionRecognition({
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required int contentRevision,
+    required String checksumSha256,
+    required HintEvidenceClassification classification,
+  }) {
+    if (contentRevision <= 0) {
+      throw ArgumentError.value(
+        contentRevision,
+        'contentRevision',
+        'must be positive',
+      );
+    }
+    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(checksumSha256)) {
+      throw ArgumentError.value(
+        checksumSha256,
+        'checksumSha256',
+        'must be lowercase SHA-256',
+      );
+    }
+    final hintLevel = classification.hintLevel;
+    final evidenceClass = classification.evidenceClass;
+    if ((hintLevel == 0 && evidenceClass != EvidenceClass.recognition) ||
+        (hintLevel > 0 && evidenceClass != EvidenceClass.guidedPractice) ||
+        hintLevel < 0) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must be unhinted recognition or hinted guided practice',
+      );
+    }
+    return _capture(
+      input: CurrentActivityInput.definitionMultipleChoice,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: evidenceClass,
+        skillId: 'definition-recognition',
+        promptMode: 'definitionChoice',
+        contentRevision:
+            'lexical-definition:$wordId@$contentRevision:$checksumSha256',
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance:
+          'reviewed-lexical-definition:$contentRevision:$checksumSha256',
       hintLevel: hintLevel,
     );
   }
@@ -453,7 +524,8 @@ final class _CurrentActivityDeclaration {
     required this.evidenceClass,
     required this.skillId,
     required this.promptMode,
-  }) : contentRevision = 'built-in-v1';
+    this.contentRevision = 'built-in-v1',
+  });
 
   final EvidenceClass evidenceClass;
   final String skillId;
@@ -474,6 +546,12 @@ _CurrentActivityDeclaration _declarationFor(CurrentActivityInput input) {
         evidenceClass: EvidenceClass.recognition,
         skillId: 'meaning-recall',
         promptMode: 'wordChoice',
+      ),
+    CurrentActivityInput.definitionMultipleChoice =>
+      const _CurrentActivityDeclaration(
+        evidenceClass: EvidenceClass.recognition,
+        skillId: 'definition-recognition',
+        promptMode: 'definitionChoice',
       ),
     CurrentActivityInput.srsRecall => const _CurrentActivityDeclaration(
       evidenceClass: EvidenceClass.independentRecall,

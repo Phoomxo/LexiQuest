@@ -1,6 +1,7 @@
 import '../../../runtime/production_feature_contract.dart';
 import '../../../runtime/registries/feature.dart';
 import '../domain/lesson_mode.dart';
+import 'definition_quiz_mode_adapter.dart';
 import 'flashcard_mode_adapter.dart';
 import 'legacy_lesson_mode_adapters.dart';
 import 'meaning_quiz_mode_adapter.dart';
@@ -36,7 +37,7 @@ final class LessonModeRegistry {
     Iterable<LessonModeRegistration> registrations,
   ) {
     final indexed = <LessonMode, LessonModeRegistration>{};
-    final productionEntryIds = <String>{};
+    final productionEntryFeatures = <String, Feature>{};
     final routeNames = <String>{};
     for (final registration in registrations) {
       if (registration.productionEntryId.trim().isEmpty) {
@@ -53,13 +54,17 @@ final class LessonModeRegistry {
           'must not be blank',
         );
       }
-      if (!productionEntryIds.add(registration.productionEntryId)) {
+      final existingFeature =
+          productionEntryFeatures[registration.productionEntryId];
+      if (existingFeature != null && existingFeature != registration.feature) {
         throw ArgumentError.value(
           registration.productionEntryId,
           'registrations',
-          'duplicate production entry',
+          'production entry cannot be shared across runtime features',
         );
       }
+      productionEntryFeatures[registration.productionEntryId] =
+          registration.feature;
       if (!routeNames.add(registration.routeName)) {
         throw ArgumentError.value(
           registration.routeName,
@@ -104,6 +109,11 @@ LessonModeRegistry buildLessonModeRegistry() {
       adapter: const MeaningQuizModeAdapter(),
       feature: Feature.quiz,
       routeName: 'learning/quiz',
+    ),
+    registration(
+      adapter: const DefinitionQuizModeAdapter(),
+      feature: Feature.quiz,
+      routeName: 'learning/definition-quiz',
     ),
     registration(
       adapter: const FlashcardModeAdapter(),

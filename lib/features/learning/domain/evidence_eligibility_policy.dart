@@ -173,11 +173,13 @@ ProjectionDisposition effectiveProjectionDisposition({
   if (context.evidenceClass == EvidenceClass.recreational) {
     return evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
   }
-  // Exposure and recognition are never binary recall memory updates, including
-  // while unrelated projections still use the class-agnostic Legacy rollout.
-  // This safety floor is deliberately scoped to the canonical SRS projection.
+  // Exposure, recognition, and guided practice are never binary recall memory
+  // updates, including while unrelated projections still use the
+  // class-agnostic Legacy rollout. This safety floor is deliberately scoped to
+  // the canonical SRS projection.
   if ((context.evidenceClass == EvidenceClass.exposure ||
-          context.evidenceClass == EvidenceClass.recognition) &&
+          context.evidenceClass == EvidenceClass.recognition ||
+          context.evidenceClass == EvidenceClass.guidedPractice) &&
       projection == LearningProjection.masterySrs) {
     return ProjectionDisposition.deny;
   }

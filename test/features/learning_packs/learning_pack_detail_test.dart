@@ -4,7 +4,8 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    hide VocabularyWord;
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -20,6 +21,7 @@ import 'package:vocab_learning_app/features/learning_packs/domain/content_qualit
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_detail.dart';
 import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 
 void main() {
@@ -180,6 +182,7 @@ void main() {
 
       expect(view.activities.map((activity) => activity.mode).toList(), const [
         LessonMode.associativeReading,
+        LessonMode.definitionQuiz,
         LessonMode.flashcard,
         LessonMode.meaningQuiz,
       ]);
@@ -193,6 +196,79 @@ void main() {
         view.activities
             .singleWhere((activity) => activity.mode == LessonMode.meaningQuiz)
             .availability,
+        LearningPackActivityAvailability.available,
+      );
+    },
+  );
+
+  test(
+    'definition quiz is unavailable when pinned vocabulary is not composed',
+    () async {
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 1,
+        title: 'Travel basics',
+        wordIds: const ['word:station'],
+      );
+      final useCases = _definitionPackDetailUseCases(database);
+
+      final view = await useCases.loadVersion('pack:travel', 1);
+
+      expect(
+        _definitionAvailability(view),
+        LearningPackActivityAvailability.unavailable,
+      );
+    },
+  );
+
+  test(
+    'definition quiz is unavailable without a qualifying reviewed definition',
+    () async {
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 1,
+        title: 'Travel basics',
+        wordIds: const ['word:station'],
+      );
+      final useCases = _definitionPackDetailUseCases(
+        database,
+        readPinnedVocabulary: (_) async => <VocabularyWord>[_definitionWord()],
+      );
+
+      final view = await useCases.loadVersion('pack:travel', 1);
+
+      expect(
+        _definitionAvailability(view),
+        LearningPackActivityAvailability.unavailable,
+      );
+    },
+  );
+
+  test(
+    'definition quiz is available with a qualifying pinned reviewed definition',
+    () async {
+      await _insertVerifiedPack(
+        database,
+        packId: 'pack:travel',
+        revision: 1,
+        title: 'Travel basics',
+        wordIds: const ['word:station'],
+      );
+      final useCases = _definitionPackDetailUseCases(
+        database,
+        readPinnedVocabulary: (_) async => <VocabularyWord>[
+          _definitionWord(
+            definition: 'A place where trains stop for passengers.',
+          ),
+        ],
+      );
+
+      final view = await useCases.loadVersion('pack:travel', 1);
+
+      expect(
+        _definitionAvailability(view),
         LearningPackActivityAvailability.available,
       );
     },
@@ -255,6 +331,76 @@ void main() {
 }
 
 final _createdAt = DateTime.utc(2026, 8, 24, 8);
+
+LearningPackDetailUseCases _definitionPackDetailUseCases(
+  AppDatabase database, {
+  Future<List<VocabularyWord>> Function(Iterable<String>)? readPinnedVocabulary,
+}) => LearningPackDetailUseCases(
+  packs: repositoryFor(database),
+  progress: ProgressUseCases(
+    owners: _Owner(),
+    queries: DriftProgressQueries(database),
+    nowUtc: () => DateTime.utc(2026, 8, 24),
+  ),
+  lessonModes: buildLessonModeRegistry(),
+  features: const BuildFeatureRegistry.allEnabled(),
+  hasComposedDependency: (_) => true,
+  readPinnedVocabulary: readPinnedVocabulary,
+);
+
+DriftLearningPackRepository repositoryFor(AppDatabase database) =>
+    DriftLearningPackRepository(
+      database,
+      contentManifests: DriftContentManifestRepository(database),
+    );
+
+LearningPackActivityAvailability _definitionAvailability(
+  LearningPackDetailView view,
+) => view.activities
+    .singleWhere((activity) => activity.mode == LessonMode.definitionQuiz)
+    .availability;
+
+VocabularyWord _definitionWord({String? definition}) {
+  final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
+    categoryId: 'category:pack',
+    spelling: 'station',
+    normalizedSpelling: 'station',
+    meaning: 'สถานี',
+    normalizedMeaning: 'สถานี',
+    partOfSpeech: 'noun',
+    cefrLevel: null,
+    source: 'pack:v1',
+    isGlobal: true,
+  );
+  return VocabularyWord(
+    id: 'word:station',
+    ownerId: 'packaged-owner',
+    categoryId: 'category:pack',
+    spelling: 'station',
+    normalizedSpelling: 'station',
+    meaning: 'สถานี',
+    normalizedMeaning: 'สถานี',
+    partOfSpeech: 'noun',
+    source: 'pack:v1',
+    isGlobal: true,
+    localRevision: 1,
+    isDeleted: false,
+    createdAtUtc: _createdAt,
+    updatedAtUtc: _createdAt,
+    contentRevision: 1,
+    contentChecksumSha256: checksum,
+    contentProvenance: ContentProvenance.packaged,
+    contentReviewState: ContentReviewState.approved,
+    contentPublicationState: ContentPublicationState.published,
+    richMetadata: definition == null
+        ? null
+        : RichLexicalMetadata(
+            englishDefinition: definition,
+            verifiedArtifactChecksumSha256:
+                'eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee',
+          ),
+  );
+}
 
 Future<void> _insertVocabularyAuthority(AppDatabase database) async {
   await database.customInsert(

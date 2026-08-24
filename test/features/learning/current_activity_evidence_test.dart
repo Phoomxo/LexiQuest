@@ -39,6 +39,21 @@ void main() {
       };
 
       for (final input in CurrentActivityInput.values) {
+        if (input == CurrentActivityInput.definitionMultipleChoice) {
+          expect(
+            () => adapter.capture(
+              input: input,
+              sessionId: 'session-1',
+              wordId: 'word-1',
+              isCorrect: true,
+              responseTimeMs: 17,
+              attemptNumber: 1,
+            ),
+            throwsStateError,
+            reason: 'definition evidence requires its verified artifact pin',
+          );
+          continue;
+        }
         final pending = adapter.capture(
           input: input,
           sessionId: 'session-1',

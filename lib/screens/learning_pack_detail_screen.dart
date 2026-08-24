@@ -59,6 +59,7 @@ final class _LearningPackDetailScreenState
         features: dependencies?.features,
         hasComposedDependency: (feature) =>
             dependencies?.hasComposedDependencyFor(feature) ?? false,
+        readPinnedVocabulary: vocabulary?.readPinnedByIds,
       ),
       vocabulary,
     );

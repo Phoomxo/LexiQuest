@@ -39,6 +39,7 @@ final class LearningPackActivity {
   String get label => switch (mode) {
     LessonMode.associativeReading => 'Associative reading',
     LessonMode.meaningQuiz => 'Meaning quiz',
+    LessonMode.definitionQuiz => 'Definition quiz',
     LessonMode.flashcard => 'Flashcards',
   };
 }

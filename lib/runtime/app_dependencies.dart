@@ -176,7 +176,10 @@ final class AppDependencies {
   /// even if a registry override makes their flag visible.
   bool hasComposedDependencyFor(Feature feature) => switch (feature) {
     Feature.vocabulary => vocabulary != null,
-    Feature.quiz || Feature.srs || Feature.ghostDuel => learning != null,
+    Feature.quiz =>
+      learning != null &&
+          identical(currentActivityEvidence?.learning, learning),
+    Feature.srs || Feature.ghostDuel => learning != null,
     Feature.reading =>
       vocabulary != null && learning != null && associativeLearning != null,
     Feature.mastery ||

@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -32,6 +33,7 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
@@ -63,7 +65,11 @@ void main() {
         find.byKey(const ValueKey<String>('home/learn/srs')),
         findsOneWidget,
       );
-      expect(find.byType(ListTile), findsNWidgets(3));
+      expect(
+        find.byKey(const ValueKey<String>('home/learn/quiz/definition')),
+        findsOneWidget,
+      );
+      expect(find.byType(ListTile), findsNWidgets(4));
 
       await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
       await tester.pumpAndSettle();
@@ -195,6 +201,11 @@ void main() {
           routeName: 'learning/quiz',
         ),
         (
+          entryId: 'home/learn/quiz/definition',
+          mode: LessonMode.definitionQuiz,
+          routeName: 'learning/definition-quiz',
+        ),
+        (
           entryId: 'home/learn/srs',
           mode: LessonMode.flashcard,
           routeName: 'learning/srs',
@@ -256,6 +267,19 @@ void main() {
             AppLifecycleState.resumed,
           );
           await tester.pump();
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.definitionQuiz) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isA<DefinitionQuizModeAdapter>(),
+          );
+          expect(
+            tester
+                .widget<DefinitionQuizScreen>(find.byType(DefinitionQuizScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
           expect(controller.state.status, LessonSessionStatus.active);
         }
 
@@ -323,6 +347,50 @@ void main() {
             .get(),
         isEmpty,
       );
+    },
+  );
+
+  testWidgets(
+    'Definition Quiz emergency-off terminally closes its durable shell session',
+    (tester) async {
+      final harness = await _SrsGateHarness.create();
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/definition')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(DefinitionQuizScreen), findsOneWidget);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.active,
+      );
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+      harness.features.emergencyOff(Feature.quiz);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(DefinitionQuizScreen), findsNothing);
+      expect(harness.repository.abandonCalls, 1);
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.finished,
+      );
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
     },
   );
 

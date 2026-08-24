@@ -544,6 +544,7 @@ final class DriftVocabularyRepository implements VocabularyRepository {
           bytes: verified.bytes,
           wordId: core.id,
           contentRevision: core.contentRevision,
+          verifiedArtifactChecksumSha256: manifest.checksumSha256,
         ),
       );
     } on Object {

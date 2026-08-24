@@ -330,6 +330,10 @@ void main() {
       expect(words.last.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
       expect(words.last.richMetadata!.synonyms, const ['terminal']);
       expect(words.last.richMetadata!.audio!.assetId, 'audio:station:en');
+      expect(
+        words.last.richMetadata!.verifiedArtifactChecksumSha256,
+        sha256.convert(resolver.artifacts['word:station']!).toString(),
+      );
       final after = await database.customSelect('''
             SELECT (SELECT COUNT(*) FROM vocabulary_words) AS word_count,
                    (SELECT COUNT(*) FROM sqlite_master

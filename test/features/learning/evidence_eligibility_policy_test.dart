@@ -131,7 +131,8 @@ void main() {
           final hasSrsSafetyFloor =
               projection == LearningProjection.masterySrs &&
               (evidenceClass == EvidenceClass.exposure ||
-                  evidenceClass == EvidenceClass.recognition);
+                  evidenceClass == EvidenceClass.recognition ||
+                  evidenceClass == EvidenceClass.guidedPractice);
           final expectedShadow = evidenceClass == EvidenceClass.recreational
               ? _expectedV1[evidenceClass]![projection]
               : hasSrsSafetyFloor
@@ -252,11 +253,12 @@ void main() {
     );
 
     test(
-      'recognition and exposure keep their SRS safety floor in Legacy and Shadow',
+      'non-mastery evidence keeps its SRS safety floor in Legacy and Shadow',
       () {
         for (final evidenceClass in const <EvidenceClass>[
           EvidenceClass.recognition,
           EvidenceClass.exposure,
+          EvidenceClass.guidedPractice,
         ]) {
           final contexts = <EvidenceContext>[
             _legacyContext(evidenceClass: evidenceClass),

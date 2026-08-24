@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/flashcard_mode_adapter.dart';
+import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/domain/lesson_mode.dart';
@@ -10,6 +11,7 @@ import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'associative_reading_launcher_screen.dart';
+import 'definition_quiz_screen.dart';
 import 'quiz_screen.dart';
 import 'srs_flashcards_screen.dart';
 
@@ -52,6 +54,20 @@ class ChooseModeScreen extends StatelessWidget {
                 LessonMode.meaningQuiz,
                 (_, adapter) =>
                     QuizScreen(modeAdapter: adapter as MeaningQuizModeAdapter),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/definition'),
+              icon: Icons.menu_book_outlined,
+              title: 'Definition Quiz',
+              subtitle: 'Choose a word from a reviewed English definition.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.definitionQuiz,
+                (_, adapter) => DefinitionQuizScreen(
+                  modeAdapter: adapter as DefinitionQuizModeAdapter,
+                ),
               ),
             ),
           if (features?.isVisible(Feature.srs) == true)
@@ -105,6 +121,13 @@ class ChooseModeScreen extends StatelessWidget {
         registration.adapter is! MeaningQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This meaning quiz is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    if (mode == LessonMode.definitionQuiz &&
+        registration.adapter is! DefinitionQuizModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This definition quiz is unavailable.')),
       );
       return Future<void>.value();
     }

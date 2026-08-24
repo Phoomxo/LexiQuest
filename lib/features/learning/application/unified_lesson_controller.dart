@@ -135,6 +135,19 @@ final class UnifiedLessonController extends ChangeNotifier {
   LessonSessionState get state => _state;
   AnswerFeedback? get feedback => _feedback;
   HintState? get hintState => _hints?.state;
+  HintUsageSnapshot snapshotHintUsageForAcceptedEvidence() {
+    _requireNotDisposed();
+    return _hints?.snapshot() ?? const HintUsageSnapshot.unknown();
+  }
+
+  void resetHintsAfterAcceptedEvidence() {
+    _requireNotDisposed();
+    final hints = _hints;
+    if (hints == null) return;
+    hints.resetAfterCommittedEvidence();
+    if (!_disposed) notifyListeners();
+  }
+
   ActiveLearningTimeController? get activeLearningTime => _activeLearningTime;
   FocusTimerController? get focusTimer => _focusTimer;
   Feature? get focusTimerFeature => _focusTimerFeature;

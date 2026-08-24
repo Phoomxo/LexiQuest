@@ -79,6 +79,8 @@ final class DriftLearningRepository
             partOfSpeech: row.partOfSpeech,
             normalizedSpelling: row.normalizedSpelling,
             normalizedMeaning: row.normalizedMeaning,
+            contentRevision: row.contentRevision,
+            contentChecksumSha256: row.contentChecksumSha256,
           ),
         )
         .toList(growable: false);

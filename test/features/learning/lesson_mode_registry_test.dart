@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -17,9 +18,10 @@ void main() {
       expect(registrations.map((entry) => entry.mode).toSet(), <LessonMode>{
         LessonMode.associativeReading,
         LessonMode.meaningQuiz,
+        LessonMode.definitionQuiz,
         LessonMode.flashcard,
       });
-      expect(registrations, hasLength(3));
+      expect(registrations, hasLength(4));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -27,6 +29,7 @@ void main() {
         <LessonMode, Feature>{
           LessonMode.associativeReading: Feature.reading,
           LessonMode.meaningQuiz: Feature.quiz,
+          LessonMode.definitionQuiz: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
         },
       );
@@ -37,6 +40,10 @@ void main() {
       expect(
         registry.find(LessonMode.meaningQuiz)!.adapter,
         isA<MeaningQuizModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.definitionQuiz)!.adapter,
+        isA<DefinitionQuizModeAdapter>(),
       );
       for (final entry in registrations) {
         expect(
@@ -52,6 +59,7 @@ void main() {
         <LessonMode, String>{
           LessonMode.associativeReading: 'learning/associative-reading',
           LessonMode.meaningQuiz: 'learning/quiz',
+          LessonMode.definitionQuiz: 'learning/definition-quiz',
           LessonMode.flashcard: 'learning/srs',
         },
       );

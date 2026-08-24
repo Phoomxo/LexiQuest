@@ -11,6 +11,8 @@ final class QuizWord {
     required this.partOfSpeech,
     this.normalizedSpelling,
     this.normalizedMeaning,
+    this.contentRevision,
+    this.contentChecksumSha256,
   });
 
   final String id;
@@ -20,6 +22,8 @@ final class QuizWord {
   final String partOfSpeech;
   final String? normalizedSpelling;
   final String? normalizedMeaning;
+  final int? contentRevision;
+  final String? contentChecksumSha256;
 }
 
 final class QuizQuestion {
