@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
@@ -121,6 +122,9 @@ void main() {
         isCorrect: true,
         responseTimeMs: 100,
         attemptNumber: 1,
+        feedbackContext: const AnswerFeedbackContext(
+          canonicalCorrectAnswer: 'boundary answer',
+        ),
       );
 
       for (final registration

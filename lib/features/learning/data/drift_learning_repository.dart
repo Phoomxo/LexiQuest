@@ -130,6 +130,7 @@ final class DriftLearningRepository
       return CommittedAnswerReplay(
         result: AnswerRecordResult(
           inserted: false,
+          isCorrect: existing.isCorrect,
           srs: decisionSet.allows(LearningProjection.masterySrs)
               ? await _readSrsSnapshot(
                   ownerId: candidate.ownerId,
@@ -185,6 +186,7 @@ final class DriftLearningRepository
         }
         return AnswerRecordResult(
           inserted: false,
+          isCorrect: existing.isCorrect,
           srs: decisionSet.allows(LearningProjection.masterySrs)
               ? await _readSrsSnapshot(
                   ownerId: command.ownerId,
@@ -284,6 +286,7 @@ final class DriftLearningRepository
       }
       return AnswerRecordResult(
         inserted: true,
+        isCorrect: command.isCorrect,
         srs: decisionSet.allows(LearningProjection.masterySrs) ? next : null,
       );
     });

@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 
+import '../domain/answer_feedback.dart';
 import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
@@ -24,6 +25,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   final LearningUseCases _learning;
   final LessonModeAdapter _adapter;
   LessonSessionState _state;
+  AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
       <String, _PendingSubmission>{};
   PendingLearningSessionClose? _pendingClose;
@@ -33,6 +35,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool _disposed = false;
 
   LessonSessionState get state => _state;
+  AnswerFeedback? get feedback => _feedback;
 
   Future<void> start(LessonStartCommand command) {
     if (_disposed) return _disposedError<void>();
@@ -119,7 +122,11 @@ final class UnifiedLessonController extends ChangeNotifier {
         );
       }
       submission.support.evidenceContext.validate();
-      final fingerprint = _SubmissionFingerprint.from(submission);
+      final feedbackContext = submission.response.feedbackContext.normalized();
+      final fingerprint = _SubmissionFingerprint.from(
+        submission,
+        feedbackContext: feedbackContext,
+      );
       final existing = _submissions[evidenceId];
       if (existing != null) {
         if (existing.fingerprint != fingerprint) {
@@ -139,6 +146,7 @@ final class UnifiedLessonController extends ChangeNotifier {
           submission.response,
           submission.support,
         ),
+        feedbackContext: feedbackContext,
       );
       pending.evidenceContext.validate();
       _submissions[evidenceId] = pending;
@@ -264,6 +272,10 @@ final class UnifiedLessonController extends ChangeNotifier {
       providerProvenance: response.providerProvenance,
     );
     pending.result = result;
+    _feedback = AnswerFeedback.fromCommittedResult(
+      result: result,
+      context: pending.feedbackContext,
+    );
     _setState(
       _state.copyWith(
         committedResponseCount: _state.committedResponseCount + 1,
@@ -377,10 +389,12 @@ final class _PendingSubmission {
   _PendingSubmission({
     required this.fingerprint,
     required this.evidenceContext,
+    required this.feedbackContext,
   });
 
   final _SubmissionFingerprint fingerprint;
   final EvidenceContext evidenceContext;
+  final AnswerFeedbackContext feedbackContext;
   Future<AnswerRecordResult>? inFlight;
   AnswerRecordResult? result;
   bool writeAttempted = false;
@@ -389,7 +403,10 @@ final class _PendingSubmission {
 final class _SubmissionFingerprint {
   const _SubmissionFingerprint(this.value);
 
-  factory _SubmissionFingerprint.from(LessonSubmission submission) {
+  factory _SubmissionFingerprint.from(
+    LessonSubmission submission, {
+    required AnswerFeedbackContext feedbackContext,
+  }) {
     final response = submission.response;
     return _SubmissionFingerprint(
       jsonEncode(<String, Object?>{
@@ -402,6 +419,7 @@ final class _SubmissionFingerprint {
         'responseTimeMs': response.responseTimeMs,
         'attemptNumber': response.attemptNumber,
         'providerProvenance': response.providerProvenance,
+        'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
         'evidenceContext': submission.support.evidenceContext.toJson(),
       }),
     );

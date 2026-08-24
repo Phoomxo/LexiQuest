@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../application/unified_lesson_controller.dart';
 import '../domain/lesson_session_state.dart';
+import 'answer_feedback_panel.dart';
 
 typedef LessonUtcNow = DateTime Function();
 
@@ -105,6 +106,8 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       child: Column(
         children: <Widget>[
           LinearProgressIndicator(value: controller.state.progress),
+          if (controller.feedback case final feedback?)
+            AnswerFeedbackPanel(feedback: feedback),
           Expanded(child: Builder(builder: widget.builder)),
         ],
       ),

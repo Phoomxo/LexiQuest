@@ -972,8 +972,9 @@ final class _CountingLearningRepository implements LearningRepository {
       if (failFirstRecord) throw StateError('simulated local failure');
     }
     successfulRecordCalls += 1;
-    return const AnswerRecordResult(
+    return AnswerRecordResult(
       inserted: true,
+      isCorrect: command.isCorrect,
       srs: SrsSnapshot(
         intervalDays: 1,
         repetitions: 1,

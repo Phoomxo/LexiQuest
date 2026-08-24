@@ -120,6 +120,8 @@ void main() {
 
     expect(first.inserted, isTrue);
     expect(replay.inserted, isFalse);
+    expect(first.isCorrect, isTrue);
+    expect(replay.isCorrect, isTrue);
     expect(replay.srs, isA<SrsSnapshot>());
     expect(replay.srs!.intervalDays, 1);
     final attempts = await database.select(database.answerAttempts).get();
@@ -825,9 +827,14 @@ void main() {
   });
 
   test('answer result can represent evidence without an SRS projection', () {
-    const result = AnswerRecordResult(inserted: true, srs: null);
+    const result = AnswerRecordResult(
+      inserted: true,
+      isCorrect: true,
+      srs: null,
+    );
 
     expect(result.inserted, isTrue);
+    expect(result.isCorrect, isTrue);
     expect(result.srs, equals(null));
   });
 }

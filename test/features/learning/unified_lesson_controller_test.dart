@@ -6,13 +6,16 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -156,8 +159,86 @@ void main() {
       expect(results.every((result) => result.inserted), isTrue);
       expect(replay, same(results.first));
       expect(fixture.repository.recordCalls, 1);
-      expect(fixture.adapter.classifyCalls, 1);
+      expect((fixture.adapter as _Adapter).classifyCalls, 1);
       expect(fixture.controller.state.committedResponseCount, 1);
+    },
+  );
+
+  test(
+    'publishes one feedback view model from the committed result and frozen answer context',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      final submission = fixture.submission(isCorrect: false);
+
+      final first = await fixture.controller.submit(submission);
+      final duplicate = await fixture.controller.submit(submission);
+
+      expect(first.isCorrect, isFalse);
+      expect(duplicate, same(first));
+      expect(fixture.controller.feedback, isNotNull);
+      expect(fixture.controller.feedback!.isCorrect, isFalse);
+      expect(fixture.controller.feedback!.canonicalCorrectAnswer, 'บทเรียน');
+      expect(
+        fixture.controller.feedback!.nextAction,
+        AnswerFeedbackAction.retry,
+      );
+      expect(fixture.repository.recordCalls, 1);
+    },
+  );
+
+  test(
+    'rejects a duplicate evidence identity with changed feedback context',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      const sourceEvidenceId = 'feedback-context-evidence';
+
+      await fixture.controller.submit(
+        fixture.submission(sourceEvidenceId: sourceEvidenceId),
+      );
+      await expectLater(
+        fixture.controller.submit(
+          fixture.submission(
+            sourceEvidenceId: sourceEvidenceId,
+            canonicalCorrectAnswer: 'different reviewed answer',
+          ),
+        ),
+        throwsStateError,
+      );
+      expect(fixture.repository.recordCalls, 1);
+    },
+  );
+
+  test(
+    'rejects blank feedback context before a durable write and permits a corrected retry',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      const sourceEvidenceId = 'invalid-feedback-context';
+
+      await expectLater(
+        fixture.controller.submit(
+          fixture.submission(
+            sourceEvidenceId: sourceEvidenceId,
+            canonicalCorrectAnswer: '   ',
+          ),
+        ),
+        throwsArgumentError,
+      );
+      expect(fixture.repository.recordCalls, 0);
+      expect(fixture.controller.feedback, isNull);
+      expect(fixture.controller.state.committedResponseCount, 0);
+
+      final corrected = await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: sourceEvidenceId,
+          canonicalCorrectAnswer: 'บทเรียน',
+        ),
+      );
+      expect(corrected.isCorrect, isTrue);
+      expect(fixture.repository.recordCalls, 1);
+      expect(fixture.controller.feedback!.canonicalCorrectAnswer, 'บทเรียน');
     },
   );
 
@@ -331,6 +412,94 @@ void main() {
     expect(fixture.controller.state.status, LessonSessionStatus.paused);
     expect(find.text('lesson body'), findsOneWidget);
   });
+
+  testWidgets('shell presents one panel for one committed answer result', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    await fixture.controller.start(fixture.startCommand);
+    await fixture.controller.submit(fixture.submission(isCorrect: false));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+
+    expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+    expect(find.text('Not quite'), findsOneWidget);
+    expect(find.text('Correct answer: บทเรียน'), findsOneWidget);
+  });
+
+  testWidgets(
+    'every registered adapter delivers one committed result to one panel without duplicate evidence',
+    (tester) async {
+      for (final registration
+          in buildLegacyLessonModeRegistry().registrations) {
+        final fixture = await _fixture(adapter: registration.adapter);
+        await fixture.controller.start(fixture.startCommand);
+        final submission = fixture.submission(
+          sourceEvidenceId: 'adapter-${registration.mode.id}',
+        );
+
+        final first = await fixture.controller.submit(submission);
+        final duplicate = await fixture.controller.submit(submission);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        );
+
+        expect(first.isCorrect, isTrue);
+        expect(duplicate, same(first));
+        expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+        expect(fixture.repository.recordCalls, 1);
+      }
+    },
+  );
+
+  testWidgets(
+    'every registered adapter reuses one committed result and panel after a lost ACK',
+    (tester) async {
+      for (final registration
+          in buildLegacyLessonModeRegistry().registrations) {
+        final fixture = await _fixture(
+          adapter: registration.adapter,
+          failAfterFirstRecord: true,
+        );
+        await fixture.controller.start(fixture.startCommand);
+        final submission = fixture.submission(
+          sourceEvidenceId: 'adapter-lost-ack-${registration.mode.id}',
+        );
+
+        await expectLater(
+          fixture.controller.submit(submission),
+          throwsStateError,
+        );
+        final replay = await fixture.controller.submit(submission);
+        final duplicate = await fixture.controller.submit(submission);
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        );
+
+        expect(replay.inserted, isFalse);
+        expect(duplicate, same(replay));
+        expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+        expect(fixture.repository.recordCalls, 1);
+      }
+    },
+  );
 }
 
 final class _Fixture {
@@ -346,7 +515,7 @@ final class _Fixture {
 
   final AppDatabase database;
   final _CountingRepository repository;
-  final _Adapter adapter;
+  final LessonModeAdapter adapter;
   final UnifiedLessonController controller;
   final LessonStartCommand startCommand;
   final DateTime now;
@@ -355,6 +524,7 @@ final class _Fixture {
   LessonSubmission submission({
     String sourceEvidenceId = 'evidence-1',
     bool isCorrect = true,
+    String canonicalCorrectAnswer = 'บทเรียน',
   }) => LessonSubmission(
     response: LessonResponse(
       sourceEvidenceId: sourceEvidenceId,
@@ -365,6 +535,9 @@ final class _Fixture {
       isCorrect: isCorrect,
       responseTimeMs: 400,
       attemptNumber: 1,
+      feedbackContext: AnswerFeedbackContext(
+        canonicalCorrectAnswer: canonicalCorrectAnswer,
+      ),
     ),
     support: LessonSupport(
       evidenceContext: EvidenceContext.legacyCompatibility(
@@ -379,6 +552,7 @@ final class _Fixture {
 }
 
 Future<_Fixture> _fixture({
+  LessonModeAdapter? adapter,
   bool failAfterFirstRecord = false,
   bool blockRecord = false,
   bool blockFinish = false,
@@ -435,18 +609,18 @@ Future<_Fixture> _fixture({
     buildInfo: const AppBuildInfo(version: 'test', buildId: 'f05-test'),
   );
   final quiz = await learning.startQuiz(limit: 1);
-  final adapter = _Adapter();
+  final modeAdapter = adapter ?? _Adapter();
   final controller = UnifiedLessonController(
     learning: learning,
-    adapter: adapter,
+    adapter: modeAdapter,
   );
   return _Fixture(
     database: database,
     repository: repository,
-    adapter: adapter,
+    adapter: modeAdapter,
     controller: controller,
     startCommand: LessonStartCommand(
-      mode: LessonMode.meaningQuiz,
+      mode: modeAdapter.mode,
       sessionId: quiz.id,
       startedAtUtc: quiz.startedAtUtc!,
       itemCount: quiz.questions.length,

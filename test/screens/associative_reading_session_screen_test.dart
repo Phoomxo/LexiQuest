@@ -1002,7 +1002,11 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     answerCommands.add(command);
-    return const AnswerRecordResult(inserted: true, srs: null);
+    return AnswerRecordResult(
+      inserted: true,
+      isCorrect: command.isCorrect,
+      srs: null,
+    );
   }
 
   @override
@@ -1068,7 +1072,11 @@ final class _RetryLearningRepository implements LearningRepository {
       _recordFailed = true;
       throw StateError('simulated local failure');
     }
-    return const AnswerRecordResult(inserted: true, srs: null);
+    return AnswerRecordResult(
+      inserted: true,
+      isCorrect: command.isCorrect,
+      srs: null,
+    );
   }
 
   @override
@@ -1104,7 +1112,11 @@ final class _PartialBatchLearningRepository implements LearningRepository {
       _appleFailed = true;
       throw StateError('simulated second-item failure');
     }
-    return const AnswerRecordResult(inserted: true, srs: null);
+    return AnswerRecordResult(
+      inserted: true,
+      isCorrect: command.isCorrect,
+      srs: null,
+    );
   }
 
   @override

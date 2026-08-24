@@ -708,7 +708,11 @@ final class _RetryLearningRepository implements LearningRepository {
       _answerFailed = true;
       throw StateError('simulated local failure');
     }
-    return const AnswerRecordResult(inserted: true, srs: null);
+    return AnswerRecordResult(
+      inserted: true,
+      isCorrect: command.isCorrect,
+      srs: null,
+    );
   }
 
   @override

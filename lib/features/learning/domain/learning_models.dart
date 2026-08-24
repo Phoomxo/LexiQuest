@@ -246,9 +246,14 @@ final class SrsSnapshot {
 }
 
 final class AnswerRecordResult {
-  const AnswerRecordResult({required this.inserted, required this.srs});
+  const AnswerRecordResult({
+    required this.inserted,
+    required this.isCorrect,
+    required this.srs,
+  });
 
   final bool inserted;
+  final bool isCorrect;
   final SrsSnapshot? srs;
 }
 

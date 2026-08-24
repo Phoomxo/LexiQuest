@@ -1,3 +1,4 @@
+import 'answer_feedback.dart';
 import 'evidence_context.dart';
 
 enum LessonMode { associativeReading, meaningQuiz, flashcard }
@@ -20,6 +21,7 @@ final class LessonResponse {
     required this.isCorrect,
     required this.responseTimeMs,
     required this.attemptNumber,
+    required this.feedbackContext,
     this.providerProvenance,
   });
 
@@ -31,6 +33,7 @@ final class LessonResponse {
   final bool isCorrect;
   final int? responseTimeMs;
   final int attemptNumber;
+  final AnswerFeedbackContext feedbackContext;
   final String? providerProvenance;
 }
 

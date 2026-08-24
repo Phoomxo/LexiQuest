@@ -494,7 +494,11 @@ final class _RecordingRepository implements LearningRepository {
       _failed = true;
       throw StateError('simulated local write failure');
     }
-    return const AnswerRecordResult(inserted: true, srs: null);
+    return AnswerRecordResult(
+      inserted: true,
+      isCorrect: command.isCorrect,
+      srs: null,
+    );
   }
 
   @override
