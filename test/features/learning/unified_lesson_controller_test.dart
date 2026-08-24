@@ -32,19 +32,59 @@ import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent_repository.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/focus_timer_controller.dart';
+import 'package:vocab_learning_app/features/time_tracking/domain/focus_timer.dart';
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
+import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
 import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../../support/inert_research_dependencies.dart';
 import '../../support/test_quest_use_cases.dart';
 
 void main() {
+  test(
+    'focus timer requires a capable adapter and the exact time authority',
+    () async {
+      final fixture = await _fixture();
+      final activeTime = _activeTimeController(
+        _MemoryLearningTimeRepository(),
+        monotonicMicros: () => 0,
+      );
+      final otherTime = _activeTimeController(
+        _MemoryLearningTimeRepository(),
+        monotonicMicros: () => 0,
+      );
+
+      expect(
+        () => UnifiedLessonController(
+          learning: fixture.learning,
+          adapter: _ActiveEffortAdapter(),
+          activeLearningTime: activeTime,
+          focusTimer: FocusTimerController(timeAuthority: activeTime),
+          focusTimerFeature: Feature.quiz,
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => UnifiedLessonController(
+          learning: fixture.learning,
+          adapter: _FocusAdapter(),
+          activeLearningTime: activeTime,
+          focusTimer: FocusTimerController(timeAuthority: otherTime),
+          focusTimerFeature: Feature.quiz,
+        ),
+        throwsArgumentError,
+      );
+    },
+  );
+
   test(
     'certified lesson lifecycle writes only monotonic active segments',
     () async {
@@ -916,6 +956,185 @@ void main() {
 
     expect(fixture.controller.state.status, LessonSessionStatus.paused);
   });
+
+  testWidgets(
+    'focus surface follows adapter capability and the live parent gate',
+    (tester) async {
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final focusTimer = FocusTimerController(timeAuthority: activeTime);
+      final fixture = await _fixture(
+        adapter: _FocusAdapter(),
+        activeLearningTime: activeTime,
+        focusTimer: focusTimer,
+        focusTimerFeature: Feature.quiz,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _bookmarkDependencies(
+            fixture.database,
+            features: registry,
+          ),
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              nowUtc: () =>
+                  fixture.now.add(Duration(microseconds: monotonicMicros)),
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(FocusTimerWidget), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey<String>('focus-timer/start')));
+      await tester.pump();
+      monotonicMicros += const Duration(seconds: 10).inMicroseconds;
+      timeRepository.failNextAppend = true;
+      registry.emergencyOff(Feature.quiz);
+      await tester.pumpAndSettle();
+
+      expect(find.byType(FocusTimerWidget), findsNothing);
+      expect(focusTimer.snapshot.status, FocusTimerStatus.paused);
+      expect(
+        focusTimer.snapshot.pauseReason,
+        FocusTimerPauseReason.featureDisabled,
+      );
+      expect(
+        timeRepository.segments.single.captureSource,
+        LearningTimeCaptureSource.focusTimer,
+      );
+      expect(
+        timeRepository.segments.single.activeDuration,
+        const Duration(seconds: 10),
+      );
+      expect(timeRepository.attempts, hasLength(2));
+      expect(timeRepository.attempts.last, same(timeRepository.attempts.first));
+
+      registry.setOverride(Feature.quiz, FeatureState.enabled);
+      await tester.pump();
+      expect(find.byType(FocusTimerWidget), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('focus-timer/resume')),
+        findsOneWidget,
+      );
+      fixture.controller.dispose();
+    },
+  );
+
+  testWidgets(
+    'background leaves explicit focus paused when the lesson foregrounds',
+    (tester) async {
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final focusTimer = FocusTimerController(timeAuthority: activeTime);
+      final fixture = await _fixture(
+        adapter: _FocusAdapter(),
+        activeLearningTime: activeTime,
+        focusTimer: focusTimer,
+        focusTimerFeature: Feature.quiz,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      final registry = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(registry.dispose);
+      await tester.pumpWidget(
+        AppDependenciesScope(
+          dependencies: _bookmarkDependencies(
+            fixture.database,
+            features: registry,
+          ),
+          child: MaterialApp(
+            home: UnifiedLessonShell(
+              controller: fixture.controller,
+              nowUtc: () =>
+                  fixture.now.add(Duration(microseconds: monotonicMicros)),
+              builder: (_) => const Text('lesson body'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('focus-timer/start')));
+      await tester.pump();
+      monotonicMicros += const Duration(seconds: 7).inMicroseconds;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      await tester.pumpAndSettle();
+      monotonicMicros += const Duration(hours: 1).inMicroseconds;
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(focusTimer.snapshot.status, FocusTimerStatus.paused);
+      expect(
+        focusTimer.snapshot.pauseReason,
+        FocusTimerPauseReason.processBackground,
+      );
+      expect(
+        timeRepository.segments.single.activeDuration,
+        const Duration(seconds: 7),
+      );
+      fixture.controller.dispose();
+    },
+  );
+
+  for (final transition in _FocusEntryTransition.values) {
+    test(
+      'accepted focus ${transition.name} settles before process background',
+      () => _expectFocusSettlesBeforeBackground(transition),
+    );
+    test(
+      'accepted focus ${transition.name} settles before emergency-off',
+      () => _expectFocusSettlesBeforeEmergencyOff(transition),
+    );
+    test(
+      'accepted focus ${transition.name} settles before terminal finish',
+      () => _expectFocusSettlesBeforeTerminalFinish(transition),
+    );
+    test(
+      'failed focus ${transition.name} is superseded by process background',
+      () => _expectFailedFocusSupersededByBackground(transition),
+    );
+    test(
+      'failed focus ${transition.name} is superseded across gate off and re-enable',
+      () => _expectFailedFocusSupersededByGateBoundary(transition),
+    );
+    testWidgets(
+      'real shell failed focus ${transition.name} retries exact unchanged intent',
+      (tester) => _expectShellFocusRetryUsesExactIntent(tester, transition),
+    );
+    testWidgets(
+      'real shell failed focus ${transition.name} settles across gate re-enable',
+      (tester) => _expectShellFailedFocusSettlesAcrossGate(tester, transition),
+    );
+    testWidgets(
+      'real shell failed focus evidence ${transition.name} content supersedes before fresh retry',
+      (tester) => _expectShellContentSupersedesFailedEntry(tester, transition),
+    );
+    testWidgets(
+      'real shell failed focus evidence ${transition.name} IME survives passive emergency-off',
+      (tester) =>
+          _expectShellImeSupersedesBeforeEmergencyOff(tester, transition),
+    );
+    test(
+      'failed focus evidence ${transition.name} emergency-off stays passive until interaction',
+      () => _expectEmergencyOffWaitsForInteraction(transition),
+    );
+  }
 
   testWidgets(
     'initial paused or hidden mount reconciles without a lifecycle event',
@@ -1843,6 +2062,7 @@ void main() {
 
 AppDependencies _bookmarkDependencies(
   AppDatabase database, {
+  FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   LearnerIntentRepository? learnerIntents,
   BookmarkLearningItemAction? bookmarkLearningItem,
   ContentQualityReportRepository? contentQualityReports,
@@ -1859,6 +2079,7 @@ AppDependencies _bookmarkDependencies(
     ),
     config: null,
     guestSessionService: _GuestSession(),
+    features: features,
     quest: testQuestUseCases(),
     experiments: research.experiments,
     consents: research.consents,
@@ -1946,6 +2167,8 @@ Future<_Fixture> _fixture({
   bool blockAbandon = false,
   bool failAbandon = false,
   ActiveLearningTimeController? activeLearningTime,
+  FocusTimerController? focusTimer,
+  Feature? focusTimerFeature,
 }) async {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -2008,6 +2231,8 @@ Future<_Fixture> _fixture({
     adapter: modeAdapter,
     hints: hints,
     activeLearningTime: activeLearningTime,
+    focusTimer: focusTimer,
+    focusTimerFeature: focusTimerFeature,
   );
   return _Fixture(
     database: database,
@@ -2058,6 +2283,19 @@ final class _ActiveEffortAdapter
       LessonItem(id: 'active-item-${cursor.index}');
 }
 
+final class _FocusAdapter implements FocusTimerSupportingLessonModeAdapter {
+  @override
+  LessonMode get mode => LessonMode.meaningQuiz;
+
+  @override
+  EvidenceContext classify(LessonResponse response, LessonSupport support) =>
+      support.evidenceContext;
+
+  @override
+  Future<LessonItem> next(LessonCursor cursor) async =>
+      LessonItem(id: 'focus-item-${cursor.index}');
+}
+
 ActiveLearningTimeController _activeTimeController(
   LearningTimeRepository repository, {
   required int Function() monotonicMicros,
@@ -2071,23 +2309,736 @@ ActiveLearningTimeController _activeTimeController(
   ),
 );
 
+enum _FocusEntryTransition { start, resume }
+
+final class _MutableMonotonicClock {
+  int micros = 0;
+
+  int call() => micros;
+
+  void advance(Duration duration) {
+    micros += duration.inMicroseconds;
+  }
+}
+
+final class _FocusLifecycleRaceFixture {
+  const _FocusLifecycleRaceFixture({
+    required this.fixture,
+    required this.timeRepository,
+    required this.activeTime,
+    required this.focusTimer,
+    required this.clock,
+  });
+
+  final _Fixture fixture;
+  final _MemoryLearningTimeRepository timeRepository;
+  final ActiveLearningTimeController activeTime;
+  final FocusTimerController focusTimer;
+  final _MutableMonotonicClock clock;
+
+  DateTime get now => fixture.now.add(Duration(microseconds: clock.micros));
+
+  Future<void> beginTransition(_FocusEntryTransition transition) =>
+      switch (transition) {
+        _FocusEntryTransition.start => fixture.controller.startFocusTimer(now),
+        _FocusEntryTransition.resume => fixture.controller.resumeFocusTimer(
+          now,
+        ),
+      };
+
+  Future<void> beginBlockedTransition(_FocusEntryTransition transition) {
+    timeRepository.blockNextAppend();
+    return beginTransition(transition);
+  }
+}
+
+Future<_FocusLifecycleRaceFixture> _focusLifecycleRaceFixture(
+  _FocusEntryTransition transition,
+) async {
+  final timeRepository = _MemoryLearningTimeRepository();
+  final clock = _MutableMonotonicClock();
+  final activeTime = _activeTimeController(
+    timeRepository,
+    monotonicMicros: clock.call,
+  );
+  final focusTimer = FocusTimerController(timeAuthority: activeTime);
+  final fixture = await _fixture(
+    adapter: _FocusAdapter(),
+    activeLearningTime: activeTime,
+    focusTimer: focusTimer,
+    focusTimerFeature: Feature.quiz,
+  );
+  await fixture.controller.start(fixture.startCommand);
+  switch (transition) {
+    case _FocusEntryTransition.start:
+      clock.advance(const Duration(seconds: 1));
+      break;
+    case _FocusEntryTransition.resume:
+      await fixture.controller.startFocusTimer(fixture.now);
+      clock.advance(const Duration(seconds: 1));
+      await fixture.controller.pauseFocusTimer(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+      clock.advance(const Duration(seconds: 1));
+      break;
+  }
+  return _FocusLifecycleRaceFixture(
+    fixture: fixture,
+    timeRepository: timeRepository,
+    activeTime: activeTime,
+    focusTimer: focusTimer,
+    clock: clock,
+  );
+}
+
+Future<void> _expectFocusSettlesBeforeBackground(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final focusAction = race.beginBlockedTransition(transition);
+  await race.timeRepository.blockedAppendStarted;
+
+  race.clock.advance(const Duration(seconds: 1));
+  final background = race.fixture.controller.pause(
+    race.now,
+    processBackground: true,
+  );
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+
+  race.timeRepository.releaseBlockedAppend();
+  await focusAction;
+  await background;
+
+  expect(race.fixture.controller.state.status, LessonSessionStatus.paused);
+  expect(race.focusTimer.snapshot.status, FocusTimerStatus.paused);
+  expect(
+    race.focusTimer.snapshot.pauseReason,
+    FocusTimerPauseReason.processBackground,
+  );
+  expect(race.activeTime.state, ActiveLearningTimeState.paused);
+  expect(
+    race.activeTime.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  race.fixture.controller.dispose();
+}
+
+Future<void> _expectFocusSettlesBeforeEmergencyOff(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final focusAction = race.beginBlockedTransition(transition);
+  await race.timeRepository.blockedAppendStarted;
+
+  race.clock.advance(const Duration(seconds: 1));
+  final emergencyOff = race.fixture.controller.disableFocusTimer(race.now);
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+
+  race.timeRepository.releaseBlockedAppend();
+  await focusAction;
+  await emergencyOff;
+
+  expect(race.fixture.controller.state.status, LessonSessionStatus.active);
+  expect(race.focusTimer.snapshot.status, FocusTimerStatus.paused);
+  expect(
+    race.focusTimer.snapshot.pauseReason,
+    FocusTimerPauseReason.featureDisabled,
+  );
+  expect(race.activeTime.state, ActiveLearningTimeState.active);
+  expect(
+    race.activeTime.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  await expectLater(
+    race.fixture.controller.resumeFocusTimer(race.now),
+    throwsStateError,
+  );
+  expect(race.focusTimer.snapshot.status, FocusTimerStatus.paused);
+  race.fixture.controller.dispose();
+}
+
+Future<void> _expectFocusSettlesBeforeTerminalFinish(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final focusAction = race.beginBlockedTransition(transition);
+  await race.timeRepository.blockedAppendStarted;
+
+  race.clock.advance(const Duration(seconds: 1));
+  final completion = race.fixture.controller.complete(race.now);
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+
+  race.timeRepository.releaseBlockedAppend();
+  await focusAction;
+  await completion;
+
+  expect(race.fixture.controller.state.status, LessonSessionStatus.completed);
+  expect(race.focusTimer.snapshot.status, FocusTimerStatus.finished);
+  expect(race.activeTime.state, ActiveLearningTimeState.finished);
+  expect(
+    race.activeTime.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  race.fixture.controller.dispose();
+}
+
+Future<void> _expectFailedFocusSupersededByBackground(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  race.timeRepository.failNextAppend = true;
+
+  await expectLater(race.beginTransition(transition), throwsStateError);
+  final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+  expect(
+    frozenAutomaticAttempt.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+
+  race.clock.advance(const Duration(seconds: 1));
+  await race.fixture.controller.pause(race.now, processBackground: true);
+
+  expect(race.fixture.controller.state.status, LessonSessionStatus.paused);
+  expect(race.activeTime.state, ActiveLearningTimeState.paused);
+  expect(
+    race.timeRepository.attempts.where(
+      (segment) => identical(segment, frozenAutomaticAttempt),
+    ),
+    hasLength(2),
+  );
+  expect(
+    race.timeRepository.segments.where(
+      (segment) => identical(segment, frozenAutomaticAttempt),
+    ),
+    hasLength(1),
+  );
+
+  race.clock.advance(const Duration(hours: 1));
+  await race.fixture.controller.resume(race.now);
+  race.clock.advance(const Duration(seconds: 1));
+  final freshEntryAtUtc = race.now;
+  await race.beginTransition(transition);
+  expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+  race.clock.advance(const Duration(seconds: 2));
+  await race.fixture.controller.finishFocusTimer(race.now);
+
+  _expectOnlyFreshFocusEffort(race, transition);
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  expect(
+    race.timeRepository.segments.every(
+      (segment) => segment.activeDuration < const Duration(hours: 1),
+    ),
+    isTrue,
+  );
+  race.fixture.controller.dispose();
+}
+
+Future<void> _expectFailedFocusSupersededByGateBoundary(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  race.timeRepository.failNextAppend = true;
+
+  await expectLater(race.beginTransition(transition), throwsStateError);
+  final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+  expect(
+    frozenAutomaticAttempt.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+
+  race.clock.advance(const Duration(seconds: 1));
+  await race.fixture.controller.disableFocusTimer(race.now);
+
+  expect(
+    race.timeRepository.attempts.where(
+      (segment) => identical(segment, frozenAutomaticAttempt),
+    ),
+    hasLength(2),
+  );
+  expect(
+    race.timeRepository.segments.where(
+      (segment) => identical(segment, frozenAutomaticAttempt),
+    ),
+    hasLength(1),
+  );
+  await expectLater(race.beginTransition(transition), throwsStateError);
+
+  race.clock.advance(const Duration(hours: 1));
+  race.fixture.controller.setFocusTimerGateEnabled(true);
+  await race.fixture.controller.recordActiveLearningInteraction(race.now);
+  race.clock.advance(const Duration(seconds: 1));
+  final freshEntryAtUtc = race.now;
+  await race.beginTransition(transition);
+  expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+  race.clock.advance(const Duration(seconds: 2));
+  await race.fixture.controller.finishFocusTimer(race.now);
+
+  _expectOnlyFreshFocusEffort(race, transition);
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  race.fixture.controller.dispose();
+}
+
+void _expectOnlyFreshFocusEffort(
+  _FocusLifecycleRaceFixture race,
+  _FocusEntryTransition transition,
+) {
+  final focusDurations = race.timeRepository.segments
+      .where(
+        (segment) =>
+            segment.captureSource == LearningTimeCaptureSource.focusTimer,
+      )
+      .map((segment) => segment.activeDuration);
+  expect(
+    focusDurations,
+    transition == _FocusEntryTransition.start
+        ? <Duration>[const Duration(seconds: 2)]
+        : <Duration>[const Duration(seconds: 1), const Duration(seconds: 2)],
+  );
+  expect(
+    race.focusTimer.snapshot.activeDuration,
+    transition == _FocusEntryTransition.start
+        ? const Duration(seconds: 2)
+        : const Duration(seconds: 3),
+  );
+}
+
+Future<void> _expectShellFocusRetryUsesExactIntent(
+  WidgetTester tester,
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final registry = RuntimeFeatureRegistry(
+    const BuildFeatureRegistry.allEnabled(),
+  );
+  addTearDown(registry.dispose);
+  await _pumpFocusRaceShell(tester, race, registry);
+  try {
+    race.timeRepository.failNextAppend = true;
+    final acceptedAtUtc = race.now;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey<String>('focus-timer/error')),
+      findsOneWidget,
+    );
+    final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+    race.clock.advance(const Duration(seconds: 1));
+
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+
+    expect(race.focusTimer.snapshot.status, FocusTimerStatus.running);
+    expect(race.focusTimer.snapshot.lastTransitionAtUtc, acceptedAtUtc);
+    expect(
+      race.timeRepository.attempts.where(
+        (segment) => identical(segment, frozenAutomaticAttempt),
+      ),
+      hasLength(2),
+    );
+
+    race.clock.advance(const Duration(minutes: 4, seconds: 59));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('lesson-body/interaction')),
+    );
+    await tester.pumpAndSettle();
+    race.clock.advance(const Duration(minutes: 2));
+    await tester.tap(find.byKey(const ValueKey<String>('focus-timer/finish')));
+    await tester.pumpAndSettle();
+
+    expect(race.focusTimer.snapshot.status, FocusTimerStatus.finished);
+    expect(
+      race.focusTimer.snapshot.activeDuration,
+      transition == _FocusEntryTransition.start
+          ? const Duration(minutes: 7)
+          : const Duration(minutes: 7, seconds: 1),
+    );
+    expect(race.timeRepository.maximumConcurrentAppends, 1);
+  } finally {
+    await tester.pumpWidget(const SizedBox.shrink());
+    race.fixture.controller.dispose();
+  }
+}
+
+Future<void> _expectShellFailedFocusSettlesAcrossGate(
+  WidgetTester tester,
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final registry = RuntimeFeatureRegistry(
+    const BuildFeatureRegistry.allEnabled(),
+  );
+  addTearDown(registry.dispose);
+  await _pumpFocusRaceShell(tester, race, registry);
+  try {
+    race.timeRepository.failNextAppend = true;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+    final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+
+    race.clock.advance(const Duration(seconds: 1));
+    registry.emergencyOff(Feature.quiz);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(FocusTimerWidget), findsNothing);
+    expect(
+      race.timeRepository.attempts.where(
+        (segment) => identical(segment, frozenAutomaticAttempt),
+      ),
+      hasLength(2),
+    );
+    expect(
+      race.activeTime.captureSource,
+      LearningTimeCaptureSource.automaticLesson,
+    );
+
+    race.clock.advance(const Duration(hours: 1));
+    registry.setOverride(Feature.quiz, FeatureState.enabled);
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('lesson-body/interaction')),
+    );
+    await tester.pumpAndSettle();
+    race.clock.advance(const Duration(seconds: 1));
+    final freshEntryAtUtc = race.now;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+
+    expect(race.focusTimer.snapshot.status, FocusTimerStatus.running);
+    expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+    race.clock.advance(const Duration(seconds: 2));
+    await tester.tap(find.byKey(const ValueKey<String>('focus-timer/finish')));
+    await tester.pumpAndSettle();
+    _expectOnlyFreshFocusEffort(race, transition);
+    expect(race.timeRepository.maximumConcurrentAppends, 1);
+  } finally {
+    await tester.pumpWidget(const SizedBox.shrink());
+    race.fixture.controller.dispose();
+  }
+}
+
+Future<void> _expectShellContentSupersedesFailedEntry(
+  WidgetTester tester,
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final registry = RuntimeFeatureRegistry(
+    const BuildFeatureRegistry.allEnabled(),
+  );
+  addTearDown(registry.dispose);
+  await _pumpFocusRaceShell(tester, race, registry);
+  try {
+    race.timeRepository.failNextAppend = true;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+    final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+
+    race.clock.advance(const Duration(hours: 1));
+    await tester.tap(
+      find.byKey(const ValueKey<String>('lesson-body/interaction')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(race.activeTime.state, ActiveLearningTimeState.active);
+    expect(
+      race.activeTime.captureSource,
+      LearningTimeCaptureSource.automaticLesson,
+    );
+    expect(
+      race.timeRepository.attempts.where(
+        (segment) => identical(segment, frozenAutomaticAttempt),
+      ),
+      hasLength(2),
+    );
+
+    race.clock.advance(const Duration(seconds: 2));
+    final freshEntryAtUtc = race.now;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+    expect(race.focusTimer.snapshot.status, FocusTimerStatus.running);
+    expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+
+    race.clock.advance(const Duration(seconds: 3));
+    await tester.tap(find.byKey(const ValueKey<String>('focus-timer/finish')));
+    await tester.pumpAndSettle();
+
+    _expectAllCaptureSegments(
+      race,
+      transition,
+      automaticAfterSettlement: const Duration(seconds: 2),
+    );
+    expect(race.timeRepository.maximumConcurrentAppends, 1);
+  } finally {
+    await tester.pumpWidget(const SizedBox.shrink());
+    race.fixture.controller.dispose();
+  }
+}
+
+Future<void> _expectShellImeSupersedesBeforeEmergencyOff(
+  WidgetTester tester,
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  final registry = RuntimeFeatureRegistry(
+    const BuildFeatureRegistry.allEnabled(),
+  );
+  addTearDown(registry.dispose);
+  await _pumpFocusRaceShell(tester, race, registry);
+  try {
+    race.timeRepository.failNextAppend = true;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+
+    race.clock.advance(const Duration(hours: 1));
+    await tester.enterText(
+      find.byKey(const ValueKey<String>('lesson-body/ime')),
+      'learner evidence',
+    );
+    await tester.pumpAndSettle();
+    expect(race.activeTime.state, ActiveLearningTimeState.active);
+
+    race.clock.advance(const Duration(seconds: 2));
+    registry.emergencyOff(Feature.quiz);
+    await tester.pumpAndSettle();
+    expect(race.activeTime.state, ActiveLearningTimeState.active);
+    expect(find.byType(FocusTimerWidget), findsNothing);
+
+    race.clock.advance(const Duration(seconds: 2));
+    registry.setOverride(Feature.quiz, FeatureState.enabled);
+    await tester.pumpAndSettle();
+    final freshEntryAtUtc = race.now;
+    await tester.tap(find.byKey(_focusEntryKey(transition)));
+    await tester.pumpAndSettle();
+    expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+
+    race.clock.advance(const Duration(seconds: 3));
+    await tester.tap(find.byKey(const ValueKey<String>('focus-timer/finish')));
+    await tester.pumpAndSettle();
+
+    _expectAllCaptureSegments(
+      race,
+      transition,
+      automaticAfterSettlement: const Duration(seconds: 4),
+    );
+    expect(race.timeRepository.maximumConcurrentAppends, 1);
+  } finally {
+    await tester.pumpWidget(const SizedBox.shrink());
+    race.fixture.controller.dispose();
+  }
+}
+
+Future<void> _expectEmergencyOffWaitsForInteraction(
+  _FocusEntryTransition transition,
+) async {
+  final race = await _focusLifecycleRaceFixture(transition);
+  race.timeRepository.failNextAppend = true;
+  await expectLater(race.beginTransition(transition), throwsStateError);
+  final frozenAutomaticAttempt = race.timeRepository.attempts.last;
+
+  race.clock.advance(const Duration(hours: 1));
+  await race.fixture.controller.disableFocusTimer(race.now);
+
+  expect(race.activeTime.state, ActiveLearningTimeState.paused);
+  expect(
+    race.activeTime.captureSource,
+    LearningTimeCaptureSource.automaticLesson,
+  );
+  expect(
+    race.timeRepository.attempts.where(
+      (segment) => identical(segment, frozenAutomaticAttempt),
+    ),
+    hasLength(2),
+  );
+  _expectSettledEntrySegmentsOnly(race, transition);
+
+  race.clock.advance(const Duration(hours: 1));
+  await race.fixture.controller.recordActiveLearningInteraction(race.now);
+  expect(race.activeTime.state, ActiveLearningTimeState.active);
+  _expectSettledEntrySegmentsOnly(race, transition);
+
+  race.clock.advance(const Duration(seconds: 2));
+  race.fixture.controller.setFocusTimerGateEnabled(true);
+  final freshEntryAtUtc = race.now;
+  await race.beginTransition(transition);
+  expect(race.focusTimer.snapshot.lastTransitionAtUtc, freshEntryAtUtc);
+  race.clock.advance(const Duration(seconds: 3));
+  await race.fixture.controller.finishFocusTimer(race.now);
+
+  _expectAllCaptureSegments(
+    race,
+    transition,
+    automaticAfterSettlement: const Duration(seconds: 2),
+  );
+  expect(race.timeRepository.maximumConcurrentAppends, 1);
+  race.fixture.controller.dispose();
+}
+
+void _expectSettledEntrySegmentsOnly(
+  _FocusLifecycleRaceFixture race,
+  _FocusEntryTransition transition,
+) {
+  final expected = transition == _FocusEntryTransition.start
+      ? <(LearningTimeCaptureSource, Duration)>[
+          (
+            LearningTimeCaptureSource.automaticLesson,
+            const Duration(seconds: 1),
+          ),
+        ]
+      : <(LearningTimeCaptureSource, Duration)>[
+          (LearningTimeCaptureSource.focusTimer, const Duration(seconds: 1)),
+          (
+            LearningTimeCaptureSource.automaticLesson,
+            const Duration(seconds: 1),
+          ),
+        ];
+  expect(_captureSegments(race), expected);
+}
+
+void _expectAllCaptureSegments(
+  _FocusLifecycleRaceFixture race,
+  _FocusEntryTransition transition, {
+  required Duration automaticAfterSettlement,
+}) {
+  final expected = <(LearningTimeCaptureSource, Duration)>[
+    if (transition == _FocusEntryTransition.resume)
+      (LearningTimeCaptureSource.focusTimer, const Duration(seconds: 1)),
+    (LearningTimeCaptureSource.automaticLesson, const Duration(seconds: 1)),
+    (LearningTimeCaptureSource.automaticLesson, automaticAfterSettlement),
+    (LearningTimeCaptureSource.focusTimer, const Duration(seconds: 3)),
+  ];
+  expect(_captureSegments(race), expected);
+  expect(
+    race.timeRepository.segments.any(
+      (segment) => segment.activeDuration >= const Duration(hours: 1),
+    ),
+    isFalse,
+  );
+}
+
+List<(LearningTimeCaptureSource, Duration)> _captureSegments(
+  _FocusLifecycleRaceFixture race,
+) => race.timeRepository.segments
+    .map((segment) => (segment.captureSource, segment.activeDuration))
+    .toList(growable: false);
+
+Future<void> _pumpFocusRaceShell(
+  WidgetTester tester,
+  _FocusLifecycleRaceFixture race,
+  RuntimeFeatureRegistry registry,
+) => tester.pumpWidget(
+  AppDependenciesScope(
+    dependencies: _bookmarkDependencies(
+      race.fixture.database,
+      features: registry,
+    ),
+    child: MaterialApp(
+      home: UnifiedLessonShell(
+        controller: race.fixture.controller,
+        nowUtc: () => race.now,
+        lifecycleStateReader: () => AppLifecycleState.resumed,
+        builder: (context) => Material(
+          child: Center(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                TextButton(
+                  key: const ValueKey<String>('lesson-body/interaction'),
+                  onPressed: () {},
+                  child: const Text('Lesson interaction'),
+                ),
+                TextField(
+                  key: const ValueKey<String>('lesson-body/ime'),
+                  onChanged: (_) => UnifiedLessonSessionLifecycleScope.maybeOf(
+                    context,
+                  )?.recordInteraction(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    ),
+  ),
+);
+
+ValueKey<String> _focusEntryKey(_FocusEntryTransition transition) =>
+    ValueKey<String>(
+      transition == _FocusEntryTransition.start
+          ? 'focus-timer/start'
+          : 'focus-timer/resume',
+    );
+
 final class _MemoryLearningTimeRepository implements LearningTimeRepository {
   final segments = <LearningTimeSegment>[];
+  final attempts = <LearningTimeSegment>[];
   bool failActiveDuration = false;
   bool failNextAppend = false;
+  bool _blockNextAppend = false;
+  Completer<void>? _blockedAppendStarted;
+  Completer<void>? _blockedAppendRelease;
+  int _concurrentAppends = 0;
+  int maximumConcurrentAppends = 0;
+
+  Future<void> get blockedAppendStarted {
+    final started = _blockedAppendStarted;
+    if (started == null) {
+      throw StateError('no append was prepared for blocking');
+    }
+    return started.future;
+  }
+
+  void blockNextAppend() {
+    if (_blockNextAppend ||
+        (_blockedAppendRelease != null &&
+            !_blockedAppendRelease!.isCompleted)) {
+      throw StateError('an append is already blocked');
+    }
+    _blockNextAppend = true;
+    _blockedAppendStarted = Completer<void>();
+    _blockedAppendRelease = Completer<void>();
+  }
+
+  void releaseBlockedAppend() {
+    final release = _blockedAppendRelease;
+    if (release == null || release.isCompleted) {
+      throw StateError('no append is blocked');
+    }
+    release.complete();
+  }
 
   @override
   Future<void> append(LearningTimeSegment segment) async {
-    if (failNextAppend) {
-      failNextAppend = false;
-      throw StateError('injected time append failure');
+    attempts.add(segment);
+    _concurrentAppends += 1;
+    if (_concurrentAppends > maximumConcurrentAppends) {
+      maximumConcurrentAppends = _concurrentAppends;
     }
-    final existing = segments.where((candidate) => candidate.id == segment.id);
-    if (existing.isNotEmpty) {
-      if (existing.single != segment) throw StateError('time replay mismatch');
-      return;
+    try {
+      if (_blockNextAppend) {
+        _blockNextAppend = false;
+        _blockedAppendStarted!.complete();
+        await _blockedAppendRelease!.future;
+      }
+      if (failNextAppend) {
+        failNextAppend = false;
+        throw StateError('injected time append failure');
+      }
+      final existing = segments.where(
+        (candidate) => candidate.id == segment.id,
+      );
+      if (existing.isNotEmpty) {
+        if (existing.single != segment) {
+          throw StateError('time replay mismatch');
+        }
+        return;
+      }
+      segments.add(segment);
+    } finally {
+      _concurrentAppends -= 1;
     }
-    segments.add(segment);
   }
 
   @override

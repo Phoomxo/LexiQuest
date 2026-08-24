@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../time_tracking/application/active_learning_time_controller.dart';
+import '../../time_tracking/application/focus_timer_controller.dart';
+import '../../time_tracking/domain/focus_timer.dart';
+import '../../time_tracking/domain/learning_time_segment.dart';
+import '../../../runtime/registries/feature.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/evidence_context.dart';
 import '../domain/evidence_eligibility_policy.dart';
@@ -24,6 +28,8 @@ final class UnifiedLessonController extends ChangeNotifier {
     required LessonModeAdapter adapter,
     HintUseCases? hints,
     ActiveLearningTimeController? activeLearningTime,
+    FocusTimerController? focusTimer,
+    Feature? focusTimerFeature,
   }) {
     final hintAdapter = adapter is HintSupportingLessonModeAdapter
         ? adapter
@@ -55,11 +61,28 @@ final class UnifiedLessonController extends ChangeNotifier {
         'active learning time requires a trustworthy-effort adapter',
       );
     }
+    if ((focusTimer == null) != (focusTimerFeature == null)) {
+      throw ArgumentError(
+        'focusTimer and focusTimerFeature must be composed together',
+      );
+    }
+    if (focusTimer != null &&
+        (adapter is! FocusTimerSupportingLessonModeAdapter ||
+            activeLearningTime == null ||
+            !identical(focusTimer.timeAuthority, activeLearningTime))) {
+      throw ArgumentError.value(
+        focusTimer,
+        'focusTimer',
+        'requires a capable adapter and the exact lesson time authority',
+      );
+    }
     return UnifiedLessonController._(
       learning,
       adapter,
       resolvedHints,
       activeLearningTime,
+      focusTimer,
+      focusTimerFeature,
     );
   }
 
@@ -68,12 +91,16 @@ final class UnifiedLessonController extends ChangeNotifier {
     this._adapter,
     this._hints,
     this._activeLearningTime,
+    this._focusTimer,
+    this._focusTimerFeature,
   ) : _state = LessonSessionState.planned(_adapter.mode);
 
   final LearningUseCases _learning;
   final LessonModeAdapter _adapter;
   final HintUseCases? _hints;
   final ActiveLearningTimeController? _activeLearningTime;
+  final FocusTimerController? _focusTimer;
+  final Feature? _focusTimerFeature;
   LessonSessionState _state;
   AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
@@ -86,12 +113,15 @@ final class UnifiedLessonController extends ChangeNotifier {
   PendingLearningSessionClose? _terminalClosePending;
   Future<void> _mutationTail = Future<void>.value();
   bool _disposed = false;
+  bool _focusTimerGateEnabled = true;
   Object? _lastActiveLearningTimeFailure;
 
   LessonSessionState get state => _state;
   AnswerFeedback? get feedback => _feedback;
   HintState? get hintState => _hints?.state;
   ActiveLearningTimeController? get activeLearningTime => _activeLearningTime;
+  FocusTimerController? get focusTimer => _focusTimer;
+  Feature? get focusTimerFeature => _focusTimerFeature;
   Object? get lastActiveLearningTimeFailure => _lastActiveLearningTimeFailure;
   bool get terminalMutationInFlight =>
       _completionInFlight != null ||
@@ -153,6 +183,7 @@ final class UnifiedLessonController extends ChangeNotifier {
             sessionId: sessionId,
             occurredAtUtc: startedAtUtc,
           );
+          _focusTimer?.attachSession(sessionId);
           _lastActiveLearningTimeFailure = null;
         } catch (error) {
           // Time capture is an isolated measurement projection. A local time
@@ -173,7 +204,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     });
   }
 
-  Future<void> pause(DateTime occurredAtUtc) {
+  Future<void> pause(DateTime occurredAtUtc, {bool processBackground = false}) {
     try {
       _requireNotDisposed();
       final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
@@ -191,6 +222,22 @@ final class UnifiedLessonController extends ChangeNotifier {
           _serialize<void>(() async {
             _requireStatus(LessonSessionStatus.active, 'pause');
             if (activeTime != null && timeOccurrence != null) {
+              final focusTimer = _focusTimer;
+              if (focusTimer != null) {
+                await focusTimer.supersedeFailedEntryObserved(
+                  timeOccurrence,
+                  pauseReason: processBackground
+                      ? FocusTimerPauseReason.processBackground
+                      : FocusTimerPauseReason.explicit,
+                );
+                if (focusTimer.snapshot.status == FocusTimerStatus.running) {
+                  if (processBackground) {
+                    await focusTimer.pauseForBackgroundObserved(timeOccurrence);
+                  } else {
+                    await focusTimer.pauseObserved(timeOccurrence);
+                  }
+                }
+              }
               await activeTime.pauseObserved(timeOccurrence);
             }
             _transition(LessonSessionStatus.paused, occurredAt);
@@ -546,6 +593,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     final activeTime = _activeLearningTime;
     if (activeTime != null && timeOccurrence != null) {
       try {
+        await _focusTimer?.finishObserved(timeOccurrence);
         await activeTime.finishObserved(timeOccurrence);
         _lastActiveLearningTimeFailure = null;
       } catch (error) {
@@ -575,6 +623,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     var timeFinished = false;
     if (activeTime != null && timeOccurrence != null) {
       try {
+        await _focusTimer?.finishObserved(timeOccurrence);
         await activeTime.finishObserved(timeOccurrence);
         _lastActiveLearningTimeFailure = null;
         timeFinished = true;
@@ -616,10 +665,153 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   Future<void> recordActiveLearningInteraction(DateTime occurredAtUtc) {
-    if (_disposed) return _disposedError<void>();
-    final controller = _activeLearningTime;
-    if (controller == null) return Future<void>.value();
-    return controller.recordInteraction(occurredAtUtc: occurredAtUtc);
+    try {
+      _requireNotDisposed();
+      final controller = _activeLearningTime;
+      if (controller == null) return Future<void>.value();
+      final occurrence = controller.observe(
+        _requiredUtc(occurredAtUtc, 'occurredAtUtc'),
+      );
+      return _serialize<void>(() async {
+        final focusTimer = _focusTimer;
+        if (focusTimer?.snapshot.status == FocusTimerStatus.running) {
+          await focusTimer!.recordInteractionObserved(occurrence);
+          return;
+        }
+        if (_state.status != LessonSessionStatus.active) {
+          await controller.recordInteractionObserved(occurrence);
+          return;
+        }
+        final supersedeFailedEntry = focusTimer?.hasFailedEntryIntent ?? false;
+        await controller.recordAutomaticInteractionObserved(occurrence);
+        if (supersedeFailedEntry) {
+          await focusTimer!.supersedeFailedEntryObserved(occurrence);
+        }
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> startFocusTimer(DateTime occurredAtUtc) =>
+      _transitionFocusTimer(_FocusTimerAction.start, occurredAtUtc);
+
+  Future<void> pauseFocusTimer(DateTime occurredAtUtc) =>
+      _transitionFocusTimer(_FocusTimerAction.pause, occurredAtUtc);
+
+  Future<void> resumeFocusTimer(DateTime occurredAtUtc) =>
+      _transitionFocusTimer(_FocusTimerAction.resume, occurredAtUtc);
+
+  Future<void> finishFocusTimer(DateTime occurredAtUtc) =>
+      _transitionFocusTimer(_FocusTimerAction.finish, occurredAtUtc);
+
+  Future<void> _transitionFocusTimer(
+    _FocusTimerAction action,
+    DateTime occurredAtUtc,
+  ) {
+    try {
+      _requireNotDisposed();
+      if (!_focusTimerGateEnabled) {
+        throw StateError('Focus timer is disabled by its live feature gate.');
+      }
+      if (_pauseInFlight != null) {
+        throw StateError(
+          'Cannot ${action.label} while lesson pause is pending.',
+        );
+      }
+      _requireNoTerminalMutation(action.label);
+      _requireStatus(LessonSessionStatus.active, action.label);
+      final focusTimer = _focusTimer;
+      final activeTime = _activeLearningTime;
+      if (focusTimer == null || activeTime == null) {
+        throw StateError('Focus timer is unavailable for this lesson mode.');
+      }
+      if (activeTime.state == ActiveLearningTimeState.inactive ||
+          activeTime.state == ActiveLearningTimeState.finished) {
+        throw StateError('Lesson time authority is unavailable.');
+      }
+      final occurrence = activeTime.observe(
+        _requiredUtc(occurredAtUtc, 'occurredAtUtc'),
+      );
+      return _serialize<void>(() async {
+        _requireStatus(LessonSessionStatus.active, action.label);
+        try {
+          switch (action) {
+            case _FocusTimerAction.start:
+              await focusTimer.startObserved(occurrence);
+              break;
+            case _FocusTimerAction.pause:
+              await focusTimer.pauseObserved(occurrence);
+              break;
+            case _FocusTimerAction.resume:
+              await focusTimer.resumeObserved(occurrence);
+              break;
+            case _FocusTimerAction.finish:
+              await focusTimer.finishObserved(occurrence);
+              break;
+          }
+          _lastActiveLearningTimeFailure = null;
+        } catch (error) {
+          _lastActiveLearningTimeFailure = error;
+          rethrow;
+        }
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> disableFocusTimer(DateTime occurredAtUtc) {
+    try {
+      _requireNotDisposed();
+      _focusTimerGateEnabled = false;
+      final focusTimer = _focusTimer;
+      final activeTime = _activeLearningTime;
+      if (focusTimer == null ||
+          activeTime == null ||
+          activeTime.state == ActiveLearningTimeState.inactive ||
+          activeTime.state == ActiveLearningTimeState.finished) {
+        return Future<void>.value();
+      }
+      final occurrence = activeTime.observe(
+        _requiredUtc(occurredAtUtc, 'occurredAtUtc'),
+      );
+      return _serialize<void>(() async {
+        final failedEntry = focusTimer.hasFailedEntryIntent;
+        Future<void> settleBoundary() async {
+          if (failedEntry) {
+            await activeTime.settleCaptureSourceWithoutInteraction(
+              LearningTimeCaptureSource.automaticLesson,
+            );
+          } else if (focusTimer.snapshot.status == FocusTimerStatus.running) {
+            await focusTimer.pauseForFeatureDisabledObserved(occurrence);
+          }
+        }
+
+        try {
+          await settleBoundary();
+          _lastActiveLearningTimeFailure = null;
+        } catch (error) {
+          _lastActiveLearningTimeFailure = error;
+          // Retry exactly once with the same boundary and canonical segment.
+          await settleBoundary();
+          _lastActiveLearningTimeFailure = null;
+        }
+        if (failedEntry) {
+          await focusTimer.supersedeFailedEntryObserved(
+            occurrence,
+            pauseReason: FocusTimerPauseReason.featureDisabled,
+          );
+        }
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  void setFocusTimerGateEnabled(bool enabled) {
+    if (_disposed) return;
+    _focusTimerGateEnabled = enabled;
   }
 
   void noteActiveLearningInteraction(DateTime occurredAtUtc) {
@@ -719,9 +911,21 @@ final class UnifiedLessonController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _focusTimer?.dispose();
     _activeLearningTime?.dispose();
     super.dispose();
   }
+}
+
+enum _FocusTimerAction {
+  start('start focus'),
+  pause('pause focus'),
+  resume('resume focus'),
+  finish('finish focus');
+
+  const _FocusTimerAction(this.label);
+
+  final String label;
 }
 
 final class _PendingSubmission {

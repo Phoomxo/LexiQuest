@@ -68,3 +68,8 @@ abstract interface class LessonModeAdapter {
 /// Recreational activities must never implement this contract.
 abstract interface class TrustworthyActiveEffortLessonModeAdapter
     implements LessonModeAdapter {}
+
+/// Marker for educational modes that can expose explicit focus intervals.
+/// Recreational adapters cannot satisfy the trustworthy-effort parent.
+abstract interface class FocusTimerSupportingLessonModeAdapter
+    implements TrustworthyActiveEffortLessonModeAdapter {}

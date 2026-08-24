@@ -8,6 +8,7 @@ import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
 import '../../../runtime/app_dependencies.dart';
+import '../../time_tracking/presentation/focus_timer_widget.dart';
 import 'answer_feedback_panel.dart';
 import 'hint_panel.dart';
 
@@ -117,6 +118,9 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   Future<void>? _lifecycleTransitionInFlight;
   Object? _lifecycleFailure;
   bool _pauseRetryRequired = false;
+  Listenable? _focusFeatureChanges;
+  UnifiedLessonController? _focusGateController;
+  bool _focusGateEnabled = false;
 
   @override
   void initState() {
@@ -137,6 +141,12 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _observeFocusFeatureGate();
+  }
+
+  @override
   void didUpdateWidget(UnifiedLessonShell oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!identical(oldWidget.controller, widget.controller)) {
@@ -146,6 +156,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       _lifecycleTransitionInFlight = null;
       _lifecycleFailure = null;
       _pauseRetryRequired = false;
+      _observeFocusFeatureGate();
       unawaited(_reconcileLifecycle());
     }
   }
@@ -208,7 +219,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
           return _LifecycleDriveOutcome.conflict;
         }
         try {
-          await controller.pause(_now());
+          await controller.pause(_now(), processBackground: true);
         } catch (error) {
           if (controller.state.status != LessonSessionStatus.active ||
               controller.terminalMutationInFlight) {
@@ -229,7 +240,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       if (_pauseRetryRequired &&
           controller.state.status == LessonSessionStatus.active) {
         try {
-          await controller.pause(_now());
+          await controller.pause(_now(), processBackground: true);
         } catch (error) {
           if (controller.state.status != LessonSessionStatus.active ||
               controller.terminalMutationInFlight) {
@@ -299,6 +310,59 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     });
   }
 
+  void _observeFocusFeatureGate() {
+    final controller = widget.controller;
+    final features = AppDependenciesScope.maybeOf(context)?.features;
+    final Listenable? changes = features is Listenable
+        ? features as Listenable
+        : null;
+    if (!identical(changes, _focusFeatureChanges)) {
+      _focusFeatureChanges?.removeListener(_onFocusFeatureChanged);
+      _focusFeatureChanges = changes;
+      changes?.addListener(_onFocusFeatureChanged);
+    }
+    final wasEnabled = _focusGateEnabled;
+    final controllerChanged = !identical(controller, _focusGateController);
+    _focusGateController = controller;
+    _focusGateEnabled = _isFocusGateEnabled();
+    controller?.setFocusTimerGateEnabled(_focusGateEnabled);
+    if (!_focusGateEnabled && (wasEnabled || controllerChanged)) {
+      _disableFocusTimerForGate(controller);
+    }
+  }
+
+  bool _isFocusGateEnabled() {
+    final controller = widget.controller;
+    final feature = controller?.focusTimerFeature;
+    final features = AppDependenciesScope.maybeOf(context)?.features;
+    return controller?.focusTimer != null &&
+        feature != null &&
+        features != null &&
+        features.isEnabled(feature);
+  }
+
+  void _onFocusFeatureChanged() {
+    if (!mounted) return;
+    final controller = widget.controller;
+    final wasEnabled = _focusGateEnabled;
+    final isEnabled = _isFocusGateEnabled();
+    if (wasEnabled == isEnabled) return;
+    setState(() => _focusGateEnabled = isEnabled);
+    controller?.setFocusTimerGateEnabled(isEnabled);
+    if (wasEnabled && !isEnabled) {
+      _disableFocusTimerForGate(controller);
+    }
+  }
+
+  void _disableFocusTimerForGate(UnifiedLessonController? controller) {
+    if (controller == null) return;
+    unawaited(
+      controller
+          .disableFocusTimer(_now())
+          .then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
@@ -312,31 +376,48 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       child: Semantics(
         container: true,
         label: 'Lesson ${controller.state.status.name}',
-        child: Listener(
-          behavior: HitTestBehavior.translucent,
-          onPointerDown: (_) =>
-              controller.noteActiveLearningInteraction(_now()),
-          child: Column(
-            children: <Widget>[
-              LinearProgressIndicator(value: controller.state.progress),
-              if (controller.state.status == LessonSessionStatus.active &&
-                  hintState != null)
-                HintPanel(
-                  state: hintState,
-                  onRevealNext: controller.revealNextHint,
-                  enabled: controller.canRevealHint,
+        child: Column(
+          children: <Widget>[
+            LinearProgressIndicator(value: controller.state.progress),
+            if (_focusGateEnabled)
+              if (controller.focusTimer case final timer?)
+                if (timer.snapshot.sessionId != null)
+                  FocusTimerWidget(
+                    controller: timer,
+                    nowUtc: _now,
+                    onStart: controller.startFocusTimer,
+                    onPause: controller.pauseFocusTimer,
+                    onResume: controller.resumeFocusTimer,
+                    onFinish: controller.finishFocusTimer,
+                  ),
+            Expanded(
+              child: Listener(
+                behavior: HitTestBehavior.translucent,
+                onPointerDown: (_) =>
+                    controller.noteActiveLearningInteraction(_now()),
+                child: Column(
+                  children: <Widget>[
+                    if (controller.state.status == LessonSessionStatus.active &&
+                        hintState != null)
+                      HintPanel(
+                        state: hintState,
+                        onRevealNext: controller.revealNextHint,
+                        enabled: controller.canRevealHint,
+                      ),
+                    if (controller.feedback case final feedback?)
+                      AnswerFeedbackPanel(
+                        feedback: feedback,
+                        bookmarkIdentity: feedback.bookmarkIdentity,
+                        onBookmark: bookmarkLearningItem,
+                        reportIdentity: feedback.bookmarkIdentity,
+                        onReport: reportContent,
+                      ),
+                    Expanded(child: Builder(builder: widget.builder)),
+                  ],
                 ),
-              if (controller.feedback case final feedback?)
-                AnswerFeedbackPanel(
-                  feedback: feedback,
-                  bookmarkIdentity: feedback.bookmarkIdentity,
-                  onBookmark: bookmarkLearningItem,
-                  reportIdentity: feedback.bookmarkIdentity,
-                  onReport: reportContent,
-                ),
-              Expanded(child: Builder(builder: widget.builder)),
-            ],
-          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -344,6 +425,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
 
   @override
   void dispose() {
+    _focusFeatureChanges?.removeListener(_onFocusFeatureChanged);
     widget.controller?.removeListener(_onControllerChanged);
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();

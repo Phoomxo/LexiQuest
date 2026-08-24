@@ -333,6 +333,28 @@ void main() {
     expect(repository.attempts, hasLength(2));
     expect(repository.attempts.last, same(repository.attempts.first));
   });
+
+  test(
+    'capture-source transition rejects a monotonic clock rollback',
+    () async {
+      final repository = _MemoryRepository();
+      final clock = _FakeTimeAuthority(
+        utc: DateTime.utc(2026, 8, 24, 9),
+        monotonicMicros: 10,
+      );
+      final controller = _controller(repository, clock);
+      await controller.start(sessionId: 'session-1', occurredAtUtc: clock.utc);
+      clock.monotonicMicros = 5;
+
+      await expectLater(
+        controller.transitionCaptureSource(
+          captureSource: LearningTimeCaptureSource.automaticLesson,
+          occurredAtUtc: clock.utc,
+        ),
+        throwsStateError,
+      );
+    },
+  );
 }
 
 ActiveLearningTimeController _controller(

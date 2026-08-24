@@ -5,7 +5,7 @@ import '../domain/lesson_mode.dart';
 import 'lesson_mode_registry.dart';
 
 final class LegacyLessonModeAdapter
-    implements TrustworthyActiveEffortLessonModeAdapter {
+    implements FocusTimerSupportingLessonModeAdapter {
   const LegacyLessonModeAdapter(this.mode);
 
   @override

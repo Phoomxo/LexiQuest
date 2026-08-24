@@ -46,6 +46,8 @@ import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
+import 'package:vocab_learning_app/features/time_tracking/application/focus_timer_rollout.dart';
+import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/runtime/app_bootstrap.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
@@ -2000,6 +2002,7 @@ void main() {
         final controller = dependencies.createLessonController!(adapter);
 
         expect(controller.activeLearningTime, isNotNull);
+        expect(controller.focusTimer, isNull);
         await controller.start(
           LessonStartCommand(
             sessionId: 'bootstrap-time-session',
@@ -2067,6 +2070,7 @@ void main() {
           learningTimeMonotonicMicros: () => monotonicMicros,
           learningTimeCaptureRollout:
               const LearningTimeCaptureRollout.internal(),
+          focusTimerRollout: const FocusTimerRollout.internal(),
         ).initialize();
         final category = await dependencies.vocabulary!.createCategory(
           'Time capture',
@@ -2090,6 +2094,7 @@ void main() {
         await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
         await tester.pumpAndSettle();
         expect(find.byType(QuizScreen), findsOneWidget);
+        expect(find.byType(FocusTimerWidget), findsOneWidget);
 
         monotonicMicros += const Duration(seconds: 7).inMicroseconds;
         tester.binding.handleAppLifecycleStateChanged(

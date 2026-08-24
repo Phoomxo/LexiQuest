@@ -33,6 +33,7 @@ import '../features/review/domain/learner_intent_repository.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/time_tracking/application/active_learning_time_controller.dart';
+import '../features/time_tracking/application/focus_timer_rollout.dart';
 import '../features/time_tracking/application/learning_time_capture_rollout.dart';
 import '../features/time_tracking/domain/learning_time_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
@@ -77,6 +78,7 @@ final class AppDependencies {
     this.learningTime,
     this.learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
+    this.focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.createActiveLearningTimeController,
     this.assessment,
     this.currentActivityEvidence,
@@ -129,6 +131,7 @@ final class AppDependencies {
   final UnifiedLessonControllerFactory? createLessonController;
   final LearningTimeRepository? learningTime;
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
+  final FocusTimerRollout focusTimerRollout;
   final ActiveLearningTimeControllerFactory? createActiveLearningTimeController;
   final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;

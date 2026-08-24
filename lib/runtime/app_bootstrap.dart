@@ -97,6 +97,8 @@ import '../features/sync/data/drift_owner_operation_gate.dart';
 import '../features/sync/data/drift_sync_store.dart';
 import '../features/sync/data/firestore_sync_gateway.dart';
 import '../features/time_tracking/application/active_learning_time_controller.dart';
+import '../features/time_tracking/application/focus_timer_controller.dart';
+import '../features/time_tracking/application/focus_timer_rollout.dart';
 import '../features/time_tracking/application/learning_time_capture_rollout.dart';
 import '../features/time_tracking/data/drift_learning_time_repository.dart';
 import '../features/time_tracking/domain/learning_time_segment.dart';
@@ -322,6 +324,7 @@ final class AppBootstrap {
     this.activeLearningIdleTimeout = const Duration(minutes: 5),
     this.learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
+    this.focusTimerRollout = const FocusTimerRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
   }) : exportStoreFactory = exportStoreFactory ?? _productionExportStore,
@@ -392,6 +395,7 @@ final class AppBootstrap {
   final LearningTimeMonotonicMicros learningTimeMonotonicMicros;
   final Duration activeLearningIdleTimeout;
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
+  final FocusTimerRollout focusTimerRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
   final ExportArtifactStoreFactory exportStoreFactory;
@@ -1069,17 +1073,35 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       learning: learning,
       lessonModes: lessonModes,
-      createLessonController: (adapter) => UnifiedLessonController(
-        learning: learning,
-        adapter: adapter,
-        activeLearningTime:
+      createLessonController: (adapter) {
+        final registration = lessonModes.find(adapter.mode);
+        final registeredFeature =
+            registration != null && identical(registration.adapter, adapter)
+            ? registration.feature
+            : null;
+        final activeTime =
             learningTimeCaptureRollout.allowsCapture &&
                 adapter is TrustworthyActiveEffortLessonModeAdapter
             ? createActiveLearningTimeController()
-            : null,
-      ),
+            : null;
+        final focusTimer =
+            activeTime != null &&
+                focusTimerRollout.allowsFocusTimer &&
+                registeredFeature != null &&
+                adapter is FocusTimerSupportingLessonModeAdapter
+            ? FocusTimerController(timeAuthority: activeTime)
+            : null;
+        return UnifiedLessonController(
+          learning: learning,
+          adapter: adapter,
+          activeLearningTime: activeTime,
+          focusTimer: focusTimer,
+          focusTimerFeature: focusTimer == null ? null : registeredFeature,
+        );
+      },
       learningTime: learningTime,
       learningTimeCaptureRollout: learningTimeCaptureRollout,
+      focusTimerRollout: focusTimerRollout,
       createActiveLearningTimeController:
           learningTimeCaptureRollout.allowsCapture
           ? createActiveLearningTimeController

@@ -62,6 +62,10 @@ final class ActiveLearningTimeController {
   ActiveLearningTimeState get state => _state;
   String? get sessionId => _sessionId;
   Object? get lastIdleFailure => _lastIdleFailure;
+  LearningTimeCaptureSource get captureSource => _captureSource;
+
+  LearningTimeCaptureSource _captureSource =
+      LearningTimeCaptureSource.automaticLesson;
 
   Future<void> start({
     required String sessionId,
@@ -147,39 +151,134 @@ final class ActiveLearningTimeController {
 
   Future<void> recordInteraction({required DateTime occurredAtUtc}) {
     try {
-      final occurrence = observe(occurredAtUtc);
+      return recordInteractionObserved(observe(occurredAtUtc));
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> recordInteractionObserved(LearningTimeObservation occurrence) {
+    try {
+      _requireObservation(occurrence);
+      return _serialize(
+        () => _recordInteractionObserved(
+          occurrence,
+          resumePausedAutomaticCapture: false,
+        ),
+      );
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> recordAutomaticInteractionObserved(
+    LearningTimeObservation occurrence,
+  ) {
+    try {
+      _requireObservation(occurrence);
+      return _serialize(
+        () => _recordInteractionObserved(
+          occurrence,
+          resumePausedAutomaticCapture: true,
+        ),
+      );
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> transitionCaptureSource({
+    required LearningTimeCaptureSource captureSource,
+    required DateTime occurredAtUtc,
+  }) {
+    try {
+      return transitionCaptureSourceObserved(
+        captureSource,
+        observe(occurredAtUtc),
+      );
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> transitionCaptureSourceObserved(
+    LearningTimeCaptureSource captureSource,
+    LearningTimeObservation occurrence,
+  ) {
+    try {
+      _requireObservation(occurrence);
       return _serialize(() async {
         final pending = _pending;
         if (pending != null) await _commitPending(pending);
         if (_state == ActiveLearningTimeState.idle) {
+          _captureSource = captureSource;
           _openAt(occurrence);
           _state = ActiveLearningTimeState.active;
           _armIdleTimer();
           return;
         }
-        if (_state != ActiveLearningTimeState.active) return;
-        final interactionMonotonicMicros = occurrence.monotonicMicros;
-        _requireMonotonicNotBeforeOpen(interactionMonotonicMicros);
-        final priorInteractionMonotonicMicros = _lastInteractionMonotonicMicros;
-        if (priorInteractionMonotonicMicros == null) {
-          throw StateError(
-            'active learning-time interaction anchor is missing',
-          );
+        if (_state != ActiveLearningTimeState.active &&
+            !(_state == ActiveLearningTimeState.paused && pending != null)) {
+          throw StateError('learning-time capture is not active');
         }
-        if (interactionMonotonicMicros >
-            priorInteractionMonotonicMicros + idleTimeout.inMicroseconds) {
-          await _close(occurrence, ActiveLearningTimeState.idle);
-          _openAt(occurrence);
-          _state = ActiveLearningTimeState.active;
+        if (_state == ActiveLearningTimeState.active &&
+            _captureSource == captureSource) {
+          _requireMonotonicNotBeforeOpen(occurrence.monotonicMicros);
+          _lastInteractionMonotonicMicros = occurrence.monotonicMicros;
           _armIdleTimer();
           return;
         }
-        _lastInteractionMonotonicMicros = interactionMonotonicMicros;
-        await _flushCompleteChunks(
-          occurrence: occurrence,
-          throughMonotonicMicros: interactionMonotonicMicros,
-        );
+        if (_state == ActiveLearningTimeState.active) {
+          await _close(occurrence, ActiveLearningTimeState.paused);
+        }
+        _captureSource = captureSource;
+        _openAt(occurrence);
+        _state = ActiveLearningTimeState.active;
         _armIdleTimer();
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> selectCaptureSourceWhileSuspended(
+    LearningTimeCaptureSource captureSource,
+  ) {
+    try {
+      return _serialize(() async {
+        final pending = _pending;
+        if (pending != null) await _commitPending(pending);
+        if (_state != ActiveLearningTimeState.paused &&
+            _state != ActiveLearningTimeState.idle) {
+          throw StateError('learning-time capture is not suspended');
+        }
+        _captureSource = captureSource;
+      });
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
+  }
+
+  Future<void> settleCaptureSourceWithoutInteraction(
+    LearningTimeCaptureSource captureSource,
+  ) {
+    try {
+      return _serialize(() async {
+        final pending = _pending;
+        if (pending != null) await _commitPending(pending);
+        if (_state == ActiveLearningTimeState.active) {
+          if (_captureSource != captureSource) {
+            throw StateError(
+              'an active capture source requires an observed transition',
+            );
+          }
+          return;
+        }
+        if (_state != ActiveLearningTimeState.paused &&
+            _state != ActiveLearningTimeState.idle) {
+          throw StateError('learning-time capture cannot settle its source');
+        }
+        _captureSource = captureSource;
       });
     } catch (error, stackTrace) {
       return Future<void>.error(error, stackTrace);
@@ -291,6 +390,49 @@ final class ActiveLearningTimeController {
     await _commitPending(pending);
   }
 
+  Future<void> _recordInteractionObserved(
+    LearningTimeObservation occurrence, {
+    required bool resumePausedAutomaticCapture,
+  }) async {
+    final pending = _pending;
+    if (pending != null) await _commitPending(pending);
+    if (_state == ActiveLearningTimeState.idle ||
+        (resumePausedAutomaticCapture &&
+            _state == ActiveLearningTimeState.paused)) {
+      if (resumePausedAutomaticCapture &&
+          _captureSource != LearningTimeCaptureSource.automaticLesson) {
+        throw StateError(
+          'only automatic capture can resume from learner interaction',
+        );
+      }
+      _openAt(occurrence);
+      _state = ActiveLearningTimeState.active;
+      _armIdleTimer();
+      return;
+    }
+    if (_state != ActiveLearningTimeState.active) return;
+    final interactionMonotonicMicros = occurrence.monotonicMicros;
+    _requireMonotonicNotBeforeOpen(interactionMonotonicMicros);
+    final priorInteractionMonotonicMicros = _lastInteractionMonotonicMicros;
+    if (priorInteractionMonotonicMicros == null) {
+      throw StateError('active learning-time interaction anchor is missing');
+    }
+    if (interactionMonotonicMicros >
+        priorInteractionMonotonicMicros + idleTimeout.inMicroseconds) {
+      await _close(occurrence, ActiveLearningTimeState.idle);
+      _openAt(occurrence);
+      _state = ActiveLearningTimeState.active;
+      _armIdleTimer();
+      return;
+    }
+    _lastInteractionMonotonicMicros = interactionMonotonicMicros;
+    await _flushCompleteChunks(
+      occurrence: occurrence,
+      throughMonotonicMicros: interactionMonotonicMicros,
+    );
+    _armIdleTimer();
+  }
+
   _PendingLearningTimeClose _freezeClose(
     LearningTimeObservation occurrence,
     ActiveLearningTimeState target,
@@ -371,7 +513,7 @@ final class ActiveLearningTimeController {
           timezone: consumedMs == 0
               ? open.timezone
               : timezoneContext(endedAtUtc),
-          captureSource: LearningTimeCaptureSource.automaticLesson,
+          captureSource: _captureSource,
         ),
       );
       consumedMs += durationMs;
