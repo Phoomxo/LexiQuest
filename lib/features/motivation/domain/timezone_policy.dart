@@ -56,9 +56,24 @@ abstract final class TimezonePolicy {
   ///
   /// Useful for scheduling streak-expiry timers.
   static DateTime getNextDayBoundary(DateTime utcNow, String timezoneId) {
-    final today = getLearningDay(utcNow, timezoneId);
-    final tomorrow = today.add(const Duration(days: 1));
     final tz = getLocation(timezoneId);
-    return TZDateTime(tz, tomorrow.year, tomorrow.month, tomorrow.day).toUtc();
+    final local = TZDateTime.from(utcNow, tz);
+    var nextLocalMidnight = TZDateTime(
+      tz,
+      local.year,
+      local.month,
+      local.day + 1,
+    );
+    var boundary = nextLocalMidnight.toUtc();
+    while (!boundary.isAfter(utcNow)) {
+      nextLocalMidnight = TZDateTime(
+        tz,
+        nextLocalMidnight.year,
+        nextLocalMidnight.month,
+        nextLocalMidnight.day + 1,
+      );
+      boundary = nextLocalMidnight.toUtc();
+    }
+    return boundary;
   }
 }

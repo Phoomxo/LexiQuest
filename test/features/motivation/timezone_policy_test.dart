@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:vocab_learning_app/features/motivation/domain/timezone_policy.dart';
@@ -118,6 +120,51 @@ void main() {
       final utc = DateTime.utc(2026, 8, 4, 12, 0);
       final boundary = TimezonePolicy.getNextDayBoundary(utc, bangkok);
       expect(boundary.isUtc, isTrue);
+    });
+
+    test('spring-forward day ends at its timezone-specific next midnight', () {
+      // 01:59:30 EST becomes 03:01:00 EDT after 90 seconds.
+      final utc = DateTime.utc(2026, 3, 8, 6, 59, 30);
+
+      final boundary = TimezonePolicy.getNextDayBoundary(utc, newYork);
+
+      expect(boundary, DateTime.utc(2026, 3, 9, 4));
+      expect(boundary.difference(utc), const Duration(hours: 21, seconds: 30));
+      expect(boundary.isAfter(utc), isTrue);
+    });
+
+    test(
+      'fall-back day boundary is strictly after the repeated local hour',
+      () {
+        // 01:59:59.500 EST after the fall-back transition on Sunday Nov 1.
+        final utc = DateTime.utc(2026, 11, 2, 4, 59, 59, 500);
+
+        final boundary = TimezonePolicy.getNextDayBoundary(utc, newYork);
+
+        expect(boundary, DateTime.utc(2026, 11, 2, 5));
+        expect(boundary.difference(utc), const Duration(milliseconds: 500));
+        expect(boundary.isAfter(utc), isTrue);
+      },
+    );
+
+    test('does not derive tomorrow from device-local calendar arithmetic', () {
+      final source = File(
+        'lib/features/motivation/domain/timezone_policy.dart',
+      ).readAsStringSync();
+      final boundaryStart = source.indexOf(
+        'static DateTime getNextDayBoundary',
+      );
+      final boundaryEnd = source.indexOf('\n  }', boundaryStart);
+      final boundaryBody = source.substring(boundaryStart, boundaryEnd);
+
+      expect(
+        boundaryBody,
+        contains('final local = TZDateTime.from(utcNow, tz);'),
+      );
+      expect(boundaryBody, contains('TZDateTime('));
+      expect(boundaryBody, contains('local.day + 1'));
+      expect(boundaryBody, isNot(contains('.add(const Duration(days: 1))')));
+      expect(boundaryBody, contains('isAfter(utcNow)'));
     });
   });
 }
