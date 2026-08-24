@@ -16,6 +16,7 @@ import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/evidence_policy_rollout.dart';
+import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -70,6 +71,7 @@ final class AppDependencies {
     this.currentActivityEvidence,
     this.learningReconciliation,
     this.contentManifests,
+    this.studyPlanning,
     this.progress,
     this.rewards,
     this.vocabulary,
@@ -114,6 +116,7 @@ final class AppDependencies {
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
   final LearningReconciliationScheduler? learningReconciliation;
   final ContentManifestRepository? contentManifests;
+  final StudyPlanningUseCases? studyPlanning;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final VocabularyUseCases? vocabulary;
@@ -158,7 +161,7 @@ final class AppDependencies {
     Feature.export => exports != null,
     Feature.shadowRewardV2 => false,
     Feature.questV2 => true,
-    Feature.studyPlanning => false,
+    Feature.studyPlanning => studyPlanning != null,
     Feature.researchAssessment => assessment != null,
     Feature.dailyContinuity => false,
     Feature.offlineContent => false,

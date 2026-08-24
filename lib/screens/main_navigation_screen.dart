@@ -19,6 +19,7 @@ import 'quest_status_screen.dart';
 import 'setting_screen.dart';
 import 'shadowing_challenge_screen.dart';
 import 'shop_page.dart';
+import 'study_planning_hub_screen.dart';
 import 'weakness_clinic_screen.dart';
 
 class MainNavigationScreen extends StatefulWidget {
@@ -79,7 +80,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
   void _refreshEntries(FeatureRegistry? features) {
     _entries = _buildEntries();
     _visibleEntries = _entries
-        .where((entry) => entry.isVisible(features))
+        .where(
+          (entry) =>
+              entry.isVisible(features, AppDependenciesScope.maybeOf(context)),
+        )
         .toList(growable: false);
     if (!_selectionInitialized) {
       final initialIndex = widget.initialIndex.clamp(
@@ -133,6 +137,20 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         icon: Icons.school_outlined,
         selectedIcon: Icons.school,
         label: 'เรียนรู้',
+      ),
+      _NavigationEntry(
+        id: 'study-planning',
+        productionEntryId: 'home/study-planning',
+        visibilityFeatures: const [Feature.studyPlanning],
+        requiresComposedDependency: true,
+        screen: _gate(
+          'study-planning',
+          Feature.studyPlanning,
+          (_) => const StudyPlanningHubScreen(),
+        ),
+        icon: Icons.event_note_outlined,
+        selectedIcon: Icons.event_note,
+        label: 'แผนการเรียน',
       ),
       _NavigationEntry(
         id: 'mastery',
@@ -253,7 +271,10 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     final selectedEntry = _entries[selectedStackIndex];
     final showAggregateUnavailable =
         selectedEntry.showUnavailableWhenHidden &&
-        !selectedEntry.isVisible(features);
+        !selectedEntry.isVisible(
+          features,
+          AppDependenciesScope.maybeOf(context),
+        );
     final status = AppDependenciesScope.maybeOf(context)?.runtimeStatus;
     final showBanner = status != null && !status.isFullyReady;
     return Scaffold(
@@ -521,6 +542,7 @@ final class _NavigationEntry {
     this.visibilityFeatures = const [],
     this.alwaysVisible = false,
     this.showUnavailableWhenHidden = false,
+    this.requiresComposedDependency = false,
   });
 
   final String id;
@@ -532,10 +554,14 @@ final class _NavigationEntry {
   final List<Feature> visibilityFeatures;
   final bool alwaysVisible;
   final bool showUnavailableWhenHidden;
+  final bool requiresComposedDependency;
 
-  bool isVisible(FeatureRegistry? features) {
+  bool isVisible(FeatureRegistry? features, AppDependencies? dependencies) {
     if (alwaysVisible) return true;
     if (features == null) return false;
-    return visibilityFeatures.any(features.isVisible);
+    return visibilityFeatures.any(features.isVisible) &&
+        (!requiresComposedDependency ||
+            dependencies?.hasComposedDependencyFor(visibilityFeatures.single) ==
+                true);
   }
 }

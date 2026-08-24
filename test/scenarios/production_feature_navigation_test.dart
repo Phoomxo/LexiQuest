@@ -23,6 +23,9 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
 import 'package:vocab_learning_app/features/media_practice/application/object_scanner_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
@@ -58,6 +61,7 @@ import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/shadowing_challenge_screen.dart';
 import 'package:vocab_learning_app/screens/shop_page.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
+import 'package:vocab_learning_app/screens/study_planning_hub_screen.dart';
 import 'package:vocab_learning_app/screens/weakness_clinic_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -381,6 +385,31 @@ void main() {
     expect(find.text('World Map'), findsNothing);
     expect(find.text('CEFR Diagnostic'), findsNothing);
   });
+
+  testWidgets(
+    'study planning has one composed parent entry and live kill switch',
+    (tester) async {
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
+      await tester.pumpWidget(
+        MyApp(dependencies: _dependencies(features, _QuestRepositoryFake())),
+      );
+      await tester.pumpAndSettle();
+
+      final entry = find.byKey(const ValueKey<String>('home/study-planning'));
+      expect(entry, findsOneWidget);
+      await tester.tap(entry);
+      await tester.pumpAndSettle();
+      expect(find.byType(StudyPlanningHubScreen), findsOneWidget);
+
+      features.emergencyOff(Feature.studyPlanning);
+      await tester.pump();
+      expect(find.byType(StudyPlanningHubScreen), findsNothing);
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+    },
+  );
 }
 
 void _expectEnabledDestination(
@@ -452,6 +481,11 @@ AppDependencies _dependencies(
     nowUtc: () => DateTime.utc(2026, 8, 11),
   );
   final lessonModes = buildLegacyLessonModeRegistry();
+  final progress = ProgressUseCases(
+    owners: owners,
+    queries: DriftProgressQueries(database),
+    nowUtc: () => DateTime.utc(2026, 8, 11),
+  );
   return AppDependencies(
     initialRoute: AppRoute.home,
     runtimeStatus: const AppRuntimeStatus(
@@ -478,10 +512,10 @@ AppDependencies _dependencies(
     vocabulary: vocabulary,
     associativeLearning: InMemoryAssociativeLearningAdapter(),
     currentActivityEvidence: CurrentActivityEvidenceAdapter(learning: learning),
-    progress: ProgressUseCases(
-      owners: owners,
-      queries: DriftProgressQueries(database),
-      nowUtc: () => DateTime.utc(2026, 8, 11),
+    progress: progress,
+    studyPlanning: StudyPlanningUseCases(
+      packs: _NavigationLearningPackRepository(),
+      progress: progress,
     ),
     rewards: RewardUseCases(
       owners: owners,
@@ -512,6 +546,13 @@ final class _NavigationObjectScannerController
     implements ObjectScannerController {
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+final class _NavigationLearningPackRepository
+    implements LearningPackRepository {
+  @override
+  Future<List<LearningPackSummary>> list(LearningPackFilter filter) async =>
+      const [];
 }
 
 final class _NavigationVocabularyRepository implements VocabularyRepository {

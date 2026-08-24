@@ -56,6 +56,8 @@ import '../features/learning/data/drift_learning_repository.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
 import '../features/learning_packs/data/drift_content_manifest_repository.dart';
+import '../features/learning_packs/data/drift_learning_pack_repository.dart';
+import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/media_practice/application/image_preprocessor.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
@@ -570,6 +572,13 @@ final class AppBootstrap {
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final studyPlanning = StudyPlanningUseCases(
+      packs: DriftLearningPackRepository(
+        database,
+        contentManifests: contentManifests,
+      ),
+      progress: progress,
+    );
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
       repository: DriftResearchConsentRepository(database),
@@ -928,6 +937,7 @@ final class AppBootstrap {
       currentActivityEvidence: currentActivityEvidence,
       learningReconciliation: learningReconciliation,
       contentManifests: contentManifests,
+      studyPlanning: studyPlanning,
       progress: progress,
       rewards: rewards,
       exports: exports,

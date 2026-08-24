@@ -680,6 +680,11 @@ void main() {
       expect(dependencies.voice, isNotNull);
       expect(dependencies.vocabulary, isNotNull);
       expect(dependencies.contentManifests, isNotNull);
+      expect(dependencies.studyPlanning, isNotNull);
+      expect(
+        dependencies.hasComposedDependencyFor(Feature.studyPlanning),
+        isTrue,
+      );
       expect(dependencies.quest, isNotNull);
     });
 
@@ -712,6 +717,11 @@ void main() {
       expect(dependencies.voice, isNull);
       expect(dependencies.vocabulary, isNotNull);
       expect(dependencies.contentManifests, isNotNull);
+      expect(dependencies.studyPlanning, isNotNull);
+      expect(
+        dependencies.hasComposedDependencyFor(Feature.studyPlanning),
+        isTrue,
+      );
       expect(dependencies.quest, isNotNull);
     });
 
