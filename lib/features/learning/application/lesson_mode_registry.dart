@@ -6,6 +6,9 @@ import 'cloze_mode_adapter.dart';
 import 'flashcard_mode_adapter.dart';
 import 'legacy_lesson_mode_adapters.dart';
 import 'meaning_quiz_mode_adapter.dart';
+import 'matching_mode_adapter.dart';
+
+enum LessonModeDeliveryState { implementedOff, enabled }
 
 final class LessonModeRegistration {
   const LessonModeRegistration({
@@ -13,6 +16,7 @@ final class LessonModeRegistration {
     required this.feature,
     required this.productionEntryId,
     required this.routeName,
+    this.deliveryState = LessonModeDeliveryState.enabled,
   });
 
   final LessonModeAdapter adapter;
@@ -20,6 +24,9 @@ final class LessonModeRegistration {
   final Feature feature;
   final String productionEntryId;
   final String routeName;
+  final LessonModeDeliveryState deliveryState;
+
+  bool get isDeliverable => deliveryState == LessonModeDeliveryState.enabled;
 }
 
 final class LessonModeRegistry {
@@ -33,6 +40,14 @@ final class LessonModeRegistry {
   Iterable<LessonModeRegistration> get registrations => _registrations.values;
 
   LessonModeRegistration? find(LessonMode mode) => _registrations[mode];
+
+  /// Resolves only invokable delivery. Raw [find] remains available to
+  /// architecture/readiness checks without making implemented-off code a
+  /// learner-facing route.
+  LessonModeRegistration? resolve(LessonMode mode) {
+    final registration = find(mode);
+    return registration?.isDeliverable == true ? registration : null;
+  }
 
   static Map<LessonMode, LessonModeRegistration> _index(
     Iterable<LessonModeRegistration> registrations,
@@ -88,16 +103,21 @@ final class LessonModeRegistry {
 
 /// Production registry. Each migrated mode replaces the legacy adapter at the
 /// same typed entry and route, so there is never a competing delivery path.
-LessonModeRegistry buildLessonModeRegistry() {
+LessonModeRegistry buildLessonModeRegistry({
+  LessonModeDeliveryState matchingDeliveryState =
+      LessonModeDeliveryState.implementedOff,
+}) {
   LessonModeRegistration registration({
     required LessonModeAdapter adapter,
     required Feature feature,
     required String routeName,
+    LessonModeDeliveryState deliveryState = LessonModeDeliveryState.enabled,
   }) => LessonModeRegistration(
     adapter: adapter,
     feature: feature,
     productionEntryId: productionFeatureContract[feature]!.productionEntryId,
     routeName: routeName,
+    deliveryState: deliveryState,
   );
 
   return LessonModeRegistry(<LessonModeRegistration>[
@@ -120,6 +140,12 @@ LessonModeRegistry buildLessonModeRegistry() {
       adapter: const ClozeModeAdapter(),
       feature: Feature.quiz,
       routeName: 'learning/cloze',
+    ),
+    registration(
+      adapter: const MatchingModeAdapter(),
+      feature: Feature.quiz,
+      routeName: 'learning/matching',
+      deliveryState: matchingDeliveryState,
     ),
     registration(
       adapter: const FlashcardModeAdapter(),

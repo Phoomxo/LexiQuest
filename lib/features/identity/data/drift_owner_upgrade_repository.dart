@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
@@ -12,7 +13,6 @@ import '../../learning/data/drift_learning_event_store.dart';
 import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
-import '../../learning/domain/evidence_policy_rollout.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
@@ -221,6 +221,17 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             ],
             updates: {_database.localOwners},
           );
+          await _database.customUpdate(
+            'UPDATE local_owners '
+            'SET account_state = ?, upgraded_at_utc_ms = ? '
+            'WHERE account_state = ?',
+            variables: [
+              Variable<String>('mergedInto:${target.id}'),
+              Variable<int>(upgradedAt),
+              Variable<String>('mergedInto:${source.id}'),
+            ],
+            updates: {_database.localOwners},
+          );
           await _rebuildLearningProjections(target.id);
           await DriftEconomyCutover(_database).ensureSeparated(target.id);
           await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
@@ -379,7 +390,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           '''
       SELECT guest.id AS guest_id, target.id AS target_id,
              guest.spelling AS guest_spelling,
+             guest.meaning AS guest_meaning,
+             guest.normalized_spelling AS guest_normalized_spelling,
+             guest.normalized_meaning AS guest_normalized_meaning,
              target.spelling AS target_spelling,
+             target.meaning AS target_meaning,
+             target.normalized_spelling AS target_normalized_spelling,
+             target.normalized_meaning AS target_normalized_meaning,
              guest.content_revision AS guest_content_revision,
              guest.content_checksum_sha256 AS guest_content_checksum,
              guest.content_provenance AS guest_content_provenance,
@@ -405,16 +422,27 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     for (final collision in collisions) {
       final guestId = collision.read<String>('guest_id');
       final targetWordId = collision.read<String>('target_id');
-      await _database.customUpdate(
-        'UPDATE answer_attempts SET word_id = ? '
-        'WHERE owner_id = ? AND word_id = ?',
-        variables: [
-          Variable<String>(targetWordId),
-          Variable<String>(sourceId),
-          Variable<String>(guestId),
-        ],
-        updates: {_database.answerAttempts},
+      await _fenceMatchingSessionsForCollidingWord(
+        sourceId: sourceId,
+        guestWordId: guestId,
+        resolvedAtUtcMs: resolvedAt,
       );
+      final preserveHistoricalWord = await _mustPreserveHistoricalWordIdentity(
+        sourceId: sourceId,
+        guestWordId: guestId,
+      );
+      if (!preserveHistoricalWord) {
+        await _database.customUpdate(
+          'UPDATE answer_attempts SET word_id = ? '
+          'WHERE owner_id = ? AND word_id = ?',
+          variables: [
+            Variable<String>(targetWordId),
+            Variable<String>(sourceId),
+            Variable<String>(guestId),
+          ],
+          updates: {_database.answerAttempts},
+        );
+      }
       await _database.customUpdate(
         'UPDATE vocabulary_import_rows SET word_id = ? WHERE word_id = ?',
         variables: [Variable<String>(targetWordId), Variable<String>(guestId)],
@@ -469,6 +497,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         localSnapshot: <String, Object?>{
           'id': guestId,
           'spelling': collision.read<String>('guest_spelling'),
+          'meaning': collision.read<String>('guest_meaning'),
+          'normalizedSpelling': collision.read<String>(
+            'guest_normalized_spelling',
+          ),
+          'normalizedMeaning': collision.read<String>(
+            'guest_normalized_meaning',
+          ),
           'contentRevision': collision.read<int>('guest_content_revision'),
           'contentChecksumSha256': collision.readNullable<String>(
             'guest_content_checksum',
@@ -482,10 +517,22 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           'contentPublicationState': collision.read<String>(
             'guest_content_publication_state',
           ),
+          if (preserveHistoricalWord) ...<String, Object?>{
+            'projectionAliasVersion': 1,
+            'projectionAliasSourceOwnerId': sourceId,
+            'projectionAliasTargetWordId': targetWordId,
+          },
         },
         targetSnapshot: <String, Object?>{
           'id': targetWordId,
           'spelling': collision.read<String>('target_spelling'),
+          'meaning': collision.read<String>('target_meaning'),
+          'normalizedSpelling': collision.read<String>(
+            'target_normalized_spelling',
+          ),
+          'normalizedMeaning': collision.read<String>(
+            'target_normalized_meaning',
+          ),
           'contentRevision': collision.read<int>('target_content_revision'),
           'contentChecksumSha256': collision.readNullable<String>(
             'target_content_checksum',
@@ -504,13 +551,171 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         outcome: _GuestUpgradeConflictOutcome.targetRetained,
         resolvedAt: resolvedAt,
       );
-      await _database.customUpdate(
-        'DELETE FROM vocabulary_words WHERE id = ?',
-        variables: [Variable<String>(guestId)],
-        updates: {_database.vocabularyWords},
-      );
+      if (preserveHistoricalWord) {
+        final tombstoneIdentity = sha256
+            .convert(utf8.encode('$sourceId|$guestId|$targetWordId'))
+            .toString();
+        await _database.customUpdate(
+          'UPDATE vocabulary_words SET normalized_spelling = ?, '
+          'normalized_meaning = ?, is_deleted = 1, updated_at_utc_ms = ?, '
+          'local_revision = local_revision + 1 '
+          'WHERE id = ? AND owner_id = ?',
+          variables: [
+            Variable<String>('merged-collision-$tombstoneIdentity-spelling'),
+            Variable<String>('merged-collision-$tombstoneIdentity-meaning'),
+            Variable<int>(resolvedAt),
+            Variable<String>(guestId),
+            Variable<String>(sourceId),
+          ],
+          updates: {_database.vocabularyWords},
+        );
+      } else {
+        await _database.customUpdate(
+          'DELETE FROM vocabulary_words WHERE id = ?',
+          variables: [Variable<String>(guestId)],
+          updates: {_database.vocabularyWords},
+        );
+      }
     }
     return collisions.length;
+  }
+
+  Future<bool> _mustPreserveHistoricalWordIdentity({
+    required String sourceId,
+    required String guestWordId,
+  }) async {
+    final eventStore = DriftLearningEventStore(
+      _database,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: rolloutModeProvider,
+    );
+    final attempts =
+        await (_database.select(_database.answerAttempts)..where(
+              (row) =>
+                  row.ownerId.equals(sourceId) & row.wordId.equals(guestWordId),
+            ))
+            .get();
+    var mustPreserve = false;
+    for (final attempt in attempts) {
+      final evidenceContext = EvidenceContext.fromJson(
+        (jsonDecode(attempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
+      final sourceEvent = await eventStore.readValidatedSourceForAttempt(
+        attempt: attempt,
+      );
+      if (sourceEvent == null) {
+        if (LearningEvidenceContract.isExactFrozenV13LegacyEvidence(
+          evidenceContext,
+        )) {
+          continue;
+        }
+        throw StateError('colliding word attempt source identity is invalid');
+      }
+      if (sourceEvent.eventVersion == 1) continue;
+      mustPreserve = true;
+    }
+    if (mustPreserve) return true;
+    return DriftLearningProjectionRebuilder(
+      _database,
+      evidencePolicy: evidencePolicy,
+      rolloutModeProvider: rolloutModeProvider,
+    ).hasIncomingProjectionAlias(ownerId: sourceId, wordId: guestWordId);
+  }
+
+  Future<void> _fenceMatchingSessionsForCollidingWord({
+    required String sourceId,
+    required String guestWordId,
+    required int resolvedAtUtcMs,
+  }) async {
+    const maximumActiveMatchingSessions = 16;
+    const maximumMatchingCheckpointsPerSession = 64;
+    final sessions =
+        await (_database.select(_database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(sourceId) &
+                    row.activityType.equals('matching') &
+                    row.state.equals('active'),
+              )
+              ..orderBy([(row) => OrderingTerm.asc(row.id)])
+              ..limit(maximumActiveMatchingSessions + 1))
+            .get();
+    if (sessions.length > maximumActiveMatchingSessions) {
+      throw StateError('active Matching owner-upgrade fence bound exceeded');
+    }
+    for (final session in sessions) {
+      final checkpoints =
+          await (_database.select(_database.eventsV2)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(sourceId) &
+                      row.eventType.equals('LearningActivityCheckpoint') &
+                      row.aggregateType.equals('LearningSession') &
+                      row.aggregateId.equals(session.id),
+                )
+                ..limit(maximumMatchingCheckpointsPerSession + 1))
+              .get();
+      if (checkpoints.isEmpty ||
+          checkpoints.length > maximumMatchingCheckpointsPerSession) {
+        throw StateError('Matching owner-upgrade checkpoint bound is invalid');
+      }
+      var latestRevision = 0;
+      var latestContainsCollision = false;
+      final revisions = <int>{};
+      for (final checkpoint in checkpoints) {
+        try {
+          if (utf8.encode(checkpoint.payloadJson).length > 64 * 1024) {
+            throw const FormatException('checkpoint payload is oversized');
+          }
+          final payload = jsonDecode(checkpoint.payloadJson);
+          if (payload is! Map<String, dynamic>) {
+            throw const FormatException('checkpoint envelope is invalid');
+          }
+          final revision = payload['revision'];
+          final state = payload['state'];
+          final pairs = state is Map<String, dynamic> ? state['pairs'] : null;
+          if (revision is! int ||
+              revision <= 0 ||
+              !revisions.add(revision) ||
+              pairs is! List<dynamic>) {
+            throw const FormatException('checkpoint state is invalid');
+          }
+          var containsCollision = false;
+          for (final pair in pairs) {
+            if (pair is! Map<String, dynamic> || pair['id'] is! String) {
+              throw const FormatException('checkpoint pair is invalid');
+            }
+            containsCollision = containsCollision || pair['id'] == guestWordId;
+          }
+          if (revision > latestRevision) {
+            latestRevision = revision;
+            latestContainsCollision = containsCollision;
+          }
+        } on Object catch (error) {
+          throw StateError(
+            'Matching owner-upgrade checkpoint cannot be fenced: $error',
+          );
+        }
+      }
+      if (!latestContainsCollision) continue;
+      final fenced =
+          await (_database.update(_database.learningSessions)..where(
+                (row) =>
+                    row.id.equals(session.id) &
+                    row.ownerId.equals(sourceId) &
+                    row.state.equals('active'),
+              ))
+              .write(
+                db.LearningSessionsCompanion(
+                  state: const Value('abandoned'),
+                  endedAtUtcMs: Value(resolvedAtUtcMs),
+                ),
+              );
+      if (fenced != 1) {
+        throw StateError('Matching owner-upgrade fence lost its session');
+      }
+    }
   }
 
   Future<int> _mergeSavedLearningItems(

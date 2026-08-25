@@ -1,6 +1,7 @@
 import '../../events/domain/event_envelope_v2.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
+import 'learning_event_context.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -98,6 +99,8 @@ final class RecordAnswerCandidate {
     required this.occurredAtUtc,
     required this.evidenceContext,
     this.providerProvenance,
+    this.actorIdentity,
+    this.eventContext,
   });
 
   final String id;
@@ -111,6 +114,8 @@ final class RecordAnswerCandidate {
   final DateTime occurredAtUtc;
   final EvidenceContext evidenceContext;
   final String? providerProvenance;
+  final String? actorIdentity;
+  final LearningEventContext? eventContext;
 }
 
 final class RecordAnswerCommand {
@@ -235,6 +240,13 @@ final class RecordAnswerCommand {
     occurredAtUtc: occurredAtUtc,
     evidenceContext: evidenceContext,
     providerProvenance: providerProvenance,
+    actorIdentity: event?.actorIdentity,
+    eventContext: event == null
+        ? null
+        : LearningEventContext.fromEvidenceEnvelope(
+            envelope: event!,
+            evidenceContext: evidenceContext,
+          ),
   );
 }
 
@@ -305,6 +317,42 @@ final class LearningSessionSummary {
   final int score;
   final String? appVersion;
   final String? buildId;
+}
+
+/// Versioned local checkpoint for reconstructing an interrupted activity from
+/// the canonical learning session and its immutable event history.
+final class LearningActivityCheckpoint {
+  const LearningActivityCheckpoint({
+    required this.sessionId,
+    required this.activityType,
+    required this.revision,
+    required this.occurredAtUtc,
+    required this.state,
+    this.terminalAtUtc,
+    this.terminalAcknowledged = false,
+  });
+
+  final String sessionId;
+  final String activityType;
+  final int revision;
+  final DateTime occurredAtUtc;
+  final Map<String, Object?> state;
+  final DateTime? terminalAtUtc;
+  final bool terminalAcknowledged;
+}
+
+/// One repository-authenticated activity reconstruction. Attempts are
+/// returned only after their canonical source events have been validated.
+final class LearningActivityRecovery {
+  const LearningActivityRecovery({
+    required this.session,
+    required this.checkpoint,
+    required this.attempts,
+  });
+
+  final LearningSessionSummary session;
+  final LearningActivityCheckpoint? checkpoint;
+  final List<RecordAnswerCandidate> attempts;
 }
 
 final class ReadingProgressCommand {

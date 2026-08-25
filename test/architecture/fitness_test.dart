@@ -827,6 +827,7 @@ void main() {
         'definitionMultipleChoice',
         'clozeSelected',
         'clozeTyped',
+        'matchingPair',
         'srsRecall',
         'typedRecall',
         'associativeRecall',

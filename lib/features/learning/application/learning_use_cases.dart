@@ -12,6 +12,8 @@ import '../domain/learning_repository.dart';
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
 typedef LearningMutationNotifier = void Function();
+typedef LearningActivityInitialState =
+    Map<String, Object?> Function(QuizSession session);
 
 /// Immutable response semantics captured by the UI before any provider wait.
 final class FrozenLearningEvidenceCommand {
@@ -25,6 +27,7 @@ final class FrozenLearningEvidenceCommand {
     required this.responseTimeMs,
     required this.attemptNumber,
     required this.providerProvenance,
+    this.actorIdentity,
   });
 
   final String sourceEvidenceId;
@@ -36,6 +39,7 @@ final class FrozenLearningEvidenceCommand {
   final int? responseTimeMs;
   final int attemptNumber;
   final String? providerProvenance;
+  final String? actorIdentity;
 }
 
 /// Canonical response semantics bound to the active owner before any
@@ -369,6 +373,86 @@ final class LearningUseCases {
     );
   }
 
+  /// Starts a quiz-shaped activity and its reconstruction checkpoint in one
+  /// repository transaction. Callers provide only versioned presentation
+  /// state; session identity and ownership remain learning-layer authority.
+  Future<QuizSession> startCheckpointedQuiz({
+    required String activityType,
+    required LearningActivityInitialState initialState,
+    String? categoryId,
+    int limit = 10,
+  }) async {
+    final activity = _requiredId(activityType, 'activityType');
+    if (repository is! LearningActivityRecoveryRepository) {
+      throw StateError(
+        'Learning repository does not support activity reconstruction.',
+      );
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    final words = await repository.listQuizWords(
+      ownerId: owner.id,
+      categoryId: _optionalId(categoryId, 'categoryId'),
+      limit: limit,
+    );
+    if (words.isEmpty) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    final now = _now();
+    final sessionId = 'session:${_nextId()}';
+    final session = QuizSession(
+      id: sessionId,
+      startedAtUtc: now,
+      questions: _questions(words),
+    );
+    final checkpoint = LearningActivityCheckpoint(
+      sessionId: sessionId,
+      activityType: activity,
+      revision: 1,
+      occurredAtUtc: now,
+      state: initialState(session),
+    );
+    await (repository as LearningActivityRecoveryRepository)
+        .startSessionWithCheckpoint(
+          session: LearningSessionDraft(
+            id: sessionId,
+            ownerId: owner.id,
+            activityType: activity,
+            startedAtUtc: now,
+            appVersion: buildInfo.version,
+            buildId: buildInfo.buildId,
+          ),
+          checkpoint: checkpoint,
+        );
+    onLocalMutation?.call();
+    return session;
+  }
+
+  Future<LearningActivityRecovery?> loadActivityRecovery({
+    required String activityType,
+  }) async {
+    if (repository is! LearningActivityRecoveryRepository) return null;
+    final owner = await owners.getOrCreateActiveOwner();
+    return (repository as LearningActivityRecoveryRepository)
+        .loadLatestActivityRecovery(
+          ownerId: owner.id,
+          activityType: _requiredId(activityType, 'activityType'),
+        );
+  }
+
+  Future<void> appendActivityCheckpoint(
+    LearningActivityCheckpoint checkpoint,
+  ) async {
+    if (repository is! LearningActivityRecoveryRepository) {
+      throw StateError(
+        'Learning repository does not support activity reconstruction.',
+      );
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    await (repository as LearningActivityRecoveryRepository)
+        .appendActivityCheckpoint(ownerId: owner.id, checkpoint: checkpoint);
+    onLocalMutation?.call();
+  }
+
   Future<QuizSession> startDueReview({int limit = 20}) async {
     final owner = await owners.getOrCreateActiveOwner();
     final now = _now();
@@ -578,6 +662,7 @@ final class LearningUseCases {
       occurredAtUtc: command.occurredAtUtc,
       evidenceContext: evidenceContext,
       providerProvenance: command.providerProvenance,
+      actorIdentity: command.actorIdentity,
     );
     final replayRepository = repository;
     final replay = replayRepository is LearningEvidenceReplayRepository
@@ -604,6 +689,10 @@ final class LearningUseCases {
       durableEvent = eventAdapter.adaptFromCommand(
         sourceEvidenceId: command.sourceEvidenceId,
         ownerId: ownerId,
+        // Historical actors are replay identity only. If no canonical attempt
+        // exists, this is a first write and both identities belong to the
+        // current owner even when the frozen checkpoint originated pre-merge.
+        actorIdentity: ownerId,
         sessionId: command.sessionId,
         wordId: command.wordId,
         promptMode: command.promptMode,
@@ -689,6 +778,17 @@ final class LearningUseCases {
       learning: this,
       sessionId: _requiredId(sessionId, 'sessionId'),
       completedAtUtc: _now(),
+    );
+  }
+
+  PendingLearningSessionClose restoreSessionClose({
+    required String sessionId,
+    required DateTime completedAtUtc,
+  }) {
+    return PendingLearningSessionClose._(
+      learning: this,
+      sessionId: _requiredId(sessionId, 'sessionId'),
+      completedAtUtc: _requiredUtc(completedAtUtc, 'completedAtUtc'),
     );
   }
 
@@ -862,6 +962,9 @@ final class LearningUseCases {
       responseTimeMs: command.responseTimeMs,
       attemptNumber: command.attemptNumber,
       providerProvenance: command.providerProvenance,
+      actorIdentity: command.actorIdentity == null
+          ? null
+          : _requiredId(command.actorIdentity!, 'actorIdentity'),
     );
   }
 

@@ -6,6 +6,7 @@ enum LessonMode {
   meaningQuiz,
   definitionQuiz,
   cloze,
+  matching,
   flashcard,
 }
 
@@ -15,6 +16,7 @@ extension LessonModeIdentity on LessonMode {
     LessonMode.meaningQuiz => 'meaning-quiz',
     LessonMode.definitionQuiz => 'definition-quiz',
     LessonMode.cloze => 'cloze',
+    LessonMode.matching => 'matching',
     LessonMode.flashcard => 'flashcard',
   };
 }

@@ -37,6 +37,27 @@ void main() {
     expect(unknown.hintLevel, 2);
   });
 
+  test('matching assistance is fail-closed in the shared helper', () {
+    final unassisted = classifyCurrentActivityEvidence(
+      CurrentActivityInput.matchingPair,
+      hintLevel: 0,
+    );
+    final assisted = classifyCurrentActivityEvidence(
+      CurrentActivityInput.matchingPair,
+      hintLevel: 1,
+    );
+    final unknown = classifyCurrentActivityEvidence(
+      CurrentActivityInput.matchingPair,
+      hintLevel: -1,
+    );
+
+    expect(unassisted.evidenceClass, EvidenceClass.recognition);
+    expect(assisted.evidenceClass, EvidenceClass.guidedPractice);
+    expect(assisted.hintLevel, 1);
+    expect(unknown.evidenceClass, EvidenceClass.guidedPractice);
+    expect(unknown.hintLevel, 2);
+  });
+
   test(
     'typed activity declarations cover the complete current-mode matrix',
     () async {
@@ -63,7 +84,8 @@ void main() {
       for (final input in CurrentActivityInput.values) {
         if (input == CurrentActivityInput.definitionMultipleChoice ||
             input == CurrentActivityInput.clozeSelected ||
-            input == CurrentActivityInput.clozeTyped) {
+            input == CurrentActivityInput.clozeTyped ||
+            input == CurrentActivityInput.matchingPair) {
           expect(
             () => adapter.capture(
               input: input,
@@ -74,7 +96,7 @@ void main() {
               attemptNumber: 1,
             ),
             throwsStateError,
-            reason: 'reviewed lexical evidence requires its verified pin',
+            reason: 'typed modes require their dedicated capture contract',
           );
           continue;
         }

@@ -183,6 +183,23 @@ ProjectionDisposition effectiveProjectionDisposition({
       projection == LearningProjection.masterySrs) {
     return ProjectionDisposition.deny;
   }
+  // Versioned declarations retain the v1 engagement matrix even when a mode
+  // is locally enabled without a research protocol. Legacy-inferred evidence
+  // keeps the frozen compatibility behavior; future approved protocols can
+  // opt into protocol-controlled motivation through engagementAllowed.
+  if (context.policyVersion == EvidenceContext.currentPolicyVersion &&
+      context.classificationSource == EvidenceClassificationSource.declared &&
+      context.rolloutMode == EvidencePolicyRolloutMode.legacy &&
+      switch (projection) {
+        LearningProjection.quest ||
+        LearningProjection.streak ||
+        LearningProjection.achievement ||
+        LearningProjection.xp ||
+        LearningProjection.coins => true,
+        _ => false,
+      }) {
+    return policyDisposition;
+  }
   return switch (context.rolloutMode) {
     EvidencePolicyRolloutMode.legacy => _legacyDisposition(projection),
     EvidencePolicyRolloutMode.shadow => _legacyDisposition(projection),

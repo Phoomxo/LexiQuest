@@ -13,6 +13,7 @@ enum CurrentActivityInput {
   definitionMultipleChoice,
   clozeSelected,
   clozeTyped,
+  matchingPair,
   srsRecall,
   typedRecall,
   associativeRecall,
@@ -28,7 +29,8 @@ HintEvidenceClassification classifyCurrentActivityEvidence(
 }) {
   final declaration = _declarationFor(input);
   if ((input == CurrentActivityInput.definitionMultipleChoice ||
-          input == CurrentActivityInput.clozeSelected) &&
+          input == CurrentActivityInput.clozeSelected ||
+          input == CurrentActivityInput.matchingPair) &&
       hintLevel != 0) {
     return HintEvidenceClassification(
       evidenceClass: EvidenceClass.guidedPractice,
@@ -181,9 +183,10 @@ final class CurrentActivityEvidenceAdapter {
   }) {
     if (input == CurrentActivityInput.definitionMultipleChoice ||
         input == CurrentActivityInput.clozeSelected ||
-        input == CurrentActivityInput.clozeTyped) {
+        input == CurrentActivityInput.clozeTyped ||
+        input == CurrentActivityInput.matchingPair) {
       throw StateError(
-        'This activity requires a verified lexical artifact pin.',
+        'This activity requires its typed mode capture contract.',
       );
     }
     final declaration = _declarationFor(input);
@@ -348,6 +351,125 @@ final class CurrentActivityEvidenceAdapter {
     hintLevel: 0,
   );
 
+  /// Captures one matching resolution through the canonical AnswerAttempts
+  /// authority. Matching is recognition unless the shell-owned hint/support
+  /// snapshot proves any assistance, in which case it is guided practice.
+  PendingCurrentActivityEvidence captureMatching({
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required String contentRevision,
+    required HintEvidenceClassification classification,
+  }) {
+    final validUnassisted =
+        classification.hintLevel == 0 &&
+        classification.evidenceClass == EvidenceClass.recognition;
+    final validAssisted =
+        classification.hintLevel > 0 &&
+        classification.evidenceClass == EvidenceClass.guidedPractice;
+    if ((!validUnassisted && !validAssisted) || responseTimeMs < 0) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must be unassisted recognition or assisted guided practice',
+      );
+    }
+    return _capture(
+      input: CurrentActivityInput.matchingPair,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: classification.evidenceClass,
+        skillId: 'matching-recognition',
+        promptMode: 'matchingPair',
+        contentRevision: contentRevision,
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: 'pinned-lexical-matching',
+      hintLevel: classification.hintLevel,
+    );
+  }
+
+  /// Reconstructs a previously checkpointed matching occurrence with its
+  /// exact caller-owned identity. The returned command deliberately requires
+  /// an explicit retry before any canonical write can occur.
+  PendingCurrentActivityEvidence restoreMatching({
+    required String sourceEvidenceId,
+    required DateTime occurredAtUtc,
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required String contentRevision,
+    required HintEvidenceClassification classification,
+    required ResolvedLearningEvidenceContexts contexts,
+    String? actorIdentity,
+  }) {
+    final validUnassisted =
+        classification.hintLevel == 0 &&
+        classification.evidenceClass == EvidenceClass.recognition;
+    final validAssisted =
+        classification.hintLevel > 0 &&
+        classification.evidenceClass == EvidenceClass.guidedPractice;
+    if ((!validUnassisted && !validAssisted) ||
+        responseTimeMs < 0 ||
+        !occurredAtUtc.isUtc) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'invalid restored matching evidence',
+      );
+    }
+    final frozenEvidenceContext = contexts.evidenceContext;
+    try {
+      contexts.eventContext.validateAgainst(
+        evidenceContext: frozenEvidenceContext,
+        occurredAtUtc: occurredAtUtc,
+      );
+    } on Object catch (error) {
+      throw StateError('restored matching contexts are corrupt: $error');
+    }
+    if (frozenEvidenceContext.evidenceClass != classification.evidenceClass ||
+        frozenEvidenceContext.hintLevel != classification.hintLevel ||
+        frozenEvidenceContext.skillId != 'matching-recognition' ||
+        frozenEvidenceContext.contentRevision != contentRevision) {
+      throw StateError(
+        'restored matching contexts conflict with their classification',
+      );
+    }
+    return PendingCurrentActivityEvidence._(
+      learning: learning,
+      input: CurrentActivityInput.matchingPair,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: classification.evidenceClass,
+        skillId: 'matching-recognition',
+        promptMode: 'matchingPair',
+        contentRevision: contentRevision,
+      ),
+      hintLevel: classification.hintLevel,
+      rolloutModeProvider: rolloutModeProvider,
+      researchStateProvider: researchStateProvider,
+      restoredContexts: contexts,
+      command: FrozenLearningEvidenceCommand(
+        sourceEvidenceId: sourceEvidenceId,
+        occurredAtUtc: occurredAtUtc,
+        sessionId: sessionId,
+        wordId: wordId,
+        promptMode: 'matchingPair',
+        isCorrect: isCorrect,
+        responseTimeMs: responseTimeMs,
+        attemptNumber: attemptNumber,
+        providerProvenance: 'pinned-lexical-matching',
+        actorIdentity: actorIdentity,
+      ),
+    ).._status = PendingCurrentActivityEvidenceStatus.retryRequired;
+  }
+
   PendingCurrentActivityEvidence _capture({
     required CurrentActivityInput input,
     required _CurrentActivityDeclaration declaration,
@@ -406,6 +528,7 @@ final class PendingCurrentActivityEvidence {
     required this._rolloutModeProvider,
     required this._researchStateProvider,
     required this._command,
+    this._restoredContexts,
   });
 
   final LearningUseCases _learning;
@@ -415,6 +538,7 @@ final class PendingCurrentActivityEvidence {
   final EvidencePolicyRolloutModeProvider _rolloutModeProvider;
   final CurrentActivityResearchStateProvider _researchStateProvider;
   final FrozenLearningEvidenceCommand _command;
+  final ResolvedLearningEvidenceContexts? _restoredContexts;
 
   PendingCurrentActivityEvidenceStatus _status =
       PendingCurrentActivityEvidenceStatus.captured;
@@ -434,6 +558,7 @@ final class PendingCurrentActivityEvidence {
   int? get responseTimeMs => _command.responseTimeMs;
   int get attemptNumber => _command.attemptNumber;
   String? get providerProvenance => _command.providerProvenance;
+  String? get actorIdentity => _command.actorIdentity ?? _boundBasis?.ownerId;
   EvidenceContext? get evidenceContext => _resolved?.contexts.evidenceContext;
   PendingCurrentActivityEvidenceStatus get status => _status;
   bool get requiresRetry =>
@@ -445,6 +570,10 @@ final class PendingCurrentActivityEvidence {
   /// Once captured, mutable response controls remain locked until the owning
   /// screen advances after a successful commit.
   bool get isResponseLocked => !isCommitted;
+
+  Future<ResolvedLearningEvidenceContexts> freezeContexts() async {
+    return (await _resolveOnce()).contexts;
+  }
 
   Future<AnswerRecordResult> record() {
     final inFlight = _recordInFlight;
@@ -504,9 +633,11 @@ final class PendingCurrentActivityEvidence {
   Future<ResolvedLearningEvidenceRecord> _resolveAndMemoize() async {
     try {
       final basis = await _bindOnce();
+      final restoredContexts = _restoredContexts;
       final resolved = await _learning.resolveOwnerBoundEvidenceForRecording(
         basis: basis,
         resolveContexts: ({required ownerId, required command}) async {
+          if (restoredContexts != null) return restoredContexts;
           final rolloutMode = await _rolloutModeProvider.resolve(
             ownerId: ownerId,
             evidenceContext: null,
@@ -533,8 +664,12 @@ final class PendingCurrentActivityEvidence {
             declaredClass: declaredEvidenceClass,
             hint: HintUsageSnapshot.fromRecordedLevel(_hintLevel),
           );
+          final useVersionedLegacyMatrix =
+              rolloutMode == EvidencePolicyRolloutMode.legacy &&
+              _input == CurrentActivityInput.matchingPair;
           final evidenceContext =
-              rolloutMode == EvidencePolicyRolloutMode.legacy
+              rolloutMode == EvidencePolicyRolloutMode.legacy &&
+                  !useVersionedLegacyMatrix
               ? EvidenceContext.legacyCompatibility(
                   evidenceClass: hintClassification.evidenceClass,
                   skillId: _declaration.skillId,
@@ -554,9 +689,12 @@ final class PendingCurrentActivityEvidence {
                   experimentVersion: research.experimentVersion,
                   assignmentId: research.assignmentId,
                   cohort: research.experimentContext?.variantId,
-                  researchConsentVersion:
-                      research.consentContext.researchConsentVersion,
-                  engagementAllowed: research.engagementAllowed,
+                  researchConsentVersion: useVersionedLegacyMatrix
+                      ? null
+                      : research.consentContext.researchConsentVersion,
+                  engagementAllowed: useVersionedLegacyMatrix
+                      ? false
+                      : research.engagementAllowed,
                 );
           return ResolvedLearningEvidenceContexts(
             evidenceContext: evidenceContext,
@@ -633,6 +771,11 @@ _CurrentActivityDeclaration _declarationFor(CurrentActivityInput input) {
       evidenceClass: EvidenceClass.independentRecall,
       skillId: 'cloze-context',
       promptMode: 'clozeTyped',
+    ),
+    CurrentActivityInput.matchingPair => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.recognition,
+      skillId: 'matching-recognition',
+      promptMode: 'matchingPair',
     ),
     CurrentActivityInput.srsRecall => const _CurrentActivityDeclaration(
       evidenceClass: EvidenceClass.independentRecall,

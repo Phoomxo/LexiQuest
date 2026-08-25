@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +12,7 @@ import 'package:vocab_learning_app/features/learning/application/definition_quiz
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -37,6 +39,8 @@ import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
+import 'package:vocab_learning_app/screens/matching_mode_screen.dart';
+import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
@@ -74,6 +78,11 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        findsNothing,
+        reason: 'f10 remains implemented-off by default',
       );
       expect(find.byType(ListTile), findsNWidgets(5));
 
@@ -125,20 +134,24 @@ void main() {
         generateId: () => 'choose-mode-owner',
         nowUtc: () => now,
       );
+      var learningId = 0;
       final learning = LearningUseCases(
         owners: owners,
         repository: DriftLearningRepository(database),
-        generateId: () => 'choose-mode-id',
+        generateId: () => 'choose-mode-id-${++learningId}',
         nowUtc: () => now,
         buildInfo: const AppBuildInfo(
           version: 'test',
           buildId: 'f05-choose-mode-test',
         ),
       );
+      var vocabularyId = 0;
       final vocabulary = VocabularyUseCases(
         owners: owners,
         vocabulary: DriftVocabularyRepository(database),
-        generateId: () => 'choose-mode-vocabulary-id',
+        generateId: () => vocabularyId++ < 2
+            ? 'choose-mode-vocabulary-id'
+            : 'choose-mode-vocabulary-id-two',
         nowUtc: () => now,
       );
       await owners.getOrCreateActiveOwner();
@@ -151,7 +164,17 @@ void main() {
           partOfSpeech: 'adjective',
         ),
       );
-      final modes = buildLessonModeRegistry();
+      await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'stable',
+          meaning: 'not likely to change',
+          partOfSpeech: 'adjective',
+        ),
+      );
+      final modes = buildLessonModeRegistry(
+        matchingDeliveryState: LessonModeDeliveryState.enabled,
+      );
       final research = InertResearchDependencies(database);
       final features = RuntimeFeatureRegistry(
         const BuildFeatureRegistry.allEnabled(),
@@ -215,6 +238,11 @@ void main() {
           entryId: 'home/learn/quiz/cloze',
           mode: LessonMode.cloze,
           routeName: 'learning/cloze',
+        ),
+        (
+          entryId: 'home/learn/quiz/matching',
+          mode: LessonMode.matching,
+          routeName: 'learning/matching',
         ),
         (
           entryId: 'home/learn/srs',
@@ -300,6 +328,19 @@ void main() {
                 .widget<FillInTheBlanksScreen>(
                   find.byType(FillInTheBlanksScreen),
                 )
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.matching) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isA<MatchingModeAdapter>(),
+          );
+          expect(
+            tester
+                .widget<MatchingModeScreen>(find.byType(MatchingModeScreen))
                 .modeAdapter,
             same(modes.find(routeCase.mode)!.adapter),
           );
@@ -458,6 +499,135 @@ void main() {
           .get();
       expect(segments, hasLength(1));
       expect(segments.single.activeDurationMs, 2000);
+    },
+  );
+
+  testWidgets(
+    'Matching off fences a retained pair and closes durable session plus F24',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(enableMatching: true);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(MatchingModeScreen), findsOneWidget);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.active,
+      );
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>('matching-word-word:srs-gate-vocabulary'),
+        ),
+      );
+      await tester.pump();
+      final retained = tester
+          .widget<OutlinedButton>(
+            find.byKey(
+              const ValueKey<String>(
+                'matching-meaning-word:srs-gate-vocabulary',
+              ),
+            ),
+          )
+          .onPressed!;
+      harness.monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+      harness.features.emergencyOff(Feature.quiz);
+      retained();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+      expect(find.byType(MatchingModeScreen), findsNothing);
+      expect(harness.repository.answerCalls, 0);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.abandoned,
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.finished,
+      );
+      final activeSessions = await (harness.database.select(
+        harness.database.learningSessions,
+      )..where((row) => row.state.equals('active'))).get();
+      expect(activeSessions, isEmpty);
+      final matchingAttempts = await (harness.database.select(
+        harness.database.answerAttempts,
+      )..where((row) => row.promptMode.equals('matchingPair'))).get();
+      expect(matchingAttempts, isEmpty);
+      final segments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(segments, hasLength(1));
+      expect(segments.single.activeDurationMs, 2000);
+    },
+  );
+
+  testWidgets(
+    'completed Matching recovery closes shell and F24 before one score receipt',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(enableMatching: true);
+      addTearDown(harness.close);
+      final learning = harness.dependencies.learning!;
+      const adapter = MatchingModeAdapter();
+      final prepared = await adapter.prepareSession(
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+      );
+      final close = learning.captureSessionClose(
+        sessionId: prepared.session.id,
+      );
+      await prepared.persistClose(close: close, timeoutRequested: true);
+      await close.finish();
+      expect(harness.repository.finishCalls, 1);
+
+      await harness.pump(tester);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ScoreScreen), findsOneWidget);
+      expect(harness.repository.finishCalls, 2);
+      expect(harness.repository.abandonCalls, 0);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.completed,
+      );
+      expect(
+        harness.activeTimes.single.state,
+        ActiveLearningTimeState.finished,
+      );
+      final timeSegments = await harness.database
+          .select(harness.database.learningTimeSegments)
+          .get();
+      expect(
+        timeSegments.where((segment) => segment.endedAtUtcMs == null),
+        isEmpty,
+      );
+      final checkpoints =
+          await (harness.database.select(harness.database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningActivityCheckpoint'),
+              ))
+              .get();
+      final latest = checkpoints
+          .map((row) => jsonDecode(row.payloadJson) as Map<String, dynamic>)
+          .reduce(
+            (left, right) =>
+                (left['revision'] as int) > (right['revision'] as int)
+                ? left
+                : right,
+          );
+      expect(latest['terminalAcknowledged'], isTrue);
+      expect(
+        (latest['state'] as Map<String, dynamic>)['summaryPresented'],
+        isTrue,
+      );
+      await tester.pump();
+      expect(harness.repository.finishCalls, 2);
     },
   );
 
@@ -921,6 +1091,7 @@ final class _SrsGateHarness {
     bool blockAbandon = false,
     bool blockAnswer = false,
     bool blockFinish = false,
+    bool enableMatching = false,
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
     final now = DateTime.utc(2026, 8, 25, 15);
@@ -929,10 +1100,13 @@ final class _SrsGateHarness {
       generateId: () => 'srs-gate-owner',
       nowUtc: () => now,
     );
+    var vocabularyId = 0;
     final vocabulary = VocabularyUseCases(
       owners: owners,
       vocabulary: DriftVocabularyRepository(database),
-      generateId: () => 'srs-gate-vocabulary',
+      generateId: () => vocabularyId++ < 2
+          ? 'srs-gate-vocabulary'
+          : 'srs-gate-vocabulary-two',
       nowUtc: () => now,
     );
     final category = await vocabulary.createCategory('SRS gate');
@@ -976,6 +1150,16 @@ final class _SrsGateHarness {
       ),
     );
     await seedLearning.finishSession(seedSession.id);
+    if (enableMatching) {
+      await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'stable',
+          meaning: 'not likely to change',
+          partOfSpeech: 'adjective',
+        ),
+      );
+    }
     final repository = _CoordinatedLearningRepository(
       driftLearning,
       delayDue: delayDue,
@@ -1001,7 +1185,11 @@ final class _SrsGateHarness {
     final features = RuntimeFeatureRegistry(
       const BuildFeatureRegistry.allEnabled(),
     );
-    final modes = buildLessonModeRegistry();
+    final modes = buildLessonModeRegistry(
+      matchingDeliveryState: enableMatching
+          ? LessonModeDeliveryState.enabled
+          : LessonModeDeliveryState.implementedOff,
+    );
     final research = InertResearchDependencies(database);
     late final _SrsGateHarness harness;
     final dependencies = AppDependencies(
@@ -1078,7 +1266,10 @@ final class _SrsGateHarness {
 }
 
 final class _CoordinatedLearningRepository
-    implements LearningRepository, LearningSessionLifecycleRepository {
+    implements
+        LearningRepository,
+        LearningSessionLifecycleRepository,
+        LearningActivityRecoveryRepository {
   _CoordinatedLearningRepository(
     this.delegate, {
     required this.delayDue,
@@ -1145,6 +1336,27 @@ final class _CoordinatedLearningRepository
   @override
   Future<void> startSession(LearningSessionDraft session) =>
       delegate.startSession(session);
+
+  @override
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .startSessionWithCheckpoint(session: session, checkpoint: checkpoint);
+
+  @override
+  Future<LearningActivityRecovery?> loadLatestActivityRecovery({
+    required String ownerId,
+    required String activityType,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .loadLatestActivityRecovery(ownerId: ownerId, activityType: activityType);
+
+  @override
+  Future<void> appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  }) => (delegate as LearningActivityRecoveryRepository)
+      .appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
 
   @override
   Future<LearningSessionSummary> abandonSession({

@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/features/learning/application/definition_quiz
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
@@ -38,6 +39,11 @@ void main() {
             feature: Feature.quiz,
             entryId: 'home/learn/quiz',
             routeName: 'learning/cloze',
+          ),
+          LessonMode.matching: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'learning/matching',
           ),
           LessonMode.flashcard: (
             feature: Feature.srs,
@@ -77,7 +83,8 @@ void main() {
         registration.productionEntryId,
       );
       if (registration.mode == LessonMode.definitionQuiz ||
-          registration.mode == LessonMode.cloze) {
+          registration.mode == LessonMode.cloze ||
+          registration.mode == LessonMode.matching) {
         expect(registration.adapter, isA<HintSupportingLessonModeAdapter>());
       } else {
         expect(
@@ -112,6 +119,18 @@ void main() {
           .adapter,
       isA<ClozeModeAdapter>(),
     );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.matching)
+          .adapter,
+      isA<MatchingModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.matching)
+          .deliveryState,
+      LessonModeDeliveryState.implementedOff,
+    );
   });
 
   test(
@@ -126,10 +145,11 @@ void main() {
           .toList(growable: false);
       final adapter = _HintBoundaryAdapter();
 
-      expect(hintRegistrations, hasLength(2));
+      expect(hintRegistrations, hasLength(3));
       expect(hintRegistrations.map((entry) => entry.mode).toSet(), <LessonMode>{
         LessonMode.definitionQuiz,
         LessonMode.cloze,
+        LessonMode.matching,
       });
       expect(adapter, isA<LessonModeAdapter>());
       expect(adapter.hintPolicy.maximumHintLevel, 2);
@@ -371,7 +391,8 @@ void main() {
       for (final registration in buildLessonModeRegistry().registrations) {
         if (registration.mode == LessonMode.flashcard ||
             registration.mode == LessonMode.definitionQuiz ||
-            registration.mode == LessonMode.cloze) {
+            registration.mode == LessonMode.cloze ||
+            registration.mode == LessonMode.matching) {
           continue;
         }
         expect(

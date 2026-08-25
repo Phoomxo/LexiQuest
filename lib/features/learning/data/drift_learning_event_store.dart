@@ -187,26 +187,57 @@ final class DriftLearningEventStore {
 
   Future<EventEnvelopeV2?> readBySourceEvidenceId(
     String sourceEvidenceId,
-  ) async {
-    final eventId = LearningEvidenceContract.learningEventId(sourceEvidenceId);
-    final expectedIdempotencyKey =
-        LearningEvidenceContract.learningAttemptIdempotencyKey(
-          sourceEvidenceId,
-        );
-    final row =
-        await (database.select(database.eventsV2)
-              ..where((candidate) => candidate.eventId.equals(eventId)))
-            .getSingleOrNull();
-    if (row == null) return null;
-    final event = _toEvent(row);
-    if (event.eventId != eventId ||
-        event.eventVersion != 2 ||
-        event.idempotencyKey != expectedIdempotencyKey ||
-        event.payload['attemptId'] != sourceEvidenceId) {
-      throw StateError('stored learning event has corrupt source identity');
+  ) async => (await readBySourceEvidenceIds(<String>[
+    sourceEvidenceId,
+  ]))[sourceEvidenceId];
+
+  Future<EventEnvelopeV2?> readValidatedSourceForAttempt({
+    required db.AnswerAttempt attempt,
+  }) async {
+    final source = await _readSourceEventForAttempt(attempt.id);
+    if (source == null) return null;
+    final failure = await validateSourceForAttempt(
+      attempt: attempt,
+      source: source,
+    );
+    if (failure != null) {
+      throw StateError('invalid correlated source event: $failure');
     }
-    _requireCanonicalEventTime(event, stateError: true);
-    return event;
+    return source;
+  }
+
+  Future<Map<String, EventEnvelopeV2>> readBySourceEvidenceIds(
+    Iterable<String> sourceEvidenceIds,
+  ) async {
+    final sourceIds = sourceEvidenceIds.toSet();
+    if (sourceIds.isEmpty) return const <String, EventEnvelopeV2>{};
+    final sourceByEventId = <String, String>{
+      for (final sourceId in sourceIds)
+        LearningEvidenceContract.learningEventId(sourceId): sourceId,
+    };
+    final rows =
+        await (database.select(database.eventsV2)..where(
+              (candidate) => candidate.eventId.isIn(sourceByEventId.keys),
+            ))
+            .get();
+    final result = <String, EventEnvelopeV2>{};
+    for (final row in rows) {
+      final sourceEvidenceId = sourceByEventId[row.eventId]!;
+      final expectedIdempotencyKey =
+          LearningEvidenceContract.learningAttemptIdempotencyKey(
+            sourceEvidenceId,
+          );
+      final event = _toEvent(row);
+      if (event.eventId != row.eventId ||
+          event.eventVersion != 2 ||
+          event.idempotencyKey != expectedIdempotencyKey ||
+          event.payload['attemptId'] != sourceEvidenceId) {
+        throw StateError('stored learning event has corrupt source identity');
+      }
+      _requireCanonicalEventTime(event, stateError: true);
+      result[sourceEvidenceId] = event;
+    }
+    return Map<String, EventEnvelopeV2>.unmodifiable(result);
   }
 
   Future<LearningEvidenceDecisionSet> ensureDecisionSetForAttempt({
@@ -281,7 +312,10 @@ final class DriftLearningEventStore {
     required RecordAnswerCandidate candidate,
     required EventEnvelopeV2 source,
   }) {
-    if (source.actorIdentity != candidate.ownerId) return false;
+    if (source.actorIdentity !=
+        (candidate.actorIdentity ?? candidate.ownerId)) {
+      return false;
+    }
     return _validateDeclaredSource(
           attemptId: candidate.id,
           ownerId: candidate.ownerId,

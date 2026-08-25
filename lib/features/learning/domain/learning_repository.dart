@@ -14,6 +14,26 @@ abstract interface class LearningSessionLifecycleRepository {
   });
 }
 
+/// Durable, versioned activity-state storage backed by the canonical learning
+/// session event stream. This is intentionally separate from projections and
+/// score storage.
+abstract interface class LearningActivityRecoveryRepository {
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  });
+
+  Future<LearningActivityRecovery?> loadLatestActivityRecovery({
+    required String ownerId,
+    required String activityType,
+  });
+
+  Future<void> appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  });
+}
+
 abstract interface class LearningRepository {
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,

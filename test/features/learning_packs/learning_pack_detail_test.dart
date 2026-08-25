@@ -185,6 +185,7 @@ void main() {
         LessonMode.cloze,
         LessonMode.definitionQuiz,
         LessonMode.flashcard,
+        LessonMode.matching,
         LessonMode.meaningQuiz,
       ]);
       expect(
@@ -201,6 +202,88 @@ void main() {
       );
     },
   );
+
+  test('implemented-off matching is omitted from pack detail', () async {
+    await _insertVerifiedPack(
+      database,
+      packId: 'pack:travel',
+      revision: 1,
+      title: 'Travel basics',
+      wordIds: const ['word:station'],
+    );
+    final view = await LearningPackDetailUseCases(
+      packs: repository,
+      progress: ProgressUseCases(
+        owners: _Owner(),
+        queries: DriftProgressQueries(database),
+        nowUtc: () => DateTime.utc(2026, 8, 24),
+      ),
+      lessonModes: buildLessonModeRegistry(),
+      features: const BuildFeatureRegistry.allEnabled(),
+      hasComposedDependency: (_) => true,
+    ).loadVersion('pack:travel', 1);
+
+    expect(
+      view.activities.where((activity) => activity.mode == LessonMode.matching),
+      isEmpty,
+    );
+  });
+
+  test('enabled matching requires two ambiguity-safe pinned choices', () async {
+    await _insertVerifiedPack(
+      database,
+      packId: 'pack:travel',
+      revision: 1,
+      title: 'Travel basics',
+      wordIds: const ['word:station'],
+    );
+    LearningPackDetailUseCases useCases(
+      Future<List<VocabularyWord>> Function(Iterable<String>) reader,
+    ) => LearningPackDetailUseCases(
+      packs: repository,
+      progress: ProgressUseCases(
+        owners: _Owner(),
+        queries: DriftProgressQueries(database),
+        nowUtc: () => DateTime.utc(2026, 8, 24),
+      ),
+      lessonModes: buildLessonModeRegistry(
+        matchingDeliveryState: LessonModeDeliveryState.enabled,
+      ),
+      features: const BuildFeatureRegistry.allEnabled(),
+      hasComposedDependency: (_) => true,
+      readPinnedVocabulary: reader,
+    );
+
+    final oneChoice = await useCases(
+      (_) async => <VocabularyWord>[_definitionWord()],
+    ).loadVersion('pack:travel', 1);
+    expect(
+      oneChoice.activities
+          .singleWhere((activity) => activity.mode == LessonMode.matching)
+          .availability,
+      LearningPackActivityAvailability.unavailable,
+    );
+
+    await _insertVerifiedPack(
+      database,
+      packId: 'pack:travel-two',
+      revision: 1,
+      title: 'Travel pairs',
+      wordIds: const ['word:station', 'word:market'],
+    );
+    final safeChoices = await useCases(
+      (_) async => <VocabularyWord>[
+        _definitionWord(),
+        _definitionWord(id: 'word:market', spelling: 'market', meaning: 'ตลาด'),
+      ],
+    ).loadVersion('pack:travel-two', 1);
+    expect(
+      safeChoices.activities
+          .singleWhere((activity) => activity.mode == LessonMode.matching)
+          .availability,
+      LearningPackActivityAvailability.available,
+    );
+  });
 
   test(
     'definition quiz is unavailable when pinned vocabulary is not composed',
@@ -430,28 +513,31 @@ LearningPackActivityAvailability _clozeAvailability(
     .availability;
 
 VocabularyWord _definitionWord({
+  String id = 'word:station',
+  String spelling = 'station',
+  String meaning = 'สถานี',
   String? definition,
   List<String> examples = const <String>[],
 }) {
   final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
     categoryId: 'category:pack',
-    spelling: 'station',
-    normalizedSpelling: 'station',
-    meaning: 'สถานี',
-    normalizedMeaning: 'สถานี',
+    spelling: spelling,
+    normalizedSpelling: spelling,
+    meaning: meaning,
+    normalizedMeaning: meaning,
     partOfSpeech: 'noun',
     cefrLevel: null,
     source: 'pack:v1',
     isGlobal: true,
   );
   return VocabularyWord(
-    id: 'word:station',
+    id: id,
     ownerId: 'packaged-owner',
     categoryId: 'category:pack',
-    spelling: 'station',
-    normalizedSpelling: 'station',
-    meaning: 'สถานี',
-    normalizedMeaning: 'สถานี',
+    spelling: spelling,
+    normalizedSpelling: spelling,
+    meaning: meaning,
+    normalizedMeaning: meaning,
     partOfSpeech: 'noun',
     source: 'pack:v1',
     isGlobal: true,

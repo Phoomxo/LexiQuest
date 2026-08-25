@@ -11,7 +11,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
-import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_detail_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
@@ -123,6 +123,8 @@ void main() {
       );
       await tester.pump();
       expect(find.bySemanticsLabel('Meaning quiz: Available'), findsOneWidget);
+      expect(find.text('Matching'), findsNothing);
+      expect(find.bySemanticsLabel('Matching: Unavailable'), findsNothing);
       await tester.ensureVisible(find.text('Flashcards'));
       await tester.pump();
       expect(find.bySemanticsLabel('Flashcards: Available'), findsOneWidget);
@@ -390,7 +392,7 @@ LearningPackDetailUseCases _useCases(
     queries: DriftProgressQueries(database),
     nowUtc: () => DateTime.utc(2026, 8, 24),
   ),
-  lessonModes: buildLegacyLessonModeRegistry(),
+  lessonModes: buildLessonModeRegistry(),
   features: const BuildFeatureRegistry.allEnabled(),
   hasComposedDependency: (_) => true,
 );

@@ -280,6 +280,64 @@ void main() {
       },
     );
 
+    test('matching recognition remains matrix and protocol derived', () {
+      final defaultOff = EvidenceContext.forNewEvidence(
+        evidenceClass: EvidenceClass.recognition,
+        skillId: 'matching-recognition',
+        hintLevel: 0,
+        contentRevision: 'matching-default-v1',
+        rolloutMode: EvidencePolicyRolloutMode.legacy,
+        engagementAllowed: false,
+      );
+      final approvedProtocol = _declaredContext(
+        evidenceClass: EvidenceClass.recognition,
+        rolloutMode: EvidencePolicyRolloutMode.enforced,
+        engagementAllowed: true,
+        skillId: 'matching-recognition',
+      );
+
+      for (final projection in const <LearningProjection>[
+        LearningProjection.quest,
+        LearningProjection.streak,
+        LearningProjection.achievement,
+        LearningProjection.xp,
+        LearningProjection.coins,
+      ]) {
+        final denied = EvidenceProjectionDecision.resolve(
+          context: defaultOff,
+          projection: projection,
+        );
+        final approved = EvidenceProjectionDecision.resolve(
+          context: approvedProtocol,
+          projection: projection,
+        );
+        expect(
+          denied.dispositionToApply,
+          ProjectionDisposition.protocolControlled,
+        );
+        expect(denied.isEligible, isFalse);
+        expect(
+          approved.dispositionToApply,
+          ProjectionDisposition.protocolControlled,
+        );
+        expect(approved.isEligible, isTrue);
+      }
+      expect(
+        EvidenceProjectionDecision.resolve(
+          context: approvedProtocol,
+          projection: LearningProjection.masterySrs,
+        ).dispositionToApply,
+        ProjectionDisposition.deny,
+      );
+      expect(
+        EvidenceProjectionDecision.resolve(
+          context: approvedProtocol,
+          projection: LearningProjection.assessmentOutcome,
+        ).dispositionToApply,
+        ProjectionDisposition.deny,
+      );
+    });
+
     test('Enforced applies v1 and permits efficacy outcomes', () {
       final context = _declaredContext(
         evidenceClass: EvidenceClass.assessment,
@@ -445,9 +503,10 @@ EvidenceContext _declaredContext({
   EvidenceClass evidenceClass = EvidenceClass.independentRecall,
   EvidencePolicyRolloutMode rolloutMode = EvidencePolicyRolloutMode.enforced,
   bool engagementAllowed = true,
+  String skillId = 'vocabulary.meaning',
 }) => EvidenceContext.forNewEvidence(
   evidenceClass: evidenceClass,
-  skillId: 'vocabulary.meaning',
+  skillId: skillId,
   hintLevel: 0,
   contentRevision: 'content-r1',
   rolloutMode: rolloutMode,
@@ -478,9 +537,10 @@ EvidenceContext _declaredContext({
 
 EvidenceContext _legacyContext({
   EvidenceClass evidenceClass = EvidenceClass.independentRecall,
+  String skillId = 'legacy.practice',
 }) => EvidenceContext.legacyCompatibility(
   evidenceClass: evidenceClass,
-  skillId: 'legacy.practice',
+  skillId: skillId,
   hintLevel: 0,
   contentRevision: 'legacy-content',
   engagementAllowed: false,

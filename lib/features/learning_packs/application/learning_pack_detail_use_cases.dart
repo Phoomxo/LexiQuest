@@ -1,6 +1,8 @@
 import '../../learning/application/definition_quiz_mode_adapter.dart';
 import '../../learning/application/cloze_mode_adapter.dart';
 import '../../learning/application/lesson_mode_registry.dart';
+import '../../learning/application/matching_mode_adapter.dart';
+import '../../learning/domain/learning_models.dart';
 import '../../learning/domain/lesson_mode.dart';
 import '../../progress/application/progress_use_cases.dart';
 import '../../progress/domain/progress_models.dart';
@@ -52,6 +54,10 @@ final class LearningPackDetailUseCases {
     final activities = <LearningPackActivity>[];
     for (final mode in LessonMode.values) {
       final registration = lessonModes?.find(mode);
+      if (registration?.deliveryState ==
+          LessonModeDeliveryState.implementedOff) {
+        continue;
+      }
       final availability = await _isAvailable(registration, detail)
           ? LearningPackActivityAvailability.available
           : LearningPackActivityAvailability.unavailable;
@@ -67,7 +73,9 @@ final class LearningPackDetailUseCases {
     LessonModeRegistration? registration,
     LearningPackDetail detail,
   ) async {
-    if (registration == null || !hasComposedDependency(registration.feature)) {
+    if (registration == null ||
+        !registration.isDeliverable ||
+        !hasComposedDependency(registration.feature)) {
       return false;
     }
     final delivery = productionFeatureContract[registration.feature];
@@ -81,14 +89,16 @@ final class LearningPackDetailUseCases {
         registration.productionEntryId == delivery.productionEntryId;
     if (!productionReady) return false;
     if (registration.mode != LessonMode.definitionQuiz &&
-        registration.mode != LessonMode.cloze) {
+        registration.mode != LessonMode.cloze &&
+        registration.mode != LessonMode.matching) {
       return true;
     }
     final adapter = registration.adapter;
     final reader = readPinnedVocabulary;
     if (reader == null ||
         (adapter is! DefinitionQuizModeAdapter &&
-            adapter is! ClozeModeAdapter)) {
+            adapter is! ClozeModeAdapter &&
+            adapter is! MatchingModeAdapter)) {
       return false;
     }
     try {
@@ -105,6 +115,33 @@ final class LearningPackDetailUseCases {
           adapter.hasDeliverableReviewedDefinition(words),
         LessonMode.cloze when adapter is ClozeModeAdapter =>
           adapter.hasDeliverableReviewedExample(words),
+        LessonMode.matching when adapter is MatchingModeAdapter =>
+          !adapter
+              .pinPairs(
+                QuizSession(
+                  id: 'pack:${detail.summary.packId}@${detail.summary.revision}',
+                  startedAtUtc: null,
+                  questions: words
+                      .map(
+                        (word) => QuizQuestion(
+                          word: QuizWord(
+                            id: word.id,
+                            categoryId: word.categoryId,
+                            spelling: word.spelling,
+                            meaning: word.meaning,
+                            partOfSpeech: word.partOfSpeech,
+                            normalizedSpelling: word.normalizedSpelling,
+                            normalizedMeaning: word.normalizedMeaning,
+                            contentRevision: word.contentRevision,
+                            contentChecksumSha256: word.contentChecksumSha256,
+                          ),
+                          options: const <String>[],
+                        ),
+                      )
+                      .toList(growable: false),
+                ),
+              )
+              .isEmpty,
         _ => false,
       };
     } on Object {

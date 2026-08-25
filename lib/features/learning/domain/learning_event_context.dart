@@ -65,6 +65,72 @@ final class LearningEventContext {
   final String? assignmentId;
   final FeatureContractIdentity featureContractIdentity;
 
+  Map<String, Object?> toJson() => <String, Object?>{
+    'schemaVersion': schemaVersion,
+    'consentContext': consentContext.toJson(),
+    'experimentContext': experimentContext?.toJson(),
+    'protocolId': protocolId,
+    'protocolVersion': protocolVersion,
+    'experimentVersion': experimentVersion,
+    'assignmentId': assignmentId,
+    'featureContractIdentity': <String, Object?>{
+      'revision': featureContractIdentity.revision,
+      'semanticHash': featureContractIdentity.semanticHash,
+    },
+  };
+
+  factory LearningEventContext.fromJson(Map<String, Object?> json) {
+    const keys = <String>{
+      'schemaVersion',
+      'consentContext',
+      'experimentContext',
+      'protocolId',
+      'protocolVersion',
+      'experimentVersion',
+      'assignmentId',
+      'featureContractIdentity',
+    };
+    if (json.length != keys.length ||
+        !json.keys.every(keys.contains) ||
+        json['schemaVersion'] != currentSchemaVersion ||
+        json['consentContext'] is! Map<String, Object?> ||
+        json['featureContractIdentity'] is! Map<String, Object?>) {
+      throw const FormatException('invalid learning-event context');
+    }
+    final consent = json['consentContext']! as Map<String, Object?>;
+    final feature = json['featureContractIdentity']! as Map<String, Object?>;
+    final experiment = json['experimentContext'];
+    if (consent.length != 4 ||
+        feature.length != 2 ||
+        feature['revision'] is! String ||
+        feature['semanticHash'] is! String ||
+        (experiment != null && experiment is! Map<String, Object?>)) {
+      throw const FormatException('invalid learning-event context');
+    }
+    try {
+      return LearningEventContext(
+        consentContext: ConsentContext.fromJson(
+          consent.cast<String, dynamic>(),
+        ),
+        experimentContext: experiment == null
+            ? null
+            : ExperimentContext.fromJson(
+                (experiment as Map<String, Object?>).cast<String, dynamic>(),
+              ),
+        protocolId: json['protocolId'] as String?,
+        protocolVersion: json['protocolVersion'] as String?,
+        experimentVersion: json['experimentVersion'] as int?,
+        assignmentId: json['assignmentId'] as String?,
+        featureContractIdentity: FeatureContractIdentity(
+          revision: feature['revision']! as String,
+          semanticHash: feature['semanticHash']! as String,
+        ),
+      );
+    } on Object catch (error) {
+      throw FormatException('invalid learning-event context: $error');
+    }
+  }
+
   void validateAgainst({
     required EvidenceContext evidenceContext,
     required DateTime occurredAtUtc,

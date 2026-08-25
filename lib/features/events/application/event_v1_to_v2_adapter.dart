@@ -115,6 +115,7 @@ final class EventV1ToV2Adapter {
   EventEnvelopeV2 adaptFromCommand({
     required String sourceEvidenceId,
     required String ownerId,
+    String? actorIdentity,
     required String sessionId,
     required String wordId,
     required String promptMode,
@@ -145,7 +146,7 @@ final class EventV1ToV2Adapter {
       eventVersion: 2,
       occurredAtUtc: eventOccurredAtUtc,
       recordedAtUtc: eventOccurredAtUtc,
-      actorIdentity: ownerId,
+      actorIdentity: actorIdentity ?? ownerId,
       ownerIdentity: ownerId,
       aggregateType: 'LearningSession',
       aggregateId: sessionId,

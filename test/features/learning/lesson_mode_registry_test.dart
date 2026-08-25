@@ -5,6 +5,7 @@ import 'package:vocab_learning_app/features/learning/application/definition_quiz
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
@@ -21,9 +22,10 @@ void main() {
         LessonMode.meaningQuiz,
         LessonMode.definitionQuiz,
         LessonMode.cloze,
+        LessonMode.matching,
         LessonMode.flashcard,
       });
-      expect(registrations, hasLength(5));
+      expect(registrations, hasLength(6));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -33,6 +35,7 @@ void main() {
           LessonMode.meaningQuiz: Feature.quiz,
           LessonMode.definitionQuiz: Feature.quiz,
           LessonMode.cloze: Feature.quiz,
+          LessonMode.matching: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
         },
       );
@@ -49,6 +52,15 @@ void main() {
         isA<DefinitionQuizModeAdapter>(),
       );
       expect(registry.find(LessonMode.cloze)!.adapter, isA<ClozeModeAdapter>());
+      expect(
+        registry.find(LessonMode.matching)!.adapter,
+        isA<MatchingModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.matching)!.deliveryState,
+        LessonModeDeliveryState.implementedOff,
+      );
+      expect(registry.resolve(LessonMode.matching), isNull);
       for (final entry in registrations) {
         expect(
           entry.productionEntryId,
@@ -65,11 +77,24 @@ void main() {
           LessonMode.meaningQuiz: 'learning/quiz',
           LessonMode.definitionQuiz: 'learning/definition-quiz',
           LessonMode.cloze: 'learning/cloze',
+          LessonMode.matching: 'learning/matching',
           LessonMode.flashcard: 'learning/srs',
         },
       );
     },
   );
+
+  test('matching delivery requires an explicit typed enable', () {
+    final registry = buildLessonModeRegistry(
+      matchingDeliveryState: LessonModeDeliveryState.enabled,
+    );
+
+    expect(registry.resolve(LessonMode.matching), isNotNull);
+    expect(
+      registry.resolve(LessonMode.matching)!.deliveryState,
+      LessonModeDeliveryState.enabled,
+    );
+  });
 
   test('registry rejects duplicate adapters for one mode', () {
     expect(

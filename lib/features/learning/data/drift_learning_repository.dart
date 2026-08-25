@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
@@ -11,8 +12,10 @@ import 'drift_learning_event_store.dart'
         FixedEvidencePolicyRolloutModeProvider;
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/evidence_eligibility_policy.dart';
+import '../domain/evidence_context.dart';
 import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
+import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
 import '../domain/srs_policy.dart';
@@ -22,7 +25,11 @@ final class DriftLearningRepository
     implements
         LearningRepository,
         LearningEvidenceReplayRepository,
-        LearningSessionLifecycleRepository {
+        LearningSessionLifecycleRepository,
+        LearningActivityRecoveryRepository {
+  static const int maxActivityRecoveryCheckpoints = 64;
+  static const int maxActivityRecoveryAttempts = 128;
+
   DriftLearningRepository(
     this.database, {
     SrsPolicy srsPolicy = const BinarySm2SrsPolicy(),
@@ -106,6 +113,578 @@ final class DriftLearningRepository
   }
 
   @override
+  Future<void> startSessionWithCheckpoint({
+    required LearningSessionDraft session,
+    required LearningActivityCheckpoint checkpoint,
+  }) {
+    if (checkpoint.sessionId != session.id ||
+        checkpoint.activityType != session.activityType ||
+        checkpoint.revision != 1) {
+      throw ArgumentError.value(
+        checkpoint,
+        'checkpoint',
+        'must be revision 1 for the same activity session',
+      );
+    }
+    final canonicalCheckpoint = _canonicalizeActivityCheckpoint(checkpoint);
+    return database.transaction(() async {
+      await startSession(session);
+      final stored = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(session.id))).getSingle();
+      if (stored.ownerId != session.ownerId ||
+          stored.activityType != session.activityType ||
+          stored.state != 'active' ||
+          stored.startedAtUtcMs !=
+              _requiredUtc(
+                session.startedAtUtc,
+                'startedAtUtc',
+              ).millisecondsSinceEpoch ||
+          stored.appVersion != session.appVersion ||
+          stored.buildId != session.buildId) {
+        throw StateError('learning activity session identity conflict');
+      }
+      await _appendActivityCheckpoint(
+        ownerId: session.ownerId,
+        checkpoint: canonicalCheckpoint,
+      );
+    });
+  }
+
+  @override
+  Future<void> appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  }) {
+    final canonicalCheckpoint = _canonicalizeActivityCheckpoint(checkpoint);
+    return database.transaction(
+      () => _appendActivityCheckpoint(
+        ownerId: ownerId,
+        checkpoint: canonicalCheckpoint,
+      ),
+    );
+  }
+
+  LearningActivityCheckpoint _canonicalizeActivityCheckpoint(
+    LearningActivityCheckpoint checkpoint,
+  ) {
+    late final Map<String, Object?> canonicalState;
+    try {
+      final decoded = jsonDecode(jsonEncode(checkpoint.state));
+      if (decoded is! Map<String, dynamic>) {
+        throw const FormatException('checkpoint state must be an object');
+      }
+      canonicalState = _freezeJsonMap(decoded.cast<String, Object?>());
+    } on Object catch (error) {
+      throw ArgumentError.value(
+        checkpoint.state,
+        'state',
+        'must be JSON encodable: $error',
+      );
+    }
+    final stateBytes = utf8.encode(jsonEncode(canonicalState)).length;
+    if (stateBytes > 65536) {
+      throw ArgumentError.value(
+        stateBytes,
+        'state',
+        'checkpoint exceeds the 64 KiB bound',
+      );
+    }
+    return LearningActivityCheckpoint(
+      sessionId: checkpoint.sessionId,
+      activityType: checkpoint.activityType,
+      revision: checkpoint.revision,
+      occurredAtUtc: checkpoint.occurredAtUtc,
+      state: canonicalState,
+      terminalAtUtc: checkpoint.terminalAtUtc,
+      terminalAcknowledged: checkpoint.terminalAcknowledged,
+    );
+  }
+
+  Future<void> _appendActivityCheckpoint({
+    required String ownerId,
+    required LearningActivityCheckpoint checkpoint,
+  }) async {
+    final requiredOwnerId = _required(ownerId, 'ownerId');
+    final sessionId = _required(checkpoint.sessionId, 'sessionId');
+    final activityType = _required(checkpoint.activityType, 'activityType');
+    if (checkpoint.revision < 1 ||
+        checkpoint.revision > maxActivityRecoveryCheckpoints) {
+      throw RangeError.range(
+        checkpoint.revision,
+        1,
+        maxActivityRecoveryCheckpoints,
+        'revision',
+      );
+    }
+    final occurredAtUtc = _requiredUtc(
+      checkpoint.occurredAtUtc,
+      'occurredAtUtc',
+    );
+    final terminalAtUtc = checkpoint.terminalAtUtc == null
+        ? null
+        : _requiredUtc(checkpoint.terminalAtUtc, 'terminalAtUtc');
+    if (checkpoint.terminalAcknowledged && terminalAtUtc == null) {
+      throw ArgumentError.value(
+        checkpoint,
+        'checkpoint',
+        'terminal acknowledgement requires a terminal identity',
+      );
+    }
+    final canonicalTime = LearningEvidenceContract.canonicalEventUtcSecond(
+      occurredAtUtc,
+    );
+    final canonicalState = checkpoint.state;
+    final stateJson = jsonEncode(canonicalState);
+    final session =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.id.equals(sessionId) &
+                  row.ownerId.equals(requiredOwnerId) &
+                  row.activityType.equals(activityType),
+            ))
+            .getSingleOrNull();
+    if (session == null) {
+      throw StateError('learning activity session not found');
+    }
+    final storedTerminalAtUtc = _fromEpoch(session.endedAtUtcMs);
+    if (session.state == 'active') {
+      if (checkpoint.terminalAcknowledged) {
+        throw StateError('active activity cannot acknowledge completion');
+      }
+    } else if (session.state == 'completed') {
+      if (terminalAtUtc == null || terminalAtUtc != storedTerminalAtUtc) {
+        throw StateError('completed activity terminal identity is invalid');
+      }
+    } else {
+      throw StateError('learning activity session is not recoverable');
+    }
+    final latest = await _latestActivityCheckpoint(
+      ownerId: requiredOwnerId,
+      session: session,
+    );
+    if (latest != null && latest.revision >= checkpoint.revision) {
+      if (latest.revision == checkpoint.revision &&
+          jsonEncode(latest.state) == stateJson &&
+          latest.occurredAtUtc == canonicalTime &&
+          latest.terminalAtUtc == terminalAtUtc &&
+          latest.terminalAcknowledged == checkpoint.terminalAcknowledged) {
+        return;
+      }
+      throw StateError('activity checkpoint revision already exists');
+    }
+    final expectedRevision = (latest?.revision ?? 0) + 1;
+    if (checkpoint.revision != expectedRevision) {
+      throw StateError('activity checkpoint revision is not sequential');
+    }
+    final key = _activityCheckpointKey(
+      ownerId: requiredOwnerId,
+      sessionId: sessionId,
+      activityType: activityType,
+      revision: checkpoint.revision,
+    );
+    final payload = <String, Object?>{
+      'schemaVersion': 2,
+      'activityType': activityType,
+      'sessionId': sessionId,
+      'revision': checkpoint.revision,
+      'state': canonicalState,
+      'terminalAtUtc': terminalAtUtc?.toIso8601String(),
+      'terminalAcknowledged': checkpoint.terminalAcknowledged,
+    };
+    await database
+        .into(database.eventsV2)
+        .insert(
+          db.EventsV2Companion.insert(
+            eventId: key,
+            eventType: 'LearningActivityCheckpoint',
+            eventVersion: 2,
+            occurredAtUtc: canonicalTime,
+            recordedAtUtc: canonicalTime,
+            actorIdentity: requiredOwnerId,
+            ownerId: requiredOwnerId,
+            aggregateType: 'LearningSession',
+            aggregateId: sessionId,
+            idempotencyKey: key,
+            consentContextJson: jsonEncode(<String, Object?>{
+              'researchConsentVersion': 0,
+              'aiConsentGranted': false,
+              'voiceConsentGranted': false,
+              'socialConsentGranted': false,
+            }),
+            appVersion: session.appVersion,
+            buildId: session.buildId,
+            privacyClassification: 'ownerOnly',
+            payloadJson: jsonEncode(payload),
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    final stored = await (database.select(
+      database.eventsV2,
+    )..where((row) => row.eventId.equals(key))).getSingleOrNull();
+    if (stored == null ||
+        !_isExactStoredActivityCheckpoint(
+          row: stored,
+          eventId: key,
+          eventVersion: 2,
+          actorIdentity: requiredOwnerId,
+          ownerId: requiredOwnerId,
+          session: session,
+          occurredAtUtc: canonicalTime,
+          payloadJson: jsonEncode(payload),
+        )) {
+      throw StateError('activity checkpoint identity conflict');
+    }
+  }
+
+  @override
+  Future<LearningActivityRecovery?> loadLatestActivityRecovery({
+    required String ownerId,
+    required String activityType,
+  }) async {
+    final requiredOwnerId = _required(ownerId, 'ownerId');
+    final requiredActivityType = _required(activityType, 'activityType');
+    var session =
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(requiredOwnerId) &
+                    row.activityType.equals(requiredActivityType) &
+                    row.state.equals('active'),
+              )
+              ..orderBy([(row) => OrderingTerm.desc(row.startedAtUtcMs)])
+              ..limit(1))
+            .getSingleOrNull();
+    session ??=
+        await (database.select(database.learningSessions)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(requiredOwnerId) &
+                    row.activityType.equals(requiredActivityType) &
+                    row.state.equals('completed'),
+              )
+              ..orderBy([(row) => OrderingTerm.desc(row.startedAtUtcMs)])
+              ..limit(1))
+            .getSingleOrNull();
+    if (session == null) return null;
+    final recoverySession = session;
+    final checkpoint = await _latestActivityCheckpoint(
+      ownerId: requiredOwnerId,
+      session: recoverySession,
+    );
+    if (checkpoint == null) {
+      if (recoverySession.state == 'completed') return null;
+      return LearningActivityRecovery(
+        session: _rowToSummary(recoverySession),
+        checkpoint: null,
+        attempts: const <RecordAnswerCandidate>[],
+      );
+    }
+    if (recoverySession.state == 'completed' &&
+        checkpoint.terminalAtUtc != _fromEpoch(recoverySession.endedAtUtcMs)) {
+      return null;
+    }
+    final attempts =
+        await (database.select(database.answerAttempts)
+              ..where(
+                (row) =>
+                    row.ownerId.equals(requiredOwnerId) &
+                    row.sessionId.equals(recoverySession.id),
+              )
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.attemptNumber),
+                (row) => OrderingTerm.asc(row.occurredAtUtcMs),
+                (row) => OrderingTerm.asc(row.id),
+              ])
+              ..limit(maxActivityRecoveryAttempts + 1))
+            .get();
+    if (attempts.length > maxActivityRecoveryAttempts) {
+      throw StateError('activity attempt recovery bound exceeded');
+    }
+    final sources = await events.readBySourceEvidenceIds(
+      attempts.map((attempt) => attempt.id),
+    );
+    final candidates = <RecordAnswerCandidate>[];
+    for (final attempt in attempts) {
+      final source = sources[attempt.id];
+      if (source == null ||
+          await events.validateSourceForAttempt(
+                attempt: attempt,
+                source: source,
+              ) !=
+              null) {
+        throw StateError('activity attempt has missing or corrupt event');
+      }
+      final decoded = jsonDecode(attempt.evidenceContextJson);
+      if (decoded is! Map<String, dynamic>) {
+        throw StateError('activity attempt has corrupt evidence context');
+      }
+      final context = EvidenceContext.fromJson(decoded.cast<String, Object?>());
+      candidates.add(
+        RecordAnswerCandidate(
+          id: attempt.id,
+          ownerId: attempt.ownerId,
+          sessionId: attempt.sessionId,
+          wordId: attempt.wordId,
+          promptMode: attempt.promptMode,
+          isCorrect: attempt.isCorrect,
+          responseTimeMs: attempt.responseTimeMs,
+          attemptNumber: attempt.attemptNumber,
+          occurredAtUtc: _fromEpoch(attempt.occurredAtUtcMs)!,
+          evidenceContext: context,
+          providerProvenance: attempt.providerProvenance,
+          actorIdentity: source.actorIdentity,
+          eventContext: LearningEventContext.fromEvidenceEnvelope(
+            envelope: source,
+            evidenceContext: context,
+          ),
+        ),
+      );
+    }
+    return LearningActivityRecovery(
+      session: _rowToSummary(recoverySession),
+      checkpoint: checkpoint,
+      attempts: List<RecordAnswerCandidate>.unmodifiable(candidates),
+    );
+  }
+
+  Future<LearningActivityCheckpoint?> _latestActivityCheckpoint({
+    required String ownerId,
+    required db.LearningSession session,
+  }) async {
+    final rows =
+        await (database.select(database.eventsV2)
+              ..where(
+                (row) =>
+                    row.eventId.like('learning-activity-checkpoint:%') &
+                    row.ownerId.equals(ownerId) &
+                    row.eventType.equals('LearningActivityCheckpoint') &
+                    row.aggregateType.equals('LearningSession') &
+                    row.aggregateId.equals(session.id),
+              )
+              ..limit(maxActivityRecoveryCheckpoints + 1))
+            .get();
+    if (rows.length > maxActivityRecoveryCheckpoints) {
+      throw StateError('activity checkpoint recovery bound exceeded');
+    }
+    LearningActivityCheckpoint? latest;
+    final revisions = <int>[];
+    for (final row in rows) {
+      late final Object? decodedValue;
+      try {
+        decodedValue = jsonDecode(row.payloadJson);
+      } on Object {
+        if (row.aggregateId == session.id) {
+          throw StateError('activity checkpoint is corrupt');
+        }
+        continue;
+      }
+      if (decodedValue is! Map<String, dynamic>) {
+        if (row.aggregateId == session.id) {
+          throw StateError('activity checkpoint is corrupt');
+        }
+        continue;
+      }
+      final decoded = decodedValue;
+      if (decoded['sessionId'] != session.id && row.aggregateId != session.id) {
+        continue;
+      }
+      final actorIsAuthorized = await _isAuthorizedCheckpointActor(
+        actorIdentity: row.actorIdentity,
+        ownerIdentity: ownerId,
+      );
+      final schemaVersion = decoded['schemaVersion'];
+      final isV1 = schemaVersion == 1;
+      final isV2 = schemaVersion == 2;
+      final expectedLength = isV1 ? 5 : 7;
+      if ((!isV1 && !isV2) ||
+          decoded.length != expectedLength ||
+          decoded['activityType'] != session.activityType ||
+          decoded['sessionId'] != session.id ||
+          decoded['revision'] is! int ||
+          decoded['state'] is! Map<String, dynamic> ||
+          row.eventVersion != schemaVersion ||
+          row.recordedAtUtc != row.occurredAtUtc ||
+          !actorIsAuthorized ||
+          row.tenantContextJson != null ||
+          row.correlationId != null ||
+          row.causationId != null ||
+          row.idempotencyKey != row.eventId ||
+          row.consentContextJson !=
+              jsonEncode(<String, Object?>{
+                'researchConsentVersion': 0,
+                'aiConsentGranted': false,
+                'voiceConsentGranted': false,
+                'socialConsentGranted': false,
+              }) ||
+          row.experimentContextJson != null ||
+          row.contentRevision != null ||
+          row.policyVersion != null ||
+          row.appVersion != session.appVersion ||
+          row.buildId != session.buildId ||
+          row.providerProvenanceJson != null ||
+          row.privacyClassification != 'ownerOnly') {
+        throw StateError('activity checkpoint is corrupt');
+      }
+      final revision = decoded['revision']! as int;
+      final canonicalState = _freezeJsonMap(
+        (decoded['state']! as Map<String, dynamic>).cast<String, Object?>(),
+      );
+      if (revision < 1 ||
+          revision > maxActivityRecoveryCheckpoints ||
+          utf8.encode(jsonEncode(canonicalState)).length > 65536) {
+        throw StateError('activity checkpoint is corrupt');
+      }
+      DateTime? terminalAtUtc;
+      var terminalAcknowledged = false;
+      if (isV2) {
+        final encodedTerminal = decoded['terminalAtUtc'];
+        terminalAcknowledged = decoded['terminalAcknowledged'] is bool
+            ? decoded['terminalAcknowledged']! as bool
+            : throw StateError('activity checkpoint is corrupt');
+        if (encodedTerminal != null) {
+          if (encodedTerminal is! String) {
+            throw StateError('activity checkpoint is corrupt');
+          }
+          if (!encodedTerminal.endsWith('Z')) {
+            throw StateError('activity checkpoint is corrupt');
+          }
+          terminalAtUtc = DateTime.tryParse(encodedTerminal);
+          if (terminalAtUtc == null || !terminalAtUtc.isUtc) {
+            throw StateError('activity checkpoint is corrupt');
+          }
+        }
+        if (terminalAcknowledged && terminalAtUtc == null) {
+          throw StateError('activity checkpoint is corrupt');
+        }
+      }
+      final expectedKey = _activityCheckpointKey(
+        ownerId: row.actorIdentity,
+        sessionId: session.id,
+        activityType: session.activityType,
+        revision: revision,
+      );
+      if (row.eventId != expectedKey ||
+          !_isExactStoredActivityCheckpoint(
+            row: row,
+            eventId: expectedKey,
+            eventVersion: schemaVersion as int,
+            actorIdentity: row.actorIdentity,
+            ownerId: ownerId,
+            session: session,
+            occurredAtUtc: row.occurredAtUtc.toUtc(),
+            payloadJson: row.payloadJson,
+          )) {
+        throw StateError('activity checkpoint identity is corrupt');
+      }
+      final candidate = LearningActivityCheckpoint(
+        sessionId: session.id,
+        activityType: session.activityType,
+        revision: revision,
+        occurredAtUtc: row.occurredAtUtc.toUtc(),
+        state: canonicalState,
+        terminalAtUtc: terminalAtUtc,
+        terminalAcknowledged: terminalAcknowledged,
+      );
+      if (latest == null || candidate.revision > latest.revision) {
+        latest = candidate;
+      }
+      revisions.add(revision);
+    }
+    revisions.sort();
+    for (var index = 0; index < revisions.length; index += 1) {
+      if (revisions[index] != index + 1) {
+        throw StateError('activity checkpoint revision history is corrupt');
+      }
+    }
+    return latest;
+  }
+
+  bool _isExactStoredActivityCheckpoint({
+    required db.EventsV2Data row,
+    required String eventId,
+    required int eventVersion,
+    required String actorIdentity,
+    required String ownerId,
+    required db.LearningSession session,
+    required DateTime occurredAtUtc,
+    required String payloadJson,
+  }) {
+    return row.eventId == eventId &&
+        row.eventType == 'LearningActivityCheckpoint' &&
+        row.eventVersion == eventVersion &&
+        row.occurredAtUtc.toUtc() == occurredAtUtc &&
+        row.recordedAtUtc.toUtc() == occurredAtUtc &&
+        row.actorIdentity == actorIdentity &&
+        row.ownerId == ownerId &&
+        row.tenantContextJson == null &&
+        row.aggregateType == 'LearningSession' &&
+        row.aggregateId == session.id &&
+        row.correlationId == null &&
+        row.causationId == null &&
+        row.idempotencyKey == eventId &&
+        row.consentContextJson ==
+            jsonEncode(<String, Object?>{
+              'researchConsentVersion': 0,
+              'aiConsentGranted': false,
+              'voiceConsentGranted': false,
+              'socialConsentGranted': false,
+            }) &&
+        row.experimentContextJson == null &&
+        row.contentRevision == null &&
+        row.policyVersion == null &&
+        row.appVersion == session.appVersion &&
+        row.buildId == session.buildId &&
+        row.providerProvenanceJson == null &&
+        row.privacyClassification == 'ownerOnly' &&
+        row.payloadJson == payloadJson;
+  }
+
+  Map<String, Object?> _freezeJsonMap(Map<String, Object?> value) =>
+      Map<String, Object?>.unmodifiable(
+        value.map(
+          (key, item) => MapEntry<String, Object?>(key, _freezeJsonValue(item)),
+        ),
+      );
+
+  Object? _freezeJsonValue(Object? value) {
+    if (value is Map<String, Object?>) return _freezeJsonMap(value);
+    if (value is List<Object?>) {
+      return List<Object?>.unmodifiable(value.map(_freezeJsonValue));
+    }
+    return value;
+  }
+
+  Future<bool> _isAuthorizedCheckpointActor({
+    required String actorIdentity,
+    required String ownerIdentity,
+  }) async {
+    if (actorIdentity == ownerIdentity) return true;
+    final historicalActor = await (database.select(
+      database.localOwners,
+    )..where((row) => row.id.equals(actorIdentity))).getSingleOrNull();
+    return historicalActor != null &&
+        !historicalActor.isActive &&
+        historicalActor.accountState == 'mergedInto:$ownerIdentity';
+  }
+
+  String _activityCheckpointKey({
+    required String ownerId,
+    required String sessionId,
+    required String activityType,
+    required int revision,
+  }) {
+    final digest = sha256
+        .convert(
+          utf8.encode(
+            '$ownerId\u0000$sessionId\u0000$activityType\u0000$revision',
+          ),
+        )
+        .toString();
+    return 'learning-activity-checkpoint:$digest';
+  }
+
+  @override
   Future<CommittedAnswerReplay?> replayCommittedAnswer(
     RecordAnswerCandidate candidate,
   ) {
@@ -151,6 +730,18 @@ final class DriftLearningRepository
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) {
     _validateAnswer(command);
     return database.transaction(() async {
+      final event = command.event;
+      if (event != null &&
+          !await _isAuthorizedCheckpointActor(
+            actorIdentity: event.actorIdentity,
+            ownerIdentity: command.ownerId,
+          )) {
+        throw ArgumentError.value(
+          command,
+          'command',
+          'invalid answer actor lineage',
+        );
+      }
       final existing = await (database.select(
         database.answerAttempts,
       )..where((row) => row.id.equals(command.id))).getSingleOrNull();
@@ -200,6 +791,14 @@ final class DriftLearningRepository
         );
       }
 
+      if (event != null && event.actorIdentity != command.ownerId) {
+        throw ArgumentError.value(
+          command,
+          'command',
+          'a first-write answer actor must equal its owner',
+        );
+      }
+
       final session =
           await (database.select(database.learningSessions)..where(
                 (row) =>
@@ -215,12 +814,18 @@ final class DriftLearningRepository
           await (database.select(database.vocabularyWords)..where(
                 (row) =>
                     row.id.equals(command.wordId) &
-                    row.ownerId.equals(command.ownerId) &
-                    row.isDeleted.equals(false),
+                    row.ownerId.equals(command.ownerId),
               ))
               .getSingleOrNull();
       if (word == null) {
         throw StateError('active vocabulary word not found');
+      }
+      if (word.isDeleted &&
+          !await _isValidPinnedDeletedMatchingAnswer(
+            command: command,
+            session: session,
+          )) {
+        throw StateError('deleted vocabulary is not pinned to this session');
       }
 
       await database
@@ -249,7 +854,6 @@ final class DriftLearningRepository
         entityId: command.id,
         occurredAtUtc: command.occurredAtUtc,
       );
-      final event = command.event;
       if (event != null) await events.append(event);
       final insertedAttempt = await (database.select(
         database.answerAttempts,
@@ -296,6 +900,169 @@ final class DriftLearningRepository
     });
   }
 
+  Future<bool> _isValidPinnedDeletedMatchingAnswer({
+    required RecordAnswerCommand command,
+    required db.LearningSession session,
+  }) async {
+    if (session.activityType != 'matching' ||
+        command.promptMode != 'matchingPair' ||
+        command.providerProvenance != 'pinned-lexical-matching' ||
+        command.evidenceContext.skillId != 'matching-recognition' ||
+        (command.evidenceContext.evidenceClass != EvidenceClass.recognition &&
+            command.evidenceContext.evidenceClass !=
+                EvidenceClass.guidedPractice)) {
+      return false;
+    }
+    final checkpoint = await _latestActivityCheckpoint(
+      ownerId: command.ownerId,
+      session: session,
+    );
+    final state = checkpoint?.state;
+    final pairs = state?['pairs'];
+    final pending = state?['pendingEvidence'];
+    final stateVersion = state?['schemaVersion'];
+    if ((stateVersion != 1 &&
+            stateVersion != 2 &&
+            stateVersion != 3 &&
+            stateVersion != 4) ||
+        pairs is! List<Object?> ||
+        pending is! Map<String, Object?>) {
+      return false;
+    }
+    final matches = pairs
+        .where((value) {
+          return value is Map<String, Object?> && value['id'] == command.wordId;
+        })
+        .toList(growable: false);
+    if (matches.length != 1) return false;
+    final snapshot = matches.single! as Map<String, Object?>;
+    const wordKeys = <String>{
+      'id',
+      'categoryId',
+      'spelling',
+      'meaning',
+      'partOfSpeech',
+      'normalizedSpelling',
+      'normalizedMeaning',
+      'contentRevision',
+      'contentChecksumSha256',
+    };
+    if (snapshot.length != wordKeys.length ||
+        !snapshot.keys.every(wordKeys.contains)) {
+      return false;
+    }
+    final revision = snapshot['contentRevision'];
+    final checksum = snapshot['contentChecksumSha256'];
+    final contentIdentity =
+        revision is int &&
+            revision > 0 &&
+            checksum is String &&
+            RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)
+        ? 'lexical-matching:v$revision:$checksum'
+        : 'lexical-matching:snapshot:'
+              '${sha256.convert(utf8.encode(jsonEncode(snapshot)))}';
+    if (command.evidenceContext.contentRevision != contentIdentity) {
+      return false;
+    }
+    const pendingV1Keys = <String>{
+      'sourceEvidenceId',
+      'occurredAtUtc',
+      'wordId',
+      'selectedMeaningWordId',
+      'isCorrect',
+      'responseTimeMs',
+      'attemptNumber',
+      'evidenceClass',
+      'hintLevel',
+      'contentRevision',
+      'canonicalCorrectAnswer',
+      'evidenceContext',
+      'eventContext',
+    };
+    const pendingV2Keys = <String>{
+      ...pendingV1Keys,
+      'schemaVersion',
+      'actorIdentity',
+    };
+    const pendingV3Keys = <String>{...pendingV2Keys, 'providerProvenance'};
+    final pendingVersion = pending['schemaVersion'];
+    final expectedPendingKeys = switch (pendingVersion) {
+      2 => pendingV2Keys,
+      3 => pendingV3Keys,
+      _ => pendingV1Keys,
+    };
+    if (pendingVersion != null && pendingVersion != 2 && pendingVersion != 3) {
+      return false;
+    }
+    if (pending.length != expectedPendingKeys.length ||
+        !pending.keys.every(expectedPendingKeys.contains)) {
+      return false;
+    }
+    final encodedOccurredAt = pending['occurredAtUtc'];
+    if (encodedOccurredAt is! String || !encodedOccurredAt.endsWith('Z')) {
+      return false;
+    }
+    final occurredAtUtc = DateTime.tryParse(encodedOccurredAt);
+    final frozenEvidenceJson = pending['evidenceContext'];
+    final frozenEventJson = pending['eventContext'];
+    final event = command.event;
+    final pendingActor = pendingVersion == 2 || pendingVersion == 3
+        ? pending['actorIdentity']
+        : command.ownerId;
+    if (occurredAtUtc == null ||
+        !occurredAtUtc.isUtc ||
+        event == null ||
+        pendingActor is! String ||
+        pendingActor != event.actorIdentity ||
+        frozenEvidenceJson is! Map<String, Object?> ||
+        frozenEventJson is! Map<String, Object?> ||
+        pending['sourceEvidenceId'] != command.id ||
+        occurredAtUtc != command.occurredAtUtc ||
+        pending['wordId'] != command.wordId ||
+        pending['isCorrect'] != command.isCorrect ||
+        pending['responseTimeMs'] != command.responseTimeMs ||
+        pending['attemptNumber'] != command.attemptNumber ||
+        (pendingVersion == 3 &&
+            pending['providerProvenance'] != command.providerProvenance) ||
+        pending['evidenceClass'] !=
+            command.evidenceContext.evidenceClass.name ||
+        pending['hintLevel'] != command.evidenceContext.hintLevel ||
+        pending['contentRevision'] != contentIdentity ||
+        pending['canonicalCorrectAnswer'] !=
+            (snapshot['meaning'] as String).trim().replaceAll(
+              RegExp(r'\s+'),
+              ' ',
+            ) ||
+        pending['selectedMeaningWordId'] is! String ||
+        command.isCorrect !=
+            (pending['selectedMeaningWordId'] == command.wordId) ||
+        jsonEncode(frozenEvidenceJson) !=
+            jsonEncode(command.evidenceContext.toJson())) {
+      return false;
+    }
+    if (!await _isAuthorizedCheckpointActor(
+      actorIdentity: pendingActor,
+      ownerIdentity: command.ownerId,
+    )) {
+      return false;
+    }
+    try {
+      final frozenEventContext = LearningEventContext.fromJson(frozenEventJson);
+      frozenEventContext.validateAgainst(
+        evidenceContext: command.evidenceContext,
+        occurredAtUtc: command.occurredAtUtc,
+      );
+      final commandEventContext = LearningEventContext.fromEvidenceEnvelope(
+        envelope: event,
+        evidenceContext: command.evidenceContext,
+      );
+      return jsonEncode(frozenEventContext.toJson()) ==
+          jsonEncode(commandEventContext.toJson());
+    } on Object {
+      return false;
+    }
+  }
+
   @override
   Future<LearningSessionSummary> finishSession({
     required String ownerId,
@@ -314,7 +1081,18 @@ final class DriftLearningRepository
       if (row == null) throw StateError('learning session not found');
       final total = row.correctCount + row.wrongCount;
       final score = total == 0 ? 0 : ((row.correctCount * 100) / total).round();
-      if (row.state != 'completed') {
+      if (row.state == 'completed') {
+        if (row.endedAtUtcMs != endedAtUtc.millisecondsSinceEpoch) {
+          throw StateError(
+            'learning session was completed with a different terminal time',
+          );
+        }
+        return _rowToSummary(row);
+      }
+      if (row.state != 'active') {
+        throw StateError('learning session is not active');
+      }
+      {
         await (database.update(
           database.learningSessions,
         )..where((candidate) => candidate.id.equals(sessionId))).write(
@@ -355,17 +1133,10 @@ final class DriftLearningRepository
           }
         }
       }
-      return LearningSessionSummary(
-        id: row.id,
-        ownerId: row.ownerId,
-        activityType: row.activityType,
-        state: 'completed',
-        startedAtUtc: _fromEpoch(row.startedAtUtcMs)!,
-        endedAtUtc: endedAtUtc,
-        correctCount: row.correctCount,
-        wrongCount: row.wrongCount,
-        score: score,
-      );
+      final completed = await (database.select(
+        database.learningSessions,
+      )..where((candidate) => candidate.id.equals(sessionId))).getSingle();
+      return _rowToSummary(completed);
     });
   }
 

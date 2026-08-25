@@ -5,6 +5,7 @@ import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
+import '../features/learning/application/matching_mode_adapter.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -15,6 +16,7 @@ import 'associative_reading_launcher_screen.dart';
 import 'definition_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
+import 'matching_mode_screen.dart';
 import 'srs_flashcards_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
@@ -27,6 +29,8 @@ class ChooseModeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final features = featureRegistry ?? dependencies?.features;
+    final modes = lessonModes ?? dependencies?.lessonModes;
+    final matching = modes?.resolve(LessonMode.matching);
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
       body: ListView(
@@ -56,6 +60,20 @@ class ChooseModeScreen extends StatelessWidget {
                 LessonMode.meaningQuiz,
                 (_, adapter) =>
                     QuizScreen(modeAdapter: adapter as MeaningQuizModeAdapter),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true && matching != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/matching'),
+              icon: Icons.compare_arrows_outlined,
+              title: 'Matching',
+              subtitle: 'Match each vocabulary word with its meaning.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.matching,
+                (_, adapter) => MatchingModeScreen(
+                  modeAdapter: adapter as MatchingModeAdapter,
+                ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true)
@@ -119,7 +137,7 @@ class ChooseModeScreen extends StatelessWidget {
   ) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final modes = lessonModes ?? dependencies?.lessonModes;
-    final registration = modes?.find(mode);
+    final registration = modes?.resolve(mode);
     if (registration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This lesson mode is unavailable.')),
@@ -150,6 +168,13 @@ class ChooseModeScreen extends StatelessWidget {
     if (mode == LessonMode.cloze && registration.adapter is! ClozeModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This cloze mode is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    if (mode == LessonMode.matching &&
+        registration.adapter is! MatchingModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This matching mode is unavailable.')),
       );
       return Future<void>.value();
     }
