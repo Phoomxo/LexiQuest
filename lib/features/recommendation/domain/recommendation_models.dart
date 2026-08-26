@@ -1,8 +1,15 @@
+import '../../learning/domain/lesson_mode.dart';
+
 /// Read-only recommendation inputs, references, and decisions.
 ///
 /// These types deliberately contain identifiers and timestamps only. They do
 /// not carry raw learner content, repositories, or research-assignment state.
-enum RecommendationAction { flashcardPreparation, noRecommendation }
+enum RecommendationAction {
+  flashcardPreparation,
+  lessonMode,
+  learnerChoice,
+  noRecommendation,
+}
 
 enum RecommendationReasonCode {
   unseenItem,
@@ -17,6 +24,17 @@ enum RecommendationReasonCode {
   invalidEvidenceTime,
   invalidEvidenceReference,
   invalidMasteryEvidence,
+  recallLadderNextStep,
+  recallLadderComplete,
+  unsupportedLadderVersion,
+  unsupportedAuthorityVersion,
+  unsupportedProtocolVersion,
+  canonicalAuthorityUnavailable,
+  modeUnavailable,
+  protocolLockedStep,
+  accessibilityAlternativeRequired,
+  invalidLadderEvidence,
+  circularRecommendationPrevented,
 }
 
 extension RecommendationReasonCodeWireValue on RecommendationReasonCode {
@@ -36,12 +54,33 @@ extension RecommendationReasonCodeWireValue on RecommendationReasonCode {
       'invalid_evidence_reference',
     RecommendationReasonCode.invalidMasteryEvidence =>
       'invalid_mastery_evidence',
+    RecommendationReasonCode.recallLadderNextStep => 'recall_ladder_next_step',
+    RecommendationReasonCode.recallLadderComplete => 'recall_ladder_complete',
+    RecommendationReasonCode.unsupportedLadderVersion =>
+      'unsupported_ladder_version',
+    RecommendationReasonCode.unsupportedAuthorityVersion =>
+      'unsupported_authority_version',
+    RecommendationReasonCode.unsupportedProtocolVersion =>
+      'unsupported_protocol_version',
+    RecommendationReasonCode.canonicalAuthorityUnavailable =>
+      'canonical_authority_unavailable',
+    RecommendationReasonCode.modeUnavailable => 'mode_unavailable',
+    RecommendationReasonCode.protocolLockedStep => 'protocol_locked_step',
+    RecommendationReasonCode.accessibilityAlternativeRequired =>
+      'accessibility_alternative_required',
+    RecommendationReasonCode.invalidLadderEvidence => 'invalid_ladder_evidence',
+    RecommendationReasonCode.circularRecommendationPrevented =>
+      'circular_recommendation_prevented',
   };
 }
 
 enum RecommendationLearnerChoice { dismiss, override }
 
-enum RecommendationEvidenceSource { progressReadModel, srsReadModel }
+enum RecommendationEvidenceSource {
+  progressReadModel,
+  srsReadModel,
+  responseEvidenceReadModel,
+}
 
 /// An immutable, non-content-bearing pointer to canonical read evidence.
 final class RecommendationEvidenceReference {
@@ -103,8 +142,11 @@ final class RecommendationDecision {
     required this.action,
     required this.reasonCode,
     required List<RecommendationEvidenceReference> evidenceReferences,
+    this.recommendedMode,
+    List<LessonMode> learnerChoiceModes = const <LessonMode>[],
     this.learnerChoice,
-  }) : evidenceReferences = List.unmodifiable(evidenceReferences);
+  }) : evidenceReferences = List.unmodifiable(evidenceReferences),
+       learnerChoiceModes = List.unmodifiable(learnerChoiceModes);
 
   final String policyVersion;
   final String ownerId;
@@ -112,6 +154,8 @@ final class RecommendationDecision {
   final RecommendationAction action;
   final RecommendationReasonCode reasonCode;
   final List<RecommendationEvidenceReference> evidenceReferences;
+  final LessonMode? recommendedMode;
+  final List<LessonMode> learnerChoiceModes;
   final RecommendationLearnerChoice? learnerChoice;
 
   bool get isAdvisory => true;
@@ -130,6 +174,8 @@ final class RecommendationDecision {
       action: action,
       reasonCode: reasonCode,
       evidenceReferences: evidenceReferences,
+      recommendedMode: recommendedMode,
+      learnerChoiceModes: learnerChoiceModes,
       learnerChoice: choice,
     );
   }
