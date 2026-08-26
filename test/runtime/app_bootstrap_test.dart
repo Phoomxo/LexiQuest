@@ -2099,6 +2099,21 @@ void main() {
         await tester.pumpAndSettle();
         await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
         await tester.pumpAndSettle();
+        expect(
+          find.byKey(const ValueKey('session-configuration-sheet')),
+          findsOneWidget,
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey('session-item-count')),
+          '1',
+        );
+        tester.testTextInput.hide();
+        await tester.pumpAndSettle();
+        final start = find.byKey(const ValueKey('session-config-start'));
+        await tester.ensureVisible(start);
+        await tester.pump();
+        await tester.tap(start);
+        await tester.pumpAndSettle();
         expect(find.byType(QuizScreen), findsOneWidget);
         expect(find.byType(FocusTimerWidget), findsOneWidget);
 
