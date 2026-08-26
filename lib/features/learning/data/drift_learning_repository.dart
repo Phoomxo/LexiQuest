@@ -1057,7 +1057,8 @@ final class DriftLearningRepository
     if ((stateVersion != 1 &&
             stateVersion != 2 &&
             stateVersion != 3 &&
-            stateVersion != 4) ||
+            stateVersion != 4 &&
+            stateVersion != 5) ||
         pairs is! List<Object?> ||
         pending is! Map<String, Object?>) {
       return false;

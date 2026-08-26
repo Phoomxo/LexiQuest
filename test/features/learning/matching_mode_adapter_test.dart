@@ -623,6 +623,72 @@ void main() {
       },
     );
 
+    test('deleted word rejects a future matching checkpoint schema', () async {
+      final repository = _RestartRecoveryRepository(
+        DriftLearningRepository(database),
+        recordFailure: _RecordFailure.beforeWrite,
+      );
+      final retryLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'deleted-future-${++generatedId}',
+        nowUtc: () => DateTime.utc(2026, 8, 25, 10, 31, generatedId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+      );
+      final evidence = CurrentActivityEvidenceAdapter(learning: retryLearning);
+      final prepared = await adapter.prepareSession(
+        learning: retryLearning,
+        evidence: evidence,
+        categoryId: 'category:travel',
+      );
+      final review = adapter.createReview(
+        session: prepared.session,
+        learning: retryLearning,
+        evidence: evidence,
+        recovery: prepared,
+        hintUsage: () => const HintUsageSnapshot.known(0),
+      );
+      addTearDown(review.dispose);
+      final pair = review.pairSet.pairs.first;
+      await (database.update(database.vocabularyWords)
+            ..where((row) => row.id.equals(pair.word.id)))
+          .write(const VocabularyWordsCompanion(isDeleted: Value(true)));
+      await review.selectWord(pair.word.id, responseTimeMs: 100);
+      await expectLater(
+        review.selectMeaning(pair.word.id, responseTimeMs: 200),
+        throwsStateError,
+      );
+      final command = repository.commands.single;
+      final rows =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningActivityCheckpoint'),
+              ))
+              .get();
+      rows.sort((left, right) {
+        final leftRevision =
+            (jsonDecode(left.payloadJson) as Map<String, dynamic>)['revision']
+                as int;
+        final rightRevision =
+            (jsonDecode(right.payloadJson) as Map<String, dynamic>)['revision']
+                as int;
+        return leftRevision.compareTo(rightRevision);
+      });
+      final latest = rows.last;
+      final payload = jsonDecode(latest.payloadJson) as Map<String, dynamic>;
+      final state = payload['state'] as Map<String, dynamic>;
+      expect(state['schemaVersion'], 5);
+      state['schemaVersion'] = 6;
+      await (database.update(database.eventsV2)
+            ..where((row) => row.eventId.equals(latest.eventId)))
+          .write(EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
+
+      await expectLater(
+        repository.delegate.recordAnswer(command),
+        throwsStateError,
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    });
+
     test('guest owner upgrade resumes and closes the active board', () async {
       final guest = await owners.getOrCreateActiveOwner();
       var upgradeId = 0;
