@@ -18,18 +18,44 @@ import 'hint_panel.dart';
 typedef LessonUtcNow = DateTime Function();
 typedef LessonLifecycleStateReader = AppLifecycleState? Function();
 
+/// Local-only child state that must be purged whenever a lesson crosses a
+/// privacy, terminal, or route-retirement boundary.
+abstract interface class EphemeralLessonState {
+  void clearEphemeralState();
+}
+
+final class LessonEphemeralStateRegistry {
+  final Set<EphemeralLessonState> _states = <EphemeralLessonState>{};
+
+  void register(EphemeralLessonState state) => _states.add(state);
+  void unregister(EphemeralLessonState state) => _states.remove(state);
+  void clear() {
+    for (final state in _states.toList(growable: false)) {
+      state.clearEphemeralState();
+    }
+  }
+}
+
 final class UnifiedLessonSessionLifecycle {
   const UnifiedLessonSessionLifecycle._(
     this._controller,
     this._nowUtc,
     this._routeLifecycle,
+    this._ephemeralStates,
   );
 
   final UnifiedLessonController _controller;
   final LessonUtcNow _nowUtc;
   final UnifiedLessonRouteLifecycle? _routeLifecycle;
+  final LessonEphemeralStateRegistry _ephemeralStates;
 
   bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
+
+  void registerEphemeralState(EphemeralLessonState state) =>
+      _ephemeralStates.register(state);
+
+  void unregisterEphemeralState(EphemeralLessonState state) =>
+      _ephemeralStates.unregister(state);
 
   HintUsageSnapshot snapshotHintUsage() =>
       _controller.snapshotHintUsageForAcceptedEvidence();
@@ -81,12 +107,16 @@ final class UnifiedLessonSessionLifecycle {
     return session;
   }
 
-  Future<LearningSessionSummary> complete(PendingLearningSessionClose close) =>
-      _routeLifecycle?.complete(close) ??
-      _controller.completeCapturedSession(close, _nowUtc());
+  Future<LearningSessionSummary> complete(PendingLearningSessionClose close) {
+    _ephemeralStates.clear();
+    return _routeLifecycle?.complete(close) ??
+        _controller.completeCapturedSession(close, _nowUtc());
+  }
 
-  Future<void> abandon() =>
-      _routeLifecycle?.retire() ?? _controller.abandon(_nowUtc());
+  Future<void> abandon() {
+    _ephemeralStates.clear();
+    return _routeLifecycle?.retire() ?? _controller.abandon(_nowUtc());
+  }
 
   void recordInteraction() {
     if (!acceptsOperations) return;
@@ -97,19 +127,32 @@ final class UnifiedLessonSessionLifecycle {
 final class UnifiedLessonSessionLifecycleScope extends InheritedWidget {
   const UnifiedLessonSessionLifecycleScope({
     super.key,
-    required this.lifecycle,
+    required this.ephemeralStates,
+    this.lifecycle,
     required super.child,
   });
 
-  final UnifiedLessonSessionLifecycle lifecycle;
+  final LessonEphemeralStateRegistry ephemeralStates;
+  final UnifiedLessonSessionLifecycle? lifecycle;
 
-  static UnifiedLessonSessionLifecycle? maybeOf(BuildContext context) => context
-      .dependOnInheritedWidgetOfExactType<UnifiedLessonSessionLifecycleScope>()
-      ?.lifecycle;
+  static UnifiedLessonSessionLifecycleScope? maybeScopeOf(
+    BuildContext context,
+  ) => context
+      .dependOnInheritedWidgetOfExactType<UnifiedLessonSessionLifecycleScope>();
+
+  static UnifiedLessonSessionLifecycle? maybeOf(BuildContext context) =>
+      maybeScopeOf(context)?.lifecycle;
+
+  void registerEphemeralState(EphemeralLessonState state) =>
+      ephemeralStates.register(state);
+
+  void unregisterEphemeralState(EphemeralLessonState state) =>
+      ephemeralStates.unregister(state);
 
   @override
   bool updateShouldNotify(UnifiedLessonSessionLifecycleScope oldWidget) =>
-      !identical(lifecycle, oldWidget.lifecycle);
+      !identical(lifecycle, oldWidget.lifecycle) ||
+      !identical(ephemeralStates, oldWidget.ephemeralStates);
 }
 
 /// One route-owned arbiter for initialization, accepted terminal work, and
@@ -132,6 +175,10 @@ final class UnifiedLessonRouteLifecycle {
   PendingLearningSessionClose? _acceptedClose;
   Future<void>? _terminal;
   final Set<Future<void>> _acceptedOperations = <Future<void>>{};
+  final LessonEphemeralStateRegistry _ephemeralStates =
+      LessonEphemeralStateRegistry();
+
+  LessonEphemeralStateRegistry get _ephemeralStateRegistry => _ephemeralStates;
 
   bool get acceptsOperations => _accepting;
 
@@ -239,6 +286,7 @@ final class UnifiedLessonRouteLifecycle {
 
   Future<void> retire() {
     _accepting = false;
+    _ephemeralStates.clear();
     final existing = _terminal;
     if (existing != null) return existing;
     final cutoff = _controller.captureTerminalCutoff(_nowUtc());
@@ -497,6 +545,12 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   Listenable? _focusFeatureChanges;
   UnifiedLessonController? _focusGateController;
   bool _focusGateEnabled = false;
+  final LessonEphemeralStateRegistry _standaloneEphemeralStates =
+      LessonEphemeralStateRegistry();
+
+  LessonEphemeralStateRegistry get _ephemeralStates =>
+      widget.routeLifecycle?._ephemeralStateRegistry ??
+      _standaloneEphemeralStates;
 
   @override
   void initState() {
@@ -525,6 +579,12 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   @override
   void didUpdateWidget(UnifiedLessonShell oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.controller, widget.controller) ||
+        !identical(oldWidget.routeLifecycle, widget.routeLifecycle)) {
+      (oldWidget.routeLifecycle?._ephemeralStateRegistry ??
+              _standaloneEphemeralStates)
+          .clear();
+    }
     if (!identical(oldWidget.controller, widget.controller)) {
       oldWidget.controller?.removeListener(_onControllerChanged);
       widget.controller?.addListener(_onControllerChanged);
@@ -546,6 +606,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
       case AppLifecycleState.detached:
       case AppLifecycleState.inactive:
         _lifecycleWantsActive = false;
+        _ephemeralStates.clear();
         unawaited(_reconcileLifecycle());
       case AppLifecycleState.resumed:
         _lifecycleWantsActive = true;
@@ -678,6 +739,11 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
 
   void _onControllerChanged() {
     if (!mounted) return;
+    final status = widget.controller?.state.status;
+    if (status == LessonSessionStatus.completed ||
+        status == LessonSessionStatus.abandoned) {
+      _ephemeralStates.clear();
+    }
     setState(() {});
     scheduleMicrotask(() {
       if (mounted && _lifecycleFailure == null) {
@@ -742,16 +808,23 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   @override
   Widget build(BuildContext context) {
     final controller = widget.controller;
-    if (controller == null) return widget.builder(context);
+    if (controller == null) {
+      return UnifiedLessonSessionLifecycleScope(
+        ephemeralStates: _ephemeralStates,
+        child: widget.builder(context),
+      );
+    }
     final hintState = controller.hintState;
     final dependencies = AppDependenciesScope.maybeOf(context);
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
     return UnifiedLessonSessionLifecycleScope(
+      ephemeralStates: _ephemeralStates,
       lifecycle: UnifiedLessonSessionLifecycle._(
         controller,
         _now,
         widget.routeLifecycle,
+        _ephemeralStates,
       ),
       child: Semantics(
         container: true,
@@ -805,6 +878,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
 
   @override
   void dispose() {
+    _ephemeralStates.clear();
     _focusFeatureChanges?.removeListener(_onFocusFeatureChanged);
     widget.controller?.removeListener(_onControllerChanged);
     WidgetsBinding.instance.removeObserver(this);

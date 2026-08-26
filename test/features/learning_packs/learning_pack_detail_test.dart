@@ -204,7 +204,7 @@ void main() {
     },
   );
 
-  test('implemented-off matching is omitted from pack detail', () async {
+  test('implemented-off modes are omitted from pack detail', () async {
     await _insertVerifiedPack(
       database,
       packId: 'pack:travel',
@@ -226,6 +226,12 @@ void main() {
 
     expect(
       view.activities.where((activity) => activity.mode == LessonMode.matching),
+      isEmpty,
+    );
+    expect(
+      view.activities.where(
+        (activity) => activity.mode == LessonMode.handwritingScratchpad,
+      ),
       isEmpty,
     );
   });

@@ -9,6 +9,20 @@ enum LessonMode {
   cloze,
   matching,
   flashcard,
+  handwritingScratchpad,
+}
+
+/// Canonical behavior when a partially composed registry has no registration
+/// for a mode. New implemented-off modes remain invisible; established modes
+/// stay visible as unavailable so pack readiness can explain the gap.
+enum LessonModeDefaultDelivery { enabled, implementedOff }
+
+extension LessonModeDeliveryPolicy on LessonMode {
+  LessonModeDefaultDelivery get defaultDelivery => switch (this) {
+    LessonMode.handwritingScratchpad =>
+      LessonModeDefaultDelivery.implementedOff,
+    _ => LessonModeDefaultDelivery.enabled,
+  };
 }
 
 extension LessonModeIdentity on LessonMode {
@@ -20,6 +34,7 @@ extension LessonModeIdentity on LessonMode {
     LessonMode.cloze => 'cloze',
     LessonMode.matching => 'matching',
     LessonMode.flashcard => 'flashcard',
+    LessonMode.handwritingScratchpad => 'handwriting-scratchpad',
   };
 }
 

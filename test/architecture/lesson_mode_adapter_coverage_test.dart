@@ -1,5 +1,8 @@
+import 'dart:io';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/handwriting_self_check_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
@@ -18,6 +21,25 @@ const _typedChecksum =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
+  test(
+    'handwriting implementation cannot import capture or transport clients',
+    () {
+      final source = File(
+        'lib/features/learning/presentation/handwriting_scratchpad.dart',
+      ).readAsStringSync();
+
+      expect(
+        RegExp(
+          r"^import .*?(?:camera|ocr|image|file|cache|database|outbox|analytics|network)",
+          multiLine: true,
+          caseSensitive: false,
+        ).hasMatch(source),
+        isFalse,
+      );
+      expect(source, isNot(contains('toJson(')));
+    },
+  );
+
   test('canonical mode registry is an exact typed delivery and route join', () {
     final registrations = buildLessonModeRegistry().registrations.toList(
       growable: false,
@@ -58,6 +80,11 @@ void main() {
             feature: Feature.srs,
             entryId: 'home/learn/srs',
             routeName: 'learning/srs',
+          ),
+          LessonMode.handwritingScratchpad: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'learning/handwriting-scratchpad',
           ),
         };
 
@@ -138,6 +165,14 @@ void main() {
     );
     expect(
       registrations
+          .singleWhere(
+            (entry) => entry.mode == LessonMode.handwritingScratchpad,
+          )
+          .adapter,
+      isA<HandwritingSelfCheckAdapter>(),
+    );
+    expect(
+      registrations
           .singleWhere((entry) => entry.mode == LessonMode.associativeReading)
           .adapter,
       isNot(isA<TypedRecallModeAdapter>()),
@@ -154,6 +189,14 @@ void main() {
     expect(
       registrations
           .singleWhere((entry) => entry.mode == LessonMode.matching)
+          .deliveryState,
+      LessonModeDeliveryState.implementedOff,
+    );
+    expect(
+      registrations
+          .singleWhere(
+            (entry) => entry.mode == LessonMode.handwritingScratchpad,
+          )
           .deliveryState,
       LessonModeDeliveryState.implementedOff,
     );
@@ -619,7 +662,8 @@ void main() {
             registration.mode == LessonMode.flashcard ||
             registration.mode == LessonMode.definitionQuiz ||
             registration.mode == LessonMode.cloze ||
-            registration.mode == LessonMode.matching) {
+            registration.mode == LessonMode.matching ||
+            registration.mode == LessonMode.handwritingScratchpad) {
           continue;
         }
         expect(

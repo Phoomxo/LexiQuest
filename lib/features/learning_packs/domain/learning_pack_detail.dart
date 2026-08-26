@@ -44,5 +44,6 @@ final class LearningPackActivity {
     LessonMode.cloze => 'Cloze test',
     LessonMode.matching => 'Matching',
     LessonMode.flashcard => 'Flashcards',
+    LessonMode.handwritingScratchpad => 'Handwriting scratchpad',
   };
 }

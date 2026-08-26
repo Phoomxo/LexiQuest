@@ -55,7 +55,10 @@ final class LearningPackDetailUseCases {
     for (final mode in LessonMode.values) {
       final registration = lessonModes?.find(mode);
       if (registration?.deliveryState ==
-          LessonModeDeliveryState.implementedOff) {
+              LessonModeDeliveryState.implementedOff ||
+          (registration == null &&
+              mode.defaultDelivery ==
+                  LessonModeDefaultDelivery.implementedOff)) {
         continue;
       }
       final availability = await _isAvailable(registration, detail)

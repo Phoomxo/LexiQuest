@@ -9,6 +9,7 @@ import 'flashcard_mode_adapter.dart';
 import 'meaning_quiz_mode_adapter.dart';
 import 'matching_mode_adapter.dart';
 import 'typed_recall_mode_adapter.dart';
+import 'handwriting_self_check_adapter.dart';
 
 enum LessonModeDeliveryState { implementedOff, enabled }
 
@@ -146,6 +147,8 @@ final class LessonModeRegistry {
 LessonModeRegistry buildLessonModeRegistry({
   LessonModeDeliveryState matchingDeliveryState =
       LessonModeDeliveryState.implementedOff,
+  LessonModeDeliveryState handwritingDeliveryState =
+      LessonModeDeliveryState.implementedOff,
 }) {
   LessonModeRegistration registration({
     required LessonModeAdapter adapter,
@@ -192,6 +195,12 @@ LessonModeRegistry buildLessonModeRegistry({
         adapter: const FlashcardModeAdapter(),
         feature: Feature.srs,
         routeName: 'learning/srs',
+      ),
+      registration(
+        adapter: const HandwritingSelfCheckAdapter(),
+        feature: Feature.quiz,
+        routeName: 'learning/handwriting-scratchpad',
+        deliveryState: handwritingDeliveryState,
       ),
     ],
     typedRecall: TypedRecallCapabilityRegistration(

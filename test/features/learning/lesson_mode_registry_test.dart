@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/handwriting_self_check_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
@@ -26,8 +27,9 @@ void main() {
         LessonMode.cloze,
         LessonMode.matching,
         LessonMode.flashcard,
+        LessonMode.handwritingScratchpad,
       });
-      expect(registrations, hasLength(7));
+      expect(registrations, hasLength(8));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -40,6 +42,7 @@ void main() {
           LessonMode.cloze: Feature.quiz,
           LessonMode.matching: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
+          LessonMode.handwritingScratchpad: Feature.quiz,
         },
       );
       expect(
@@ -60,6 +63,10 @@ void main() {
         isA<MatchingModeAdapter>(),
       );
       expect(
+        registry.find(LessonMode.handwritingScratchpad)!.adapter,
+        isA<HandwritingSelfCheckAdapter>(),
+      );
+      expect(
         registry.find(LessonMode.associativeReading)!.adapter,
         isNot(isA<TypedRecallModeAdapter>()),
       );
@@ -75,6 +82,11 @@ void main() {
         LessonModeDeliveryState.implementedOff,
       );
       expect(registry.resolve(LessonMode.matching), isNull);
+      expect(
+        registry.find(LessonMode.handwritingScratchpad)!.deliveryState,
+        LessonModeDeliveryState.implementedOff,
+      );
+      expect(registry.resolve(LessonMode.handwritingScratchpad), isNull);
       for (final entry in registrations) {
         expect(
           entry.productionEntryId,
@@ -94,6 +106,7 @@ void main() {
           LessonMode.cloze: 'learning/cloze',
           LessonMode.matching: 'learning/matching',
           LessonMode.flashcard: 'learning/srs',
+          LessonMode.handwritingScratchpad: 'learning/handwriting-scratchpad',
         },
       );
     },
@@ -108,6 +121,26 @@ void main() {
     expect(
       registry.resolve(LessonMode.matching)!.deliveryState,
       LessonModeDeliveryState.enabled,
+    );
+  });
+
+  test('handwriting delivery requires an explicit typed enable', () {
+    final registry = buildLessonModeRegistry(
+      handwritingDeliveryState: LessonModeDeliveryState.enabled,
+    );
+
+    expect(registry.resolve(LessonMode.handwritingScratchpad), isNotNull);
+    expect(
+      registry.resolve(LessonMode.handwritingScratchpad)!.deliveryState,
+      LessonModeDeliveryState.enabled,
+    );
+    expect(
+      LessonMode.handwritingScratchpad.defaultDelivery,
+      LessonModeDefaultDelivery.implementedOff,
+    );
+    expect(
+      LessonMode.matching.defaultDelivery,
+      LessonModeDefaultDelivery.enabled,
     );
   });
 

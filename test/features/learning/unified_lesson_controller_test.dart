@@ -7,8 +7,10 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -20,6 +22,7 @@ import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
+import 'package:vocab_learning_app/features/learning/presentation/handwriting_scratchpad.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/review/application/content_report_use_cases.dart';
@@ -1508,6 +1511,174 @@ void main() {
     },
   );
 
+  testWidgets(
+    'shell controller replacement clears registered ephemeral state',
+    (tester) async {
+      final first = await _fixture();
+      final replacement = await _fixture();
+      final scratchpad = HandwritingScratchpadController()
+        ..beginStroke(const Offset(1, 1))
+        ..endStroke();
+      UnifiedLessonShell shell(UnifiedLessonController controller) =>
+          UnifiedLessonShell(
+            controller: controller,
+            builder: (_) =>
+                Material(child: HandwritingScratchpad(controller: scratchpad)),
+          );
+
+      await tester.pumpWidget(MaterialApp(home: shell(first.controller)));
+      await tester.pumpWidget(MaterialApp(home: shell(replacement.controller)));
+      await tester.pump();
+
+      expect(scratchpad.strokeCount, 0);
+    },
+  );
+
+  testWidgets(
+    'controllerless-to-controlled shell transition clears scratchpad state',
+    (tester) async {
+      final fixture = await _fixture();
+      final scratchpad = HandwritingScratchpadController()
+        ..beginStroke(const Offset(1, 1))
+        ..endStroke();
+      UnifiedLessonShell shell(UnifiedLessonController? controller) =>
+          UnifiedLessonShell(
+            controller: controller,
+            builder: (_) =>
+                Material(child: HandwritingScratchpad(controller: scratchpad)),
+          );
+
+      await tester.pumpWidget(MaterialApp(home: shell(null)));
+      await tester.enterText(find.byType(TextField), 'station');
+      await tester.pumpWidget(MaterialApp(home: shell(fixture.controller)));
+      await tester.pump();
+
+      expect(scratchpad.strokeCount, 0);
+      expect(find.text('station'), findsNothing);
+      expect(find.byType(HandwritingScratchpad), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'controlled-to-controllerless shell transition clears scratchpad state',
+    (tester) async {
+      final fixture = await _fixture();
+      final scratchpad = HandwritingScratchpadController()
+        ..beginStroke(const Offset(1, 1))
+        ..endStroke();
+      UnifiedLessonShell shell(UnifiedLessonController? controller) =>
+          UnifiedLessonShell(
+            controller: controller,
+            builder: (_) =>
+                Material(child: HandwritingScratchpad(controller: scratchpad)),
+          );
+
+      await tester.pumpWidget(MaterialApp(home: shell(fixture.controller)));
+      await tester.enterText(find.byType(TextField), 'station');
+      await tester.pumpWidget(MaterialApp(home: shell(null)));
+      await tester.pump();
+
+      expect(scratchpad.strokeCount, 0);
+      expect(find.text('station'), findsNothing);
+      expect(find.byType(HandwritingScratchpad), findsOneWidget);
+    },
+  );
+
+  testWidgets('terminal lesson state clears registered ephemeral state', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    await fixture.controller.start(fixture.startCommand);
+    final scratchpad = HandwritingScratchpadController()
+      ..beginStroke(const Offset(1, 1))
+      ..endStroke();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          builder: (_) =>
+              Material(child: HandwritingScratchpad(controller: scratchpad)),
+        ),
+      ),
+    );
+    await fixture.controller.abandon(
+      fixture.now.add(const Duration(seconds: 1)),
+    );
+    await tester.pump();
+
+    expect(scratchpad.strokeCount, 0);
+  });
+
+  testWidgets('route retirement clears registered ephemeral state', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    final route = UnifiedLessonRouteLifecycle(
+      fixture.controller,
+      fixture.learning,
+      () => fixture.now,
+    );
+    final scratchpad = HandwritingScratchpadController()
+      ..beginStroke(const Offset(1, 1))
+      ..endStroke();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          routeLifecycle: route,
+          builder: (_) =>
+              Material(child: HandwritingScratchpad(controller: scratchpad)),
+        ),
+      ),
+    );
+    await route.retire();
+    await tester.pump();
+
+    expect(scratchpad.strokeCount, 0);
+  });
+
+  testWidgets('emergency-off clears registered ephemeral state', (
+    tester,
+  ) async {
+    final fixture = await _fixture();
+    final features = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    final scratchpad = HandwritingScratchpadController()
+      ..beginStroke(const Offset(1, 1))
+      ..endStroke();
+
+    await tester.pumpWidget(
+      AppDependenciesScope(
+        dependencies: _bookmarkDependencies(
+          fixture.database,
+          features: features,
+          learning: fixture.learning,
+        ),
+        child: MaterialApp(
+          home: UnifiedLessonModeHost(
+            adapter: fixture.adapter,
+            createController: (_) => fixture.controller,
+            feature: Feature.quiz,
+            featureRegistry: features,
+            learning: fixture.learning,
+            nowUtc: () => fixture.now,
+            builder: (_) =>
+                Material(child: HandwritingScratchpad(controller: scratchpad)),
+          ),
+        ),
+      ),
+    );
+    expect(find.byType(HandwritingScratchpad), findsOneWidget);
+    features.emergencyOff(Feature.quiz);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(HandwritingScratchpad), findsNothing);
+    expect(scratchpad.strokeCount, 0);
+  });
+
   testWidgets('shell presents one panel for one committed answer result', (
     tester,
   ) async {
@@ -1999,7 +2170,8 @@ void main() {
           in buildLegacyLessonModeRegistry().registrations) {
         final fixture = await _fixture(adapter: registration.adapter);
         await fixture.controller.start(fixture.startCommand);
-        final submission = fixture.submission(
+        final submission = fixture.submissionForAdapter(
+          registration.adapter,
           sourceEvidenceId: 'adapter-${registration.mode.id}',
         );
 
@@ -2032,7 +2204,8 @@ void main() {
           failAfterFirstRecord: true,
         );
         await fixture.controller.start(fixture.startCommand);
-        final submission = fixture.submission(
+        final submission = fixture.submissionForAdapter(
+          registration.adapter,
           sourceEvidenceId: 'adapter-lost-ack-${registration.mode.id}',
         );
 
@@ -2063,6 +2236,7 @@ void main() {
 AppDependencies _bookmarkDependencies(
   AppDatabase database, {
   FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
+  LearningUseCases? learning,
   LearnerIntentRepository? learnerIntents,
   BookmarkLearningItemAction? bookmarkLearningItem,
   ContentQualityReportRepository? contentQualityReports,
@@ -2080,6 +2254,10 @@ AppDependencies _bookmarkDependencies(
     config: null,
     guestSessionService: _GuestSession(),
     features: features,
+    learning: learning,
+    currentActivityEvidence: learning == null
+        ? null
+        : CurrentActivityEvidenceAdapter(learning: learning),
     quest: testQuestUseCases(),
     experiments: research.experiments,
     consents: research.consents,
@@ -2130,13 +2308,17 @@ final class _Fixture {
     ContentIdentity? bookmarkIdentity,
     EvidenceClass evidenceClass = EvidenceClass.recognition,
     int declaredHintLevel = 0,
+    String promptMode = 'meaningChoice',
+    String? providerProvenance,
+    String skillId = 'legacy-meaning-quiz',
+    String contentRevision = 'legacy-unknown',
   }) => LessonSubmission(
     response: LessonResponse(
       sourceEvidenceId: sourceEvidenceId,
       occurredAtUtc: now.add(const Duration(milliseconds: 400)),
       sessionId: startCommand.sessionId,
       wordId: wordId,
-      promptMode: 'meaningChoice',
+      promptMode: promptMode,
       isCorrect: isCorrect,
       responseTimeMs: 400,
       attemptNumber: 1,
@@ -2144,17 +2326,38 @@ final class _Fixture {
         canonicalCorrectAnswer: canonicalCorrectAnswer,
         bookmarkIdentity: bookmarkIdentity,
       ),
+      providerProvenance: providerProvenance,
     ),
     support: LessonSupport(
       evidenceContext: EvidenceContext.legacyCompatibility(
         evidenceClass: evidenceClass,
-        skillId: 'legacy-meaning-quiz',
+        skillId: skillId,
         hintLevel: declaredHintLevel,
-        contentRevision: 'legacy-unknown',
+        contentRevision: contentRevision,
         engagementAllowed: true,
       ),
     ),
   );
+
+  LessonSubmission submissionForAdapter(
+    LessonModeAdapter adapter, {
+    required String sourceEvidenceId,
+  }) {
+    if (adapter is! TypedRecallModeAdapter) {
+      return submission(sourceEvidenceId: sourceEvidenceId);
+    }
+    return submission(
+      sourceEvidenceId: sourceEvidenceId,
+      promptMode: 'typedRecall',
+      providerProvenance:
+          'typed-recall:$typedRecallNormalizationRevisionV1:meaning:exact',
+      skillId: 'typed-recall',
+      contentRevision:
+          'lexical-typed-recall:$wordId@1:'
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      evidenceClass: EvidenceClass.independentRecall,
+    );
+  }
 }
 
 Future<_Fixture> _fixture({
