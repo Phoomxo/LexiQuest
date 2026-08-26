@@ -4,6 +4,8 @@ import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../recommendation/domain/recommendation_models.dart';
+import '../../recommendation/domain/recommendation_policy.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -18,14 +20,7 @@ final class DriftProgressQueries {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
-    final storedAttempts =
-        await (database.select(database.answerAttempts)
-              ..where((row) => row.ownerId.equals(ownerId))
-              ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]))
-            .get();
-    final attempts = storedAttempts
-        .where(_isPracticeAttempt)
-        .toList(growable: false);
+    final attempts = await _loadValidatedPracticeAttempts(ownerId);
     final correctCount = attempts.where((row) => row.isCorrect).length;
     final wrongCount = attempts.length - correctCount;
     final responseTimes = attempts
@@ -150,7 +145,165 @@ final class DriftProgressQueries {
     );
   }
 
-  Future<List<WeaknessEvidence>> _loadWeaknesses(String ownerId) async {
+  /// Returns f14's typed advisory decisions without changing the legacy
+  /// [ProgressSnapshot] contract or persisting a recommendation record.
+  Future<List<RecommendationDecision>> loadFlashcardFirstDecisions({
+    required String ownerId,
+    required DateTime nowUtc,
+  }) async {
+    if (!nowUtc.isUtc) {
+      throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
+    }
+    final candidates = await _loadFlashcardRecommendationCandidates(ownerId);
+    final srsByWordId = await _loadSrsForWords(
+      ownerId: ownerId,
+      wordIds: candidates.map((candidate) => candidate.wordId).toSet(),
+    );
+    const policy = FlashcardFirstRecommendationPolicy();
+    return candidates
+        .map(
+          (candidate) => policy.recommend(
+            _recommendationEvidenceForCandidate(
+              ownerId: ownerId,
+              candidate: candidate,
+              srs: srsByWordId[candidate.wordId],
+              nowUtc: nowUtc,
+            ),
+          ),
+        )
+        .toList(growable: false);
+  }
+
+  RecommendationEvidence _recommendationEvidenceForCandidate({
+    required String ownerId,
+    required _FlashcardRecommendationCandidate candidate,
+    required SrsState? srs,
+    required DateTime nowUtc,
+  }) {
+    final references = <RecommendationEvidenceReference>[
+      RecommendationEvidenceReference(
+        source: RecommendationEvidenceSource.progressReadModel,
+        ownerId: ownerId,
+        contentId: candidate.wordId,
+        referenceId: 'progress:${candidate.wordId}',
+        version: 'progress-v1',
+        capturedAtUtc: candidate.latestAttemptAtUtc,
+      ),
+    ];
+    final lastReviewAtUtcMs = srs?.lastReviewAtUtcMs;
+    if (srs != null && lastReviewAtUtcMs != null) {
+      references.add(
+        RecommendationEvidenceReference(
+          source: RecommendationEvidenceSource.srsReadModel,
+          ownerId: srs.ownerId,
+          contentId: srs.wordId,
+          referenceId: 'srs:${srs.id}',
+          version: 'srs-v${srs.algorithmVersion}',
+          capturedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            lastReviewAtUtcMs,
+            isUtc: true,
+          ),
+        ),
+      );
+    }
+    return RecommendationEvidence(
+      policyVersion: FlashcardFirstRecommendationPolicy.policyVersion,
+      ownerId: ownerId,
+      contentOwnerId: ownerId,
+      contentId: candidate.wordId,
+      confidence: candidate.confidence,
+      isUnseen: false,
+      isMastered: srs != null && srs.repetitions >= 4 && srs.intervalDays >= 14,
+      observedAtUtc: candidate.latestAttemptAtUtc,
+      evaluatedAtUtc: nowUtc,
+      evidenceReferences: references,
+    );
+  }
+
+  Future<List<_FlashcardRecommendationCandidate>>
+  _loadFlashcardRecommendationCandidates(String ownerId) async {
+    final weaknesses = await _loadWeaknesses(ownerId, limit: 5);
+    final weaknessByWordId = {
+      for (final weakness in weaknesses) weakness.wordId: weakness,
+    };
+    final attempts = await _loadValidatedPracticeAttempts(
+      ownerId,
+      wordIds: weaknessByWordId.keys.toSet(),
+    );
+    final attemptsByWordId = <String, List<AnswerAttempt>>{};
+    for (final attempt in attempts) {
+      (attemptsByWordId[attempt.wordId] ??= <AnswerAttempt>[]).add(attempt);
+    }
+    final candidates = <_FlashcardRecommendationCandidate>[];
+    for (final entry in attemptsByWordId.entries) {
+      final wordAttempts = entry.value;
+      final incorrectCount = wordAttempts
+          .where((attempt) => !attempt.isCorrect)
+          .length;
+      if (incorrectCount == 0) continue;
+      candidates.add(
+        _FlashcardRecommendationCandidate(
+          wordId: entry.key,
+          spelling: weaknessByWordId[entry.key]!.spelling,
+          confidence: 1 - (incorrectCount / wordAttempts.length),
+          incorrectCount: incorrectCount,
+          latestAttemptAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            wordAttempts.last.occurredAtUtcMs,
+            isUtc: true,
+          ),
+        ),
+      );
+    }
+    candidates.sort((left, right) {
+      final errorRate = (1 - right.confidence).compareTo(1 - left.confidence);
+      if (errorRate != 0) return errorRate;
+      final incorrectCount = right.incorrectCount.compareTo(
+        left.incorrectCount,
+      );
+      if (incorrectCount != 0) return incorrectCount;
+      return left.spelling.compareTo(right.spelling);
+    });
+    return candidates;
+  }
+
+  Future<List<AnswerAttempt>> _loadValidatedPracticeAttempts(
+    String ownerId, {
+    Set<String>? wordIds,
+  }) async {
+    if (wordIds != null && wordIds.isEmpty) return const <AnswerAttempt>[];
+    final query = database.select(database.answerAttempts)
+      ..where((row) => row.ownerId.equals(ownerId))
+      ..orderBy([(row) => OrderingTerm.asc(row.occurredAtUtcMs)]);
+    if (wordIds != null) {
+      query.where((row) => row.wordId.isIn(wordIds.toList()));
+    }
+    final storedAttempts = await query.get();
+    return storedAttempts.where(_isPracticeAttempt).toList(growable: false);
+  }
+
+  Future<Map<String, SrsState>> _loadSrsForWords({
+    required String ownerId,
+    required Set<String> wordIds,
+  }) async {
+    if (wordIds.isEmpty) return const <String, SrsState>{};
+    final rows =
+        await (database.select(database.srsStates)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.wordId.isIn(wordIds.toList()),
+            ))
+            .get();
+    return Map<String, SrsState>.unmodifiable({
+      for (final row in rows) row.wordId: row,
+    });
+  }
+
+  Future<List<WeaknessEvidence>> _loadWeaknesses(
+    String ownerId, {
+    int? limit,
+  }) async {
+    if (limit != null && limit <= 0) return const <WeaknessEvidence>[];
+    final limitSql = limit == null ? '' : 'LIMIT ?';
     final rows = await database
         .customSelect(
           '''
@@ -176,8 +329,12 @@ final class DriftProgressQueries {
         (1.0 * SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) / COUNT(*)) DESC,
         incorrect_count DESC,
         w.spelling ASC
+      $limitSql
       ''',
-          variables: [Variable<String>(ownerId)],
+          variables: [
+            Variable<String>(ownerId),
+            if (limit != null) Variable<int>(limit),
+          ],
           readsFrom: {
             database.answerAttempts,
             database.vocabularyWords,
@@ -245,4 +402,20 @@ final class DriftProgressQueries {
     return context.evidenceClass != EvidenceClass.assessment &&
         context.evidenceClass != EvidenceClass.recreational;
   }
+}
+
+final class _FlashcardRecommendationCandidate {
+  const _FlashcardRecommendationCandidate({
+    required this.wordId,
+    required this.spelling,
+    required this.confidence,
+    required this.incorrectCount,
+    required this.latestAttemptAtUtc,
+  });
+
+  final String wordId;
+  final String spelling;
+  final double confidence;
+  final int incorrectCount;
+  final DateTime latestAttemptAtUtc;
 }
