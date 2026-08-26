@@ -14,6 +14,9 @@ final class QuizWord {
     this.normalizedMeaning,
     this.contentRevision,
     this.contentChecksumSha256,
+    this.acceptedSpellingVariants = const <String>[],
+    this.acceptedSpellingVariantsRevision,
+    this.acceptedSpellingVariantsChecksumSha256,
   });
 
   final String id;
@@ -25,6 +28,9 @@ final class QuizWord {
   final String? normalizedMeaning;
   final int? contentRevision;
   final String? contentChecksumSha256;
+  final List<String> acceptedSpellingVariants;
+  final int? acceptedSpellingVariantsRevision;
+  final String? acceptedSpellingVariantsChecksumSha256;
 }
 
 final class QuizQuestion {

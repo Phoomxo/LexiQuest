@@ -6,6 +6,9 @@ import 'package:flutter/services.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
+import '../features/learning/application/typed_recall_mode_adapter.dart';
+import '../features/learning/domain/answer_feedback.dart';
+import '../features/learning/domain/hint_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
@@ -21,12 +24,25 @@ class QuizScreen extends StatefulWidget {
     this.learning,
     this.evidenceAdapter,
     this.modeAdapter,
-  });
+  }) : typedRecallModeAdapter = null,
+       typedRecall = false;
+
+  const QuizScreen.typedRecall({
+    super.key,
+    this.categoryId,
+    this.learning,
+    this.evidenceAdapter,
+    TypedRecallModeAdapter? modeAdapter,
+  }) : modeAdapter = null,
+       typedRecallModeAdapter = modeAdapter,
+       typedRecall = true;
 
   final String? categoryId;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final MeaningQuizModeAdapter? modeAdapter;
+  final TypedRecallModeAdapter? typedRecallModeAdapter;
+  final bool typedRecall;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -34,23 +50,30 @@ class QuizScreen extends StatefulWidget {
 
 class _QuizScreenState extends State<QuizScreen> {
   final Stopwatch _responseStopwatch = Stopwatch();
+  final TextEditingController _typedResponseController =
+      TextEditingController();
   LearningUseCases? _learning;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   MeaningQuizModeAdapter? _modeAdapter;
+  TypedRecallModeAdapter? _typedRecallAdapter;
   UnifiedLessonSessionLifecycle? _lessonLifecycle;
   Future<QuizSession>? _load;
   QuizSession? _session;
-  MeaningQuizReviewController? _review;
+  MeaningQuizReviewController? _meaningReview;
+  TypedRecallQuizReviewController? _typedReview;
   bool _completionCommitted = false;
   bool _loadSettled = false;
   bool _abandoning = false;
 
   bool get _persistenceLocked =>
-      _abandoning || (_review?.persistenceLocked ?? false);
+      _abandoning ||
+      (_typedReview?.persistenceLocked ??
+          _meaningReview?.persistenceLocked ??
+          false);
   bool get _actionLocked =>
       _abandoning ||
       _lessonLifecycle?.acceptsOperations == false ||
-      (_review?.actionLocked ?? true) ||
+      (_typedReview?.actionLocked ?? _meaningReview?.actionLocked ?? true) ||
       _completionCommitted;
 
   @override
@@ -65,16 +88,28 @@ class _QuizScreenState extends State<QuizScreen> {
       _evidenceAdapter =
           widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     }
-    final registeredAdapter = dependencies?.lessonModes
-        ?.find(LessonMode.meaningQuiz)
-        ?.adapter;
-    _modeAdapter =
-        widget.modeAdapter ??
-        (registeredAdapter is MeaningQuizModeAdapter
-            ? registeredAdapter
-            : dependencies == null
-            ? const MeaningQuizModeAdapter()
-            : null);
+    if (widget.typedRecall) {
+      final supplied = widget.typedRecallModeAdapter;
+      final registered = dependencies?.lessonModes
+          ?.resolveTypedRecall()
+          ?.adapter;
+      _typedRecallAdapter = supplied is TypedRecallModeAdapter
+          ? supplied
+          : registered ??
+                (dependencies == null ? const TypedRecallModeAdapter() : null);
+    } else {
+      final supplied = widget.modeAdapter;
+      final registered = dependencies?.lessonModes
+          ?.find(LessonMode.meaningQuiz)
+          ?.adapter;
+      _modeAdapter = supplied is MeaningQuizModeAdapter
+          ? supplied
+          : registered is MeaningQuizModeAdapter
+          ? registered
+          : dependencies == null
+          ? const MeaningQuizModeAdapter()
+          : null;
+    }
     final rawLoad = learning == null
         ? Future<QuizSession>.error(
             StateError('local learning dependency unavailable'),
@@ -83,9 +118,13 @@ class _QuizScreenState extends State<QuizScreen> {
         ? Future<QuizSession>.error(
             StateError('current activity evidence dependency unavailable'),
           )
-        : _modeAdapter == null
+        : !widget.typedRecall && _modeAdapter == null
         ? Future<QuizSession>.error(
             StateError('meaning quiz mode adapter dependency unavailable'),
+          )
+        : widget.typedRecall && _typedRecallAdapter == null
+        ? Future<QuizSession>.error(
+            StateError('typed recall mode adapter dependency unavailable'),
           )
         : !identical(_evidenceAdapter!.learning, learning)
         ? Future<QuizSession>.error(
@@ -104,19 +143,42 @@ class _QuizScreenState extends State<QuizScreen> {
       if (!mounted) return session;
       if (!session.isEmpty) {
         final lifecycle = _lessonLifecycle;
-        _review = _modeAdapter!.createReview(
-          session: session,
-          learning: _learning!,
-          evidence: _evidenceAdapter!,
-          completeSession: lifecycle == null
-              ? null
-              : (close) => lifecycle.complete(close),
-          recordInteraction: () => lifecycle?.recordInteraction(),
-          acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
-          runEvidenceOperation: lifecycle == null
-              ? null
-              : (operation) => lifecycle.runAcceptedOperation(operation),
-        )..addListener(_onReviewChanged);
+        if (widget.typedRecall) {
+          _typedReview = _typedRecallAdapter!.createQuizReview(
+            session: session,
+            learning: _learning!,
+            evidence: _evidenceAdapter!,
+            supportUsage: () => TypedRecallSupport(
+              hint:
+                  lifecycle?.snapshotHintUsage() ??
+                  const HintUsageSnapshot.unavailable(),
+            ),
+            resetHintsAfterCommit: () =>
+                lifecycle?.resetHintsAfterCommittedEvidence(),
+            completeSession: lifecycle == null
+                ? null
+                : (close) => lifecycle.complete(close),
+            recordInteraction: () => lifecycle?.recordInteraction(),
+            acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
+            runEvidenceOperation: lifecycle == null
+                ? null
+                : (operation) => lifecycle.runAcceptedOperation(operation),
+          )..addListener(_onReviewChanged);
+        } else {
+          _meaningReview = _modeAdapter!.createReview(
+            session: session,
+            learning: _learning!,
+            evidence: _evidenceAdapter!,
+            completeSession: lifecycle == null
+                ? null
+                : (close) => lifecycle.complete(close),
+            recordInteraction: () => lifecycle?.recordInteraction(),
+            acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
+            runEvidenceOperation: lifecycle == null
+                ? null
+                : (operation) => lifecycle.runAcceptedOperation(operation),
+          )..addListener(_onReviewChanged);
+        }
         _responseStopwatch
           ..reset()
           ..start();
@@ -131,6 +193,25 @@ class _QuizScreenState extends State<QuizScreen> {
   void _onReviewChanged() {
     if (mounted) setState(() {});
   }
+
+  MeaningQuizQuestion get _currentQuestion =>
+      _typedReview?.currentQuestion ?? _meaningReview!.currentQuestion;
+  int get _reviewIndex => _typedReview?.index ?? _meaningReview!.index;
+  int get _questionCount =>
+      _typedReview?.questions.length ?? _meaningReview!.questions.length;
+  MeaningQuizReviewPhase get _reviewPhase =>
+      _typedReview?.phase ?? _meaningReview!.phase;
+  AnswerFeedback? get _reviewFeedback =>
+      _typedReview?.feedback ?? _meaningReview?.feedback;
+  String? get _selectedOption =>
+      _typedReview?.selectedOption ?? _meaningReview?.selectedOption;
+  bool get _expectsTypedResponse => _typedReview?.expectsTypedResponse ?? false;
+  bool get _isAnswered =>
+      _typedReview?.isAnswered ?? _meaningReview?.isAnswered ?? false;
+  bool get _isSaving =>
+      _typedReview?.isSaving ?? _meaningReview?.isSaving ?? false;
+  bool get _requiresRetry =>
+      _typedReview?.requiresRetry ?? _meaningReview?.requiresRetry ?? false;
 
   @override
   Widget build(BuildContext context) {
@@ -164,19 +245,18 @@ class _QuizScreenState extends State<QuizScreen> {
                 message: 'ยังไม่มีคำศัพท์สำหรับ Quiz กรุณาเพิ่มคำศัพท์ก่อน',
               );
             }
-            final review = _review;
-            if (review == null) {
+            if (_typedReview == null && _meaningReview == null) {
               return const Center(child: CircularProgressIndicator());
             }
-            return _buildQuestion(review);
+            return _buildQuestion();
           },
         ),
       ),
     );
   }
 
-  Widget _buildQuestion(MeaningQuizReviewController review) {
-    final question = review.currentQuestion;
+  Widget _buildQuestion() {
+    final question = _currentQuestion;
     final actionLocked = _actionLocked;
     return SafeArea(
       child: SingleChildScrollView(
@@ -185,9 +265,9 @@ class _QuizScreenState extends State<QuizScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             Semantics(
-              label: 'คำถาม ${review.index + 1} จาก ${review.questions.length}',
+              label: 'คำถาม ${_reviewIndex + 1} จาก $_questionCount',
               child: LinearProgressIndicator(
-                value: (review.index + 1) / review.questions.length,
+                value: (_reviewIndex + 1) / _questionCount,
               ),
             ),
             const SizedBox(height: 24),
@@ -204,49 +284,85 @@ class _QuizScreenState extends State<QuizScreen> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
-            ...question.options.map(
-              (option) => Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: FilledButton.tonal(
-                  key: ValueKey<String>(
-                    'meaning-quiz-option-${question.word.id}-$option',
-                  ),
-                  onPressed: review.isAnswered || actionLocked
-                      ? null
-                      : () => _record(option),
-                  style: FilledButton.styleFrom(
-                    minimumSize: const Size.fromHeight(52),
-                    backgroundColor: _answerColor(review, option),
-                  ),
-                  child: Text(option),
+            if (_expectsTypedResponse) ...<Widget>[
+              TextField(
+                key: const ValueKey<String>('typed-recall-input'),
+                controller: _typedResponseController,
+                enabled: !_isAnswered && !actionLocked,
+                maxLength: TypedRecallModeAdapter.maxAnswerScalars,
+                autocorrect: false,
+                textInputAction: TextInputAction.done,
+                onChanged: (_) {
+                  _lessonLifecycle?.recordInteraction();
+                  setState(() {});
+                },
+                onSubmitted: (_) {
+                  if (_typedResponseController.text.trim().isNotEmpty &&
+                      !actionLocked) {
+                    _recordTyped();
+                  }
+                },
+                decoration: const InputDecoration(
+                  labelText: 'Type the vocabulary word',
+                  hintText: 'Enter the spelling from memory',
+                  border: OutlineInputBorder(),
                 ),
               ),
-            ),
-            if (review.isSaving) const LinearProgressIndicator(),
-            if (review.phase == MeaningQuizReviewPhase.evidenceRetryRequired)
+              const SizedBox(height: 10),
+              FilledButton(
+                key: const ValueKey<String>('typed-recall-submit'),
+                onPressed:
+                    _isAnswered ||
+                        actionLocked ||
+                        _typedResponseController.text.trim().isEmpty
+                    ? null
+                    : _recordTyped,
+                child: const Text('Check answer'),
+              ),
+            ] else
+              ...question.options.map(
+                (option) => Padding(
+                  padding: const EdgeInsets.only(bottom: 10),
+                  child: FilledButton.tonal(
+                    key: ValueKey<String>(
+                      'meaning-quiz-option-${question.word.id}-$option',
+                    ),
+                    onPressed: _isAnswered || actionLocked
+                        ? null
+                        : () => _recordChoice(option),
+                    style: FilledButton.styleFrom(
+                      minimumSize: const Size.fromHeight(52),
+                      backgroundColor: _answerColor(option),
+                    ),
+                    child: Text(option),
+                  ),
+                ),
+              ),
+            if (_isSaving) const LinearProgressIndicator(),
+            if (_reviewPhase == MeaningQuizReviewPhase.evidenceRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: review.isSaving ? null : _retryEvidence,
+                onPressed: _isSaving ? null : _retryEvidence,
                 child: const Text('Retry saved answer'),
               )
-            else if (review.phase ==
+            else if (_reviewPhase ==
                 MeaningQuizReviewPhase.completionRetryRequired)
               FilledButton(
                 key: const ValueKey<String>('current-evidence-retry'),
-                onPressed: review.isSaving ? null : _retrySessionClose,
+                onPressed: _isSaving ? null : _retrySessionClose,
                 child: const Text('Retry session completion'),
               ),
-            if (review.feedback case final feedback?) ...<Widget>[
+            if (_reviewFeedback case final feedback?) ...<Widget>[
               const SizedBox(height: 12),
               AnswerFeedbackPanel(feedback: feedback),
             ],
-            if (review.isAnswered) ...<Widget>[
+            if (_isAnswered) ...<Widget>[
               const SizedBox(height: 12),
               FilledButton(
                 key: const ValueKey<String>('meaning-quiz-next'),
                 onPressed: actionLocked ? null : _next,
                 child: Text(
-                  review.index == review.questions.length - 1
+                  _reviewIndex == _questionCount - 1
                       ? 'ดูผลการเรียน'
                       : 'คำถามถัดไป',
                 ),
@@ -258,21 +374,41 @@ class _QuizScreenState extends State<QuizScreen> {
     );
   }
 
-  Color? _answerColor(MeaningQuizReviewController review, String option) {
-    if (!review.isAnswered) return null;
-    if (option == review.currentQuestion.correctOption) {
+  Color? _answerColor(String option) {
+    if (!_isAnswered) return null;
+    if (option == _currentQuestion.correctOption) {
       return Colors.green.shade100;
     }
-    if (option == review.selectedOption) return Colors.red.shade100;
+    if (option == _selectedOption) return Colors.red.shade100;
     return null;
   }
 
-  Future<void> _record(String option) async {
-    final review = _review;
+  Future<void> _recordChoice(String option) async {
+    if ((_typedReview == null && _meaningReview == null) || _actionLocked) {
+      return;
+    }
+    try {
+      final result = _typedReview != null
+          ? await _typedReview!.answerChoice(
+              option: option,
+              responseTimeMs: _responseStopwatch.elapsedMilliseconds,
+            )
+          : await _meaningReview!.answer(
+              option: option,
+              responseTimeMs: _responseStopwatch.elapsedMilliseconds,
+            );
+      await _haptic(result);
+    } catch (_) {
+      _showSaveFailure();
+    }
+  }
+
+  Future<void> _recordTyped() async {
+    final review = _typedReview;
     if (review == null || _actionLocked) return;
     try {
-      final result = await review.answer(
-        option: option,
+      final result = await review.answerTyped(
+        response: _typedResponseController.text,
         responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
       await _haptic(result);
@@ -282,10 +418,11 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _retryEvidence() async {
-    final review = _review;
-    if (review == null || !review.requiresRetry || review.isSaving) return;
+    if (!_requiresRetry || _isSaving) return;
     try {
-      final result = await review.retryEvidence();
+      final result = _typedReview != null
+          ? await _typedReview!.retryEvidence()
+          : await _meaningReview!.retryEvidence();
       await _haptic(result);
     } catch (_) {
       _showSaveFailure();
@@ -305,14 +442,18 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _next() async {
-    final review = _review;
-    if (review == null || _actionLocked) return;
+    if ((_typedReview == null && _meaningReview == null) || _actionLocked) {
+      return;
+    }
     try {
-      final summary = await review.advance();
+      final summary = _typedReview != null
+          ? await _typedReview!.advance()
+          : await _meaningReview!.advance();
       if (summary != null) {
         await _showScore(summary);
         return;
       }
+      _typedResponseController.clear();
       _responseStopwatch
         ..reset()
         ..start();
@@ -322,10 +463,12 @@ class _QuizScreenState extends State<QuizScreen> {
   }
 
   Future<void> _retrySessionClose() async {
-    final review = _review;
-    if (review == null || review.isSaving) return;
+    if (_isSaving) return;
     try {
-      await _showScore(await review.retryCompletion());
+      final summary = _typedReview != null
+          ? await _typedReview!.retryCompletion()
+          : await _meaningReview!.retryCompletion();
+      await _showScore(summary);
     } catch (_) {
       _showSessionCloseFailure();
     }
@@ -416,8 +559,11 @@ class _QuizScreenState extends State<QuizScreen> {
   @override
   void dispose() {
     _responseStopwatch.stop();
-    _review?.removeListener(_onReviewChanged);
-    _review?.dispose();
+    _typedResponseController.dispose();
+    _typedReview?.removeListener(_onReviewChanged);
+    _typedReview?.dispose();
+    _meaningReview?.removeListener(_onReviewChanged);
+    _meaningReview?.dispose();
     super.dispose();
   }
 }

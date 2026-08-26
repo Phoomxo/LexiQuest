@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/application/flashcard_mode_
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
@@ -66,6 +67,11 @@ void main() {
       expect(
         find.byKey(const ValueKey<String>('home/learn/quiz')),
         findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+        findsNothing,
+        reason: 'typed recall stays hidden without its registry authority',
       );
       expect(
         find.byKey(const ValueKey<String>('home/learn/srs')),
@@ -230,6 +236,11 @@ void main() {
           routeName: 'learning/quiz',
         ),
         (
+          entryId: 'home/learn/quiz/typed-recall',
+          mode: LessonMode.typedRecall,
+          routeName: 'learning/typed-recall',
+        ),
+        (
           entryId: 'home/learn/quiz/definition',
           mode: LessonMode.definitionQuiz,
           routeName: 'learning/definition-quiz',
@@ -251,10 +262,17 @@ void main() {
         ),
       ];
       for (final (index, routeCase) in cases.indexed) {
-        await tester.tap(find.byKey(ValueKey<String>(routeCase.entryId)));
+        final entry = find.byKey(ValueKey<String>(routeCase.entryId));
+        await tester.ensureVisible(entry);
+        await tester.pump();
+        await tester.tap(entry);
         await tester.pumpAndSettle();
 
         if (routeCase.mode == LessonMode.associativeReading) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isNot(isA<TypedRecallModeAdapter>()),
+          );
           expect(controllerBuilds, 0);
           expect(find.byType(UnifiedLessonShell), findsNothing);
           await tester.tap(find.text('Start reading'));
@@ -295,6 +313,10 @@ void main() {
             tester.widget<QuizScreen>(find.byType(QuizScreen)).modeAdapter,
             same(modes.find(routeCase.mode)!.adapter),
           );
+          expect(
+            tester.widget<QuizScreen>(find.byType(QuizScreen)).typedRecall,
+            isFalse,
+          );
           expect(controller.state.status, LessonSessionStatus.active);
 
           tester.binding.handleAppLifecycleStateChanged(
@@ -306,6 +328,19 @@ void main() {
             AppLifecycleState.resumed,
           );
           await tester.pump();
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.typedRecall) {
+          expect(
+            modes.find(routeCase.mode)!.adapter,
+            isA<TypedRecallModeAdapter>(),
+          );
+          final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+          expect(
+            screen.typedRecallModeAdapter,
+            same(modes.resolveTypedRecall()!.adapter),
+          );
+          expect(screen.typedRecall, isTrue);
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.definitionQuiz) {
@@ -373,7 +408,10 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await tester.tap(srsTile);
       await tester.pump();
       await tester.runAsync(
         () => harness.repository.dueEntered.future.timeout(
@@ -605,8 +643,10 @@ void main() {
           .select(harness.database.learningTimeSegments)
           .get();
       expect(
-        timeSegments.where((segment) => segment.endedAtUtcMs == null),
-        isEmpty,
+        timeSegments.map(
+          (segment) => segment.endedAtUtcMs >= segment.startedAtUtcMs,
+        ),
+        everyElement(isTrue),
       );
       final checkpoints =
           await (harness.database.select(harness.database.eventsV2)..where(
@@ -637,7 +677,10 @@ void main() {
       final harness = await _SrsGateHarness.create(blockAbandon: true);
       addTearDown(harness.close);
       await harness.pump(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await tester.tap(srsTile);
       await tester.pumpAndSettle();
 
       expect(
@@ -706,7 +749,10 @@ void main() {
       final harness = await _SrsGateHarness.create(blockFinish: true);
       addTearDown(harness.close);
       await harness.pump(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/srs')));
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await tester.tap(srsTile);
       await tester.pumpAndSettle();
 
       final remembered = find.byKey(
@@ -916,6 +962,286 @@ void main() {
     expect(segments.single.activeDurationMs, 2000);
   });
 
+  testWidgets(
+    'typed route choice freezes hinted recognition until durable commit',
+    (tester) async {
+      final harness = await _SrsGateHarness.create();
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      final srsBefore = (await tester.runAsync(() async {
+        return <Map<String, dynamic>>[
+          for (final row
+              in await harness.database
+                  .select(harness.database.srsStates)
+                  .get())
+            row.toJson(),
+        ];
+      }))!;
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+      );
+      await tester.pumpAndSettle();
+      final controller = harness.controllers.single;
+      final showStrategy = find.widgetWithText(FilledButton, 'Show strategy');
+      tester.widget<FilledButton>(showStrategy).onPressed!();
+      await tester.pump();
+      expect(controller.hintState!.hintLevel, 1);
+
+      final choice = find.byKey(
+        const ValueKey<String>(
+          'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+        ),
+      );
+      final submitChoice = tester.widget<FilledButton>(choice).onPressed!;
+      harness.repository.armAnswerBlock();
+      submitChoice();
+      await tester.runAsync(
+        () => harness.repository.answerEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      final revealContext = find.widgetWithText(FilledButton, 'Reveal context');
+      tester.widget<FilledButton>(revealContext).onPressed!();
+      await tester.pump();
+      expect(controller.hintState!.hintLevel, 2);
+
+      harness.repository.answerRelease.complete();
+      final next = find.byKey(const ValueKey<String>('meaning-quiz-next'));
+      for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      final attempt = (await tester.runAsync(() async {
+        return (await harness.database
+                .select(harness.database.answerAttempts)
+                .get())
+            .singleWhere((row) => row.promptMode == 'meaningChoice');
+      }))!;
+      final context = EvidenceContext.fromJson(
+        (jsonDecode(attempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
+      final command = harness.repository.commands.single;
+      final commandEventContext = EvidenceContext.fromJson(
+        (command.event!.payload['evidenceContext'] as Map)
+            .cast<String, Object?>(),
+      );
+      expect(attempt.isCorrect, isTrue);
+      expect(
+        command.evidenceContext.evidenceClass,
+        EvidenceClass.guidedPractice,
+      );
+      expect(command.evidenceContext.hintLevel, 1);
+      expect(commandEventContext.evidenceClass, EvidenceClass.guidedPractice);
+      expect(commandEventContext.hintLevel, 1);
+      expect(context.evidenceClass, EvidenceClass.guidedPractice);
+      expect(context.hintLevel, 1);
+      final srsAfter = (await tester.runAsync(() async {
+        return <Map<String, dynamic>>[
+          for (final row
+              in await harness.database
+                  .select(harness.database.srsStates)
+                  .get())
+            row.toJson(),
+        ];
+      }))!;
+      expect(srsAfter, srsBefore);
+      expect(controller.hintState!.hintLevel, 0);
+    },
+  );
+
+  testWidgets(
+    'typed recall freezes support through pending mutation then resets it',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableTypedHintSequence: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      final srsBefore = (await tester.runAsync(() async {
+        return <Map<String, dynamic>>[
+          for (final row
+              in await harness.database
+                  .select(harness.database.srsStates)
+                  .get())
+            row.toJson(),
+        ];
+      }))!;
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(
+          const ValueKey<String>(
+            'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+          ),
+        ),
+      );
+      final next = find.byKey(const ValueKey<String>('meaning-quiz-next'));
+      for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      await tester.tap(next);
+      final input = find.byKey(const ValueKey<String>('typed-recall-input'));
+      for (var pump = 0; pump < 50 && input.evaluate().isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+
+      expect(find.text('able to recover'), findsOneWidget);
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Show strategy'),
+          )
+          .onPressed!();
+      await tester.pump();
+      expect(
+        find.text(
+          'Recall the spelling pattern before entering the whole word.',
+        ),
+        findsOneWidget,
+      );
+      final controller = harness.controllers.single;
+      expect(controller.hintState!.hintLevel, 1);
+
+      harness.repository.armAnswerBlock();
+      await tester.enterText(input, 'resilient');
+      final submit = find.byKey(const ValueKey<String>('typed-recall-submit'));
+      await tester.pump();
+      tester.widget<FilledButton>(submit).onPressed!();
+      await tester.runAsync(
+        () => harness.repository.answerEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      expect(
+        controller.hintState!.hintLevel,
+        1,
+        reason: 'per-item support must remain frozen while evidence is pending',
+      );
+      tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Reveal context'),
+          )
+          .onPressed!();
+      await tester.pump();
+      expect(controller.hintState!.hintLevel, 2);
+
+      harness.repository.answerRelease.complete();
+      for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
+        await tester.pump(const Duration(milliseconds: 1));
+      }
+      final typedAttempt = (await tester.runAsync(() async {
+        return (await harness.database
+                .select(harness.database.answerAttempts)
+                .get())
+            .singleWhere((attempt) => attempt.promptMode == 'typedRecall');
+      }))!;
+      final typedContext = EvidenceContext.fromJson(
+        (jsonDecode(typedAttempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
+      final typedCommand = harness.repository.commands.singleWhere(
+        (command) => command.promptMode == 'typedRecall',
+      );
+      final typedEventContext = EvidenceContext.fromJson(
+        (typedCommand.event!.payload['evidenceContext'] as Map)
+            .cast<String, Object?>(),
+      );
+      expect(typedAttempt.isCorrect, isTrue);
+      expect(
+        typedCommand.evidenceContext.evidenceClass,
+        EvidenceClass.guidedPractice,
+      );
+      expect(typedCommand.evidenceContext.hintLevel, 1);
+      expect(typedEventContext.evidenceClass, EvidenceClass.guidedPractice);
+      expect(typedEventContext.hintLevel, 1);
+      expect(typedContext.evidenceClass, EvidenceClass.guidedPractice);
+      expect(typedContext.hintLevel, 1);
+      final srsAfter = (await tester.runAsync(() async {
+        return <Map<String, dynamic>>[
+          for (final row
+              in await harness.database
+                  .select(harness.database.srsStates)
+                  .get())
+            row.toJson(),
+        ];
+      }))!;
+      expect(srsAfter, srsBefore);
+      expect(controller.hintState!.hintLevel, 0);
+      expect(find.text('Show strategy'), findsOneWidget);
+
+      tester.widget<FilledButton>(next).onPressed!();
+      await tester.pump();
+      expect(controller.hintState!.hintLevel, 0);
+      expect(find.text('Show strategy'), findsOneWidget);
+    },
+  );
+
+  testWidgets('Quiz off synchronously rejects a retained typed callback', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(
+      blockAbandon: true,
+      enableMatching: true,
+    );
+    addTearDown(harness.close);
+    await harness.pump(tester);
+    await tester.tap(
+      find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+    );
+    await tester.pumpAndSettle();
+
+    final choice = find.byKey(
+      const ValueKey<String>(
+        'meaning-quiz-option-word:srs-gate-vocabulary-lasting',
+      ),
+    );
+    tester.widget<FilledButton>(choice).onPressed!();
+    final next = find.byKey(const ValueKey<String>('meaning-quiz-next'));
+    for (var pump = 0; pump < 50 && next.evaluate().isEmpty; pump++) {
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+    tester.widget<FilledButton>(next).onPressed!();
+    final input = find.byKey(const ValueKey<String>('typed-recall-input'));
+    for (var pump = 0; pump < 50 && input.evaluate().isEmpty; pump++) {
+      await tester.pump(const Duration(milliseconds: 1));
+    }
+    await tester.tap(find.text('Show strategy'));
+    await tester.pump();
+    await tester.tap(find.text('Reveal context'));
+    await tester.pump();
+    expect(harness.controllers.single.hintState!.hintLevel, 2);
+    await tester.enterText(input, 'stable');
+    await tester.pump();
+    final submit = find.byKey(const ValueKey<String>('typed-recall-submit'));
+    final staleSubmit = tester.widget<FilledButton>(submit).onPressed!;
+
+    harness.features.emergencyOff(Feature.quiz);
+    staleSubmit();
+    await tester.runAsync(
+      () => harness.repository.abandonEntered.future.timeout(
+        const Duration(seconds: 1),
+      ),
+    );
+    harness.repository.abandonRelease.complete();
+    await tester.pumpAndSettle();
+
+    expect(
+      harness.repository.answerCalls,
+      1,
+      reason: 'only the accepted first recognition may reach persistence',
+    );
+    final attempts = await harness.database
+        .select(harness.database.answerAttempts)
+        .get();
+    expect(
+      attempts.where((attempt) => attempt.promptMode == 'typedRecall'),
+      isEmpty,
+    );
+  });
+
   testWidgets('Quiz off freezes time while accepted evidence settles', (
     tester,
   ) async {
@@ -1092,6 +1418,7 @@ final class _SrsGateHarness {
     bool blockAnswer = false,
     bool blockFinish = false,
     bool enableMatching = false,
+    bool enableTypedHintSequence = false,
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
     final now = DateTime.utc(2026, 8, 25, 15);
@@ -1104,9 +1431,11 @@ final class _SrsGateHarness {
     final vocabulary = VocabularyUseCases(
       owners: owners,
       vocabulary: DriftVocabularyRepository(database),
-      generateId: () => vocabularyId++ < 2
-          ? 'srs-gate-vocabulary'
-          : 'srs-gate-vocabulary-two',
+      generateId: () => switch (vocabularyId++) {
+        0 || 1 => 'srs-gate-vocabulary',
+        2 => 'srs-gate-vocabulary-two',
+        _ => 'srs-gate-vocabulary-three',
+      },
       nowUtc: () => now,
     );
     final category = await vocabulary.createCategory('SRS gate');
@@ -1150,12 +1479,22 @@ final class _SrsGateHarness {
       ),
     );
     await seedLearning.finishSession(seedSession.id);
-    if (enableMatching) {
+    if (enableMatching || enableTypedHintSequence) {
       await vocabulary.createWord(
         CreateWordCommand(
           categoryId: category.id,
           spelling: 'stable',
           meaning: 'not likely to change',
+          partOfSpeech: 'adjective',
+        ),
+      );
+    }
+    if (enableTypedHintSequence) {
+      await vocabulary.createWord(
+        CreateWordCommand(
+          categoryId: category.id,
+          spelling: 'resilient',
+          meaning: 'able to recover',
           partOfSpeech: 'adjective',
         ),
       );
@@ -1283,7 +1622,7 @@ final class _CoordinatedLearningRepository
   final bool delayDue;
   final bool delayQuiz;
   final bool blockAbandon;
-  final bool blockAnswer;
+  bool blockAnswer;
   final bool blockFinish;
   final Completer<void> dueEntered = Completer<void>();
   final Completer<void> dueRelease = Completer<void>();
@@ -1298,6 +1637,9 @@ final class _CoordinatedLearningRepository
   int abandonCalls = 0;
   int answerCalls = 0;
   int finishCalls = 0;
+  final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
+
+  void armAnswerBlock() => blockAnswer = true;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -1397,6 +1739,7 @@ final class _CoordinatedLearningRepository
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     answerCalls += 1;
+    commands.add(command);
     if (blockAnswer) {
       if (!answerEntered.isCompleted) answerEntered.complete();
       await answerRelease.future;

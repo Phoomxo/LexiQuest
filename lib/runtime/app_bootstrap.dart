@@ -697,12 +697,13 @@ final class AppBootstrap {
       database,
       loadArtifactBytes: loadContentArtifactBytes,
     );
+    final vocabularyRepository = DriftVocabularyRepository(
+      database,
+      contentManifests: contentManifests,
+    );
     final vocabulary = VocabularyUseCases(
       owners: localOwners,
-      vocabulary: DriftVocabularyRepository(
-        database,
-        contentManifests: contentManifests,
-      ),
+      vocabulary: vocabularyRepository,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
@@ -900,6 +901,7 @@ final class AppBootstrap {
         database,
         evidencePolicy: evidencePolicy,
         rolloutModeProvider: evidenceRolloutModeProvider,
+        lexicalVocabulary: vocabularyRepository,
       ),
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),

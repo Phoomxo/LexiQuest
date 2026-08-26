@@ -1,17 +1,26 @@
 import 'dart:convert';
-
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/events/application/event_v1_to_v2_adapter.dart';
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_event_store.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
   late AppDatabase database;
@@ -89,6 +98,258 @@ void main() {
     expect(words.map((word) => word.id), ['word-1', 'word-2']);
     expect(words.first.meaning, 'สถานี');
   });
+
+  test(
+    'verified lexical variants reach typed evidence and stale artifacts fail closed',
+    () async {
+      const wordId = 'word-2';
+      final coreChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: 'category-1',
+        spelling: 'ticket',
+        normalizedSpelling: 'ticket',
+        meaning: 'ตั๋ว',
+        normalizedMeaning: 'ตั๋ว',
+        partOfSpeech: 'noun',
+        cefrLevel: null,
+        source: 'pack:v1',
+        isGlobal: true,
+      );
+      await (database.update(
+        database.vocabularyWords,
+      )..where((row) => row.id.equals(wordId))).write(
+        VocabularyWordsCompanion(
+          source: const Value('pack:v1'),
+          isGlobal: const Value(true),
+          contentRevision: const Value(1),
+          contentChecksumSha256: Value(coreChecksum),
+          contentProvenance: const Value('packaged'),
+          contentReviewState: const Value('approved'),
+          contentPublicationState: const Value('published'),
+        ),
+      );
+      final artifact = Uint8List.fromList(
+        utf8.encode(
+          jsonEncode(<String, Object?>{
+            'schemaVersion': 3,
+            'wordId': wordId,
+            'contentRevision': 1,
+            'englishDefinition': 'A pass used for a journey.',
+            'ipa': null,
+            'examples': <String>[],
+            'synonyms': <String>[],
+            'antonyms': <String>[],
+            'acceptedSpellingVariants': <String>['rail ticket'],
+            'audio': null,
+          }),
+        ),
+      );
+      final artifacts = <String, Uint8List>{wordId: artifact};
+      Future<void> writeManifest({
+        required String manifestId,
+        required String contentId,
+        required Uint8List bytes,
+      }) async {
+        await database
+            .into(database.contentManifests)
+            .insert(
+              ContentManifestsCompanion.insert(
+                id: manifestId,
+                contentType: ContentType.lexicalMetadata.name,
+                contentId: contentId,
+                revision: 1,
+                checksumSha256: sha256.convert(bytes).toString(),
+                byteLength: bytes.length,
+                provenance: ContentProvenance.packaged.name,
+                sourceUri: 'asset://lexical-metadata/$contentId/r1.json',
+                reviewState: ContentReviewState.approved.name,
+                publicationState: ContentPublicationState.published.name,
+                createdAtUtcMs: 1,
+                reviewedAtUtcMs: const Value(2),
+                publishedAtUtcMs: const Value(3),
+              ),
+            );
+      }
+
+      await writeManifest(
+        manifestId: 'manifest:word-2:r1',
+        contentId: wordId,
+        bytes: artifact,
+      );
+      final vocabulary = DriftVocabularyRepository(
+        database,
+        contentManifests: DriftContentManifestRepository(
+          database,
+          loadArtifactBytes: (identity) async => artifacts[identity.id],
+        ),
+      );
+      final lexicalLearningRepository = DriftLearningRepository(
+        database,
+        lexicalVocabulary: vocabulary,
+      );
+      final words = await lexicalLearningRepository.listQuizWords(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+        limit: 10,
+      );
+      final ticket = words.singleWhere((word) => word.id == wordId);
+      final artifactChecksum = sha256.convert(artifact).toString();
+      expect(ticket.acceptedSpellingVariants, const <String>['rail ticket']);
+      expect(ticket.acceptedSpellingVariantsRevision, 1);
+      expect(ticket.acceptedSpellingVariantsChecksumSha256, artifactChecksum);
+
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'unexpected-owner',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 13),
+      );
+      var id = 0;
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: lexicalLearningRepository,
+        generateId: () => 'verified-variant-${++id}',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 13, 0, id),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'f11-real-variant',
+        ),
+      );
+      final session = await learning.startQuiz(
+        categoryId: 'category-1',
+        limit: 2,
+      );
+      final adapter = const TypedRecallModeAdapter();
+      final prompt = adapter.pinQuizPrompt(
+        session.questions
+            .singleWhere((question) => question.word.id == wordId)
+            .word,
+      );
+      final accepted = adapter.capture(
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+        sessionId: session.id,
+        prompt: prompt,
+        response: 'RAIL TICKET',
+        responseTimeMs: 240,
+        attemptNumber: 1,
+        support: const TypedRecallSupport.unassisted(),
+      );
+      expect((await accepted.pending.record()).isCorrect, isTrue);
+      expect(
+        adapter
+            .evaluate(
+              prompt: prompt,
+              response: 'unknown ticket',
+              support: const TypedRecallSupport.unassisted(),
+            )
+            .isCorrect,
+        isFalse,
+      );
+      final stored =
+          (await database.select(database.answerAttempts).get()).single;
+      final storedContext = EvidenceContext.fromJson(
+        (jsonDecode(stored.evidenceContextJson) as Map).cast<String, Object?>(),
+      );
+      expect(
+        storedContext.contentRevision,
+        'lexical-typed-recall:$wordId@1:'
+        '${typedRecallAnswerSetChecksumSha256(coreChecksumSha256: coreChecksum, acceptedVariantsRevision: 1, acceptedVariantsChecksumSha256: artifactChecksum)}',
+      );
+
+      artifacts.remove(wordId);
+      final offlineWords = await lexicalLearningRepository.listQuizWords(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+        limit: 10,
+      );
+      expect(
+        offlineWords
+            .singleWhere((word) => word.id == wordId)
+            .acceptedSpellingVariants,
+        isEmpty,
+      );
+      artifacts[wordId] = Uint8List.fromList(<int>[...artifact, 0x20]);
+      final tamperedWords = await lexicalLearningRepository.listQuizWords(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+        limit: 10,
+      );
+      expect(
+        tamperedWords
+            .singleWhere((word) => word.id == wordId)
+            .acceptedSpellingVariants,
+        isEmpty,
+      );
+      artifacts[wordId] = artifact;
+
+      const staleWordId = 'word-stale';
+      final staleCoreChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: 'category-1',
+        spelling: 'pass',
+        normalizedSpelling: 'pass',
+        meaning: 'บัตรผ่าน',
+        normalizedMeaning: 'บัตรผ่าน',
+        partOfSpeech: 'noun',
+        cefrLevel: null,
+        source: 'pack:v1',
+        isGlobal: true,
+      );
+      await database
+          .into(database.vocabularyWords)
+          .insert(
+            VocabularyWordsCompanion.insert(
+              id: staleWordId,
+              ownerId: 'owner-1',
+              categoryId: 'category-1',
+              spelling: 'pass',
+              normalizedSpelling: 'pass',
+              meaning: 'บัตรผ่าน',
+              normalizedMeaning: 'บัตรผ่าน',
+              partOfSpeech: 'noun',
+              source: const Value('pack:v1'),
+              isGlobal: const Value(true),
+              contentRevision: const Value(1),
+              contentChecksumSha256: Value(staleCoreChecksum),
+              contentProvenance: const Value('packaged'),
+              contentReviewState: const Value('approved'),
+              contentPublicationState: const Value('published'),
+              createdAtUtcMs: 1,
+              updatedAtUtcMs: 1,
+            ),
+          );
+      final staleArtifact = Uint8List.fromList(
+        utf8.encode(
+          jsonEncode(<String, Object?>{
+            'schemaVersion': 3,
+            'wordId': staleWordId,
+            'contentRevision': 2,
+            'englishDefinition': 'A pass used for a journey.',
+            'ipa': null,
+            'examples': <String>[],
+            'synonyms': <String>[],
+            'antonyms': <String>[],
+            'acceptedSpellingVariants': <String>['stale rail ticket'],
+            'audio': null,
+          }),
+        ),
+      );
+      artifacts[staleWordId] = staleArtifact;
+      await writeManifest(
+        manifestId: 'manifest:word-stale:r1',
+        contentId: staleWordId,
+        bytes: staleArtifact,
+      );
+      final staleWords = await lexicalLearningRepository.listQuizWords(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+        limit: 10,
+      );
+      expect(
+        staleWords
+            .singleWhere((word) => word.id == staleWordId)
+            .acceptedSpellingVariants,
+        isEmpty,
+      );
+    },
+  );
 
   test('answer transaction is idempotent and updates SRS and points', () async {
     const session = LearningSessionDraft(

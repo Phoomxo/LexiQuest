@@ -1,13 +1,17 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
+import '../runtime/registries/feature_registry.dart';
 
 typedef AssociativeReadingTerminalCompensationClaim =
     Future<AssociativeReadingTerminalCompensationResult> Function(
@@ -64,6 +68,9 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.sessionStartedAtUtc,
     this.sessionLifecycle,
     this.evidenceAdapter,
+    this.modeAdapter,
+    this.recallPrompts,
+    this.featureRegistry,
     this.claimTerminalCompensation,
     this.retainsLifecycleOwnership,
     this.mayPublishOwnedTerminalFailure,
@@ -94,6 +101,9 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   final DateTime? sessionStartedAtUtc;
   final UnifiedLessonSessionLifecycle? sessionLifecycle;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final TypedRecallModeAdapter? modeAdapter;
+  final List<TypedRecallPrompt>? recallPrompts;
+  final FeatureRegistry? featureRegistry;
   final AssociativeReadingTerminalCompensationClaim? claimTerminalCompensation;
   final bool Function()? retainsLifecycleOwnership;
   final bool Function()? mayPublishOwnedTerminalFailure;
@@ -107,6 +117,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
 enum AssociativeReadingUnavailableReason {
   learning,
   currentActivityEvidence,
+  typedRecallMode,
   associativeLearning,
 }
 
@@ -223,13 +234,24 @@ class _AssociativeReadingSessionScreenState
       _completionLocked ||
       _checkpointLocked ||
       _associationLocked ||
-      _completed;
+      _completed ||
+      !(_lessonLifecycle?.acceptsOperations ?? true) ||
+      (_currentStage == 3 && !_typedRecallEnabled);
+
+  bool get _typedRecallEnabled =>
+      _featureRegistry?.isEnabled(Feature.quiz) ?? true;
 
   // Stage 3 — per-word recall controllers and results.
   late List<TextEditingController> _recallControllers;
   late List<bool?> _recallResults; // null=unanswered, true=correct, false=wrong
   late List<PendingCurrentActivityEvidence?> _pendingRecallEvidence;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
+  TypedRecallModeAdapter? _modeAdapter;
+  FeatureRegistry? _featureRegistry;
+  Listenable? _featureChanges;
+  late final List<TypedRecallPrompt>? _suppliedRecallPrompts;
+  List<TypedRecallPrompt>? _frozenRecallPrompts;
+  List<String>? _frozenRecallResponses;
   bool _recallBatchFrozen = false;
   bool _recallMappingInvalid = false;
 
@@ -259,6 +281,9 @@ class _AssociativeReadingSessionScreenState
       widget.targetWords.length,
       null,
     );
+    _suppliedRecallPrompts = widget.recallPrompts == null
+        ? null
+        : List<TypedRecallPrompt>.unmodifiable(widget.recallPrompts!);
     _cueControllers = List.generate(
       widget.targetWords.length,
       (_) => TextEditingController(),
@@ -271,6 +296,13 @@ class _AssociativeReadingSessionScreenState
     if (_initialized) return;
     _initialized = true;
     final dependencies = AppDependenciesScope.maybeOf(context);
+    _featureRegistry = widget.featureRegistry ?? dependencies?.features;
+    final featureChanges = _featureRegistry;
+    if (featureChanges is Listenable) {
+      final changes = featureChanges as Listenable;
+      _featureChanges = changes;
+      changes.addListener(_onFeatureRegistryChanged);
+    }
     _lessonLifecycle =
         widget.sessionLifecycle ??
         UnifiedLessonSessionLifecycleScope.maybeOf(context);
@@ -286,6 +318,24 @@ class _AssociativeReadingSessionScreenState
     _evidenceAdapter =
         widget.evidenceAdapter ?? dependencies?.currentActivityEvidence;
     if (_evidenceAdapter == null) {
+      _unavailableReason =
+          AssociativeReadingUnavailableReason.currentActivityEvidence;
+      _loading = false;
+      return;
+    }
+    final registeredAdapter = dependencies?.lessonModes
+        ?.resolveTypedRecall()
+        ?.adapter;
+    _modeAdapter =
+        widget.modeAdapter ??
+        registeredAdapter ??
+        (dependencies == null ? const TypedRecallModeAdapter() : null);
+    if (_modeAdapter == null) {
+      _unavailableReason = AssociativeReadingUnavailableReason.typedRecallMode;
+      _loading = false;
+      return;
+    }
+    if (!identical(_evidenceAdapter!.learning, learning)) {
       _unavailableReason =
           AssociativeReadingUnavailableReason.currentActivityEvidence;
       _loading = false;
@@ -464,6 +514,7 @@ class _AssociativeReadingSessionScreenState
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _featureChanges?.removeListener(_onFeatureRegistryChanged);
     for (final c in _recallControllers) {
       c.dispose();
     }
@@ -471,6 +522,10 @@ class _AssociativeReadingSessionScreenState
       c.dispose();
     }
     super.dispose();
+  }
+
+  void _onFeatureRegistryChanged() {
+    if (mounted) setState(() {});
   }
 
   // ── Navigation ─────────────────────────────────────────────────────────────
@@ -653,6 +708,10 @@ class _AssociativeReadingSessionScreenState
     final sessionId = widget.sessionId;
     final wordIds = widget.targetWordIds;
     if (_learning == null || sessionId == null) return true;
+    if (!_typedRecallEnabled ||
+        !(_lessonLifecycle?.acceptsOperations ?? true)) {
+      return false;
+    }
 
     if (!_recallBatchFrozen) {
       final validatedWordIds = _validateRecallWordIds(wordIds);
@@ -660,53 +719,112 @@ class _AssociativeReadingSessionScreenState
         _recallMappingInvalid = true;
         return false;
       }
-      _freezeRecallBatch(sessionId: sessionId, wordIds: validatedWordIds);
-    }
-
-    var allSaved = true;
-    for (final pending in _pendingRecallEvidence) {
-      if (pending == null || pending.isCommitted) continue;
       try {
-        if (pending.requiresRetry) {
-          await pending.retry();
-        } else {
-          await pending.record();
-        }
+        _freezeRecallBatch(wordIds: validatedWordIds);
       } catch (_) {
-        allSaved = false;
+        return false;
       }
     }
-    return allSaved;
+
+    for (var index = 0; index < _pendingRecallEvidence.length; index++) {
+      if (!_typedRecallEnabled ||
+          !(_lessonLifecycle?.acceptsOperations ?? true)) {
+        return false;
+      }
+      var pending = _pendingRecallEvidence[index];
+      if (pending?.isCommitted == true) continue;
+      try {
+        if (pending == null) {
+          final lifecycle = _lessonLifecycle;
+          final hint = lifecycle?.snapshotHintUsage();
+          final captured = _modeAdapter!.capture(
+            evidence: _evidenceAdapter!,
+            sessionId: sessionId,
+            prompt: _frozenRecallPrompts![index],
+            response: _frozenRecallResponses![index],
+            responseTimeMs: null,
+            attemptNumber: index + 1,
+            support: hint == null
+                ? const TypedRecallSupport.unassisted()
+                : TypedRecallSupport(hint: hint),
+          );
+          pending = captured.pending;
+          _pendingRecallEvidence[index] = pending;
+          _recallResults[index] = captured.evaluation.isCorrect;
+        }
+        final operation = pending.requiresRetry
+            ? pending.retry
+            : pending.record;
+        final lifecycle = _lessonLifecycle;
+        if (pending.requiresRetry) {
+          await (lifecycle?.runAcceptedOperation(operation) ?? operation());
+        } else {
+          await (lifecycle?.runAcceptedOperation(operation) ?? operation());
+        }
+        lifecycle?.resetHintsAfterCommittedEvidence();
+      } catch (_) {
+        return false;
+      }
+    }
+    _frozenRecallResponses = null;
+    _frozenRecallPrompts = null;
+    return true;
   }
 
   /// Reads every controller and creates every pending command before the
   /// first provider resolution or local write begins.
-  void _freezeRecallBatch({
-    required String sessionId,
-    required List<String> wordIds,
-  }) {
-    final pending = <PendingCurrentActivityEvidence?>[];
-    final results = <bool?>[];
-    for (var i = 0; i < widget.targetWords.length; i++) {
-      final word = widget.targetWords[i];
-      final wordId = wordIds[i];
-      final typed = _recallControllers[i].text.trim().toLowerCase();
-      final isCorrect = typed == word.trim().toLowerCase();
-      results.add(isCorrect);
-      pending.add(
-        _evidenceAdapter!.capture(
-          input: CurrentActivityInput.associativeRecall,
-          sessionId: sessionId,
-          wordId: wordId,
-          isCorrect: isCorrect,
-          responseTimeMs: null,
-          attemptNumber: i + 1,
-        ),
+  void _freezeRecallBatch({required List<String> wordIds}) {
+    final prompts = _validatedRecallPrompts(wordIds);
+    if (prompts == null) {
+      _recallMappingInvalid = true;
+      throw StateError('typed recall prompts do not match target words');
+    }
+    final responses = List<String>.unmodifiable(
+      _recallControllers.map((controller) => controller.text),
+    );
+    for (var index = 0; index < prompts.length; index++) {
+      _modeAdapter!.validateSubmission(
+        prompt: prompts[index],
+        response: responses[index],
       );
     }
-    _pendingRecallEvidence = List.unmodifiable(pending);
-    _recallResults = List.unmodifiable(results);
+    _frozenRecallResponses = responses;
+    _frozenRecallPrompts = prompts;
     _recallBatchFrozen = true;
+  }
+
+  List<TypedRecallPrompt>? _validatedRecallPrompts(List<String> wordIds) {
+    final supplied = _suppliedRecallPrompts;
+    final prompts = supplied ?? _compatibilityRecallPrompts(wordIds);
+    if (prompts.length != wordIds.length) return null;
+    for (var index = 0; index < prompts.length; index++) {
+      final prompt = prompts[index];
+      if (prompt.wordId != wordIds[index] ||
+          prompt.promptKind != TypedRecallPromptKind.context) {
+        return null;
+      }
+    }
+    return prompts;
+  }
+
+  List<TypedRecallPrompt> _compatibilityRecallPrompts(List<String> wordIds) {
+    return List<TypedRecallPrompt>.unmodifiable(
+      List<TypedRecallPrompt>.generate(widget.targetWords.length, (index) {
+        final wordId = wordIds[index];
+        final answer = widget.targetWords[index];
+        final checksum = sha256
+            .convert(utf8.encode('$wordId\u0000$answer'))
+            .toString();
+        return TypedRecallPrompt(
+          wordId: wordId,
+          canonicalAnswer: answer,
+          promptKind: TypedRecallPromptKind.context,
+          normalizationRevision: typedRecallNormalizationRevisionV1,
+          contentRevision: widget.documentRevision,
+          contentChecksumSha256: checksum,
+        );
+      }),
+    );
   }
 
   List<String>? _validateRecallWordIds(Map<String, String>? wordIds) {
@@ -1008,7 +1126,12 @@ class _AssociativeReadingSessionScreenState
                             : recallRetry
                             ? const ValueKey<String>('current-evidence-retry')
                             : null,
-                        onPressed: _saving || _completed
+                        onPressed:
+                            _saving ||
+                                _completed ||
+                                !(_lessonLifecycle?.acceptsOperations ??
+                                    true) ||
+                                (_currentStage == 3 && !_typedRecallEnabled)
                             ? null
                             : closeRetry
                             ? _retrySessionClose
@@ -1108,7 +1231,12 @@ class _AssociativeReadingSessionScreenState
                 padding: const EdgeInsets.only(bottom: 12),
                 child: TextField(
                   controller: _recallControllers[i],
-                  enabled: !_saving && !_recallBatchFrozen,
+                  enabled:
+                      !_saving &&
+                      !_recallBatchFrozen &&
+                      _typedRecallEnabled &&
+                      (_lessonLifecycle?.acceptsOperations ?? true),
+                  maxLength: TypedRecallModeAdapter.maxAnswerScalars,
                   onChanged: (_) => _lessonLifecycle?.recordInteraction(),
                   decoration: InputDecoration(
                     labelText: 'Word ${i + 1}',

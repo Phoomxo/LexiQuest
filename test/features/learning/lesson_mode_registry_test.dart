@@ -6,6 +6,7 @@ import 'package:vocab_learning_app/features/learning/application/legacy_lesson_m
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
@@ -20,12 +21,13 @@ void main() {
       expect(registrations.map((entry) => entry.mode).toSet(), <LessonMode>{
         LessonMode.associativeReading,
         LessonMode.meaningQuiz,
+        LessonMode.typedRecall,
         LessonMode.definitionQuiz,
         LessonMode.cloze,
         LessonMode.matching,
         LessonMode.flashcard,
       });
-      expect(registrations, hasLength(6));
+      expect(registrations, hasLength(7));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -33,6 +35,7 @@ void main() {
         <LessonMode, Feature>{
           LessonMode.associativeReading: Feature.reading,
           LessonMode.meaningQuiz: Feature.quiz,
+          LessonMode.typedRecall: Feature.quiz,
           LessonMode.definitionQuiz: Feature.quiz,
           LessonMode.cloze: Feature.quiz,
           LessonMode.matching: Feature.quiz,
@@ -57,6 +60,17 @@ void main() {
         isA<MatchingModeAdapter>(),
       );
       expect(
+        registry.find(LessonMode.associativeReading)!.adapter,
+        isNot(isA<TypedRecallModeAdapter>()),
+      );
+      expect(registry.typedRecall, isNotNull);
+      expect(registry.typedRecall!.feature, Feature.quiz);
+      expect(registry.typedRecall!.productionEntryId, 'home/learn/quiz');
+      expect(registry.typedRecall!.routeName, 'learning/typed-recall');
+      expect(registry.typedRecall!.mode, LessonMode.typedRecall);
+      expect(registry.typedRecall!.adapter, isA<TypedRecallModeAdapter>());
+      expect(registry.resolveTypedRecall(), same(registry.typedRecall));
+      expect(
         registry.find(LessonMode.matching)!.deliveryState,
         LessonModeDeliveryState.implementedOff,
       );
@@ -75,6 +89,7 @@ void main() {
         <LessonMode, String>{
           LessonMode.associativeReading: 'learning/associative-reading',
           LessonMode.meaningQuiz: 'learning/quiz',
+          LessonMode.typedRecall: 'learning/typed-recall',
           LessonMode.definitionQuiz: 'learning/definition-quiz',
           LessonMode.cloze: 'learning/cloze',
           LessonMode.matching: 'learning/matching',

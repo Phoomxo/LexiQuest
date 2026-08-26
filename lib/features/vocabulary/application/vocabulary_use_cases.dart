@@ -95,9 +95,17 @@ final class VocabularyUseCases {
   Future<List<VocabularyWord>> getGameWords({int limit = 10}) async {
     final owner = await owners.getOrCreateActiveOwner();
     final all = await vocabulary.listAllWords(owner.id);
-    if (all.length <= limit) return all;
-    all.shuffle();
-    return all.take(limit).toList(growable: false);
+    final selected = all.length <= limit
+        ? all
+        : (all..shuffle()).take(limit).toList(growable: false);
+    if (selected.isEmpty) return selected;
+    try {
+      return await vocabulary.readPinnedByIds(selected.map((word) => word.id));
+    } on Object {
+      // Optional reviewed lexical metadata is not required for canonical game
+      // content. Offline or stale artifacts reduce to the core word set.
+      return selected;
+    }
   }
 
   Future<VocabularyCategory> createCategory(String name) async {

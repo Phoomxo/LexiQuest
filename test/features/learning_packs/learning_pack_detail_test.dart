@@ -187,6 +187,7 @@ void main() {
         LessonMode.flashcard,
         LessonMode.matching,
         LessonMode.meaningQuiz,
+        LessonMode.typedRecall,
       ]);
       expect(
         view.activities

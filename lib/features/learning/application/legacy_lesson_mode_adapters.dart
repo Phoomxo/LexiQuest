@@ -3,6 +3,7 @@ import '../../../runtime/registries/feature.dart';
 import '../domain/evidence_context.dart';
 import '../domain/lesson_mode.dart';
 import 'lesson_mode_registry.dart';
+import 'typed_recall_mode_adapter.dart';
 
 final class LegacyLessonModeAdapter
     implements FocusTimerSupportingLessonModeAdapter {
@@ -42,13 +43,22 @@ LessonModeRegistry buildLegacyLessonModeRegistry() {
     );
   }
 
-  return LessonModeRegistry(<LessonModeRegistration>[
-    registration(
-      LessonMode.associativeReading,
-      Feature.reading,
-      'learning/associative-reading',
+  return LessonModeRegistry(
+    <LessonModeRegistration>[
+      registration(
+        LessonMode.associativeReading,
+        Feature.reading,
+        'learning/associative-reading',
+      ),
+      registration(LessonMode.meaningQuiz, Feature.quiz, 'learning/quiz'),
+      registration(LessonMode.flashcard, Feature.srs, 'learning/srs'),
+    ],
+    typedRecall: TypedRecallCapabilityRegistration(
+      adapter: const TypedRecallModeAdapter(),
+      feature: Feature.quiz,
+      productionEntryId:
+          productionFeatureContract[Feature.quiz]!.productionEntryId,
+      routeName: 'learning/typed-recall',
     ),
-    registration(LessonMode.meaningQuiz, Feature.quiz, 'learning/quiz'),
-    registration(LessonMode.flashcard, Feature.srs, 'learning/srs'),
-  ]);
+  );
 }

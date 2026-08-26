@@ -5,6 +5,8 @@ import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../vocabulary/domain/vocabulary_repository.dart';
+import '../../vocabulary/domain/vocabulary_word.dart';
 import 'drift_learning_event_store.dart'
     hide
         ContextEvidencePolicyRolloutModeProvider,
@@ -37,6 +39,7 @@ final class DriftLearningRepository
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
         const FixedEvidencePolicyRolloutModeProvider.legacy(),
+    this.lexicalVocabulary,
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          srsPolicy: srsPolicy,
@@ -51,6 +54,7 @@ final class DriftLearningRepository
        );
 
   final db.AppDatabase database;
+  final VocabularyRepository? lexicalVocabulary;
   final DriftLearningProjectionRebuilder projections;
   final DriftRewardProjectionRebuilder rewardProjections;
   final DriftLearningEventStore events;
@@ -76,7 +80,7 @@ final class DriftLearningRepository
       ..orderBy([(row) => OrderingTerm.asc(row.id)])
       ..limit(limit);
     final rows = await query.get();
-    return rows
+    final coreWords = rows
         .map(
           (row) => QuizWord(
             id: row.id,
@@ -91,6 +95,58 @@ final class DriftLearningRepository
           ),
         )
         .toList(growable: false);
+    final vocabulary = lexicalVocabulary;
+    if (vocabulary == null || coreWords.isEmpty) return coreWords;
+    List<VocabularyWord> enriched;
+    try {
+      enriched = await vocabulary.readPinnedByIds(
+        coreWords.map((word) => word.id),
+      );
+    } on Object {
+      // Accepted variants are optional reviewed metadata. Core quiz content
+      // remains available when that source is absent, stale, or offline.
+      return coreWords;
+    }
+    if (enriched.length != coreWords.length) return coreWords;
+    final enrichedById = <String, VocabularyWord>{
+      for (final word in enriched) word.id: word,
+    };
+    return <QuizWord>[
+      for (final core in coreWords)
+        _withAcceptedSpellingVariants(core, enrichedById[core.id]),
+    ];
+  }
+
+  QuizWord _withAcceptedSpellingVariants(
+    QuizWord core,
+    VocabularyWord? enriched,
+  ) {
+    final metadata = enriched?.richMetadata;
+    final variants = metadata?.acceptedSpellingVariants;
+    final revision = metadata?.verifiedContentRevision;
+    final checksum = metadata?.verifiedArtifactChecksumSha256;
+    if (variants == null ||
+        variants.isEmpty ||
+        revision == null ||
+        revision != core.contentRevision ||
+        checksum == null ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+      return core;
+    }
+    return QuizWord(
+      id: core.id,
+      categoryId: core.categoryId,
+      spelling: core.spelling,
+      meaning: core.meaning,
+      partOfSpeech: core.partOfSpeech,
+      normalizedSpelling: core.normalizedSpelling,
+      normalizedMeaning: core.normalizedMeaning,
+      contentRevision: core.contentRevision,
+      contentChecksumSha256: core.contentChecksumSha256,
+      acceptedSpellingVariants: variants,
+      acceptedSpellingVariantsRevision: revision,
+      acceptedSpellingVariantsChecksumSha256: checksum,
+    );
   }
 
   @override

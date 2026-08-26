@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/lesson_session_state.dart';
@@ -25,6 +26,7 @@ enum AssociativeReadingLauncherUnavailableReason {
   learning,
   associativeLearning,
   lessonLifecycle,
+  typedRecall,
 }
 
 class AssociativeReadingLauncherScreen extends StatefulWidget {
@@ -54,6 +56,7 @@ class _AssociativeReadingLauncherScreenState
   AssociativeLearningPort? _associativeLearning;
   CurrentActivityEvidenceAdapter? _currentActivityEvidence;
   LessonModeAdapter? _lessonAdapter;
+  TypedRecallModeAdapter? _typedRecallAdapter;
   UnifiedLessonControllerFactory? _createLessonController;
   FeatureRegistry? _features;
   bool _starting = false;
@@ -68,6 +71,9 @@ class _AssociativeReadingLauncherScreenState
     _features = dependencies?.features;
     _lessonAdapter = dependencies?.lessonModes
         ?.find(LessonMode.associativeReading)
+        ?.adapter;
+    _typedRecallAdapter = dependencies?.lessonModes
+        ?.resolveTypedRecall()
         ?.adapter;
     _createLessonController = dependencies?.createLessonController;
     final vocabulary = widget.vocabulary ?? dependencies?.vocabulary;
@@ -91,9 +97,12 @@ class _AssociativeReadingLauncherScreenState
       return;
     }
     if (dependencies != null &&
-        (_lessonAdapter == null || _createLessonController == null)) {
-      _unavailableReason =
-          AssociativeReadingLauncherUnavailableReason.lessonLifecycle;
+        (_lessonAdapter == null ||
+            _typedRecallAdapter == null ||
+            _createLessonController == null)) {
+      _unavailableReason = _typedRecallAdapter == null
+          ? AssociativeReadingLauncherUnavailableReason.typedRecall
+          : AssociativeReadingLauncherUnavailableReason.lessonLifecycle;
       return;
     }
     _loadWords(vocabulary);
@@ -220,6 +229,8 @@ class _AssociativeReadingLauncherScreenState
     final learning = _learning!;
     final associativeLearning = _associativeLearning!;
     final lessonAdapter = _lessonAdapter;
+    final typedRecallAdapter =
+        _typedRecallAdapter ?? const TypedRecallModeAdapter();
     final createLessonController = _createLessonController;
     final features = _features;
     final wordIds = <String, String>{
@@ -247,6 +258,34 @@ class _AssociativeReadingLauncherScreenState
     String? createdSessionId;
     var compensationAttempted = false;
     try {
+      final recallPrompts = List<TypedRecallPrompt>.unmodifiable(
+        words.map((word) {
+          final checksum = word.contentChecksumSha256;
+          if (checksum == null) {
+            throw StateError('typed recall content identity is unavailable');
+          }
+          final metadata = word.richMetadata;
+          final acceptedVariants =
+              metadata?.acceptedSpellingVariants ?? const <String>[];
+          final prompt = TypedRecallPrompt(
+            wordId: word.id,
+            canonicalAnswer: word.normalizedSpelling,
+            acceptedVariants: acceptedVariants,
+            acceptedVariantsRevision: acceptedVariants.isEmpty
+                ? null
+                : metadata?.verifiedContentRevision,
+            acceptedVariantsChecksumSha256: acceptedVariants.isEmpty
+                ? null
+                : metadata?.verifiedArtifactChecksumSha256,
+            promptKind: TypedRecallPromptKind.context,
+            normalizationRevision: typedRecallNormalizationRevisionV1,
+            contentRevision: word.contentRevision,
+            contentChecksumSha256: checksum,
+          );
+          typedRecallAdapter.validateSubmission(prompt: prompt, response: '');
+          return prompt;
+        }),
+      );
       final session = await learning.startAssociativeReadingSessionHandle();
       createdSessionId = session.id;
       if (!mounted) {
@@ -277,6 +316,9 @@ class _AssociativeReadingLauncherScreenState
                   sessionId: session.id,
                   sessionStartedAtUtc: session.startedAtUtc,
                   evidenceAdapter: _currentActivityEvidence,
+                  modeAdapter: typedRecallAdapter,
+                  recallPrompts: recallPrompts,
+                  featureRegistry: features,
                   claimTerminalCompensation:
                       terminalAuthority.claimTerminalCompensation,
                   retainsLifecycleOwnership:
@@ -475,18 +517,27 @@ final class _AssociativeReadingSessionRouteState
   late final UnifiedLessonController _controller = widget.createController(
     widget.adapter,
   );
+  late final UnifiedLessonRouteLifecycle _routeLifecycle =
+      UnifiedLessonRouteLifecycle(
+        _controller,
+        widget.learning,
+        () => DateTime.now().toUtc(),
+      );
   Listenable? _featureChanges;
   late bool _routeEnabled;
+  Feature _disabledFeature = Feature.reading;
   FeatureState? _disabledState;
   bool _controllerDisposed = false;
 
   @override
   void initState() {
     super.initState();
-    _routeEnabled = widget.features.isEnabled(Feature.reading);
-    _disabledState = _routeEnabled
-        ? null
-        : widget.features.stateOf(Feature.reading);
+    final disabledFeature = _firstDisabledFeature();
+    _routeEnabled = disabledFeature == null;
+    if (disabledFeature != null) {
+      _disabledFeature = disabledFeature;
+      _disabledState = widget.features.stateOf(disabledFeature);
+    }
     final changes = widget.features is Listenable
         ? widget.features as Listenable
         : null;
@@ -500,17 +551,27 @@ final class _AssociativeReadingSessionRouteState
   }
 
   void _onFeatureChanged() {
-    if (!_routeEnabled || widget.features.isEnabled(Feature.reading)) return;
+    if (!_routeEnabled) return;
+    final disabledFeature = _firstDisabledFeature();
+    if (disabledFeature == null) return;
     _routeEnabled = false;
-    _disabledState = widget.features.stateOf(Feature.reading);
+    _disabledFeature = disabledFeature;
+    _disabledState = widget.features.stateOf(disabledFeature);
     if (mounted) setState(() {});
     _beginRollback();
+  }
+
+  Feature? _firstDisabledFeature() {
+    for (final feature in const <Feature>[Feature.reading, Feature.quiz]) {
+      if (!widget.features.isEnabled(feature)) return feature;
+    }
+    return null;
   }
 
   void _beginRollback() {
     widget.terminalAuthority.markRollbackRequested();
     final claim = widget.terminalAuthority.claimTerminalCompensation(
-      _abandonDurableSession,
+      _retireDurableSession,
     );
     unawaited(
       claim.then<void>((result) {
@@ -540,14 +601,13 @@ final class _AssociativeReadingSessionRouteState
     _controller.dispose();
   }
 
-  Future<void> _abandonDurableSession() async {
-    if (_controller.state.status == LessonSessionStatus.completed) return;
-    final abandonedAtUtc = DateTime.now().toUtc();
-    final wasBoundToSession = _controller.state.sessionId == widget.sessionId;
+  Future<void> _retireDurableSession() async {
     try {
-      await _controller.abandon(abandonedAtUtc);
-      if (wasBoundToSession ||
-          _controller.state.sessionId == widget.sessionId) {
+      await _routeLifecycle.retire();
+      final state = _controller.state;
+      if ((state.status == LessonSessionStatus.completed ||
+              state.status == LessonSessionStatus.abandoned) &&
+          state.sessionId == widget.sessionId) {
         return;
       }
     } catch (_) {
@@ -555,7 +615,7 @@ final class _AssociativeReadingSessionRouteState
     }
     await widget.learning.abandonSession(
       sessionId: widget.sessionId,
-      abandonedAtUtc: abandonedAtUtc,
+      abandonedAtUtc: DateTime.now().toUtc(),
     );
   }
 
@@ -563,7 +623,7 @@ final class _AssociativeReadingSessionRouteState
   Widget build(BuildContext context) {
     if (!_routeEnabled) {
       return ProductionFeatureUnavailable(
-        feature: Feature.reading,
+        feature: _disabledFeature,
         reason: ProductionFeatureUnavailableReason.unavailableState,
         state: _disabledState,
       );
@@ -571,8 +631,11 @@ final class _AssociativeReadingSessionRouteState
     return ProductionFeatureGate(
       feature: Feature.reading,
       registry: widget.features,
-      builder: (_) =>
-          UnifiedLessonShell(controller: _controller, builder: widget.builder),
+      builder: (_) => UnifiedLessonShell(
+        controller: _controller,
+        routeLifecycle: _routeLifecycle,
+        builder: widget.builder,
+      ),
     );
   }
 
@@ -591,10 +654,18 @@ final class _AssociativeReadingSessionRouteState
         state.sessionId == widget.sessionId) {
       widget.terminalAuthority.markDurableTerminal();
     }
-    final terminalCompensation = widget.terminalAuthority.terminalCompensation;
-    if (terminalCompensation == null) {
+    if (widget.terminalAuthority.durableTerminal) {
       _disposeController();
     } else {
+      final terminalCompensation =
+          widget.terminalAuthority.terminalCompensation ??
+          widget.terminalAuthority
+              .claimTerminalCompensation(_retireDurableSession)
+              .then<void>((result) {
+                if (!result.succeeded) {
+                  Error.throwWithStackTrace(result.error!, result.stackTrace!);
+                }
+              });
       unawaited(
         terminalCompensation.then<void>(
           (_) => _disposeController(),
@@ -622,6 +693,8 @@ class _LauncherUnavailable extends StatelessWidget {
         'Associative persistence is unavailable.',
       AssociativeReadingLauncherUnavailableReason.lessonLifecycle =>
         'Lesson lifecycle is unavailable.',
+      AssociativeReadingLauncherUnavailableReason.typedRecall =>
+        'Typed recall is unavailable.',
     };
     return Scaffold(
       appBar: AppBar(title: const Text('Associative Reading')),

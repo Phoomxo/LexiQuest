@@ -4,6 +4,7 @@ import 'evidence_context.dart';
 enum LessonMode {
   associativeReading,
   meaningQuiz,
+  typedRecall,
   definitionQuiz,
   cloze,
   matching,
@@ -14,6 +15,7 @@ extension LessonModeIdentity on LessonMode {
   String get id => switch (this) {
     LessonMode.associativeReading => 'associative-reading',
     LessonMode.meaningQuiz => 'meaning-quiz',
+    LessonMode.typedRecall => 'typed-recall',
     LessonMode.definitionQuiz => 'definition-quiz',
     LessonMode.cloze => 'cloze',
     LessonMode.matching => 'matching',

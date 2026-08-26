@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -11,7 +13,9 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner_reposito
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
@@ -21,7 +25,11 @@ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
+import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
+
+const _typedChecksum =
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
   group('B3 Associative Reading Session Screen Tests', () {
@@ -60,9 +68,29 @@ void main() {
       AssociativeLearningPort? port,
       LearningUseCases? learningUseCases,
       CurrentActivityEvidenceAdapter? evidenceAdapter,
+      TypedRecallModeAdapter? modeAdapter,
+      List<TypedRecallPrompt>? recallPrompts,
+      FeatureRegistry? featureRegistry,
       String? sessionId,
     }) {
       final resolvedLearning = learningUseCases ?? learning;
+      final resolvedPrompts =
+          recallPrompts ??
+          (targetWordIds == null
+              ? null
+              : <TypedRecallPrompt>[
+                  for (final word in targetWords)
+                    if (targetWordIds[word] case final wordId?)
+                      TypedRecallPrompt(
+                        wordId: wordId.trim(),
+                        canonicalAnswer: word,
+                        promptKind: TypedRecallPromptKind.context,
+                        normalizationRevision:
+                            typedRecallNormalizationRevisionV1,
+                        contentRevision: 1,
+                        contentChecksumSha256: _typedChecksum,
+                      ),
+                ]);
       return MaterialApp(
         home: AssociativeReadingSessionScreen(
           cefrLevel: 'B2',
@@ -74,6 +102,9 @@ void main() {
           evidenceAdapter:
               evidenceAdapter ??
               CurrentActivityEvidenceAdapter(learning: resolvedLearning),
+          modeAdapter: modeAdapter,
+          recallPrompts: resolvedPrompts,
+          featureRegistry: featureRegistry,
           associativeLearning: port ?? associativeLearning,
           sessionId: sessionId,
         ),
@@ -419,15 +450,26 @@ void main() {
         MaterialApp(
           home: AssociativeReadingSessionScreen(
             cefrLevel: 'A2',
-            targetWords: const ['banana'],
-            targetWordIds: const {'banana': 'word-banana'},
-            passageText: 'The banana is yellow.',
+            targetWords: const ['rail station'],
+            targetWordIds: const {'rail station': 'word-rail-station'},
+            passageText: 'The rail station is nearby.',
             learning: retryLearning,
             evidenceAdapter: CurrentActivityEvidenceAdapter(
               learning: retryLearning,
             ),
             associativeLearning: associativeLearning,
             sessionId: 'session-1',
+            modeAdapter: const TypedRecallModeAdapter(),
+            recallPrompts: <TypedRecallPrompt>[
+              TypedRecallPrompt(
+                wordId: 'word-rail-station',
+                canonicalAnswer: 'rail station',
+                promptKind: TypedRecallPromptKind.context,
+                normalizationRevision: typedRecallNormalizationRevisionV1,
+                contentRevision: 7,
+                contentChecksumSha256: _typedChecksum,
+              ),
+            ],
           ),
         ),
       );
@@ -439,7 +481,7 @@ void main() {
           find.text('Stage $stage: ${_stageName(stage)}'),
         );
       }
-      await tester.enterText(find.byType(TextField), 'banana');
+      await tester.enterText(find.byType(TextField), '  RAIL   STATION  ');
 
       await tester.tap(find.text('Complete & Continue'));
       await tester.pumpAndSettle();
@@ -464,6 +506,16 @@ void main() {
         EvidenceClass.independentRecall,
       );
       expect(retry.evidenceContext.skillId, 'associative-recall');
+      expect(retry.isCorrect, isTrue);
+      expect(
+        retry.providerProvenance,
+        'typed-recall:vocabulary-text-v1:context:exact',
+      );
+      expect(
+        retry.evidenceContext.contentRevision,
+        'lexical-typed-recall:word-rail-station@7:$_typedChecksum',
+      );
+      expect(retry.providerProvenance, isNot(contains('RAIL   STATION')));
     });
 
     testWidgets(
@@ -494,6 +546,24 @@ void main() {
               ),
               associativeLearning: associativeLearning,
               sessionId: 'session-1',
+              recallPrompts: <TypedRecallPrompt>[
+                TypedRecallPrompt(
+                  wordId: 'word-banana',
+                  canonicalAnswer: 'banana',
+                  promptKind: TypedRecallPromptKind.context,
+                  normalizationRevision: typedRecallNormalizationRevisionV1,
+                  contentRevision: 1,
+                  contentChecksumSha256: _typedChecksum,
+                ),
+                TypedRecallPrompt(
+                  wordId: 'word-apple',
+                  canonicalAnswer: 'apple',
+                  promptKind: TypedRecallPromptKind.context,
+                  normalizationRevision: typedRecallNormalizationRevisionV1,
+                  contentRevision: 1,
+                  contentChecksumSha256: _typedChecksum,
+                ),
+              ],
             ),
           ),
         );
@@ -550,6 +620,413 @@ void main() {
         );
       },
     );
+
+    test(
+      'plain Drift commits hinted then independent typed recall and terminates',
+      () async {
+        final owner = await owners.getOrCreateActiveOwner();
+        await database
+            .into(database.vocabularyCategories)
+            .insert(
+              VocabularyCategoriesCompanion.insert(
+                id: 'category-plain-hints',
+                ownerId: owner.id,
+                name: 'Plain hints',
+                normalizedName: 'plain hints',
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        for (final entry in const <(String, String)>[
+          ('word-plain-anchor', 'anchor'),
+          ('word-plain-beacon', 'beacon'),
+        ]) {
+          await database
+              .into(database.vocabularyWords)
+              .insert(
+                VocabularyWordsCompanion.insert(
+                  id: entry.$1,
+                  ownerId: owner.id,
+                  categoryId: 'category-plain-hints',
+                  spelling: entry.$2,
+                  normalizedSpelling: entry.$2,
+                  meaning: '${entry.$2} meaning',
+                  normalizedMeaning: '${entry.$2} meaning',
+                  partOfSpeech: 'noun',
+                  contentRevision: const Value(1),
+                  contentChecksumSha256: const Value(_typedChecksum),
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+        }
+
+        final handle = await learning.startAssociativeReadingSessionHandle();
+        final registry = buildLessonModeRegistry();
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: registry.find(LessonMode.associativeReading)!.adapter,
+        );
+        addTearDown(controller.dispose);
+        await controller.start(
+          LessonStartCommand(
+            sessionId: handle.id,
+            mode: LessonMode.associativeReading,
+            itemCount: 2,
+            startedAtUtc: handle.startedAtUtc,
+          ),
+        );
+        final typedRecall = registry.typedRecall!.adapter;
+        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+        TypedRecallPrompt prompt(String wordId, String answer) =>
+            TypedRecallPrompt(
+              wordId: wordId,
+              canonicalAnswer: answer,
+              promptKind: TypedRecallPromptKind.context,
+              normalizationRevision: typedRecallNormalizationRevisionV1,
+              contentRevision: 1,
+              contentChecksumSha256: _typedChecksum,
+            );
+
+        controller.revealNextHint();
+        expect(controller.hintState!.hintLevel, 1);
+        final guided = typedRecall.capture(
+          evidence: evidence,
+          sessionId: handle.id,
+          prompt: prompt('word-plain-anchor', 'anchor'),
+          response: 'anchor',
+          responseTimeMs: null,
+          attemptNumber: 1,
+          support: TypedRecallSupport(
+            hint: controller.snapshotHintUsageForAcceptedEvidence(),
+          ),
+        );
+        await guided.pending.record();
+        expect(guided.evaluation.evidenceClass, EvidenceClass.guidedPractice);
+        expect(guided.evaluation.hintLevel, 1);
+        expect(await database.select(database.srsStates).get(), isEmpty);
+
+        controller.resetHintsAfterAcceptedEvidence();
+        expect(controller.hintState!.hintLevel, 0);
+        final independent = typedRecall.capture(
+          evidence: evidence,
+          sessionId: handle.id,
+          prompt: prompt('word-plain-beacon', 'beacon'),
+          response: 'beacon',
+          responseTimeMs: null,
+          attemptNumber: 2,
+          support: TypedRecallSupport(
+            hint: controller.snapshotHintUsageForAcceptedEvidence(),
+          ),
+        );
+        await independent.pending.record();
+        expect(
+          independent.evaluation.evidenceClass,
+          EvidenceClass.independentRecall,
+        );
+        expect(independent.evaluation.hintLevel, 0);
+        expect(
+          (await database.select(database.srsStates).get()).map(
+            (row) => row.wordId,
+          ),
+          <String>['word-plain-beacon'],
+        );
+
+        final close = learning.captureSessionClose(sessionId: handle.id);
+        await controller.completeCapturedSession(
+          close,
+          handle.startedAtUtc.add(const Duration(minutes: 1)),
+        );
+        expect(controller.state.status, LessonSessionStatus.completed);
+        expect(
+          (await database.select(database.answerAttempts).get()).map(
+            (row) => row.evidenceClass,
+          ),
+          <String>[
+            EvidenceClass.guidedPractice.name,
+            EvidenceClass.independentRecall.name,
+          ],
+        );
+      },
+      timeout: const Timeout(Duration(seconds: 5)),
+    );
+
+    testWidgets(
+      'Stage 3 consumes one shell hint then resets support per committed item',
+      (tester) async {
+        final handle = (await tester.runAsync(() async {
+          final owner = await owners.getOrCreateActiveOwner();
+          await database
+              .into(database.vocabularyCategories)
+              .insert(
+                VocabularyCategoriesCompanion.insert(
+                  id: 'category-hints',
+                  ownerId: owner.id,
+                  name: 'Hints',
+                  normalizedName: 'hints',
+                  createdAtUtcMs: 1,
+                  updatedAtUtcMs: 1,
+                ),
+              );
+          for (final entry in const <(String, String)>[
+            ('word-anchor', 'anchor'),
+            ('word-beacon', 'beacon'),
+          ]) {
+            await database
+                .into(database.vocabularyWords)
+                .insert(
+                  VocabularyWordsCompanion.insert(
+                    id: entry.$1,
+                    ownerId: owner.id,
+                    categoryId: 'category-hints',
+                    spelling: entry.$2,
+                    normalizedSpelling: entry.$2,
+                    meaning: '${entry.$2} meaning',
+                    normalizedMeaning: '${entry.$2} meaning',
+                    partOfSpeech: 'noun',
+                    contentRevision: const Value(1),
+                    contentChecksumSha256: const Value(_typedChecksum),
+                    createdAtUtcMs: 1,
+                    updatedAtUtcMs: 1,
+                  ),
+                );
+          }
+          return learning.startAssociativeReadingSessionHandle();
+        }))!;
+        final registry = buildLessonModeRegistry();
+        final controller = UnifiedLessonController(
+          learning: learning,
+          adapter: registry.find(LessonMode.associativeReading)!.adapter,
+        );
+        addTearDown(controller.dispose);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: UnifiedLessonShell(
+              controller: controller,
+              nowUtc: () => handle.startedAtUtc,
+              builder: (_) => AssociativeReadingSessionScreen(
+                cefrLevel: 'B1',
+                targetWords: const <String>['anchor', 'beacon'],
+                targetWordIds: const <String, String>{
+                  'anchor': 'word-anchor',
+                  'beacon': 'word-beacon',
+                },
+                recallPrompts: <TypedRecallPrompt>[
+                  TypedRecallPrompt(
+                    wordId: 'word-anchor',
+                    canonicalAnswer: 'anchor',
+                    promptKind: TypedRecallPromptKind.context,
+                    normalizationRevision: typedRecallNormalizationRevisionV1,
+                    contentRevision: 1,
+                    contentChecksumSha256: _typedChecksum,
+                  ),
+                  TypedRecallPrompt(
+                    wordId: 'word-beacon',
+                    canonicalAnswer: 'beacon',
+                    promptKind: TypedRecallPromptKind.context,
+                    normalizationRevision: typedRecallNormalizationRevisionV1,
+                    contentRevision: 1,
+                    contentChecksumSha256: _typedChecksum,
+                  ),
+                ],
+                passageText: 'An anchor steadies us while a beacon guides us.',
+                learning: learning,
+                evidenceAdapter: CurrentActivityEvidenceAdapter(
+                  learning: learning,
+                ),
+                associativeLearning: associativeLearning,
+                sessionId: handle.id,
+                sessionStartedAtUtc: handle.startedAtUtc,
+                modeAdapter: registry.typedRecall!.adapter,
+                featureRegistry: const BuildFeatureRegistry.allEnabled(),
+              ),
+            ),
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 3; stage++) {
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Complete & Continue'),
+              )
+              .onPressed!();
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Show strategy'),
+            )
+            .onPressed!();
+        await tester.pump();
+        await tester.enterText(find.byType(TextField).at(0), 'anchor');
+        await tester.enterText(find.byType(TextField).at(1), 'beacon');
+
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Complete & Continue'),
+            )
+            .onPressed!();
+        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+
+        final attempts = (await tester.runAsync(
+          () => database.select(database.answerAttempts).get(),
+        ))!;
+        final contexts = <EvidenceContext>[
+          for (final attempt in attempts)
+            EvidenceContext.fromJson(
+              (jsonDecode(attempt.evidenceContextJson) as Map)
+                  .cast<String, Object?>(),
+            ),
+        ];
+        expect(
+          contexts.map((context) => context.evidenceClass),
+          <EvidenceClass>[
+            EvidenceClass.guidedPractice,
+            EvidenceClass.independentRecall,
+          ],
+        );
+        expect(contexts.map((context) => context.hintLevel), <int>[1, 0]);
+        final srs = (await tester.runAsync(
+          () => database.select(database.srsStates).get(),
+        ))!;
+        expect(srs.map((row) => row.wordId), <String>['word-beacon']);
+        expect(controller.hintState!.hintLevel, 0);
+      },
+    );
+
+    testWidgets(
+      'Stage 3 rejects over-limit raw input without locking retry or persistence',
+      (tester) async {
+        final repository = _OrderedCompletionLearningRepository();
+        final contractLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'over-limit-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 13, 0, id),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-limit'),
+        );
+        await tester.pumpWidget(
+          session(
+            targetWords: const <String>['anchor'],
+            targetWordIds: const <String, String>{'anchor': 'word-anchor'},
+            learningUseCases: contractLearning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(
+              learning: contractLearning,
+            ),
+            modeAdapter: const TypedRecallModeAdapter(),
+            sessionId: 'over-limit-session',
+          ),
+        );
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+        for (var stage = 2; stage <= 3; stage++) {
+          tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Complete & Continue'),
+              )
+              .onPressed!();
+          await pumpUntilFound(
+            tester,
+            find.text('Stage $stage: ${_stageName(stage)}'),
+          );
+        }
+        final field = tester.widget<TextField>(find.byType(TextField));
+        expect(field.maxLength, TypedRecallModeAdapter.maxAnswerScalars);
+        field.controller!.text = 'x' * 121;
+
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Complete & Continue'),
+            )
+            .onPressed!();
+        await tester.pump();
+        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(repository.answerCommands, isEmpty);
+        expect(
+          tester.widget<TextField>(find.byType(TextField)).enabled,
+          isTrue,
+        );
+
+        field.controller!.text = 'anchor';
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Complete & Continue'),
+            )
+            .onPressed!();
+        await pumpUntilFound(tester, find.text('Stage 4: Memory Association'));
+        expect(repository.answerCommands, hasLength(1));
+        expect(
+          repository.answerCommands.single.providerProvenance,
+          isNot(contains('x' * 121)),
+        );
+      },
+    );
+
+    testWidgets('quiz emergency-off fences a stale associative typed submit', (
+      tester,
+    ) async {
+      final repository = _OrderedCompletionLearningRepository();
+      final contractLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'live-off-${++id}',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 14, 0, id),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-live-off'),
+      );
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
+      await tester.pumpWidget(
+        session(
+          targetWords: const <String>['anchor'],
+          targetWordIds: const <String, String>{'anchor': 'word-anchor'},
+          learningUseCases: contractLearning,
+          evidenceAdapter: CurrentActivityEvidenceAdapter(
+            learning: contractLearning,
+          ),
+          modeAdapter: const TypedRecallModeAdapter(),
+          featureRegistry: features,
+          sessionId: 'live-off-session',
+        ),
+      );
+      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+      for (var stage = 2; stage <= 3; stage++) {
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Complete & Continue'),
+            )
+            .onPressed!();
+        await pumpUntilFound(
+          tester,
+          find.text('Stage $stage: ${_stageName(stage)}'),
+        );
+      }
+      await tester.enterText(find.byType(TextField), 'anchor');
+      final staleSubmit = tester
+          .widget<FilledButton>(
+            find.widgetWithText(FilledButton, 'Complete & Continue'),
+          )
+          .onPressed!;
+
+      features.emergencyOff(Feature.quiz);
+      staleSubmit();
+      await tester.pump();
+
+      expect(repository.answerCommands, isEmpty);
+      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+      expect(
+        tester
+            .widget<FilledButton>(
+              find.widgetWithText(FilledButton, 'Complete & Continue'),
+            )
+            .onPressed,
+        isNull,
+      );
+    });
 
     final invalidMappings = <({String name, Map<String, String>? wordIds})>[
       (name: 'missing map', wordIds: null),

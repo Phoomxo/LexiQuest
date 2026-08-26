@@ -261,6 +261,48 @@ final class CurrentActivityEvidenceAdapter {
     );
   }
 
+  /// Captures the recognition leg hosted by the explicit typed-recall route.
+  /// The legacy f07 quiz remains unassisted recognition; this ingress accepts
+  /// only the shell-owned support classification frozen by the typed adapter.
+  PendingCurrentActivityEvidence captureSupportedMeaningRecognition({
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required HintEvidenceClassification classification,
+  }) {
+    final validUnassisted =
+        classification.hintLevel == 0 &&
+        classification.evidenceClass == EvidenceClass.recognition;
+    final validAssisted =
+        classification.hintLevel > 0 &&
+        classification.hintLevel <= 2 &&
+        classification.evidenceClass == EvidenceClass.guidedPractice;
+    if ((!validUnassisted && !validAssisted) || responseTimeMs < 0) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must be unhinted recognition or hinted guided practice',
+      );
+    }
+    return _capture(
+      input: CurrentActivityInput.meaningMultipleChoice,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: classification.evidenceClass,
+        skillId: 'meaning-recall',
+        promptMode: 'meaningChoice',
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: null,
+      hintLevel: classification.hintLevel,
+    );
+  }
+
   /// Captures one reviewed, revision-pinned cloze occurrence. The adapter
   /// owns response scoring and assistance classification; this gateway owns
   /// the sole canonical evidence write.
@@ -323,6 +365,73 @@ final class CurrentActivityEvidenceAdapter {
       attemptNumber: attemptNumber,
       providerProvenance:
           'reviewed-lexical-example:$contentRevision:$checksumSha256',
+      hintLevel: classification.hintLevel,
+    );
+  }
+
+  /// Captures one version-pinned productive spelling response. Correctness
+  /// and assistance classification are owned by the typed-recall adapter;
+  /// this gateway only freezes the resulting controlled evidence command.
+  PendingCurrentActivityEvidence captureTypedRecall({
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int? responseTimeMs,
+    required int attemptNumber,
+    required int contentRevision,
+    required String checksumSha256,
+    required bool contextual,
+    required String providerProvenance,
+    required HintEvidenceClassification classification,
+  }) {
+    if (contentRevision <= 0) {
+      throw ArgumentError.value(
+        contentRevision,
+        'contentRevision',
+        'must be positive',
+      );
+    }
+    if (!RegExp(r'^[0-9a-f]{64}$').hasMatch(checksumSha256)) {
+      throw ArgumentError.value(
+        checksumSha256,
+        'checksumSha256',
+        'must be lowercase SHA-256',
+      );
+    }
+    final validUnassisted =
+        classification.hintLevel == 0 &&
+        classification.evidenceClass == EvidenceClass.independentRecall;
+    final validAssisted =
+        classification.hintLevel > 0 &&
+        classification.evidenceClass == EvidenceClass.guidedPractice;
+    if ((!validUnassisted && !validAssisted) ||
+        classification.hintLevel < 0 ||
+        providerProvenance.isEmpty ||
+        providerProvenance.length > 96) {
+      throw ArgumentError.value(
+        classification,
+        'classification',
+        'must be unassisted recall or assisted guided practice',
+      );
+    }
+    final input = contextual
+        ? CurrentActivityInput.associativeRecall
+        : CurrentActivityInput.typedRecall;
+    return _capture(
+      input: input,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: classification.evidenceClass,
+        skillId: contextual ? 'associative-recall' : 'typed-recall',
+        promptMode: contextual ? 'associativeRecall' : 'typedRecall',
+        contentRevision:
+            'lexical-typed-recall:$wordId@$contentRevision:$checksumSha256',
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance: providerProvenance,
       hintLevel: classification.hintLevel,
     );
   }

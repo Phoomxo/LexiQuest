@@ -294,13 +294,15 @@ void main() {
         'word:station': Uint8List.fromList(
           utf8.encode(
             jsonEncode(<String, Object?>{
-              'schemaVersion': 1,
+              'schemaVersion': 3,
               'wordId': 'word:station',
               'contentRevision': 1,
+              'englishDefinition': 'A place where trains stop.',
               'ipa': '/ˈsteɪ.ʃən/',
               'examples': <String>['The station is near the market.'],
               'synonyms': <String>['terminal'],
               'antonyms': <String>[],
+              'acceptedSpellingVariants': <String>['railway station'],
               'audio': <String, Object?>{
                 'language': 'en',
                 'assetId': 'audio:station:en',
@@ -329,6 +331,10 @@ void main() {
       expect(words.first.richMetadata, isNull);
       expect(words.last.richMetadata!.ipa, '/ˈsteɪ.ʃən/');
       expect(words.last.richMetadata!.synonyms, const ['terminal']);
+      expect(words.last.richMetadata!.acceptedSpellingVariants, const [
+        'railway station',
+      ]);
+      expect(words.last.richMetadata!.verifiedContentRevision, 1);
       expect(words.last.richMetadata!.audio!.assetId, 'audio:station:en');
       expect(
         words.last.richMetadata!.verifiedArtifactChecksumSha256,
@@ -403,6 +409,21 @@ void main() {
           'word:station': _overNestedLexicalArtifact(),
         }),
       );
+      final unknownSchema = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': Uint8List.fromList(
+            utf8.encode(
+              jsonEncode(<String, Object?>{
+                'schemaVersion': 4,
+                'wordId': 'word:station',
+                'contentRevision': 1,
+                'acceptedSpellingVariants': <String>['railway station'],
+              }),
+            ),
+          ),
+        }),
+      );
 
       expect(
         (await malformed.readPinnedByIds(const [
@@ -430,6 +451,12 @@ void main() {
       );
       expect(
         (await overNested.readPinnedByIds(const [
+          'word:station',
+        ])).single.richMetadata,
+        isNull,
+      );
+      expect(
+        (await unknownSchema.readPinnedByIds(const [
           'word:station',
         ])).single.richMetadata,
         isNull,

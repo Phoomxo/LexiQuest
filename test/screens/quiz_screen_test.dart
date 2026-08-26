@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -9,13 +11,20 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
+
+const _checksumA =
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+const _checksumB =
+    'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
 
 void main() {
   late AppDatabase database;
@@ -56,6 +65,8 @@ void main() {
             meaning: 'สถานี',
             normalizedMeaning: 'สถานี',
             partOfSpeech: 'noun',
+            contentRevision: const Value(1),
+            contentChecksumSha256: const Value(_checksumA),
             createdAtUtcMs: 1,
             updatedAtUtcMs: 1,
           ),
@@ -259,7 +270,233 @@ void main() {
   });
 
   testWidgets(
-    'screen records both directions as recognition and feedback is read-only',
+    'default f07 quiz keeps both directions as recognition without SRS',
+    (tester) async {
+      await tester.runAsync(() async {
+        final ownerId = (await owners.getOrCreateActiveOwner()).id;
+        await _insertWord(
+          database,
+          ownerId: ownerId,
+          id: 'word-2',
+          spelling: 'airport',
+          meaning: 'สนามบิน',
+        );
+      });
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen(
+            categoryId: 'category-1',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const MeaningQuizModeAdapter(),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      tester
+          .widget<FilledButton>(
+            find.byKey(
+              const ValueKey<String>('meaning-quiz-option-word-1-สถานี'),
+            ),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('Correct answer: สถานี'));
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey<String>('meaning-quiz-next')),
+          )
+          .onPressed!();
+      await _pumpUntilFound(
+        tester,
+        find.byKey(
+          const ValueKey<String>('meaning-quiz-option-word-2-airport'),
+        ),
+      );
+
+      expect(
+        find.byKey(const ValueKey<String>('typed-recall-input')),
+        findsNothing,
+      );
+      tester
+          .widget<FilledButton>(
+            find.byKey(
+              const ValueKey<String>('meaning-quiz-option-word-2-airport'),
+            ),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+
+      final attempts = await database.select(database.answerAttempts).get();
+      expect(attempts.map((attempt) => attempt.promptMode), <String>[
+        'meaningChoice',
+        'wordChoice',
+      ]);
+      expect(attempts.map((attempt) => attempt.evidenceClass).toSet(), <String>{
+        EvidenceClass.recognition.name,
+      });
+      expect(await database.select(database.srsStates).get(), isEmpty);
+    },
+  );
+
+  test(
+    'mixed review commits typed response and notifies answered phase',
+    () async {
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      await _insertWord(
+        database,
+        ownerId: ownerId,
+        id: 'word-2',
+        spelling: 'airport',
+        meaning: 'สนามบิน',
+      );
+      final session = await learning.startQuiz(
+        categoryId: 'category-1',
+        limit: 2,
+      );
+      final review = const TypedRecallModeAdapter().createQuizReview(
+        session: session,
+        meaningQuiz: const MeaningQuizModeAdapter(),
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+      );
+      addTearDown(review.dispose);
+      final phases = <MeaningQuizReviewPhase>[];
+      review.addListener(() => phases.add(review.phase));
+
+      expect(review.expectsTypedResponse, isFalse);
+      await review.answerChoice(
+        option: review.currentQuestion.correctOption,
+        responseTimeMs: 100,
+      );
+      expect(review.phase, MeaningQuizReviewPhase.answered);
+      expect(review.persistenceLocked, isFalse);
+      await review.advance();
+      expect(review.expectsTypedResponse, isTrue);
+
+      final typed = await review.answerTyped(
+        response: '  AIRPORT  ',
+        responseTimeMs: 200,
+      );
+
+      expect(typed.isCorrect, isTrue);
+      expect(review.phase, MeaningQuizReviewPhase.answered);
+      expect(review.feedback?.canonicalCorrectAnswer, 'airport');
+      expect(review.typedResponseCode, TypedRecallResponseCode.exact);
+      expect(review.persistenceLocked, isFalse);
+      expect(phases, contains(MeaningQuizReviewPhase.savingEvidence));
+      expect(phases.last, MeaningQuizReviewPhase.answered);
+      expect(
+        (await database.select(database.answerAttempts).get()).map(
+          (row) => row.promptMode,
+        ),
+        <String>['meaningChoice', 'typedRecall'],
+      );
+    },
+  );
+
+  test(
+    'typed retry retains its hint snapshot until the exact durable acknowledgement',
+    () async {
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      await _insertWord(
+        database,
+        ownerId: ownerId,
+        id: 'word-2',
+        spelling: 'airport',
+        meaning: 'สนามบิน',
+      );
+      final repository = _FailFirstLearningRepository(
+        DriftLearningRepository(database),
+        failAnswerOnce: false,
+        commitThenLoseAckOnce: true,
+        commitThenLoseAckPromptMode: 'typedRecall',
+      );
+      var retryId = 0;
+      final retryLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'typed-hint-retry-${++retryId}',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 12, 30, retryId),
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'f11-hint-retry',
+        ),
+      );
+      final session = await retryLearning.startQuiz(
+        categoryId: 'category-1',
+        limit: 2,
+      );
+      var support = const HintUsageSnapshot.known(0);
+      var resets = 0;
+      final review = const TypedRecallModeAdapter().createQuizReview(
+        session: session,
+        learning: retryLearning,
+        evidence: CurrentActivityEvidenceAdapter(learning: retryLearning),
+        supportUsage: () => TypedRecallSupport(hint: support),
+        resetHintsAfterCommit: () {
+          resets += 1;
+          support = const HintUsageSnapshot.known(0);
+        },
+      );
+      addTearDown(review.dispose);
+
+      await review.answerChoice(
+        option: review.currentQuestion.correctOption,
+        responseTimeMs: 100,
+      );
+      expect(resets, 1);
+      await review.advance();
+      support = const HintUsageSnapshot.known(1);
+
+      await expectLater(
+        review.answerTyped(response: 'airport', responseTimeMs: 200),
+        throwsStateError,
+      );
+      expect(review.phase, MeaningQuizReviewPhase.evidenceRetryRequired);
+      expect(support.hintLevel, 1);
+      expect(resets, 1);
+      support = const HintUsageSnapshot.known(2);
+
+      final result = await review.retryEvidence();
+      expect(result.isCorrect, isTrue);
+      expect(review.phase, MeaningQuizReviewPhase.answered);
+      expect(support.hintLevel, 0);
+      expect(resets, 2);
+      expect(repository.commands, hasLength(3));
+      expect(repository.commands.last.id, repository.commands[1].id);
+      expect(
+        repository.commands.last.evidenceContext.toJson(),
+        repository.commands[1].evidenceContext.toJson(),
+      );
+      for (final command in repository.commands.skip(1)) {
+        final eventContext = EvidenceContext.fromJson(
+          (command.event!.payload['evidenceContext'] as Map)
+              .cast<String, Object?>(),
+        );
+        expect(
+          command.evidenceContext.evidenceClass,
+          EvidenceClass.guidedPractice,
+        );
+        expect(command.evidenceContext.hintLevel, 1);
+        expect(eventContext.evidenceClass, EvidenceClass.guidedPractice);
+        expect(eventContext.hintLevel, 1);
+      }
+      final typedAttempt =
+          (await database.select(database.answerAttempts).get()).singleWhere(
+            (attempt) => attempt.promptMode == 'typedRecall',
+          );
+      final typedContext = EvidenceContext.fromJson(
+        (jsonDecode(typedAttempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
+      expect(typedContext.evidenceClass, EvidenceClass.guidedPractice);
+      expect(typedContext.hintLevel, 1);
+    },
+  );
+
+  testWidgets(
+    'explicit f11 screen keeps selection and records productive typed recall',
     (tester) async {
       await tester.runAsync(() async {
         final ownerId = (await owners.getOrCreateActiveOwner()).id;
@@ -288,11 +525,11 @@ void main() {
 
       await tester.pumpWidget(
         MaterialApp(
-          home: QuizScreen(
+          home: QuizScreen.typedRecall(
             categoryId: 'category-1',
             learning: learning,
             evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-            modeAdapter: const MeaningQuizModeAdapter(),
+            modeAdapter: const TypedRecallModeAdapter(),
           ),
         ),
       );
@@ -320,27 +557,347 @@ void main() {
       await tester.tap(next);
       await tester.pumpAndSettle();
       expect(find.text('สนามบิน'), findsOneWidget);
-      expect(find.text('airport'), findsOneWidget);
-      expect(find.text('station'), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey<String>('typed-recall-input')),
+        findsOneWidget,
+      );
+      expect(find.text('station'), findsNothing);
 
-      await tester.tap(find.text('airport'));
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('typed-recall-input')),
+        '  AIRPORT  ',
+      );
+      final typedSubmit = find.byKey(
+        const ValueKey<String>('typed-recall-submit'),
+      );
+      await tester.ensureVisible(typedSubmit);
+      await tester.pump();
+      expect(typedSubmit.hitTestable(), findsOneWidget);
+      final typedSubmitButton = tester.widget<FilledButton>(typedSubmit);
+      expect(typedSubmitButton.onPressed, isNotNull);
+      typedSubmitButton.onPressed!();
       await _pumpUntilFound(tester, find.text('Correct answer: airport'));
 
       final attempts = await database.select(database.answerAttempts).get();
       expect(attempts, hasLength(2));
       expect(attempts.map((attempt) => attempt.promptMode), <String>[
         'meaningChoice',
-        'wordChoice',
+        'typedRecall',
       ]);
-      expect(attempts.map((attempt) => attempt.evidenceClass).toSet(), <String>{
+      expect(attempts.map((attempt) => attempt.evidenceClass), <String>[
         EvidenceClass.recognition.name,
-      });
-      expect(await database.select(database.srsStates).get(), isEmpty);
+        EvidenceClass.independentRecall.name,
+      ]);
+      expect(
+        attempts.last.providerProvenance,
+        'typed-recall:vocabulary-text-v1:meaning:exact',
+      );
+      final srs = await database.select(database.srsStates).get();
+      expect(srs, hasLength(1));
+      expect(srs.single.wordId, 'word-2');
       expect(
         (await database.select(database.eventsV2).get()).where(
           (event) => event.eventId.startsWith('learning-event:'),
         ),
         hasLength(2),
+      );
+    },
+  );
+
+  testWidgets(
+    'screen accepts a pinned spelling variant and persists pinned identity',
+    (tester) async {
+      await tester.runAsync(() async {
+        final ownerId = (await owners.getOrCreateActiveOwner()).id;
+        await _insertWord(
+          database,
+          ownerId: ownerId,
+          id: 'word-2',
+          spelling: 'airport',
+          meaning: 'สนามบิน',
+          checksum: _checksumB,
+        );
+      });
+      final pinnedRepository = _FailFirstLearningRepository(
+        DriftLearningRepository(database),
+        failAnswerOnce: false,
+        transformWords: (words) => <QuizWord>[
+          for (final word in words)
+            if (word.id == 'word-2')
+              QuizWord(
+                id: word.id,
+                categoryId: word.categoryId,
+                spelling: word.spelling,
+                meaning: word.meaning,
+                partOfSpeech: word.partOfSpeech,
+                normalizedSpelling: word.normalizedSpelling,
+                normalizedMeaning: word.normalizedMeaning,
+                contentRevision: word.contentRevision,
+                contentChecksumSha256: word.contentChecksumSha256,
+                acceptedSpellingVariants: const <String>['air port'],
+                acceptedSpellingVariantsRevision: 1,
+                acceptedSpellingVariantsChecksumSha256: _checksumA,
+              )
+            else
+              word,
+        ],
+      );
+      final pinnedLearning = LearningUseCases(
+        owners: owners,
+        repository: pinnedRepository,
+        generateId: () => 'pinned-${++id}',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 12, 0, id),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-pinned'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: QuizScreen.typedRecall(
+            categoryId: 'category-1',
+            learning: pinnedLearning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(
+              learning: pinnedLearning,
+            ),
+            modeAdapter: const TypedRecallModeAdapter(),
+          ),
+        ),
+      );
+      await _pumpUntilFound(tester, find.text('station'));
+      final first = find.byKey(
+        const ValueKey<String>('meaning-quiz-option-word-1-สถานี'),
+      );
+      tester.widget<FilledButton>(first).onPressed!();
+      await _pumpUntilFound(tester, find.text('Correct answer: สถานี'));
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey<String>('meaning-quiz-next')),
+          )
+          .onPressed!();
+      await _pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey<String>('typed-recall-input')),
+      );
+
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('typed-recall-input')),
+        'AIR PORT',
+      );
+      await tester.pump();
+      tester
+          .widget<FilledButton>(
+            find.byKey(const ValueKey<String>('typed-recall-submit')),
+          )
+          .onPressed!();
+      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+
+      final attempt =
+          (await database.select(database.answerAttempts).get()).last;
+      final context = EvidenceContext.fromJson(
+        (jsonDecode(attempt.evidenceContextJson) as Map)
+            .cast<String, Object?>(),
+      );
+      expect(attempt.isCorrect, isTrue);
+      expect(
+        attempt.providerProvenance,
+        'typed-recall:vocabulary-text-v1:meaning:accepted-variant',
+      );
+      expect(
+        context.contentRevision,
+        'lexical-typed-recall:word-2@1:'
+        '${typedRecallAnswerSetChecksumSha256(coreChecksumSha256: _checksumB, acceptedVariantsRevision: 1, acceptedVariantsChecksumSha256: _checksumA)}',
+      );
+    },
+  );
+
+  test(
+    'typed capture retries lost acknowledgement with one raw-free attempt',
+    () async {
+      final repository = _FailFirstLearningRepository(
+        DriftLearningRepository(database),
+        commitThenLoseAckOnce: true,
+      );
+      var retryId = 0;
+      final retryLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'typed-lost-ack-${++retryId}',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 11, 0, retryId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-test'),
+      );
+      final session = await retryLearning.startQuiz(
+        categoryId: 'category-1',
+        limit: 1,
+      );
+      final ownerId = (await owners.getOrCreateActiveOwner()).id;
+      await (repository.delegate as DriftLearningRepository)
+          .appendActivityCheckpoint(
+            ownerId: ownerId,
+            checkpoint: LearningActivityCheckpoint(
+              sessionId: session.id,
+              activityType: 'quiz',
+              revision: 1,
+              occurredAtUtc: DateTime.utc(2026, 8, 26, 11, 0, 30),
+              state: const <String, Object?>{
+                'schemaVersion': 1,
+                'privacyBoundary': 'typed-recall-controlled-code-only',
+              },
+            ),
+          );
+      const rawAcceptedVariant = 'F11RawFreeCanary9Q7';
+      const normalizedAcceptedVariant = 'f11rawfreecanary9q7';
+      final captured = const TypedRecallModeAdapter().capture(
+        evidence: CurrentActivityEvidenceAdapter(learning: retryLearning),
+        sessionId: session.id,
+        prompt: TypedRecallPrompt(
+          wordId: 'word-1',
+          canonicalAnswer: 'station',
+          acceptedVariants: <String>[normalizedAcceptedVariant],
+          acceptedVariantsRevision: 1,
+          acceptedVariantsChecksumSha256: _checksumB,
+          promptKind: TypedRecallPromptKind.meaning,
+          normalizationRevision: typedRecallNormalizationRevisionV1,
+          contentRevision: 1,
+          contentChecksumSha256: _checksumA,
+        ),
+        response: rawAcceptedVariant,
+        responseTimeMs: 420,
+        attemptNumber: 1,
+        support: const TypedRecallSupport.unassisted(),
+      );
+
+      expect(captured.evaluation.isCorrect, isTrue);
+      expect(
+        captured.evaluation.responseCode,
+        TypedRecallResponseCode.acceptedVariant,
+      );
+      await expectLater(captured.pending.record(), throwsStateError);
+      final result = await captured.pending.retry();
+
+      expect(result.isCorrect, isTrue);
+      expect(repository.commands, hasLength(2));
+      final first = repository.commands.first;
+      final retry = repository.commands.last;
+      expect(retry.id, first.id);
+      expect(retry.occurredAtUtc, first.occurredAtUtc);
+      expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
+      expect(retry.event?.toJson(), first.event?.toJson());
+      expect(first.promptMode, 'typedRecall');
+      expect(
+        first.evidenceContext.evidenceClass,
+        EvidenceClass.independentRecall,
+      );
+      expect(
+        first.providerProvenance,
+        'typed-recall:vocabulary-text-v1:meaning:accepted-variant',
+      );
+      expect(first.providerProvenance, isNot(contains(rawAcceptedVariant)));
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
+      );
+      final attemptsPayload = jsonEncode(<Object?>[
+        for (final row in await database.select(database.answerAttempts).get())
+          row.toJson(),
+      ]);
+      final eventRows = await database.select(database.eventsV2).get();
+      final eventPayload = jsonEncode(<Object?>[
+        for (final row in eventRows) row.toJson(),
+      ]);
+      final checkpointPayload = jsonEncode(<Object?>[
+        for (final row in eventRows)
+          if (row.eventType == 'LearningActivityCheckpoint') row.toJson(),
+      ]);
+      final outboxPayload = jsonEncode(<Object?>[
+        for (final row
+            in await database.select(database.outboxOperations).get())
+          row.toJson(),
+      ]);
+      final loggablePayload = jsonEncode(<Object?>[
+        for (final command in repository.commands)
+          <String, Object?>{
+            'id': command.id,
+            'ownerId': command.ownerId,
+            'sessionId': command.sessionId,
+            'wordId': command.wordId,
+            'promptMode': command.promptMode,
+            'isCorrect': command.isCorrect,
+            'responseTimeMs': command.responseTimeMs,
+            'attemptNumber': command.attemptNumber,
+            'occurredAtUtc': command.occurredAtUtc.toIso8601String(),
+            'evidenceContext': command.evidenceContext.toJson(),
+            'providerProvenance': command.providerProvenance,
+            'event': command.event?.toJson(),
+          },
+      ]);
+      for (final payload in <String, String>{
+        'attempt': attemptsPayload,
+        'event': eventPayload,
+        'outbox': outboxPayload,
+        'checkpoint': checkpointPayload,
+        'loggable': loggablePayload,
+      }.entries) {
+        expect(
+          payload.value,
+          isNot(contains(rawAcceptedVariant)),
+          reason: '${payload.key} payload must not retain the raw response',
+        );
+        expect(
+          payload.value,
+          isNot(contains(normalizedAcceptedVariant)),
+          reason:
+              '${payload.key} payload must not retain the normalized response',
+        );
+      }
+    },
+  );
+
+  test(
+    'duplicate typed submit shares one in-flight gateway operation',
+    () async {
+      final release = Completer<void>();
+      final repository = _FailFirstLearningRepository(
+        DriftLearningRepository(database),
+        failAnswerOnce: false,
+        firstAnswerRelease: release,
+      );
+      final duplicateLearning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'typed-duplicate',
+        nowUtc: () => DateTime.utc(2026, 8, 26, 11, 30),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f11-test'),
+      );
+      final session = await duplicateLearning.startQuiz(
+        categoryId: 'category-1',
+        limit: 1,
+      );
+      final captured = const TypedRecallModeAdapter().capture(
+        evidence: CurrentActivityEvidenceAdapter(learning: duplicateLearning),
+        sessionId: session.id,
+        prompt: TypedRecallPrompt(
+          wordId: 'word-1',
+          canonicalAnswer: 'station',
+          promptKind: TypedRecallPromptKind.audio,
+          normalizationRevision: typedRecallNormalizationRevisionV1,
+          contentRevision: 1,
+          contentChecksumSha256: _checksumA,
+        ),
+        response: 'station',
+        responseTimeMs: 250,
+        attemptNumber: 1,
+        support: const TypedRecallSupport.unassisted(),
+      );
+
+      final first = captured.pending.record();
+      final duplicate = captured.pending.record();
+      expect(duplicate, same(first));
+      release.complete();
+      await Future.wait(<Future<AnswerRecordResult>>[first, duplicate]);
+
+      expect(repository.commands, hasLength(1));
+      expect(
+        await database.select(database.answerAttempts).get(),
+        hasLength(1),
       );
     },
   );
@@ -803,16 +1360,20 @@ final class _FailFirstLearningRepository implements LearningRepository {
     this.failAnswerOnce = true,
     this.failFinishOnce = false,
     this.commitThenLoseAckOnce = false,
+    this.commitThenLoseAckPromptMode,
     this.firstAnswerRelease,
     this.firstFinishRelease,
+    this.transformWords,
   });
 
   final LearningRepository delegate;
   final bool failAnswerOnce;
   final bool failFinishOnce;
   final bool commitThenLoseAckOnce;
+  final String? commitThenLoseAckPromptMode;
   final Completer<void>? firstAnswerRelease;
   final Completer<void>? firstFinishRelease;
+  final List<QuizWord> Function(List<QuizWord> words)? transformWords;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
   finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
@@ -823,11 +1384,14 @@ final class _FailFirstLearningRepository implements LearningRepository {
     required String ownerId,
     String? categoryId,
     required int limit,
-  }) => delegate.listQuizWords(
-    ownerId: ownerId,
-    categoryId: categoryId,
-    limit: limit,
-  );
+  }) async {
+    final words = await delegate.listQuizWords(
+      ownerId: ownerId,
+      categoryId: categoryId,
+      limit: limit,
+    );
+    return transformWords?.call(words) ?? words;
+  }
 
   @override
   Future<void> startSession(LearningSessionDraft session) =>
@@ -837,7 +1401,10 @@ final class _FailFirstLearningRepository implements LearningRepository {
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
     if (commands.length == 1) await firstAnswerRelease?.future;
-    if (commitThenLoseAckOnce && !_answerFailed) {
+    if (commitThenLoseAckOnce &&
+        !_answerFailed &&
+        (commitThenLoseAckPromptMode == null ||
+            command.promptMode == commitThenLoseAckPromptMode)) {
       _answerFailed = true;
       await delegate.recordAnswer(command);
       throw StateError('simulated acknowledgement loss after commit');
@@ -881,6 +1448,7 @@ Future<void> _insertWord(
   required String id,
   required String spelling,
   required String meaning,
+  String checksum = _checksumA,
 }) {
   return database
       .into(database.vocabularyWords)
@@ -894,6 +1462,8 @@ Future<void> _insertWord(
           meaning: meaning,
           normalizedMeaning: meaning,
           partOfSpeech: 'noun',
+          contentRevision: const Value(1),
+          contentChecksumSha256: Value(checksum),
           createdAtUtcMs: 1,
           updatedAtUtcMs: 1,
         ),

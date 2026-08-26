@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -11,6 +10,7 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
@@ -18,6 +18,9 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
 import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
@@ -233,6 +236,133 @@ void main() {
         matches(RegExp(r'^associative-reading:[0-9a-f]{64}$')),
       );
       expect(session.documentRevision, inInclusiveRange(1, 4503599627370496));
+      await closeHarness(tester);
+    },
+    timeout: const Timeout(Duration(seconds: 20)),
+  );
+
+  testWidgets(
+    'launcher pins verified spelling variants from the production lexical source',
+    (tester) async {
+      final seeded = await tester.runAsync(() async {
+        final owner = await owners.getOrCreateActiveOwner();
+        final category = await vocabulary.createCategory('Verified recall');
+        const wordId = 'word:verified-rail-ticket';
+        const spelling = 'ticket';
+        const meaning = 'ตั๋ว';
+        const source = 'pack:v1';
+        final coreChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+          categoryId: category.id,
+          spelling: spelling,
+          normalizedSpelling: spelling,
+          meaning: meaning,
+          normalizedMeaning: meaning,
+          partOfSpeech: 'noun',
+          cefrLevel: 'A2',
+          source: source,
+          isGlobal: true,
+        );
+        await database
+            .into(database.vocabularyWords)
+            .insert(
+              VocabularyWordsCompanion.insert(
+                id: wordId,
+                ownerId: owner.id,
+                categoryId: category.id,
+                spelling: spelling,
+                normalizedSpelling: spelling,
+                meaning: meaning,
+                normalizedMeaning: meaning,
+                partOfSpeech: 'noun',
+                cefrLevel: const Value('A2'),
+                source: const Value(source),
+                isGlobal: const Value(true),
+                contentRevision: const Value(1),
+                contentChecksumSha256: Value(coreChecksum),
+                contentProvenance: const Value('packaged'),
+                contentReviewState: const Value('approved'),
+                contentPublicationState: const Value('published'),
+                createdAtUtcMs: 1,
+                updatedAtUtcMs: 1,
+              ),
+            );
+        final bytes = Uint8List.fromList(
+          utf8.encode(
+            jsonEncode(<String, Object?>{
+              'schemaVersion': 3,
+              'wordId': wordId,
+              'contentRevision': 1,
+              'englishDefinition': 'A pass used for a journey.',
+              'ipa': null,
+              'examples': <String>[],
+              'synonyms': <String>[],
+              'antonyms': <String>[],
+              'acceptedSpellingVariants': <String>['rail ticket'],
+              'audio': null,
+            }),
+          ),
+        );
+        final artifactChecksum = sha256.convert(bytes).toString();
+        await database
+            .into(database.contentManifests)
+            .insert(
+              ContentManifestsCompanion.insert(
+                id: 'manifest:verified-rail-ticket:r1',
+                contentType: ContentType.lexicalMetadata.name,
+                contentId: wordId,
+                revision: 1,
+                checksumSha256: artifactChecksum,
+                byteLength: bytes.length,
+                provenance: ContentProvenance.packaged.name,
+                sourceUri: 'asset://lexical-metadata/rail-ticket/r1.json',
+                reviewState: ContentReviewState.approved.name,
+                publicationState: ContentPublicationState.published.name,
+                createdAtUtcMs: 1,
+                reviewedAtUtcMs: const Value(2),
+                publishedAtUtcMs: const Value(3),
+              ),
+            );
+        vocabulary = VocabularyUseCases(
+          owners: owners,
+          vocabulary: DriftVocabularyRepository(
+            database,
+            contentManifests: DriftContentManifestRepository(
+              database,
+              loadArtifactBytes: (identity) async =>
+                  identity.id == wordId ? bytes : null,
+            ),
+          ),
+          generateId: () => 'unused-verified-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 14),
+        );
+        dependencies = makeDependencies();
+        return (coreChecksum: coreChecksum, artifactChecksum: artifactChecksum);
+      });
+
+      await pump(tester, const AssociativeReadingLauncherScreen());
+      await pumpUntilFound(tester, find.text('Start reading'));
+      await tester.tap(find.text('Start reading'));
+      await pumpUntilFound(
+        tester,
+        find.byType(AssociativeReadingSessionScreen),
+      );
+
+      final session = tester.widget<AssociativeReadingSessionScreen>(
+        find.byType(AssociativeReadingSessionScreen),
+      );
+      final source = seeded!;
+      final prompt = session.recallPrompts!.single;
+      expect(prompt.acceptedVariants, const <String>['rail ticket']);
+      expect(prompt.acceptedVariantsRevision, 1);
+      expect(prompt.acceptedVariantsChecksumSha256, source.artifactChecksum);
+      expect(
+        typedRecallAnswerSetChecksumSha256(
+          coreChecksumSha256: source.coreChecksum,
+          acceptedVariantsRevision: prompt.acceptedVariantsRevision,
+          acceptedVariantsChecksumSha256: prompt.acceptedVariantsChecksumSha256,
+        ),
+        isNot(source.coreChecksum),
+      );
       await closeHarness(tester);
     },
     timeout: const Timeout(Duration(seconds: 20)),
@@ -703,8 +833,12 @@ void main() {
 
         expect(repository.abandonCalls, 2);
         expect(repository.successfulAbandons, 1);
-        expect(idleCallbacks, hasLength(2));
-        expect(idleCancellations, greaterThanOrEqualTo(2));
+        expect(
+          idleCallbacks,
+          hasLength(1),
+          reason: 'route retirement owns one F24 lifecycle at one cutoff',
+        );
+        expect(idleCancellations, greaterThanOrEqualTo(1));
         final sessionsBeforeIdle = (await tester.runAsync(
           () => database.select(database.learningSessions).get(),
         ))!;
@@ -1026,6 +1160,114 @@ void main() {
     timeout: const Timeout(Duration(seconds: 20)),
   );
 
+  for (final gatedFeature in const <Feature>[Feature.reading, Feature.quiz]) {
+    testWidgets(
+      'production ${gatedFeature.name} live-off drains one accepted associative evidence write',
+      (tester) async {
+        final repository = _BlockedAnswerCountingLearningRepository(
+          DriftLearningRepository(database),
+        );
+        learning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'accepted-live-off-${++id}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 15, 0, id),
+          buildInfo: const AppBuildInfo(
+            version: 'test',
+            buildId: 'associative-accepted-live-off',
+          ),
+        );
+        final registry = RuntimeFeatureRegistry(
+          const BuildFeatureRegistry.allEnabled(),
+        );
+        addTearDown(registry.dispose);
+        dependencies = makeDependencies(features: registry);
+
+        try {
+          await tester.runAsync(() => seedWords(1));
+          await pump(tester, const AssociativeReadingLauncherScreen());
+          await pumpUntilFound(tester, find.text('Start reading'));
+          await tester.tap(find.text('Start reading'));
+          await pumpUntilFound(
+            tester,
+            find.byType(AssociativeReadingSessionScreen),
+          );
+          await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+          for (var stage = 2; stage <= 3; stage++) {
+            tester
+                .widget<FilledButton>(
+                  find.widgetWithText(FilledButton, 'Complete & Continue'),
+                )
+                .onPressed!();
+            await pumpUntilFound(
+              tester,
+              find.text('Stage $stage: ${_stageName(stage)}'),
+            );
+          }
+          await tester.enterText(find.byType(TextField), 'word-0');
+          final staleSubmit = tester
+              .widget<FilledButton>(
+                find.widgetWithText(FilledButton, 'Complete & Continue'),
+              )
+              .onPressed!;
+          monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+
+          staleSubmit();
+          await tester.runAsync(
+            () => repository.answerEntered.future.timeout(
+              const Duration(seconds: 1),
+            ),
+          );
+          registry.emergencyOff(gatedFeature);
+          staleSubmit();
+          await tester.pump();
+
+          expect(repository.answerCalls, 1);
+          expect(
+            repository.abandonCalls,
+            0,
+            reason: 'retirement must await the accepted evidence operation',
+          );
+          final segmentsWhileBlocked = (await tester.runAsync(
+            () => database.select(database.learningTimeSegments).get(),
+          ))!;
+          expect(segmentsWhileBlocked, hasLength(1));
+          expect(segmentsWhileBlocked.single.activeDurationMs, 2000);
+
+          repository.releaseAnswer();
+          await tester.pumpAndSettle();
+          final result = (await tester.runAsync(() async {
+            return (
+              attempts: await database.select(database.answerAttempts).get(),
+              sessions: await database.select(database.learningSessions).get(),
+              segments: await database
+                  .select(database.learningTimeSegments)
+                  .get(),
+            );
+          }))!;
+          expect(repository.answerCalls, 1);
+          expect(repository.abandonCalls, 1);
+          expect(result.attempts, hasLength(1));
+          expect(result.attempts.single.promptMode, 'associativeRecall');
+          expect(
+            result.sessions.where((session) => session.state == 'active'),
+            isEmpty,
+          );
+          expect(
+            result.sessions.where((session) => session.state == 'abandoned'),
+            hasLength(1),
+          );
+          expect(result.segments, hasLength(1));
+          expect(result.segments.single.activeDurationMs, 2000);
+        } finally {
+          repository.releaseAnswer();
+          await closeHarness(tester);
+        }
+      },
+      timeout: const Timeout(Duration(seconds: 20)),
+    );
+  }
+
   testWidgets(
     'completed reading replay closes its fresh durable session',
     (tester) async {
@@ -1095,6 +1337,72 @@ void main() {
     },
     timeout: const Timeout(Duration(seconds: 15)),
   );
+}
+
+String _stageName(int stage) => switch (stage) {
+  2 => 'Cue Fading',
+  3 => 'Active Recall',
+  _ => throw ArgumentError.value(stage, 'stage'),
+};
+
+final class _BlockedAnswerCountingLearningRepository
+    implements LearningRepository, LearningSessionLifecycleRepository {
+  _BlockedAnswerCountingLearningRepository(this._delegate);
+
+  final DriftLearningRepository _delegate;
+  final Completer<void> answerEntered = Completer<void>();
+  final Completer<void> _answerRelease = Completer<void>();
+  int answerCalls = 0;
+  int abandonCalls = 0;
+
+  void releaseAnswer() {
+    if (!_answerRelease.isCompleted) _answerRelease.complete();
+  }
+
+  @override
+  Future<void> startSession(LearningSessionDraft session) =>
+      _delegate.startSession(session);
+
+  @override
+  Future<ReadingProgressSnapshot?> readReadingProgress({
+    required String ownerId,
+    required String documentId,
+    required int documentRevision,
+  }) => _delegate.readReadingProgress(
+    ownerId: ownerId,
+    documentId: documentId,
+    documentRevision: documentRevision,
+  );
+
+  @override
+  Future<ReadingProgressSnapshot> saveReadingProgress(
+    ReadingProgressCommand command,
+  ) => _delegate.saveReadingProgress(command);
+
+  @override
+  Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
+    answerCalls += 1;
+    if (!answerEntered.isCompleted) answerEntered.complete();
+    await _answerRelease.future;
+    return _delegate.recordAnswer(command);
+  }
+
+  @override
+  Future<LearningSessionSummary> abandonSession({
+    required String ownerId,
+    required String sessionId,
+    required DateTime abandonedAtUtc,
+  }) {
+    abandonCalls += 1;
+    return _delegate.abandonSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      abandonedAtUtc: abandonedAtUtc,
+    );
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _FailingProgressCountingLearningRepository

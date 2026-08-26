@@ -6,12 +6,16 @@ import 'package:vocab_learning_app/features/learning/application/legacy_lesson_m
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
+
+const _typedChecksum =
+    'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
   test('canonical mode registry is an exact typed delivery and route join', () {
@@ -29,6 +33,11 @@ void main() {
             feature: Feature.quiz,
             entryId: 'home/learn/quiz',
             routeName: 'learning/quiz',
+          ),
+          LessonMode.typedRecall: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'learning/typed-recall',
           ),
           LessonMode.definitionQuiz: (
             feature: Feature.quiz,
@@ -82,7 +91,9 @@ void main() {
         productionFeatureContract[registration.feature]!.productionEntryId,
         registration.productionEntryId,
       );
-      if (registration.mode == LessonMode.definitionQuiz ||
+      if (registration.mode == LessonMode.associativeReading ||
+          registration.mode == LessonMode.typedRecall ||
+          registration.mode == LessonMode.definitionQuiz ||
           registration.mode == LessonMode.cloze ||
           registration.mode == LessonMode.matching) {
         expect(registration.adapter, isA<HintSupportingLessonModeAdapter>());
@@ -127,6 +138,21 @@ void main() {
     );
     expect(
       registrations
+          .singleWhere((entry) => entry.mode == LessonMode.associativeReading)
+          .adapter,
+      isNot(isA<TypedRecallModeAdapter>()),
+    );
+    final registry = buildLessonModeRegistry();
+    final typedRecall = registry.typedRecall;
+    expect(typedRecall, isNotNull);
+    expect(typedRecall!.feature, Feature.quiz);
+    expect(typedRecall.productionEntryId, 'home/learn/quiz');
+    expect(typedRecall.routeName, 'learning/typed-recall');
+    expect(typedRecall.mode, LessonMode.typedRecall);
+    expect(typedRecall.adapter, isA<TypedRecallModeAdapter>());
+    expect(registry.resolveTypedRecall(), same(typedRecall));
+    expect(
+      registrations
           .singleWhere((entry) => entry.mode == LessonMode.matching)
           .deliveryState,
       LessonModeDeliveryState.implementedOff,
@@ -145,8 +171,10 @@ void main() {
           .toList(growable: false);
       final adapter = _HintBoundaryAdapter();
 
-      expect(hintRegistrations, hasLength(3));
+      expect(hintRegistrations, hasLength(5));
       expect(hintRegistrations.map((entry) => entry.mode).toSet(), <LessonMode>{
+        LessonMode.associativeReading,
+        LessonMode.typedRecall,
         LessonMode.definitionQuiz,
         LessonMode.cloze,
         LessonMode.matching,
@@ -156,6 +184,203 @@ void main() {
       expect(registrations, hasLength(LessonMode.values.length));
     },
   );
+
+  test(
+    'typed recall owns versioned normalization correctness and assistance',
+    () {
+      const adapter = TypedRecallModeAdapter();
+      final prompt = TypedRecallPrompt(
+        wordId: 'typed-word',
+        canonicalAnswer: 'Rail station',
+        acceptedVariants: <String>['train stop'],
+        acceptedVariantsRevision: 3,
+        acceptedVariantsChecksumSha256: _typedChecksum,
+        promptKind: TypedRecallPromptKind.meaning,
+        normalizationRevision: typedRecallNormalizationRevisionV1,
+        contentRevision: 3,
+        contentChecksumSha256: _typedChecksum,
+      );
+
+      final exact = adapter.evaluate(
+        prompt: prompt,
+        response: '  RAIL   STATION ',
+        support: const TypedRecallSupport.unassisted(),
+      );
+      final variant = adapter.evaluate(
+        prompt: prompt,
+        response: ' Train   Stop ',
+        support: const TypedRecallSupport.unassisted(),
+      );
+      final hinted = adapter.evaluate(
+        prompt: prompt,
+        response: 'Rail station',
+        support: const TypedRecallSupport(hint: HintUsageSnapshot.known(1)),
+      );
+      final supported = adapter.evaluate(
+        prompt: prompt,
+        response: 'not the answer',
+        support: const TypedRecallSupport(
+          hint: HintUsageSnapshot.unavailable(),
+          additionalSupportUsed: true,
+        ),
+      );
+
+      expect(exact.isCorrect, isTrue);
+      expect(exact.responseCode, TypedRecallResponseCode.exact);
+      expect(exact.evidenceClass, EvidenceClass.independentRecall);
+      expect(exact.hintLevel, 0);
+      expect(variant.isCorrect, isTrue);
+      expect(variant.responseCode, TypedRecallResponseCode.acceptedVariant);
+      expect(variant.evidenceClass, EvidenceClass.independentRecall);
+      expect(hinted.evidenceClass, EvidenceClass.guidedPractice);
+      expect(hinted.hintLevel, 1);
+      expect(supported.isCorrect, isFalse);
+      expect(supported.responseCode, TypedRecallResponseCode.incorrect);
+      expect(supported.evidenceClass, EvidenceClass.guidedPractice);
+      expect(supported.hintLevel, 1);
+      for (final outcome in <TypedRecallEvaluation>[
+        exact,
+        variant,
+        hinted,
+        supported,
+      ]) {
+        expect(outcome.controlledResponseCode.length, lessThanOrEqualTo(32));
+        expect(
+          outcome.controlledResponseCode,
+          matches(RegExp(r'^[a-z][a-z-]{0,31}$')),
+        );
+        expect(outcome.providerProvenance, isNot(contains('Rail station')));
+        expect(outcome.providerProvenance.length, lessThanOrEqualTo(96));
+      }
+    },
+  );
+
+  test('typed recall fails closed for an unknown normalization revision', () {
+    const adapter = TypedRecallModeAdapter();
+
+    expect(
+      () => adapter.evaluate(
+        prompt: TypedRecallPrompt(
+          wordId: 'typed-word',
+          canonicalAnswer: 'station',
+          promptKind: TypedRecallPromptKind.context,
+          normalizationRevision: 'vocabulary-text-v999',
+          contentRevision: 1,
+          contentChecksumSha256: _typedChecksum,
+        ),
+        response: 'station',
+        support: const TypedRecallSupport.unassisted(),
+      ),
+      throwsStateError,
+    );
+  });
+
+  test('typed recall v1 canonicalizes Unicode without locale drift', () {
+    const adapter = TypedRecallModeAdapter();
+    final composed = TypedRecallPrompt(
+      wordId: 'typed-cafe',
+      canonicalAnswer: 'caf\u00e9',
+      promptKind: TypedRecallPromptKind.meaning,
+      normalizationRevision: typedRecallNormalizationRevisionV1,
+      contentRevision: 4,
+      contentChecksumSha256: _typedChecksum,
+    );
+    final turkishAsciiI = TypedRecallPrompt(
+      wordId: 'typed-i',
+      canonicalAnswer: 'I',
+      promptKind: TypedRecallPromptKind.audio,
+      normalizationRevision: typedRecallNormalizationRevisionV1,
+      contentRevision: 2,
+      contentChecksumSha256: _typedChecksum,
+    );
+    final turkishDottedI = TypedRecallPrompt(
+      wordId: 'typed-dotted-i',
+      canonicalAnswer: '\u0130',
+      promptKind: TypedRecallPromptKind.audio,
+      normalizationRevision: typedRecallNormalizationRevisionV1,
+      contentRevision: 2,
+      contentChecksumSha256: _typedChecksum,
+    );
+
+    expect(
+      adapter
+          .evaluate(
+            prompt: composed,
+            response: 'CAFE\u0301',
+            support: const TypedRecallSupport.unassisted(),
+          )
+          .responseCode,
+      TypedRecallResponseCode.exact,
+    );
+    expect(
+      adapter
+          .evaluate(
+            prompt: turkishAsciiI,
+            response: 'i',
+            support: const TypedRecallSupport.unassisted(),
+          )
+          .responseCode,
+      TypedRecallResponseCode.exact,
+    );
+    expect(
+      adapter
+          .evaluate(
+            prompt: turkishDottedI,
+            response: 'i',
+            support: const TypedRecallSupport.unassisted(),
+          )
+          .responseCode,
+      TypedRecallResponseCode.incorrect,
+    );
+  });
+
+  test('typed recall validates scalar and pinned content bounds', () {
+    const adapter = TypedRecallModeAdapter();
+    TypedRecallPrompt prompt({
+      int contentRevision = 1,
+      String checksum = _typedChecksum,
+    }) => TypedRecallPrompt(
+      wordId: 'typed-bounds',
+      canonicalAnswer: 'answer',
+      promptKind: TypedRecallPromptKind.context,
+      normalizationRevision: typedRecallNormalizationRevisionV1,
+      contentRevision: contentRevision,
+      contentChecksumSha256: checksum,
+    );
+
+    expect(
+      adapter.evaluate(
+        prompt: prompt(),
+        response: 'a' * TypedRecallModeAdapter.maxAnswerScalars,
+        support: const TypedRecallSupport.unassisted(),
+      ),
+      isA<TypedRecallEvaluation>(),
+    );
+    expect(
+      () => adapter.evaluate(
+        prompt: prompt(),
+        response: 'a' * (TypedRecallModeAdapter.maxAnswerScalars + 1),
+        support: const TypedRecallSupport.unassisted(),
+      ),
+      throwsArgumentError,
+    );
+    expect(
+      () => adapter.evaluate(
+        prompt: prompt(contentRevision: 0),
+        response: 'answer',
+        support: const TypedRecallSupport.unassisted(),
+      ),
+      throwsStateError,
+    );
+    expect(
+      () => adapter.evaluate(
+        prompt: prompt(checksum: 'unknown'),
+        response: 'answer',
+        support: const TypedRecallSupport.unassisted(),
+      ),
+      throwsStateError,
+    );
+  });
 
   test('flashcard adapter keeps reveal and independent recall disjoint', () {
     const adapter = FlashcardModeAdapter();
@@ -389,7 +614,9 @@ void main() {
       );
 
       for (final registration in buildLessonModeRegistry().registrations) {
-        if (registration.mode == LessonMode.flashcard ||
+        if (registration.mode == LessonMode.associativeReading ||
+            registration.mode == LessonMode.typedRecall ||
+            registration.mode == LessonMode.flashcard ||
             registration.mode == LessonMode.definitionQuiz ||
             registration.mode == LessonMode.cloze ||
             registration.mode == LessonMode.matching) {

@@ -6,6 +6,7 @@ import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/matching_mode_adapter.dart';
+import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -31,6 +32,7 @@ class ChooseModeScreen extends StatelessWidget {
     final features = featureRegistry ?? dependencies?.features;
     final modes = lessonModes ?? dependencies?.lessonModes;
     final matching = modes?.resolve(LessonMode.matching);
+    final typedRecall = modes?.resolveTypedRecall();
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
       body: ListView(
@@ -60,6 +62,20 @@ class ChooseModeScreen extends StatelessWidget {
                 LessonMode.meaningQuiz,
                 (_, adapter) =>
                     QuizScreen(modeAdapter: adapter as MeaningQuizModeAdapter),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true && typedRecall != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/typed-recall'),
+              icon: Icons.keyboard_outlined,
+              title: 'Typed Recall',
+              subtitle: 'Recall and type the vocabulary spelling from memory.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.typedRecall,
+                (_, adapter) => QuizScreen.typedRecall(
+                  modeAdapter: adapter as TypedRecallModeAdapter,
+                ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true && matching != null)
@@ -151,10 +167,24 @@ class ChooseModeScreen extends StatelessWidget {
       );
       return Future<void>.value();
     }
+    final typedRecall = modes?.resolveTypedRecall();
+    if (mode == LessonMode.associativeReading && typedRecall == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This typed recall mode is unavailable.')),
+      );
+      return Future<void>.value();
+    }
     if (mode == LessonMode.meaningQuiz &&
         registration.adapter is! MeaningQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This meaning quiz is unavailable.')),
+      );
+      return Future<void>.value();
+    }
+    if (mode == LessonMode.typedRecall &&
+        registration.adapter is! TypedRecallModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This typed recall mode is unavailable.')),
       );
       return Future<void>.value();
     }

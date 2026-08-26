@@ -14,11 +14,13 @@ final class RichLexicalMetadata {
 
   RichLexicalMetadata({
     this.englishDefinition,
+    this.verifiedContentRevision,
     this.verifiedArtifactChecksumSha256,
     this.ipa,
     Iterable<String> examples = const <String>[],
     Iterable<String> synonyms = const <String>[],
     Iterable<String> antonyms = const <String>[],
+    Iterable<String> acceptedSpellingVariants = const <String>[],
     this.audio,
   }) : examples = UnmodifiableListView<String>(
          examples.toList(growable: false),
@@ -28,9 +30,16 @@ final class RichLexicalMetadata {
        ),
        antonyms = UnmodifiableListView<String>(
          antonyms.toList(growable: false),
+       ),
+       acceptedSpellingVariants = UnmodifiableListView<String>(
+         acceptedSpellingVariants.toList(growable: false),
        );
 
   final String? englishDefinition;
+
+  /// Revision of the verified lexical-metadata artifact. Evidence-producing
+  /// callers must pair this with [verifiedArtifactChecksumSha256].
+  final int? verifiedContentRevision;
 
   /// SHA-256 of the verified lexical-metadata artifact these fields came
   /// from. Presentation-only callers may omit it; evidence-producing modes
@@ -40,6 +49,7 @@ final class RichLexicalMetadata {
   final List<String> examples;
   final List<String> synonyms;
   final List<String> antonyms;
+  final List<String> acceptedSpellingVariants;
   final LexicalAudioMetadata? audio;
 
   /// Strictly decodes the bounded canonical f04 lexical-metadata JSON shape.
@@ -86,6 +96,18 @@ final class RichLexicalMetadata {
         'antonyms',
         'audio',
       },
+      3 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'acceptedSpellingVariants',
+        'audio',
+      },
       _ => const <String>{},
     };
     if (expectedKeys.isEmpty ||
@@ -99,18 +121,22 @@ final class RichLexicalMetadata {
     }
     final ipa = _optionalText(decoded['ipa'], 'ipa', maxLength: 160);
     return RichLexicalMetadata(
-      englishDefinition: schemaVersion == 2
+      englishDefinition: schemaVersion == 2 || schemaVersion == 3
           ? _optionalText(
               decoded['englishDefinition'],
               'englishDefinition',
               maxLength: 600,
             )
           : null,
+      verifiedContentRevision: contentRevision,
       verifiedArtifactChecksumSha256: verifiedArtifactChecksumSha256,
       ipa: ipa,
       examples: _textList(decoded['examples'], 'examples'),
       synonyms: _textList(decoded['synonyms'], 'synonyms'),
       antonyms: _textList(decoded['antonyms'], 'antonyms'),
+      acceptedSpellingVariants: schemaVersion == 3
+          ? _acceptedSpellingVariants(decoded['acceptedSpellingVariants'])
+          : const <String>[],
       audio: _audio(decoded['audio']),
     );
   }
@@ -175,6 +201,27 @@ final class RichLexicalMetadata {
           !_canonicalText(entry, maxLength: 400) ||
           !seen.add(entry)) {
         throw FormatException('invalid lexical metadata $field');
+      }
+      values.add(entry);
+    }
+    return values;
+  }
+
+  static List<String> _acceptedSpellingVariants(Object? value) {
+    if (value is! List<Object?> || value.length > 8) {
+      throw const FormatException(
+        'invalid lexical metadata acceptedSpellingVariants',
+      );
+    }
+    final values = <String>[];
+    final seen = <String>{};
+    for (final entry in value) {
+      if (entry is! String ||
+          !_canonicalText(entry, maxLength: 120) ||
+          !seen.add(entry)) {
+        throw const FormatException(
+          'invalid lexical metadata acceptedSpellingVariants',
+        );
       }
       values.add(entry);
     }
