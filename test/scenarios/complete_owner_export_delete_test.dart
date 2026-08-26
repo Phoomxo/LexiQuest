@@ -17,6 +17,9 @@ import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_mani
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/runtime/download_counter.dart';
 
@@ -24,7 +27,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v19 lifecycle classifies owner and non-owner tables exactly once',
+    'current v20 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -45,7 +48,7 @@ void main() {
       expect(ownerLifecycleDeletionTableNames, exactCurrentSchemaTables);
       expect(
         ownerLifecycleManifest.map((entry) => entry.alias).toSet(),
-        hasLength(42),
+        hasLength(43),
       );
       expect(
         ownerLifecycleManifest.where(
@@ -57,7 +60,7 @@ void main() {
         ownerLifecycleManifest.where(
           (entry) => entry.authority == OwnerLifecycleAuthority.directOwner,
         ),
-        hasLength(32),
+        hasLength(33),
       );
       expect(ownerLifecycleDirectOwnerTableNames, ownerUpgradeInventory);
       expect(
@@ -260,6 +263,22 @@ void main() {
         'timezoneOffsetMinutes',
         'captureSource',
       });
+      final learningSessions = ownerLifecycleManifest.singleWhere(
+        (entry) => entry.tableName == 'learning_sessions',
+      );
+      expect(learningSessions.allowedExportFields.toSet(), {
+        'recordCount',
+        'activityType',
+        'state',
+        'startedAtUtc',
+        'endedAtUtc',
+        'correctCount',
+        'wrongCount',
+        'score',
+        'sessionConfigurationIdentity',
+        'sessionConfiguration',
+        'configurationActiveEffortUs',
+      });
       final learningGoals = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'learning_goals',
       );
@@ -437,6 +456,189 @@ void main() {
                 as Map<String, dynamic>;
         expect(record['state'], state == 'unknown' ? 'degraded' : state);
       }
+    },
+  );
+
+  test('f16 archive includes saved configuration governing values', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    addTearDown(database.close);
+    await database.customInsert(
+      'INSERT INTO local_owners '
+      '(id, account_state, created_at_utc_ms, is_active) '
+      "VALUES ('owner-a', 'localGuest', 1, 1)",
+    );
+    final configuration = SessionConfiguration.validated(
+      schemaVersion: sessionConfigurationSchemaVersion,
+      policyVersion: sessionConfigurationPolicyVersion,
+      ownerId: 'owner-a',
+      mode: LessonMode.typedRecall,
+      itemCount: 7,
+      direction: SessionDirection.reverse,
+      difficulty: SessionDifficulty.challenge,
+      hintBudget: 2,
+      timing: const SessionTiming.untimedAlternative(
+        maximumActiveEffort: Duration(minutes: 12),
+      ),
+      packIdentity: const ContentIdentity(
+        type: ContentType.learningPack,
+        id: 'pack:archive-f16',
+        revision: 8,
+      ),
+      protocolId: 'protocol:archive-f16',
+      protocolVersion: '3',
+      protocolLimitsIdentity: 'sha256:archive-f16-limits',
+    );
+    await database
+        .into(database.sessionConfigurations)
+        .insert(
+          SessionConfigurationsCompanion.insert(
+            ownerId: 'owner-a',
+            mode: LessonMode.typedRecall.name,
+            contentIdentity: configuration.contentIdentity,
+            stableSerialization: configuration.stableSerialization,
+            updatedAtUtcMs: 2,
+          ),
+        );
+
+    final artifact = await OwnerLifecycleArchiveExporter(
+      database: database,
+      nowUtc: () => DateTime.utc(2026, 8, 26),
+    ).prepareActive();
+    final envelope =
+        jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+    final content = envelope['content'] as Map<String, dynamic>;
+    final table = (content['tables'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .singleWhere((entry) => entry['alias'] == 'sessionConfigurations');
+    final record = (table['records'] as List<dynamic>)
+        .cast<Map<String, dynamic>>()
+        .singleWhere((entry) => !entry.containsKey('recordCount'));
+    final archived = record['sessionConfiguration'] as Map<String, dynamic>;
+
+    expect(record['contentIdentity'], configuration.contentIdentity);
+    expect(archived, <String, Object?>{
+      'schemaVersion': sessionConfigurationSchemaVersion,
+      'policyVersion': sessionConfigurationPolicyVersion,
+      'mode': LessonMode.typedRecall.name,
+      'itemCount': 7,
+      'direction': SessionDirection.reverse.name,
+      'difficulty': SessionDifficulty.challenge.name,
+      'hintBudget': 2,
+      'timing': configuration.timing.toJson(),
+      'packIdentity': <String, Object?>{
+        'type': ContentType.learningPack.name,
+        'id': 'pack:archive-f16',
+        'revision': 8,
+      },
+      'protocolId': 'protocol:archive-f16',
+      'protocolVersion': '3',
+      'protocolLimitsIdentity': 'sha256:archive-f16-limits',
+    });
+  });
+
+  test(
+    'f16 configuration export losslessly roundtrips bounded Unicode IDs',
+    () async {
+      String identifier(String prefix) =>
+          '$prefix ${List<String>.filled(255 - prefix.runes.length, '界').join()}';
+      final packId = identifier('ชุด คำ');
+      final protocolId = identifier('โพรโทคอล ภายใน');
+      final protocolVersion = identifier('รุ่น ทดลอง');
+      expect(packId.runes.length, 256);
+      expect(protocolId.runes.length, 256);
+      expect(protocolVersion.runes.length, 256);
+
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await database.customInsert(
+        'INSERT INTO local_owners '
+        '(id, account_state, created_at_utc_ms, is_active) '
+        "VALUES ('owner-a', 'localGuest', 1, 1)",
+      );
+      final configuration = SessionConfiguration.validated(
+        schemaVersion: sessionConfigurationSchemaVersion,
+        policyVersion: sessionConfigurationPolicyVersion,
+        ownerId: 'owner-a',
+        mode: LessonMode.typedRecall,
+        itemCount: 5,
+        direction: SessionDirection.mixed,
+        difficulty: SessionDifficulty.standard,
+        hintBudget: 1,
+        timing: const SessionTiming.timed(Duration(minutes: 5)),
+        packIdentity: ContentIdentity(
+          type: ContentType.learningPack,
+          id: packId,
+          revision: 4,
+        ),
+        protocolId: protocolId,
+        protocolVersion: protocolVersion,
+        protocolLimitsIdentity: 'sha256:unicode-export-limits',
+      );
+      await database
+          .into(database.sessionConfigurations)
+          .insert(
+            SessionConfigurationsCompanion.insert(
+              ownerId: 'owner-a',
+              mode: configuration.mode.name,
+              contentIdentity: configuration.contentIdentity,
+              stableSerialization: configuration.stableSerialization,
+              updatedAtUtcMs: 2,
+            ),
+          );
+
+      final artifact = await OwnerLifecycleArchiveExporter(
+        database: database,
+        nowUtc: () => DateTime.utc(2026, 8, 26),
+      ).prepareActive();
+      final envelope =
+          jsonDecode(utf8.decode(artifact.bytes)) as Map<String, dynamic>;
+      final tables =
+          (envelope['content'] as Map<String, dynamic>)['tables']
+              as List<dynamic>;
+      final records =
+          (tables.cast<Map<String, dynamic>>().singleWhere(
+                    (table) => table['alias'] == 'sessionConfigurations',
+                  )['records']
+                  as List<dynamic>)
+              .cast<Map<String, dynamic>>();
+      final archived =
+          records.singleWhere(
+                (record) => !record.containsKey('recordCount'),
+              )['sessionConfiguration']
+              as Map<String, dynamic>;
+      final archivedPack = archived['packIdentity'] as Map<String, dynamic>;
+      final reconstructed = SessionConfiguration.validated(
+        schemaVersion: archived['schemaVersion'] as int,
+        policyVersion: archived['policyVersion'] as String,
+        ownerId: 'owner-a',
+        mode: LessonMode.values.byName(archived['mode'] as String),
+        itemCount: archived['itemCount'] as int,
+        direction: SessionDirection.values.byName(
+          archived['direction'] as String,
+        ),
+        difficulty: SessionDifficulty.values.byName(
+          archived['difficulty'] as String,
+        ),
+        hintBudget: archived['hintBudget'] as int,
+        timing: SessionTiming.fromJson(archived['timing']),
+        packIdentity: ContentIdentity(
+          type: ContentType.values.byName(archivedPack['type'] as String),
+          id: archivedPack['id'] as String,
+          revision: archivedPack['revision'] as int,
+        ),
+        protocolId: archived['protocolId'] as String,
+        protocolVersion: archived['protocolVersion'] as String,
+        protocolLimitsIdentity: archived['protocolLimitsIdentity'] as String,
+      );
+
+      expect(archivedPack['id'], packId);
+      expect(archived['protocolId'], protocolId);
+      expect(archived['protocolVersion'], protocolVersion);
+      expect(
+        reconstructed.stableSerialization,
+        configuration.stableSerialization,
+      );
+      expect(reconstructed.contentIdentity, configuration.contentIdentity);
     },
   );
 
@@ -672,7 +874,7 @@ void main() {
       );
       expect(archiveContent['participantAlias'], 'participant-1');
       final archiveTables = archiveContent['tables'] as List<dynamic>;
-      expect(archiveTables, hasLength(42));
+      expect(archiveTables, hasLength(43));
       expect(
         archiveTables
             .map((entry) => (entry as Map<String, dynamic>)['alias'] as String)
@@ -707,6 +909,8 @@ void main() {
         'learningDays',
         'savedLearningItems',
         'contentQualityReports',
+        'learningSessions',
+        'sessionConfigurations',
         'learningTimeSegments',
         'learningGoals',
       ]) {
@@ -738,6 +942,24 @@ void main() {
               .single;
       expect(learningTimeRecord['timezoneId'], 'Asia/Bangkok');
       expect(learningTimeRecord['timezoneOffsetMinutes'], 420);
+      final learningSessionRecord =
+          (archiveTables.cast<Map<String, dynamic>>().singleWhere(
+                    (entry) => entry['alias'] == 'learningSessions',
+                  )['records']
+                  as List<dynamic>)
+              .cast<Map<String, dynamic>>()
+              .where((record) => !record.containsKey('recordCount'))
+              .single;
+      expect(
+        learningSessionRecord['sessionConfigurationIdentity'],
+        startsWith('sha256:'),
+      );
+      expect(
+        (learningSessionRecord['sessionConfiguration']
+            as Map<String, dynamic>)['mode'],
+        LessonMode.meaningQuiz.name,
+      );
+      expect(learningSessionRecord['configurationActiveEffortUs'], 1000000);
       final learningGoalArchive = archiveTables
           .cast<Map<String, dynamic>>()
           .singleWhere((entry) => entry['alias'] == 'learningGoals');
@@ -975,7 +1197,8 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      expect(deleted, 35);
+      // v20 also deletes the owner's durable session-configuration binding.
+      expect(deleted, 36);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
       // v19 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
@@ -1056,6 +1279,23 @@ const _assessmentContractHash =
     '3333333333333333333333333333333333333333333333333333333333333333';
 
 Future<void> _seedCompleteOwnerA(AppDatabase database) async {
+  final sessionConfiguration = SessionConfiguration.validated(
+    schemaVersion: sessionConfigurationSchemaVersion,
+    policyVersion: sessionConfigurationPolicyVersion,
+    ownerId: 'owner-a',
+    mode: LessonMode.meaningQuiz,
+    itemCount: 1,
+    direction: SessionDirection.forward,
+    difficulty: SessionDifficulty.standard,
+    hintBudget: 0,
+    timing: const SessionTiming.untimedAlternative(
+      maximumActiveEffort: Duration(minutes: 10),
+    ),
+    packIdentity: null,
+    protocolId: 'protocol:f16-lifecycle',
+    protocolVersion: '1',
+    protocolLimitsIdentity: 'sha256:f16-lifecycle-limits',
+  );
   final assignmentId =
       DriftExperimentAssignmentRepository.canonicalAssignmentId(
         ownerId: 'owner-a',
@@ -1106,9 +1346,28 @@ Future<void> _seedCompleteOwnerA(AppDatabase database) async {
     "'a:word')",
   );
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    'INSERT INTO learning_sessions '
+    '(id, owner_id, activity_type, state, started_at_utc_ms, ended_at_utc_ms, '
+    'correct_count, wrong_count, score, app_version, build_id, '
+    'session_configuration_identity, session_configuration_json, '
+    'configuration_active_effort_us) VALUES '
     "('a:session', 'owner-a', 'quiz', 'completed', 10, 20, 1, 0, 100, "
-    "'1', '1')",
+    "'1', '1', ?, ?, 1000000)",
+    variables: <Variable<Object>>[
+      Variable<String>(sessionConfiguration.contentIdentity),
+      Variable<String>(sessionConfiguration.stableSerialization),
+    ],
+  );
+  await database.customInsert(
+    'INSERT INTO session_configurations '
+    '(owner_id, mode, content_identity, stable_serialization, '
+    'updated_at_utc_ms) VALUES (?, ?, ?, ?, 20)',
+    variables: <Variable<Object>>[
+      const Variable<String>('owner-a'),
+      Variable<String>(LessonMode.meaningQuiz.name),
+      Variable<String>(sessionConfiguration.contentIdentity),
+      Variable<String>(sessionConfiguration.stableSerialization),
+    ],
   );
   await database.customInsert(
     'INSERT INTO learning_time_segments '

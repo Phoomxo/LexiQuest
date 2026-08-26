@@ -2,6 +2,8 @@ import '../../progress/application/progress_use_cases.dart';
 import '../../progress/domain/progress_models.dart';
 import '../domain/learning_pack.dart';
 import '../domain/learning_pack_repository.dart';
+import '../domain/learning_pack_detail.dart';
+import '../domain/content_manifest.dart';
 
 /// Read-only composition for the one study-planning parent delivery.
 final class StudyPlanningUseCases {
@@ -14,6 +16,21 @@ final class StudyPlanningUseCases {
     final summaries = await packs.list(filter);
     final snapshot = await progress.load();
     return LearningPackCatalog(packs: summaries, progress: snapshot);
+  }
+
+  Future<LearningPackDetail> loadPinnedVersion(ContentIdentity identity) async {
+    if (identity.type != ContentType.learningPack || identity.revision < 1) {
+      throw ArgumentError.value(
+        identity,
+        'identity',
+        'must pin a pack revision',
+      );
+    }
+    final detail = await packs.getVersion(identity.id, identity.revision);
+    if (detail.summary.contentIdentity != identity) {
+      throw StateError('Learning-pack identity drift.');
+    }
+    return detail;
   }
 }
 

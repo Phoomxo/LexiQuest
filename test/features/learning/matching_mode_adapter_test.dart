@@ -2287,70 +2287,90 @@ void main() {
       expect(retried.event?.toJson(), original.event?.toJson());
     });
 
-    test('orphan is fenced and pending close survives restart', () async {
-      final owner = await owners.getOrCreateActiveOwner();
-      final repository = DriftLearningRepository(database);
-      await repository.startSession(
-        LearningSessionDraft(
-          id: 'session:orphan-matching',
-          ownerId: owner.id,
-          activityType: MatchingModeAdapter.activityType,
-          startedAtUtc: DateTime.utc(2026, 8, 25, 12),
-          appVersion: 'test',
-          buildId: 'f10-test',
-        ),
-      );
-      final restartRepository = _RestartRecoveryRepository(
-        repository,
-        finishFailuresRemaining: 1,
-      );
-      final restartLearning = LearningUseCases(
-        owners: owners,
-        repository: restartRepository,
-        generateId: () => 'close-${++generatedId}',
-        nowUtc: () => DateTime.utc(2026, 8, 25, 14, 0, generatedId),
-        buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
-      );
-      final evidence = CurrentActivityEvidenceAdapter(
-        learning: restartLearning,
-      );
-      final prepared = await adapter.prepareSession(
-        learning: restartLearning,
-        evidence: evidence,
-        categoryId: 'category:travel',
-      );
-      expect(prepared.session.id, isNot('session:orphan-matching'));
-      final orphan = await (database.select(
-        database.learningSessions,
-      )..where((row) => row.id.equals('session:orphan-matching'))).getSingle();
-      expect(orphan.state, 'abandoned');
-      final first = adapter.createReview(
-        session: prepared.session,
-        learning: restartLearning,
-        evidence: evidence,
-        recovery: prepared,
-      );
-      await expectLater(first.timeout(), throwsStateError);
-      final closeAtUtc = restartRepository.closes.single.endedAtUtc;
-      first.dispose();
+    test(
+      'orphan is fenced and restored close is owned before emergency retry',
+      () async {
+        final owner = await owners.getOrCreateActiveOwner();
+        final repository = DriftLearningRepository(database);
+        await repository.startSession(
+          LearningSessionDraft(
+            id: 'session:orphan-matching',
+            ownerId: owner.id,
+            activityType: MatchingModeAdapter.activityType,
+            startedAtUtc: DateTime.utc(2026, 8, 25, 12),
+            appVersion: 'test',
+            buildId: 'f10-test',
+          ),
+        );
+        final restartRepository = _RestartRecoveryRepository(
+          repository,
+          finishFailuresRemaining: 1,
+        );
+        final restartLearning = LearningUseCases(
+          owners: owners,
+          repository: restartRepository,
+          generateId: () => 'close-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 14, 0, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+        );
+        final evidence = CurrentActivityEvidenceAdapter(
+          learning: restartLearning,
+        );
+        final prepared = await adapter.prepareSession(
+          learning: restartLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        expect(prepared.session.id, isNot('session:orphan-matching'));
+        final orphan =
+            await (database.select(database.learningSessions)
+                  ..where((row) => row.id.equals('session:orphan-matching')))
+                .getSingle();
+        expect(orphan.state, 'abandoned');
+        final first = adapter.createReview(
+          session: prepared.session,
+          learning: restartLearning,
+          evidence: evidence,
+          recovery: prepared,
+        );
+        await expectLater(first.timeout(), throwsStateError);
+        final closeAtUtc = restartRepository.closes.single.endedAtUtc;
+        first.dispose();
 
-      final recovered = await adapter.prepareSession(
-        learning: restartLearning,
-        evidence: evidence,
-        categoryId: 'category:travel',
-      );
-      final restarted = adapter.createReview(
-        session: recovered.session,
-        learning: restartLearning,
-        evidence: evidence,
-        recovery: recovered,
-      );
-      addTearDown(restarted.dispose);
-      expect(restarted.phase, MatchingReviewPhase.completionRetryRequired);
-      await restarted.retryCompletion();
-      expect(restartRepository.closes, hasLength(2));
-      expect(restartRepository.closes.last.endedAtUtc, closeAtUtc);
-    });
+        final recovered = await adapter.prepareSession(
+          learning: restartLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        PendingLearningSessionClose? retirementClose;
+        Future<void> Function()? retirementPreparation;
+        final restarted = adapter.createReview(
+          session: recovered.session,
+          learning: restartLearning,
+          evidence: evidence,
+          recovery: recovered,
+          ownClose: (close, ensureDurable) {
+            retirementClose = close;
+            retirementPreparation = ensureDurable;
+          },
+        );
+        addTearDown(restarted.dispose);
+        expect(restarted.phase, MatchingReviewPhase.completionRetryRequired);
+        expect(retirementClose, same(recovered.pendingClose));
+        expect(retirementPreparation, isNotNull);
+
+        await retirementPreparation!();
+        final owned = retirementClose!;
+        final emergencySummary = await (owned.requiresRetry
+            ? owned.retry()
+            : owned.finish());
+
+        expect(emergencySummary.id, recovered.session.id);
+        expect(emergencySummary.state, 'completed');
+        expect(restartRepository.closes, hasLength(2));
+        expect(restartRepository.closes.last.endedAtUtc, closeAtUtc);
+      },
+    );
 
     test(
       'process restart reconciles a post-commit close acknowledgement loss',
@@ -2614,6 +2634,40 @@ void main() {
     });
 
     test(
+      'late timeout admission cannot mutate matching after retirement',
+      () async {
+        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+        final prepared = await adapter.prepareSession(
+          learning: learning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        var recoveryAccepting = false;
+        final review = adapter.createReview(
+          session: prepared.session,
+          learning: learning,
+          evidence: evidence,
+          recovery: prepared,
+          runRecoveryOperation: <T>(operation) {
+            if (!recoveryAccepting) {
+              return Future<T>.error(StateError('retired'));
+            }
+            return operation();
+          },
+        );
+        addTearDown(review.dispose);
+
+        await expectLater(review.timeout(), throwsStateError);
+        expect(review.timeoutRequested, isFalse);
+        expect(review.phase, MatchingReviewPhase.awaitingSelection);
+
+        recoveryAccepting = true;
+        final summary = await review.timeout();
+        expect(summary.state, 'completed');
+      },
+    );
+
+    test(
       'repeated reconstruction cannot extend the absolute timeout',
       () async {
         var clock = DateTime.utc(2026, 8, 25, 17);
@@ -2667,6 +2721,59 @@ void main() {
     );
 
     test(
+      'untimed alternative persists no wall-clock deadline across idle restart',
+      () async {
+        var clock = DateTime.utc(2026, 8, 25, 17);
+        final untimedLearning = LearningUseCases(
+          owners: owners,
+          repository: DriftLearningRepository(database),
+          generateId: () => 'untimed-${++generatedId}',
+          nowUtc: () => clock,
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f16-test'),
+        );
+        final evidence = CurrentActivityEvidenceAdapter(
+          learning: untimedLearning,
+        );
+        final first = await adapter.prepareSession(
+          learning: untimedLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+          timeLimit: null,
+        );
+
+        expect(first.hasWallClockTimeout, isFalse);
+        expect(first.timeoutAnchorUtc, isNull);
+        expect(first.timeoutDeadlineUtc, isNull);
+        expect(first.remainingTime(clock), isNull);
+
+        clock = clock.add(const Duration(days: 30));
+        final restarted = await adapter.prepareSession(
+          learning: untimedLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+          timeLimit: null,
+        );
+        expect(restarted.session.id, first.session.id);
+        expect(restarted.hasWallClockTimeout, isFalse);
+        expect(restarted.remainingTime(clock), isNull);
+
+        final checkpointRows =
+            await (database.select(database.eventsV2)..where(
+                  (event) =>
+                      event.eventType.equals('LearningActivityCheckpoint'),
+                ))
+                .get();
+        final latest = checkpointRows.last;
+        final payload = jsonDecode(latest.payloadJson) as Map<String, dynamic>;
+        final state = payload['state'] as Map<String, dynamic>;
+        expect(state['timingKind'], 'activeEffort');
+        expect(state['timeoutAnchorUtc'], isNull);
+        expect(state['timeoutDurationMs'], isNull);
+        expect(state['timeoutDeadlineUtc'], isNull);
+      },
+    );
+
+    test(
       'checkpoint v1 bootstrap derives the original bounded deadline',
       () async {
         final evidence = CurrentActivityEvidenceAdapter(learning: learning);
@@ -2690,6 +2797,7 @@ void main() {
           ..remove('timeoutDeadlineUtc')
           ..remove('timeoutAnchorUtc')
           ..remove('timeoutDurationMs')
+          ..remove('timingKind')
           ..remove('summaryPresented');
         payload
           ..['schemaVersion'] = 1

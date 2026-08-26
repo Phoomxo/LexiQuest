@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
 
-import '../features/progress/domain/progress_models.dart';
+import '../features/learning/application/flashcard_mode_adapter.dart';
+import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
+import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../features/progress/domain/progress_models.dart';
+import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'mastery_dashboard_screen.dart';
 import 'srs_flashcards_screen.dart';
-import '../navigation/app_routes.dart';
 
 class WeaknessClinicScreen extends StatefulWidget {
   const WeaknessClinicScreen({super.key, this.loader});
@@ -21,6 +25,7 @@ class WeaknessClinicScreen extends StatefulWidget {
 
 class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
   Future<ProgressSnapshot>? _load;
+  bool _openingSrs = false;
 
   @override
   void didChangeDependencies() {
@@ -61,17 +66,190 @@ class _WeaknessClinicScreenState extends State<WeaknessClinicScreen> {
               'ยังไม่พบคำที่ตอบผิด\nจำนวนตัวอย่าง: ${progress.sampleSize}',
             );
           }
-          return _WeaknessBody(progress);
+          return _WeaknessBody(progress, onReviewDue: _openConfiguredSrs);
         },
       ),
     );
   }
+
+  Future<void> _openConfiguredSrs() async {
+    if (_openingSrs) return;
+    setState(() => _openingSrs = true);
+    try {
+      final dependencies = AppDependenciesScope.maybeOf(context);
+      final registration = dependencies?.lessonModes?.resolve(
+        LessonMode.flashcard,
+      );
+      final features = dependencies?.features;
+      final owners = dependencies?.localOwners;
+      final protocols = dependencies?.sessionConfigurationProtocols;
+      final configurations = dependencies?.sessionConfigurations;
+      final createController = dependencies?.createLessonController;
+      if (registration == null ||
+          registration.adapter is! FlashcardModeAdapter ||
+          features?.isEnabled(Feature.srs) != true ||
+          owners == null ||
+          protocols == null ||
+          configurations == null ||
+          createController == null ||
+          dependencies?.learning == null) {
+        if (mounted) await _pushUnavailableSrs(features);
+        return;
+      }
+
+      late final String ownerId;
+      late final SessionConfigurationProtocolLimits limits;
+      SessionConfiguration? initialConfiguration;
+      try {
+        ownerId = (await owners.getOrCreateActiveOwner()).id;
+        SessionConfigurationPolicy.requireCanonical(ownerId, 'ownerId');
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.ownerDrift,
+        );
+      }
+      try {
+        limits = await protocols.resolveForOwner(ownerId);
+      } on SessionConfigurationResetRequired {
+        rethrow;
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.invalidProtocol,
+        );
+      }
+      try {
+        initialConfiguration = await configurations.read(
+          ownerId: ownerId,
+          mode: LessonMode.flashcard,
+        );
+      } on SessionConfigurationResetRequired {
+        rethrow;
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      if (!mounted) return;
+      const policy = SessionConfigurationPolicy();
+      final configuration = await showSessionConfigurationSheet(
+        context: context,
+        registration: registration,
+        policy: policy,
+        limits: limits,
+        ownerId: ownerId,
+        packs: const [],
+        initialConfiguration: initialConfiguration,
+      );
+      if (configuration == null || !mounted) return;
+
+      Future<SessionConfiguration> revalidate(
+        SessionConfiguration candidate,
+      ) async {
+        final live = AppDependenciesScope.maybeOf(context);
+        final liveRegistration = live?.lessonModes?.resolve(
+          LessonMode.flashcard,
+        );
+        if (liveRegistration == null ||
+            !identical(liveRegistration.adapter, registration.adapter) ||
+            live?.features.isEnabled(Feature.srs) != true) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.modeUnavailable,
+          );
+        }
+        late final String liveOwnerId;
+        late final SessionConfigurationProtocolLimits liveLimits;
+        try {
+          liveOwnerId = (await live!.localOwners!.getOrCreateActiveOwner()).id;
+          SessionConfigurationPolicy.requireCanonical(liveOwnerId, 'ownerId');
+        } catch (_) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.ownerDrift,
+          );
+        }
+        try {
+          liveLimits = await live.sessionConfigurationProtocols!
+              .resolveForOwner(liveOwnerId);
+        } on SessionConfigurationResetRequired {
+          rethrow;
+        } catch (_) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.invalidProtocol,
+          );
+        }
+        return policy.revalidate(
+          configuration: candidate,
+          registration: liveRegistration,
+          limits: liveLimits,
+          ownerId: liveOwnerId,
+          availablePackIdentities: const [],
+        );
+      }
+
+      final refreshed = await revalidate(configuration);
+      try {
+        await configurations.save(
+          refreshed,
+          updatedAtUtc: DateTime.now().toUtc(),
+        );
+      } on SessionConfigurationResetRequired {
+        rethrow;
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+          'The validated configuration could not be persisted.',
+        );
+      }
+      if (!mounted) return;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/weakness-srs',
+          builder: (_) => UnifiedLessonModeHost(
+            adapter: registration.adapter,
+            createController: createController,
+            feature: Feature.srs,
+            featureRegistry: features,
+            learning: dependencies!.learning,
+            configuration: refreshed,
+            revalidateConfiguration: revalidate,
+            builder: (_) =>
+                SrsFlashcardsScreen(sessionConfiguration: refreshed),
+          ),
+        ),
+      );
+    } on SessionConfigurationResetRequired catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.promptMessage)));
+      }
+    } finally {
+      if (mounted) setState(() => _openingSrs = false);
+    }
+  }
+
+  Future<void> _pushUnavailableSrs(FeatureRegistry? features) =>
+      AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: 'learning/weakness-srs',
+          builder: (_) => ProductionFeatureGate(
+            feature: Feature.srs,
+            registry: features,
+            builder: (_) => const ProductionFeatureUnavailable(
+              feature: Feature.srs,
+              reason: ProductionFeatureUnavailableReason.missingDependency,
+            ),
+          ),
+        ),
+      );
 }
 
 class _WeaknessBody extends StatelessWidget {
-  const _WeaknessBody(this.progress);
+  const _WeaknessBody(this.progress, {required this.onReviewDue});
 
   final ProgressSnapshot progress;
+  final VoidCallback onReviewDue;
 
   @override
   Widget build(BuildContext context) {
@@ -108,43 +286,7 @@ class _WeaknessBody extends StatelessWidget {
         SafeArea(
           minimum: const EdgeInsets.all(16),
           child: FilledButton.icon(
-            onPressed: progress.dueReviewCount == 0
-                ? null
-                : () => AppNavigator.pushPage<void>(
-                    context,
-                    AppPage<void>(
-                      name: 'learning/weakness-srs',
-                      builder: (context) {
-                        final dependencies = AppDependenciesScope.maybeOf(
-                          context,
-                        );
-                        final registration = dependencies?.lessonModes?.find(
-                          LessonMode.flashcard,
-                        );
-                        final createController =
-                            dependencies?.createLessonController;
-                        if (registration == null || createController == null) {
-                          return ProductionFeatureGate(
-                            feature: Feature.srs,
-                            registry: dependencies?.features,
-                            builder: (_) => const ProductionFeatureUnavailable(
-                              feature: Feature.srs,
-                              reason: ProductionFeatureUnavailableReason
-                                  .missingDependency,
-                            ),
-                          );
-                        }
-                        return UnifiedLessonModeHost(
-                          adapter: registration.adapter,
-                          createController: createController,
-                          feature: Feature.srs,
-                          featureRegistry: dependencies?.features,
-                          learning: dependencies?.learning,
-                          builder: (_) => const SrsFlashcardsScreen(),
-                        );
-                      },
-                    ),
-                  ),
+            onPressed: progress.dueReviewCount == 0 ? null : onReviewDue,
             style: FilledButton.styleFrom(
               minimumSize: const Size.fromHeight(52),
             ),

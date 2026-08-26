@@ -1512,6 +1512,40 @@ class $LearningSessionsTable extends LearningSessions
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _sessionConfigurationIdentityMeta =
+      const VerificationMeta('sessionConfigurationIdentity');
+  @override
+  late final GeneratedColumn<String> sessionConfigurationIdentity =
+      GeneratedColumn<String>(
+        'session_configuration_identity',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _sessionConfigurationJsonMeta =
+      const VerificationMeta('sessionConfigurationJson');
+  @override
+  late final GeneratedColumn<String> sessionConfigurationJson =
+      GeneratedColumn<String>(
+        'session_configuration_json',
+        aliasedName,
+        true,
+        type: DriftSqlType.string,
+        requiredDuringInsert: false,
+      );
+  static const VerificationMeta _configurationActiveEffortUsMeta =
+      const VerificationMeta('configurationActiveEffortUs');
+  @override
+  late final GeneratedColumn<int> configurationActiveEffortUs =
+      GeneratedColumn<int>(
+        'configuration_active_effort_us',
+        aliasedName,
+        false,
+        type: DriftSqlType.int,
+        requiredDuringInsert: false,
+        defaultValue: const Constant(0),
+      );
   @override
   List<GeneratedColumn> get $columns => [
     id,
@@ -1525,6 +1559,9 @@ class $LearningSessionsTable extends LearningSessions
     score,
     appVersion,
     buildId,
+    sessionConfigurationIdentity,
+    sessionConfigurationJson,
+    configurationActiveEffortUs,
   ];
   @override
   String get aliasedName => _alias ?? actualTableName;
@@ -1627,6 +1664,33 @@ class $LearningSessionsTable extends LearningSessions
     } else if (isInserting) {
       context.missing(_buildIdMeta);
     }
+    if (data.containsKey('session_configuration_identity')) {
+      context.handle(
+        _sessionConfigurationIdentityMeta,
+        sessionConfigurationIdentity.isAcceptableOrUnknown(
+          data['session_configuration_identity']!,
+          _sessionConfigurationIdentityMeta,
+        ),
+      );
+    }
+    if (data.containsKey('session_configuration_json')) {
+      context.handle(
+        _sessionConfigurationJsonMeta,
+        sessionConfigurationJson.isAcceptableOrUnknown(
+          data['session_configuration_json']!,
+          _sessionConfigurationJsonMeta,
+        ),
+      );
+    }
+    if (data.containsKey('configuration_active_effort_us')) {
+      context.handle(
+        _configurationActiveEffortUsMeta,
+        configurationActiveEffortUs.isAcceptableOrUnknown(
+          data['configuration_active_effort_us']!,
+          _configurationActiveEffortUsMeta,
+        ),
+      );
+    }
     return context;
   }
 
@@ -1680,6 +1744,18 @@ class $LearningSessionsTable extends LearningSessions
         DriftSqlType.string,
         data['${effectivePrefix}build_id'],
       )!,
+      sessionConfigurationIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_configuration_identity'],
+      ),
+      sessionConfigurationJson: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}session_configuration_json'],
+      ),
+      configurationActiveEffortUs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}configuration_active_effort_us'],
+      )!,
     );
   }
 
@@ -1701,6 +1777,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
   final int? score;
   final String appVersion;
   final String buildId;
+  final String? sessionConfigurationIdentity;
+  final String? sessionConfigurationJson;
+  final int configurationActiveEffortUs;
   const LearningSession({
     required this.id,
     required this.ownerId,
@@ -1713,6 +1792,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     this.score,
     required this.appVersion,
     required this.buildId,
+    this.sessionConfigurationIdentity,
+    this.sessionConfigurationJson,
+    required this.configurationActiveEffortUs,
   });
   @override
   Map<String, Expression> toColumns(bool nullToAbsent) {
@@ -1732,6 +1814,19 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     }
     map['app_version'] = Variable<String>(appVersion);
     map['build_id'] = Variable<String>(buildId);
+    if (!nullToAbsent || sessionConfigurationIdentity != null) {
+      map['session_configuration_identity'] = Variable<String>(
+        sessionConfigurationIdentity,
+      );
+    }
+    if (!nullToAbsent || sessionConfigurationJson != null) {
+      map['session_configuration_json'] = Variable<String>(
+        sessionConfigurationJson,
+      );
+    }
+    map['configuration_active_effort_us'] = Variable<int>(
+      configurationActiveEffortUs,
+    );
     return map;
   }
 
@@ -1752,6 +1847,14 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           : Value(score),
       appVersion: Value(appVersion),
       buildId: Value(buildId),
+      sessionConfigurationIdentity:
+          sessionConfigurationIdentity == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionConfigurationIdentity),
+      sessionConfigurationJson: sessionConfigurationJson == null && nullToAbsent
+          ? const Value.absent()
+          : Value(sessionConfigurationJson),
+      configurationActiveEffortUs: Value(configurationActiveEffortUs),
     );
   }
 
@@ -1772,6 +1875,15 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       score: serializer.fromJson<int?>(json['score']),
       appVersion: serializer.fromJson<String>(json['appVersion']),
       buildId: serializer.fromJson<String>(json['buildId']),
+      sessionConfigurationIdentity: serializer.fromJson<String?>(
+        json['sessionConfigurationIdentity'],
+      ),
+      sessionConfigurationJson: serializer.fromJson<String?>(
+        json['sessionConfigurationJson'],
+      ),
+      configurationActiveEffortUs: serializer.fromJson<int>(
+        json['configurationActiveEffortUs'],
+      ),
     );
   }
   @override
@@ -1789,6 +1901,15 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
       'score': serializer.toJson<int?>(score),
       'appVersion': serializer.toJson<String>(appVersion),
       'buildId': serializer.toJson<String>(buildId),
+      'sessionConfigurationIdentity': serializer.toJson<String?>(
+        sessionConfigurationIdentity,
+      ),
+      'sessionConfigurationJson': serializer.toJson<String?>(
+        sessionConfigurationJson,
+      ),
+      'configurationActiveEffortUs': serializer.toJson<int>(
+        configurationActiveEffortUs,
+      ),
     };
   }
 
@@ -1804,6 +1925,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     Value<int?> score = const Value.absent(),
     String? appVersion,
     String? buildId,
+    Value<String?> sessionConfigurationIdentity = const Value.absent(),
+    Value<String?> sessionConfigurationJson = const Value.absent(),
+    int? configurationActiveEffortUs,
   }) => LearningSession(
     id: id ?? this.id,
     ownerId: ownerId ?? this.ownerId,
@@ -1816,6 +1940,14 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score: score.present ? score.value : this.score,
     appVersion: appVersion ?? this.appVersion,
     buildId: buildId ?? this.buildId,
+    sessionConfigurationIdentity: sessionConfigurationIdentity.present
+        ? sessionConfigurationIdentity.value
+        : this.sessionConfigurationIdentity,
+    sessionConfigurationJson: sessionConfigurationJson.present
+        ? sessionConfigurationJson.value
+        : this.sessionConfigurationJson,
+    configurationActiveEffortUs:
+        configurationActiveEffortUs ?? this.configurationActiveEffortUs,
   );
   LearningSession copyWithCompanion(LearningSessionsCompanion data) {
     return LearningSession(
@@ -1842,6 +1974,15 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ? data.appVersion.value
           : this.appVersion,
       buildId: data.buildId.present ? data.buildId.value : this.buildId,
+      sessionConfigurationIdentity: data.sessionConfigurationIdentity.present
+          ? data.sessionConfigurationIdentity.value
+          : this.sessionConfigurationIdentity,
+      sessionConfigurationJson: data.sessionConfigurationJson.present
+          ? data.sessionConfigurationJson.value
+          : this.sessionConfigurationJson,
+      configurationActiveEffortUs: data.configurationActiveEffortUs.present
+          ? data.configurationActiveEffortUs.value
+          : this.configurationActiveEffortUs,
     );
   }
 
@@ -1858,7 +1999,12 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           ..write('wrongCount: $wrongCount, ')
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
-          ..write('buildId: $buildId')
+          ..write('buildId: $buildId, ')
+          ..write(
+            'sessionConfigurationIdentity: $sessionConfigurationIdentity, ',
+          )
+          ..write('sessionConfigurationJson: $sessionConfigurationJson, ')
+          ..write('configurationActiveEffortUs: $configurationActiveEffortUs')
           ..write(')'))
         .toString();
   }
@@ -1876,6 +2022,9 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
     score,
     appVersion,
     buildId,
+    sessionConfigurationIdentity,
+    sessionConfigurationJson,
+    configurationActiveEffortUs,
   );
   @override
   bool operator ==(Object other) =>
@@ -1891,7 +2040,12 @@ class LearningSession extends DataClass implements Insertable<LearningSession> {
           other.wrongCount == this.wrongCount &&
           other.score == this.score &&
           other.appVersion == this.appVersion &&
-          other.buildId == this.buildId);
+          other.buildId == this.buildId &&
+          other.sessionConfigurationIdentity ==
+              this.sessionConfigurationIdentity &&
+          other.sessionConfigurationJson == this.sessionConfigurationJson &&
+          other.configurationActiveEffortUs ==
+              this.configurationActiveEffortUs);
 }
 
 class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
@@ -1906,6 +2060,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
   final Value<int?> score;
   final Value<String> appVersion;
   final Value<String> buildId;
+  final Value<String?> sessionConfigurationIdentity;
+  final Value<String?> sessionConfigurationJson;
+  final Value<int> configurationActiveEffortUs;
   final Value<int> rowid;
   const LearningSessionsCompanion({
     this.id = const Value.absent(),
@@ -1919,6 +2076,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     this.appVersion = const Value.absent(),
     this.buildId = const Value.absent(),
+    this.sessionConfigurationIdentity = const Value.absent(),
+    this.sessionConfigurationJson = const Value.absent(),
+    this.configurationActiveEffortUs = const Value.absent(),
     this.rowid = const Value.absent(),
   });
   LearningSessionsCompanion.insert({
@@ -1933,6 +2093,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     this.score = const Value.absent(),
     required String appVersion,
     required String buildId,
+    this.sessionConfigurationIdentity = const Value.absent(),
+    this.sessionConfigurationJson = const Value.absent(),
+    this.configurationActiveEffortUs = const Value.absent(),
     this.rowid = const Value.absent(),
   }) : id = Value(id),
        ownerId = Value(ownerId),
@@ -1953,6 +2116,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Expression<int>? score,
     Expression<String>? appVersion,
     Expression<String>? buildId,
+    Expression<String>? sessionConfigurationIdentity,
+    Expression<String>? sessionConfigurationJson,
+    Expression<int>? configurationActiveEffortUs,
     Expression<int>? rowid,
   }) {
     return RawValuesInsertable({
@@ -1967,6 +2133,12 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       if (score != null) 'score': score,
       if (appVersion != null) 'app_version': appVersion,
       if (buildId != null) 'build_id': buildId,
+      if (sessionConfigurationIdentity != null)
+        'session_configuration_identity': sessionConfigurationIdentity,
+      if (sessionConfigurationJson != null)
+        'session_configuration_json': sessionConfigurationJson,
+      if (configurationActiveEffortUs != null)
+        'configuration_active_effort_us': configurationActiveEffortUs,
       if (rowid != null) 'rowid': rowid,
     });
   }
@@ -1983,6 +2155,9 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     Value<int?>? score,
     Value<String>? appVersion,
     Value<String>? buildId,
+    Value<String?>? sessionConfigurationIdentity,
+    Value<String?>? sessionConfigurationJson,
+    Value<int>? configurationActiveEffortUs,
     Value<int>? rowid,
   }) {
     return LearningSessionsCompanion(
@@ -1997,6 +2172,12 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
       score: score ?? this.score,
       appVersion: appVersion ?? this.appVersion,
       buildId: buildId ?? this.buildId,
+      sessionConfigurationIdentity:
+          sessionConfigurationIdentity ?? this.sessionConfigurationIdentity,
+      sessionConfigurationJson:
+          sessionConfigurationJson ?? this.sessionConfigurationJson,
+      configurationActiveEffortUs:
+          configurationActiveEffortUs ?? this.configurationActiveEffortUs,
       rowid: rowid ?? this.rowid,
     );
   }
@@ -2037,6 +2218,21 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
     if (buildId.present) {
       map['build_id'] = Variable<String>(buildId.value);
     }
+    if (sessionConfigurationIdentity.present) {
+      map['session_configuration_identity'] = Variable<String>(
+        sessionConfigurationIdentity.value,
+      );
+    }
+    if (sessionConfigurationJson.present) {
+      map['session_configuration_json'] = Variable<String>(
+        sessionConfigurationJson.value,
+      );
+    }
+    if (configurationActiveEffortUs.present) {
+      map['configuration_active_effort_us'] = Variable<int>(
+        configurationActiveEffortUs.value,
+      );
+    }
     if (rowid.present) {
       map['rowid'] = Variable<int>(rowid.value);
     }
@@ -2057,6 +2253,11 @@ class LearningSessionsCompanion extends UpdateCompanion<LearningSession> {
           ..write('score: $score, ')
           ..write('appVersion: $appVersion, ')
           ..write('buildId: $buildId, ')
+          ..write(
+            'sessionConfigurationIdentity: $sessionConfigurationIdentity, ',
+          )
+          ..write('sessionConfigurationJson: $sessionConfigurationJson, ')
+          ..write('configurationActiveEffortUs: $configurationActiveEffortUs, ')
           ..write('rowid: $rowid')
           ..write(')'))
         .toString();
@@ -9436,6 +9637,405 @@ class ContentDownloadStatesCompanion
           ..write('downloadedBytes: $downloadedBytes, ')
           ..write('verifiedChecksumSha256: $verifiedChecksumSha256, ')
           ..write('failureCode: $failureCode, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('rowid: $rowid')
+          ..write(')'))
+        .toString();
+  }
+}
+
+class $SessionConfigurationsTable extends SessionConfigurations
+    with TableInfo<$SessionConfigurationsTable, SessionConfigurationRow> {
+  @override
+  final GeneratedDatabase attachedDatabase;
+  final String? _alias;
+  $SessionConfigurationsTable(this.attachedDatabase, [this._alias]);
+  static const VerificationMeta _ownerIdMeta = const VerificationMeta(
+    'ownerId',
+  );
+  @override
+  late final GeneratedColumn<String> ownerId = GeneratedColumn<String>(
+    'owner_id',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'REFERENCES local_owners (id) ON DELETE CASCADE',
+    ),
+  );
+  static const VerificationMeta _modeMeta = const VerificationMeta('mode');
+  @override
+  late final GeneratedColumn<String> mode = GeneratedColumn<String>(
+    'mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _contentIdentityMeta = const VerificationMeta(
+    'contentIdentity',
+  );
+  @override
+  late final GeneratedColumn<String> contentIdentity = GeneratedColumn<String>(
+    'content_identity',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _stableSerializationMeta =
+      const VerificationMeta('stableSerialization');
+  @override
+  late final GeneratedColumn<String> stableSerialization =
+      GeneratedColumn<String>(
+        'stable_serialization',
+        aliasedName,
+        false,
+        type: DriftSqlType.string,
+        requiredDuringInsert: true,
+      );
+  static const VerificationMeta _updatedAtUtcMsMeta = const VerificationMeta(
+    'updatedAtUtcMs',
+  );
+  @override
+  late final GeneratedColumn<int> updatedAtUtcMs = GeneratedColumn<int>(
+    'updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: true,
+  );
+  @override
+  List<GeneratedColumn> get $columns => [
+    ownerId,
+    mode,
+    contentIdentity,
+    stableSerialization,
+    updatedAtUtcMs,
+  ];
+  @override
+  String get aliasedName => _alias ?? actualTableName;
+  @override
+  String get actualTableName => $name;
+  static const String $name = 'session_configurations';
+  @override
+  VerificationContext validateIntegrity(
+    Insertable<SessionConfigurationRow> instance, {
+    bool isInserting = false,
+  }) {
+    final context = VerificationContext();
+    final data = instance.toColumns(true);
+    if (data.containsKey('owner_id')) {
+      context.handle(
+        _ownerIdMeta,
+        ownerId.isAcceptableOrUnknown(data['owner_id']!, _ownerIdMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_ownerIdMeta);
+    }
+    if (data.containsKey('mode')) {
+      context.handle(
+        _modeMeta,
+        mode.isAcceptableOrUnknown(data['mode']!, _modeMeta),
+      );
+    } else if (isInserting) {
+      context.missing(_modeMeta);
+    }
+    if (data.containsKey('content_identity')) {
+      context.handle(
+        _contentIdentityMeta,
+        contentIdentity.isAcceptableOrUnknown(
+          data['content_identity']!,
+          _contentIdentityMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_contentIdentityMeta);
+    }
+    if (data.containsKey('stable_serialization')) {
+      context.handle(
+        _stableSerializationMeta,
+        stableSerialization.isAcceptableOrUnknown(
+          data['stable_serialization']!,
+          _stableSerializationMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_stableSerializationMeta);
+    }
+    if (data.containsKey('updated_at_utc_ms')) {
+      context.handle(
+        _updatedAtUtcMsMeta,
+        updatedAtUtcMs.isAcceptableOrUnknown(
+          data['updated_at_utc_ms']!,
+          _updatedAtUtcMsMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_updatedAtUtcMsMeta);
+    }
+    return context;
+  }
+
+  @override
+  Set<GeneratedColumn> get $primaryKey => {ownerId, mode};
+  @override
+  SessionConfigurationRow map(
+    Map<String, dynamic> data, {
+    String? tablePrefix,
+  }) {
+    final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
+    return SessionConfigurationRow(
+      ownerId: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}owner_id'],
+      )!,
+      mode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}mode'],
+      )!,
+      contentIdentity: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}content_identity'],
+      )!,
+      stableSerialization: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}stable_serialization'],
+      )!,
+      updatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}updated_at_utc_ms'],
+      )!,
+    );
+  }
+
+  @override
+  $SessionConfigurationsTable createAlias(String alias) {
+    return $SessionConfigurationsTable(attachedDatabase, alias);
+  }
+}
+
+class SessionConfigurationRow extends DataClass
+    implements Insertable<SessionConfigurationRow> {
+  final String ownerId;
+  final String mode;
+  final String contentIdentity;
+  final String stableSerialization;
+  final int updatedAtUtcMs;
+  const SessionConfigurationRow({
+    required this.ownerId,
+    required this.mode,
+    required this.contentIdentity,
+    required this.stableSerialization,
+    required this.updatedAtUtcMs,
+  });
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    map['owner_id'] = Variable<String>(ownerId);
+    map['mode'] = Variable<String>(mode);
+    map['content_identity'] = Variable<String>(contentIdentity);
+    map['stable_serialization'] = Variable<String>(stableSerialization);
+    map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    return map;
+  }
+
+  SessionConfigurationsCompanion toCompanion(bool nullToAbsent) {
+    return SessionConfigurationsCompanion(
+      ownerId: Value(ownerId),
+      mode: Value(mode),
+      contentIdentity: Value(contentIdentity),
+      stableSerialization: Value(stableSerialization),
+      updatedAtUtcMs: Value(updatedAtUtcMs),
+    );
+  }
+
+  factory SessionConfigurationRow.fromJson(
+    Map<String, dynamic> json, {
+    ValueSerializer? serializer,
+  }) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return SessionConfigurationRow(
+      ownerId: serializer.fromJson<String>(json['ownerId']),
+      mode: serializer.fromJson<String>(json['mode']),
+      contentIdentity: serializer.fromJson<String>(json['contentIdentity']),
+      stableSerialization: serializer.fromJson<String>(
+        json['stableSerialization'],
+      ),
+      updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+    );
+  }
+  @override
+  Map<String, dynamic> toJson({ValueSerializer? serializer}) {
+    serializer ??= driftRuntimeOptions.defaultSerializer;
+    return <String, dynamic>{
+      'ownerId': serializer.toJson<String>(ownerId),
+      'mode': serializer.toJson<String>(mode),
+      'contentIdentity': serializer.toJson<String>(contentIdentity),
+      'stableSerialization': serializer.toJson<String>(stableSerialization),
+      'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+    };
+  }
+
+  SessionConfigurationRow copyWith({
+    String? ownerId,
+    String? mode,
+    String? contentIdentity,
+    String? stableSerialization,
+    int? updatedAtUtcMs,
+  }) => SessionConfigurationRow(
+    ownerId: ownerId ?? this.ownerId,
+    mode: mode ?? this.mode,
+    contentIdentity: contentIdentity ?? this.contentIdentity,
+    stableSerialization: stableSerialization ?? this.stableSerialization,
+    updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+  );
+  SessionConfigurationRow copyWithCompanion(
+    SessionConfigurationsCompanion data,
+  ) {
+    return SessionConfigurationRow(
+      ownerId: data.ownerId.present ? data.ownerId.value : this.ownerId,
+      mode: data.mode.present ? data.mode.value : this.mode,
+      contentIdentity: data.contentIdentity.present
+          ? data.contentIdentity.value
+          : this.contentIdentity,
+      stableSerialization: data.stableSerialization.present
+          ? data.stableSerialization.value
+          : this.stableSerialization,
+      updatedAtUtcMs: data.updatedAtUtcMs.present
+          ? data.updatedAtUtcMs.value
+          : this.updatedAtUtcMs,
+    );
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionConfigurationRow(')
+          ..write('ownerId: $ownerId, ')
+          ..write('mode: $mode, ')
+          ..write('contentIdentity: $contentIdentity, ')
+          ..write('stableSerialization: $stableSerialization, ')
+          ..write('updatedAtUtcMs: $updatedAtUtcMs')
+          ..write(')'))
+        .toString();
+  }
+
+  @override
+  int get hashCode => Object.hash(
+    ownerId,
+    mode,
+    contentIdentity,
+    stableSerialization,
+    updatedAtUtcMs,
+  );
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      (other is SessionConfigurationRow &&
+          other.ownerId == this.ownerId &&
+          other.mode == this.mode &&
+          other.contentIdentity == this.contentIdentity &&
+          other.stableSerialization == this.stableSerialization &&
+          other.updatedAtUtcMs == this.updatedAtUtcMs);
+}
+
+class SessionConfigurationsCompanion
+    extends UpdateCompanion<SessionConfigurationRow> {
+  final Value<String> ownerId;
+  final Value<String> mode;
+  final Value<String> contentIdentity;
+  final Value<String> stableSerialization;
+  final Value<int> updatedAtUtcMs;
+  final Value<int> rowid;
+  const SessionConfigurationsCompanion({
+    this.ownerId = const Value.absent(),
+    this.mode = const Value.absent(),
+    this.contentIdentity = const Value.absent(),
+    this.stableSerialization = const Value.absent(),
+    this.updatedAtUtcMs = const Value.absent(),
+    this.rowid = const Value.absent(),
+  });
+  SessionConfigurationsCompanion.insert({
+    required String ownerId,
+    required String mode,
+    required String contentIdentity,
+    required String stableSerialization,
+    required int updatedAtUtcMs,
+    this.rowid = const Value.absent(),
+  }) : ownerId = Value(ownerId),
+       mode = Value(mode),
+       contentIdentity = Value(contentIdentity),
+       stableSerialization = Value(stableSerialization),
+       updatedAtUtcMs = Value(updatedAtUtcMs);
+  static Insertable<SessionConfigurationRow> custom({
+    Expression<String>? ownerId,
+    Expression<String>? mode,
+    Expression<String>? contentIdentity,
+    Expression<String>? stableSerialization,
+    Expression<int>? updatedAtUtcMs,
+    Expression<int>? rowid,
+  }) {
+    return RawValuesInsertable({
+      if (ownerId != null) 'owner_id': ownerId,
+      if (mode != null) 'mode': mode,
+      if (contentIdentity != null) 'content_identity': contentIdentity,
+      if (stableSerialization != null)
+        'stable_serialization': stableSerialization,
+      if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (rowid != null) 'rowid': rowid,
+    });
+  }
+
+  SessionConfigurationsCompanion copyWith({
+    Value<String>? ownerId,
+    Value<String>? mode,
+    Value<String>? contentIdentity,
+    Value<String>? stableSerialization,
+    Value<int>? updatedAtUtcMs,
+    Value<int>? rowid,
+  }) {
+    return SessionConfigurationsCompanion(
+      ownerId: ownerId ?? this.ownerId,
+      mode: mode ?? this.mode,
+      contentIdentity: contentIdentity ?? this.contentIdentity,
+      stableSerialization: stableSerialization ?? this.stableSerialization,
+      updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      rowid: rowid ?? this.rowid,
+    );
+  }
+
+  @override
+  Map<String, Expression> toColumns(bool nullToAbsent) {
+    final map = <String, Expression>{};
+    if (ownerId.present) {
+      map['owner_id'] = Variable<String>(ownerId.value);
+    }
+    if (mode.present) {
+      map['mode'] = Variable<String>(mode.value);
+    }
+    if (contentIdentity.present) {
+      map['content_identity'] = Variable<String>(contentIdentity.value);
+    }
+    if (stableSerialization.present) {
+      map['stable_serialization'] = Variable<String>(stableSerialization.value);
+    }
+    if (updatedAtUtcMs.present) {
+      map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (rowid.present) {
+      map['rowid'] = Variable<int>(rowid.value);
+    }
+    return map;
+  }
+
+  @override
+  String toString() {
+    return (StringBuffer('SessionConfigurationsCompanion(')
+          ..write('ownerId: $ownerId, ')
+          ..write('mode: $mode, ')
+          ..write('contentIdentity: $contentIdentity, ')
+          ..write('stableSerialization: $stableSerialization, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
           ..write('rowid: $rowid')
           ..write(')'))
@@ -28062,6 +28662,8 @@ abstract class _$AppDatabase extends GeneratedDatabase {
       $LearningPackItemsTable(this);
   late final $ContentDownloadStatesTable contentDownloadStates =
       $ContentDownloadStatesTable(this);
+  late final $SessionConfigurationsTable sessionConfigurations =
+      $SessionConfigurationsTable(this);
   late final $AnswerAttemptsTable answerAttempts = $AnswerAttemptsTable(this);
   late final $SrsStatesTable srsStates = $SrsStatesTable(this);
   late final $ReadingProgressEntriesTable readingProgressEntries =
@@ -28128,6 +28730,7 @@ abstract class _$AppDatabase extends GeneratedDatabase {
     learningPacks,
     learningPackItems,
     contentDownloadStates,
+    sessionConfigurations,
     answerAttempts,
     srsStates,
     readingProgressEntries,
@@ -28173,6 +28776,13 @@ abstract class _$AppDatabase extends GeneratedDatabase {
         limitUpdateKind: UpdateKind.delete,
       ),
       result: [TableUpdate('learning_pack_items', kind: UpdateKind.delete)],
+    ),
+    WritePropagation(
+      on: TableUpdateQuery.onTableName(
+        'local_owners',
+        limitUpdateKind: UpdateKind.delete,
+      ),
+      result: [TableUpdate('session_configurations', kind: UpdateKind.delete)],
     ),
     WritePropagation(
       on: TableUpdateQuery.onTableName(
@@ -28382,6 +28992,31 @@ final class $$LocalOwnersTableReferences
 
     final cache = $_typedResult.readTableOrNull(
       _vocabularyImportsRefsTable($_db),
+    );
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: cache),
+    );
+  }
+
+  static MultiTypedResultKey<
+    $SessionConfigurationsTable,
+    List<SessionConfigurationRow>
+  >
+  _sessionConfigurationsRefsTable(_$AppDatabase db) =>
+      MultiTypedResultKey.fromTable(
+        db.sessionConfigurations,
+        aliasName: 'local_owners__id__session_configurations__owner_id',
+      );
+
+  $$SessionConfigurationsTableProcessedTableManager
+  get sessionConfigurationsRefs {
+    final manager = $$SessionConfigurationsTableTableManager(
+      $_db,
+      $_db.sessionConfigurations,
+    ).filter((f) => f.ownerId.id.sqlEquals($_itemColumn<String>('id')!));
+
+    final cache = $_typedResult.readTableOrNull(
+      _sessionConfigurationsRefsTable($_db),
     );
     return ProcessedTableManager(
       manager.$state.copyWith(prefetchedData: cache),
@@ -29109,6 +29744,32 @@ class $$LocalOwnersTableFilterComposer
                 $removeJoinBuilderFromRootComposer,
           ),
     );
+    return f(composer);
+  }
+
+  Expression<bool> sessionConfigurationsRefs(
+    Expression<bool> Function($$SessionConfigurationsTableFilterComposer f) f,
+  ) {
+    final $$SessionConfigurationsTableFilterComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.sessionConfigurations,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SessionConfigurationsTableFilterComposer(
+                $db: $db,
+                $table: $db.sessionConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
     return f(composer);
   }
 
@@ -29994,6 +30655,32 @@ class $$LocalOwnersTableAnnotationComposer
     return f(composer);
   }
 
+  Expression<T> sessionConfigurationsRefs<T extends Object>(
+    Expression<T> Function($$SessionConfigurationsTableAnnotationComposer a) f,
+  ) {
+    final $$SessionConfigurationsTableAnnotationComposer composer =
+        $composerBuilder(
+          composer: this,
+          getCurrentColumn: (t) => t.id,
+          referencedTable: $db.sessionConfigurations,
+          getReferencedColumn: (t) => t.ownerId,
+          builder:
+              (
+                joinBuilder, {
+                $addJoinBuilderToRootComposer,
+                $removeJoinBuilderFromRootComposer,
+              }) => $$SessionConfigurationsTableAnnotationComposer(
+                $db: $db,
+                $table: $db.sessionConfigurations,
+                $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+                joinBuilder: joinBuilder,
+                $removeJoinBuilderFromRootComposer:
+                    $removeJoinBuilderFromRootComposer,
+              ),
+        );
+    return f(composer);
+  }
+
   Expression<T> answerAttemptsRefs<T extends Object>(
     Expression<T> Function($$AnswerAttemptsTableAnnotationComposer a) f,
   ) {
@@ -30652,6 +31339,7 @@ class $$LocalOwnersTableTableManager
             bool vocabularyCategoriesRefs,
             bool vocabularyWordsRefs,
             bool vocabularyImportsRefs,
+            bool sessionConfigurationsRefs,
             bool answerAttemptsRefs,
             bool srsStatesRefs,
             bool readingProgressEntriesRefs,
@@ -30743,6 +31431,7 @@ class $$LocalOwnersTableTableManager
                 vocabularyCategoriesRefs = false,
                 vocabularyWordsRefs = false,
                 vocabularyImportsRefs = false,
+                sessionConfigurationsRefs = false,
                 answerAttemptsRefs = false,
                 srsStatesRefs = false,
                 readingProgressEntriesRefs = false,
@@ -30779,6 +31468,7 @@ class $$LocalOwnersTableTableManager
                     if (vocabularyCategoriesRefs) db.vocabularyCategories,
                     if (vocabularyWordsRefs) db.vocabularyWords,
                     if (vocabularyImportsRefs) db.vocabularyImports,
+                    if (sessionConfigurationsRefs) db.sessionConfigurations,
                     if (answerAttemptsRefs) db.answerAttempts,
                     if (srsStatesRefs) db.srsStates,
                     if (readingProgressEntriesRefs) db.readingProgressEntries,
@@ -30949,6 +31639,27 @@ class $$LocalOwnersTableTableManager
                                 table,
                                 p0,
                               ).vocabularyImportsRefs,
+                          referencedItemsForCurrentItem:
+                              (item, referencedItems) => referencedItems.where(
+                                (e) => e.ownerId == item.id,
+                              ),
+                          typedResults: items,
+                        ),
+                      if (sessionConfigurationsRefs)
+                        await $_getPrefetchedData<
+                          LocalOwner,
+                          $LocalOwnersTable,
+                          SessionConfigurationRow
+                        >(
+                          currentTable: table,
+                          referencedTable: $$LocalOwnersTableReferences
+                              ._sessionConfigurationsRefsTable(db),
+                          managerFromTypedResult: (p0) =>
+                              $$LocalOwnersTableReferences(
+                                db,
+                                table,
+                                p0,
+                              ).sessionConfigurationsRefs,
                           referencedItemsForCurrentItem:
                               (item, referencedItems) => referencedItems.where(
                                 (e) => e.ownerId == item.id,
@@ -31508,6 +32219,7 @@ typedef $$LocalOwnersTableProcessedTableManager =
         bool vocabularyCategoriesRefs,
         bool vocabularyWordsRefs,
         bool vocabularyImportsRefs,
+        bool sessionConfigurationsRefs,
         bool answerAttemptsRefs,
         bool srsStatesRefs,
         bool readingProgressEntriesRefs,
@@ -32380,6 +33092,9 @@ typedef $$LearningSessionsTableCreateCompanionBuilder =
       Value<int?> score,
       required String appVersion,
       required String buildId,
+      Value<String?> sessionConfigurationIdentity,
+      Value<String?> sessionConfigurationJson,
+      Value<int> configurationActiveEffortUs,
       Value<int> rowid,
     });
 typedef $$LearningSessionsTableUpdateCompanionBuilder =
@@ -32395,6 +33110,9 @@ typedef $$LearningSessionsTableUpdateCompanionBuilder =
       Value<int?> score,
       Value<String> appVersion,
       Value<String> buildId,
+      Value<String?> sessionConfigurationIdentity,
+      Value<String?> sessionConfigurationJson,
+      Value<int> configurationActiveEffortUs,
       Value<int> rowid,
     });
 
@@ -32560,6 +33278,21 @@ class $$LearningSessionsTableFilterComposer
 
   ColumnFilters<String> get buildId => $composableBuilder(
     column: $table.buildId,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionConfigurationIdentity => $composableBuilder(
+    column: $table.sessionConfigurationIdentity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get configurationActiveEffortUs => $composableBuilder(
+    column: $table.configurationActiveEffortUs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -32746,6 +33479,22 @@ class $$LearningSessionsTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get sessionConfigurationIdentity =>
+      $composableBuilder(
+        column: $table.sessionConfigurationIdentity,
+        builder: (column) => ColumnOrderings(column),
+      );
+
+  ColumnOrderings<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get configurationActiveEffortUs => $composableBuilder(
+    column: $table.configurationActiveEffortUs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   $$LocalOwnersTableOrderingComposer get ownerId {
     final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
       composer: this,
@@ -32820,6 +33569,22 @@ class $$LearningSessionsTableAnnotationComposer
 
   GeneratedColumn<String> get buildId =>
       $composableBuilder(column: $table.buildId, builder: (column) => column);
+
+  GeneratedColumn<String> get sessionConfigurationIdentity =>
+      $composableBuilder(
+        column: $table.sessionConfigurationIdentity,
+        builder: (column) => column,
+      );
+
+  GeneratedColumn<String> get sessionConfigurationJson => $composableBuilder(
+    column: $table.sessionConfigurationJson,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get configurationActiveEffortUs => $composableBuilder(
+    column: $table.configurationActiveEffortUs,
+    builder: (column) => column,
+  );
 
   $$LocalOwnersTableAnnotationComposer get ownerId {
     final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
@@ -32993,6 +33758,10 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 Value<String> appVersion = const Value.absent(),
                 Value<String> buildId = const Value.absent(),
+                Value<String?> sessionConfigurationIdentity =
+                    const Value.absent(),
+                Value<String?> sessionConfigurationJson = const Value.absent(),
+                Value<int> configurationActiveEffortUs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion(
                 id: id,
@@ -33006,6 +33775,9 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                sessionConfigurationIdentity: sessionConfigurationIdentity,
+                sessionConfigurationJson: sessionConfigurationJson,
+                configurationActiveEffortUs: configurationActiveEffortUs,
                 rowid: rowid,
               ),
           createCompanionCallback:
@@ -33021,6 +33793,10 @@ class $$LearningSessionsTableTableManager
                 Value<int?> score = const Value.absent(),
                 required String appVersion,
                 required String buildId,
+                Value<String?> sessionConfigurationIdentity =
+                    const Value.absent(),
+                Value<String?> sessionConfigurationJson = const Value.absent(),
+                Value<int> configurationActiveEffortUs = const Value.absent(),
                 Value<int> rowid = const Value.absent(),
               }) => LearningSessionsCompanion.insert(
                 id: id,
@@ -33034,6 +33810,9 @@ class $$LearningSessionsTableTableManager
                 score: score,
                 appVersion: appVersion,
                 buildId: buildId,
+                sessionConfigurationIdentity: sessionConfigurationIdentity,
+                sessionConfigurationJson: sessionConfigurationJson,
+                configurationActiveEffortUs: configurationActiveEffortUs,
                 rowid: rowid,
               ),
           withReferenceMapper: (p0) => p0
@@ -38910,6 +39689,351 @@ typedef $$ContentDownloadStatesTableProcessedTableManager =
       (ContentDownloadStateRow, $$ContentDownloadStatesTableReferences),
       ContentDownloadStateRow,
       PrefetchHooks Function({bool manifestId})
+    >;
+typedef $$SessionConfigurationsTableCreateCompanionBuilder =
+    SessionConfigurationsCompanion Function({
+      required String ownerId,
+      required String mode,
+      required String contentIdentity,
+      required String stableSerialization,
+      required int updatedAtUtcMs,
+      Value<int> rowid,
+    });
+typedef $$SessionConfigurationsTableUpdateCompanionBuilder =
+    SessionConfigurationsCompanion Function({
+      Value<String> ownerId,
+      Value<String> mode,
+      Value<String> contentIdentity,
+      Value<String> stableSerialization,
+      Value<int> updatedAtUtcMs,
+      Value<int> rowid,
+    });
+
+final class $$SessionConfigurationsTableReferences
+    extends
+        BaseReferences<
+          _$AppDatabase,
+          $SessionConfigurationsTable,
+          SessionConfigurationRow
+        > {
+  $$SessionConfigurationsTableReferences(
+    super.$_db,
+    super.$_table,
+    super.$_typedResult,
+  );
+
+  static $LocalOwnersTable _ownerIdTable(_$AppDatabase db) => db.localOwners
+      .createAlias('session_configurations__owner_id__local_owners__id');
+
+  $$LocalOwnersTableProcessedTableManager get ownerId {
+    final $_column = $_itemColumn<String>('owner_id')!;
+
+    final manager = $$LocalOwnersTableTableManager(
+      $_db,
+      $_db.localOwners,
+    ).filter((f) => f.id.sqlEquals($_column));
+    final item = $_typedResult.readTableOrNull(_ownerIdTable($_db));
+    if (item == null) return manager;
+    return ProcessedTableManager(
+      manager.$state.copyWith(prefetchedData: [item]),
+    );
+  }
+}
+
+class $$SessionConfigurationsTableFilterComposer
+    extends Composer<_$AppDatabase, $SessionConfigurationsTable> {
+  $$SessionConfigurationsTableFilterComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnFilters<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get contentIdentity => $composableBuilder(
+    column: $table.contentIdentity,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get stableSerialization => $composableBuilder(
+    column: $table.stableSerialization,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  $$LocalOwnersTableFilterComposer get ownerId {
+    final $$LocalOwnersTableFilterComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableFilterComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SessionConfigurationsTableOrderingComposer
+    extends Composer<_$AppDatabase, $SessionConfigurationsTable> {
+  $$SessionConfigurationsTableOrderingComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  ColumnOrderings<String> get mode => $composableBuilder(
+    column: $table.mode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get contentIdentity => $composableBuilder(
+    column: $table.contentIdentity,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get stableSerialization => $composableBuilder(
+    column: $table.stableSerialization,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  $$LocalOwnersTableOrderingComposer get ownerId {
+    final $$LocalOwnersTableOrderingComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableOrderingComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SessionConfigurationsTableAnnotationComposer
+    extends Composer<_$AppDatabase, $SessionConfigurationsTable> {
+  $$SessionConfigurationsTableAnnotationComposer({
+    required super.$db,
+    required super.$table,
+    super.joinBuilder,
+    super.$addJoinBuilderToRootComposer,
+    super.$removeJoinBuilderFromRootComposer,
+  });
+  GeneratedColumn<String> get mode =>
+      $composableBuilder(column: $table.mode, builder: (column) => column);
+
+  GeneratedColumn<String> get contentIdentity => $composableBuilder(
+    column: $table.contentIdentity,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get stableSerialization => $composableBuilder(
+    column: $table.stableSerialization,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
+    column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  $$LocalOwnersTableAnnotationComposer get ownerId {
+    final $$LocalOwnersTableAnnotationComposer composer = $composerBuilder(
+      composer: this,
+      getCurrentColumn: (t) => t.ownerId,
+      referencedTable: $db.localOwners,
+      getReferencedColumn: (t) => t.id,
+      builder:
+          (
+            joinBuilder, {
+            $addJoinBuilderToRootComposer,
+            $removeJoinBuilderFromRootComposer,
+          }) => $$LocalOwnersTableAnnotationComposer(
+            $db: $db,
+            $table: $db.localOwners,
+            $addJoinBuilderToRootComposer: $addJoinBuilderToRootComposer,
+            joinBuilder: joinBuilder,
+            $removeJoinBuilderFromRootComposer:
+                $removeJoinBuilderFromRootComposer,
+          ),
+    );
+    return composer;
+  }
+}
+
+class $$SessionConfigurationsTableTableManager
+    extends
+        RootTableManager<
+          _$AppDatabase,
+          $SessionConfigurationsTable,
+          SessionConfigurationRow,
+          $$SessionConfigurationsTableFilterComposer,
+          $$SessionConfigurationsTableOrderingComposer,
+          $$SessionConfigurationsTableAnnotationComposer,
+          $$SessionConfigurationsTableCreateCompanionBuilder,
+          $$SessionConfigurationsTableUpdateCompanionBuilder,
+          (SessionConfigurationRow, $$SessionConfigurationsTableReferences),
+          SessionConfigurationRow,
+          PrefetchHooks Function({bool ownerId})
+        > {
+  $$SessionConfigurationsTableTableManager(
+    _$AppDatabase db,
+    $SessionConfigurationsTable table,
+  ) : super(
+        TableManagerState(
+          db: db,
+          table: table,
+          createFilteringComposer: () =>
+              $$SessionConfigurationsTableFilterComposer(
+                $db: db,
+                $table: table,
+              ),
+          createOrderingComposer: () =>
+              $$SessionConfigurationsTableOrderingComposer(
+                $db: db,
+                $table: table,
+              ),
+          createComputedFieldComposer: () =>
+              $$SessionConfigurationsTableAnnotationComposer(
+                $db: db,
+                $table: table,
+              ),
+          updateCompanionCallback:
+              ({
+                Value<String> ownerId = const Value.absent(),
+                Value<String> mode = const Value.absent(),
+                Value<String> contentIdentity = const Value.absent(),
+                Value<String> stableSerialization = const Value.absent(),
+                Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<int> rowid = const Value.absent(),
+              }) => SessionConfigurationsCompanion(
+                ownerId: ownerId,
+                mode: mode,
+                contentIdentity: contentIdentity,
+                stableSerialization: stableSerialization,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          createCompanionCallback:
+              ({
+                required String ownerId,
+                required String mode,
+                required String contentIdentity,
+                required String stableSerialization,
+                required int updatedAtUtcMs,
+                Value<int> rowid = const Value.absent(),
+              }) => SessionConfigurationsCompanion.insert(
+                ownerId: ownerId,
+                mode: mode,
+                contentIdentity: contentIdentity,
+                stableSerialization: stableSerialization,
+                updatedAtUtcMs: updatedAtUtcMs,
+                rowid: rowid,
+              ),
+          withReferenceMapper: (p0) => p0
+              .map(
+                (e) => (
+                  e.readTable(table),
+                  $$SessionConfigurationsTableReferences(db, table, e),
+                ),
+              )
+              .toList(),
+          prefetchHooksCallback: ({ownerId = false}) {
+            return PrefetchHooks(
+              db: db,
+              explicitlyWatchedTables: [],
+              addJoins:
+                  <
+                    T extends TableManagerState<
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic,
+                      dynamic
+                    >
+                  >(state) {
+                    if (ownerId) {
+                      state =
+                          state.withJoin(
+                                currentTable: table,
+                                currentColumn: table.ownerId,
+                                referencedTable:
+                                    $$SessionConfigurationsTableReferences
+                                        ._ownerIdTable(db),
+                                referencedColumn:
+                                    $$SessionConfigurationsTableReferences
+                                        ._ownerIdTable(db)
+                                        .id,
+                              )
+                              as T;
+                    }
+
+                    return state;
+                  },
+              getPrefetchedDataCallback: (items) async {
+                return [];
+              },
+            );
+          },
+        ),
+      );
+}
+
+typedef $$SessionConfigurationsTableProcessedTableManager =
+    ProcessedTableManager<
+      _$AppDatabase,
+      $SessionConfigurationsTable,
+      SessionConfigurationRow,
+      $$SessionConfigurationsTableFilterComposer,
+      $$SessionConfigurationsTableOrderingComposer,
+      $$SessionConfigurationsTableAnnotationComposer,
+      $$SessionConfigurationsTableCreateCompanionBuilder,
+      $$SessionConfigurationsTableUpdateCompanionBuilder,
+      (SessionConfigurationRow, $$SessionConfigurationsTableReferences),
+      SessionConfigurationRow,
+      PrefetchHooks Function({bool ownerId})
     >;
 typedef $$AnswerAttemptsTableCreateCompanionBuilder =
     AnswerAttemptsCompanion Function({
@@ -52296,6 +53420,8 @@ class $AppDatabaseManager {
       $$LearningPackItemsTableTableManager(_db, _db.learningPackItems);
   $$ContentDownloadStatesTableTableManager get contentDownloadStates =>
       $$ContentDownloadStatesTableTableManager(_db, _db.contentDownloadStates);
+  $$SessionConfigurationsTableTableManager get sessionConfigurations =>
+      $$SessionConfigurationsTableTableManager(_db, _db.sessionConfigurations);
   $$AnswerAttemptsTableTableManager get answerAttempts =>
       $$AnswerAttemptsTableTableManager(_db, _db.answerAttempts);
   $$SrsStatesTableTableManager get srsStates =>

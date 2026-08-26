@@ -2149,7 +2149,9 @@ Future<void> _seedCompleteSyncInventory(AppDatabase database) async {
     "'station', 'station', 'noun', 'manual', 0, 1, 0, 0, 1, 1)",
   );
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES ('session-1', 'guest-owner', "
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+    "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+    "app_version, build_id) VALUES ('session-1', 'guest-owner', "
     "'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(
@@ -2260,7 +2262,9 @@ Future<void> _seedAnonymousBoundCompleteInventory(AppDatabase database) async {
     "('import-row-1', 'import-1', 1, 'row-hash-1', 'accepted', NULL, 'word-1')",
   );
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES ('session-1', 'guest-owner', "
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+    "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+    "app_version, build_id) VALUES ('session-1', 'guest-owner', "
     "'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
   );
   await _seedCompleteInventoryAssessmentRun(

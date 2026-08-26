@@ -1,6 +1,7 @@
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import '../../media_practice/domain/media_practice_contracts.dart';
 import 'current_activity_evidence.dart';
 import 'typed_recall_mode_adapter.dart';
@@ -35,7 +36,32 @@ final class CapturedNativeModeSubmission {
   final PendingCurrentActivityEvidence pending;
 }
 
-abstract base class _NativeModeAdapter implements LessonModeAdapter {
+const _oneItemSessionConfiguration = SessionConfigurationCapabilities(
+  minimumItemCount: 1,
+  maximumItemCount: 1,
+  defaultItemCount: 1,
+  directions: <SessionDirection>{SessionDirection.forward},
+  difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+  maximumHintBudget: 0,
+  supportsTimed: true,
+  supportsUntimedAlternative: true,
+  supportsPackSelection: false,
+);
+
+const _associativeSessionConfiguration = SessionConfigurationCapabilities(
+  minimumItemCount: 1,
+  maximumItemCount: 100,
+  defaultItemCount: 10,
+  directions: <SessionDirection>{SessionDirection.forward},
+  difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+  maximumHintBudget: 2,
+  supportsTimed: true,
+  supportsUntimedAlternative: true,
+  supportsPackSelection: false,
+);
+
+abstract base class _NativeModeAdapter
+    implements SessionConfigurableLessonModeAdapter {
   const _NativeModeAdapter({
     required this.mode,
     required this.promptModes,
@@ -44,6 +70,7 @@ abstract base class _NativeModeAdapter implements LessonModeAdapter {
     required this.provenancePrefix,
     required this.correctCodes,
     required this.incorrectCodes,
+    required this.sessionConfigurationCapabilities,
   });
 
   @override
@@ -54,6 +81,8 @@ abstract base class _NativeModeAdapter implements LessonModeAdapter {
   final String provenancePrefix;
   final Set<String> correctCodes;
   final Set<String> incorrectCodes;
+  @override
+  final SessionConfigurationCapabilities sessionConfigurationCapabilities;
 
   @override
   EvidenceContext classify(LessonResponse response, LessonSupport support) {
@@ -104,6 +133,7 @@ final class AssociativeReadingModeAdapter extends _NativeModeAdapter
         provenancePrefix: 'native-associative:v1:',
         correctCodes: const <String>{'exact', 'accepted-variant'},
         incorrectCodes: const <String>{'incorrect'},
+        sessionConfigurationCapabilities: _associativeSessionConfiguration,
       );
 
   @override
@@ -128,6 +158,7 @@ final class DictationModeAdapter extends _NativeModeAdapter
         provenancePrefix: 'native-dictation:v1:',
         correctCodes: const <String>{'exact'},
         incorrectCodes: const <String>{'incorrect'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   NativeModeEvaluation evaluate({
@@ -193,6 +224,7 @@ final class SpeakingModeAdapter extends _NativeModeAdapter
         provenancePrefix: 'native-speaking:v1:',
         correctCodes: const <String>{'exact'},
         incorrectCodes: const <String>{'nonexact'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   NativeModeEvaluation evaluate({
@@ -239,6 +271,7 @@ final class ShadowingModeAdapter extends _NativeModeAdapter
         provenancePrefix: 'native-shadowing:v1:',
         correctCodes: const <String>{'threshold-pass'},
         incorrectCodes: const <String>{'threshold-fail'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   static const int similarityThresholdPercent = 80;
@@ -291,6 +324,7 @@ final class CefrReadingModeAdapter extends _NativeModeAdapter
         provenancePrefix: 'native-cefr-reading:v1:',
         correctCodes: const <String>{},
         incorrectCodes: const <String>{'exposure'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   static const Set<String> canonicalCefrLevels = <String>{
@@ -351,6 +385,7 @@ final class SentenceScrambleModeAdapter extends _NativeModeAdapter {
         provenancePrefix: 'native-sentence-scramble:v1:',
         correctCodes: const <String>{'correct'},
         incorrectCodes: const <String>{'incorrect'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   NativeModeEvaluation evaluate({
@@ -406,6 +441,7 @@ final class WordScrambleModeAdapter extends _NativeModeAdapter {
         provenancePrefix: 'native-word-scramble:v1:',
         correctCodes: const <String>{'correct'},
         incorrectCodes: const <String>{'incorrect'},
+        sessionConfigurationCapabilities: _oneItemSessionConfiguration,
       );
 
   NativeModeEvaluation evaluate({

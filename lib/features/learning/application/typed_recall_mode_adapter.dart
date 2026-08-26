@@ -8,6 +8,7 @@ import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
 import 'meaning_quiz_mode_adapter.dart';
@@ -318,7 +319,8 @@ typedef TypedRecallHintReset = void Function();
 final class TypedRecallModeAdapter
     implements
         FocusTimerSupportingLessonModeAdapter,
-        HintSupportingLessonModeAdapter {
+        HintSupportingLessonModeAdapter,
+        SessionConfigurableLessonModeAdapter {
   const TypedRecallModeAdapter();
 
   static const int maxAnswerScalars = 120;
@@ -326,6 +328,20 @@ final class TypedRecallModeAdapter
 
   @override
   LessonMode get mode => LessonMode.typedRecall;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 1,
+        maximumItemCount: 100,
+        defaultItemCount: 10,
+        directions: <SessionDirection>{SessionDirection.mixed},
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 2,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: false,
+      );
 
   @override
   HintPolicy get hintPolicy => HintPolicy.staged(

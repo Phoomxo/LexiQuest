@@ -1,4 +1,5 @@
 import 'lesson_mode.dart';
+import 'session_configuration.dart';
 
 enum LessonSessionStatus { planned, active, paused, completed, abandoned }
 
@@ -8,12 +9,14 @@ final class LessonStartCommand {
     required this.sessionId,
     required this.startedAtUtc,
     required this.itemCount,
+    this.configuration,
   });
 
   final LessonMode mode;
   final String sessionId;
   final DateTime startedAtUtc;
   final int itemCount;
+  final SessionConfiguration? configuration;
 }
 
 final class LessonSubmission {

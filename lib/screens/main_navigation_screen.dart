@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 
 import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/application/session_configuration_policy.dart';
+import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
+import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../features/learning_packs/domain/learning_pack.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/production_feature_gate.dart';
@@ -262,7 +267,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
-  void _pushRegisteredShadowing() {
+  Future<void> _pushRegisteredShadowing() async {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final registration = dependencies?.lessonModes?.resolve(
       LessonMode.shadowing,
@@ -274,24 +279,107 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       return;
     }
     final adapter = registration!.adapter as ShadowingModeAdapter;
-    _pushDestination(
-      registration.routeName,
-      (_) => ProductionFeatureGate(
-        feature: registration.feature,
-        registry: widget.featureRegistry ?? dependencies?.features,
-        builder: (context) => _buildRegisteredShadowing(
-          context,
-          adapter: adapter,
+    _scaffoldKey.currentState?.closeDrawer();
+    try {
+      final initialContext = await _loadSessionConfigurationContext(
+        dependencies,
+        LessonMode.shadowing,
+      );
+      if (!mounted) return;
+      final configuration = await showSessionConfigurationSheet(
+        context: context,
+        registration: registration,
+        policy: const SessionConfigurationPolicy(),
+        limits: initialContext.limits,
+        ownerId: initialContext.ownerId,
+        packs: initialContext.packs,
+        initialConfiguration: initialContext.initialConfiguration,
+        initialResetRequired: initialContext.initialResetRequired,
+        initialResetCanUseDefaults:
+            initialContext.protocolResetRequired == null,
+      );
+      if (configuration == null || !mounted) return;
+
+      Future<SessionConfiguration> revalidate(
+        SessionConfiguration candidate,
+      ) async {
+        final currentDependencies = AppDependenciesScope.maybeOf(context);
+        final currentRegistration = currentDependencies?.lessonModes?.resolve(
+          LessonMode.shadowing,
+        );
+        if (currentRegistration == null ||
+            !identical(currentRegistration.adapter, adapter) ||
+            currentDependencies?.features.isEnabled(registration.feature) !=
+                true) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.modeUnavailable,
+          );
+        }
+        final currentContext = await _loadSessionConfigurationContext(
+          currentDependencies,
+          LessonMode.shadowing,
+        );
+        final reset = currentContext.protocolResetRequired;
+        if (reset != null) throw reset;
+        return const SessionConfigurationPolicy().revalidate(
+          configuration: candidate,
+          registration: currentRegistration,
+          limits: currentContext.limits,
+          ownerId: currentContext.ownerId,
+          availablePackIdentities: currentContext.packs.map(
+            (pack) => pack.identity,
+          ),
+        );
+      }
+
+      final validated = await revalidate(configuration);
+      final store = dependencies?.sessionConfigurations;
+      if (store == null) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+          'The validated configuration could not be persisted.',
+        );
+      }
+      try {
+        await store.save(validated, updatedAtUtc: DateTime.now().toUtc());
+      } on SessionConfigurationResetRequired {
+        rethrow;
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+          'The validated configuration could not be persisted.',
+        );
+      }
+      if (!mounted) return;
+      _pushDestination(
+        registration.routeName,
+        (_) => ProductionFeatureGate(
           feature: registration.feature,
+          registry: widget.featureRegistry ?? dependencies?.features,
+          builder: (context) => _buildRegisteredShadowing(
+            context,
+            adapter: adapter,
+            feature: registration.feature,
+            configuration: validated,
+            revalidateConfiguration: revalidate,
+          ),
         ),
-      ),
-    );
+      );
+    } on SessionConfigurationResetRequired catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.promptMessage)));
+      }
+    }
   }
 
   Widget _buildRegisteredShadowing(
     BuildContext context, {
     required ShadowingModeAdapter adapter,
     required Feature feature,
+    required SessionConfiguration configuration,
+    required SessionConfigurationRevalidator revalidateConfiguration,
   }) {
     final dependencies = AppDependenciesScope.maybeOf(context);
     final createController = dependencies?.createLessonController;
@@ -307,8 +395,107 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
       feature: feature,
       featureRegistry: widget.featureRegistry ?? dependencies?.features,
       learning: dependencies!.learning,
-      builder: (_) => ShadowingChallengeScreen(modeAdapter: adapter),
+      configuration: configuration,
+      revalidateConfiguration: revalidateConfiguration,
+      builder: (_) => NativeVocabularyLessonModeLoader(
+        sessionConfiguration: configuration,
+        builder: (_, session, question) => ShadowingChallengeScreen(
+          referenceSentence: question.word.spelling,
+          sessionId: session.id,
+          wordId: question.word.id,
+          modeAdapter: adapter,
+        ),
+      ),
     );
+  }
+
+  Future<_MainSessionConfigurationContext> _loadSessionConfigurationContext(
+    AppDependencies? dependencies,
+    LessonMode mode,
+  ) async {
+    var ownerId = 'owner:local-compatibility';
+    final owners = dependencies?.localOwners;
+    if (owners != null) {
+      try {
+        ownerId = (await owners.getOrCreateActiveOwner()).id;
+        SessionConfigurationPolicy.requireCanonical(ownerId, 'ownerId');
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.ownerDrift,
+        );
+      }
+    }
+    try {
+      SessionConfigurationPolicy.requireCanonical(ownerId, 'ownerId');
+      var limits = const SessionConfigurationProtocolLimits.standard();
+      SessionConfigurationResetRequired? protocolReset;
+      try {
+        limits =
+            await dependencies?.sessionConfigurationProtocols?.resolveForOwner(
+              ownerId,
+            ) ??
+            limits;
+      } on SessionConfigurationResetRequired catch (error) {
+        protocolReset = error;
+      } catch (_) {
+        protocolReset = const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.invalidProtocol,
+        );
+      }
+      SessionConfiguration? initial;
+      SessionConfigurationResetRequired? storedReset;
+      try {
+        initial = await dependencies?.sessionConfigurations?.read(
+          ownerId: ownerId,
+          mode: mode,
+        );
+      } on SessionConfigurationResetRequired catch (error) {
+        storedReset = error;
+      } catch (_) {
+        storedReset = const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      final planning = dependencies?.studyPlanning;
+      final List<SessionConfigurationPackOption> packs;
+      try {
+        packs = planning == null
+            ? const <SessionConfigurationPackOption>[]
+            : (await planning.listPacks(LearningPackFilter())).packs
+                  .where(
+                    (pack) =>
+                        limits.pinnedPackIdentities.isEmpty ||
+                        limits.pinnedPackIdentities.contains(
+                          pack.contentIdentity,
+                        ),
+                  )
+                  .map(
+                    (pack) => SessionConfigurationPackOption(
+                      identity: pack.contentIdentity,
+                      label: '${pack.title} revision ${pack.revision}',
+                    ),
+                  )
+                  .toList(growable: false);
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.packDrift,
+        );
+      }
+      return _MainSessionConfigurationContext(
+        ownerId: ownerId,
+        limits: limits,
+        packs: packs,
+        initialConfiguration: initial,
+        initialResetRequired: protocolReset ?? storedReset,
+        protocolResetRequired: protocolReset,
+      );
+    } on SessionConfigurationResetRequired {
+      rethrow;
+    } catch (_) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.packDrift,
+      );
+    }
   }
 
   @override
@@ -585,6 +772,24 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
             ),
     );
   }
+}
+
+final class _MainSessionConfigurationContext {
+  const _MainSessionConfigurationContext({
+    required this.ownerId,
+    required this.limits,
+    required this.packs,
+    required this.initialConfiguration,
+    required this.initialResetRequired,
+    required this.protocolResetRequired,
+  });
+
+  final String ownerId;
+  final SessionConfigurationProtocolLimits limits;
+  final List<SessionConfigurationPackOption> packs;
+  final SessionConfiguration? initialConfiguration;
+  final SessionConfigurationResetRequired? initialResetRequired;
+  final SessionConfigurationResetRequired? protocolResetRequired;
 }
 
 final class _NavigationEntry {

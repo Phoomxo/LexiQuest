@@ -11,6 +11,7 @@ import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/lesson_session_state.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
@@ -35,11 +36,15 @@ class AssociativeReadingLauncherScreen extends StatefulWidget {
     this.vocabulary,
     this.learning,
     this.associativeLearning,
+    this.sessionConfiguration,
+    this.revalidateSessionConfiguration,
   });
 
   final VocabularyUseCases? vocabulary;
   final LearningUseCases? learning;
   final AssociativeLearningPort? associativeLearning;
+  final SessionConfiguration? sessionConfiguration;
+  final SessionConfigurationRevalidator? revalidateSessionConfiguration;
 
   @override
   State<AssociativeReadingLauncherScreen> createState() =>
@@ -110,7 +115,9 @@ class _AssociativeReadingLauncherScreenState
 
   Future<void> _loadWords(VocabularyUseCases vocabulary) async {
     try {
-      final loaded = await vocabulary.getGameWords(limit: 10);
+      final loaded = await vocabulary.getGameWords(
+        limit: widget.sessionConfiguration?.itemCount ?? 10,
+      );
       if (!mounted) return;
       final spellings = <String>{};
       final words = loaded
@@ -258,6 +265,14 @@ class _AssociativeReadingLauncherScreenState
     String? createdSessionId;
     var compensationAttempted = false;
     try {
+      final configuration = widget.sessionConfiguration;
+      final revalidateConfiguration = widget.revalidateSessionConfiguration;
+      if ((configuration == null) != (revalidateConfiguration == null)) {
+        throw StateError('session configuration authority is incomplete');
+      }
+      if (configuration != null && revalidateConfiguration != null) {
+        await revalidateConfiguration(configuration);
+      }
       final recallPrompts = List<TypedRecallPrompt>.unmodifiable(
         words.map((word) {
           final checksum = word.contentChecksumSha256;
@@ -286,7 +301,9 @@ class _AssociativeReadingLauncherScreenState
           return prompt;
         }),
       );
-      final session = await learning.startAssociativeReadingSessionHandle();
+      final session = await learning.startAssociativeReadingSessionHandle(
+        sessionConfiguration: configuration,
+      );
       createdSessionId = session.id;
       if (!mounted) {
         await learning.abandonSession(
@@ -338,6 +355,8 @@ class _AssociativeReadingLauncherScreenState
                 sessionId: session.id,
                 adapter: lessonAdapter,
                 createController: createLessonController,
+                configuration: configuration,
+                revalidateConfiguration: revalidateConfiguration,
                 terminalAuthority: terminalAuthority,
                 builder: buildSession,
               );
@@ -495,6 +514,8 @@ final class _AssociativeReadingSessionRoute extends StatefulWidget {
     required this.sessionId,
     required this.adapter,
     required this.createController,
+    this.configuration,
+    this.revalidateConfiguration,
     required this.terminalAuthority,
     required this.builder,
   });
@@ -504,6 +525,8 @@ final class _AssociativeReadingSessionRoute extends StatefulWidget {
   final String sessionId;
   final LessonModeAdapter adapter;
   final UnifiedLessonControllerFactory createController;
+  final SessionConfiguration? configuration;
+  final SessionConfigurationRevalidator? revalidateConfiguration;
   final _AssociativeReadingSessionTerminalAuthority terminalAuthority;
   final WidgetBuilder builder;
 
@@ -514,9 +537,7 @@ final class _AssociativeReadingSessionRoute extends StatefulWidget {
 
 final class _AssociativeReadingSessionRouteState
     extends State<_AssociativeReadingSessionRoute> {
-  late final UnifiedLessonController _controller = widget.createController(
-    widget.adapter,
-  );
+  late final UnifiedLessonController _controller = _createController();
   late final UnifiedLessonRouteLifecycle _routeLifecycle =
       UnifiedLessonRouteLifecycle(
         _controller,
@@ -528,6 +549,22 @@ final class _AssociativeReadingSessionRouteState
   Feature _disabledFeature = Feature.reading;
   FeatureState? _disabledState;
   bool _controllerDisposed = false;
+
+  UnifiedLessonController _createController() {
+    final controller = widget.createController(widget.adapter);
+    final configuration = widget.configuration;
+    final revalidate = widget.revalidateConfiguration;
+    if ((configuration == null) != (revalidate == null)) {
+      throw StateError('session configuration authority is incomplete');
+    }
+    if (configuration != null && revalidate != null) {
+      controller.bindSessionConfiguration(
+        configuration,
+        revalidate: revalidate,
+      );
+    }
+    return controller;
+  }
 
   @override
   void initState() {
@@ -634,6 +671,7 @@ final class _AssociativeReadingSessionRouteState
       builder: (_) => UnifiedLessonShell(
         controller: _controller,
         routeLifecycle: _routeLifecycle,
+        configuration: widget.configuration,
         builder: widget.builder,
       ),
     );

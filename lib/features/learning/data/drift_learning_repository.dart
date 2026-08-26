@@ -20,6 +20,7 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/session_configuration.dart';
 import '../domain/srs_policy.dart';
 import '../domain/srs_operation_identity.dart';
 
@@ -28,7 +29,9 @@ final class DriftLearningRepository
         LearningRepository,
         LearningEvidenceReplayRepository,
         LearningSessionLifecycleRepository,
-        LearningActivityRecoveryRepository {
+        SessionConfiguredLearningRepository,
+        LearningActivityRecoveryRepository,
+        PinnedLearningContentRepository {
   static const int maxActivityRecoveryCheckpoints = 64;
   static const int maxActivityRecoveryAttempts = 128;
 
@@ -118,6 +121,66 @@ final class DriftLearningRepository
     ];
   }
 
+  @override
+  Future<List<QuizWord>> listPinnedQuizWords({
+    required String ownerId,
+    required List<String> wordIds,
+  }) async {
+    if (wordIds.isEmpty ||
+        wordIds.length > 100 ||
+        wordIds.toSet().length != wordIds.length) {
+      throw ArgumentError.value(
+        wordIds,
+        'wordIds',
+        'must contain 1–100 unique IDs',
+      );
+    }
+    for (final id in wordIds) {
+      if (id.isEmpty || id != id.trim()) {
+        throw ArgumentError.value(id, 'wordIds', 'must be canonical');
+      }
+    }
+    final query = database.select(database.vocabularyWords)
+      ..where(
+        (row) =>
+            row.ownerId.equals(ownerId) &
+            row.isDeleted.equals(false) &
+            row.id.isIn(wordIds),
+      );
+    final rows = await query.get();
+    final byId = <String, QuizWord>{
+      for (final row in rows)
+        row.id: QuizWord(
+          id: row.id,
+          categoryId: row.categoryId,
+          spelling: row.spelling,
+          meaning: row.meaning,
+          partOfSpeech: row.partOfSpeech,
+          cefrLevel: row.cefrLevel,
+          normalizedSpelling: row.normalizedSpelling,
+          normalizedMeaning: row.normalizedMeaning,
+          contentRevision: row.contentRevision,
+          contentChecksumSha256: row.contentChecksumSha256,
+        ),
+    };
+    final ordered = <QuizWord>[for (final id in wordIds) ?byId[id]];
+    final vocabulary = lexicalVocabulary;
+    if (vocabulary == null || ordered.isEmpty) return ordered;
+    try {
+      final enriched = await vocabulary.readPinnedByIds(wordIds);
+      if (enriched.length != ordered.length) return ordered;
+      final enrichedById = <String, VocabularyWord>{
+        for (final word in enriched) word.id: word,
+      };
+      return <QuizWord>[
+        for (final core in ordered)
+          _withAcceptedSpellingVariants(core, enrichedById[core.id]),
+      ];
+    } on Object {
+      return ordered;
+    }
+  }
+
   QuizWord _withAcceptedSpellingVariants(
     QuizWord core,
     VocabularyWord? enriched,
@@ -154,6 +217,12 @@ final class DriftLearningRepository
   @override
   Future<void> startSession(LearningSessionDraft session) async {
     final startedAt = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
+    final configuration = session.sessionConfiguration;
+    if (configuration != null && configuration.ownerId != session.ownerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
     await database
         .into(database.learningSessions)
         .insert(
@@ -165,6 +234,8 @@ final class DriftLearningRepository
             startedAtUtcMs: startedAt.millisecondsSinceEpoch,
             appVersion: _required(session.appVersion, 'appVersion'),
             buildId: _required(session.buildId, 'buildId'),
+            sessionConfigurationIdentity: Value(configuration?.contentIdentity),
+            sessionConfigurationJson: Value(configuration?.stableSerialization),
           ),
           mode: InsertMode.insertOrIgnore,
         );
@@ -199,7 +270,11 @@ final class DriftLearningRepository
                 'startedAtUtc',
               ).millisecondsSinceEpoch ||
           stored.appVersion != session.appVersion ||
-          stored.buildId != session.buildId) {
+          stored.buildId != session.buildId ||
+          stored.sessionConfigurationIdentity !=
+              session.sessionConfiguration?.contentIdentity ||
+          stored.sessionConfigurationJson !=
+              session.sessionConfiguration?.stableSerialization) {
         throw StateError('learning activity session identity conflict');
       }
       await _appendActivityCheckpoint(
@@ -1578,6 +1653,73 @@ final class DriftLearningRepository
   }
 
   @override
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    final row =
+        await (database.select(database.learningSessions)..where(
+              (candidate) =>
+                  candidate.ownerId.equals(_required(ownerId, 'ownerId')) &
+                  candidate.id.equals(_required(sessionId, 'sessionId')),
+            ))
+            .getSingleOrNull();
+    return row == null ? null : _rowToSummary(row);
+  }
+
+  @override
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    final owner = _required(ownerId, 'ownerId');
+    final session = _required(sessionId, 'sessionId');
+    final identity = _required(configurationIdentity, 'configurationIdentity');
+    if (delta.isNegative || delta > const Duration(minutes: 5)) {
+      throw ArgumentError.value(
+        delta,
+        'delta',
+        'must be between zero and five minutes',
+      );
+    }
+    return database.transaction(() async {
+      final updated = await database.customUpdate(
+        'UPDATE learning_sessions SET configuration_active_effort_us = '
+        'configuration_active_effort_us + ? WHERE id = ? AND owner_id = ? '
+        'AND state = ? AND session_configuration_identity = ?',
+        variables: <Variable<Object>>[
+          Variable<int>(delta.inMicroseconds),
+          Variable<String>(session),
+          Variable<String>(owner),
+          const Variable<String>('active'),
+          Variable<String>(identity),
+        ],
+        updates: <TableInfo<Table, Object?>>{database.learningSessions},
+      );
+      if (updated != 1) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      final row =
+          await (database.select(database.learningSessions)..where(
+                (candidate) =>
+                    candidate.id.equals(session) &
+                    candidate.ownerId.equals(owner),
+              ))
+              .getSingle();
+      if (row.configurationActiveEffortUs < 0) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      return Duration(microseconds: row.configurationActiveEffortUs);
+    });
+  }
+
+  @override
   Future<void> abandonActiveSessions({required String ownerId}) async {
     await (database.update(database.learningSessions)
           ..where((t) => t.ownerId.equals(ownerId) & t.state.equals('active')))
@@ -1652,6 +1794,12 @@ final class DriftLearningRepository
   }
 
   LearningSessionSummary _rowToSummary(db.LearningSession row) {
+    final configuration = _sessionConfiguration(row);
+    if (row.configurationActiveEffortUs < 0) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
     return LearningSessionSummary(
       id: row.id,
       ownerId: row.ownerId,
@@ -1664,6 +1812,31 @@ final class DriftLearningRepository
       score: row.score ?? 0,
       appVersion: row.appVersion,
       buildId: row.buildId,
+      sessionConfiguration: configuration,
+      configurationActiveEffort: Duration(
+        microseconds: row.configurationActiveEffortUs,
+      ),
     );
+  }
+
+  SessionConfiguration? _sessionConfiguration(db.LearningSession row) {
+    final identity = row.sessionConfigurationIdentity;
+    final serialization = row.sessionConfigurationJson;
+    if (identity == null && serialization == null) return null;
+    if (identity == null || serialization == null) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
+    final configuration = SessionConfiguration.fromStableSerialization(
+      serialization,
+    );
+    if (configuration.contentIdentity != identity ||
+        configuration.ownerId != row.ownerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
+    return configuration;
   }
 }

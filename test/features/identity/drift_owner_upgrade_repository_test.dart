@@ -21,6 +21,8 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_event_s
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -101,6 +103,81 @@ void main() {
 
     expect(ownerUpgradeInventory, actual);
   });
+
+  test(
+    'f16 upgrade rebinds preference and durable session configuration identity',
+    () async {
+      final configuration = SessionConfiguration.validated(
+        schemaVersion: sessionConfigurationSchemaVersion,
+        policyVersion: sessionConfigurationPolicyVersion,
+        ownerId: 'guest-owner',
+        mode: LessonMode.meaningQuiz,
+        itemCount: 3,
+        direction: SessionDirection.mixed,
+        difficulty: SessionDifficulty.standard,
+        hintBudget: 1,
+        timing: const SessionTiming.untimedAlternative(
+          maximumActiveEffort: Duration(minutes: 15),
+        ),
+        packIdentity: null,
+        protocolId: 'protocol:f16-owner-upgrade',
+        protocolVersion: '1',
+        protocolLimitsIdentity: 'sha256:f16-owner-upgrade-limits',
+      );
+      await database
+          .into(database.learningSessions)
+          .insert(
+            LearningSessionsCompanion.insert(
+              id: 'session:f16-upgrade',
+              ownerId: 'guest-owner',
+              activityType: 'quiz',
+              state: 'active',
+              startedAtUtcMs: 10,
+              appVersion: '1',
+              buildId: 'f16-upgrade-test',
+              sessionConfigurationIdentity: Value(
+                configuration.contentIdentity,
+              ),
+              sessionConfigurationJson: Value(
+                configuration.stableSerialization,
+              ),
+              configurationActiveEffortUs: const Value(750000),
+            ),
+          );
+      await database
+          .into(database.sessionConfigurations)
+          .insert(
+            SessionConfigurationsCompanion.insert(
+              ownerId: 'guest-owner',
+              mode: LessonMode.meaningQuiz.name,
+              contentIdentity: configuration.contentIdentity,
+              stableSerialization: configuration.stableSerialization,
+              updatedAtUtcMs: 20,
+            ),
+          );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final session = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals('session:f16-upgrade'))).getSingle();
+      final rebound = SessionConfiguration.fromStableSerialization(
+        session.sessionConfigurationJson!,
+      );
+      final preference = await database
+          .select(database.sessionConfigurations)
+          .getSingle();
+      expect(session.ownerId, 'account-owner');
+      expect(session.configurationActiveEffortUs, 750000);
+      expect(rebound.ownerId, 'account-owner');
+      expect(rebound.contentIdentity, session.sessionConfigurationIdentity);
+      expect(preference.ownerId, 'account-owner');
+      expect(preference.stableSerialization, rebound.stableSerialization);
+    },
+  );
 
   test(
     'merge resolves saved natural-key collisions and moves report lifecycle',
@@ -723,7 +800,9 @@ void main() {
       "'one', 'noun', 1, 1)",
     );
     await database.customInsert(
-      "INSERT INTO learning_sessions VALUES "
+      "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+      "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+      "app_version, build_id) VALUES "
       "('session-srs', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, "
       "100, '1', '1')",
     );
@@ -2973,7 +3052,9 @@ Future<void> _seedEveryOwnerScopedTable(AppDatabase database) async {
     "('import-row-1', 'import-1', 1, 'row-hash-1', 'accepted', NULL, 'word-1')",
   );
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+    "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+    "app_version, build_id) VALUES "
     "('session-1', 'guest-owner', 'quiz', 'completed', 10, 20, 1, 0, 100, '1', '1')",
   );
   final learningTimeSegmentId = LearningTimeSegment.canonicalId(
@@ -3243,7 +3324,9 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
     );
   }
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+    "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+    "app_version, build_id) VALUES "
     "('session-guest', 'guest-owner', 'quiz', 'completed', 1, 2, 1, 0, 1, '1', '1')",
   );
   await database.customInsert(
@@ -3265,7 +3348,9 @@ Future<void> _seedCollisionGraph(AppDatabase database) async {
 Future<void> _seedProjectionCollisionGraph(AppDatabase database) async {
   await _seedCollisionGraph(database);
   await database.customInsert(
-    "INSERT INTO learning_sessions VALUES "
+    "INSERT INTO learning_sessions (id, owner_id, activity_type, state, "
+    "started_at_utc_ms, ended_at_utc_ms, correct_count, wrong_count, score, "
+    "app_version, build_id) VALUES "
     "('session-target', 'account-owner', 'quiz', 'completed', 1, 2, 1, 0, 100, '1', '1')",
   );
   await database.customInsert(

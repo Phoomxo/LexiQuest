@@ -11,7 +11,9 @@ import '../features/learning/domain/answer_feedback.dart';
 import '../features/learning/domain/hint_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
+import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
@@ -24,6 +26,7 @@ class QuizScreen extends StatefulWidget {
     this.learning,
     this.evidenceAdapter,
     this.modeAdapter,
+    this.sessionConfiguration,
   }) : typedRecallModeAdapter = null,
        typedRecall = false;
 
@@ -33,6 +36,7 @@ class QuizScreen extends StatefulWidget {
     this.learning,
     this.evidenceAdapter,
     TypedRecallModeAdapter? modeAdapter,
+    this.sessionConfiguration,
   }) : modeAdapter = null,
        typedRecallModeAdapter = modeAdapter,
        typedRecall = true;
@@ -43,6 +47,7 @@ class QuizScreen extends StatefulWidget {
   final MeaningQuizModeAdapter? modeAdapter;
   final TypedRecallModeAdapter? typedRecallModeAdapter;
   final bool typedRecall;
+  final SessionConfiguration? sessionConfiguration;
 
   @override
   State<QuizScreen> createState() => _QuizScreenState();
@@ -57,6 +62,7 @@ class _QuizScreenState extends State<QuizScreen> {
   MeaningQuizModeAdapter? _modeAdapter;
   TypedRecallModeAdapter? _typedRecallAdapter;
   UnifiedLessonSessionLifecycle? _lessonLifecycle;
+  SessionConfiguration? _sessionConfiguration;
   Future<QuizSession>? _load;
   QuizSession? _session;
   MeaningQuizReviewController? _meaningReview;
@@ -82,6 +88,19 @@ class _QuizScreenState extends State<QuizScreen> {
     if (_load != null) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _lessonLifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
+    final lifecycleConfiguration = _lessonLifecycle?.configuration;
+    if (widget.sessionConfiguration != null &&
+        lifecycleConfiguration != null &&
+        widget.sessionConfiguration != lifecycleConfiguration) {
+      _load = Future<QuizSession>.error(
+        const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        ),
+      );
+      return;
+    }
+    _sessionConfiguration =
+        lifecycleConfiguration ?? widget.sessionConfiguration;
     _learning = widget.learning ?? dependencies?.learning;
     final learning = _learning;
     if (learning != null) {
@@ -130,11 +149,74 @@ class _QuizScreenState extends State<QuizScreen> {
         ? Future<QuizSession>.error(
             StateError('meaning quiz learning authority mismatch'),
           )
-        : learning.startQuiz(categoryId: widget.categoryId);
+        : _loadConfiguredQuiz(learning, dependencies);
     final lifecycle = _lessonLifecycle;
     _load = _prepareSession(
       lifecycle == null ? rawLoad : lifecycle.initializeSession(rawLoad),
     );
+  }
+
+  Future<QuizSession> _loadConfiguredQuiz(
+    LearningUseCases learning,
+    AppDependencies? dependencies,
+  ) async {
+    final configuration = _sessionConfiguration;
+    if (configuration == null) {
+      return learning.startQuiz(categoryId: widget.categoryId);
+    }
+    if (configuration.mode !=
+            (widget.typedRecall
+                ? LessonMode.typedRecall
+                : LessonMode.meaningQuiz) ||
+        configuration.difficulty != SessionDifficulty.standard) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.unsupportedOption,
+      );
+    }
+    final pack = configuration.packIdentity;
+    if (pack == null) {
+      return learning.startQuiz(
+        categoryId: widget.categoryId,
+        limit: configuration.itemCount,
+        sessionConfiguration: configuration,
+      );
+    }
+    if (widget.typedRecall || widget.categoryId != null) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.unsupportedOption,
+      );
+    }
+    final planning = dependencies?.studyPlanning;
+    if (planning == null) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.packDrift,
+      );
+    }
+    try {
+      final detail = await planning.loadPinnedVersion(pack);
+      if (detail.vocabularyWordIds.length < configuration.itemCount) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.packDrift,
+        );
+      }
+      final session = await learning.startQuiz(
+        limit: configuration.itemCount,
+        pinnedWordIds: detail.vocabularyWordIds,
+        sessionConfiguration: configuration,
+      );
+      if (session.questions.length != configuration.itemCount) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.packDrift,
+        );
+      }
+      return session;
+    } on SessionConfigurationResetRequired {
+      rethrow;
+    } catch (_) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.packDrift,
+      );
+    }
   }
 
   Future<QuizSession> _prepareSession(Future<QuizSession> load) async {
@@ -177,6 +259,8 @@ class _QuizScreenState extends State<QuizScreen> {
             runEvidenceOperation: lifecycle == null
                 ? null
                 : (operation) => lifecycle.runAcceptedOperation(operation),
+            direction:
+                _sessionConfiguration?.direction ?? SessionDirection.mixed,
           )..addListener(_onReviewChanged);
         }
         _responseStopwatch
@@ -230,6 +314,16 @@ class _QuizScreenState extends State<QuizScreen> {
           future: _load,
           builder: (context, snapshot) {
             if (snapshot.hasError) {
+              final error = snapshot.error;
+              if (error is SessionConfigurationResetRequired) {
+                return Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SessionConfigurationResetPrompt(
+                    error: error,
+                    onReset: () => Navigator.of(context).maybePop(),
+                  ),
+                );
+              }
               return const _QuizMessage(
                 icon: Icons.error_outline,
                 message:

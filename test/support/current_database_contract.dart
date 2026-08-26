@@ -16,6 +16,7 @@ const currentDatabaseTableInventory = <String>{
   'content_manifests',
   'content_download_states',
   'learning_sessions',
+  'session_configurations',
   'answer_attempts',
   'srs_states',
   'reading_progress_entries',

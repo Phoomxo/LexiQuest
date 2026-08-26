@@ -9,6 +9,7 @@ import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
@@ -127,6 +128,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
     this.learning,
     this.evidenceAdapter,
     this.modeAdapter,
+    this.sessionConfiguration,
   });
 
   /// Compatibility-only fixture input. Production loads due words from Drift.
@@ -135,6 +137,7 @@ class SrsFlashcardsScreen extends StatefulWidget {
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final FlashcardModeAdapter? modeAdapter;
+  final SessionConfiguration? sessionConfiguration;
 
   @override
   State<SrsFlashcardsScreen> createState() => _SrsFlashcardsScreenState();
@@ -231,7 +234,10 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           ? Future<QuizSession>.error(
               StateError('flashcard learning authority mismatch'),
             )
-          : learning.startDueReview();
+          : learning.startDueReview(
+              limit: widget.sessionConfiguration?.itemCount ?? 20,
+              sessionConfiguration: widget.sessionConfiguration,
+            );
       final lifecycle = _lessonLifecycle;
       _load = lifecycle == null
           ? _startLifecycle(load)
@@ -268,8 +274,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
           evidence: _evidenceAdapter!,
           completeSession: lifecycle == null
               ? null
-              : (close) => lifecycle.complete(close),
-          recordInteraction: () => _lessonLifecycle?.recordInteraction(),
+              : (close) => lifecycle.completeRecovery(close),
+          runAdmittedOperation: lifecycle?.runAdmittedOperation,
+          runRecoveryOperation: lifecycle?.runRecoveryOperation,
           acceptsOperation: () => _lessonLifecycle?.acceptsOperations ?? true,
         )..addListener(_onReviewChanged);
       }

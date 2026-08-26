@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
@@ -16,25 +17,35 @@ import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
+import '../domain/session_configuration.dart';
 import 'hint_use_cases.dart';
 import 'learning_use_cases.dart';
 
 typedef UnifiedLessonControllerFactory =
     UnifiedLessonController Function(LessonModeAdapter adapter);
+typedef SessionConfigurationRevalidator =
+    Future<SessionConfiguration> Function(SessionConfiguration configuration);
+typedef SessionConfigurationMonotonicMicros = int Function();
 
 /// Route-owned terminal occurrence captured when operation acceptance closes.
 /// Its private authority prevents a later wall/monotonic observation or a
 /// different lesson controller from extending the trusted cutoff.
 final class LessonTerminalCutoff {
-  const LessonTerminalCutoff._({
+  LessonTerminalCutoff._({
     required this.authority,
     required this.occurredAtUtc,
     required this.timeOccurrence,
+    required this.configurationMonotonicMicros,
+    required this.configurationSessionAttached,
   });
 
   final Object authority;
   final DateTime occurredAtUtc;
   final LearningTimeObservation? timeOccurrence;
+  final int? configurationMonotonicMicros;
+  final bool configurationSessionAttached;
+  int? configurationEffortTargetMicros;
+  Future<void>? configurationClose;
 }
 
 final class UnifiedLessonController extends ChangeNotifier {
@@ -45,6 +56,8 @@ final class UnifiedLessonController extends ChangeNotifier {
     ActiveLearningTimeController? activeLearningTime,
     FocusTimerController? focusTimer,
     Feature? focusTimerFeature,
+    SessionConfigurationMonotonicMicros? configurationMonotonicMicros,
+    Duration configurationIdleTimeout = const Duration(minutes: 5),
   }) {
     final hintAdapter = adapter is HintSupportingLessonModeAdapter
         ? adapter
@@ -81,6 +94,14 @@ final class UnifiedLessonController extends ChangeNotifier {
         'focusTimer and focusTimerFeature must be composed together',
       );
     }
+    if (configurationIdleTimeout <= Duration.zero ||
+        configurationIdleTimeout > const Duration(minutes: 5)) {
+      throw ArgumentError.value(
+        configurationIdleTimeout,
+        'configurationIdleTimeout',
+        'must be positive and no longer than five minutes',
+      );
+    }
     if (focusTimer != null &&
         (adapter is! FocusTimerSupportingLessonModeAdapter ||
             activeLearningTime == null ||
@@ -98,6 +119,8 @@ final class UnifiedLessonController extends ChangeNotifier {
       activeLearningTime,
       focusTimer,
       focusTimerFeature,
+      configurationMonotonicMicros ?? _SystemSessionMonotonicClock().read,
+      configurationIdleTimeout,
     );
   }
 
@@ -108,6 +131,8 @@ final class UnifiedLessonController extends ChangeNotifier {
     this._activeLearningTime,
     this._focusTimer,
     this._focusTimerFeature,
+    this._configurationMonotonicMicros,
+    this._configurationIdleTimeout,
   ) : _state = LessonSessionState.planned(_adapter.mode);
 
   final LearningUseCases _learning;
@@ -116,6 +141,8 @@ final class UnifiedLessonController extends ChangeNotifier {
   final ActiveLearningTimeController? _activeLearningTime;
   final FocusTimerController? _focusTimer;
   final Feature? _focusTimerFeature;
+  final SessionConfigurationMonotonicMicros _configurationMonotonicMicros;
+  final Duration _configurationIdleTimeout;
   LessonSessionState _state;
   AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
@@ -131,8 +158,28 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool _focusTimerGateEnabled = true;
   Object? _lastActiveLearningTimeFailure;
   final Object _terminalCutoffAuthority = Object();
+  SessionConfiguration? _sessionConfiguration;
+  SessionConfigurationRevalidator? _configurationRevalidator;
+  SessionConfigurationResetRequired? _configurationResetRequired;
+  Timer? _configurationLimitTimer;
+  int _configurationLimitTimerGeneration = 0;
+  int _configurationEffortGeneration = 0;
+  int _configurationConsumedMicros = 0;
+  int? _configurationActiveAnchorMicros;
+  Future<void>? _configurationTerminalClose;
+  bool _configurationLimitReached = false;
+  bool _configurationIdle = false;
 
   LessonSessionState get state => _state;
+  SessionConfiguration? get sessionConfiguration => _sessionConfiguration;
+  SessionConfigurationResetRequired? get configurationResetRequired =>
+      _configurationResetRequired;
+  bool get configurationLimitReached => _configurationLimitReached;
+  Duration get configurationActiveEffort =>
+      Duration(microseconds: _configurationConsumedMicros);
+  bool get configurationIsIdle => _configurationIdle;
+  bool get configurationAcceptsOperations =>
+      !_disposed && !_configurationLimitReached;
   AnswerFeedback? get feedback => _feedback;
   HintState? get hintState => _hints?.state;
   HintUsageSnapshot snapshotHintUsageForAcceptedEvidence() {
@@ -160,21 +207,25 @@ final class UnifiedLessonController extends ChangeNotifier {
       _terminalClosePending != null;
   bool get canRevealHint {
     final hint = _hints?.state;
+    final configuredBudget = _sessionConfiguration?.hintBudget;
     return !_disposed &&
         hint != null &&
         hint.availability == HintAvailability.available &&
         !hint.isExhausted &&
+        (configuredBudget == null || hint.hintLevel < configuredBudget) &&
         _state.status == LessonSessionStatus.active &&
         _pauseInFlight == null &&
         _completionInFlight == null &&
         _capturedCompletionInFlight == null &&
         _abandonInFlight == null &&
         _terminalClosePending == null &&
+        !_configurationLimitReached &&
         !_hasUncommittedSubmission;
   }
 
   HintRevealResult revealNextHint() {
     _requireNotDisposed();
+    _requireConfigurationEffortAvailable();
     if (_pauseInFlight != null) {
       throw StateError('Cannot reveal a hint while pause is pending.');
     }
@@ -185,9 +236,35 @@ final class UnifiedLessonController extends ChangeNotifier {
     if (hints == null) {
       throw StateError('Hints are unavailable for this lesson mode.');
     }
+    final configuredBudget = _sessionConfiguration?.hintBudget;
+    if (configuredBudget != null && hints.state.hintLevel >= configuredBudget) {
+      throw StateError('The validated session hint budget is exhausted.');
+    }
     final result = hints.revealNext();
     if (result.changed && !_disposed) notifyListeners();
     return result;
+  }
+
+  void bindSessionConfiguration(
+    SessionConfiguration configuration, {
+    required SessionConfigurationRevalidator revalidate,
+  }) {
+    _requireNotDisposed();
+    _requireStatus(LessonSessionStatus.planned, 'bind session configuration');
+    if (configuration.mode != _adapter.mode) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.modeDrift,
+      );
+    }
+    final existing = _sessionConfiguration;
+    if (existing != null && existing != configuration) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
+    _sessionConfiguration = configuration;
+    _configurationRevalidator = revalidate;
+    _configurationResetRequired = null;
   }
 
   Future<void> start(LessonStartCommand command) {
@@ -197,6 +274,7 @@ final class UnifiedLessonController extends ChangeNotifier {
       if (command.mode != _adapter.mode) {
         throw StateError('Lesson mode does not match the resolved adapter.');
       }
+      await _revalidateStartConfiguration(command.configuration);
       final sessionId = _required(command.sessionId, 'sessionId');
       final startedAtUtc = _requiredUtc(command.startedAtUtc, 'startedAtUtc');
       if (command.itemCount < 0) {
@@ -205,6 +283,76 @@ final class UnifiedLessonController extends ChangeNotifier {
           'itemCount',
           'must be nonnegative',
         );
+      }
+      final configuration = _sessionConfiguration;
+      if (configuration != null &&
+          command.itemCount != configuration.itemCount) {
+        final error = const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+          'loaded item count differs from the validated configuration',
+        );
+        _configurationResetRequired = error;
+        _notifyAvailabilityChanged();
+        throw error;
+      }
+      var restoredConfigurationEffort = Duration.zero;
+      var completedConfigurationRecovery = false;
+      if (configuration != null) {
+        try {
+          final durable = await _learning.loadSessionConfigurationState(
+            sessionId,
+          );
+          if (durable == null ||
+              durable.sessionConfiguration != configuration) {
+            throw const SessionConfigurationResetRequired(
+              SessionConfigurationResetReason.tampered,
+              'durable learning session has a different configuration',
+            );
+          }
+          restoredConfigurationEffort = durable.configurationActiveEffort;
+          if (restoredConfigurationEffort.isNegative) {
+            throw const SessionConfigurationResetRequired(
+              SessionConfigurationResetReason.tampered,
+              'durable active effort is invalid',
+            );
+          }
+          switch (durable.state) {
+            case 'active':
+              if (durable.endedAtUtc != null) {
+                throw const SessionConfigurationResetRequired(
+                  SessionConfigurationResetReason.tampered,
+                  'active durable session has a terminal occurrence',
+                );
+              }
+              break;
+            case 'completed':
+              if (durable.endedAtUtc == null) {
+                throw const SessionConfigurationResetRequired(
+                  SessionConfigurationResetReason.tampered,
+                  'completed durable session has no terminal occurrence',
+                );
+              }
+              completedConfigurationRecovery = true;
+              break;
+            default:
+              throw const SessionConfigurationResetRequired(
+                SessionConfigurationResetReason.tampered,
+                'durable session is not startable',
+              );
+          }
+        } on SessionConfigurationResetRequired catch (error) {
+          _configurationResetRequired = error;
+          _notifyAvailabilityChanged();
+          rethrow;
+        } catch (_) {
+          final error = const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.tampered,
+            'durable session configuration authority is unavailable',
+          );
+          _configurationResetRequired = error;
+          _notifyAvailabilityChanged();
+          throw error;
+        }
       }
       final activeTime = _activeLearningTime;
       if (activeTime != null) {
@@ -231,7 +379,46 @@ final class UnifiedLessonController extends ChangeNotifier {
           itemCount: command.itemCount,
         ),
       );
+      if (completedConfigurationRecovery) {
+        _restoreConfigurationEffortForTerminalReconciliation(
+          restoredConfigurationEffort,
+        );
+      } else {
+        _beginConfigurationEffort(restoredConfigurationEffort);
+      }
     });
+  }
+
+  Future<void> _revalidateStartConfiguration(
+    SessionConfiguration? commandConfiguration,
+  ) async {
+    final bound = _sessionConfiguration;
+    final revalidate = _configurationRevalidator;
+    if (bound == null && commandConfiguration == null) return;
+    if (bound == null ||
+        revalidate == null ||
+        commandConfiguration == null ||
+        commandConfiguration != bound) {
+      final error = const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+      _configurationResetRequired = error;
+      _notifyAvailabilityChanged();
+      throw error;
+    }
+    try {
+      final refreshed = await revalidate(bound);
+      if (refreshed != bound) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+      _configurationResetRequired = null;
+    } on SessionConfigurationResetRequired catch (error) {
+      _configurationResetRequired = error;
+      _notifyAvailabilityChanged();
+      rethrow;
+    }
   }
 
   Future<void> pause(DateTime occurredAtUtc, {bool processBackground = false}) {
@@ -270,6 +457,7 @@ final class UnifiedLessonController extends ChangeNotifier {
               }
               await activeTime.pauseObserved(timeOccurrence);
             }
+            await _pauseConfigurationEffort();
             _transition(LessonSessionStatus.paused, occurredAt);
           }).whenComplete(() {
             if (identical(_pauseInFlight, future)) {
@@ -302,6 +490,7 @@ final class UnifiedLessonController extends ChangeNotifier {
           await activeTime.resumeObserved(timeOccurrence);
         }
         _transition(LessonSessionStatus.active, occurredAt);
+        _resumeConfigurationEffort();
       });
     } catch (error, stackTrace) {
       return Future<void>.error(error, stackTrace);
@@ -370,6 +559,7 @@ final class UnifiedLessonController extends ChangeNotifier {
         if (inFlight != null) return inFlight;
         return _startSubmission(existing, submission.response);
       }
+      _requireConfigurationEffortAvailable();
       _requireNoUncommittedSubmission('submit new evidence');
       final classifiedEvidence = _adapter.classify(
         submission.response,
@@ -494,7 +684,10 @@ final class UnifiedLessonController extends ChangeNotifier {
       late final Future<LearningSessionSummary> future;
       future =
           _serialize<LearningSessionSummary>(() async {
-            _requireStatus(LessonSessionStatus.active, 'complete');
+            if (_state.status != LessonSessionStatus.active &&
+                _state.status != LessonSessionStatus.paused) {
+              throw StateError('Cannot complete from ${_state.status.name}.');
+            }
             _requireNoUncommittedSubmission('complete');
             return _finish(close, occurredAt, timeOccurrence);
           }).whenComplete(() {
@@ -572,6 +765,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     future =
         _serialize<AnswerRecordResult>(() {
           _requireStatus(LessonSessionStatus.active, 'submit');
+          _requireConfigurationEffortAvailable();
           if (response.sessionId != _state.sessionId) {
             throw StateError(
               'Submission does not belong to the active session.',
@@ -647,6 +841,7 @@ final class UnifiedLessonController extends ChangeNotifier {
         rethrow;
       }
     }
+    await _finishConfigurationEffort();
     final LearningSessionSummary summary;
     if (close.requiresRetry) {
       summary = await close.retry();
@@ -681,6 +876,7 @@ final class UnifiedLessonController extends ChangeNotifier {
       }
     }
     try {
+      await _finishConfigurationEffort();
       await _learning.abandonSession(
         sessionId: _state.sessionId!,
         abandonedAtUtc: occurredAtUtc,
@@ -719,7 +915,80 @@ final class UnifiedLessonController extends ChangeNotifier {
       authority: _terminalCutoffAuthority,
       occurredAtUtc: occurredAt,
       timeOccurrence: _activeLearningTime?.observe(occurredAt),
+      configurationMonotonicMicros: _configurationActiveAnchorMicros == null
+          ? null
+          : _readConfigurationMonotonic(),
+      configurationSessionAttached: _state.sessionId != null,
     );
+  }
+
+  Future<void> closeConfigurationEffortAtCutoff(LessonTerminalCutoff cutoff) {
+    try {
+      _requireNotDisposed();
+      _requireTerminalCutoff(cutoff);
+      final existing = cutoff.configurationClose;
+      if (existing != null) return existing;
+      final terminalClose = _configurationTerminalClose;
+      if (terminalClose != null) {
+        cutoff.configurationClose = terminalClose;
+        return terminalClose;
+      }
+      final anchor = _configurationActiveAnchorMicros;
+      final observed = cutoff.configurationMonotonicMicros;
+      var targetMicros = _configurationConsumedMicros;
+      if (anchor != null) {
+        if (observed == null || observed < anchor) {
+          _failConfigurationEffortClosed();
+          return Future<void>.error(
+            StateError('Configuration cutoff clock is invalid.'),
+          );
+        }
+        final elapsedMicros = observed - anchor;
+        final countedMicros = _configurationExcludesIdle
+            ? math.min(elapsedMicros, _configurationIdleTimeout.inMicroseconds)
+            : elapsedMicros;
+        final limitMicros = _configurationEffortLimit?.inMicroseconds;
+        targetMicros = limitMicros == null
+            ? targetMicros + countedMicros
+            : math.min(limitMicros, targetMicros + countedMicros);
+      }
+      cutoff.configurationEffortTargetMicros = targetMicros;
+      _configurationActiveAnchorMicros = null;
+      _configurationIdle = false;
+      _configurationEffortGeneration += 1;
+      _invalidateConfigurationLimitTimer();
+      late final Future<void> operation;
+      operation = _serialize<void>(() async {
+        var target = cutoff.configurationEffortTargetMicros!;
+        if (_configurationConsumedMicros > target) {
+          if (!cutoff.configurationSessionAttached) {
+            target = _configurationConsumedMicros;
+            cutoff.configurationEffortTargetMicros = target;
+          } else {
+            _failConfigurationEffortClosed();
+            throw StateError(
+              'Configuration effort crossed its terminal cutoff.',
+            );
+          }
+        }
+        await _persistConfigurationEffort(
+          target - _configurationConsumedMicros,
+        );
+        if (_configurationConsumedMicros != target) {
+          _failConfigurationEffortClosed();
+          throw StateError('Configuration cutoff effort was not durable.');
+        }
+        final limit = _configurationEffortLimit;
+        if (limit != null && target >= limit.inMicroseconds) {
+          _reachConfigurationLimit();
+        }
+      });
+      cutoff.configurationClose = operation;
+      _configurationTerminalClose = operation;
+      return operation;
+    } catch (error, stackTrace) {
+      return Future<void>.error(error, stackTrace);
+    }
   }
 
   Future<void> closeTimeAtCutoff(LessonTerminalCutoff cutoff) {
@@ -759,12 +1028,14 @@ final class UnifiedLessonController extends ChangeNotifier {
   Future<void> recordActiveLearningInteraction(DateTime occurredAtUtc) {
     try {
       _requireNotDisposed();
+      _requireConfigurationEffortAvailable();
+      final occurredAt = _requiredUtc(occurredAtUtc, 'occurredAtUtc');
       final controller = _activeLearningTime;
-      if (controller == null) return Future<void>.value();
-      final occurrence = controller.observe(
-        _requiredUtc(occurredAtUtc, 'occurredAtUtc'),
-      );
+      final occurrence = controller?.observe(occurredAt);
       return _serialize<void>(() async {
+        await _recordConfigurationInteraction();
+        _requireConfigurationEffortAvailable();
+        if (controller == null || occurrence == null) return;
         final focusTimer = _focusTimer;
         if (focusTimer?.snapshot.status == FocusTimerStatus.running) {
           await focusTimer!.recordInteractionObserved(occurrence);
@@ -803,6 +1074,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   ) {
     try {
       _requireNotDisposed();
+      _requireConfigurationEffortAvailable();
       if (!_focusTimerGateEnabled) {
         throw StateError('Focus timer is disabled by its live feature gate.');
       }
@@ -908,16 +1180,17 @@ final class UnifiedLessonController extends ChangeNotifier {
 
   void noteActiveLearningInteraction(DateTime occurredAtUtc) {
     final controller = _activeLearningTime;
-    if (_disposed || controller == null) return;
+    if (_disposed || _configurationLimitReached) return;
     unawaited(
       recordActiveLearningInteraction(occurredAtUtc).then<void>(
         (_) {
-          if (controller.state != ActiveLearningTimeState.inactive) {
+          if (controller != null &&
+              controller.state != ActiveLearningTimeState.inactive) {
             _lastActiveLearningTimeFailure = null;
           }
         },
         onError: (Object error, StackTrace _) {
-          _lastActiveLearningTimeFailure = error;
+          if (controller != null) _lastActiveLearningTimeFailure = error;
         },
       ),
     );
@@ -982,6 +1255,269 @@ final class UnifiedLessonController extends ChangeNotifier {
     }
   }
 
+  Duration? get _configurationEffortLimit {
+    final timing = _sessionConfiguration?.timing;
+    if (timing == null) return null;
+    return switch (timing.kind) {
+      SessionTimingKind.timed => timing.timedLimit,
+      SessionTimingKind.untimedAlternative => timing.maximumActiveEffort,
+    };
+  }
+
+  bool get _configurationExcludesIdle =>
+      _sessionConfiguration?.timing.kind ==
+      SessionTimingKind.untimedAlternative;
+
+  void _beginConfigurationEffort(Duration restored) {
+    _invalidateConfigurationLimitTimer();
+    _configurationEffortGeneration += 1;
+    _configurationConsumedMicros = restored.inMicroseconds;
+    _configurationLimitReached = false;
+    _configurationIdle = false;
+    if (_configurationTerminalClose != null) {
+      _configurationActiveAnchorMicros = null;
+      return;
+    }
+    final limit = _configurationEffortLimit;
+    if (limit == null) {
+      _configurationActiveAnchorMicros = null;
+      return;
+    }
+    if (_configurationConsumedMicros < 0 ||
+        _configurationConsumedMicros >= limit.inMicroseconds) {
+      _reachConfigurationLimit();
+      return;
+    }
+    _configurationActiveAnchorMicros = _readConfigurationMonotonic();
+    _scheduleConfigurationLimit();
+  }
+
+  void _restoreConfigurationEffortForTerminalReconciliation(Duration restored) {
+    _invalidateConfigurationLimitTimer();
+    _configurationEffortGeneration += 1;
+    _configurationConsumedMicros = restored.inMicroseconds;
+    _configurationActiveAnchorMicros = null;
+    _configurationLimitReached = false;
+    _configurationIdle = false;
+  }
+
+  Future<void> _pauseConfigurationEffort() async {
+    await _captureConfigurationEffort(stop: true);
+    _configurationActiveAnchorMicros = null;
+    _configurationIdle = false;
+    _invalidateConfigurationLimitTimer();
+  }
+
+  void _resumeConfigurationEffort() {
+    if (_configurationLimitReached ||
+        _configurationEffortLimit == null ||
+        _configurationTerminalClose != null) {
+      return;
+    }
+    _configurationIdle = false;
+    _configurationActiveAnchorMicros = _readConfigurationMonotonic();
+    _scheduleConfigurationLimit();
+  }
+
+  Future<void> _finishConfigurationEffort() async {
+    await _captureConfigurationEffort(stop: true);
+    _configurationActiveAnchorMicros = null;
+    _configurationIdle = false;
+    _invalidateConfigurationLimitTimer();
+  }
+
+  Future<void> _recordConfigurationInteraction() async {
+    if (_configurationEffortLimit == null ||
+        _state.status != LessonSessionStatus.active ||
+        _configurationTerminalClose != null) {
+      return;
+    }
+    final effortGeneration = _configurationEffortGeneration;
+    await _captureConfigurationEffort(stop: false);
+    if (_configurationLimitReached ||
+        _configurationTerminalClose != null ||
+        effortGeneration != _configurationEffortGeneration) {
+      return;
+    }
+    _configurationIdle = false;
+    _configurationActiveAnchorMicros = _readConfigurationMonotonic();
+    _scheduleConfigurationLimit();
+  }
+
+  Future<void> _captureConfigurationEffort({required bool stop}) async {
+    final anchor = _configurationActiveAnchorMicros;
+    if (anchor == null) return;
+    final effortGeneration = _configurationEffortGeneration;
+    final now = _readConfigurationMonotonic();
+    if (now < anchor) {
+      _failConfigurationEffortClosed();
+      return;
+    }
+    final elapsedMicros = now - anchor;
+    final countedMicros = _configurationExcludesIdle
+        ? math.min(elapsedMicros, _configurationIdleTimeout.inMicroseconds)
+        : elapsedMicros;
+    await _persistConfigurationEffort(countedMicros);
+    if (_configurationTerminalClose != null ||
+        effortGeneration != _configurationEffortGeneration) {
+      return;
+    }
+    final limit = _configurationEffortLimit;
+    if (limit != null && _configurationConsumedMicros >= limit.inMicroseconds) {
+      _reachConfigurationLimit();
+      return;
+    }
+    final wentIdle =
+        _configurationExcludesIdle &&
+        elapsedMicros >= _configurationIdleTimeout.inMicroseconds;
+    _configurationIdle = wentIdle;
+    _configurationActiveAnchorMicros = stop || wentIdle ? null : now;
+  }
+
+  void _scheduleConfigurationLimit() {
+    final limit = _configurationEffortLimit;
+    if (limit == null ||
+        _configurationLimitReached ||
+        _configurationTerminalClose != null) {
+      return;
+    }
+    final remainingMicros = limit.inMicroseconds - _configurationConsumedMicros;
+    if (remainingMicros <= 0) {
+      _reachConfigurationLimit();
+      return;
+    }
+    _invalidateConfigurationLimitTimer();
+    final timerGeneration = _configurationLimitTimerGeneration;
+    final effortGeneration = _configurationEffortGeneration;
+    final scheduledMicros = math.min(
+      remainingMicros,
+      _configurationIdleTimeout.inMicroseconds,
+    );
+    final reachesLimit = scheduledMicros == remainingMicros;
+    _configurationLimitTimer = Timer(
+      Duration(microseconds: scheduledMicros),
+      () {
+        unawaited(
+          _serialize<void>(() async {
+            if (timerGeneration != _configurationLimitTimerGeneration ||
+                _configurationActiveAnchorMicros == null ||
+                _configurationLimitReached) {
+              return;
+            }
+            try {
+              await _persistConfigurationEffort(scheduledMicros);
+              if (timerGeneration != _configurationLimitTimerGeneration ||
+                  effortGeneration != _configurationEffortGeneration ||
+                  _configurationTerminalClose != null) {
+                return;
+              }
+              _configurationActiveAnchorMicros = null;
+              if (reachesLimit) {
+                _reachConfigurationLimit();
+              } else if (_configurationExcludesIdle) {
+                _configurationIdle = true;
+                _configurationLimitTimer = null;
+                _notifyAvailabilityChanged();
+              } else {
+                _configurationActiveAnchorMicros =
+                    _readConfigurationMonotonic();
+                _scheduleConfigurationLimit();
+              }
+            } catch (_) {
+              _failConfigurationEffortClosed();
+            }
+          }),
+        );
+      },
+    );
+  }
+
+  Future<void> _persistConfigurationEffort(int deltaMicros) async {
+    if (deltaMicros <= 0) return;
+    final configuration = _sessionConfiguration;
+    final sessionId = _state.sessionId;
+    if (configuration == null || sessionId == null) {
+      _failConfigurationEffortClosed();
+      return;
+    }
+    final limitMicros = _configurationEffortLimit?.inMicroseconds;
+    var remainingMicros = limitMicros == null
+        ? deltaMicros
+        : math.min(
+            deltaMicros,
+            math.max(0, limitMicros - _configurationConsumedMicros),
+          );
+    while (remainingMicros > 0) {
+      final chunkMicros = math.min(
+        remainingMicros,
+        const Duration(minutes: 5).inMicroseconds,
+      );
+      final restored = await _learning.addSessionConfigurationActiveEffort(
+        sessionId: sessionId,
+        configurationIdentity: configuration.contentIdentity,
+        delta: Duration(microseconds: chunkMicros),
+      );
+      if (restored.isNegative ||
+          restored.inMicroseconds < _configurationConsumedMicros ||
+          (limitMicros != null && restored.inMicroseconds > limitMicros)) {
+        _failConfigurationEffortClosed();
+        return;
+      }
+      _configurationConsumedMicros = restored.inMicroseconds;
+      remainingMicros -= chunkMicros;
+    }
+  }
+
+  void _failConfigurationEffortClosed() {
+    _configurationResetRequired = const SessionConfigurationResetRequired(
+      SessionConfigurationResetReason.tampered,
+      'durable active-effort authority is unavailable',
+    );
+    _reachConfigurationLimit();
+  }
+
+  void _reachConfigurationLimit() {
+    if (_disposed || _configurationLimitReached) return;
+    _configurationLimitReached = true;
+    _configurationEffortGeneration += 1;
+    final limit = _configurationEffortLimit;
+    if (limit != null) {
+      _configurationConsumedMicros = limit.inMicroseconds;
+    }
+    _configurationActiveAnchorMicros = null;
+    _configurationIdle = false;
+    _invalidateConfigurationLimitTimer();
+    notifyListeners();
+    if (_state.status == LessonSessionStatus.active) {
+      unawaited(
+        pause(
+          DateTime.now().toUtc(),
+        ).then<void>((_) {}, onError: (Object _, StackTrace _) {}),
+      );
+    }
+  }
+
+  int _readConfigurationMonotonic() {
+    final value = _configurationMonotonicMicros();
+    if (value < 0) {
+      _reachConfigurationLimit();
+      return 0;
+    }
+    return value;
+  }
+
+  void _invalidateConfigurationLimitTimer() {
+    _configurationLimitTimerGeneration += 1;
+    _configurationLimitTimer?.cancel();
+    _configurationLimitTimer = null;
+  }
+
+  void _requireConfigurationEffortAvailable() {
+    if (_configurationLimitReached) {
+      throw const SessionConfigurationLimitReached();
+    }
+  }
+
   Future<T> _disposedError<T>() =>
       Future<T>.error(StateError('UnifiedLessonController is disposed.'));
 
@@ -1003,10 +1539,19 @@ final class UnifiedLessonController extends ChangeNotifier {
   @override
   void dispose() {
     _disposed = true;
+    _invalidateConfigurationLimitTimer();
     _focusTimer?.dispose();
     _activeLearningTime?.dispose();
     super.dispose();
   }
+}
+
+final class _SystemSessionMonotonicClock {
+  _SystemSessionMonotonicClock() : _stopwatch = Stopwatch()..start();
+
+  final Stopwatch _stopwatch;
+
+  int read() => _stopwatch.elapsedMicroseconds;
 }
 
 enum _FocusTimerAction {

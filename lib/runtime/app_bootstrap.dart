@@ -53,12 +53,15 @@ import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/data/drift_associative_learning_adapter.dart';
 import '../features/learning/data/drift_learning_repository.dart';
+import '../features/learning/data/drift_session_configuration_store.dart';
 import '../features/learning/domain/evidence_context.dart';
 import '../features/learning/domain/evidence_eligibility_policy.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning_packs/data/drift_content_manifest_repository.dart';
 import '../features/learning_packs/data/drift_learning_pack_repository.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
@@ -320,6 +323,7 @@ final class AppBootstrap {
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
     this.researchStateProvider,
     ResearchProtocolModeCatalog? researchProtocolModeCatalog,
+    SessionConfigurationProtocolCatalog? sessionConfigurationProtocolCatalog,
     this.assessmentOverride,
     ContentArtifactBytesLoader? loadContentArtifactBytes,
     LearningTimeMonotonicMicros? learningTimeMonotonicMicros,
@@ -343,6 +347,11 @@ final class AppBootstrap {
            researchProtocolModeCatalog ??
            const ResearchProtocolModeCatalog(
              mappings: <ResearchProtocolModeMapping>[],
+           ),
+       sessionConfigurationProtocolCatalog =
+           sessionConfigurationProtocolCatalog ??
+           SessionConfigurationProtocolCatalog(
+             baseline: const SessionConfigurationProtocolLimits.standard(),
            ),
        runtimeFeatureNowUtc =
            runtimeFeatureNowUtc ?? _runtimeFeatureSystemNowUtc,
@@ -388,6 +397,7 @@ final class AppBootstrap {
   final ResearchRuntimeConfigLoader loadResearchRuntimeConfig;
   final CurrentActivityResearchStateProvider? researchStateProvider;
   final ResearchProtocolModeCatalog researchProtocolModeCatalog;
+  final SessionConfigurationProtocolCatalog sessionConfigurationProtocolCatalog;
   final AssessmentUseCases? assessmentOverride;
   final GuestSessionService guestSessionService;
   final AppDatabaseFactory createDatabase;
@@ -1112,6 +1122,14 @@ final class AppBootstrap {
       syncTrigger: syncTrigger,
       learning: learning,
       lessonModes: lessonModes,
+      sessionConfigurationProtocols:
+          PersistedSessionConfigurationProtocolProvider(
+            currentResearchState: currentResearchStateProvider,
+            rolloutMode: evidenceRolloutModeProvider,
+            nowUtc: () => DateTime.now().toUtc(),
+            catalog: sessionConfigurationProtocolCatalog,
+          ),
+      sessionConfigurations: DriftSessionConfigurationStore(database),
       createLessonController: (adapter) {
         final registration = lessonModes.find(adapter.mode);
         final registeredFeature =
@@ -1136,6 +1154,7 @@ final class AppBootstrap {
           activeLearningTime: activeTime,
           focusTimer: focusTimer,
           focusTimerFeature: focusTimer == null ? null : registeredFeature,
+          configurationMonotonicMicros: learningTimeMonotonicMicros,
         );
       },
       learningTime: learningTime,

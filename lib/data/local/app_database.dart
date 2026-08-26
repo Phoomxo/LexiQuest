@@ -38,6 +38,7 @@ part 'app_database.g.dart';
     LearningPackItems,
     ContentDownloadStates,
     LearningSessions,
+    SessionConfigurations,
     AnswerAttempts,
     SrsStates,
     ReadingProgressEntries,
@@ -70,7 +71,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 19;
+  static const int currentSchemaVersion = 20;
 
   AppDatabase(super.executor);
 
@@ -262,6 +263,29 @@ final class AppDatabase extends _$AppDatabase {
         if (!await _tableExists('study_reminders')) {
           await migrator.createTable(studyReminders);
         }
+      }
+      if (from < 20) {
+        if (!await _tableExists('session_configurations')) {
+          await migrator.createTable(sessionConfigurations);
+        }
+        await _addColumnIfMissing(
+          migrator,
+          'learning_sessions',
+          learningSessions,
+          learningSessions.sessionConfigurationIdentity,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'learning_sessions',
+          learningSessions,
+          learningSessions.sessionConfigurationJson,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'learning_sessions',
+          learningSessions,
+          learningSessions.configurationActiveEffortUs,
+        );
       }
     },
     beforeOpen: (details) async {

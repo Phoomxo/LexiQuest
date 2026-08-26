@@ -8,10 +8,15 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/matching_mode_adapter.dart';
 import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
+import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
+import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
+import '../features/learning_packs/domain/learning_pack.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
@@ -29,17 +34,30 @@ import 'speak_to_text_screen.dart';
 import 'srs_flashcards_screen.dart';
 import 'word_scramble_screen.dart';
 
-class ChooseModeScreen extends StatelessWidget {
-  const ChooseModeScreen({super.key, this.featureRegistry, this.lessonModes});
+class ChooseModeScreen extends StatefulWidget {
+  const ChooseModeScreen({
+    super.key,
+    this.featureRegistry,
+    this.lessonModes,
+    this.sessionConfigurationPolicy = const SessionConfigurationPolicy(),
+  });
 
   final FeatureRegistry? featureRegistry;
   final LessonModeRegistry? lessonModes;
+  final SessionConfigurationPolicy sessionConfigurationPolicy;
+
+  @override
+  State<ChooseModeScreen> createState() => _ChooseModeScreenState();
+}
+
+class _ChooseModeScreenState extends State<ChooseModeScreen> {
+  bool _openingMode = false;
 
   @override
   Widget build(BuildContext context) {
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final features = featureRegistry ?? dependencies?.features;
-    final modes = lessonModes ?? dependencies?.lessonModes;
+    final features = widget.featureRegistry ?? dependencies?.features;
+    final modes = widget.lessonModes ?? dependencies?.lessonModes;
     final matching = modes?.resolve(LessonMode.matching);
     final typedRecall = modes?.resolveTypedRecall();
     final dictation = modes?.resolve(LessonMode.dictation);
@@ -63,7 +81,11 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.associativeReading,
-                (_, _) => const AssociativeReadingLauncherScreen(),
+                (_, _, configuration, revalidateConfiguration) =>
+                    AssociativeReadingLauncherScreen(
+                      sessionConfiguration: configuration,
+                      revalidateSessionConfiguration: revalidateConfiguration,
+                    ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true)
@@ -75,8 +97,10 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.meaningQuiz,
-                (_, adapter) =>
-                    QuizScreen(modeAdapter: adapter as MeaningQuizModeAdapter),
+                (_, adapter, configuration, _) => QuizScreen(
+                  modeAdapter: adapter as MeaningQuizModeAdapter,
+                  sessionConfiguration: configuration,
+                ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true && typedRecall != null)
@@ -88,8 +112,9 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.typedRecall,
-                (_, adapter) => QuizScreen.typedRecall(
+                (_, adapter, configuration, _) => QuizScreen.typedRecall(
                   modeAdapter: adapter as TypedRecallModeAdapter,
+                  sessionConfiguration: configuration,
                 ),
               ),
             ),
@@ -102,8 +127,11 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.matching,
-                (_, adapter) => MatchingModeScreen(
+                (_, adapter, configuration, _) => MatchingModeScreen(
                   modeAdapter: adapter as MatchingModeAdapter,
+                  sessionConfiguration: configuration,
+                  timeLimit: configuration.timing.timedLimit,
+                  showCountdown: !configuration.timing.isUntimedAlternative,
                 ),
               ),
             ),
@@ -116,8 +144,9 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.cloze,
-                (_, adapter) => FillInTheBlanksScreen(
+                (_, adapter, configuration, _) => FillInTheBlanksScreen(
                   modeAdapter: adapter as ClozeModeAdapter,
+                  sessionConfiguration: configuration,
                 ),
               ),
             ),
@@ -130,8 +159,9 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.definitionQuiz,
-                (_, adapter) => DefinitionQuizScreen(
+                (_, adapter, configuration, _) => DefinitionQuizScreen(
                   modeAdapter: adapter as DefinitionQuizModeAdapter,
+                  sessionConfiguration: configuration,
                 ),
               ),
             ),
@@ -144,8 +174,9 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.flashcard,
-                (_, adapter) => SrsFlashcardsScreen(
+                (_, adapter, configuration, _) => SrsFlashcardsScreen(
                   modeAdapter: adapter as FlashcardModeAdapter,
+                  sessionConfiguration: configuration,
                 ),
               ),
             ),
@@ -156,35 +187,39 @@ class ChooseModeScreen extends StatelessWidget {
               icon: Icons.chrome_reader_mode_outlined,
               title: 'CEFR Reading',
               subtitle: 'Read a levelled passage and hear words in context.',
-              onTap: () =>
-                  _openMode(context, LessonMode.cefrReading, (_, adapter) {
-                    final cefrAdapter = adapter as CefrReadingModeAdapter;
-                    return NativeVocabularyLessonModeLoader(
-                      isQuestionAvailable: (question) {
-                        try {
-                          cefrAdapter.requireCanonicalCefrLevel(
-                            question.word.cefrLevel,
-                          );
-                          return true;
-                        } on StateError {
-                          return false;
-                        }
-                      },
-                      builder: (_, session, question) =>
-                          CefrArticleReaderScreen(
-                            title: 'Vocabulary reading',
-                            content:
-                                '${question.word.spelling} means '
-                                '${question.word.meaning}.',
-                            cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
-                              question.word.cefrLevel,
-                            ),
-                            sessionId: session.id,
-                            wordId: question.word.id,
-                            modeAdapter: cefrAdapter,
-                          ),
-                    );
-                  }),
+              onTap: () => _openMode(context, LessonMode.cefrReading, (
+                _,
+                adapter,
+                configuration,
+                _,
+              ) {
+                final cefrAdapter = adapter as CefrReadingModeAdapter;
+                return NativeVocabularyLessonModeLoader(
+                  sessionConfiguration: configuration,
+                  isQuestionAvailable: (question) {
+                    try {
+                      cefrAdapter.requireCanonicalCefrLevel(
+                        question.word.cefrLevel,
+                      );
+                      return true;
+                    } on StateError {
+                      return false;
+                    }
+                  },
+                  builder: (_, session, question) => CefrArticleReaderScreen(
+                    title: 'Vocabulary reading',
+                    content:
+                        '${question.word.spelling} means '
+                        '${question.word.meaning}.',
+                    cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
+                      question.word.cefrLevel,
+                    ),
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: cefrAdapter,
+                  ),
+                );
+              }),
             ),
           if (features?.isVisible(Feature.quiz) == true && dictation != null)
             _LearningTile(
@@ -195,14 +230,16 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.dictation,
-                (_, adapter) => NativeVocabularyLessonModeLoader(
-                  builder: (_, session, question) => DictationQuizScreen(
-                    targetWord: question.word.spelling,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: adapter as DictationModeAdapter,
-                  ),
-                ),
+                (_, adapter, configuration, _) =>
+                    NativeVocabularyLessonModeLoader(
+                      sessionConfiguration: configuration,
+                      builder: (_, session, question) => DictationQuizScreen(
+                        targetWord: question.word.spelling,
+                        sessionId: session.id,
+                        wordId: question.word.id,
+                        modeAdapter: adapter as DictationModeAdapter,
+                      ),
+                    ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true &&
@@ -215,17 +252,19 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.sentenceScramble,
-                (_, adapter) => NativeVocabularyLessonModeLoader(
-                  builder: (_, session, question) => SentenceScrambleScreen(
-                    targetSentence:
-                        '${question.word.spelling} means '
-                        '${question.word.meaning}',
-                    translation: question.word.meaning,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: adapter as SentenceScrambleModeAdapter,
-                  ),
-                ),
+                (_, adapter, configuration, _) =>
+                    NativeVocabularyLessonModeLoader(
+                      sessionConfiguration: configuration,
+                      builder: (_, session, question) => SentenceScrambleScreen(
+                        targetSentence:
+                            '${question.word.spelling} means '
+                            '${question.word.meaning}',
+                        translation: question.word.meaning,
+                        sessionId: session.id,
+                        wordId: question.word.id,
+                        modeAdapter: adapter as SentenceScrambleModeAdapter,
+                      ),
+                    ),
               ),
             ),
           if (features?.isVisible(Feature.quiz) == true && wordScramble != null)
@@ -237,14 +276,16 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.wordScramble,
-                (_, adapter) => NativeVocabularyLessonModeLoader(
-                  builder: (_, session, question) => WordScrambleScreen(
-                    word: question.word.spelling,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: adapter as WordScrambleModeAdapter,
-                  ),
-                ),
+                (_, adapter, configuration, _) =>
+                    NativeVocabularyLessonModeLoader(
+                      sessionConfiguration: configuration,
+                      builder: (_, session, question) => WordScrambleScreen(
+                        word: question.word.spelling,
+                        sessionId: session.id,
+                        wordId: question.word.id,
+                        modeAdapter: adapter as WordScrambleModeAdapter,
+                      ),
+                    ),
               ),
             ),
           if (features?.isVisible(Feature.speechPractice) == true &&
@@ -257,14 +298,16 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.speaking,
-                (_, adapter) => NativeVocabularyLessonModeLoader(
-                  builder: (_, session, question) => SpeakToTextScreen(
-                    correctWord: question.word.spelling,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: adapter as SpeakingModeAdapter,
-                  ),
-                ),
+                (_, adapter, configuration, _) =>
+                    NativeVocabularyLessonModeLoader(
+                      sessionConfiguration: configuration,
+                      builder: (_, session, question) => SpeakToTextScreen(
+                        correctWord: question.word.spelling,
+                        sessionId: session.id,
+                        wordId: question.word.id,
+                        modeAdapter: adapter as SpeakingModeAdapter,
+                      ),
+                    ),
               ),
             ),
           if (features?.isVisible(Feature.speechPractice) == true &&
@@ -277,14 +320,17 @@ class ChooseModeScreen extends StatelessWidget {
               onTap: () => _openMode(
                 context,
                 LessonMode.shadowing,
-                (_, adapter) => NativeVocabularyLessonModeLoader(
-                  builder: (_, session, question) => ShadowingChallengeScreen(
-                    referenceSentence: question.word.spelling,
-                    sessionId: session.id,
-                    wordId: question.word.id,
-                    modeAdapter: adapter as ShadowingModeAdapter,
-                  ),
-                ),
+                (_, adapter, configuration, _) =>
+                    NativeVocabularyLessonModeLoader(
+                      sessionConfiguration: configuration,
+                      builder: (_, session, question) =>
+                          ShadowingChallengeScreen(
+                            referenceSentence: question.word.spelling,
+                            sessionId: session.id,
+                            wordId: question.word.id,
+                            modeAdapter: adapter as ShadowingModeAdapter,
+                          ),
+                    ),
               ),
             ),
         ],
@@ -295,103 +341,375 @@ class ChooseModeScreen extends StatelessWidget {
   Future<void> _openMode(
     BuildContext context,
     LessonMode mode,
-    Widget Function(BuildContext context, LessonModeAdapter adapter) builder,
-  ) {
+    Widget Function(
+      BuildContext context,
+      LessonModeAdapter adapter,
+      SessionConfiguration configuration,
+      SessionConfigurationRevalidator revalidateConfiguration,
+    )
+    builder,
+  ) async {
+    if (_openingMode) return;
     final dependencies = AppDependenciesScope.maybeOf(context);
-    final modes = lessonModes ?? dependencies?.lessonModes;
+    final modes = widget.lessonModes ?? dependencies?.lessonModes;
     final registration = modes?.resolve(mode);
     if (registration == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This lesson mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.flashcard &&
         registration.adapter is! FlashcardModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This flashcard mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     final typedRecall = modes?.resolveTypedRecall();
     if (mode == LessonMode.associativeReading && typedRecall == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This typed recall mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.meaningQuiz &&
         registration.adapter is! MeaningQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This meaning quiz is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.typedRecall &&
         registration.adapter is! TypedRecallModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This typed recall mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.definitionQuiz &&
         registration.adapter is! DefinitionQuizModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This definition quiz is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.cloze && registration.adapter is! ClozeModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This cloze mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
     if (mode == LessonMode.matching &&
         registration.adapter is! MatchingModeAdapter) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('This matching mode is unavailable.')),
       );
-      return Future<void>.value();
+      return;
     }
-    final features = featureRegistry ?? dependencies?.features;
-    return AppNavigator.pushPage<void>(
-      context,
-      AppPage<void>(
-        name: registration.routeName,
-        builder: (_) {
-          final createController = dependencies?.createLessonController;
-          if (createController == null) {
-            return ProductionFeatureGate(
-              feature: registration.feature,
-              registry: features,
-              builder: (_) => ProductionFeatureUnavailable(
+    final features = widget.featureRegistry ?? dependencies?.features;
+    if (features?.isEnabled(registration.feature) != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('This lesson mode is no longer available.'),
+        ),
+      );
+      return;
+    }
+    setState(() => _openingMode = true);
+    try {
+      final configurationContext = await _loadConfigurationContext(
+        dependencies,
+        mode,
+      );
+      if (!context.mounted) return;
+      final configuration = await showSessionConfigurationSheet(
+        context: context,
+        registration: registration,
+        policy: widget.sessionConfigurationPolicy,
+        limits: configurationContext.limits,
+        ownerId: configurationContext.ownerId,
+        packs: configurationContext.packs,
+        initialConfiguration: configurationContext.initialConfiguration,
+        initialResetRequired: configurationContext.initialResetRequired,
+        initialResetCanUseDefaults:
+            configurationContext.protocolResetRequired == null,
+      );
+      if (configuration == null || !context.mounted) return;
+
+      var candidate = configuration;
+      var recovery = configurationContext.recovery;
+      final recoveryConfiguration = recovery?.session.sessionConfiguration;
+      if (recovery != null && recoveryConfiguration != candidate) {
+        final canDiscard = recovery.session.state == 'active';
+        if (recoveryConfiguration == null && !canDiscard) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.tampered,
+            'The terminal saved session has no reconstructible configuration.',
+          );
+        }
+        final decision = await showSessionConfigurationRecoveryPrompt(
+          context: context,
+          canResume: recoveryConfiguration != null,
+          canDiscard: canDiscard,
+        );
+        if (decision == null || !context.mounted) return;
+        if (decision == SessionConfigurationRecoveryDecision.resume) {
+          candidate = recoveryConfiguration!;
+        } else {
+          final learning = dependencies?.learning;
+          if (learning == null || recovery.session.state != 'active') {
+            throw const SessionConfigurationResetRequired(
+              SessionConfigurationResetReason.tampered,
+              'The saved session cannot be discarded safely.',
+            );
+          }
+          await learning.abandonSession(
+            sessionId: recovery.session.id,
+            abandonedAtUtc: learning.nowUtc(),
+          );
+          recovery = null;
+        }
+      }
+
+      Future<SessionConfiguration> revalidateConfiguration(
+        SessionConfiguration candidate,
+      ) async {
+        final currentDependencies = AppDependenciesScope.maybeOf(context);
+        final currentModes =
+            widget.lessonModes ?? currentDependencies?.lessonModes;
+        final currentRegistration = currentModes?.resolve(mode);
+        final currentFeatures =
+            widget.featureRegistry ?? currentDependencies?.features;
+        if (currentRegistration == null ||
+            !identical(currentRegistration.adapter, registration.adapter) ||
+            currentFeatures?.isEnabled(registration.feature) != true) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.modeUnavailable,
+          );
+        }
+        final currentContext = await _loadConfigurationContext(
+          currentDependencies,
+          mode,
+        );
+        final protocolResetRequired = currentContext.protocolResetRequired;
+        if (protocolResetRequired != null) throw protocolResetRequired;
+        return widget.sessionConfigurationPolicy.revalidate(
+          configuration: candidate,
+          registration: currentRegistration,
+          limits: currentContext.limits,
+          ownerId: currentContext.ownerId,
+          availablePackIdentities: currentContext.packs.map(
+            (pack) => pack.identity,
+          ),
+        );
+      }
+
+      final refreshed = await revalidateConfiguration(candidate);
+      final store = dependencies?.sessionConfigurations;
+      if (store != null && recovery == null) {
+        try {
+          await store.save(refreshed, updatedAtUtc: DateTime.now().toUtc());
+        } on SessionConfigurationResetRequired {
+          rethrow;
+        } catch (_) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.tampered,
+            'The validated configuration could not be persisted.',
+          );
+        }
+      }
+      if (!context.mounted) return;
+      await AppNavigator.pushPage<void>(
+        context,
+        AppPage<void>(
+          name: registration.routeName,
+          builder: (_) {
+            final createController = dependencies?.createLessonController;
+            if (createController == null) {
+              return ProductionFeatureGate(
                 feature: registration.feature,
-                reason: ProductionFeatureUnavailableReason.missingDependency,
+                registry: features,
+                builder: (_) => ProductionFeatureUnavailable(
+                  feature: registration.feature,
+                  reason: ProductionFeatureUnavailableReason.missingDependency,
+                ),
+              );
+            }
+            if (mode == LessonMode.associativeReading) {
+              // The launcher can create multiple durable sessions. Each
+              // pushed session owns a fresh shell/controller instance.
+              return ProductionFeatureGate(
+                feature: registration.feature,
+                registry: features,
+                builder: (_) => builder(
+                  context,
+                  registration.adapter,
+                  refreshed,
+                  revalidateConfiguration,
+                ),
+              );
+            }
+            return UnifiedLessonModeHost(
+              adapter: registration.adapter,
+              createController: createController,
+              feature: registration.feature,
+              featureRegistry: features,
+              learning: dependencies?.learning,
+              configuration: refreshed,
+              revalidateConfiguration: revalidateConfiguration,
+              builder: (context) => builder(
+                context,
+                registration.adapter,
+                refreshed,
+                revalidateConfiguration,
               ),
             );
-          }
-          if (mode == LessonMode.associativeReading) {
-            // The launcher can create multiple durable sessions. Each
-            // pushed session owns a fresh shell/controller instance.
-            return ProductionFeatureGate(
-              feature: registration.feature,
-              registry: features,
-              builder: (_) => builder(context, registration.adapter),
-            );
-          }
-          return UnifiedLessonModeHost(
-            adapter: registration.adapter,
-            createController: createController,
-            feature: registration.feature,
-            featureRegistry: features,
-            learning: dependencies?.learning,
-            builder: (context) => builder(context, registration.adapter),
-          );
-        },
-      ),
+          },
+        ),
+      );
+    } on SessionConfigurationResetRequired catch (error) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(error.promptMessage)));
+      }
+    } finally {
+      if (mounted) setState(() => _openingMode = false);
+    }
+  }
+
+  Future<_SessionConfigurationContext> _loadConfigurationContext(
+    AppDependencies? dependencies,
+    LessonMode mode,
+  ) async {
+    var ownerId = 'owner:local-compatibility';
+    final owners = dependencies?.localOwners;
+    if (owners != null) {
+      try {
+        ownerId = (await owners.getOrCreateActiveOwner()).id;
+        SessionConfigurationPolicy.requireCanonical(ownerId, 'ownerId');
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.ownerDrift,
+        );
+      }
+    }
+    var limits = const SessionConfigurationProtocolLimits.standard();
+    SessionConfiguration? initialConfiguration;
+    SessionConfigurationResetRequired? protocolResetRequired;
+    SessionConfigurationResetRequired? storedResetRequired;
+    LearningActivityRecovery? recovery;
+    final provider = dependencies?.sessionConfigurationProtocols;
+    if (provider != null) {
+      try {
+        limits = await provider.resolveForOwner(ownerId);
+      } on SessionConfigurationResetRequired catch (error) {
+        protocolResetRequired = error;
+      } catch (_) {
+        protocolResetRequired = const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.invalidProtocol,
+        );
+      }
+    }
+    final store = dependencies?.sessionConfigurations;
+    if (store != null) {
+      try {
+        initialConfiguration = await store.read(ownerId: ownerId, mode: mode);
+      } on SessionConfigurationResetRequired catch (error) {
+        storedResetRequired = error;
+      } catch (_) {
+        storedResetRequired = const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+        );
+      }
+    }
+    if (mode == LessonMode.matching && dependencies?.learning != null) {
+      try {
+        recovery = await dependencies!.learning!.loadActivityRecovery(
+          activityType: MatchingModeAdapter.activityType,
+        );
+        if (recovery?.session.state == 'completed' &&
+            recovery?.checkpoint?.terminalAcknowledged == true &&
+            recovery?.checkpoint?.state['summaryPresented'] == true) {
+          recovery = null;
+        }
+        final durableConfiguration = recovery?.session.sessionConfiguration;
+        if (durableConfiguration != null) {
+          initialConfiguration = durableConfiguration;
+          storedResetRequired = null;
+        }
+      } on SessionConfigurationResetRequired {
+        rethrow;
+      } catch (_) {
+        throw const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.tampered,
+          'The saved session configuration could not be restored.',
+        );
+      }
+    }
+    final planning = dependencies?.studyPlanning;
+    if (planning == null) {
+      return _SessionConfigurationContext(
+        ownerId: ownerId,
+        limits: limits,
+        packs: const [],
+        initialConfiguration: initialConfiguration,
+        initialResetRequired: protocolResetRequired ?? storedResetRequired,
+        protocolResetRequired: protocolResetRequired,
+        recovery: recovery,
+      );
+    }
+    late final List<SessionConfigurationPackOption> packs;
+    try {
+      final catalog = await planning.listPacks(LearningPackFilter());
+      final pinned = limits.pinnedPackIdentities;
+      packs = catalog.packs
+          .where(
+            (pack) => pinned.isEmpty || pinned.contains(pack.contentIdentity),
+          )
+          .map(
+            (pack) => SessionConfigurationPackOption(
+              identity: pack.contentIdentity,
+              label: '${pack.title} revision ${pack.revision}',
+            ),
+          )
+          .toList(growable: false);
+    } catch (_) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.packDrift,
+      );
+    }
+    return _SessionConfigurationContext(
+      ownerId: ownerId,
+      limits: limits,
+      packs: packs,
+      initialConfiguration: initialConfiguration,
+      initialResetRequired: protocolResetRequired ?? storedResetRequired,
+      protocolResetRequired: protocolResetRequired,
+      recovery: recovery,
     );
   }
+}
+
+final class _SessionConfigurationContext {
+  const _SessionConfigurationContext({
+    required this.ownerId,
+    required this.limits,
+    required this.packs,
+    required this.initialConfiguration,
+    required this.initialResetRequired,
+    required this.protocolResetRequired,
+    required this.recovery,
+  });
+
+  final String ownerId;
+  final SessionConfigurationProtocolLimits limits;
+  final List<SessionConfigurationPackOption> packs;
+  final SessionConfiguration? initialConfiguration;
+  final SessionConfigurationResetRequired? initialResetRequired;
+  final SessionConfigurationResetRequired? protocolResetRequired;
+  final LearningActivityRecovery? recovery;
 }
 
 typedef NativeLessonModeScreenBuilder =
@@ -409,10 +727,12 @@ class NativeVocabularyLessonModeLoader extends StatefulWidget {
     super.key,
     required this.builder,
     this.isQuestionAvailable,
+    this.sessionConfiguration,
   });
 
   final NativeLessonModeScreenBuilder builder;
   final NativeLessonQuestionAvailability? isQuestionAvailable;
+  final SessionConfiguration? sessionConfiguration;
 
   @override
   State<NativeVocabularyLessonModeLoader> createState() =>
@@ -444,7 +764,10 @@ class _NativeVocabularyModeLoaderState
     UnifiedLessonSessionLifecycle lifecycle,
   ) async {
     final session = await lifecycle.initializeSession(
-      learning.startQuiz(limit: 1),
+      learning.startQuiz(
+        limit: widget.sessionConfiguration?.itemCount ?? 1,
+        sessionConfiguration: widget.sessionConfiguration,
+      ),
     );
     if (!session.isEmpty &&
         widget.isQuestionAvailable?.call(session.questions.single) == false) {

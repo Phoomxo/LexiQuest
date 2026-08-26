@@ -61,6 +61,7 @@ final class ActiveLearningTimeController {
 
   ActiveLearningTimeState get state => _state;
   String? get sessionId => _sessionId;
+  Duration get capturedActiveDuration => _activeOffset;
   Object? get lastIdleFailure => _lastIdleFailure;
   LearningTimeCaptureSource get captureSource => _captureSource;
 

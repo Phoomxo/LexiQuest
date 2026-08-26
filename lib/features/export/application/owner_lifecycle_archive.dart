@@ -12,6 +12,7 @@ import '../../device_model/domain/model_lifecycle.dart';
 import '../data/drift_export_reader.dart';
 import '../../identity/domain/owner_lifecycle_manifest.dart';
 import '../../learning/domain/evidence_context.dart';
+import '../../learning/domain/session_configuration.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../review/domain/content_quality_report.dart';
 import '../../time_tracking/domain/learning_time_segment.dart';
@@ -157,6 +158,7 @@ final class OwnerLifecycleArchiveExporter {
       'vocabulary_words' => _vocabularyWords(ownerId),
       'vocabulary_imports' => _vocabularyImports(ownerId),
       'learning_sessions' => _learningSessions(ownerId),
+      'session_configurations' => _sessionConfigurations(ownerId),
       'learning_time_segments' => _learningTimeSegments(ownerId),
       'learning_goals' => _learningGoals(ownerId),
       'answer_attempts' => _answerAttempts(ownerId),
@@ -563,7 +565,9 @@ final class OwnerLifecycleArchiveExporter {
     final rows = await database
         .customSelect(
           'SELECT activity_type, state, started_at_utc_ms, ended_at_utc_ms, '
-          'correct_count, wrong_count, score FROM learning_sessions '
+          'correct_count, wrong_count, score, '
+          'session_configuration_identity, session_configuration_json, '
+          'configuration_active_effort_us FROM learning_sessions '
           'WHERE owner_id = ? ORDER BY started_at_utc_ms, id',
           variables: [Variable<String>(ownerId)],
           readsFrom: {database.learningSessions},
@@ -580,6 +584,43 @@ final class OwnerLifecycleArchiveExporter {
           'correctCount': row.read<int>('correct_count'),
           'wrongCount': row.read<int>('wrong_count'),
           'score': row.readNullable<int>('score'),
+          'sessionConfigurationIdentity': _nullableSafeLabel(
+            row.readNullable<String>('session_configuration_identity'),
+          ),
+          'sessionConfiguration': _sessionConfigurationExport(
+            identity: row.readNullable<String>(
+              'session_configuration_identity',
+            ),
+            serialization: row.readNullable<String>(
+              'session_configuration_json',
+            ),
+          ),
+          'configurationActiveEffortUs': row.read<int>(
+            'configuration_active_effort_us',
+          ),
+        },
+    ];
+  }
+
+  Future<List<Map<String, Object?>>> _sessionConfigurations(
+    String ownerId,
+  ) async {
+    final rows =
+        await (database.select(database.sessionConfigurations)
+              ..where((row) => row.ownerId.equals(ownerId))
+              ..orderBy([(row) => OrderingTerm.asc(row.mode)]))
+            .get();
+    return <Map<String, Object?>>[
+      {'recordCount': rows.length},
+      for (final row in rows)
+        {
+          'mode': _safeLabel(row.mode),
+          'contentIdentity': _safeLabel(row.contentIdentity),
+          'sessionConfiguration': _sessionConfigurationExport(
+            identity: row.contentIdentity,
+            serialization: row.stableSerialization,
+          ),
+          'updatedAtUtc': _iso(row.updatedAtUtcMs),
         },
     ];
   }
@@ -1139,6 +1180,71 @@ String _safeLabel(String value) {
   if (canonical.isEmpty || canonical.length > 200) return 'redacted';
   if (!RegExp(r'^[A-Za-z0-9._:-]+$').hasMatch(canonical)) return 'redacted';
   return canonical;
+}
+
+String? _nullableSafeLabel(String? value) =>
+    value == null ? null : _safeLabel(value);
+
+Map<String, Object?>? _sessionConfigurationExport({
+  required String? identity,
+  required String? serialization,
+}) {
+  if (identity == null && serialization == null) return null;
+  if (identity == null || serialization == null) {
+    throw StateError('incomplete durable session configuration binding');
+  }
+  try {
+    final configuration = SessionConfiguration.fromStableSerialization(
+      serialization,
+    );
+    if (configuration.contentIdentity != identity) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
+    final pack = configuration.packIdentity;
+    return <String, Object?>{
+      'schemaVersion': configuration.schemaVersion,
+      'policyVersion': _configurationIdentifier(
+        configuration.policyVersion,
+        'policyVersion',
+      ),
+      'mode': configuration.mode.name,
+      'itemCount': configuration.itemCount,
+      'direction': configuration.direction.name,
+      'difficulty': configuration.difficulty.name,
+      'hintBudget': configuration.hintBudget,
+      'timing': configuration.timing.toJson(),
+      'packIdentity': pack == null
+          ? null
+          : <String, Object?>{
+              'type': pack.type.name,
+              'id': _configurationIdentifier(pack.id, 'packIdentity.id'),
+              'revision': pack.revision,
+            },
+      'protocolId': _configurationIdentifier(
+        configuration.protocolId,
+        'protocolId',
+      ),
+      'protocolVersion': _configurationIdentifier(
+        configuration.protocolVersion,
+        'protocolVersion',
+      ),
+      'protocolLimitsIdentity': _configurationIdentifier(
+        configuration.protocolLimitsIdentity,
+        'protocolLimitsIdentity',
+      ),
+    };
+  } on SessionConfigurationResetRequired catch (error) {
+    throw StateError('invalid durable session configuration: $error');
+  }
+}
+
+String _configurationIdentifier(String value, String field) {
+  if (value.isEmpty || value != value.trim() || value.runes.length > 256) {
+    throw StateError('invalid durable session configuration $field');
+  }
+  return value;
 }
 
 String _safePersonalText(String value, {required int maximumLength}) {

@@ -20,9 +20,13 @@ import 'package:vocab_learning_app/features/learning/application/current_activit
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning/presentation/session_configuration_sheet.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
@@ -201,6 +205,30 @@ void main() {
           await tester.tap(entry);
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));
+          if (entryCase.feature == Feature.speechPractice) {
+            expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+            final start = find.byKey(
+              const ValueKey<String>('session-config-start'),
+            );
+            await tester.ensureVisible(start);
+            await tester.pump();
+            await tester.tap(start);
+            for (
+              var attempt = 0;
+              attempt < 20 &&
+                  find.byType(entryCase.destinationType).evaluate().isEmpty;
+              attempt += 1
+            ) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+            expect(find.text('This lesson mode is unavailable.'), findsNothing);
+            expect(
+              find.byKey(
+                const ValueKey<String>('session-configuration-reset-prompt'),
+              ),
+              findsNothing,
+            );
+          }
           _expectEnabledDestination(tester, entryCase);
           features.emergencyOff(entryCase.feature);
           await tester.pump();
@@ -511,6 +539,9 @@ AppDependencies _dependencies(
     localOwners: owners,
     learning: learning,
     lessonModes: lessonModes,
+    sessionConfigurationProtocols:
+        const _NavigationSessionConfigurationProtocols(),
+    sessionConfigurations: _NavigationSessionConfigurationStore(),
     createLessonController: (adapter) =>
         UnifiedLessonController(learning: learning, adapter: adapter),
     vocabulary: vocabulary,
@@ -611,13 +642,24 @@ final class _NavigationExportStore implements ExportArtifactStore {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final class _LearningRepositoryFake implements LearningRepository {
+final class _LearningRepositoryFake
+    implements LearningRepository, SessionConfiguredLearningRepository {
+  LearningSessionSummary? _session;
+
   @override
   Future<List<QuizWord>> listQuizWords({
     required String ownerId,
     String? categoryId,
     required int limit,
-  }) async => const [];
+  }) async => const <QuizWord>[
+    QuizWord(
+      id: 'navigation-word',
+      categoryId: 'navigation-category',
+      spelling: 'hello',
+      meaning: 'สวัสดี',
+      partOfSpeech: 'interjection',
+    ),
+  ];
 
   @override
   Future<List<QuizWord>> listDueWords({
@@ -627,7 +669,66 @@ final class _LearningRepositoryFake implements LearningRepository {
   }) async => const [];
 
   @override
-  Future<void> startSession(LearningSessionDraft session) async {}
+  Future<void> startSession(LearningSessionDraft session) async {
+    _session = LearningSessionSummary(
+      id: session.id,
+      ownerId: session.ownerId,
+      activityType: session.activityType,
+      state: 'active',
+      startedAtUtc: session.startedAtUtc!,
+      correctCount: 0,
+      wrongCount: 0,
+      score: 0,
+      appVersion: session.appVersion,
+      buildId: session.buildId,
+      sessionConfiguration: session.sessionConfiguration,
+    );
+  }
+
+  @override
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  }) async {
+    final session = _session;
+    return session?.ownerId == ownerId && session?.id == sessionId
+        ? session
+        : null;
+  }
+
+  @override
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    final session = _session;
+    if (session == null ||
+        session.ownerId != ownerId ||
+        session.id != sessionId ||
+        session.sessionConfiguration?.contentIdentity !=
+            configurationIdentity) {
+      throw StateError('navigation session binding is unavailable');
+    }
+    final total = session.configurationActiveEffort + delta;
+    _session = LearningSessionSummary(
+      id: session.id,
+      ownerId: session.ownerId,
+      activityType: session.activityType,
+      state: session.state,
+      startedAtUtc: session.startedAtUtc,
+      endedAtUtc: session.endedAtUtc,
+      correctCount: session.correctCount,
+      wrongCount: session.wrongCount,
+      score: session.score,
+      appVersion: session.appVersion,
+      buildId: session.buildId,
+      sessionConfiguration: session.sessionConfiguration,
+      configurationActiveEffort: total,
+    );
+    return total;
+  }
 
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) =>
@@ -665,6 +766,50 @@ final class _LearningRepositoryFake implements LearningRepository {
   Future<ReadingProgressSnapshot> saveReadingProgress(
     ReadingProgressCommand command,
   ) => throw UnimplementedError();
+}
+
+final class _NavigationSessionConfigurationProtocols
+    implements SessionConfigurationProtocolProvider {
+  const _NavigationSessionConfigurationProtocols();
+
+  @override
+  Future<SessionConfigurationProtocolLimits> resolveForOwner(
+    String ownerId,
+  ) async => const SessionConfigurationProtocolLimits.standard();
+}
+
+final class _NavigationSessionConfigurationStore
+    implements SessionConfigurationStore {
+  SessionConfiguration? _configuration;
+
+  @override
+  Future<SessionConfiguration?> read({
+    required String ownerId,
+    required LessonMode mode,
+  }) async {
+    final configuration = _configuration;
+    return configuration?.ownerId == ownerId && configuration?.mode == mode
+        ? configuration
+        : null;
+  }
+
+  @override
+  Future<void> save(
+    SessionConfiguration configuration, {
+    required DateTime updatedAtUtc,
+  }) async {
+    _configuration = configuration;
+  }
+
+  @override
+  Future<void> clear({
+    required String ownerId,
+    required LessonMode mode,
+  }) async {
+    if (_configuration?.ownerId == ownerId && _configuration?.mode == mode) {
+      _configuration = null;
+    }
+  }
 }
 
 final class _GuestSessionService implements GuestSessionService {

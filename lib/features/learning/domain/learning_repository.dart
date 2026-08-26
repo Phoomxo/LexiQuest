@@ -14,6 +14,29 @@ abstract interface class LearningSessionLifecycleRepository {
   });
 }
 
+/// Durable f16 authority attached to the canonical learning session. The
+/// latest owner/mode preference is never used to reconstruct an active run.
+abstract interface class SessionConfiguredLearningRepository {
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  });
+
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  });
+}
+
+abstract interface class PinnedLearningContentRepository {
+  Future<List<QuizWord>> listPinnedQuizWords({
+    required String ownerId,
+    required List<String> wordIds,
+  });
+}
+
 /// Durable, versioned activity-state storage backed by the canonical learning
 /// session event stream. This is intentionally separate from projections and
 /// score storage.

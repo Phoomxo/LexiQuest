@@ -8,6 +8,7 @@ import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/domain/hint_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
@@ -27,6 +28,7 @@ class FillInTheBlanksScreen extends StatefulWidget {
     this.evidenceAdapter,
     this.modeAdapter,
     this.loadLexicalWords,
+    this.sessionConfiguration,
   });
 
   final String? categoryId;
@@ -34,6 +36,7 @@ class FillInTheBlanksScreen extends StatefulWidget {
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final ClozeModeAdapter? modeAdapter;
   final ClozeLexicalLoader? loadLexicalWords;
+  final SessionConfiguration? sessionConfiguration;
 
   @override
   State<FillInTheBlanksScreen> createState() => _FillInTheBlanksScreenState();
@@ -106,7 +109,11 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         ? Future<QuizSession>.error(
             StateError('cloze learning authority mismatch'),
           )
-        : learning.startQuiz(categoryId: widget.categoryId);
+        : learning.startQuiz(
+            categoryId: widget.categoryId,
+            limit: widget.sessionConfiguration?.itemCount ?? 10,
+            sessionConfiguration: widget.sessionConfiguration,
+          );
     final lifecycle = _lifecycle;
     _load = _prepareSession(
       lifecycle == null ? rawLoad : lifecycle.initializeSession(rawLoad),

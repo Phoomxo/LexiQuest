@@ -3,12 +3,16 @@ import 'package:flutter/foundation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
 
 typedef FlashcardSessionCompleter =
     Future<LearningSessionSummary> Function(PendingLearningSessionClose close);
-typedef FlashcardInteractionRecorder = void Function();
+typedef FlashcardAdmittedOperation =
+    Future<T> Function<T>(Future<T> Function() operation);
+typedef FlashcardRecoveryOperation =
+    Future<T> Function<T>(Future<T> Function() operation);
 typedef FlashcardOperationAcceptance = bool Function();
 
 enum FlashcardReviewPhase {
@@ -25,18 +29,35 @@ enum FlashcardReviewPhase {
 /// It delegates every durable write to the canonical current-activity evidence
 /// gateway and [LearningUseCases]; it is never an SRS writer itself.
 final class FlashcardModeAdapter
-    implements FocusTimerSupportingLessonModeAdapter {
+    implements
+        FocusTimerSupportingLessonModeAdapter,
+        SessionConfigurableLessonModeAdapter {
   const FlashcardModeAdapter();
 
   @override
   LessonMode get mode => LessonMode.flashcard;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 1,
+        maximumItemCount: 100,
+        defaultItemCount: 10,
+        directions: <SessionDirection>{SessionDirection.forward},
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 0,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: false,
+      );
 
   FlashcardReviewController createReview({
     required QuizSession session,
     required LearningUseCases learning,
     required CurrentActivityEvidenceAdapter evidence,
     FlashcardSessionCompleter? completeSession,
-    FlashcardInteractionRecorder? recordInteraction,
+    FlashcardAdmittedOperation? runAdmittedOperation,
+    FlashcardRecoveryOperation? runRecoveryOperation,
     FlashcardOperationAcceptance? acceptsOperation,
   }) {
     if (session.isEmpty) {
@@ -54,7 +75,10 @@ final class FlashcardModeAdapter
       completeSession:
           completeSession ??
           (close) => close.requiresRetry ? close.retry() : close.finish(),
-      recordInteraction: recordInteraction ?? () {},
+      runAdmittedOperation:
+          runAdmittedOperation ?? <T>(operation) => operation(),
+      runRecoveryOperation:
+          runRecoveryOperation ?? <T>(operation) => operation(),
       acceptsOperation: acceptsOperation ?? () => true,
     );
   }
@@ -95,7 +119,8 @@ final class FlashcardReviewController extends ChangeNotifier {
     required this._learning,
     required this._evidence,
     required this._completeSession,
-    required this._recordInteraction,
+    required this._runAdmittedOperation,
+    required this._runRecoveryOperation,
     required this._acceptsOperation,
   });
 
@@ -103,7 +128,8 @@ final class FlashcardReviewController extends ChangeNotifier {
   final LearningUseCases _learning;
   final CurrentActivityEvidenceAdapter _evidence;
   final FlashcardSessionCompleter _completeSession;
-  final FlashcardInteractionRecorder _recordInteraction;
+  final FlashcardAdmittedOperation _runAdmittedOperation;
+  final FlashcardRecoveryOperation _runRecoveryOperation;
   final FlashcardOperationAcceptance _acceptsOperation;
 
   var _index = 0;
@@ -158,37 +184,40 @@ final class FlashcardReviewController extends ChangeNotifier {
   }
 
   Future<void> advanceAfterReveal() async {
-    _requireOperationAccepted();
+    _requireNotDisposed();
     _requirePhase(FlashcardReviewPhase.revealed, 'advance');
-    _recordInteraction();
-    await _advanceOrComplete();
+    await _runRecoveryOperation(() async {
+      _requirePhase(FlashcardReviewPhase.revealed, 'advance');
+      await _advanceOrComplete();
+    });
   }
 
-  Future<void> retry() async {
-    _requireOperationAccepted();
+  Future<void> retry() {
     _requireNotDisposed();
-    switch (_phase) {
-      case FlashcardReviewPhase.evidenceRetryRequired:
-        final pending = _pendingEvidence;
-        final kind = _pendingKind;
-        if (pending == null || kind == null || !pending.requiresRetry) {
-          throw StateError('Exact flashcard evidence retry is unavailable.');
-        }
-        _setPhase(FlashcardReviewPhase.savingEvidence);
-        try {
-          await pending.retry();
-        } catch (_) {
-          _setPhase(FlashcardReviewPhase.evidenceRetryRequired);
-          rethrow;
-        }
-        await _afterEvidenceCommitted(kind);
-        return;
-      case FlashcardReviewPhase.completionRetryRequired:
-        await _complete();
-        return;
-      default:
-        throw StateError('Flashcard review is not awaiting retry.');
-    }
+    return _runRecoveryOperation(() async {
+      switch (_phase) {
+        case FlashcardReviewPhase.evidenceRetryRequired:
+          final pending = _pendingEvidence;
+          final kind = _pendingKind;
+          if (pending == null || kind == null || !pending.requiresRetry) {
+            throw StateError('Exact flashcard evidence retry is unavailable.');
+          }
+          _setPhase(FlashcardReviewPhase.savingEvidence);
+          try {
+            await pending.retry();
+          } catch (_) {
+            _setPhase(FlashcardReviewPhase.evidenceRetryRequired);
+            rethrow;
+          }
+          await _afterEvidenceCommitted(kind);
+          return;
+        case FlashcardReviewPhase.completionRetryRequired:
+          await _complete();
+          return;
+        default:
+          throw StateError('Flashcard review is not awaiting retry.');
+      }
+    });
   }
 
   Future<void> _captureAndRecord({
@@ -196,7 +225,7 @@ final class FlashcardReviewController extends ChangeNotifier {
     required CurrentActivityInput? input,
     required bool isCorrect,
     required int responseTimeMs,
-  }) async {
+  }) {
     if (responseTimeMs < 0) {
       throw ArgumentError.value(
         responseTimeMs,
@@ -204,33 +233,34 @@ final class FlashcardReviewController extends ChangeNotifier {
         'must not be negative',
       );
     }
-    _recordInteraction();
-    final pending = kind == _FlashcardEvidenceKind.exposure
-        ? _evidence.captureFlashcardExposure(
-            sessionId: _session.id,
-            wordId: currentQuestion.word.id,
-            responseTimeMs: responseTimeMs,
-            attemptNumber: _index + 1,
-          )
-        : _evidence.capture(
-            input: input!,
-            sessionId: _session.id,
-            wordId: currentQuestion.word.id,
-            isCorrect: isCorrect,
-            responseTimeMs: responseTimeMs,
-            attemptNumber: _index + 1,
-          );
-    _pendingEvidence = pending;
-    _pendingKind = kind;
-    _setPhase(FlashcardReviewPhase.savingEvidence);
-    try {
-      await pending.record();
-    } catch (_) {
-      _setPhase(FlashcardReviewPhase.evidenceRetryRequired);
-      rethrow;
-    }
-    _requireOperationAccepted();
-    await _afterEvidenceCommitted(kind);
+    return _runAdmittedOperation(() async {
+      _requirePhase(FlashcardReviewPhase.awaitingRecall, 'record evidence');
+      final pending = kind == _FlashcardEvidenceKind.exposure
+          ? _evidence.captureFlashcardExposure(
+              sessionId: _session.id,
+              wordId: currentQuestion.word.id,
+              responseTimeMs: responseTimeMs,
+              attemptNumber: _index + 1,
+            )
+          : _evidence.capture(
+              input: input!,
+              sessionId: _session.id,
+              wordId: currentQuestion.word.id,
+              isCorrect: isCorrect,
+              responseTimeMs: responseTimeMs,
+              attemptNumber: _index + 1,
+            );
+      _pendingEvidence = pending;
+      _pendingKind = kind;
+      _setPhase(FlashcardReviewPhase.savingEvidence);
+      try {
+        await pending.record();
+      } catch (_) {
+        _setPhase(FlashcardReviewPhase.evidenceRetryRequired);
+        rethrow;
+      }
+      await _afterEvidenceCommitted(kind);
+    });
   }
 
   Future<void> _afterEvidenceCommitted(_FlashcardEvidenceKind kind) async {
@@ -253,7 +283,6 @@ final class FlashcardReviewController extends ChangeNotifier {
   }
 
   Future<void> _complete() async {
-    _requireOperationAccepted();
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: _session.id,
     );
@@ -287,9 +316,8 @@ final class FlashcardReviewController extends ChangeNotifier {
   }
 
   void _setPhase(FlashcardReviewPhase next) {
-    if (_disposed) return;
     _phase = next;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   @override

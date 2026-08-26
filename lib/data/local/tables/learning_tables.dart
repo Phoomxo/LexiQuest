@@ -15,9 +15,28 @@ class LearningSessions extends Table {
   IntColumn get score => integer().nullable()();
   TextColumn get appVersion => text()();
   TextColumn get buildId => text()();
+  TextColumn get sessionConfigurationIdentity => text().nullable()();
+  TextColumn get sessionConfigurationJson => text().nullable()();
+  IntColumn get configurationActiveEffortUs =>
+      integer().withDefault(const Constant(0))();
 
   @override
   Set<Column<Object>> get primaryKey => {id};
+}
+
+/// Owner-scoped local preference for the last validated configuration of one
+/// typed lesson mode. Assignment and evidence authorities remain separate.
+@DataClassName('SessionConfigurationRow')
+class SessionConfigurations extends Table {
+  TextColumn get ownerId =>
+      text().references(LocalOwners, #id, onDelete: KeyAction.cascade)();
+  TextColumn get mode => text()();
+  TextColumn get contentIdentity => text()();
+  TextColumn get stableSerialization => text()();
+  IntColumn get updatedAtUtcMs => integer()();
+
+  @override
+  Set<Column<Object>> get primaryKey => {ownerId, mode};
 }
 
 class AnswerAttempts extends Table {

@@ -11,17 +11,22 @@ import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
 
 typedef MatchingSessionCompleter =
     Future<LearningSessionSummary> Function(PendingLearningSessionClose close);
-typedef MatchingInteractionRecorder = void Function();
-typedef MatchingOperationAcceptance = bool Function();
-typedef MatchingEvidenceOperation =
-    Future<AnswerRecordResult> Function(
-      Future<AnswerRecordResult> Function() operation,
+typedef MatchingCloseOwner =
+    void Function(
+      PendingLearningSessionClose close,
+      Future<void> Function() ensureDurable,
     );
+typedef MatchingAdmittedOperation =
+    Future<T> Function<T>(Future<T> Function() operation);
+typedef MatchingRecoveryOperation =
+    Future<T> Function<T>(Future<T> Function() operation);
+typedef MatchingOperationAcceptance = bool Function();
 typedef MatchingHintUsage = HintUsageSnapshot Function();
 typedef MatchingHintReset = void Function();
 typedef _MatchingPendingPersister =
@@ -93,9 +98,9 @@ final class MatchingPreparedSession {
     required this._checkpoint,
     required this.learning,
     required Map<String, Object?> state,
-    required this.timeoutAnchorUtc,
-    required this.timeoutDuration,
-    required this.timeoutDeadlineUtc,
+    this.timeoutAnchorUtc,
+    this.timeoutDuration,
+    this.timeoutDeadlineUtc,
     required this.needsTimeoutUpgrade,
     this.needsPendingClear = false,
     this.summaryPresented = false,
@@ -120,9 +125,9 @@ final class MatchingPreparedSession {
   final PendingLearningSessionClose? pendingClose;
   final LearningSessionSummary? completedSummary;
   final bool timeoutRequested;
-  final DateTime timeoutAnchorUtc;
-  final Duration timeoutDuration;
-  final DateTime timeoutDeadlineUtc;
+  final DateTime? timeoutAnchorUtc;
+  final Duration? timeoutDuration;
+  final DateTime? timeoutDeadlineUtc;
   final bool needsTimeoutUpgrade;
   final bool needsPendingClear;
   final bool summaryPresented;
@@ -147,26 +152,40 @@ final class MatchingPreparedSession {
         : bounded;
   }
 
-  Duration remainingTime(DateTime nowUtc) {
+  bool get hasWallClockTimeout => timeoutDeadlineUtc != null;
+
+  bool get requiresRecovery =>
+      pendingEvidence != null ||
+      pendingClose != null ||
+      completedSummary != null ||
+      needsPendingClear ||
+      timeoutRequested;
+
+  Duration? remainingTime(DateTime nowUtc) {
     if (!nowUtc.isUtc) {
       throw ArgumentError.value(nowUtc, 'nowUtc', 'must be UTC');
     }
-    if (nowUtc.isBefore(timeoutAnchorUtc)) {
+    final anchor = timeoutAnchorUtc;
+    final duration = timeoutDuration;
+    final deadline = timeoutDeadlineUtc;
+    if (anchor == null || duration == null || deadline == null) return null;
+    if (nowUtc.isBefore(anchor)) {
       throw StateError('Matching clock moved behind the timeout anchor.');
     }
-    final remaining = timeoutDeadlineUtc.difference(nowUtc);
+    final remaining = deadline.difference(nowUtc);
     if (remaining.isNegative) return Duration.zero;
-    return remaining > timeoutDuration ? timeoutDuration : remaining;
+    return remaining > duration ? duration : remaining;
   }
 
   Future<void> persistTimeoutContract() {
     if (!needsTimeoutUpgrade) return Future<void>.value();
     return _appendState(<String, Object?>{
       ..._state,
-      'schemaVersion': 4,
-      'timeoutAnchorUtc': timeoutAnchorUtc.toIso8601String(),
-      'timeoutDurationMs': timeoutDuration.inMilliseconds,
-      'timeoutDeadlineUtc': timeoutDeadlineUtc.toIso8601String(),
+      'schemaVersion': 5,
+      'timingKind': hasWallClockTimeout ? 'timed' : 'activeEffort',
+      'timeoutAnchorUtc': timeoutAnchorUtc?.toIso8601String(),
+      'timeoutDurationMs': timeoutDuration?.inMilliseconds,
+      'timeoutDeadlineUtc': timeoutDeadlineUtc?.toIso8601String(),
       'summaryPresented': summaryPresented,
     });
   }
@@ -226,7 +245,7 @@ final class MatchingPreparedSession {
     return _appendState(
       <String, Object?>{
         ..._state,
-        'schemaVersion': 4,
+        'schemaVersion': 5,
         'pendingCloseAtUtc': null,
         'summaryPresented': false,
       },
@@ -284,7 +303,7 @@ final class MatchingPreparedSession {
     return _appendState(
       <String, Object?>{
         ..._state,
-        'schemaVersion': 4,
+        'schemaVersion': 5,
         'summaryPresented': true,
       },
       terminalAtUtc: _checkpoint.terminalAtUtc,
@@ -365,9 +384,9 @@ final class _MatchingTimeoutContract {
     required this.needsUpgrade,
   });
 
-  final DateTime anchorUtc;
-  final Duration duration;
-  final DateTime deadlineUtc;
+  final DateTime? anchorUtc;
+  final Duration? duration;
+  final DateTime? deadlineUtc;
   final bool needsUpgrade;
 }
 
@@ -393,7 +412,8 @@ final class _MatchingPendingRecovery {
 final class MatchingModeAdapter
     implements
         FocusTimerSupportingLessonModeAdapter,
-        HintSupportingLessonModeAdapter {
+        HintSupportingLessonModeAdapter,
+        SessionConfigurableLessonModeAdapter {
   const MatchingModeAdapter({this.maximumPairs = 6});
 
   final int maximumPairs;
@@ -406,6 +426,20 @@ final class MatchingModeAdapter
 
   @override
   LessonMode get mode => LessonMode.matching;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 2,
+        maximumItemCount: 6,
+        defaultItemCount: 6,
+        directions: <SessionDirection>{SessionDirection.forward},
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 2,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: false,
+      );
 
   @override
   HintPolicy get hintPolicy => HintPolicy.staged(
@@ -506,14 +540,18 @@ final class MatchingModeAdapter
     required LearningUseCases learning,
     required CurrentActivityEvidenceAdapter evidence,
     String? categoryId,
-    Duration timeLimit = const Duration(minutes: 2),
+    Duration? timeLimit = const Duration(minutes: 2),
+    int itemCount = 6,
+    SessionConfiguration? sessionConfiguration,
   }) async {
     if (!identical(evidence.learning, learning)) {
       throw ArgumentError(
         'Matching evidence must use the session LearningUseCases authority.',
       );
     }
-    if (timeLimit <= Duration.zero || timeLimit > const Duration(minutes: 30)) {
+    if (timeLimit != null &&
+        (timeLimit <= Duration.zero ||
+            timeLimit > const Duration(minutes: 30))) {
       throw RangeError.range(
         timeLimit.inMilliseconds,
         1,
@@ -521,9 +559,18 @@ final class MatchingModeAdapter
         'timeLimit',
       );
     }
+    if (itemCount < 2 || itemCount > maximumPairs) {
+      throw RangeError.range(itemCount, 2, maximumPairs, 'itemCount');
+    }
     var recovery = await learning.loadActivityRecovery(
       activityType: activityType,
     );
+    if (recovery != null &&
+        recovery.session.sessionConfiguration != sessionConfiguration) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
     if (recovery?.session.state == 'completed' &&
         recovery?.checkpoint?.terminalAcknowledged == true &&
         recovery?.checkpoint?.state['summaryPresented'] == true) {
@@ -540,6 +587,8 @@ final class MatchingModeAdapter
       final session = await learning.startCheckpointedQuiz(
         activityType: activityType,
         categoryId: categoryId,
+        limit: itemCount,
+        sessionConfiguration: sessionConfiguration,
         initialState: (candidate) {
           final pairSet = pinPairs(candidate);
           if (pairSet.isEmpty) {
@@ -562,7 +611,9 @@ final class MatchingModeAdapter
                   )
                   .toList(growable: false),
             ),
-            timeoutDeadlineUtc: candidate.startedAtUtc!.add(timeLimit),
+            timeoutDeadlineUtc: timeLimit == null
+                ? null
+                : candidate.startedAtUtc!.add(timeLimit),
           );
         },
       );
@@ -580,12 +631,9 @@ final class MatchingModeAdapter
           ),
           learning: learning,
           state: const <String, Object?>{},
-          timeoutAnchorUtc: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
-          timeoutDuration: Duration.zero,
-          timeoutDeadlineUtc: DateTime.fromMillisecondsSinceEpoch(
-            0,
-            isUtc: true,
-          ),
+          timeoutAnchorUtc: null,
+          timeoutDuration: null,
+          timeoutDeadlineUtc: null,
           needsTimeoutUpgrade: false,
           needsPendingClear: false,
           summaryPresented: false,
@@ -626,11 +674,20 @@ final class MatchingModeAdapter
     final session = _decodeCheckpointSession(
       checkpoint,
       recovery.session.startedAtUtc,
+      recovery.session.sessionConfiguration,
     );
     final timeout = _decodeTimeoutContract(
       checkpoint: checkpoint,
       startedAtUtc: recovery.session.startedAtUtc,
     );
+    final configuredTiming = recovery.session.sessionConfiguration?.timing;
+    if (configuredTiming != null &&
+        ((configuredTiming.kind == SessionTimingKind.timed) !=
+            (timeout.deadlineUtc != null))) {
+      throw StateError(
+        'Matching timing does not match its pinned configuration',
+      );
+    }
     final pairSet = pinPairs(session);
     if (pairSet.isEmpty || pairSet.pairs.length != session.questions.length) {
       throw StateError('Matching checkpoint contains an unsafe pair set');
@@ -941,20 +998,23 @@ final class MatchingModeAdapter
 
   Map<String, Object?> _encodeCheckpointState(
     QuizSession session, {
-    required DateTime timeoutDeadlineUtc,
+    required DateTime? timeoutDeadlineUtc,
   }) => <String, Object?>{
-    'schemaVersion': 4,
+    'schemaVersion': 5,
     'pairs': session.questions
         .map((question) => _encodeWord(question.word))
         .toList(growable: false),
     'pendingEvidence': null,
     'pendingCloseAtUtc': null,
     'timeoutRequested': false,
-    'timeoutAnchorUtc': session.startedAtUtc!.toIso8601String(),
+    'timingKind': timeoutDeadlineUtc == null ? 'activeEffort' : 'timed',
+    'timeoutAnchorUtc': timeoutDeadlineUtc == null
+        ? null
+        : session.startedAtUtc!.toIso8601String(),
     'timeoutDurationMs': timeoutDeadlineUtc
-        .difference(session.startedAtUtc!)
+        ?.difference(session.startedAtUtc!)
         .inMilliseconds,
-    'timeoutDeadlineUtc': timeoutDeadlineUtc.toIso8601String(),
+    'timeoutDeadlineUtc': timeoutDeadlineUtc?.toIso8601String(),
     'summaryPresented': false,
   };
 
@@ -963,7 +1023,22 @@ final class MatchingModeAdapter
     required DateTime startedAtUtc,
   }) {
     final schemaVersion = checkpoint.state['schemaVersion'];
-    final hasPersistedDuration = schemaVersion == 3 || schemaVersion == 4;
+    if (schemaVersion == 5 &&
+        checkpoint.state['timingKind'] == 'activeEffort') {
+      if (checkpoint.state['timeoutAnchorUtc'] != null ||
+          checkpoint.state['timeoutDurationMs'] != null ||
+          checkpoint.state['timeoutDeadlineUtc'] != null) {
+        throw StateError('Matching active-effort timing is invalid');
+      }
+      return const _MatchingTimeoutContract(
+        anchorUtc: null,
+        duration: null,
+        deadlineUtc: null,
+        needsUpgrade: false,
+      );
+    }
+    final hasPersistedDuration =
+        schemaVersion == 3 || schemaVersion == 4 || schemaVersion == 5;
     final anchor = hasPersistedDuration
         ? _optionalUtc(checkpoint.state['timeoutAnchorUtc'], 'timeoutAnchorUtc')
         : startedAtUtc;
@@ -1001,13 +1076,14 @@ final class MatchingModeAdapter
       anchorUtc: anchor,
       duration: duration,
       deadlineUtc: deadline,
-      needsUpgrade: schemaVersion != 4,
+      needsUpgrade: schemaVersion != 5,
     );
   }
 
   QuizSession _decodeCheckpointSession(
     LearningActivityCheckpoint checkpoint,
     DateTime startedAtUtc,
+    SessionConfiguration? sessionConfiguration,
   ) {
     final state = checkpoint.state;
     const v1Keys = <String>{
@@ -1020,6 +1096,7 @@ final class MatchingModeAdapter
     const v2Keys = <String>{...v1Keys, 'timeoutDeadlineUtc'};
     const v3Keys = <String>{...v2Keys, 'timeoutAnchorUtc', 'timeoutDurationMs'};
     const v4Keys = <String>{...v3Keys, 'summaryPresented'};
+    const v5Keys = <String>{...v4Keys, 'timingKind'};
     final schemaVersion = state['schemaVersion'];
     final keys = schemaVersion == 1
         ? v1Keys
@@ -1027,17 +1104,24 @@ final class MatchingModeAdapter
         ? v2Keys
         : schemaVersion == 3
         ? v3Keys
-        : v4Keys;
+        : schemaVersion == 4
+        ? v4Keys
+        : v5Keys;
     if (checkpoint.activityType != activityType ||
         state.length != keys.length ||
         !state.keys.every(keys.contains) ||
         (schemaVersion != 1 &&
             schemaVersion != 2 &&
             schemaVersion != 3 &&
-            schemaVersion != 4) ||
+            schemaVersion != 4 &&
+            schemaVersion != 5) ||
         state['pairs'] is! List<Object?> ||
         state['timeoutRequested'] is! bool ||
-        (schemaVersion == 4 && state['summaryPresented'] is! bool)) {
+        ((schemaVersion == 4 || schemaVersion == 5) &&
+            state['summaryPresented'] is! bool) ||
+        (schemaVersion == 5 &&
+            state['timingKind'] != 'timed' &&
+            state['timingKind'] != 'activeEffort')) {
       throw StateError('Matching checkpoint schema is invalid');
     }
     final words = (state['pairs']! as List<Object?>).map(_decodeWord).toList();
@@ -1047,6 +1131,7 @@ final class MatchingModeAdapter
     return QuizSession(
       id: checkpoint.sessionId,
       startedAtUtc: startedAtUtc,
+      sessionConfiguration: sessionConfiguration,
       questions: words
           .map((word) => QuizQuestion(word: word, options: const <String>[]))
           .toList(growable: false),
@@ -1118,9 +1203,10 @@ final class MatchingModeAdapter
     required CurrentActivityEvidenceAdapter evidence,
     MatchingPreparedSession? recovery,
     MatchingSessionCompleter? completeSession,
-    MatchingInteractionRecorder? recordInteraction,
+    MatchingCloseOwner? ownClose,
+    MatchingAdmittedOperation? runAdmittedOperation,
+    MatchingRecoveryOperation? runRecoveryOperation,
     MatchingOperationAcceptance? acceptsOperation,
-    MatchingEvidenceOperation? runEvidenceOperation,
     MatchingHintUsage? hintUsage,
     MatchingHintReset? resetHintsAfterCommit,
   }) {
@@ -1192,9 +1278,12 @@ final class MatchingModeAdapter
       completeSession:
           completeSession ??
           (close) => close.requiresRetry ? close.retry() : close.finish(),
-      recordInteraction: recordInteraction ?? () {},
+      ownClose: ownClose ?? (_, _) {},
+      runAdmittedOperation:
+          runAdmittedOperation ?? <T>(operation) => operation(),
+      runRecoveryOperation:
+          runRecoveryOperation ?? <T>(operation) => operation(),
       acceptsOperation: acceptsOperation ?? () => true,
-      runEvidenceOperation: runEvidenceOperation ?? (operation) => operation(),
       hintUsage: hintUsage ?? () => const HintUsageSnapshot.unknown(),
       resetHintsAfterCommit: resetHintsAfterCommit ?? () {},
     );
@@ -1247,9 +1336,10 @@ final class MatchingReviewController extends ChangeNotifier {
     required _MatchingCloseAcknowledger? acknowledgeClose,
     required this._classifyResponse,
     required this._completeSession,
-    required this._recordInteraction,
+    required this._ownClose,
+    required this._runAdmittedOperation,
+    required this._runRecoveryOperation,
     required this._acceptsOperation,
-    required this._runEvidenceOperation,
     required this._hintUsage,
     required this._resetHintsAfterCommit,
   }) : _matchedWordIds = Set<String>.of(restoredMatchedWordIds),
@@ -1272,6 +1362,7 @@ final class MatchingReviewController extends ChangeNotifier {
       _phase = MatchingReviewPhase.completionRetryRequired;
       _acceptingSelections = false;
       _closeCheckpointed = true;
+      _ownClose(pendingClose, _ensureCloseCheckpoint);
     } else if (_attemptNumber >= _maximumAttemptNumber && !allMatched) {
       _timeoutRequested = true;
       _acceptingSelections = false;
@@ -1288,9 +1379,10 @@ final class MatchingReviewController extends ChangeNotifier {
   })
   _classifyResponse;
   final MatchingSessionCompleter _completeSession;
-  final MatchingInteractionRecorder _recordInteraction;
+  final MatchingCloseOwner _ownClose;
+  final MatchingAdmittedOperation _runAdmittedOperation;
+  final MatchingRecoveryOperation _runRecoveryOperation;
   final MatchingOperationAcceptance _acceptsOperation;
-  final MatchingEvidenceOperation _runEvidenceOperation;
   final MatchingHintUsage _hintUsage;
   final MatchingHintReset _resetHintsAfterCommit;
   final String Function(QuizWord word) _contentRevisionFor;
@@ -1351,7 +1443,6 @@ final class MatchingReviewController extends ChangeNotifier {
     _requireSelectionAccepted();
     if (_supportUsed) return;
     _supportUsed = true;
-    _recordInteraction();
     notifyListeners();
   }
 
@@ -1379,7 +1470,7 @@ final class MatchingReviewController extends ChangeNotifier {
     if (inFlight != null &&
         ((isWordSide && _selectedWordId == wordId) ||
             (!isWordSide && _selectedMeaningWordId == wordId))) {
-      return inFlight;
+      return Future<AnswerRecordResult?>.value(inFlight);
     }
     _requireSelectionAccepted();
     if (responseTimeMs < 0) {
@@ -1397,12 +1488,41 @@ final class MatchingReviewController extends ChangeNotifier {
     }
     final selected = isWordSide ? _selectedWordId : _selectedMeaningWordId;
     if (selected == wordId) return Future<AnswerRecordResult?>.value();
+    return _runAdmittedOperation(
+      () => _selectAdmitted(
+        wordId: wordId,
+        isWordSide: isWordSide,
+        responseTimeMs: responseTimeMs,
+      ),
+    );
+  }
+
+  Future<AnswerRecordResult?> _selectAdmitted({
+    required String wordId,
+    required bool isWordSide,
+    required int responseTimeMs,
+  }) {
+    final admittedInFlight = _resolutionInFlight;
+    if (admittedInFlight != null &&
+        ((isWordSide && _selectedWordId == wordId) ||
+            (!isWordSide && _selectedMeaningWordId == wordId))) {
+      return admittedInFlight;
+    }
+    _requireAcceptedSelectionState();
+    if (_matchedWordIds.contains(wordId)) {
+      return Future<AnswerRecordResult?>.value();
+    }
+    final admittedSelection = isWordSide
+        ? _selectedWordId
+        : _selectedMeaningWordId;
+    if (admittedSelection == wordId) {
+      return Future<AnswerRecordResult?>.value();
+    }
     if (isWordSide) {
       _selectedWordId = wordId;
     } else {
       _selectedMeaningWordId = wordId;
     }
-    _recordInteraction();
     notifyListeners();
     final selectedWordId = _selectedWordId;
     final selectedMeaningWordId = _selectedMeaningWordId;
@@ -1512,11 +1632,6 @@ final class MatchingReviewController extends ChangeNotifier {
 
   Future<AnswerRecordResult?> retryEvidence() {
     _requireNotDisposed();
-    if (!_acceptsOperation() || (!_acceptingSelections && !_timeoutRequested)) {
-      return Future<AnswerRecordResult?>.error(
-        StateError('The matching route is no longer accepting actions.'),
-      );
-    }
     if (_phase != MatchingReviewPhase.evidenceRetryRequired) {
       return Future<AnswerRecordResult?>.error(
         StateError('Exact matching evidence retry is unavailable.'),
@@ -1529,15 +1644,15 @@ final class MatchingReviewController extends ChangeNotifier {
         StateError('Exact matching evidence retry is unavailable.'),
       );
     }
-    _setPhase(MatchingReviewPhase.savingEvidence);
-    late final Future<AnswerRecordResult?> operation;
-    if (_pendingCheckpointPersisted) {
-      operation = _commitEvidence(
-        pending,
-        feedbackContext,
-        retry: pending.requiresRetry,
-      );
-    } else {
+    final operation = _runRecoveryOperation(() {
+      _setPhase(MatchingReviewPhase.savingEvidence);
+      if (_pendingCheckpointPersisted) {
+        return _commitEvidence(
+          pending,
+          feedbackContext,
+          retry: pending.requiresRetry,
+        );
+      }
       final selectedMeaningWordId = _pendingSelectedMeaningWordId;
       final classification = _pendingClassification;
       final contentRevision = _pendingContentRevision;
@@ -1548,14 +1663,14 @@ final class MatchingReviewController extends ChangeNotifier {
           StateError('Exact matching checkpoint retry is unavailable.'),
         );
       }
-      operation = _persistAndCommitEvidence(
+      return _persistAndCommitEvidence(
         pending: pending,
         feedbackContext: feedbackContext,
         selectedMeaningWordId: selectedMeaningWordId,
         classification: classification,
         contentRevision: contentRevision,
       );
-    }
+    });
     _resolutionInFlight = operation;
     unawaited(
       operation.then<void>(
@@ -1572,9 +1687,7 @@ final class MatchingReviewController extends ChangeNotifier {
     required bool retry,
   }) async {
     try {
-      final result = await _runEvidenceOperation(
-        () => retry ? pending.retry() : pending.record(),
-      );
+      final result = await (retry ? pending.retry() : pending.record());
       final feedback = AnswerFeedback.fromFrozenCommittedResult(
         result: result,
         context: feedbackContext,
@@ -1635,32 +1748,36 @@ final class MatchingReviewController extends ChangeNotifier {
     }
     final existing = _terminalInFlight;
     if (existing != null) return existing;
+    final terminal = _runRecoveryOperation(_timeoutRecovery);
+    _terminalInFlight = terminal;
+    unawaited(
+      terminal.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace _) {
+          if (identical(_terminalInFlight, terminal)) {
+            _terminalInFlight = null;
+          }
+        },
+      ),
+    );
+    return terminal;
+  }
+
+  Future<LearningSessionSummary> _timeoutRecovery() {
     _timeoutRequested = true;
     _acceptingSelections = false;
     final resolution = _resolutionInFlight;
     if (resolution != null) {
-      final terminal = resolution.then<LearningSessionSummary>(
-        (_) => _complete(),
+      return resolution.then<LearningSessionSummary>(
+        (_) => _completeRecovery(),
       );
-      _terminalInFlight = terminal;
-      unawaited(
-        terminal.then<void>(
-          (_) {},
-          onError: (Object _, StackTrace _) {
-            if (identical(_terminalInFlight, terminal)) {
-              _terminalInFlight = null;
-            }
-          },
-        ),
-      );
-      return terminal;
     }
     if (_pendingEvidence != null) {
       return Future<LearningSessionSummary>.error(
         StateError('Retry the exact accepted match before timeout closes.'),
       );
     }
-    return _terminalInFlight = _complete();
+    return _completeRecovery();
   }
 
   Future<LearningSessionSummary> retryCompletion() {
@@ -1673,16 +1790,17 @@ final class MatchingReviewController extends ChangeNotifier {
     return _terminalInFlight = _complete();
   }
 
-  Future<LearningSessionSummary> _complete() async {
+  Future<LearningSessionSummary> _complete() =>
+      _runRecoveryOperation(_completeRecovery);
+
+  Future<LearningSessionSummary> _completeRecovery() async {
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
     );
+    _ownClose(close, _ensureCloseCheckpoint);
     _setPhase(MatchingReviewPhase.completing);
     try {
-      if (!_closeCheckpointed) {
-        await _persistClose(close: close, timeoutRequested: _timeoutRequested);
-        _closeCheckpointed = true;
-      }
+      await _ensureCloseCheckpoint();
       final summary = await _completeSession(close);
       await _acknowledgeClose(summary);
       _completedSummary = summary;
@@ -1696,6 +1814,16 @@ final class MatchingReviewController extends ChangeNotifier {
     }
   }
 
+  Future<void> _ensureCloseCheckpoint() async {
+    if (_closeCheckpointed) return;
+    final close = _pendingClose;
+    if (close == null) {
+      throw StateError('Matching terminal close identity is unavailable.');
+    }
+    await _persistClose(close: close, timeoutRequested: _timeoutRequested);
+    _closeCheckpointed = true;
+  }
+
   void _requireSelectionAccepted() {
     _requireNotDisposed();
     if (!_acceptingSelections || !_acceptsOperation()) {
@@ -1706,14 +1834,20 @@ final class MatchingReviewController extends ChangeNotifier {
     }
   }
 
+  void _requireAcceptedSelectionState() {
+    if (!_acceptingSelections ||
+        _phase != MatchingReviewPhase.awaitingSelection) {
+      throw StateError('Matching selection is no longer available.');
+    }
+  }
+
   void _requireNotDisposed() {
     if (_disposed) throw StateError('Matching review is disposed.');
   }
 
   void _setPhase(MatchingReviewPhase next) {
-    if (_disposed) return;
     _phase = next;
-    notifyListeners();
+    if (!_disposed) notifyListeners();
   }
 
   @override

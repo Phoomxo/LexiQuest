@@ -13,20 +13,30 @@ import 'package:vocab_learning_app/features/learning/application/flashcard_mode_
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
-import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/session_configuration_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_session_configuration_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_detail.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
+import 'package:vocab_learning_app/features/learning/presentation/session_configuration_sheet.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
 import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
@@ -66,7 +76,339 @@ Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
   await tester.pump();
 }
 
+Future<void> _openConfiguredMode(
+  WidgetTester tester,
+  Finder modeEntry, {
+  bool settleAfterStart = true,
+  int? hintBudget,
+  int? itemCount = 1,
+  SessionDirection? direction,
+  String? packLabel,
+  int? timeLimitSeconds,
+  bool untimed = false,
+}) async {
+  await tester.tap(modeEntry);
+  await tester.pumpAndSettle();
+  expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+  if (itemCount != null) {
+    await tester.enterText(
+      find.byKey(const ValueKey('session-item-count')),
+      '$itemCount',
+    );
+  }
+  if (direction != null) {
+    final directionField = find.byKey(const ValueKey('session-direction'));
+    await tester.ensureVisible(directionField);
+    await tester.tap(directionField);
+    await tester.pumpAndSettle();
+    final label = switch (direction) {
+      SessionDirection.forward => 'Prompt to answer',
+      SessionDirection.reverse => 'Answer to prompt',
+      SessionDirection.mixed => 'Mixed directions',
+    };
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+  if (packLabel != null) {
+    final packField = find.byKey(const ValueKey('session-pack'));
+    await tester.ensureVisible(packField);
+    await tester.tap(packField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(packLabel).last);
+    await tester.pumpAndSettle();
+  }
+  if (hintBudget != null) {
+    final hintBudgetField = find.byKey(const ValueKey('session-hint-budget'));
+    await tester.ensureVisible(hintBudgetField);
+    await tester.tap(hintBudgetField);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('$hintBudget').last);
+    await tester.pumpAndSettle();
+  }
+  if (timeLimitSeconds != null) {
+    await tester.enterText(
+      find.byKey(const ValueKey('session-time-limit-seconds')),
+      '$timeLimitSeconds',
+    );
+  }
+  if (untimed) {
+    final untimedOption = find.byKey(const ValueKey('session-timing-untimed'));
+    await tester.ensureVisible(untimedOption);
+    await tester.tap(untimedOption);
+    await tester.pumpAndSettle();
+  }
+  tester.testTextInput.hide();
+  await tester.pumpAndSettle();
+  final start = find.byKey(const ValueKey('session-config-start'));
+  await tester.ensureVisible(start);
+  await tester.pump();
+  await tester.tap(start);
+  if (settleAfterStart) {
+    await tester.pumpAndSettle();
+  } else {
+    await tester.pump();
+  }
+}
+
 void main() {
+  testWidgets(
+    'f16 validated count and reverse direction govern delivered meaning quiz',
+    (tester) async {
+      final harness = await _SrsGateHarness.create();
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz')),
+        itemCount: 1,
+        direction: SessionDirection.reverse,
+      );
+
+      final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+      expect(screen.sessionConfiguration?.itemCount, 1);
+      expect(screen.sessionConfiguration?.direction, SessionDirection.reverse);
+      expect(find.text('lasting'), findsWidgets);
+      expect(
+        find.byKey(
+          const ValueKey<String>(
+            'meaning-quiz-option-word:srs-gate-vocabulary-durable',
+          ),
+        ),
+        findsOneWidget,
+      );
+      expect(harness.controllers.single.state.itemCount, 1);
+    },
+  );
+
+  testWidgets('f16 exact pinned pack revision governs delivered vocabulary', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(pinnedPack: _testPinnedPack());
+    addTearDown(harness.close);
+    await harness.pump(tester);
+
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/quiz')),
+      itemCount: 1,
+      packLabel: 'Pinned f16 pack revision 3',
+    );
+
+    final screen = tester.widget<QuizScreen>(find.byType(QuizScreen));
+    expect(screen.sessionConfiguration?.packIdentity, _testPackIdentity);
+    expect(harness.controllers.single.state.itemCount, 1);
+    expect(find.text('durable'), findsWidgets);
+  });
+
+  testWidgets('f16 pinned pack content drift renders a typed reset prompt', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(
+      pinnedPack: _testPinnedPack(
+        vocabularyWordIds: const <String>['word:missing-from-owner-library'],
+      ),
+    );
+    addTearDown(harness.close);
+    await harness.pump(tester);
+
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/quiz')),
+      itemCount: 1,
+      packLabel: 'Pinned f16 pack revision 3',
+    );
+
+    expect(
+      find.byKey(const ValueKey('session-configuration-reset-prompt')),
+      findsOneWidget,
+    );
+    expect(
+      find.text('The selected learning-pack revision is no longer available.'),
+      findsOneWidget,
+    );
+    expect(
+      harness.controllers.single.state.status,
+      LessonSessionStatus.planned,
+    );
+  });
+
+  testWidgets('f16 production Choose path renders stale stored reset prompt', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create();
+    addTearDown(harness.close);
+    final owner = await harness.dependencies.localOwners!
+        .getOrCreateActiveOwner();
+    final registration = harness.dependencies.lessonModes!.resolve(
+      LessonMode.meaningQuiz,
+    )!;
+    const currentLimits = SessionConfigurationProtocolLimits.standard();
+    final staleLimits = currentLimits.copyWith(protocolVersion: 'stale');
+    const policy = SessionConfigurationPolicy();
+    final stale = policy.validate(
+      draft: policy
+          .defaultsFor(registration: registration, limits: staleLimits)
+          .copyWith(itemCount: 1),
+      registration: registration,
+      limits: staleLimits,
+      ownerId: owner.id,
+      availablePackIdentities: const <ContentIdentity>[],
+    );
+    await harness.sessionConfigurations.save(
+      stale,
+      updatedAtUtc: DateTime.utc(2026, 8, 26),
+    );
+    await harness.pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('session-configuration-reset-prompt')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'The study protocol changed after this session was configured.',
+      ),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('f16 persisted protocol drift opens typed reset sheet', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(staleProtocol: true);
+    addTearDown(harness.close);
+    await harness.pump(tester);
+
+    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.byKey(const ValueKey('session-configuration-reset-prompt')),
+      findsOneWidget,
+    );
+    expect(
+      find.text(
+        'The study protocol changed after this session was configured.',
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(find.byKey(const ValueKey('session-config-reset')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SessionConfigurationSheet), findsNothing);
+    expect(find.byType(ChooseModeScreen), findsOneWidget);
+    expect(harness.controllers, isEmpty);
+  });
+
+  testWidgets(
+    'f16 opens one validated configuration sheet before route construction',
+    (tester) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChooseModeScreen(
+            featureRegistry: const BuildFeatureRegistry.allEnabled(),
+            lessonModes: buildLessonModeRegistry(),
+          ),
+        ),
+      );
+
+      final tile = find.byKey(const ValueKey<String>('home/learn/quiz'));
+      final dynamic configuredTile = tester.widget(tile);
+      configuredTile.onTap();
+      configuredTile.onTap();
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+      expect(find.byType(ProductionFeatureGate), findsNothing);
+      expect(find.byType(UnifiedLessonShell), findsNothing);
+
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('session-config-start')),
+      );
+      await tester.tap(find.byKey(const ValueKey('session-config-start')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SessionConfigurationSheet), findsNothing);
+      expect(find.byType(ProductionFeatureGate), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'f16 emergency-off between validation and start prevents navigation',
+    (tester) async {
+      final features = RuntimeFeatureRegistry(
+        const BuildFeatureRegistry.allEnabled(),
+      );
+      addTearDown(features.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: ChooseModeScreen(
+            featureRegistry: features,
+            lessonModes: buildLessonModeRegistry(),
+          ),
+        ),
+      );
+
+      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
+      await tester.pumpAndSettle();
+      expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+
+      features.emergencyOff(Feature.quiz);
+      await tester.ensureVisible(
+        find.byKey(const ValueKey('session-config-start')),
+      );
+      await tester.tap(find.byKey(const ValueKey('session-config-start')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(ChooseModeScreen), findsOneWidget);
+      expect(find.byType(UnifiedLessonShell), findsNothing);
+      expect(
+        find.text('This lesson mode is no longer available.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets('f16 a retained live-off mode callback cannot configure', (
+    tester,
+  ) async {
+    final features = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    addTearDown(features.dispose);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          featureRegistry: features,
+          lessonModes: buildLessonModeRegistry(),
+        ),
+      ),
+    );
+    final tile = tester.widget<ListTile>(
+      find.descendant(
+        of: find.byKey(const ValueKey<String>('home/learn/quiz')),
+        matching: find.byType(ListTile),
+      ),
+    );
+    final retainedOpen = tile.onTap!;
+
+    features.emergencyOff(Feature.quiz);
+    retainedOpen();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(SessionConfigurationSheet), findsNothing);
+    expect(find.byType(UnifiedLessonShell), findsNothing);
+    expect(
+      find.text('This lesson mode is no longer available.'),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('f13 shows every registered production native mode', (
     tester,
   ) async {
@@ -183,8 +525,10 @@ void main() {
         ),
       );
 
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-      await tester.pumpAndSettle();
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz')),
+      );
 
       expect(find.byType(ProductionFeatureGate), findsOneWidget);
       final unavailable = tester.widget<ProductionFeatureUnavailable>(
@@ -281,7 +625,9 @@ void main() {
         ),
         speechPractice: SpeechPracticeUseCases(_InertSpeechGateway()),
         features: features,
+        localOwners: owners,
         lessonModes: modes,
+        sessionConfigurations: DriftSessionConfigurationStore(database),
         createLessonController: (adapter) {
           controllerBuilds += 1;
           return UnifiedLessonController(learning: learning, adapter: adapter);
@@ -366,8 +712,11 @@ void main() {
         await _scrollToModeEntry(tester, routeCase.entryId);
         final entry = find.byKey(ValueKey<String>(routeCase.entryId));
         await tester.pump();
-        await tester.tap(entry);
-        await tester.pumpAndSettle();
+        await _openConfiguredMode(
+          tester,
+          entry,
+          itemCount: routeCase.mode == LessonMode.matching ? 2 : 1,
+        );
 
         if (routeCase.mode == LessonMode.associativeReading) {
           expect(
@@ -606,8 +955,12 @@ void main() {
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
       await tester.ensureVisible(srsTile);
       await tester.pump();
-      await tester.tap(srsTile);
-      await tester.pump();
+      await _openConfiguredMode(
+        tester,
+        srsTile,
+        itemCount: 1,
+        settleAfterStart: false,
+      );
       await tester.runAsync(
         () => harness.repository.dueEntered.future.timeout(
           const Duration(seconds: 1),
@@ -655,10 +1008,10 @@ void main() {
       await harness.pump(tester);
 
       await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
       );
-      await tester.pumpAndSettle();
 
       expect(find.byType(CefrArticleReaderScreen), findsNothing);
       expect(find.byType(UnifiedLessonShell), findsOneWidget);
@@ -687,10 +1040,10 @@ void main() {
         await harness.pump(tester);
 
         await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
-        await tester.tap(
+        await _openConfiguredMode(
+          tester,
           find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
         );
-        await tester.pumpAndSettle();
 
         final controller = harness.controllers.single;
         final reader = tester.widget<CefrArticleReaderScreen>(
@@ -717,10 +1070,11 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/definition')),
+        itemCount: 1,
       );
-      await tester.pumpAndSettle();
       expect(find.byType(DefinitionQuizScreen), findsOneWidget);
       expect(
         harness.controllers.single.state.status,
@@ -761,10 +1115,11 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
+        itemCount: 1,
       );
-      await tester.pumpAndSettle();
       expect(find.byType(FillInTheBlanksScreen), findsOneWidget);
       expect(
         harness.controllers.single.state.status,
@@ -805,10 +1160,11 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 2,
       );
-      await tester.pumpAndSettle();
       expect(find.byType(MatchingModeScreen), findsOneWidget);
       expect(
         harness.controllers.single.state.status,
@@ -863,15 +1219,37 @@ void main() {
   );
 
   testWidgets(
-    'completed Matching recovery closes shell and F24 before one score receipt',
+    'f16 Matching recovery ignores a newer mutable configuration preference',
     (tester) async {
       final harness = await _SrsGateHarness.create(enableMatching: true);
       addTearDown(harness.close);
       final learning = harness.dependencies.learning!;
       const adapter = MatchingModeAdapter();
+      final owner = await harness.dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      final registration = harness.dependencies.lessonModes!.resolve(
+        LessonMode.matching,
+      )!;
+      const policy = SessionConfigurationPolicy();
+      const limits = SessionConfigurationProtocolLimits.standard();
+      final configuration = policy.validate(
+        draft: policy
+            .defaultsFor(registration: registration, limits: limits)
+            .copyWith(itemCount: 2),
+        registration: registration,
+        limits: limits,
+        ownerId: owner.id,
+        availablePackIdentities: const <ContentIdentity>[],
+      );
+      await harness.sessionConfigurations.save(
+        configuration,
+        updatedAtUtc: DateTime.utc(2026, 8, 25, 15),
+      );
       final prepared = await adapter.prepareSession(
         learning: learning,
         evidence: CurrentActivityEvidenceAdapter(learning: learning),
+        itemCount: configuration.itemCount,
+        sessionConfiguration: configuration,
       );
       final close = learning.captureSessionClose(
         sessionId: prepared.session.id,
@@ -879,11 +1257,33 @@ void main() {
       await prepared.persistClose(close: close, timeoutRequested: true);
       await close.finish();
       expect(harness.repository.finishCalls, 1);
+      final newerPreference = policy.validate(
+        draft: policy
+            .defaultsFor(registration: registration, limits: limits)
+            .copyWith(itemCount: 3),
+        registration: registration,
+        limits: limits,
+        ownerId: owner.id,
+        availablePackIdentities: const <ContentIdentity>[],
+      );
+      await harness.sessionConfigurations.save(
+        newerPreference,
+        updatedAtUtc: DateTime.utc(2026, 8, 25, 16),
+      );
 
       await harness.pump(tester);
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: null,
       );
+      await tester.runAsync(() async {
+        await harness.repository.matchingTerminalAcknowledged.future.timeout(
+          const Duration(seconds: 1),
+        );
+        await Future<void>.delayed(Duration.zero);
+      });
+      await tester.pump();
       await tester.pumpAndSettle();
 
       expect(find.byType(ScoreScreen), findsOneWidget);
@@ -930,6 +1330,462 @@ void main() {
   );
 
   testWidgets(
+    'f16 Matching configuration drift requires an explicit discard decision',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(enableMatching: true);
+      addTearDown(harness.close);
+      final learning = harness.dependencies.learning!;
+      const adapter = MatchingModeAdapter();
+      final owner = await harness.dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      final registration = harness.dependencies.lessonModes!.resolve(
+        LessonMode.matching,
+      )!;
+      const policy = SessionConfigurationPolicy();
+      const limits = SessionConfigurationProtocolLimits.standard();
+      final pinned = policy.validate(
+        draft: policy
+            .defaultsFor(registration: registration, limits: limits)
+            .copyWith(itemCount: 2),
+        registration: registration,
+        limits: limits,
+        ownerId: owner.id,
+        availablePackIdentities: const <ContentIdentity>[],
+      );
+      await adapter.prepareSession(
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+        itemCount: pinned.itemCount,
+        sessionConfiguration: pinned,
+      );
+
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 3,
+      );
+
+      expect(
+        find.byKey(const ValueKey('session-configuration-recovery-prompt')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('session-config-recovery-resume')),
+        findsOneWidget,
+      );
+      expect(
+        find.byKey(const ValueKey('session-config-recovery-discard')),
+        findsOneWidget,
+      );
+      expect(harness.controllers, isEmpty);
+
+      await tester.tap(
+        find.byKey(const ValueKey('session-config-recovery-discard')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MatchingModeScreen), findsOneWidget);
+      expect(harness.repository.abandonCalls, 1);
+      expect(harness.controllers.single.sessionConfiguration?.itemCount, 3);
+    },
+  );
+
+  testWidgets(
+    'f16 Flashcard retirement waits for admitted evidence and terminal close',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        blockAnswer: true,
+        blockAbandon: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await _openConfiguredMode(tester, srsTile, itemCount: 1);
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('flashcard-remembered')),
+      );
+      await tester.runAsync(
+        () => harness.repository.answerEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      harness.features.emergencyOff(Feature.srs);
+      await tester.pump();
+      harness.repository.answerRelease.complete();
+      harness.repository.abandonRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.answerCalls, 1);
+      expect(harness.repository.finishCalls, 1);
+      expect(harness.repository.abandonCalls, 0);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.completed,
+      );
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  testWidgets(
+    'f16 Matching retirement waits through checkpoint and evidence cleanup',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableMatching: true,
+        blockMatchingCheckpoint: true,
+        blockAbandon: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 2,
+      );
+      const wordId = 'word:srs-gate-vocabulary';
+      await tester.tap(
+        find.byKey(const ValueKey<String>('matching-word-$wordId')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
+      );
+      await tester.runAsync(
+        () => harness.repository.matchingCheckpointEntered.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+
+      harness.features.emergencyOff(Feature.quiz);
+      await tester.pump();
+      expect(harness.repository.abandonCalls, 0);
+      harness.repository.matchingCheckpointRelease.complete();
+      harness.repository.abandonRelease.complete();
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.answerCalls, 1);
+      expect(harness.repository.abandonCalls, 1);
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(2),
+      );
+      final checkpoints =
+          await (harness.database.select(harness.database.eventsV2)..where(
+                (row) => row.eventType.equals('LearningActivityCheckpoint'),
+              ))
+              .get();
+      final latest = checkpoints
+          .map((row) => jsonDecode(row.payloadJson) as Map<String, dynamic>)
+          .reduce(
+            (left, right) =>
+                (left['revision'] as int) > (right['revision'] as int)
+                ? left
+                : right,
+          );
+      expect(
+        (latest['state'] as Map<String, dynamic>)['pendingEvidence'],
+        isNull,
+      );
+    },
+  );
+
+  testWidgets(
+    'f16 Matching committed close lost ack survives emergency retirement and restart',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableMatching: true,
+        loseMatchingCloseAckOnce: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 2,
+      );
+      for (final wordId in const <String>[
+        'word:srs-gate-vocabulary',
+        'word:srs-gate-vocabulary-two',
+      ]) {
+        await tester.tap(find.byKey(ValueKey<String>('matching-word-$wordId')));
+        await tester.pumpAndSettle();
+        await tester.tap(
+          find.byKey(ValueKey<String>('matching-meaning-$wordId')),
+        );
+        await tester.pumpAndSettle();
+      }
+      await tester.tap(find.byKey(const ValueKey<String>('matching-finish')));
+      await tester.runAsync(
+        () => harness.repository.matchingCloseCommitted.future.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+
+      harness.features.emergencyOff(Feature.quiz);
+      await tester.pumpAndSettle();
+
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      final configured = sessions.singleWhere(
+        (session) => session.activityType == MatchingModeAdapter.activityType,
+      );
+      expect(configured.state, 'completed');
+      expect(harness.repository.abandonCalls, 0);
+      expect(harness.repository.matchingCloseAppendCalls, 2);
+      final recovered = await const MatchingModeAdapter().prepareSession(
+        learning: harness.dependencies.learning!,
+        evidence: harness.dependencies.currentActivityEvidence!,
+        itemCount: 2,
+        sessionConfiguration: harness.controllers.single.sessionConfiguration,
+      );
+      expect(recovered.session.id, configured.id);
+      expect(recovered.completedSummary?.id, configured.id);
+      final reconciled = await recovered.reconcileCompleted(
+        completeSession: (close) =>
+            close.requiresRetry ? close.retry() : close.finish(),
+      );
+      expect(reconciled.id, configured.id);
+    },
+  );
+
+  testWidgets(
+    'f16 Flashcard lost-ack retry and close survive finite effort expiry',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        loseAnswerAckOnce: true,
+        deterministicConfigurationClock: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await _openConfiguredMode(
+        tester,
+        srsTile,
+        itemCount: 1,
+        timeLimitSeconds: 60,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('flashcard-remembered')),
+      );
+      await tester.pumpAndSettle();
+      expect(
+        find.byKey(const ValueKey<String>('current-evidence-retry')),
+        findsOneWidget,
+      );
+
+      harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
+      await expectLater(
+        harness.controllers.single.recordActiveLearningInteraction(
+          DateTime.utc(2026, 8, 25, 15, 1),
+        ),
+        throwsA(isA<SessionConfigurationLimitReached>()),
+      );
+      await tester.pumpAndSettle();
+      final retry = find.byKey(
+        const ValueKey<String>('current-evidence-retry'),
+      );
+      await tester.ensureVisible(retry);
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(harness.repository.answerCalls, 2);
+      expect(harness.repository.finishCalls, 1);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.completed,
+      );
+      expect(
+        harness.controllers.single.configurationActiveEffort,
+        const Duration(seconds: 60),
+      );
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  testWidgets('f16 Matching lost-ack retry survives finite effort expiry', (
+    tester,
+  ) async {
+    final harness = await _SrsGateHarness.create(
+      enableMatching: true,
+      loseAnswerAckOnce: true,
+      deterministicConfigurationClock: true,
+    );
+    addTearDown(harness.close);
+    await harness.pump(tester);
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+      itemCount: 2,
+      timeLimitSeconds: 60,
+    );
+    const wordId = 'word:srs-gate-vocabulary';
+    await tester.tap(
+      find.byKey(const ValueKey<String>('matching-word-$wordId')),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
+    );
+    await tester.pumpAndSettle();
+    expect(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+      findsOneWidget,
+    );
+
+    harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
+    await expectLater(
+      harness.controllers.single.recordActiveLearningInteraction(
+        DateTime.utc(2026, 8, 25, 15, 1),
+      ),
+      throwsA(isA<SessionConfigurationLimitReached>()),
+    );
+    await tester.pumpAndSettle();
+    final retry = find.byKey(const ValueKey<String>('current-evidence-retry'));
+    tester.widget<FilledButton>(retry).onPressed!();
+    await tester.pumpAndSettle();
+
+    expect(harness.repository.answerCalls, 2);
+    expect(
+      harness.controllers.single.configurationActiveEffort,
+      const Duration(seconds: 60),
+    );
+    expect(
+      await harness.database.select(harness.database.answerAttempts).get(),
+      hasLength(2),
+    );
+    expect(
+      find.byKey(const ValueKey<String>('current-evidence-retry')),
+      findsNothing,
+    );
+  });
+
+  testWidgets(
+    'f16 untimed Matching idle time never schedules wall-clock completion',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableMatching: true,
+        deterministicConfigurationClock: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 2,
+        untimed: true,
+      );
+
+      expect(
+        find.text(
+          'Untimed accessibility session. Active effort remains bounded.',
+        ),
+        findsOneWidget,
+      );
+      await tester.pump(const Duration(hours: 1));
+      await tester.pump();
+
+      expect(find.byType(MatchingModeScreen), findsOneWidget);
+      expect(find.byType(ScoreScreen), findsNothing);
+      expect(harness.repository.finishCalls, 0);
+    },
+  );
+
+  testWidgets(
+    'f16 Flashcard boundary tap cannot write after finite effort expires',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        deterministicConfigurationClock: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
+      await tester.ensureVisible(srsTile);
+      await tester.pump();
+      await _openConfiguredMode(
+        tester,
+        srsTile,
+        itemCount: 1,
+        timeLimitSeconds: 60,
+      );
+      harness.repository.blockConfigurationEffort();
+      harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('flashcard-remembered')),
+      );
+      await tester.runAsync(
+        () => harness.repository.configurationEffortEntered.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      harness.repository.releaseConfigurationEffort();
+      await tester.pumpAndSettle();
+
+      expect(harness.controllers.single.configurationLimitReached, isTrue);
+      expect(harness.repository.answerCalls, 0);
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'f16 Matching boundary tap cannot write after finite effort expires',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableMatching: true,
+        deterministicConfigurationClock: true,
+      );
+      addTearDown(harness.close);
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 2,
+        timeLimitSeconds: 60,
+      );
+      const wordId = 'word:srs-gate-vocabulary';
+      await tester.tap(
+        find.byKey(const ValueKey<String>('matching-word-$wordId')),
+      );
+      await tester.pumpAndSettle();
+      harness.repository.blockConfigurationEffort();
+      harness.monotonicMicros = const Duration(seconds: 60).inMicroseconds;
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('matching-meaning-$wordId')),
+      );
+      await tester.runAsync(
+        () => harness.repository.configurationEffortEntered.timeout(
+          const Duration(seconds: 1),
+        ),
+      );
+      harness.repository.releaseConfigurationEffort();
+      await tester.pumpAndSettle();
+
+      expect(harness.controllers.single.configurationLimitReached, isTrue);
+      expect(harness.repository.answerCalls, 0);
+      expect(
+        await harness.database.select(harness.database.answerAttempts).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
     'SRS off synchronously fences a retained rating before terminal close',
     (tester) async {
       final harness = await _SrsGateHarness.create(blockAbandon: true);
@@ -938,8 +1794,7 @@ void main() {
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
       await tester.ensureVisible(srsTile);
       await tester.pump();
-      await tester.tap(srsTile);
-      await tester.pumpAndSettle();
+      await _openConfiguredMode(tester, srsTile, itemCount: 1);
 
       expect(
         harness.controllers.single.state.status,
@@ -1010,8 +1865,7 @@ void main() {
       final srsTile = find.byKey(const ValueKey<String>('home/learn/srs'));
       await tester.ensureVisible(srsTile);
       await tester.pump();
-      await tester.tap(srsTile);
-      await tester.pumpAndSettle();
+      await _openConfiguredMode(tester, srsTile, itemCount: 1);
 
       final remembered = find.byKey(
         const ValueKey<String>('flashcard-remembered'),
@@ -1081,8 +1935,12 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-      await tester.pump();
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz')),
+        itemCount: 1,
+        settleAfterStart: false,
+      );
       await tester.runAsync(
         () => harness.repository.quizEntered.future.timeout(
           const Duration(seconds: 1),
@@ -1125,10 +1983,12 @@ void main() {
       addTearDown(harness.close);
       await harness.pump(tester);
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/cloze')),
+        itemCount: 1,
+        settleAfterStart: false,
       );
-      await tester.pump();
       await tester.runAsync(
         () => harness.repository.quizEntered.future.timeout(
           const Duration(seconds: 1),
@@ -1169,8 +2029,11 @@ void main() {
     final harness = await _SrsGateHarness.create(blockAbandon: true);
     addTearDown(harness.close);
     await harness.pump(tester);
-    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-    await tester.pumpAndSettle();
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/quiz')),
+      itemCount: 1,
+    );
 
     final answer = find.byKey(
       const ValueKey<String>(
@@ -1236,10 +2099,12 @@ void main() {
         ];
       }))!;
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+        itemCount: 1,
+        hintBudget: 2,
       );
-      await tester.pumpAndSettle();
       final controller = harness.controllers.single;
       final showStrategy = find.widgetWithText(FilledButton, 'Show strategy');
       tester.widget<FilledButton>(showStrategy).onPressed!();
@@ -1326,10 +2191,12 @@ void main() {
         ];
       }))!;
 
-      await tester.tap(
+      await _openConfiguredMode(
+        tester,
         find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+        itemCount: 3,
+        hintBudget: 2,
       );
-      await tester.pumpAndSettle();
       await tester.tap(
         find.byKey(
           const ValueKey<String>(
@@ -1446,10 +2313,12 @@ void main() {
     );
     addTearDown(harness.close);
     await harness.pump(tester);
-    await tester.tap(
+    await _openConfiguredMode(
+      tester,
       find.byKey(const ValueKey<String>('home/learn/quiz/typed-recall')),
+      itemCount: 2,
+      hintBudget: 2,
     );
-    await tester.pumpAndSettle();
 
     final choice = find.byKey(
       const ValueKey<String>(
@@ -1506,8 +2375,11 @@ void main() {
     final harness = await _SrsGateHarness.create(blockAnswer: true);
     addTearDown(harness.close);
     await harness.pump(tester);
-    await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-    await tester.pumpAndSettle();
+    await _openConfiguredMode(
+      tester,
+      find.byKey(const ValueKey<String>('home/learn/quiz')),
+      itemCount: 1,
+    );
 
     final answer = find.byKey(
       const ValueKey<String>(
@@ -1586,8 +2458,11 @@ void main() {
       final harness = await _SrsGateHarness.create(blockFinish: true);
       addTearDown(harness.close);
       await harness.pump(tester);
-      await tester.tap(find.byKey(const ValueKey<String>('home/learn/quiz')));
-      await tester.pumpAndSettle();
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz')),
+        itemCount: 1,
+      );
 
       final answer = find.byKey(
         const ValueKey<String>(
@@ -1651,6 +2526,62 @@ void main() {
   );
 }
 
+const _testPackIdentity = ContentIdentity(
+  type: ContentType.learningPack,
+  id: 'pack:f16-pinned',
+  revision: 3,
+);
+
+LearningPackDetail _testPinnedPack({
+  List<String> vocabularyWordIds = const <String>['word:srs-gate-vocabulary'],
+}) => LearningPackDetail(
+  summary: LearningPackSummary(
+    packId: _testPackIdentity.id,
+    revision: _testPackIdentity.revision,
+    title: 'Pinned f16 pack',
+    cefrLevel: 'A1',
+    topic: 'durability',
+    skill: 'recognition',
+    goal: 'practice',
+    contentIdentity: _testPackIdentity,
+  ),
+  vocabularyWordIds: vocabularyWordIds,
+);
+
+final class _StaleSessionConfigurationProtocolProvider
+    implements SessionConfigurationProtocolProvider {
+  const _StaleSessionConfigurationProtocolProvider();
+
+  @override
+  Future<SessionConfigurationProtocolLimits> resolveForOwner(String ownerId) =>
+      Future<SessionConfigurationProtocolLimits>.error(
+        const SessionConfigurationResetRequired(
+          SessionConfigurationResetReason.staleProtocol,
+        ),
+      );
+}
+
+final class _PinnedPackRepository implements LearningPackRepository {
+  const _PinnedPackRepository(this.detail);
+
+  final LearningPackDetail detail;
+
+  @override
+  Future<LearningPackDetail> getVersion(String packId, int revision) async {
+    if (packId != detail.summary.packId ||
+        revision != detail.summary.revision) {
+      throw StateError('Pinned pack version unavailable.');
+    }
+    return detail;
+  }
+
+  @override
+  Future<List<LearningPackSummary>> list(LearningPackFilter filter) async =>
+      filter.matches(detail.summary)
+      ? <LearningPackSummary>[detail.summary]
+      : const <LearningPackSummary>[];
+}
+
 final class _SrsGateHarness {
   _SrsGateHarness._({
     required this.database,
@@ -1659,6 +2590,7 @@ final class _SrsGateHarness {
     required this.dependencies,
     required this.controllers,
     required this.activeTimes,
+    required this.sessionConfigurations,
   });
 
   final AppDatabase database;
@@ -1667,6 +2599,7 @@ final class _SrsGateHarness {
   final AppDependencies dependencies;
   final List<UnifiedLessonController> controllers;
   final List<ActiveLearningTimeController> activeTimes;
+  final DriftSessionConfigurationStore sessionConfigurations;
   int monotonicMicros = 0;
 
   static Future<_SrsGateHarness> create({
@@ -1675,9 +2608,15 @@ final class _SrsGateHarness {
     bool blockAbandon = false,
     bool blockAnswer = false,
     bool blockFinish = false,
+    bool loseAnswerAckOnce = false,
+    bool loseMatchingCloseAckOnce = false,
+    bool blockMatchingCheckpoint = false,
     bool enableMatching = false,
     bool enableTypedHintSequence = false,
+    bool deterministicConfigurationClock = false,
     String? vocabularyCefrLevel = 'A1',
+    LearningPackDetail? pinnedPack,
+    bool staleProtocol = false,
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
     final now = DateTime.utc(2026, 8, 25, 15);
@@ -1766,6 +2705,9 @@ final class _SrsGateHarness {
       blockAbandon: blockAbandon,
       blockAnswer: blockAnswer,
       blockFinish: blockFinish,
+      loseAnswerAckOnce: loseAnswerAckOnce,
+      loseMatchingCloseAckOnce: loseMatchingCloseAckOnce,
+      blockMatchingCheckpoint: blockMatchingCheckpoint,
     );
     var nextId = 0;
     final learning = LearningUseCases(
@@ -1790,6 +2732,17 @@ final class _SrsGateHarness {
           : LessonModeDeliveryState.implementedOff,
     );
     final research = InertResearchDependencies(database);
+    final sessionConfigurations = DriftSessionConfigurationStore(database);
+    final studyPlanning = pinnedPack == null
+        ? null
+        : StudyPlanningUseCases(
+            packs: _PinnedPackRepository(pinnedPack),
+            progress: ProgressUseCases(
+              owners: owners,
+              queries: DriftProgressQueries(database),
+              nowUtc: () => now,
+            ),
+          );
     late final _SrsGateHarness harness;
     final dependencies = AppDependencies(
       initialRoute: AppRoute.home,
@@ -1814,10 +2767,22 @@ final class _SrsGateHarness {
       learning: learning,
       vocabulary: vocabulary,
       lessonModes: modes,
+      sessionConfigurationProtocols: staleProtocol
+          ? const _StaleSessionConfigurationProtocolProvider()
+          : PersistedSessionConfigurationProtocolProvider(
+              currentResearchState: research.assignedLearningEventContext,
+              rolloutMode: research.evidencePolicyRolloutModeProvider,
+              nowUtc: () => now,
+              catalog: SessionConfigurationProtocolCatalog(
+                baseline: const SessionConfigurationProtocolLimits.standard(),
+              ),
+            ),
+      sessionConfigurations: sessionConfigurations,
       currentActivityEvidence: CurrentActivityEvidenceAdapter(
         learning: learning,
       ),
       associativeLearning: InMemoryAssociativeLearningAdapter(),
+      studyPlanning: studyPlanning,
       learningTime: learningTime,
       learningTimeCaptureRollout: const LearningTimeCaptureRollout.internal(),
       createLessonController: (adapter) {
@@ -1835,6 +2800,9 @@ final class _SrsGateHarness {
           learning: learning,
           adapter: adapter,
           activeLearningTime: activeTime,
+          configurationMonotonicMicros: deterministicConfigurationClock
+              ? () => harness.monotonicMicros
+              : null,
         );
         controllers.add(controller);
         return controller;
@@ -1847,6 +2815,7 @@ final class _SrsGateHarness {
       dependencies: dependencies,
       controllers: controllers,
       activeTimes: activeTimes,
+      sessionConfigurations: sessionConfigurations,
     );
     return harness;
   }
@@ -1869,7 +2838,9 @@ final class _CoordinatedLearningRepository
     implements
         LearningRepository,
         LearningSessionLifecycleRepository,
-        LearningActivityRecoveryRepository {
+        SessionConfiguredLearningRepository,
+        LearningActivityRecoveryRepository,
+        PinnedLearningContentRepository {
   _CoordinatedLearningRepository(
     this.delegate, {
     required this.delayDue,
@@ -1877,7 +2848,12 @@ final class _CoordinatedLearningRepository
     required this.blockAbandon,
     required this.blockAnswer,
     required this.blockFinish,
-  });
+    required bool loseAnswerAckOnce,
+    required bool loseMatchingCloseAckOnce,
+    required bool blockMatchingCheckpoint,
+  }) : _loseAnswerAckOnce = loseAnswerAckOnce,
+       _loseMatchingCloseAckOnce = loseMatchingCloseAckOnce,
+       _blockMatchingCheckpoint = blockMatchingCheckpoint;
 
   final LearningRepository delegate;
   final bool delayDue;
@@ -1885,6 +2861,9 @@ final class _CoordinatedLearningRepository
   final bool blockAbandon;
   bool blockAnswer;
   final bool blockFinish;
+  bool _loseAnswerAckOnce;
+  bool _loseMatchingCloseAckOnce;
+  bool _blockMatchingCheckpoint;
   final Completer<void> dueEntered = Completer<void>();
   final Completer<void> dueRelease = Completer<void>();
   final Completer<void> quizEntered = Completer<void>();
@@ -1895,12 +2874,32 @@ final class _CoordinatedLearningRepository
   final Completer<void> abandonRelease = Completer<void>();
   final Completer<void> finishEntered = Completer<void>();
   final Completer<void> finishRelease = Completer<void>();
+  final Completer<void> matchingTerminalAcknowledged = Completer<void>();
+  final Completer<void> matchingCheckpointEntered = Completer<void>();
+  final Completer<void> matchingCheckpointRelease = Completer<void>();
+  final Completer<void> matchingCloseCommitted = Completer<void>();
+  Completer<void>? _configurationEffortEntered;
+  Completer<void>? _configurationEffortRelease;
   int abandonCalls = 0;
   int answerCalls = 0;
   int finishCalls = 0;
+  int matchingCloseAppendCalls = 0;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
 
   void armAnswerBlock() => blockAnswer = true;
+
+  Future<void> get configurationEffortEntered =>
+      _configurationEffortEntered!.future;
+
+  void blockConfigurationEffort() {
+    _configurationEffortEntered = Completer<void>();
+    _configurationEffortRelease = Completer<void>();
+  }
+
+  void releaseConfigurationEffort() {
+    final release = _configurationEffortRelease;
+    if (release != null && !release.isCompleted) release.complete();
+  }
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -1918,6 +2917,15 @@ final class _CoordinatedLearningRepository
       limit: limit,
     );
   }
+
+  @override
+  Future<List<QuizWord>> listPinnedQuizWords({
+    required String ownerId,
+    required List<String> wordIds,
+  }) => (delegate as PinnedLearningContentRepository).listPinnedQuizWords(
+    ownerId: ownerId,
+    wordIds: wordIds,
+  );
 
   @override
   Future<List<QuizWord>> listDueWords({
@@ -1941,6 +2949,37 @@ final class _CoordinatedLearningRepository
       delegate.startSession(session);
 
   @override
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  }) => (delegate as SessionConfiguredLearningRepository)
+      .loadSessionConfigurationState(ownerId: ownerId, sessionId: sessionId);
+
+  @override
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    final entered = _configurationEffortEntered;
+    final release = _configurationEffortRelease;
+    if (entered != null && release != null) {
+      if (!entered.isCompleted) entered.complete();
+      await release.future;
+      _configurationEffortEntered = null;
+      _configurationEffortRelease = null;
+    }
+    return (delegate as SessionConfiguredLearningRepository)
+        .addSessionConfigurationActiveEffort(
+          ownerId: ownerId,
+          sessionId: sessionId,
+          configurationIdentity: configurationIdentity,
+          delta: delta,
+        );
+  }
+
+  @override
   Future<void> startSessionWithCheckpoint({
     required LearningSessionDraft session,
     required LearningActivityCheckpoint checkpoint,
@@ -1958,8 +2997,39 @@ final class _CoordinatedLearningRepository
   Future<void> appendActivityCheckpoint({
     required String ownerId,
     required LearningActivityCheckpoint checkpoint,
-  }) => (delegate as LearningActivityRecoveryRepository)
-      .appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
+  }) async {
+    if (checkpoint.activityType == MatchingModeAdapter.activityType &&
+        checkpoint.state['pendingCloseAtUtc'] != null &&
+        !checkpoint.terminalAcknowledged) {
+      matchingCloseAppendCalls += 1;
+    }
+    if (_blockMatchingCheckpoint &&
+        checkpoint.activityType == MatchingModeAdapter.activityType &&
+        checkpoint.state['pendingEvidence'] != null) {
+      _blockMatchingCheckpoint = false;
+      if (!matchingCheckpointEntered.isCompleted) {
+        matchingCheckpointEntered.complete();
+      }
+      await matchingCheckpointRelease.future;
+    }
+    await (delegate as LearningActivityRecoveryRepository)
+        .appendActivityCheckpoint(ownerId: ownerId, checkpoint: checkpoint);
+    if (_loseMatchingCloseAckOnce &&
+        checkpoint.activityType == MatchingModeAdapter.activityType &&
+        checkpoint.state['pendingCloseAtUtc'] != null &&
+        !checkpoint.terminalAcknowledged) {
+      _loseMatchingCloseAckOnce = false;
+      if (!matchingCloseCommitted.isCompleted) {
+        matchingCloseCommitted.complete();
+      }
+      throw StateError('simulated committed close checkpoint ack loss');
+    }
+    if (checkpoint.activityType == MatchingModeAdapter.activityType &&
+        checkpoint.terminalAcknowledged &&
+        !matchingTerminalAcknowledged.isCompleted) {
+      matchingTerminalAcknowledged.complete();
+    }
+  }
 
   @override
   Future<LearningSessionSummary> abandonSession({
@@ -2005,15 +3075,24 @@ final class _CoordinatedLearningRepository
       if (!answerEntered.isCompleted) answerEntered.complete();
       await answerRelease.future;
     }
-    return delegate.recordAnswer(command);
+    final result = await delegate.recordAnswer(command);
+    if (_loseAnswerAckOnce) {
+      _loseAnswerAckOnce = false;
+      throw StateError('simulated committed answer acknowledgement loss');
+    }
+    return result;
   }
 
   void releaseAll() {
+    releaseConfigurationEffort();
     if (!dueRelease.isCompleted) dueRelease.complete();
     if (!quizRelease.isCompleted) quizRelease.complete();
     if (!answerRelease.isCompleted) answerRelease.complete();
     if (!abandonRelease.isCompleted) abandonRelease.complete();
     if (!finishRelease.isCompleted) finishRelease.complete();
+    if (!matchingCheckpointRelease.isCompleted) {
+      matchingCheckpointRelease.complete();
+    }
   }
 
   @override

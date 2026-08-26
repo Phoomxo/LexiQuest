@@ -15,8 +15,10 @@ import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/session_configuration_policy.dart';
 import '../features/learning/application/unified_lesson_controller.dart';
 import '../features/learning/domain/evidence_policy_rollout.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning_packs/application/learning_pack_use_cases.dart';
 import '../features/learning_packs/domain/content_manifest.dart';
 import '../features/media_practice/application/object_scanner_use_cases.dart';
@@ -76,6 +78,8 @@ final class AppDependencies {
     this.learning,
     this.lessonModes,
     this.createLessonController,
+    this.sessionConfigurationProtocols,
+    this.sessionConfigurations,
     this.learningTime,
     this.learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
@@ -131,6 +135,8 @@ final class AppDependencies {
   final LearningUseCases? learning;
   final LessonModeRegistry? lessonModes;
   final UnifiedLessonControllerFactory? createLessonController;
+  final SessionConfigurationProtocolProvider? sessionConfigurationProtocols;
+  final SessionConfigurationStore? sessionConfigurations;
   final LearningTimeRepository? learningTime;
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
   final FocusTimerRollout focusTimerRollout;

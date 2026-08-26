@@ -8,6 +8,7 @@ import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
 
@@ -102,11 +103,26 @@ final class _PinnedClozeCandidate {
 final class ClozeModeAdapter
     implements
         FocusTimerSupportingLessonModeAdapter,
-        HintSupportingLessonModeAdapter {
+        HintSupportingLessonModeAdapter,
+        SessionConfigurableLessonModeAdapter {
   const ClozeModeAdapter();
 
   @override
   LessonMode get mode => LessonMode.cloze;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 1,
+        maximumItemCount: 100,
+        defaultItemCount: 10,
+        directions: <SessionDirection>{SessionDirection.forward},
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 2,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: false,
+      );
 
   @override
   HintPolicy get hintPolicy => HintPolicy.staged(

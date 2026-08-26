@@ -8,6 +8,7 @@ import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_repository.dart';
+import '../domain/session_configuration.dart';
 
 typedef LearningIdGenerator = String Function();
 typedef LearningUtcNow = DateTime Function();
@@ -344,14 +345,47 @@ final class LearningUseCases {
   /// Schedules a bounded durable replay batch without delaying this answer.
   final void Function(String ownerId)? onSideEffectsPending;
 
-  Future<QuizSession> startQuiz({String? categoryId, int limit = 10}) async {
+  Future<QuizSession> startQuiz({
+    String? categoryId,
+    int limit = 10,
+    List<String>? pinnedWordIds,
+    SessionConfiguration? sessionConfiguration,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
-    final words = await repository.listQuizWords(
+    _requireSessionConfiguration(
+      sessionConfiguration,
       ownerId: owner.id,
-      categoryId: _optionalId(categoryId, 'categoryId'),
-      limit: limit,
+      itemCount: limit,
     );
+    final List<QuizWord> words;
+    if (pinnedWordIds == null) {
+      words = await repository.listQuizWords(
+        ownerId: owner.id,
+        categoryId: _optionalId(categoryId, 'categoryId'),
+        limit: limit,
+      );
+    } else {
+      if (categoryId != null ||
+          repository is! PinnedLearningContentRepository) {
+        throw StateError('Pinned quiz content authority is unavailable.');
+      }
+      final selected = pinnedWordIds.take(limit).toList(growable: false);
+      if (selected.length != limit) {
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+      words = await (repository as PinnedLearningContentRepository)
+          .listPinnedQuizWords(ownerId: owner.id, wordIds: selected);
+      if (words.length != selected.length ||
+          <String>[
+            for (final word in words) word.id,
+          ].indexed.any((entry) => entry.$2 != selected[entry.$1])) {
+        return const QuizSession(id: '', questions: [], startedAtUtc: null);
+      }
+    }
     if (words.isEmpty) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final now = _now();
@@ -364,12 +398,14 @@ final class LearningUseCases {
         startedAtUtc: now,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
+        sessionConfiguration: sessionConfiguration,
       ),
     );
     return QuizSession(
       id: sessionId,
       startedAtUtc: now,
       questions: _questions(words),
+      sessionConfiguration: sessionConfiguration,
     );
   }
 
@@ -381,6 +417,7 @@ final class LearningUseCases {
     required LearningActivityInitialState initialState,
     String? categoryId,
     int limit = 10,
+    SessionConfiguration? sessionConfiguration,
   }) async {
     final activity = _requiredId(activityType, 'activityType');
     if (repository is! LearningActivityRecoveryRepository) {
@@ -389,6 +426,11 @@ final class LearningUseCases {
       );
     }
     final owner = await owners.getOrCreateActiveOwner();
+    _requireSessionConfiguration(
+      sessionConfiguration,
+      ownerId: owner.id,
+      itemCount: limit,
+    );
     final words = await repository.listQuizWords(
       ownerId: owner.id,
       categoryId: _optionalId(categoryId, 'categoryId'),
@@ -397,12 +439,16 @@ final class LearningUseCases {
     if (words.isEmpty) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
+    if (sessionConfiguration != null && words.length != limit) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
     final now = _now();
     final sessionId = 'session:${_nextId()}';
     final session = QuizSession(
       id: sessionId,
       startedAtUtc: now,
       questions: _questions(words),
+      sessionConfiguration: sessionConfiguration,
     );
     final checkpoint = LearningActivityCheckpoint(
       sessionId: sessionId,
@@ -420,6 +466,7 @@ final class LearningUseCases {
             startedAtUtc: now,
             appVersion: buildInfo.version,
             buildId: buildInfo.buildId,
+            sessionConfiguration: sessionConfiguration,
           ),
           checkpoint: checkpoint,
         );
@@ -453,8 +500,16 @@ final class LearningUseCases {
     onLocalMutation?.call();
   }
 
-  Future<QuizSession> startDueReview({int limit = 20}) async {
+  Future<QuizSession> startDueReview({
+    int limit = 20,
+    SessionConfiguration? sessionConfiguration,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireSessionConfiguration(
+      sessionConfiguration,
+      ownerId: owner.id,
+      itemCount: limit,
+    );
     final now = _now();
     final words = await repository.listDueWords(
       ownerId: owner.id,
@@ -462,6 +517,9 @@ final class LearningUseCases {
       limit: limit,
     );
     if (words.isEmpty) {
+      return const QuizSession(id: '', questions: [], startedAtUtc: null);
+    }
+    if (sessionConfiguration != null && words.length != limit) {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final sessionId = 'session:${_nextId()}';
@@ -473,12 +531,14 @@ final class LearningUseCases {
         startedAtUtc: now,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
+        sessionConfiguration: sessionConfiguration,
       ),
     );
     return QuizSession(
       id: sessionId,
       questions: _questions(words),
       startedAtUtc: now,
+      sessionConfiguration: sessionConfiguration,
     );
   }
 
@@ -524,8 +584,11 @@ final class LearningUseCases {
   Future<String> startAssociativeReadingSession() async =>
       (await startAssociativeReadingSessionHandle()).id;
 
-  Future<LearningSessionHandle> startAssociativeReadingSessionHandle() async {
+  Future<LearningSessionHandle> startAssociativeReadingSessionHandle({
+    SessionConfiguration? sessionConfiguration,
+  }) async {
     final owner = await owners.getOrCreateActiveOwner();
+    _requireSessionConfiguration(sessionConfiguration, ownerId: owner.id);
     final startedAtUtc = _now();
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
@@ -536,9 +599,65 @@ final class LearningUseCases {
         startedAtUtc: startedAtUtc,
         appVersion: buildInfo.version,
         buildId: buildInfo.buildId,
+        sessionConfiguration: sessionConfiguration,
       ),
     );
     return LearningSessionHandle(id: sessionId, startedAtUtc: startedAtUtc);
+  }
+
+  Future<LearningSessionSummary?> loadSessionConfigurationState(
+    String sessionId,
+  ) async {
+    final configuredRepository = repository;
+    if (configuredRepository is! SessionConfiguredLearningRepository) {
+      throw StateError('Session configuration persistence is unavailable.');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    return (configuredRepository as SessionConfiguredLearningRepository)
+        .loadSessionConfigurationState(
+          ownerId: owner.id,
+          sessionId: _requiredId(sessionId, 'sessionId'),
+        );
+  }
+
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    final configuredRepository = repository;
+    if (configuredRepository is! SessionConfiguredLearningRepository) {
+      throw StateError('Session configuration persistence is unavailable.');
+    }
+    final owner = await owners.getOrCreateActiveOwner();
+    return (configuredRepository as SessionConfiguredLearningRepository)
+        .addSessionConfigurationActiveEffort(
+          ownerId: owner.id,
+          sessionId: _requiredId(sessionId, 'sessionId'),
+          configurationIdentity: _requiredId(
+            configurationIdentity,
+            'configurationIdentity',
+          ),
+          delta: delta,
+        );
+  }
+
+  void _requireSessionConfiguration(
+    SessionConfiguration? configuration, {
+    required String ownerId,
+    int? itemCount,
+  }) {
+    if (configuration == null) return;
+    if (configuration.ownerId != ownerId) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.ownerDrift,
+      );
+    }
+    if (itemCount != null && configuration.itemCount != itemCount) {
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+      );
+    }
   }
 
   /// Resolves the active owner once, then gives that exact owner and the

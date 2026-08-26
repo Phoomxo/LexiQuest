@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,9 +11,11 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/data/drift_session_configuration_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
@@ -20,6 +23,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_repository.
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/hint_panel.dart';
 import 'package:vocab_learning_app/features/learning/presentation/handwriting_scratchpad.dart';
@@ -52,6 +56,636 @@ import '../../support/inert_research_dependencies.dart';
 import '../../support/test_quest_use_cases.dart';
 
 void main() {
+  test(
+    'f16 start revalidates one bound immutable configuration and retry preserves it',
+    () async {
+      final fixture = await _fixture();
+      final configuration = _sessionConfiguration(fixture.adapter.mode);
+      var stale = true;
+      var revalidationCalls = 0;
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async {
+          revalidationCalls += 1;
+          expect(candidate, same(configuration));
+          if (stale) {
+            throw const SessionConfigurationResetRequired(
+              SessionConfigurationResetReason.ownerDrift,
+            );
+          }
+          return candidate;
+        },
+      );
+      final command = _configuredCommand(fixture.startCommand, configuration);
+
+      await expectLater(
+        fixture.controller.start(command),
+        throwsA(isA<SessionConfigurationResetRequired>()),
+      );
+      expect(fixture.controller.state.status, LessonSessionStatus.planned);
+      expect(fixture.controller.sessionConfiguration, same(configuration));
+      expect(revalidationCalls, 1);
+
+      stale = false;
+      await fixture.controller.start(command);
+
+      expect(fixture.controller.state.status, LessonSessionStatus.active);
+      expect(fixture.controller.sessionConfiguration, same(configuration));
+      expect(
+        fixture.controller.sessionConfiguration!.contentIdentity,
+        configuration.contentIdentity,
+      );
+      expect(revalidationCalls, 2);
+    },
+  );
+
+  test(
+    'f16 command cannot replace the configuration bound by the shell',
+    () async {
+      final fixture = await _fixture();
+      final configuration = _sessionConfiguration(fixture.adapter.mode);
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      final drifted = _sessionConfiguration(
+        fixture.adapter.mode,
+        ownerId: 'owner:other',
+      );
+
+      await expectLater(
+        fixture.controller.start(
+          _configuredCommand(fixture.startCommand, drifted),
+        ),
+        throwsA(
+          isA<SessionConfigurationResetRequired>().having(
+            (error) => error.reason,
+            'reason',
+            SessionConfigurationResetReason.tampered,
+          ),
+        ),
+      );
+      expect(fixture.controller.state.status, LessonSessionStatus.planned);
+      expect(fixture.controller.sessionConfiguration, same(configuration));
+    },
+  );
+
+  test('f16 item-count drift records a typed reset before start', () async {
+    final fixture = await _fixture();
+    final configuration = _sessionConfiguration(fixture.adapter.mode);
+    await fixture.bindSessionConfiguration(
+      configuration,
+      revalidate: (candidate) async => candidate,
+    );
+    final drifted = LessonStartCommand(
+      mode: fixture.startCommand.mode,
+      sessionId: fixture.startCommand.sessionId,
+      startedAtUtc: fixture.startCommand.startedAtUtc,
+      itemCount: 0,
+      configuration: configuration,
+    );
+
+    await expectLater(
+      fixture.controller.start(drifted),
+      throwsA(
+        isA<SessionConfigurationResetRequired>().having(
+          (error) => error.reason,
+          'reason',
+          SessionConfigurationResetReason.tampered,
+        ),
+      ),
+    );
+    expect(
+      fixture.controller.configurationResetRequired?.reason,
+      SessionConfigurationResetReason.tampered,
+    );
+    expect(fixture.controller.state.status, LessonSessionStatus.planned);
+  });
+
+  testWidgets('f16 finite timing stops accepting active lesson operations', (
+    tester,
+  ) async {
+    final fixture = await _fixture(
+      configurationIdleTimeout: const Duration(seconds: 1),
+    );
+    final configuration = _sessionConfiguration(
+      fixture.adapter.mode,
+      timing: const SessionTiming.timed(Duration(seconds: 2)),
+    );
+    await fixture.bindSessionConfiguration(
+      configuration,
+      revalidate: (candidate) async => candidate,
+    );
+    await fixture.controller.start(
+      _configuredCommand(fixture.startCommand, configuration),
+    );
+    final route = UnifiedLessonRouteLifecycle(
+      fixture.controller,
+      fixture.learning,
+      () => fixture.now,
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: UnifiedLessonShell(
+          controller: fixture.controller,
+          routeLifecycle: route,
+          builder: (_) => const Text('lesson body'),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(seconds: 2));
+
+    expect(fixture.controller.configurationLimitReached, isTrue);
+    expect(route.acceptsOperations, isFalse);
+    expect(find.text('Session limit reached'), findsOneWidget);
+    await expectLater(
+      fixture.controller.submit(fixture.submission()),
+      throwsA(isA<SessionConfigurationLimitReached>()),
+    );
+  });
+
+  test(
+    'f16 queued submission rechecks a preceding interaction limit',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 1)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+
+      monotonicMicros = const Duration(seconds: 1).inMicroseconds;
+      fixture.controller.noteActiveLearningInteraction(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+      final queuedSubmission = fixture.controller.submit(fixture.submission());
+
+      await expectLater(
+        queuedSubmission,
+        throwsA(isA<SessionConfigurationLimitReached>()),
+      );
+      expect(fixture.repository.recordCalls, 0);
+    },
+  );
+
+  testWidgets('f16 fired stale timer cannot replace an interaction re-anchor', (
+    tester,
+  ) async {
+    var monotonicMicros = 0;
+    final fixture = await _fixture(
+      configurationMonotonicMicros: () => monotonicMicros,
+    );
+    final configuration = _sessionConfiguration(
+      fixture.adapter.mode,
+      timing: const SessionTiming.timed(Duration(seconds: 1)),
+    );
+    await fixture.bindSessionConfiguration(
+      configuration,
+      revalidate: (candidate) async => candidate,
+    );
+    await fixture.controller.start(
+      _configuredCommand(fixture.startCommand, configuration),
+    );
+
+    monotonicMicros = const Duration(milliseconds: 500).inMicroseconds;
+    fixture.repository.blockNextConfigurationEffort();
+    final interaction = fixture.controller.recordActiveLearningInteraction(
+      fixture.now.add(const Duration(milliseconds: 500)),
+    );
+    await fixture.repository.configurationEffortStarted;
+    await tester.pump(const Duration(seconds: 1));
+    fixture.repository.releaseConfigurationEffort();
+    await interaction;
+    await tester.pump();
+
+    final durable = await fixture.learning.loadSessionConfigurationState(
+      fixture.startCommand.sessionId,
+    );
+    expect(
+      durable?.configurationActiveEffort,
+      const Duration(milliseconds: 500),
+    );
+    expect(
+      fixture.controller.configurationActiveEffort,
+      const Duration(milliseconds: 500),
+    );
+    expect(fixture.controller.configurationLimitReached, isFalse);
+    fixture.controller.dispose();
+    await tester.pump();
+  });
+
+  test(
+    'f16 terminal cutoff invalidates queued interaction continuations',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final leaseEntered = Completer<void>();
+      final leaseRelease = Completer<void>();
+      final lease = route.runAcceptedOperation<void>(() async {
+        leaseEntered.complete();
+        await leaseRelease.future;
+      });
+      await leaseEntered.future;
+
+      monotonicMicros = const Duration(milliseconds: 500).inMicroseconds;
+      fixture.repository.blockNextConfigurationEffort();
+      final first = fixture.controller.recordActiveLearningInteraction(
+        fixture.now.add(const Duration(milliseconds: 500)),
+      );
+      await fixture.repository.configurationEffortStarted;
+      final queued = fixture.controller.recordActiveLearningInteraction(
+        fixture.now.add(const Duration(milliseconds: 750)),
+      );
+      monotonicMicros = const Duration(milliseconds: 750).inMicroseconds;
+      final retirement = route.retire();
+
+      fixture.repository.releaseConfigurationEffort();
+      await first;
+      await queued;
+      monotonicMicros = const Duration(seconds: 9).inMicroseconds;
+      leaseRelease.complete();
+      await lease;
+      await retirement;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(
+        durable?.configurationActiveEffort,
+        const Duration(milliseconds: 750),
+      );
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(milliseconds: 750),
+      );
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
+  testWidgets(
+    'f16 terminal cutoff invalidates an in-flight timer continuation',
+    (tester) async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+        configurationIdleTimeout: const Duration(seconds: 1),
+      );
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final leaseEntered = Completer<void>();
+      final leaseRelease = Completer<void>();
+      final lease = route.runAcceptedOperation<void>(() async {
+        leaseEntered.complete();
+        await leaseRelease.future;
+      });
+      await leaseEntered.future;
+
+      fixture.repository.blockNextConfigurationEffort();
+      monotonicMicros = const Duration(seconds: 1).inMicroseconds;
+      await tester.pump(const Duration(seconds: 1));
+      await fixture.repository.configurationEffortStarted;
+      final retirement = route.retire();
+      fixture.repository.releaseConfigurationEffort();
+      await tester.pump();
+      final captured = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(captured?.configurationActiveEffort, const Duration(seconds: 1));
+
+      monotonicMicros = const Duration(seconds: 9).inMicroseconds;
+      leaseRelease.complete();
+      await lease;
+      await retirement;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.configurationActiveEffort, const Duration(seconds: 1));
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(seconds: 1),
+      );
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+      fixture.controller.dispose();
+      await tester.pump();
+    },
+  );
+
+  test(
+    'f16 durable effort clamps an elapsed delta to the exact limit',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 1)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      await expectLater(
+        fixture.controller.recordActiveLearningInteraction(
+          fixture.now.add(const Duration(seconds: 2)),
+        ),
+        throwsA(isA<SessionConfigurationLimitReached>()),
+      );
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.configurationActiveEffort, const Duration(seconds: 1));
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(seconds: 1),
+      );
+    },
+  );
+
+  testWidgets('f16 untimed alternative excludes idle active effort', (
+    tester,
+  ) async {
+    var monotonicMicros = 0;
+    final fixture = await _fixture(
+      configurationMonotonicMicros: () => monotonicMicros,
+      configurationIdleTimeout: const Duration(seconds: 1),
+    );
+    final configuration = _sessionConfiguration(
+      fixture.adapter.mode,
+      timing: const SessionTiming.untimedAlternative(
+        maximumActiveEffort: Duration(seconds: 2),
+      ),
+    );
+    await fixture.bindSessionConfiguration(
+      configuration,
+      revalidate: (candidate) async => candidate,
+    );
+    await fixture.controller.start(
+      _configuredCommand(fixture.startCommand, configuration),
+    );
+
+    await tester.pump(const Duration(seconds: 1));
+    expect(fixture.controller.configurationIsIdle, isTrue);
+    expect(
+      fixture.controller.configurationActiveEffort,
+      const Duration(seconds: 1),
+    );
+    await tester.pump(const Duration(seconds: 10));
+    expect(fixture.controller.configurationLimitReached, isFalse);
+    expect(
+      fixture.controller.configurationActiveEffort,
+      const Duration(seconds: 1),
+    );
+
+    fixture.controller.noteActiveLearningInteraction(
+      fixture.now.add(const Duration(seconds: 11)),
+    );
+    await tester.pump();
+    await tester.pump(const Duration(seconds: 1));
+
+    expect(fixture.controller.configurationLimitReached, isTrue);
+  });
+
+  testWidgets(
+    'f16 restart includes durably captured effort in the finite limit',
+    (tester) async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.untimedAlternative(
+          maximumActiveEffort: Duration(seconds: 2),
+        ),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.learning.addSessionConfigurationActiveEffort(
+        sessionId: fixture.startCommand.sessionId,
+        configurationIdentity: configuration.contentIdentity,
+        delta: const Duration(milliseconds: 1500),
+      );
+
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      monotonicMicros = const Duration(milliseconds: 500).inMicroseconds;
+      await tester.pump(const Duration(milliseconds: 500));
+
+      expect(fixture.controller.configurationLimitReached, isTrue);
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(seconds: 2),
+      );
+    },
+  );
+
+  test(
+    'f16 completed configured recovery reconciles without accruing effort',
+    () async {
+      var monotonicMicros = 0;
+      final timeRepository = _MemoryLearningTimeRepository();
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(fixture.adapter.mode);
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.learning.addSessionConfigurationActiveEffort(
+        sessionId: fixture.startCommand.sessionId,
+        configurationIdentity: configuration.contentIdentity,
+        delta: const Duration(milliseconds: 500),
+      );
+      final committed = await fixture.learning
+          .captureSessionClose(sessionId: fixture.startCommand.sessionId)
+          .finish();
+      expect(fixture.repository.finishCalls, 1);
+
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      final reconciled = await fixture.controller.completeCapturedSession(
+        fixture.learning.restoreSessionClose(
+          sessionId: committed.id,
+          completedAtUtc: committed.endedAtUtc!,
+        ),
+        committed.endedAtUtc!,
+      );
+
+      expect(reconciled.id, committed.id);
+      expect(fixture.repository.finishCalls, 2);
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      expect(activeTime.state, ActiveLearningTimeState.finished);
+      expect(timeRepository.segments, hasLength(1));
+      expect(
+        timeRepository.segments.single.activeDuration,
+        const Duration(seconds: 2),
+      );
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        committed.id,
+      );
+      expect(
+        durable?.configurationActiveEffort,
+        const Duration(milliseconds: 500),
+      );
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(milliseconds: 500),
+      );
+      expect(fixture.controller.configurationResetRequired, isNull);
+    },
+  );
+
+  test(
+    'f16 serialized restart preserves exact pinned content identity',
+    () async {
+      final fixture = await _fixture();
+      final first = _sessionConfiguration(fixture.adapter.mode);
+      final restored = SessionConfiguration.fromStableSerialization(
+        first.stableSerialization,
+      );
+      await fixture.bindSessionConfiguration(
+        restored,
+        revalidate: (candidate) async => candidate,
+      );
+
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, restored),
+      );
+
+      expect(fixture.controller.sessionConfiguration, restored);
+      expect(restored.contentIdentity, first.contentIdentity);
+      expect(restored.packIdentity, first.packIdentity);
+    },
+  );
+
+  test(
+    'f16 process replacement restores durable configuration before start',
+    () async {
+      final fixture = await _fixture();
+      final owner = await fixture.owners.getOrCreateActiveOwner();
+      final original = _sessionConfiguration(
+        fixture.adapter.mode,
+        ownerId: owner.id,
+      );
+      await fixture.bindSessionConfiguration(
+        original,
+        revalidate: (candidate) async => candidate,
+      );
+      await DriftSessionConfigurationStore(
+        fixture.database,
+      ).save(original, updatedAtUtc: fixture.now);
+
+      final restored = await DriftSessionConfigurationStore(
+        fixture.database,
+      ).read(ownerId: owner.id, mode: fixture.adapter.mode);
+      final replacement = UnifiedLessonController(
+        learning: fixture.learning,
+        adapter: fixture.adapter,
+      );
+      addTearDown(replacement.dispose);
+      replacement.bindSessionConfiguration(
+        restored!,
+        revalidate: (candidate) async => candidate,
+      );
+      await replacement.start(
+        _configuredCommand(fixture.startCommand, restored),
+      );
+
+      expect(replacement.sessionConfiguration, restored);
+      expect(
+        replacement.sessionConfiguration!.stableSerialization,
+        original.stableSerialization,
+      );
+      expect(replacement.state.status, LessonSessionStatus.active);
+    },
+  );
+
+  test('f16 validated hint budget is an exact controller boundary', () async {
+    final adapter = _HintAdapter();
+    final hints = HintUseCases(policy: adapter.hintPolicy);
+    final fixture = await _fixture(adapter: adapter, hints: hints);
+    final configuration = _sessionConfiguration(adapter.mode, hintBudget: 1);
+    await fixture.bindSessionConfiguration(
+      configuration,
+      revalidate: (candidate) async => candidate,
+    );
+    await fixture.controller.start(
+      _configuredCommand(fixture.startCommand, configuration),
+    );
+
+    expect(fixture.controller.canRevealHint, isTrue);
+    fixture.controller.revealNextHint();
+    expect(hints.state.hintLevel, 1);
+    expect(fixture.controller.canRevealHint, isFalse);
+    expect(fixture.controller.revealNextHint, throwsStateError);
+  });
+
   test(
     'focus timer requires a capable adapter and the exact time authority',
     () async {
@@ -296,6 +930,311 @@ void main() {
   );
 
   test(
+    'f16 retirement rejects late recovery but awaits recovery admitted before cutoff',
+    () async {
+      final fixture = await _fixture();
+      await fixture.controller.start(fixture.startCommand);
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now,
+      );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final admitted = route.runRecoveryOperation<void>(() async {
+        entered.complete();
+        await release.future;
+      });
+      await entered.future;
+
+      final retirement = route.retire();
+      await expectLater(
+        route.runRecoveryOperation<void>(() async {}),
+        throwsStateError,
+      );
+      var retired = false;
+      unawaited(retirement.then((_) => retired = true));
+      await Future<void>.delayed(Duration.zero);
+      expect(retired, isFalse);
+
+      release.complete();
+      await admitted;
+      await retirement;
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
+  test(
+    'f16 retirement freezes configuration effort before an admitted operation settles',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      final admitted = route.runAcceptedOperation<void>(() async {
+        entered.complete();
+        await release.future;
+      });
+      await entered.future;
+
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      final retirement = route.retire();
+      monotonicMicros = const Duration(seconds: 9).inMicroseconds;
+      release.complete();
+      await admitted;
+      await retirement;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.configurationActiveEffort, const Duration(seconds: 2));
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(seconds: 2),
+      );
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
+  test(
+    'f16 owned terminal close freezes configuration effort before checkpoint settles',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final close = fixture.learning.captureSessionClose(
+        sessionId: fixture.startCommand.sessionId,
+      );
+      final entered = Completer<void>();
+      final release = Completer<void>();
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      final completion = route.runRecoveryOperation(() async {
+        route.ownRecoveryClose(close);
+        entered.complete();
+        await release.future;
+        return route.completeRecovery(close);
+      });
+      await entered.future;
+      monotonicMicros = const Duration(seconds: 9).inMicroseconds;
+      release.complete();
+      await completion;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.configurationActiveEffort, const Duration(seconds: 2));
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+    },
+  );
+
+  test(
+    'f16 retirement cutoff remains closed while delayed start and admitted work settle',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      final validationEntered = Completer<void>();
+      final validationRelease = Completer<void>();
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async {
+          validationEntered.complete();
+          await validationRelease.future;
+          return candidate;
+        },
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final start = route.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      await validationEntered.future;
+      final operationEntered = Completer<void>();
+      final operationRelease = Completer<void>();
+      final admitted = route.runAcceptedOperation<void>(() async {
+        operationEntered.complete();
+        await operationRelease.future;
+      });
+
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      final retirement = route.retire();
+      monotonicMicros = const Duration(seconds: 9).inMicroseconds;
+      validationRelease.complete();
+      await start;
+      await operationEntered.future;
+      monotonicMicros = const Duration(seconds: 10).inMicroseconds;
+      operationRelease.complete();
+      await admitted;
+      await retirement;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.configurationActiveEffort, Duration.zero);
+      expect(fixture.controller.configurationActiveEffort, Duration.zero);
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
+  test(
+    'f16 pre-start cutoff reconciles restored durable configuration effort',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      final validationEntered = Completer<void>();
+      final validationRelease = Completer<void>();
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async {
+          validationEntered.complete();
+          await validationRelease.future;
+          return candidate;
+        },
+      );
+      await fixture.learning.addSessionConfigurationActiveEffort(
+        sessionId: fixture.startCommand.sessionId,
+        configurationIdentity: configuration.contentIdentity,
+        delta: const Duration(milliseconds: 500),
+      );
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(Duration(microseconds: monotonicMicros)),
+      );
+      final start = route.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      await validationEntered.future;
+      monotonicMicros = const Duration(seconds: 2).inMicroseconds;
+      final retirement = route.retire();
+
+      validationRelease.complete();
+      await start;
+      await retirement;
+
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(
+        durable?.configurationActiveEffort,
+        const Duration(milliseconds: 500),
+      );
+      expect(
+        fixture.controller.configurationActiveEffort,
+        const Duration(milliseconds: 500),
+      );
+      expect(fixture.controller.configurationResetRequired, isNull);
+      expect(fixture.controller.state.status, LessonSessionStatus.abandoned);
+    },
+  );
+
+  test(
+    'f16 delayed Matching recovery owns its close before emergency cutoff',
+    () async {
+      final fixture = await _fixture(adapter: const MatchingModeAdapter());
+      addTearDown(fixture.controller.dispose);
+      final configuration = _sessionConfiguration(fixture.adapter.mode);
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      final close = fixture.learning.restoreSessionClose(
+        sessionId: fixture.startCommand.sessionId,
+        completedAtUtc: fixture.now.add(const Duration(milliseconds: 500)),
+      );
+      final delayedLoad = Completer<QuizSession>();
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => fixture.now.add(const Duration(seconds: 1)),
+      );
+      var closeDiscovered = false;
+      final initialization = route.initializeSession(
+        delayedLoad.future,
+        recoveredClose: () {
+          closeDiscovered = true;
+          return close;
+        },
+      );
+
+      final retirement = route.retire();
+      delayedLoad.complete(
+        QuizSession(
+          id: fixture.session.id,
+          questions: fixture.session.questions,
+          startedAtUtc: fixture.session.startedAtUtc,
+          sessionConfiguration: configuration,
+        ),
+      );
+      await initialization;
+      await retirement;
+
+      expect(closeDiscovered, isTrue);
+      expect(close.status, PendingLearningSessionCloseStatus.committed);
+      expect(fixture.repository.finishCalls, 1);
+      expect(fixture.repository.scopedAbandonCalls, 0);
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      final durable = await fixture.learning.loadSessionConfigurationState(
+        fixture.startCommand.sessionId,
+      );
+      expect(durable?.state, 'completed');
+    },
+  );
+
+  test(
     'post-write time and close acknowledgement loss replay one frozen sequence',
     () async {
       final timeRepository = _MemoryLearningTimeRepository();
@@ -308,7 +1247,14 @@ void main() {
         adapter: _ActiveEffortAdapter(),
         activeLearningTime: activeTime,
       );
-      await fixture.controller.start(fixture.startCommand);
+      final configuration = _sessionConfiguration(fixture.adapter.mode);
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
       var routeNow = fixture.now.add(const Duration(seconds: 7));
       final route = UnifiedLessonRouteLifecycle(
         fixture.controller,
@@ -323,6 +1269,7 @@ void main() {
 
       await expectLater(route.complete(close), throwsStateError);
       expect(timeRepository.segments, hasLength(1));
+      expect(fixture.controller.sessionConfiguration, same(configuration));
       expect(close.status, PendingLearningSessionCloseStatus.captured);
       expect(fixture.repository.finishCalls, 0);
       expect(fixture.controller.sessionCompletionRetryRequired, isTrue);
@@ -333,6 +1280,7 @@ void main() {
       await expectLater(route.complete(close), throwsStateError);
 
       expect(timeRepository.segments, hasLength(1));
+      expect(fixture.controller.sessionConfiguration, same(configuration));
       expect(timeRepository.attempts, hasLength(2));
       expect(timeRepository.attempts.last, timeRepository.attempts.first);
       expect(close.requiresRetry, isTrue);
@@ -342,6 +1290,7 @@ void main() {
       await route.complete(close);
 
       expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      expect(fixture.controller.sessionConfiguration, same(configuration));
       expect(fixture.controller.sessionCompletionRetryRequired, isFalse);
       expect(timeRepository.segments, hasLength(1));
       expect(fixture.repository.finishCalls, 2);
@@ -2404,6 +3353,7 @@ final class _Fixture {
     required this.learning,
     required this.adapter,
     required this.controller,
+    required this.session,
     required this.startCommand,
     required this.now,
     required this.wordId,
@@ -2415,9 +3365,25 @@ final class _Fixture {
   final LearningUseCases learning;
   final LessonModeAdapter adapter;
   final UnifiedLessonController controller;
+  final QuizSession session;
   final LessonStartCommand startCommand;
   final DateTime now;
   final String wordId;
+
+  Future<void> bindSessionConfiguration(
+    SessionConfiguration configuration, {
+    required SessionConfigurationRevalidator revalidate,
+  }) async {
+    await (database.update(
+      database.learningSessions,
+    )..where((row) => row.id.equals(startCommand.sessionId))).write(
+      LearningSessionsCompanion(
+        sessionConfigurationIdentity: Value(configuration.contentIdentity),
+        sessionConfigurationJson: Value(configuration.stableSerialization),
+      ),
+    );
+    controller.bindSessionConfiguration(configuration, revalidate: revalidate);
+  }
 
   LessonSubmission submission({
     String sourceEvidenceId = 'evidence-1',
@@ -2478,6 +3444,42 @@ final class _Fixture {
   }
 }
 
+SessionConfiguration _sessionConfiguration(
+  LessonMode mode, {
+  String ownerId = 'local:lesson-owner',
+  int hintBudget = 0,
+  SessionTiming timing = const SessionTiming.timed(Duration(minutes: 10)),
+}) => SessionConfiguration.validated(
+  schemaVersion: sessionConfigurationSchemaVersion,
+  policyVersion: sessionConfigurationPolicyVersion,
+  ownerId: ownerId,
+  mode: mode,
+  itemCount: 1,
+  direction: SessionDirection.forward,
+  difficulty: SessionDifficulty.standard,
+  hintBudget: hintBudget,
+  timing: timing,
+  packIdentity: const ContentIdentity(
+    type: ContentType.learningPack,
+    id: 'pack:lesson-test',
+    revision: 4,
+  ),
+  protocolId: 'protocol:lesson-test',
+  protocolVersion: '1',
+  protocolLimitsIdentity: 'sha256:lesson-test-protocol',
+);
+
+LessonStartCommand _configuredCommand(
+  LessonStartCommand command,
+  SessionConfiguration configuration,
+) => LessonStartCommand(
+  mode: command.mode,
+  sessionId: command.sessionId,
+  startedAtUtc: command.startedAtUtc,
+  itemCount: command.itemCount,
+  configuration: configuration,
+);
+
 Future<_Fixture> _fixture({
   LessonModeAdapter? adapter,
   HintUseCases? hints,
@@ -2490,6 +3492,8 @@ Future<_Fixture> _fixture({
   ActiveLearningTimeController? activeLearningTime,
   FocusTimerController? focusTimer,
   Feature? focusTimerFeature,
+  SessionConfigurationMonotonicMicros? configurationMonotonicMicros,
+  Duration configurationIdleTimeout = const Duration(minutes: 5),
 }) async {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -2554,6 +3558,8 @@ Future<_Fixture> _fixture({
     activeLearningTime: activeLearningTime,
     focusTimer: focusTimer,
     focusTimerFeature: focusTimerFeature,
+    configurationMonotonicMicros: configurationMonotonicMicros,
+    configurationIdleTimeout: configurationIdleTimeout,
   );
   return _Fixture(
     database: database,
@@ -2562,6 +3568,7 @@ Future<_Fixture> _fixture({
     learning: learning,
     adapter: modeAdapter,
     controller: controller,
+    session: quiz,
     startCommand: LessonStartCommand(
       mode: modeAdapter.mode,
       sessionId: quiz.id,
@@ -3295,6 +4302,7 @@ ValueKey<String> _focusEntryKey(_FocusEntryTransition transition) =>
 final class _MemoryLearningTimeRepository implements LearningTimeRepository {
   final segments = <LearningTimeSegment>[];
   final attempts = <LearningTimeSegment>[];
+  Duration recoveredActiveDuration = Duration.zero;
   bool failActiveDuration = false;
   bool failNextAppend = false;
   bool loseNextAppendAcknowledgement = false;
@@ -3373,14 +4381,15 @@ final class _MemoryLearningTimeRepository implements LearningTimeRepository {
       failActiveDuration = false;
       throw StateError('injected time start failure');
     }
-    return Duration(
-      milliseconds: segments
-          .where((segment) => segment.sessionId == sessionId)
-          .fold<int>(
-            0,
-            (sum, segment) => sum + segment.activeDuration.inMilliseconds,
-          ),
-    );
+    return recoveredActiveDuration +
+        Duration(
+          milliseconds: segments
+              .where((segment) => segment.sessionId == sessionId)
+              .fold<int>(
+                0,
+                (sum, segment) => sum + segment.activeDuration.inMilliseconds,
+              ),
+        );
   }
 }
 
@@ -3411,7 +4420,8 @@ final class _CountingRepository
     implements
         LearningRepository,
         LearningEvidenceReplayRepository,
-        LearningSessionLifecycleRepository {
+        LearningSessionLifecycleRepository,
+        SessionConfiguredLearningRepository {
   _CountingRepository(
     this.delegate, {
     required this.failAfterFirstRecord,
@@ -3435,6 +4445,8 @@ final class _CountingRepository
   final Completer<void> _recordRelease = Completer<void>();
   final Completer<void> _finishRelease = Completer<void>();
   final Completer<void> _abandonRelease = Completer<void>();
+  Completer<void>? _configurationEffortStarted;
+  Completer<void>? _configurationEffortRelease;
   int recordCalls = 0;
   int replayCalls = 0;
   int finishCalls = 0;
@@ -3445,6 +4457,31 @@ final class _CountingRepository
   bool _lostAckSent = false;
   bool failNextFinish = false;
   bool loseNextFinishAcknowledgement = false;
+
+  Future<void> get configurationEffortStarted {
+    final started = _configurationEffortStarted;
+    if (started == null) {
+      throw StateError('no configuration-effort write is blocked');
+    }
+    return started.future;
+  }
+
+  void blockNextConfigurationEffort() {
+    if (_configurationEffortRelease != null &&
+        !_configurationEffortRelease!.isCompleted) {
+      throw StateError('a configuration-effort write is already blocked');
+    }
+    _configurationEffortStarted = Completer<void>();
+    _configurationEffortRelease = Completer<void>();
+  }
+
+  void releaseConfigurationEffort() {
+    final release = _configurationEffortRelease;
+    if (release == null || release.isCompleted) {
+      throw StateError('no configuration-effort write is blocked');
+    }
+    release.complete();
+  }
 
   void releaseRecord() {
     if (!_recordRelease.isCompleted) _recordRelease.complete();
@@ -3544,6 +4581,36 @@ final class _CountingRepository
   @override
   Future<void> startSession(LearningSessionDraft session) =>
       delegate.startSession(session);
+
+  @override
+  Future<LearningSessionSummary?> loadSessionConfigurationState({
+    required String ownerId,
+    required String sessionId,
+  }) => delegate.loadSessionConfigurationState(
+    ownerId: ownerId,
+    sessionId: sessionId,
+  );
+
+  @override
+  Future<Duration> addSessionConfigurationActiveEffort({
+    required String ownerId,
+    required String sessionId,
+    required String configurationIdentity,
+    required Duration delta,
+  }) async {
+    final started = _configurationEffortStarted;
+    final release = _configurationEffortRelease;
+    if (started != null && release != null && !release.isCompleted) {
+      if (!started.isCompleted) started.complete();
+      await release.future;
+    }
+    return delegate.addSessionConfigurationActiveEffort(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      configurationIdentity: configurationIdentity,
+      delta: delta,
+    );
+  }
 
   @override
   Future<LearningSessionSummary?> getActiveSession({required String ownerId}) =>

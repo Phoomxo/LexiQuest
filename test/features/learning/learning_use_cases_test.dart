@@ -17,6 +17,8 @@ import 'package:vocab_learning_app/features/learning/data/drift_learning_reposit
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -101,6 +103,37 @@ void main() {
           .getSingle();
       expect(stored.appVersion, '1.2.3');
       expect(stored.buildId, 'test-build');
+    },
+  );
+
+  test(
+    'f16 configured item count is exact and durably session-bound',
+    () async {
+      final owner = await owners.getOrCreateActiveOwner();
+      final tooLarge = _f16Configuration(owner.id, itemCount: 5);
+
+      final unavailable = await useCases.startQuiz(
+        limit: 5,
+        sessionConfiguration: tooLarge,
+      );
+
+      expect(unavailable.isEmpty, isTrue);
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+
+      final exact = _f16Configuration(owner.id, itemCount: 4);
+      final started = await useCases.startQuiz(
+        limit: 4,
+        sessionConfiguration: exact,
+      );
+      final durable = await useCases.loadSessionConfigurationState(started.id);
+
+      expect(started.questions, hasLength(4));
+      expect(started.sessionConfiguration, exact);
+      expect(durable!.sessionConfiguration, exact);
+      expect(
+        durable.sessionConfiguration!.stableSerialization,
+        exact.stableSerialization,
+      );
     },
   );
 
@@ -1236,6 +1269,27 @@ LearningEventContext _researchEventContext(
         ),
   );
 }
+
+SessionConfiguration _f16Configuration(
+  String ownerId, {
+  required int itemCount,
+}) => SessionConfiguration.validated(
+  schemaVersion: sessionConfigurationSchemaVersion,
+  policyVersion: sessionConfigurationPolicyVersion,
+  ownerId: ownerId,
+  mode: LessonMode.meaningQuiz,
+  itemCount: itemCount,
+  direction: SessionDirection.forward,
+  difficulty: SessionDifficulty.standard,
+  hintBudget: 0,
+  timing: const SessionTiming.untimedAlternative(
+    maximumActiveEffort: Duration(minutes: 10),
+  ),
+  packIdentity: null,
+  protocolId: 'protocol:f16-test',
+  protocolVersion: '1',
+  protocolLimitsIdentity: 'sha256:f16-test-limits',
+);
 
 final class _FixedLearningEventContextProvider
     implements LearningEventContextProvider {

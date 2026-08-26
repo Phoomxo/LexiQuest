@@ -7,6 +7,7 @@ import '../application/learning_use_cases.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
+import '../domain/session_configuration.dart';
 import '../domain/hint_policy.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/production_feature_gate.dart';
@@ -14,9 +15,11 @@ import '../../../runtime/registries/feature_registry.dart';
 import '../../time_tracking/presentation/focus_timer_widget.dart';
 import 'answer_feedback_panel.dart';
 import 'hint_panel.dart';
+import 'session_configuration_sheet.dart';
 
 typedef LessonUtcNow = DateTime Function();
 typedef LessonLifecycleStateReader = AppLifecycleState? Function();
+typedef RecoveredLessonCloseReader = PendingLearningSessionClose? Function();
 
 /// Local-only child state that must be purged whenever a lesson crosses a
 /// privacy, terminal, or route-retirement boundary.
@@ -49,9 +52,12 @@ final class UnifiedLessonSessionLifecycle {
   final UnifiedLessonRouteLifecycle? _routeLifecycle;
   final LessonEphemeralStateRegistry _ephemeralStates;
 
-  bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
+  bool get acceptsOperations =>
+      _controller.configurationAcceptsOperations &&
+      (_routeLifecycle?.acceptsOperations ?? true);
   bool get sessionCompletionRetryRequired =>
       _controller.sessionCompletionRetryRequired;
+  SessionConfiguration? get configuration => _controller.sessionConfiguration;
 
   void registerEphemeralState(EphemeralLessonState state) =>
       _ephemeralStates.register(state);
@@ -82,14 +88,21 @@ final class UnifiedLessonSessionLifecycle {
       mode: _controller.state.mode,
       itemCount: itemCount,
       startedAtUtc: startedAtUtc,
+      configuration: _controller.sessionConfiguration,
     );
     return _routeLifecycle?.start(command) ?? _controller.start(command);
   }
 
-  Future<QuizSession> initializeSession(Future<QuizSession> load) {
+  Future<QuizSession> initializeSession(
+    Future<QuizSession> load, {
+    RecoveredLessonCloseReader? recoveredClose,
+  }) {
     final routeLifecycle = _routeLifecycle;
     if (routeLifecycle != null) {
-      return routeLifecycle.initializeSession(load);
+      return routeLifecycle.initializeSession(
+        load,
+        recoveredClose: recoveredClose,
+      );
     }
     return _initializeWithoutRouteOwner(load);
   }
@@ -115,10 +128,50 @@ final class UnifiedLessonSessionLifecycle {
         _controller.completeCapturedSession(close, _nowUtc());
   }
 
+  Future<LearningSessionSummary> completeRecovery(
+    PendingLearningSessionClose close,
+  ) =>
+      _routeLifecycle?.completeRecovery(close) ??
+      _controller.completeCapturedSession(close, _nowUtc());
+
+  void ownRecoveryClose(
+    PendingLearningSessionClose close,
+    Future<void> Function() ensureDurable,
+  ) {
+    final route = _routeLifecycle;
+    if (route != null) {
+      route.ownRecoveryClose(close, ensureDurable);
+      return;
+    }
+    if (close.sessionId != _controller.state.sessionId) {
+      throw StateError('Captured close does not belong to this lesson.');
+    }
+  }
+
   Future<void> abandon() {
     _ephemeralStates.clear();
     return _routeLifecycle?.retire() ?? _controller.abandon(_nowUtc());
   }
+
+  Future<T> runAdmittedOperation<T>(Future<T> Function() operation) {
+    if (!acceptsOperations) {
+      return Future<T>.error(
+        _controller.configurationLimitReached
+            ? const SessionConfigurationLimitReached()
+            : StateError('The lesson route is no longer accepting actions.'),
+      );
+    }
+    Future<T> admitted() async {
+      await _controller.recordActiveLearningInteraction(_nowUtc());
+      return operation();
+    }
+
+    return _routeLifecycle?.runAcceptedOperation(admitted) ?? admitted();
+  }
+
+  Future<T> runRecoveryOperation<T>(Future<T> Function() operation) =>
+      _routeLifecycle?.runRecoveryOperation(operation) ??
+      Future<T>.sync(operation);
 
   void recordInteraction() {
     if (!acceptsOperations) return;
@@ -161,6 +214,8 @@ final class UnifiedLessonSessionLifecycleScope extends InheritedWidget {
 /// runtime retirement. Closing acceptance is synchronous; durable mutation is
 /// serialized behind work that crossed the boundary first.
 final class UnifiedLessonRouteLifecycle {
+  static final Object _acceptedLeaseZoneKey = Object();
+
   UnifiedLessonRouteLifecycle(this._controller, this._learning, this._nowUtc);
 
   final UnifiedLessonController _controller;
@@ -176,6 +231,9 @@ final class UnifiedLessonRouteLifecycle {
   Future<LearningSessionSummary>? _completionInFlight;
   PendingLearningSessionClose? _acceptedClose;
   LessonTerminalCutoff? _acceptedCloseCutoff;
+  Future<void>? _acceptedCloseConfigurationClose;
+  Future<void> Function()? _acceptedClosePreparation;
+  LessonTerminalCutoff? _retirementCutoff;
   Future<void>? _terminal;
   final Set<Future<void>> _acceptedOperations = <Future<void>>{};
   final LessonEphemeralStateRegistry _ephemeralStates =
@@ -183,17 +241,42 @@ final class UnifiedLessonRouteLifecycle {
 
   LessonEphemeralStateRegistry get _ephemeralStateRegistry => _ephemeralStates;
 
-  bool get acceptsOperations => _accepting;
+  bool get acceptsOperations =>
+      _accepting && _controller.configurationAcceptsOperations;
 
   Future<T> runAcceptedOperation<T>(Future<T> Function() operation) {
-    if (!_accepting) {
+    if (!acceptsOperations) {
       return Future<T>.error(
-        StateError('The lesson route is no longer accepting operations.'),
+        _controller.configurationLimitReached
+            ? const SessionConfigurationLimitReached()
+            : StateError('The lesson route is no longer accepting operations.'),
       );
     }
+    return _trackOperation(operation);
+  }
+
+  Future<T> runRecoveryOperation<T>(Future<T> Function() operation) =>
+      _accepting || _insideAcceptedLease
+      ? _trackOperation(operation)
+      : Future<T>.error(
+          StateError('The lesson route is no longer accepting recovery.'),
+        );
+
+  bool get _insideAcceptedLease =>
+      switch (Zone.current[_acceptedLeaseZoneKey]) {
+        _UnifiedLessonOperationLease lease =>
+          identical(lease.owner, this) && lease.active,
+        _ => false,
+      };
+
+  Future<T> _trackOperation<T>(Future<T> Function() operation) {
     late final Future<T> accepted;
+    final lease = _UnifiedLessonOperationLease(this);
     try {
-      accepted = Future<T>.sync(operation);
+      accepted = runZoned<Future<T>>(
+        () => Future<T>.sync(operation),
+        zoneValues: <Object?, Object?>{_acceptedLeaseZoneKey: lease},
+      );
     } catch (error, stackTrace) {
       return Future<T>.error(error, stackTrace);
     }
@@ -202,25 +285,51 @@ final class UnifiedLessonRouteLifecycle {
       onError: (Object _, StackTrace _) {},
     );
     _acceptedOperations.add(settled);
-    unawaited(settled.whenComplete(() => _acceptedOperations.remove(settled)));
+    unawaited(
+      settled.whenComplete(() {
+        lease.active = false;
+        _acceptedOperations.remove(settled);
+      }),
+    );
     return accepted;
   }
 
-  Future<QuizSession> initializeSession(Future<QuizSession> load) {
+  Future<QuizSession> initializeSession(
+    Future<QuizSession> load, {
+    RecoveredLessonCloseReader? recoveredClose,
+  }) {
     final existing = _initialization;
     if (existing != null) return existing;
-    final initialization = _initializeSession(load);
+    final initialization = _initializeSession(
+      load,
+      recoveredClose: recoveredClose,
+    );
     _initialization = initialization;
     return initialization;
   }
 
-  Future<QuizSession> _initializeSession(Future<QuizSession> load) async {
-    final session = await load;
+  Future<QuizSession> _initializeSession(
+    Future<QuizSession> load, {
+    required RecoveredLessonCloseReader? recoveredClose,
+  }) async {
+    final loaded = await load;
+    final session = loaded;
     final startedAtUtc = session.startedAtUtc;
     if (session.isEmpty) return session;
     _loadedSessionId = session.id;
+    final restoredClose = recoveredClose?.call();
+    if (restoredClose != null) {
+      _reserveLoadedRecoveryClose(restoredClose, session.id);
+    }
+    if (session.sessionConfiguration != _controller.sessionConfiguration) {
+      if (restoredClose == null) await _compensateUnattached(session.id);
+      throw const SessionConfigurationResetRequired(
+        SessionConfigurationResetReason.tampered,
+        'loaded session is not bound to the shell configuration',
+      );
+    }
     if (startedAtUtc == null) {
-      await _compensateUnattached(session.id);
+      if (restoredClose == null) await _compensateUnattached(session.id);
       throw StateError('A durable lesson session has no start occurrence.');
     }
     final command = LessonStartCommand(
@@ -228,11 +337,19 @@ final class UnifiedLessonRouteLifecycle {
       mode: _controller.state.mode,
       itemCount: session.questions.length,
       startedAtUtc: startedAtUtc,
+      configuration: _controller.sessionConfiguration,
     );
     try {
-      await start(command);
+      if (restoredClose == null) {
+        await start(command);
+      } else {
+        final operation = _startController(command);
+        _activateReservedClose(restoredClose);
+        await operation;
+      }
     } catch (_) {
-      if (_controller.state.sessionId != session.id) {
+      if (_controller.state.sessionId != session.id &&
+          _acceptedClose?.sessionId != session.id) {
         await _compensateUnattached(session.id);
       }
       rethrow;
@@ -242,6 +359,10 @@ final class UnifiedLessonRouteLifecycle {
 
   Future<void> start(LessonStartCommand command) {
     if (!_accepting) return _compensateUnattached(command.sessionId);
+    return _startController(command);
+  }
+
+  Future<void> _startController(LessonStartCommand command) {
     final operation = _controller.start(command);
     _startInFlight = operation;
     unawaited(
@@ -263,19 +384,96 @@ final class UnifiedLessonRouteLifecycle {
         StateError('The lesson route is no longer accepting operations.'),
       );
     }
-    final acceptedClose = _acceptedClose;
-    if (acceptedClose != null && !identical(acceptedClose, close)) {
+    return _complete(close, recovery: false);
+  }
+
+  Future<LearningSessionSummary> completeRecovery(
+    PendingLearningSessionClose close,
+  ) {
+    if (!_accepting &&
+        !_insideAcceptedLease &&
+        !identical(_acceptedClose, close)) {
       return Future<LearningSessionSummary>.error(
-        StateError('A different terminal close is already accepted.'),
+        StateError('The lesson route is no longer accepting recovery.'),
       );
     }
+    return _complete(close, recovery: true);
+  }
+
+  void ownRecoveryClose(
+    PendingLearningSessionClose close, [
+    Future<void> Function()? ensureDurable,
+  ]) {
+    if (!_accepting &&
+        !_insideAcceptedLease &&
+        !identical(_acceptedClose, close)) {
+      throw StateError('The lesson route is no longer accepting recovery.');
+    }
+    _ownClose(close, ensureDurable);
+  }
+
+  void _ownClose(
+    PendingLearningSessionClose close, [
+    Future<void> Function()? ensureDurable,
+  ]) {
+    if (close.sessionId != _controller.state.sessionId) {
+      throw StateError('Captured close does not belong to this lesson.');
+    }
+    _reserveLoadedRecoveryClose(close, close.sessionId);
+    _activateReservedClose(close, ensureDurable);
+  }
+
+  void _reserveLoadedRecoveryClose(
+    PendingLearningSessionClose close,
+    String loadedSessionId,
+  ) {
+    if (close.sessionId != loadedSessionId) {
+      throw StateError('Recovered close does not belong to the loaded lesson.');
+    }
+    final acceptedClose = _acceptedClose;
+    if (acceptedClose != null && !identical(acceptedClose, close)) {
+      throw StateError('A different terminal close is already accepted.');
+    }
     _acceptedClose = close;
-    final cutoff = _acceptedCloseCutoff ??= _controller.captureTerminalCutoff(
-      _nowUtc(),
+  }
+
+  void _activateReservedClose(
+    PendingLearningSessionClose close, [
+    Future<void> Function()? ensureDurable,
+  ]) {
+    if (!identical(_acceptedClose, close)) {
+      throw StateError('Recovered close identity was not reserved.');
+    }
+    _acceptedClosePreparation ??= ensureDurable;
+    final cutoff = _acceptedCloseCutoff ??=
+        _retirementCutoff ?? _controller.captureTerminalCutoff(_nowUtc());
+    final configurationClose = _acceptedCloseConfigurationClose ??= _controller
+        .closeConfigurationEffortAtCutoff(cutoff);
+    unawaited(
+      configurationClose.then<void>(
+        (_) {},
+        onError: (Object _, StackTrace _) {},
+      ),
     );
-    final operation = _controller.completeCapturedSessionAtCutoff(
-      close,
-      cutoff,
+  }
+
+  Future<LearningSessionSummary> _complete(
+    PendingLearningSessionClose close, {
+    required bool recovery,
+  }) {
+    if (!recovery && !_accepting) {
+      return Future<LearningSessionSummary>.error(
+        StateError('The lesson route is no longer accepting operations.'),
+      );
+    }
+    try {
+      _ownClose(close);
+    } catch (error, stackTrace) {
+      return Future<LearningSessionSummary>.error(error, stackTrace);
+    }
+    final cutoff = _acceptedCloseCutoff!;
+    final operation = _acceptedCloseConfigurationClose!.then(
+      (_) => _controller.completeCapturedSessionAtCutoff(close, cutoff),
     );
     _completionInFlight = operation;
     unawaited(
@@ -298,13 +496,19 @@ final class UnifiedLessonRouteLifecycle {
     _ephemeralStates.clear();
     final existing = _terminal;
     if (existing != null) return existing;
-    final cutoff = _controller.captureTerminalCutoff(_nowUtc());
+    final cutoff = _retirementCutoff ??= _controller.captureTerminalCutoff(
+      _nowUtc(),
+    );
+    final configurationClose = _controller.closeConfigurationEffortAtCutoff(
+      cutoff,
+    );
     final timeClose = _controller.closeTimeAtCutoff(cutoff);
-    return _terminal ??= _retire(cutoff, timeClose);
+    return _terminal ??= _retire(cutoff, configurationClose, timeClose);
   }
 
   Future<void> _retire(
     LessonTerminalCutoff cutoff,
+    Future<void> configurationClose,
     Future<void> timeClose,
   ) async {
     final settledTimeClose = timeClose.then<void>(
@@ -319,7 +523,8 @@ final class UnifiedLessonRouteLifecycle {
     }
     final loadedSessionId = _loadedSessionId;
     if (loadedSessionId != null &&
-        _controller.state.sessionId != loadedSessionId) {
+        _controller.state.sessionId != loadedSessionId &&
+        _acceptedClose?.sessionId != loadedSessionId) {
       await _compensateUnattached(loadedSessionId);
     }
     try {
@@ -327,10 +532,12 @@ final class UnifiedLessonRouteLifecycle {
     } catch (_) {
       // A failed attach is compensated by initialization before this point.
     }
-    final acceptedOperations = _acceptedOperations.toList(growable: false);
-    if (acceptedOperations.isNotEmpty) {
-      await Future.wait<void>(acceptedOperations);
+    while (_acceptedOperations.isNotEmpty) {
+      await Future.wait<void>(_acceptedOperations.toList(growable: false));
     }
+    await _acceptedClosePreparation?.call();
+    await _acceptedCloseConfigurationClose;
+    await configurationClose;
     await settledTimeClose;
     final completion = _completionInFlight;
     if (completion != null) {
@@ -347,7 +554,10 @@ final class UnifiedLessonRouteLifecycle {
     }
     final close = _acceptedClose;
     if (close != null) {
-      await _controller.completeCapturedSessionAtCutoff(close, cutoff);
+      await _controller.completeCapturedSessionAtCutoff(
+        close,
+        _acceptedCloseCutoff ?? cutoff,
+      );
       return;
     }
     await _controller.abandonAtCutoff(cutoff);
@@ -371,6 +581,13 @@ final class UnifiedLessonRouteLifecycle {
   }
 }
 
+final class _UnifiedLessonOperationLease {
+  _UnifiedLessonOperationLease(this.owner);
+
+  final UnifiedLessonRouteLifecycle owner;
+  bool active = true;
+}
+
 final class UnifiedLessonModeHost extends StatefulWidget {
   const UnifiedLessonModeHost({
     super.key,
@@ -381,6 +598,8 @@ final class UnifiedLessonModeHost extends StatefulWidget {
     this.featureRegistry,
     this.learning,
     this.nowUtc,
+    this.configuration,
+    this.revalidateConfiguration,
   });
 
   final LessonModeAdapter adapter;
@@ -390,15 +609,15 @@ final class UnifiedLessonModeHost extends StatefulWidget {
   final FeatureRegistry? featureRegistry;
   final LearningUseCases? learning;
   final LessonUtcNow? nowUtc;
+  final SessionConfiguration? configuration;
+  final SessionConfigurationRevalidator? revalidateConfiguration;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
 }
 
 final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
-  late final UnifiedLessonController _controller = widget.createController(
-    widget.adapter,
-  );
+  late final UnifiedLessonController _controller = _createController();
   FeatureRegistry? _features;
   Listenable? _featureChanges;
   bool _routeEnabled = true;
@@ -406,6 +625,24 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
   Future<void>? _terminalCompensation;
   UnifiedLessonRouteLifecycle? _routeLifecycle;
   bool _controllerDisposed = false;
+
+  UnifiedLessonController _createController() {
+    final controller = widget.createController(widget.adapter);
+    final configuration = widget.configuration;
+    final revalidate = widget.revalidateConfiguration;
+    if ((configuration == null) != (revalidate == null)) {
+      throw ArgumentError(
+        'configuration and revalidateConfiguration must be composed together',
+      );
+    }
+    if (configuration != null && revalidate != null) {
+      controller.bindSessionConfiguration(
+        configuration,
+        revalidate: revalidate,
+      );
+    }
+    return controller;
+  }
 
   @override
   void didChangeDependencies() {
@@ -493,6 +730,7 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
       controller: _controller,
       nowUtc: widget.nowUtc,
       routeLifecycle: _routeLifecycle,
+      configuration: widget.configuration,
       builder: widget.builder,
     );
     final features = _features;
@@ -532,6 +770,7 @@ final class UnifiedLessonShell extends StatefulWidget {
     this.nowUtc,
     this.lifecycleStateReader,
     this.routeLifecycle,
+    this.configuration,
   });
 
   final WidgetBuilder builder;
@@ -539,6 +778,7 @@ final class UnifiedLessonShell extends StatefulWidget {
   final LessonUtcNow? nowUtc;
   final LessonLifecycleStateReader? lifecycleStateReader;
   final UnifiedLessonRouteLifecycle? routeLifecycle;
+  final SessionConfiguration? configuration;
 
   @override
   State<UnifiedLessonShell> createState() => _UnifiedLessonShellState();
@@ -827,6 +1067,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final dependencies = AppDependenciesScope.maybeOf(context);
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
+    final resetRequired = controller.configurationResetRequired;
     return UnifiedLessonSessionLifecycleScope(
       ephemeralStates: _ephemeralStates,
       lifecycle: UnifiedLessonSessionLifecycle._(
@@ -873,6 +1114,26 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                         onBookmark: bookmarkLearningItem,
                         reportIdentity: feedback.bookmarkIdentity,
                         onReport: reportContent,
+                      ),
+                    if (resetRequired != null)
+                      Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: SessionConfigurationResetPrompt(
+                          error: resetRequired,
+                          onReset: () => Navigator.of(context).maybePop(),
+                        ),
+                      ),
+                    if (controller.configurationLimitReached)
+                      Semantics(
+                        key: const ValueKey(
+                          'session-configuration-limit-reached',
+                        ),
+                        liveRegion: true,
+                        label: 'Session limit reached',
+                        child: const Padding(
+                          padding: EdgeInsets.all(16),
+                          child: Text('Session limit reached'),
+                        ),
                       ),
                     Expanded(child: Builder(builder: widget.builder)),
                   ],

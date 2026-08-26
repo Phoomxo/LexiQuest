@@ -5,6 +5,7 @@ import '../domain/evidence_context.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
 
@@ -47,11 +48,31 @@ enum MeaningQuizReviewPhase {
 
 /// Typed production boundary for bidirectional meaning recognition.
 final class MeaningQuizModeAdapter
-    implements FocusTimerSupportingLessonModeAdapter {
+    implements
+        FocusTimerSupportingLessonModeAdapter,
+        SessionConfigurableLessonModeAdapter {
   const MeaningQuizModeAdapter();
 
   @override
   LessonMode get mode => LessonMode.meaningQuiz;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 1,
+        maximumItemCount: 100,
+        defaultItemCount: 10,
+        directions: <SessionDirection>{
+          SessionDirection.forward,
+          SessionDirection.reverse,
+          SessionDirection.mixed,
+        },
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 0,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: true,
+      );
 
   MeaningQuizReviewController createReview({
     required QuizSession session,
@@ -61,6 +82,7 @@ final class MeaningQuizModeAdapter
     MeaningQuizInteractionRecorder? recordInteraction,
     MeaningQuizOperationAcceptance? acceptsOperation,
     MeaningQuizEvidenceOperation? runEvidenceOperation,
+    SessionDirection direction = SessionDirection.mixed,
   }) {
     if (session.isEmpty) {
       throw ArgumentError.value(session, 'session', 'must contain a question');
@@ -72,7 +94,7 @@ final class MeaningQuizModeAdapter
     }
     return MeaningQuizReviewController._(
       session: session,
-      questions: pinQuestions(session),
+      questions: pinQuestions(session, direction: direction),
       learning: learning,
       evidence: evidence,
       completeSession:
@@ -86,7 +108,10 @@ final class MeaningQuizModeAdapter
 
   /// Pins direction, prompt, correctness and distractor order to canonical
   /// session content. Reconstructing the same session yields the same quiz.
-  List<MeaningQuizQuestion> pinQuestions(QuizSession session) {
+  List<MeaningQuizQuestion> pinQuestions(
+    QuizSession session, {
+    SessionDirection direction = SessionDirection.mixed,
+  }) {
     final words = session.questions
         .map((question) => question.word)
         .toList(growable: false);
@@ -94,28 +119,34 @@ final class MeaningQuizModeAdapter
       words.indexed.map((entry) {
         final index = entry.$1;
         final word = entry.$2;
-        final direction = index.isEven
-            ? MeaningQuizDirection.wordToMeaning
-            : MeaningQuizDirection.meaningToWord;
-        final correctOption = direction == MeaningQuizDirection.wordToMeaning
+        final questionDirection = switch (direction) {
+          SessionDirection.forward => MeaningQuizDirection.wordToMeaning,
+          SessionDirection.reverse => MeaningQuizDirection.meaningToWord,
+          SessionDirection.mixed =>
+            index.isEven
+                ? MeaningQuizDirection.wordToMeaning
+                : MeaningQuizDirection.meaningToWord,
+        };
+        final correctOption =
+            questionDirection == MeaningQuizDirection.wordToMeaning
             ? word.meaning
             : word.spelling;
         final pool = _equivalentDistinctDistractors(
           words: words,
           word: word,
-          direction: direction,
+          direction: questionDirection,
         );
         return MeaningQuizQuestion(
           word: word,
-          direction: direction,
-          prompt: direction == MeaningQuizDirection.wordToMeaning
+          direction: questionDirection,
+          prompt: questionDirection == MeaningQuizDirection.wordToMeaning
               ? word.spelling
               : word.meaning,
           correctOption: correctOption,
           options: _pinOptions(
             correctOption: correctOption,
             candidates: pool,
-            seed: _stableSeed('${word.id}:${direction.name}'),
+            seed: _stableSeed('${word.id}:${questionDirection.name}'),
           ),
         );
       }),

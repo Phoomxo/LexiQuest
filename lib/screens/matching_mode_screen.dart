@@ -8,6 +8,7 @@ import '../features/learning/application/matching_mode_adapter.dart';
 import '../features/learning/domain/hint_policy.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -25,6 +26,8 @@ class MatchingModeScreen extends StatefulWidget {
     this.modeAdapter,
     this.loadSession,
     this.timeLimit = const Duration(minutes: 2),
+    this.sessionConfiguration,
+    this.showCountdown = true,
   });
 
   final String? categoryId;
@@ -32,7 +35,9 @@ class MatchingModeScreen extends StatefulWidget {
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final MatchingModeAdapter? modeAdapter;
   final MatchingSessionLoader? loadSession;
-  final Duration timeLimit;
+  final Duration? timeLimit;
+  final SessionConfiguration? sessionConfiguration;
+  final bool showCountdown;
 
   @override
   State<MatchingModeScreen> createState() => _MatchingModeScreenState();
@@ -49,6 +54,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
   MatchingPreparedSession? _recovery;
   MatchingReviewController? _review;
   Timer? _timeoutTimer;
+  Future<void>? _timeoutContinuation;
   Duration? _announcedTimeRemaining;
   bool _loadSettled = false;
   bool _completionCommitted = false;
@@ -66,7 +72,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_load != null) return;
-    if (widget.timeLimit <= Duration.zero) {
+    if (widget.timeLimit != null && widget.timeLimit! <= Duration.zero) {
       _load = Future<QuizSession>.error(
         ArgumentError.value(widget.timeLimit, 'timeLimit', 'must be positive'),
       );
@@ -113,6 +119,8 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
                     evidence: _evidence!,
                     categoryId: widget.categoryId,
                     timeLimit: widget.timeLimit,
+                    itemCount: widget.sessionConfiguration?.itemCount ?? 6,
+                    sessionConfiguration: widget.sessionConfiguration,
                   )
                   .then((prepared) {
                     _recovery = prepared;
@@ -120,7 +128,12 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
                   });
     final lifecycle = _lifecycle;
     _load = _prepareSession(
-      lifecycle == null ? rawLoad : lifecycle.initializeSession(rawLoad),
+      lifecycle == null
+          ? rawLoad
+          : lifecycle.initializeSession(
+              rawLoad,
+              recoveredClose: () => _recovery?.pendingClose,
+            ),
     );
   }
 
@@ -130,15 +143,18 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
       session = await load;
       if (!mounted || session.isEmpty) return session;
       final lifecycle = _lifecycle;
-      if (lifecycle?.acceptsOperations == false) return session;
       final recovery = _recovery;
+      if (lifecycle?.acceptsOperations == false &&
+          recovery?.requiresRecovery != true) {
+        return session;
+      }
       final restoredSummary = recovery?.completedSummary == null
           ? null
           : await recovery!.reconcileCompleted(
               completeSession: lifecycle == null
                   ? (close) =>
                         close.requiresRetry ? close.retry() : close.finish()
-                  : lifecycle.complete,
+                  : lifecycle.completeRecovery,
             );
       final review = _adapter!.createReview(
         session: session,
@@ -152,12 +168,11 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
             lifecycle?.resetHintsAfterCommittedEvidence(),
         completeSession: lifecycle == null
             ? null
-            : (close) => lifecycle.complete(close),
-        recordInteraction: () => lifecycle?.recordInteraction(),
+            : (close) => lifecycle.completeRecovery(close),
+        ownClose: lifecycle?.ownRecoveryClose,
+        runAdmittedOperation: lifecycle?.runAdmittedOperation,
+        runRecoveryOperation: lifecycle?.runRecoveryOperation,
         acceptsOperation: () => lifecycle?.acceptsOperations ?? true,
-        runEvidenceOperation: lifecycle == null
-            ? null
-            : (operation) => lifecycle.runAcceptedOperation(operation),
       )..addListener(_onReviewChanged);
       _review = review;
       _session = session;
@@ -172,15 +187,17 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
       _responseStopwatch
         ..reset()
         ..start();
-      final remaining =
-          _recovery?.remainingTime(_learning!.nowUtc()) ?? widget.timeLimit;
+      final remaining = _recovery?.remainingTime(_learning!.nowUtc());
       _announcedTimeRemaining = remaining;
-      if (review.timeoutRequested || remaining == Duration.zero) {
+      if (remaining == null) {
+        // Untimed accessibility sessions are bounded only by the shell's
+        // persisted active-effort authority, never by a wall-clock timer.
+      } else if (review.timeoutRequested || remaining == Duration.zero) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (mounted) unawaited(_timeOut());
         });
       } else {
-        _timeoutTimer = Timer(remaining, () => unawaited(_timeOut()));
+        _timeoutTimer = Timer(remaining, _startTimeoutContinuation);
       }
       if (mounted) setState(() {});
       return session;
@@ -267,8 +284,10 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
             ),
             const SizedBox(height: 12),
             Text(
-              'Match each word with its meaning. Time remaining: '
-              '${_durationLabel(_announcedTimeRemaining ?? widget.timeLimit)}.',
+              widget.showCountdown
+                  ? 'Match each word with its meaning. Time remaining: '
+                        '${_durationLabel(_announcedTimeRemaining ?? widget.timeLimit!)}.'
+                  : 'Untimed accessibility session. Active effort remains bounded.',
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -435,6 +454,19 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
     } on Object {
       _showFailure('Could not close the timed session. Please retry.');
     }
+  }
+
+  void _startTimeoutContinuation() {
+    if (_timeoutContinuation != null) return;
+    final continuation = _timeOut();
+    _timeoutContinuation = continuation;
+    unawaited(
+      continuation.whenComplete(() {
+        if (identical(_timeoutContinuation, continuation)) {
+          _timeoutContinuation = null;
+        }
+      }),
+    );
   }
 
   Future<void> _retryCompletion() async {

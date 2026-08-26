@@ -1,5 +1,6 @@
 import '../domain/evidence_context.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/session_configuration.dart';
 
 enum HandwritingSelfCheckSelection { looksCorrect, needsMorePractice }
 
@@ -38,7 +39,8 @@ final class HandwritingSelfCheckOutcome {
 /// Classification boundary for an explicitly learner-reported handwriting
 /// check. It deliberately has no capture method: neither strokes nor typed
 /// alternative text can become durable lesson evidence.
-final class HandwritingSelfCheckAdapter implements LessonModeAdapter {
+final class HandwritingSelfCheckAdapter
+    implements SessionConfigurableLessonModeAdapter {
   const HandwritingSelfCheckAdapter();
 
   static const HandwritingScratchpadDefaultPolicy defaultPolicy =
@@ -46,6 +48,20 @@ final class HandwritingSelfCheckAdapter implements LessonModeAdapter {
 
   @override
   LessonMode get mode => LessonMode.handwritingScratchpad;
+
+  @override
+  SessionConfigurationCapabilities get sessionConfigurationCapabilities =>
+      const SessionConfigurationCapabilities(
+        minimumItemCount: 1,
+        maximumItemCount: 1,
+        defaultItemCount: 1,
+        directions: <SessionDirection>{SessionDirection.forward},
+        difficulties: <SessionDifficulty>{SessionDifficulty.standard},
+        maximumHintBudget: 0,
+        supportsTimed: true,
+        supportsUntimedAlternative: true,
+        supportsPackSelection: false,
+      );
 
   HandwritingSelfCheckOutcome selfCheck({
     required HandwritingSelfCheckSelection selection,

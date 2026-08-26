@@ -15,8 +15,8 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 19);
-      expect(currentDatabaseTableInventory, hasLength(42));
+      expect(AppDatabase.currentSchemaVersion, 20);
+      expect(currentDatabaseTableInventory, hasLength(43));
       expect(
         currentDatabaseTableInventory.difference(schemaSixteenInventory),
         const {
@@ -25,6 +25,7 @@ void main() {
           'learning_time_segments',
           'learning_goals',
           'study_reminders',
+          'session_configurations',
         },
       );
       await expectCurrentDatabaseContract(database);
@@ -105,6 +106,9 @@ final schemaSixteenInventory = currentDatabaseTableInventory.difference(const {
   'saved_learning_items',
   'content_quality_reports',
   'learning_time_segments',
+  'learning_goals',
+  'study_reminders',
+  'session_configurations',
 });
 
 /// Frozen v16 fixture: v15 plus the four immutable-content tables and columns.

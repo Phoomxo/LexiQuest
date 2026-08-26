@@ -7,18 +7,19 @@ import '../support/current_database_contract.dart';
 import 'migration_v17_to_v18_test.dart' as fixture;
 
 void main() {
-  test('frozen v18 adds only goals and reserved reminders', () async {
+  test('frozen v18 adds goals, reminders, and session configuration', () async {
     final database = AppDatabase(
       NativeDatabase.memory(setup: createSchemaEighteenFixture),
     );
     addTearDown(database.close);
 
-    expect(AppDatabase.currentSchemaVersion, 19);
-    expect(currentDatabaseTableInventory, hasLength(42));
-    expect(
-      currentDatabaseTableInventory.difference(schemaEighteenInventory),
-      const {'learning_goals', 'study_reminders'},
-    );
+    expect(AppDatabase.currentSchemaVersion, 20);
+    expect(currentDatabaseTableInventory, hasLength(43));
+    expect(currentDatabaseTableInventory.difference(schemaEighteenInventory), {
+      'learning_goals',
+      'study_reminders',
+      'session_configurations',
+    });
     await expectCurrentDatabaseContract(database);
     expect(await _count(database, 'learning_goals'), 0);
     expect(await _count(database, 'study_reminders'), 0);
@@ -82,6 +83,7 @@ void main() {
 final schemaEighteenInventory = currentDatabaseTableInventory.difference(const {
   'learning_goals',
   'study_reminders',
+  'session_configurations',
 });
 
 void createSchemaEighteenFixture(dynamic sqlite) {

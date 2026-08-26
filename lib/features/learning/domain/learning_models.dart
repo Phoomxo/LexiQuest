@@ -2,6 +2,7 @@ import '../../events/domain/event_envelope_v2.dart';
 import 'evidence_context.dart';
 import 'learning_evidence_contract.dart';
 import 'learning_event_context.dart';
+import 'session_configuration.dart';
 
 final class QuizWord {
   const QuizWord({
@@ -49,11 +50,13 @@ final class QuizSession {
     required this.id,
     required this.questions,
     required this.startedAtUtc,
+    this.sessionConfiguration,
   });
 
   final String id;
   final List<QuizQuestion> questions;
   final DateTime? startedAtUtc;
+  final SessionConfiguration? sessionConfiguration;
 
   bool get isEmpty => questions.isEmpty;
 }
@@ -73,6 +76,7 @@ final class LearningSessionDraft {
     required this.startedAtUtc,
     required this.appVersion,
     required this.buildId,
+    this.sessionConfiguration,
   });
 
   final String id;
@@ -81,6 +85,7 @@ final class LearningSessionDraft {
   final DateTime? startedAtUtc;
   final String appVersion;
   final String buildId;
+  final SessionConfiguration? sessionConfiguration;
 
   LearningSessionDraft copyWith({DateTime? startedAtUtc}) {
     return LearningSessionDraft(
@@ -90,6 +95,7 @@ final class LearningSessionDraft {
       startedAtUtc: startedAtUtc ?? this.startedAtUtc,
       appVersion: appVersion,
       buildId: buildId,
+      sessionConfiguration: sessionConfiguration,
     );
   }
 }
@@ -312,6 +318,8 @@ final class LearningSessionSummary {
     required this.score,
     this.appVersion,
     this.buildId,
+    this.sessionConfiguration,
+    this.configurationActiveEffort = Duration.zero,
   });
 
   final String id;
@@ -325,6 +333,8 @@ final class LearningSessionSummary {
   final int score;
   final String? appVersion;
   final String? buildId;
+  final SessionConfiguration? sessionConfiguration;
+  final Duration configurationActiveEffort;
 }
 
 /// Versioned local checkpoint for reconstructing an interrupted activity from

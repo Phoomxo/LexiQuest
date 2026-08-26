@@ -14,6 +14,7 @@ import '../../learning/domain/evidence_eligibility_policy.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
+import '../../learning/domain/session_configuration.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
@@ -186,6 +187,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           await _discardAiUsageDuplicates(source.id, target.id);
           await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
           await _normalizeLearningProjectionState(source.id, target.id);
+          await _mergeSessionConfigurations(source.id, target.id);
+          await _rebindLearningSessionConfigurations(source.id, target.id);
           conflicts += await _makeEventKeysUnique(
             source.id,
             target.id,
@@ -2617,6 +2620,127 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       variables: [Variable<String>(targetId)],
       updates: {_database.outboxOperations},
     );
+  }
+
+  Future<void> _mergeSessionConfigurations(
+    String sourceId,
+    String targetId,
+  ) async {
+    final sourceRows = await (_database.select(
+      _database.sessionConfigurations,
+    )..where((row) => row.ownerId.equals(sourceId))).get();
+    for (final source in sourceRows) {
+      final target =
+          await (_database.select(_database.sessionConfigurations)..where(
+                (row) =>
+                    row.ownerId.equals(targetId) & row.mode.equals(source.mode),
+              ))
+              .getSingleOrNull();
+      final sourceWins =
+          target == null || source.updatedAtUtcMs > target.updatedAtUtcMs;
+      await (_database.delete(_database.sessionConfigurations)..where(
+            (row) =>
+                row.ownerId.equals(sourceId) & row.mode.equals(source.mode),
+          ))
+          .go();
+      if (!sourceWins) continue;
+      try {
+        final decoded = SessionConfiguration.fromStableSerialization(
+          source.stableSerialization,
+        );
+        if (decoded.ownerId != sourceId ||
+            decoded.mode.name != source.mode ||
+            decoded.contentIdentity != source.contentIdentity) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.tampered,
+          );
+        }
+        final rebound = SessionConfiguration.validated(
+          schemaVersion: decoded.schemaVersion,
+          policyVersion: decoded.policyVersion,
+          ownerId: targetId,
+          mode: decoded.mode,
+          itemCount: decoded.itemCount,
+          direction: decoded.direction,
+          difficulty: decoded.difficulty,
+          hintBudget: decoded.hintBudget,
+          timing: decoded.timing,
+          packIdentity: decoded.packIdentity,
+          protocolId: decoded.protocolId,
+          protocolVersion: decoded.protocolVersion,
+          protocolLimitsIdentity: decoded.protocolLimitsIdentity,
+        );
+        await _database
+            .into(_database.sessionConfigurations)
+            .insertOnConflictUpdate(
+              db.SessionConfigurationsCompanion.insert(
+                ownerId: targetId,
+                mode: rebound.mode.name,
+                contentIdentity: rebound.contentIdentity,
+                stableSerialization: rebound.stableSerialization,
+                updatedAtUtcMs: source.updatedAtUtcMs,
+              ),
+            );
+      } on SessionConfigurationResetRequired {
+        // Configuration is advisory. A corrupt preference cannot block the
+        // owner transition or mutate assignment/evidence history.
+      }
+    }
+  }
+
+  Future<void> _rebindLearningSessionConfigurations(
+    String sourceId,
+    String targetId,
+  ) async {
+    final rows =
+        await (_database.select(_database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(sourceId) &
+                  row.sessionConfigurationIdentity.isNotNull(),
+            ))
+            .get();
+    for (final row in rows) {
+      final serialization = row.sessionConfigurationJson;
+      final identity = row.sessionConfigurationIdentity;
+      if (serialization == null || identity == null) continue;
+      try {
+        final decoded = SessionConfiguration.fromStableSerialization(
+          serialization,
+        );
+        if (decoded.ownerId != sourceId ||
+            decoded.contentIdentity != identity) {
+          throw const SessionConfigurationResetRequired(
+            SessionConfigurationResetReason.tampered,
+          );
+        }
+        final rebound = SessionConfiguration.validated(
+          schemaVersion: decoded.schemaVersion,
+          policyVersion: decoded.policyVersion,
+          ownerId: targetId,
+          mode: decoded.mode,
+          itemCount: decoded.itemCount,
+          direction: decoded.direction,
+          difficulty: decoded.difficulty,
+          hintBudget: decoded.hintBudget,
+          timing: decoded.timing,
+          packIdentity: decoded.packIdentity,
+          protocolId: decoded.protocolId,
+          protocolVersion: decoded.protocolVersion,
+          protocolLimitsIdentity: decoded.protocolLimitsIdentity,
+        );
+        await (_database.update(
+          _database.learningSessions,
+        )..where((candidate) => candidate.id.equals(row.id))).write(
+          db.LearningSessionsCompanion(
+            sessionConfigurationIdentity: Value(rebound.contentIdentity),
+            sessionConfigurationJson: Value(rebound.stableSerialization),
+          ),
+        );
+      } on SessionConfigurationResetRequired {
+        // Preserve malformed history byte-for-byte. It remains unavailable to
+        // lesson restart and surfaces as a typed reset after the transition.
+      }
+    }
   }
 
   Future<void> _normalizeLearningProjectionState(
