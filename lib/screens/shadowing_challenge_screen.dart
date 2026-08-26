@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
@@ -20,6 +22,9 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.speechPractice,
     this.learning,
     this.evidenceAdapter,
+    this.sessionId,
+    this.wordId,
+    this.modeAdapter = const ShadowingModeAdapter(),
   });
 
   final String? referenceSentence;
@@ -27,6 +32,9 @@ class ShadowingChallengeScreen extends StatefulWidget {
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final String? sessionId;
+  final String? wordId;
+  final ShadowingModeAdapter modeAdapter;
 
   @override
   State<ShadowingChallengeScreen> createState() =>
@@ -36,7 +44,8 @@ class ShadowingChallengeScreen extends StatefulWidget {
 class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     with
         WidgetsBindingObserver,
-        RouteVoiceSessionMixin<ShadowingChallengeScreen> {
+        RouteVoiceSessionMixin<ShadowingChallengeScreen>
+    implements EphemeralLessonState {
   VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
   SpeechPracticeSession? _speechSession;
@@ -56,18 +65,25 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
   PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lifecycle;
+  UnifiedLessonSessionLifecycleScope? _lifecycleScope;
+
+  ShadowingModeAdapter get _modeAdapter => widget.modeAdapter;
+  bool get _acceptsModeOperations =>
+      mounted && (_lifecycle?.acceptsOperations ?? true);
 
   bool get _persistenceLocked =>
       _pendingEvidence != null || _pendingSessionClose != null;
+  bool get _sessionCloseRetryRequired =>
+      (_pendingSessionClose?.requiresRetry ?? false) ||
+      (_lifecycle?.sessionCompletionRetryRequired ?? false);
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
 
   @override
   Future<void> onVoiceRouteCovered() async {
-    _listenEpoch += 1;
-    _listenPending = false;
-    _listening = false;
+    _clearRawSpeechState();
     final session = _speechSession;
     _speechSession = null;
     await session?.release();
@@ -80,11 +96,19 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   void initState() {
     super.initState();
     _referenceSentence = widget.referenceSentence;
+    _sessionId = widget.sessionId;
+    _wordId = widget.wordId;
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final nextScope = UnifiedLessonSessionLifecycleScope.maybeScopeOf(context);
+    if (!identical(nextScope, _lifecycleScope)) {
+      _lifecycleScope?.unregisterEphemeralState(this);
+      _lifecycleScope = nextScope;
+      nextScope?.registerEphemeralState(this);
+    }
     _bindDependencies();
   }
 
@@ -106,6 +130,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       _speechSession = null;
     }
     _voice = widget.voice ?? dependencies?.voice;
+    _lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
@@ -141,8 +166,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       return;
     }
     try {
-      final session = await learning.startQuiz(limit: 1);
-      if (!mounted) return;
+      final load = learning.startQuiz(limit: 1);
+      final session = await (_lifecycle?.initializeSession(load) ?? load);
+      if (!_acceptsModeOperations) return;
       if (session.isEmpty) {
         setState(() => _error = 'ยังไม่มีคำศัพท์สำหรับฝึกพูด');
         return;
@@ -158,7 +184,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _playReference() async {
-    if (_persistenceLocked) return;
+    if (_persistenceLocked || !_acceptsModeOperations) return;
     final reference = _referenceSentence;
     final session = routeVoiceSession;
     if (reference == null || session == null) return;
@@ -180,7 +206,12 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _toggleListening() async {
-    if (_listenPending || _persistenceLocked || _evidenceSaved) return;
+    if (_listenPending ||
+        _persistenceLocked ||
+        _evidenceSaved ||
+        !_acceptsModeOperations) {
+      return;
+    }
     if (_listening) {
       _listenEpoch += 1;
       _listenPending = false;
@@ -212,7 +243,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       final started = await activeSession.start(
         locale: 'en-US',
         onEvent: (event) {
-          if (!mounted ||
+          if (!_acceptsModeOperations ||
               epoch != _listenEpoch ||
               _acceptedFinalEpoch == epoch) {
             return;
@@ -231,11 +262,11 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
             if (event.isFinal) _listening = false;
           });
           if (event.isFinal) {
-            unawaited(_recordEvidence(event, assessment));
+            unawaited(_recordEvidence(assessment));
           }
         },
         onFailure: (failure) {
-          if (!mounted ||
+          if (!_acceptsModeOperations ||
               epoch != _listenEpoch ||
               _acceptedFinalEpoch == epoch) {
             return;
@@ -246,14 +277,14 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
           });
         },
         onStatus: (status) {
-          if (mounted &&
+          if (_acceptsModeOperations &&
               epoch == _listenEpoch &&
               _acceptedFinalEpoch != epoch) {
             setState(() => _listening = status == 'listening');
           }
         },
       );
-      if (!mounted || epoch != _listenEpoch) return;
+      if (!_acceptsModeOperations || epoch != _listenEpoch) return;
       if (_acceptedFinalEpoch == epoch) {
         _listenPending = false;
         return;
@@ -266,7 +297,9 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       _listenPending = false;
       setState(() => _listening = activeSession.isListening);
     } on SpeechPracticeException catch (error) {
-      if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+      if (!_acceptsModeOperations ||
+          epoch != _listenEpoch ||
+          _acceptedFinalEpoch == epoch) {
         return;
       }
       _listenPending = false;
@@ -275,7 +308,6 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   }
 
   Future<void> _recordEvidence(
-    SpeechRecognitionEvent event,
     TranscriptPronunciationAssessment assessment,
   ) async {
     final learning = _learning;
@@ -284,23 +316,25 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     if (_evidenceSaved ||
         learning == null ||
         sessionId == null ||
-        wordId == null) {
+        wordId == null ||
+        !_acceptsModeOperations) {
       return;
     }
     _evidenceSaved = true;
-    final pending = _pendingEvidence ??= _evidenceAdapter!.capture(
-      input: CurrentActivityInput.shadowing,
-      sessionId: sessionId,
-      wordId: wordId,
-      isCorrect: assessment.similarityPercent >= 80,
-      responseTimeMs: null,
-      attemptNumber: 1,
-      providerProvenance:
-          '${event.engine}|${event.locale}|${assessment.method}',
-    );
+    final pending = _pendingEvidence ??= _modeAdapter
+        .capture(
+          evidence: _evidenceAdapter!,
+          sessionId: sessionId,
+          wordId: wordId,
+          assessment: assessment,
+          responseTimeMs: null,
+          attemptNumber: 1,
+        )
+        .pending;
     if (mounted) setState(() {});
     try {
-      await pending.record();
+      await (_lifecycle?.runAcceptedOperation(pending.record) ??
+          pending.record());
     } catch (_) {
       _evidenceSaved = false;
       if (mounted) {
@@ -315,10 +349,16 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final pending = _pendingEvidence;
     final learning = _learning;
     final sessionId = _sessionId;
-    if (pending == null || learning == null || sessionId == null) return;
+    if (pending == null ||
+        learning == null ||
+        sessionId == null ||
+        !_acceptsModeOperations) {
+      return;
+    }
     setState(() => _error = null);
     try {
-      await pending.retry();
+      await (_lifecycle?.runAcceptedOperation(pending.retry) ??
+          pending.retry());
       _evidenceSaved = true;
     } catch (_) {
       _evidenceSaved = false;
@@ -340,7 +380,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
       );
       _pendingEvidence = null;
       if (mounted) setState(() {});
-      await pending.finish();
+      await (_lifecycle?.complete(pending) ?? pending.finish());
       _pendingSessionClose = null;
       if (mounted) setState(() {});
     } catch (_) {
@@ -352,10 +392,14 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
 
   Future<void> _retrySessionClose() async {
     final pending = _pendingSessionClose;
-    if (pending == null || !pending.requiresRetry) return;
+    if (pending == null ||
+        !_sessionCloseRetryRequired ||
+        !_acceptsModeOperations) {
+      return;
+    }
     setState(() => _error = null);
     try {
-      await pending.retry();
+      await (_lifecycle?.complete(pending) ?? pending.retry());
       _pendingSessionClose = null;
       if (mounted) setState(() {});
     } catch (_) {
@@ -372,26 +416,39 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
-      _cancelForLifecycle().ignore();
+      clearEphemeralState();
     }
   }
 
-  Future<void> _cancelForLifecycle() async {
-    final shouldCancel = _listenPending || _listening;
+  @override
+  void clearEphemeralState() {
+    final session = _speechSession;
+    _clearRawSpeechState();
+    session?.cancel().ignore();
+  }
+
+  void _clearRawSpeechState({bool notify = true}) {
     _listenEpoch += 1;
     _listenPending = false;
-    try {
-      if (shouldCancel) await _speechSession?.cancel();
-    } on Object {
-      // Lifecycle cleanup is best effort and must not escape its detached hook.
+    _acceptedFinalEpoch = null;
+    _listening = false;
+    if (notify && mounted) {
+      setState(() {
+        _transcript = '';
+        _assessment = null;
+        _error = null;
+      });
+    } else {
+      _transcript = '';
+      _assessment = null;
+      _error = null;
     }
-    if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
-    _listenEpoch += 1;
-    _listenPending = false;
+    _lifecycleScope?.unregisterEphemeralState(this);
+    _clearRawSpeechState(notify: false);
     _speechSession?.release().ignore();
     _speechSession = null;
     super.dispose();
@@ -412,8 +469,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final assessment = _assessment;
     final reference = _referenceSentence;
     final evidenceRetryRequired = _pendingEvidence?.requiresRetry ?? false;
-    final sessionCloseRetryRequired =
-        _pendingSessionClose?.requiresRetry ?? false;
+    final sessionCloseRetryRequired = _sessionCloseRetryRequired;
     final persistenceLocked = _persistenceLocked;
     return PopScope(
       canPop: !persistenceLocked,

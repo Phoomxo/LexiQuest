@@ -34,7 +34,7 @@ void main() {
     );
   });
 
-  testWidgets('inherited dependency changes still start exactly one load', (
+  testWidgets('injected vocabulary cannot bypass missing shell authority', (
     tester,
   ) async {
     final repository = _VocabularyRepositoryFake();
@@ -60,7 +60,13 @@ void main() {
     expect(repository.listCalls, 1);
     pending.complete([_word('alpha')]);
     await tester.pumpAndSettle();
-    expect(find.byType(WordScrambleScreen), findsOneWidget);
+    expect(find.byType(WordScrambleScreen), findsNothing);
+    expect(
+      tester
+          .widget<GameLauncherUnavailable>(find.byType(GameLauncherUnavailable))
+          .reason,
+      GameLauncherUnavailableReason.missingDependency,
+    );
   });
 
   testWidgets('multiple resolved builds schedule at most one game route', (
@@ -90,10 +96,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(
-      observer.namedRoutes.where((name) => name == 'game/word-scramble'),
-      hasLength(1),
+      observer.namedRoutes.where((routeName) => routeName != '/'),
+      isEmpty,
     );
-    expect(find.byType(WordScrambleScreen), findsOneWidget);
+    expect(find.byType(WordScrambleScreen), findsNothing);
+    expect(find.byType(GameLauncherUnavailable), findsOneWidget);
   });
 
   testWidgets('missing dependency is a typed unavailable state', (
@@ -156,45 +163,40 @@ void main() {
     expect(find.textContaining('inventory-secret'), findsNothing);
   });
 
-  testWidgets('word scramble and dictation receive the first owned word', (
-    tester,
-  ) async {
-    final repository = _VocabularyRepositoryFake()
-      ..words = [_word('alpha'), _word('beta')];
-    await tester.pumpWidget(
-      MaterialApp(
-        key: const ValueKey<String>('scramble-app'),
-        home: GameLauncherScreen(
-          key: const ValueKey<String>('scramble-launcher'),
-          gameMode: GameMode.wordScramble,
-          vocabulary: _useCases(repository),
+  testWidgets(
+    'native games fail closed without registered shell dependencies',
+    (tester) async {
+      final repository = _VocabularyRepositoryFake()
+        ..words = [_word('alpha'), _word('beta')];
+      await tester.pumpWidget(
+        MaterialApp(
+          key: const ValueKey<String>('scramble-app'),
+          home: GameLauncherScreen(
+            key: const ValueKey<String>('scramble-launcher'),
+            gameMode: GameMode.wordScramble,
+            vocabulary: _useCases(repository),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(
-      tester.widget<WordScrambleScreen>(find.byType(WordScrambleScreen)).word,
-      'alpha',
-    );
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(WordScrambleScreen), findsNothing);
+      expect(find.byType(GameLauncherUnavailable), findsOneWidget);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        key: const ValueKey<String>('dictation-app'),
-        home: GameLauncherScreen(
-          key: const ValueKey<String>('dictation-launcher'),
-          gameMode: GameMode.dictation,
-          vocabulary: _useCases(repository),
+      await tester.pumpWidget(
+        MaterialApp(
+          key: const ValueKey<String>('dictation-app'),
+          home: GameLauncherScreen(
+            key: const ValueKey<String>('dictation-launcher'),
+            gameMode: GameMode.dictation,
+            vocabulary: _useCases(repository),
+          ),
         ),
-      ),
-    );
-    await tester.pumpAndSettle();
-    expect(
-      tester
-          .widget<DictationQuizScreen>(find.byType(DictationQuizScreen))
-          .targetWord,
-      'alpha',
-    );
-  });
+      );
+      await tester.pumpAndSettle();
+      expect(find.byType(DictationQuizScreen), findsNothing);
+      expect(find.byType(GameLauncherUnavailable), findsOneWidget);
+    },
+  );
 
   testWidgets('boss receives at most ten words from owned inventory', (
     tester,

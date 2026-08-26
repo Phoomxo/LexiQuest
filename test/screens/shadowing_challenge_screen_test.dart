@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
@@ -24,6 +25,18 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 void main() {
+  test(
+    'f13 shadowing delegates evidence capture to its typed native adapter',
+    () {
+      final source = File(
+        'lib/screens/shadowing_challenge_screen.dart',
+      ).readAsStringSync();
+      expect(source, contains('ShadowingModeAdapter'));
+      expect(source, matches(RegExp(r'_modeAdapter\s*\.capture\(')));
+      expect(source, isNot(contains('_evidenceAdapter!.capture(')));
+    },
+  );
+
   testWidgets('uses real transcript provenance and never fabricates pitch', (
     tester,
   ) async {
@@ -84,6 +97,12 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('shadowing-listen-button')));
       await tester.pump();
       expect(gateway.isListening, isTrue);
+      gateway.emitPartial('private shadow draft');
+      await tester.pump();
+      expect(
+        find.text('ข้อความที่ได้ยิน: private shadow draft'),
+        findsOneWidget,
+      );
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
@@ -95,6 +114,7 @@ void main() {
 
       expect(gateway.cancelCalls, 1);
       expect(provider.stopCalls, 1);
+      expect(find.text('ข้อความที่ได้ยิน: private shadow draft'), findsNothing);
       expect(tester.takeException(), isNull);
     } finally {
       if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
@@ -184,7 +204,8 @@ void main() {
     final attempt = await database.select(database.answerAttempts).getSingle();
     expect(
       attempt.providerProvenance,
-      'device-stt|en-US|transcript-edit-distance-v1',
+      'native-shadowing:v1:'
+      'device-stt|en-US|transcript-edit-distance-v1:threshold-pass',
     );
   });
 
@@ -821,6 +842,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   final Object? cancelError;
   int startCalls = 0;
   int cancelCalls = 0;
+  SpeechEventCallback? _onEvent;
+  String? _locale;
   @override
   bool isListening = false;
 
@@ -849,6 +872,8 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
   }) async {
     startCalls += 1;
     isListening = true;
+    _onEvent = onEvent;
+    _locale = locale;
     if (!emitFinal) return;
     onEvent(
       SpeechRecognitionEvent(
@@ -861,6 +886,16 @@ final class _FakeSpeechGateway implements SpeechRecognitionGateway {
     );
     isListening = false;
   }
+
+  void emitPartial(String transcript) => _onEvent!(
+    SpeechRecognitionEvent(
+      transcript: transcript,
+      isFinal: false,
+      recognizedAtUtc: DateTime.utc(2026, 8, 26),
+      engine: 'device-stt',
+      locale: _locale!,
+    ),
+  );
 
   @override
   Future<void> stop() async {

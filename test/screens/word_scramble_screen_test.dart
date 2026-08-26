@@ -6,6 +6,16 @@ import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 
 void main() {
+  test('f13 word scramble delegates correctness to its typed adapter', () {
+    final source = File(
+      'lib/screens/word_scramble_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('WordScrambleModeAdapter'));
+    expect(source, contains('_modeAdapter.evaluate('));
+    expect(source, contains('_lifecycle!.complete('));
+    expect(source, isNot(contains('userAnswer.join() == widget.word')));
+  });
+
   test('stable scramble is deterministic and preserves every character', () {
     final first = createStableScramble('learning');
     final second = createStableScramble('learning');

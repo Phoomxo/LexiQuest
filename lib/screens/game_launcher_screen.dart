@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/vocabulary/application/vocabulary_use_cases.dart';
 import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import 'boss_battle_screen.dart';
+import 'choose_mode_screen.dart';
 import 'dictation_quiz_screen.dart';
 import 'word_scramble_screen.dart';
 
@@ -101,26 +105,11 @@ class _GameLauncherScreenState extends State<GameLauncherScreen> {
   }
 
   void _navigateToGame(BuildContext context, List<VocabularyWord> words) {
-    final first = words.first;
     switch (widget.gameMode) {
       case GameMode.wordScramble:
-        AppNavigator.pushPage(
-          context,
-          AppPage<void>(
-            name: 'game/word-scramble',
-            builder: (_) => WordScrambleScreen(word: first.spelling),
-          ),
-          replace: true,
-        );
+        _navigateToRegisteredNativeGame(context, mode: LessonMode.wordScramble);
       case GameMode.dictation:
-        AppNavigator.pushPage(
-          context,
-          AppPage<void>(
-            name: 'game/dictation',
-            builder: (_) => DictationQuizScreen(targetWord: first.spelling),
-          ),
-          replace: true,
-        );
+        _navigateToRegisteredNativeGame(context, mode: LessonMode.dictation);
       case GameMode.bossBattle:
         AppNavigator.pushPage(
           context,
@@ -135,6 +124,63 @@ class _GameLauncherScreenState extends State<GameLauncherScreen> {
           replace: true,
         );
     }
+  }
+
+  void _navigateToRegisteredNativeGame(
+    BuildContext context, {
+    required LessonMode mode,
+  }) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final registration = dependencies?.lessonModes?.resolve(mode);
+    final createController = dependencies?.createLessonController;
+    final hasTypedAdapter = switch (mode) {
+      LessonMode.wordScramble =>
+        registration?.adapter is WordScrambleModeAdapter,
+      LessonMode.dictation => registration?.adapter is DictationModeAdapter,
+      _ => false,
+    };
+    if (!hasTypedAdapter ||
+        createController == null ||
+        dependencies?.learning == null) {
+      if (mounted) {
+        setState(
+          () => _unavailableReason =
+              GameLauncherUnavailableReason.missingDependency,
+        );
+      }
+      return;
+    }
+    AppNavigator.pushPage<void>(
+      context,
+      AppPage<void>(
+        name: registration!.routeName,
+        builder: (_) => UnifiedLessonModeHost(
+          adapter: registration.adapter,
+          createController: createController,
+          feature: registration.feature,
+          featureRegistry: dependencies!.features,
+          learning: dependencies.learning,
+          builder: (_) => NativeVocabularyLessonModeLoader(
+            builder: (_, session, question) => switch (mode) {
+              LessonMode.wordScramble => WordScrambleScreen(
+                word: question.word.spelling,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: registration.adapter as WordScrambleModeAdapter,
+              ),
+              LessonMode.dictation => DictationQuizScreen(
+                targetWord: question.word.spelling,
+                sessionId: session.id,
+                wordId: question.word.id,
+                modeAdapter: registration.adapter as DictationModeAdapter,
+              ),
+              _ => throw StateError('unsupported registered native game'),
+            },
+          ),
+        ),
+      ),
+      replace: true,
+    );
   }
 }
 

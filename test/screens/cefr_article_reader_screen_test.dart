@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
@@ -24,6 +26,14 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  test('f13 CEFR reading declares exposure through its typed adapter', () {
+    final source = File(
+      'lib/screens/cefr_article_reader_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('CefrReadingModeAdapter'));
+    expect(source, contains('_modeAdapter.evaluate()'));
+  });
+
   testWidgets(
     'CefrArticleReaderScreen renders words and handles word tap speech',
     (WidgetTester tester) async {
@@ -46,6 +56,7 @@ void main() {
 
       expect(find.text('Learning Languages'), findsOneWidget);
       expect(find.text('Practice'), findsOneWidget);
+      expect(find.byType(PopScope), findsOneWidget);
 
       await tester.tap(find.text('Practice'));
       await tester.pumpAndSettle();

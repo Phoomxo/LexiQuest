@@ -13,6 +13,7 @@ import 'package:vocab_learning_app/features/learning/application/flashcard_mode_
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_layer_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -24,6 +25,8 @@ import 'package:vocab_learning_app/features/learning/domain/learning_repository.
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
+import 'package:vocab_learning_app/features/media_practice/application/speech_practice_use_cases.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/active_learning_time_controller.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
 import 'package:vocab_learning_app/features/time_tracking/data/drift_learning_time_repository.dart';
@@ -37,18 +40,83 @@ import 'package:vocab_learning_app/runtime/app_runtime_status.dart';
 import 'package:vocab_learning_app/runtime/production_feature_gate.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/screens/cefr_article_reader_screen.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/matching_mode_screen.dart';
+import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
+import 'package:vocab_learning_app/screens/shadowing_challenge_screen.dart';
+import 'package:vocab_learning_app/screens/speak_to_text_screen.dart';
 import 'package:vocab_learning_app/screens/srs_flashcards_screen.dart';
+import 'package:vocab_learning_app/screens/word_scramble_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/inert_research_dependencies.dart';
 import '../support/test_quest_use_cases.dart';
 
+Future<void> _scrollToModeEntry(WidgetTester tester, String entryId) async {
+  final scrollable = find.byType(Scrollable).first;
+  tester.state<ScrollableState>(scrollable).position.jumpTo(0);
+  await tester.pump();
+  final entry = find.byKey(ValueKey<String>(entryId));
+  await tester.scrollUntilVisible(entry, 240, scrollable: scrollable);
+  await tester.pump();
+}
+
 void main() {
+  testWidgets('f13 shows every registered production native mode', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          featureRegistry: const BuildFeatureRegistry.allEnabled(),
+          lessonModes: buildLessonModeRegistry(),
+        ),
+      ),
+    );
+
+    const entryIdsInCatalogOrder = <String>[
+      'home/learn/associative-reading',
+      'home/learn/reading/cefr',
+      'home/learn/quiz/dictation',
+      'home/learn/quiz/sentence-scramble',
+      'home/learn/quiz/word-scramble',
+      'home/learn/speech/speaking',
+      'home/learn/speech/shadowing',
+    ];
+    for (final entryId in entryIdsInCatalogOrder) {
+      await _scrollToModeEntry(tester, entryId);
+      expect(
+        find.byKey(ValueKey<String>(entryId)),
+        findsOneWidget,
+        reason: '$entryId must have one Choose Mode parent',
+      );
+    }
+  });
+
+  testWidgets('f13 speaking tile is reachable in the lazy catalog', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ChooseModeScreen(
+          featureRegistry: const BuildFeatureRegistry.allEnabled(),
+          lessonModes: buildLessonModeRegistry(),
+        ),
+      ),
+    );
+
+    await _scrollToModeEntry(tester, 'home/learn/speech/speaking');
+    expect(
+      find.byKey(const ValueKey<String>('home/learn/speech/speaking')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets(
     'shows only canonical production modes and does not navigate without an adapter',
     (tester) async {
@@ -168,6 +236,7 @@ void main() {
           spelling: 'durable',
           meaning: 'able to last',
           partOfSpeech: 'adjective',
+          cefrLevel: 'C2',
         ),
       );
       await vocabulary.createWord(
@@ -176,6 +245,7 @@ void main() {
           spelling: 'stable',
           meaning: 'not likely to change',
           partOfSpeech: 'adjective',
+          cefrLevel: 'C2',
         ),
       );
       final modes = buildLessonModeRegistry(
@@ -209,6 +279,7 @@ void main() {
         currentActivityEvidence: CurrentActivityEvidenceAdapter(
           learning: learning,
         ),
+        speechPractice: SpeechPracticeUseCases(_InertSpeechGateway()),
         features: features,
         lessonModes: modes,
         createLessonController: (adapter) {
@@ -241,9 +312,9 @@ void main() {
           routeName: 'learning/typed-recall',
         ),
         (
-          entryId: 'home/learn/quiz/definition',
-          mode: LessonMode.definitionQuiz,
-          routeName: 'learning/definition-quiz',
+          entryId: 'home/learn/quiz/matching',
+          mode: LessonMode.matching,
+          routeName: 'learning/matching',
         ),
         (
           entryId: 'home/learn/quiz/cloze',
@@ -251,9 +322,39 @@ void main() {
           routeName: 'learning/cloze',
         ),
         (
-          entryId: 'home/learn/quiz/matching',
-          mode: LessonMode.matching,
-          routeName: 'learning/matching',
+          entryId: 'home/learn/quiz/definition',
+          mode: LessonMode.definitionQuiz,
+          routeName: 'learning/definition-quiz',
+        ),
+        (
+          entryId: 'home/learn/reading/cefr',
+          mode: LessonMode.cefrReading,
+          routeName: 'learning/cefr-reading',
+        ),
+        (
+          entryId: 'home/learn/quiz/dictation',
+          mode: LessonMode.dictation,
+          routeName: 'game/dictation',
+        ),
+        (
+          entryId: 'home/learn/quiz/sentence-scramble',
+          mode: LessonMode.sentenceScramble,
+          routeName: 'game/sentence-scramble',
+        ),
+        (
+          entryId: 'home/learn/quiz/word-scramble',
+          mode: LessonMode.wordScramble,
+          routeName: 'game/word-scramble',
+        ),
+        (
+          entryId: 'home/learn/speech/speaking',
+          mode: LessonMode.speaking,
+          routeName: 'practice/speaking',
+        ),
+        (
+          entryId: 'home/learn/speech/shadowing',
+          mode: LessonMode.shadowing,
+          routeName: 'practice/shadowing',
         ),
         (
           entryId: 'home/learn/srs',
@@ -262,8 +363,8 @@ void main() {
         ),
       ];
       for (final (index, routeCase) in cases.indexed) {
+        await _scrollToModeEntry(tester, routeCase.entryId);
         final entry = find.byKey(ValueKey<String>(routeCase.entryId));
-        await tester.ensureVisible(entry);
         await tester.pump();
         await tester.tap(entry);
         await tester.pumpAndSettle();
@@ -279,8 +380,16 @@ void main() {
           await tester.pumpAndSettle();
         }
 
-        expect(controllerBuilds, index + 1);
-        expect(find.byType(UnifiedLessonShell), findsOneWidget);
+        expect(
+          controllerBuilds,
+          index + 1,
+          reason: '${routeCase.mode.id} must create one controller',
+        );
+        expect(
+          find.byType(UnifiedLessonShell),
+          findsOneWidget,
+          reason: '${routeCase.mode.id} must retain one shell',
+        );
         final shell = tester.widget<UnifiedLessonShell>(
           find.byType(UnifiedLessonShell),
         );
@@ -381,6 +490,92 @@ void main() {
           );
           expect(controller.state.status, LessonSessionStatus.active);
         }
+        if (routeCase.mode == LessonMode.cefrReading) {
+          final screen = tester.widget<CefrArticleReaderScreen>(
+            find.byType(CefrArticleReaderScreen),
+          );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.cefrLevel, 'C2');
+          expect(screen.sessionId, controller.state.sessionId);
+          expect(screen.wordId, startsWith('word:choose-mode-vocabulary-id'));
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.dictation) {
+          expect(
+            tester
+                .widget<DictationQuizScreen>(find.byType(DictationQuizScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.sentenceScramble) {
+          expect(
+            tester
+                .widget<SentenceScrambleScreen>(
+                  find.byType(SentenceScrambleScreen),
+                )
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.wordScramble) {
+          expect(
+            tester
+                .widget<WordScrambleScreen>(find.byType(WordScrambleScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.speaking) {
+          expect(
+            tester
+                .widget<SpeakToTextScreen>(find.byType(SpeakToTextScreen))
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+        if (routeCase.mode == LessonMode.shadowing) {
+          expect(
+            tester
+                .widget<ShadowingChallengeScreen>(
+                  find.byType(ShadowingChallengeScreen),
+                )
+                .modeAdapter,
+            same(modes.find(routeCase.mode)!.adapter),
+          );
+          expect(controller.state.status, LessonSessionStatus.active);
+        }
+
+        if (const <LessonMode>{
+          LessonMode.dictation,
+          LessonMode.speaking,
+          LessonMode.shadowing,
+          LessonMode.cefrReading,
+          LessonMode.sentenceScramble,
+          LessonMode.wordScramble,
+        }.contains(routeCase.mode)) {
+          final parentFeature = modes.find(routeCase.mode)!.feature;
+          features.emergencyOff(parentFeature);
+          await tester.pumpAndSettle();
+          expect(find.byType(ProductionFeatureUnavailable), findsOneWidget);
+          expect(find.byType(UnifiedLessonShell), findsNothing);
+          expect(
+            controller.state.status,
+            LessonSessionStatus.abandoned,
+            reason:
+                '${routeCase.mode.id} must reconcile when its parent turns off',
+          );
+          features.clearOverride(parentFeature);
+          Navigator.of(
+            tester.element(find.byType(ProductionFeatureUnavailable)),
+          ).pop();
+          await tester.pumpAndSettle();
+          continue;
+        }
 
         if (routeCase.mode == LessonMode.flashcard) {
           features.emergencyOff(Feature.srs);
@@ -449,6 +644,69 @@ void main() {
             .get(),
         isEmpty,
       );
+    },
+  );
+
+  testWidgets(
+    'unclassified CEFR word keeps shell and reconciles its pinned session',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(vocabularyCefrLevel: null);
+      addTearDown(harness.close);
+      await harness.pump(tester);
+
+      await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+      await tester.tap(
+        find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byType(CefrArticleReaderScreen), findsNothing);
+      expect(find.byType(UnifiedLessonShell), findsOneWidget);
+      expect(
+        harness.controllers.single.state.status,
+        LessonSessionStatus.abandoned,
+      );
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(sessions.where((session) => session.state == 'active'), isEmpty);
+      expect(
+        sessions.where((session) => session.state == 'abandoned'),
+        hasLength(1),
+      );
+    },
+  );
+
+  testWidgets(
+    'canonical A2 through C2 CEFR routes preserve pinned word and session identity',
+    (tester) async {
+      for (final level in const <String>['A2', 'B1', 'B2', 'C1', 'C2']) {
+        final harness = await _SrsGateHarness.create(
+          vocabularyCefrLevel: level,
+        );
+        await harness.pump(tester);
+
+        await _scrollToModeEntry(tester, 'home/learn/reading/cefr');
+        await tester.tap(
+          find.byKey(const ValueKey<String>('home/learn/reading/cefr')),
+        );
+        await tester.pumpAndSettle();
+
+        final controller = harness.controllers.single;
+        final reader = tester.widget<CefrArticleReaderScreen>(
+          find.byType(CefrArticleReaderScreen),
+        );
+        expect(reader.cefrLevel, level);
+        expect(reader.sessionId, controller.state.sessionId);
+        expect(reader.wordId, 'word:srs-gate-vocabulary');
+
+        harness.features.emergencyOff(Feature.reading);
+        await tester.pumpAndSettle();
+        expect(controller.state.status, LessonSessionStatus.abandoned);
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pumpAndSettle();
+        await harness.close();
+      }
     },
   );
 
@@ -1419,6 +1677,7 @@ final class _SrsGateHarness {
     bool blockFinish = false,
     bool enableMatching = false,
     bool enableTypedHintSequence = false,
+    String? vocabularyCefrLevel = 'A1',
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
     final now = DateTime.utc(2026, 8, 25, 15);
@@ -1445,6 +1704,7 @@ final class _SrsGateHarness {
         spelling: 'durable',
         meaning: 'lasting',
         partOfSpeech: 'adjective',
+        cefrLevel: vocabularyCefrLevel,
       ),
     );
     final driftLearning = DriftLearningRepository(database);
@@ -1557,6 +1817,7 @@ final class _SrsGateHarness {
       currentActivityEvidence: CurrentActivityEvidenceAdapter(
         learning: learning,
       ),
+      associativeLearning: InMemoryAssociativeLearningAdapter(),
       learningTime: learningTime,
       learningTimeCaptureRollout: const LearningTimeCaptureRollout.internal(),
       createLessonController: (adapter) {
@@ -1763,4 +2024,31 @@ final class _GuestSession implements GuestSessionService {
   @override
   Future<GuestSessionResult> start() async =>
       const GuestSessionFailed(GuestSessionFailure.unknown);
+}
+
+final class _InertSpeechGateway implements SpeechRecognitionGateway {
+  @override
+  bool get isListening => false;
+
+  @override
+  Future<MediaPermissionState> requestPermission() async =>
+      MediaPermissionState.unavailable;
+
+  @override
+  Future<void> initialize({
+    required SpeechFailureCallback onFailure,
+    required void Function(String status) onStatus,
+  }) async {}
+
+  @override
+  Future<void> start({
+    required String locale,
+    required SpeechEventCallback onEvent,
+  }) async {}
+
+  @override
+  Future<void> stop() async {}
+
+  @override
+  Future<void> cancel() async {}
 }

@@ -4,15 +4,15 @@ import 'package:flutter/material.dart';
 
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/media_practice/domain/media_practice_contracts.dart';
 import '../features/voice/application/voice_use_cases.dart';
 import '../features/voice/presentation/route_voice_session_mixin.dart';
-import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../voice/voice_models.dart';
 import 'media_dependency_unavailable.dart';
-import 'word_scramble_screen.dart';
 
 class SpeakToTextScreen extends StatefulWidget {
   const SpeakToTextScreen({
@@ -25,6 +25,7 @@ class SpeakToTextScreen extends StatefulWidget {
     this.wordId,
     this.attemptNumber = 1,
     this.evidenceAdapter,
+    this.modeAdapter = const SpeakingModeAdapter(),
   });
 
   final String correctWord;
@@ -35,13 +36,15 @@ class SpeakToTextScreen extends StatefulWidget {
   final String? wordId;
   final int attemptNumber;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final SpeakingModeAdapter modeAdapter;
 
   @override
   State<SpeakToTextScreen> createState() => _SpeakToTextScreenState();
 }
 
 class _SpeakToTextScreenState extends State<SpeakToTextScreen>
-    with WidgetsBindingObserver, RouteVoiceSessionMixin<SpeakToTextScreen> {
+    with WidgetsBindingObserver, RouteVoiceSessionMixin<SpeakToTextScreen>
+    implements EphemeralLessonState {
   VoiceUseCases? _voice;
   SpeechPracticeUseCases? _speech;
   SpeechPracticeSession? _speechSession;
@@ -57,15 +60,26 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   DateTime? _startedAtUtc;
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
+  UnifiedLessonSessionLifecycle? _lifecycle;
+  UnifiedLessonSessionLifecycleScope? _lifecycleScope;
+  bool _sessionCompleted = false;
+
+  SpeakingModeAdapter get _modeAdapter => widget.modeAdapter;
+  bool get _acceptsModeOperations =>
+      mounted && (_lifecycle?.acceptsOperations ?? true);
+  bool get _persistenceLocked =>
+      _pendingEvidence != null || _pendingSessionClose != null;
+  bool get _sessionCloseRetryRequired =>
+      (_pendingSessionClose?.requiresRetry ?? false) ||
+      (_lifecycle?.sessionCompletionRetryRequired ?? false);
 
   @override
   VoiceUseCases? get routeVoiceUseCases => _voice;
 
   @override
   Future<void> onVoiceRouteCovered() async {
-    _listenEpoch += 1;
-    _listenPending = false;
-    _listening = false;
+    _clearRawSpeechState();
     final session = _speechSession;
     _speechSession = null;
     await session?.release();
@@ -77,6 +91,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final nextScope = UnifiedLessonSessionLifecycleScope.maybeScopeOf(context);
+    if (!identical(nextScope, _lifecycleScope)) {
+      _lifecycleScope?.unregisterEphemeralState(this);
+      _lifecycleScope = nextScope;
+      nextScope?.registerEphemeralState(this);
+    }
     _bindDependencies();
   }
 
@@ -98,6 +118,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _speechSession = null;
     }
     _voice = widget.voice ?? dependencies?.voice;
+    _lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     if (refreshVoice) refreshRouteVoiceSession();
     _speech = speech;
     _learning = widget.learning ?? dependencies?.learning;
@@ -127,7 +148,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _speakWord() async {
-    if (_pendingEvidence != null) return;
+    if (_persistenceLocked || _sessionCompleted || !_acceptsModeOperations) {
+      return;
+    }
     final session = routeVoiceSession;
     if (session == null) return;
     try {
@@ -148,7 +171,12 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   Future<void> _startListening() async {
-    if (_listenPending || _pendingEvidence != null) return;
+    if (_listenPending ||
+        _persistenceLocked ||
+        _sessionCompleted ||
+        !_acceptsModeOperations) {
+      return;
+    }
     final speech = _speech;
     var session = _speechSession;
     if (speech == null) {
@@ -175,7 +203,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         locale: 'en-US',
         onEvent: (event) => _onSpeechEvent(event, epoch),
         onFailure: (failure) {
-          if (!mounted ||
+          if (!_acceptsModeOperations ||
               epoch != _listenEpoch ||
               _acceptedFinalEpoch == epoch) {
             return;
@@ -186,7 +214,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
           });
         },
         onStatus: (status) {
-          if (!mounted ||
+          if (!_acceptsModeOperations ||
               epoch != _listenEpoch ||
               _acceptedFinalEpoch == epoch) {
             return;
@@ -194,7 +222,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
           setState(() => _listening = status == 'listening');
         },
       );
-      if (!mounted || epoch != _listenEpoch) return;
+      if (!_acceptsModeOperations || epoch != _listenEpoch) return;
       if (_acceptedFinalEpoch == epoch) {
         _listenPending = false;
         return;
@@ -207,7 +235,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       _listenPending = false;
       setState(() => _listening = activeSession.isListening);
     } on SpeechPracticeException catch (error) {
-      if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+      if (!_acceptsModeOperations ||
+          epoch != _listenEpoch ||
+          _acceptedFinalEpoch == epoch) {
         return;
       }
       _listenPending = false;
@@ -219,7 +249,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
   }
 
   void _onSpeechEvent(SpeechRecognitionEvent event, int epoch) {
-    if (!mounted || epoch != _listenEpoch || _acceptedFinalEpoch == epoch) {
+    if (!_acceptsModeOperations ||
+        epoch != _listenEpoch ||
+        _acceptedFinalEpoch == epoch) {
       return;
     }
     if (event.isFinal) {
@@ -246,24 +278,26 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final sessionId = widget.sessionId;
     final wordId = widget.wordId;
     if (learning == null || sessionId == null || wordId == null) return;
+    if (!_acceptsModeOperations) return;
     final elapsed = _startedAtUtc == null
         ? null
         : DateTime.now().toUtc().difference(_startedAtUtc!).inMilliseconds;
-    final pending = _pendingEvidence ??= _evidenceAdapter!.capture(
-      input: CurrentActivityInput.speakToText,
-      sessionId: sessionId,
-      wordId: wordId,
-      isCorrect: assessment.isExactMatch,
-      responseTimeMs: elapsed,
-      attemptNumber: widget.attemptNumber,
-      providerProvenance:
-          '${assessment.engine}|${assessment.locale}|${assessment.method}',
-    );
+    final pending = _pendingEvidence ??= _modeAdapter
+        .capture(
+          evidence: _evidenceAdapter!,
+          sessionId: sessionId,
+          wordId: wordId,
+          assessment: assessment,
+          responseTimeMs: elapsed,
+          attemptNumber: widget.attemptNumber,
+        )
+        .pending;
     if (mounted) setState(() {});
     try {
-      await pending.record();
+      await (_lifecycle?.runAcceptedOperation(pending.record) ??
+          pending.record());
       _pendingEvidence = null;
-      if (mounted) setState(() {});
+      await _completeShellSession();
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');
@@ -273,15 +307,62 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
 
   Future<void> _retryEvidence() async {
     final pending = _pendingEvidence;
-    if (pending == null || !pending.requiresRetry) return;
+    if (pending == null || !pending.requiresRetry || !_acceptsModeOperations) {
+      return;
+    }
     setState(() => _error = null);
     try {
-      await pending.retry();
+      await (_lifecycle?.runAcceptedOperation(pending.retry) ??
+          pending.retry());
       _pendingEvidence = null;
-      if (mounted) setState(() {});
+      await _completeShellSession();
     } catch (_) {
       if (mounted) {
         setState(() => _error = 'บันทึกผลการฝึกไม่สำเร็จ กรุณาลองอีกครั้ง');
+      }
+    }
+  }
+
+  Future<void> _completeShellSession() async {
+    final lifecycle = _lifecycle;
+    final learning = _learning;
+    final sessionId = widget.sessionId;
+    if (lifecycle == null || learning == null || sessionId == null) {
+      if (mounted) setState(() {});
+      return;
+    }
+    final close = _pendingSessionClose ??= learning.captureSessionClose(
+      sessionId: sessionId,
+    );
+    if (mounted) setState(() {});
+    try {
+      await _lifecycle!.complete(close);
+      _pendingSessionClose = null;
+      _sessionCompleted = true;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'บันทึกคำตอบแล้วแต่ปิดเซสชันไม่สำเร็จ');
+      }
+    }
+  }
+
+  Future<void> _retrySessionClose() async {
+    final close = _pendingSessionClose;
+    if (close == null ||
+        !_sessionCloseRetryRequired ||
+        !_acceptsModeOperations) {
+      return;
+    }
+    setState(() => _error = null);
+    try {
+      await _lifecycle!.complete(close);
+      _pendingSessionClose = null;
+      _sessionCompleted = true;
+      if (mounted) setState(() {});
+    } catch (_) {
+      if (mounted) {
+        setState(() => _error = 'ปิดเซสชันไม่สำเร็จ กรุณาลองอีกครั้ง');
       }
     }
   }
@@ -300,26 +381,40 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
         state == AppLifecycleState.paused ||
         state == AppLifecycleState.hidden ||
         state == AppLifecycleState.detached) {
-      _cancelForLifecycle().ignore();
+      clearEphemeralState();
     }
   }
 
-  Future<void> _cancelForLifecycle() async {
-    final shouldCancel = _listenPending || _listening;
+  @override
+  void clearEphemeralState() {
+    final session = _speechSession;
+    _clearRawSpeechState();
+    session?.cancel().ignore();
+  }
+
+  void _clearRawSpeechState({bool notify = true}) {
     _listenEpoch += 1;
     _listenPending = false;
-    try {
-      if (shouldCancel) await _speechSession?.cancel();
-    } on Object {
-      // Lifecycle cleanup is best effort and must not escape its detached hook.
+    _acceptedFinalEpoch = null;
+    _listening = false;
+    _startedAtUtc = null;
+    if (notify && mounted) {
+      setState(() {
+        _transcript = '';
+        _assessment = null;
+        _error = null;
+      });
+    } else {
+      _transcript = '';
+      _assessment = null;
+      _error = null;
     }
-    if (mounted && _listening) setState(() => _listening = false);
   }
 
   @override
   void dispose() {
-    _listenEpoch += 1;
-    _listenPending = false;
+    _lifecycleScope?.unregisterEphemeralState(this);
+    _clearRawSpeechState(notify: false);
     _speechSession?.release().ignore();
     _speechSession = null;
     super.dispose();
@@ -338,7 +433,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
       );
     }
     final assessment = _assessment;
-    final evidenceLocked = _pendingEvidence != null;
+    final evidenceLocked = _persistenceLocked;
     return PopScope(
       canPop: !evidenceLocked,
       child: Scaffold(
@@ -353,7 +448,9 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                 button: true,
                 label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
                 child: InkWell(
-                  onTap: evidenceLocked ? null : _speakWord,
+                  onTap: evidenceLocked || _sessionCompleted
+                      ? null
+                      : _speakWord,
                   borderRadius: BorderRadius.circular(12),
                   child: Padding(
                     padding: const EdgeInsets.symmetric(vertical: 12),
@@ -415,7 +512,8 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
               const SizedBox(height: 24),
               FilledButton.icon(
                 key: const ValueKey<String>('speech-listen-button'),
-                onPressed: _listenPending || _pendingEvidence != null
+                onPressed:
+                    _listenPending || _persistenceLocked || _sessionCompleted
                     ? null
                     : (_listening ? _stopListening : _startListening),
                 icon: Icon(_listening ? Icons.stop : Icons.mic),
@@ -429,24 +527,22 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                   child: const Text('Retry saved pronunciation'),
                 ),
               ],
+              if (_sessionCloseRetryRequired) ...[
+                const SizedBox(height: 12),
+                FilledButton(
+                  key: const ValueKey<String>('session-close-retry'),
+                  onPressed: _retrySessionClose,
+                  child: const Text('Retry session completion'),
+                ),
+              ],
               const SizedBox(height: 12),
               OutlinedButton(
                 onPressed: evidenceLocked
                     ? null
-                    : assessment?.isExactMatch == true
-                    ? () => AppNavigator.pushPage<void>(
-                        context,
-                        AppPage<void>(
-                          name: 'learning/word-scramble',
-                          builder: (_) =>
-                              WordScrambleScreen(word: widget.correctWord),
-                        ),
-                        replace: true,
-                      )
                     : () => Navigator.maybePop(context),
                 child: Text(
-                  assessment?.isExactMatch == true
-                      ? 'ไปเกมเรียงคำ'
+                  assessment?.isExactMatch == true || _sessionCompleted
+                      ? 'เสร็จสิ้น'
                       : 'กลับไปแบบทดสอบ',
                 ),
               ),

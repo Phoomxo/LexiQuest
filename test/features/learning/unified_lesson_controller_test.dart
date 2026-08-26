@@ -237,6 +237,124 @@ void main() {
     );
   });
 
+  test(
+    'route close exposes pre-write teardown retry and freezes its cutoff',
+    () async {
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      var routeNow = fixture.now.add(const Duration(seconds: 5));
+      var routeNowReads = 0;
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () {
+          routeNowReads += 1;
+          return routeNow;
+        },
+      );
+      final close = fixture.learning.captureSessionClose(
+        sessionId: fixture.startCommand.sessionId,
+      );
+      monotonicMicros = const Duration(seconds: 5).inMicroseconds;
+      timeRepository.failNextAppend = true;
+
+      await expectLater(route.complete(close), throwsStateError);
+
+      expect(close.status, PendingLearningSessionCloseStatus.captured);
+      expect(fixture.repository.finishCalls, 0);
+      expect(fixture.controller.sessionCompletionRetryRequired, isTrue);
+      expect(routeNowReads, 1);
+
+      routeNow = fixture.now.add(const Duration(hours: 1));
+      monotonicMicros = const Duration(hours: 1).inMicroseconds;
+      await route.complete(close);
+
+      expect(
+        routeNowReads,
+        1,
+        reason: 'the accepted terminal cutoff is frozen',
+      );
+      expect(fixture.controller.sessionCompletionRetryRequired, isFalse);
+      expect(fixture.repository.finishCalls, 1);
+      expect(timeRepository.segments, hasLength(1));
+      expect(
+        timeRepository.segments.single.activeDuration,
+        const Duration(seconds: 5),
+      );
+      expect(timeRepository.attempts, hasLength(2));
+      expect(timeRepository.attempts.last, timeRepository.attempts.first);
+    },
+  );
+
+  test(
+    'post-write time and close acknowledgement loss replay one frozen sequence',
+    () async {
+      final timeRepository = _MemoryLearningTimeRepository();
+      var monotonicMicros = 0;
+      final activeTime = _activeTimeController(
+        timeRepository,
+        monotonicMicros: () => monotonicMicros,
+      );
+      final fixture = await _fixture(
+        adapter: _ActiveEffortAdapter(),
+        activeLearningTime: activeTime,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      var routeNow = fixture.now.add(const Duration(seconds: 7));
+      final route = UnifiedLessonRouteLifecycle(
+        fixture.controller,
+        fixture.learning,
+        () => routeNow,
+      );
+      final close = fixture.learning.captureSessionClose(
+        sessionId: fixture.startCommand.sessionId,
+      );
+      monotonicMicros = const Duration(seconds: 7).inMicroseconds;
+      timeRepository.loseNextAppendAcknowledgement = true;
+
+      await expectLater(route.complete(close), throwsStateError);
+      expect(timeRepository.segments, hasLength(1));
+      expect(close.status, PendingLearningSessionCloseStatus.captured);
+      expect(fixture.repository.finishCalls, 0);
+      expect(fixture.controller.sessionCompletionRetryRequired, isTrue);
+
+      fixture.repository.loseNextFinishAcknowledgement = true;
+      routeNow = fixture.now.add(const Duration(hours: 2));
+      monotonicMicros = const Duration(hours: 2).inMicroseconds;
+      await expectLater(route.complete(close), throwsStateError);
+
+      expect(timeRepository.segments, hasLength(1));
+      expect(timeRepository.attempts, hasLength(2));
+      expect(timeRepository.attempts.last, timeRepository.attempts.first);
+      expect(close.requiresRetry, isTrue);
+      expect(fixture.repository.finishCalls, 1);
+      expect(fixture.controller.sessionCompletionRetryRequired, isTrue);
+
+      await route.complete(close);
+
+      expect(fixture.controller.state.status, LessonSessionStatus.completed);
+      expect(fixture.controller.sessionCompletionRetryRequired, isFalse);
+      expect(timeRepository.segments, hasLength(1));
+      expect(fixture.repository.finishCalls, 2);
+      final sessions = await fixture.database
+          .select(fixture.database.learningSessions)
+          .get();
+      expect(
+        sessions.singleWhere((session) => session.id == close.sessionId).state,
+        'completed',
+      );
+    },
+  );
+
   test('time append failure freezes abandonment until exact retry', () async {
     final timeRepository = _MemoryLearningTimeRepository();
     var monotonicMicros = 0;
@@ -3179,6 +3297,7 @@ final class _MemoryLearningTimeRepository implements LearningTimeRepository {
   final attempts = <LearningTimeSegment>[];
   bool failActiveDuration = false;
   bool failNextAppend = false;
+  bool loseNextAppendAcknowledgement = false;
   bool _blockNextAppend = false;
   Completer<void>? _blockedAppendStarted;
   Completer<void>? _blockedAppendRelease;
@@ -3239,6 +3358,10 @@ final class _MemoryLearningTimeRepository implements LearningTimeRepository {
         return;
       }
       segments.add(segment);
+      if (loseNextAppendAcknowledgement) {
+        loseNextAppendAcknowledgement = false;
+        throw StateError('injected post-write time acknowledgement loss');
+      }
     } finally {
       _concurrentAppends -= 1;
     }
@@ -3321,6 +3444,7 @@ final class _CountingRepository
   final List<RecordAnswerCommand> recordCommands = <RecordAnswerCommand>[];
   bool _lostAckSent = false;
   bool failNextFinish = false;
+  bool loseNextFinishAcknowledgement = false;
 
   void releaseRecord() {
     if (!_recordRelease.isCompleted) _recordRelease.complete();
@@ -3371,11 +3495,16 @@ final class _CountingRepository
       throw StateError('injected finish failure');
     }
     if (failFinish) throw StateError('finish failed');
-    return delegate.finishSession(
+    final result = await delegate.finishSession(
       ownerId: ownerId,
       sessionId: sessionId,
       endedAtUtc: endedAtUtc,
     );
+    if (loseNextFinishAcknowledgement) {
+      loseNextFinishAcknowledgement = false;
+      throw StateError('injected post-write close acknowledgement loss');
+    }
+    return result;
   }
 
   @override

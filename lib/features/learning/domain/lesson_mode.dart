@@ -10,6 +10,12 @@ enum LessonMode {
   matching,
   flashcard,
   handwritingScratchpad,
+  dictation,
+  speaking,
+  shadowing,
+  cefrReading,
+  sentenceScramble,
+  wordScramble,
 }
 
 /// Canonical behavior when a partially composed registry has no registration
@@ -35,6 +41,12 @@ extension LessonModeIdentity on LessonMode {
     LessonMode.matching => 'matching',
     LessonMode.flashcard => 'flashcard',
     LessonMode.handwritingScratchpad => 'handwriting-scratchpad',
+    LessonMode.dictation => 'dictation',
+    LessonMode.speaking => 'speaking',
+    LessonMode.shadowing => 'shadowing',
+    LessonMode.cefrReading => 'cefr-reading',
+    LessonMode.sentenceScramble => 'sentence-scramble',
+    LessonMode.wordScramble => 'word-scramble',
   };
 }
 

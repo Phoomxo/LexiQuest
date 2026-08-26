@@ -133,9 +133,22 @@ void main() {
               (evidenceClass == EvidenceClass.exposure ||
                   evidenceClass == EvidenceClass.recognition ||
                   evidenceClass == EvidenceClass.guidedPractice);
+          final hasNativeSafetyFloor =
+              (evidenceClass == EvidenceClass.pronunciation ||
+                  evidenceClass == EvidenceClass.exposure ||
+                  evidenceClass == EvidenceClass.guidedPractice) &&
+              const <LearningProjection>{
+                LearningProjection.masterySrs,
+                LearningProjection.assessmentOutcome,
+                LearningProjection.quest,
+                LearningProjection.streak,
+                LearningProjection.achievement,
+                LearningProjection.xp,
+                LearningProjection.coins,
+              }.contains(projection);
           final expectedShadow = evidenceClass == EvidenceClass.recreational
               ? _expectedV1[evidenceClass]![projection]
-              : hasSrsSafetyFloor
+              : hasSrsSafetyFloor || hasNativeSafetyFloor
               ? ProjectionDisposition.deny
               : _expectedLegacy[projection];
           expect(
@@ -275,6 +288,47 @@ void main() {
               ).dispositionToApply,
               ProjectionDisposition.deny,
             );
+          }
+        }
+      },
+    );
+
+    test(
+      'native non-independent evidence keeps every learning and motivation safety floor',
+      () {
+        const forbidden = <LearningProjection>{
+          LearningProjection.masterySrs,
+          LearningProjection.assessmentOutcome,
+          LearningProjection.quest,
+          LearningProjection.streak,
+          LearningProjection.achievement,
+          LearningProjection.xp,
+          LearningProjection.coins,
+        };
+        for (final evidenceClass in const <EvidenceClass>[
+          EvidenceClass.pronunciation,
+          EvidenceClass.exposure,
+          EvidenceClass.guidedPractice,
+          EvidenceClass.recreational,
+        ]) {
+          for (final context in <EvidenceContext>[
+            _legacyContext(evidenceClass: evidenceClass),
+            _declaredContext(
+              evidenceClass: evidenceClass,
+              rolloutMode: EvidencePolicyRolloutMode.shadow,
+            ),
+          ]) {
+            for (final projection in forbidden) {
+              expect(
+                EvidenceProjectionDecision.resolve(
+                  context: context,
+                  projection: projection,
+                ).isEligible,
+                isFalse,
+                reason:
+                    '${context.rolloutMode.name} ${evidenceClass.name} ${projection.name}',
+              );
+            }
           }
         }
       },

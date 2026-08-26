@@ -1,13 +1,12 @@
 import '../../../runtime/production_feature_contract.dart';
 import '../../../runtime/registries/feature.dart';
-import '../domain/evidence_context.dart';
-import '../domain/hint_policy.dart';
 import '../domain/lesson_mode.dart';
 import 'definition_quiz_mode_adapter.dart';
 import 'cloze_mode_adapter.dart';
 import 'flashcard_mode_adapter.dart';
 import 'meaning_quiz_mode_adapter.dart';
 import 'matching_mode_adapter.dart';
+import 'native_mode_adapters.dart';
 import 'typed_recall_mode_adapter.dart';
 import 'handwriting_self_check_adapter.dart';
 
@@ -166,7 +165,7 @@ LessonModeRegistry buildLessonModeRegistry({
   return LessonModeRegistry(
     <LessonModeRegistration>[
       registration(
-        adapter: const _AssociativeReadingModeAdapter(),
+        adapter: const AssociativeReadingModeAdapter(),
         feature: Feature.reading,
         routeName: 'learning/associative-reading',
       ),
@@ -202,6 +201,36 @@ LessonModeRegistry buildLessonModeRegistry({
         routeName: 'learning/handwriting-scratchpad',
         deliveryState: handwritingDeliveryState,
       ),
+      registration(
+        adapter: const DictationModeAdapter(),
+        feature: Feature.quiz,
+        routeName: 'game/dictation',
+      ),
+      registration(
+        adapter: const SpeakingModeAdapter(),
+        feature: Feature.speechPractice,
+        routeName: 'practice/speaking',
+      ),
+      registration(
+        adapter: const ShadowingModeAdapter(),
+        feature: Feature.speechPractice,
+        routeName: 'practice/shadowing',
+      ),
+      registration(
+        adapter: const CefrReadingModeAdapter(),
+        feature: Feature.reading,
+        routeName: 'learning/cefr-reading',
+      ),
+      registration(
+        adapter: const SentenceScrambleModeAdapter(),
+        feature: Feature.quiz,
+        routeName: 'game/sentence-scramble',
+      ),
+      registration(
+        adapter: const WordScrambleModeAdapter(),
+        feature: Feature.quiz,
+        routeName: 'game/word-scramble',
+      ),
     ],
     typedRecall: TypedRecallCapabilityRegistration(
       adapter: const TypedRecallModeAdapter(),
@@ -210,34 +239,5 @@ LessonModeRegistry buildLessonModeRegistry({
           productionFeatureContract[Feature.quiz]!.productionEntryId,
       routeName: 'learning/typed-recall',
     ),
-  );
-}
-
-final class _AssociativeReadingModeAdapter
-    implements
-        FocusTimerSupportingLessonModeAdapter,
-        HintSupportingLessonModeAdapter {
-  const _AssociativeReadingModeAdapter();
-
-  @override
-  LessonMode get mode => LessonMode.associativeReading;
-
-  @override
-  HintPolicy get hintPolicy => const TypedRecallModeAdapter().hintPolicy;
-
-  @override
-  EvidenceContext classify(LessonResponse response, LessonSupport support) {
-    final context = support.evidenceContext;
-    if (context.evidenceClass == EvidenceClass.recreational) {
-      throw StateError(
-        'Associative reading cannot record recreational lesson evidence.',
-      );
-    }
-    return context;
-  }
-
-  @override
-  Future<LessonItem> next(LessonCursor cursor) => Future<LessonItem>.error(
-    StateError('Associative reading owns staged item selection.'),
   );
 }

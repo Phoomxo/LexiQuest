@@ -21,6 +21,9 @@ enum CurrentActivityInput {
   speakToText,
   shadowing,
   readingExposure,
+  dictation,
+  sentenceScramble,
+  wordScramble,
 }
 
 HintEvidenceClassification classifyCurrentActivityEvidence(
@@ -920,6 +923,21 @@ _CurrentActivityDeclaration _declarationFor(CurrentActivityInput input) {
       evidenceClass: EvidenceClass.exposure,
       skillId: 'reading-exposure',
       promptMode: 'readingExposure',
+    ),
+    CurrentActivityInput.dictation => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'dictation-spelling',
+      promptMode: 'dictation',
+    ),
+    CurrentActivityInput.sentenceScramble => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.recreational,
+      skillId: 'sentence-scramble',
+      promptMode: 'sentenceScramble',
+    ),
+    CurrentActivityInput.wordScramble => const _CurrentActivityDeclaration(
+      evidenceClass: EvidenceClass.recreational,
+      skillId: 'word-scramble',
+      promptMode: 'wordScramble',
     ),
   };
 }

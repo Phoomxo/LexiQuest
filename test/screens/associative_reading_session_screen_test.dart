@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
@@ -33,6 +34,14 @@ const _typedChecksum =
 
 void main() {
   group('B3 Associative Reading Session Screen Tests', () {
+    test('f13 associative reading declares its native adapter boundary', () {
+      final source = File(
+        'lib/screens/associative_reading_session_screen.dart',
+      ).readAsStringSync();
+      expect(source, contains('AssociativeReadingModeAdapter'));
+      expect(source, contains('nativeModeAdapter'));
+    });
+
     late AppDatabase database;
     late DriftLocalOwnerRepository owners;
     late LearningUseCases learning;

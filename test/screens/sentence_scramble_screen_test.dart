@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/screens/sentence_scramble_screen.dart';
@@ -24,6 +26,16 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  test('f13 sentence scramble delegates correctness to its typed adapter', () {
+    final source = File(
+      'lib/screens/sentence_scramble_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('SentenceScrambleModeAdapter'));
+    expect(source, contains('_modeAdapter.evaluate('));
+    expect(source, contains('_lifecycle!.complete('));
+    expect(source, isNot(contains('userSentence == widget.targetSentence')));
+  });
+
   testWidgets(
     'SentenceScrambleScreen allows word selection and sentence checking',
     (WidgetTester tester) async {

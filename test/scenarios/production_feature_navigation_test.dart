@@ -23,6 +23,7 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack_repository.dart';
@@ -418,6 +419,9 @@ void _expectEnabledDestination(
 ) {
   final destination = find.byType(entryCase.destinationType);
   expect(destination, findsOneWidget);
+  if (entryCase.feature == Feature.speechPractice) {
+    expect(find.byType(UnifiedLessonShell), findsOneWidget);
+  }
   if (entryCase.routeName != null) {
     final route = ModalRoute.of(tester.element(destination));
     expect(route?.settings.name, entryCase.routeName);

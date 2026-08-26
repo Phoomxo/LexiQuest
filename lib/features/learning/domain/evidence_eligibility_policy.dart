@@ -173,6 +173,23 @@ ProjectionDisposition effectiveProjectionDisposition({
   if (context.evidenceClass == EvidenceClass.recreational) {
     return evidenceEligibilityV1[EvidenceClass.recreational]![projection]!;
   }
+  final keepsNativeSafetyFloor =
+      (context.evidenceClass == EvidenceClass.pronunciation ||
+          context.evidenceClass == EvidenceClass.exposure ||
+          context.evidenceClass == EvidenceClass.guidedPractice) &&
+      switch (projection) {
+        LearningProjection.masterySrs ||
+        LearningProjection.assessmentOutcome ||
+        LearningProjection.quest ||
+        LearningProjection.streak ||
+        LearningProjection.achievement ||
+        LearningProjection.xp ||
+        LearningProjection.coins => true,
+        _ => false,
+      };
+  if (keepsNativeSafetyFloor) {
+    return evidenceEligibilityV1[context.evidenceClass]![projection]!;
+  }
   // Exposure, recognition, and guided practice are never binary recall memory
   // updates, including while unrelated projections still use the
   // class-agnostic Legacy rollout. This safety floor is deliberately scoped to

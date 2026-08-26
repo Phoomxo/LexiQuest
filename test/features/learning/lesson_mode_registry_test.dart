@@ -7,12 +7,32 @@ import 'package:vocab_learning_app/features/learning/application/legacy_lesson_m
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
 void main() {
+  test('canonical lesson modes include the exact native production set', () {
+    expect(LessonMode.values.map((mode) => mode.id).toSet(), <String>{
+      'associative-reading',
+      'meaning-quiz',
+      'typed-recall',
+      'definition-quiz',
+      'cloze',
+      'matching',
+      'flashcard',
+      'handwriting-scratchpad',
+      'dictation',
+      'speaking',
+      'shadowing',
+      'cefr-reading',
+      'sentence-scramble',
+      'word-scramble',
+    });
+  });
+
   test(
     'production registry has one adapter for each canonical learning entry',
     () {
@@ -28,8 +48,14 @@ void main() {
         LessonMode.matching,
         LessonMode.flashcard,
         LessonMode.handwritingScratchpad,
+        LessonMode.dictation,
+        LessonMode.speaking,
+        LessonMode.shadowing,
+        LessonMode.cefrReading,
+        LessonMode.sentenceScramble,
+        LessonMode.wordScramble,
       });
-      expect(registrations, hasLength(8));
+      expect(registrations, hasLength(14));
       expect(
         <LessonMode, Feature>{
           for (final entry in registrations) entry.mode: entry.feature,
@@ -43,6 +69,12 @@ void main() {
           LessonMode.matching: Feature.quiz,
           LessonMode.flashcard: Feature.srs,
           LessonMode.handwritingScratchpad: Feature.quiz,
+          LessonMode.dictation: Feature.quiz,
+          LessonMode.speaking: Feature.speechPractice,
+          LessonMode.shadowing: Feature.speechPractice,
+          LessonMode.cefrReading: Feature.reading,
+          LessonMode.sentenceScramble: Feature.quiz,
+          LessonMode.wordScramble: Feature.quiz,
         },
       );
       expect(
@@ -68,7 +100,31 @@ void main() {
       );
       expect(
         registry.find(LessonMode.associativeReading)!.adapter,
-        isNot(isA<TypedRecallModeAdapter>()),
+        isA<AssociativeReadingModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.dictation)!.adapter,
+        isA<DictationModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.speaking)!.adapter,
+        isA<SpeakingModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.shadowing)!.adapter,
+        isA<ShadowingModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.cefrReading)!.adapter,
+        isA<CefrReadingModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.sentenceScramble)!.adapter,
+        isA<SentenceScrambleModeAdapter>(),
+      );
+      expect(
+        registry.find(LessonMode.wordScramble)!.adapter,
+        isA<WordScrambleModeAdapter>(),
       );
       expect(registry.typedRecall, isNotNull);
       expect(registry.typedRecall!.feature, Feature.quiz);
@@ -107,6 +163,12 @@ void main() {
           LessonMode.matching: 'learning/matching',
           LessonMode.flashcard: 'learning/srs',
           LessonMode.handwritingScratchpad: 'learning/handwriting-scratchpad',
+          LessonMode.dictation: 'game/dictation',
+          LessonMode.speaking: 'practice/speaking',
+          LessonMode.shadowing: 'practice/shadowing',
+          LessonMode.cefrReading: 'learning/cefr-reading',
+          LessonMode.sentenceScramble: 'game/sentence-scramble',
+          LessonMode.wordScramble: 'game/word-scramble',
         },
       );
     },

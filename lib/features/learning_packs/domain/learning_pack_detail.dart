@@ -45,5 +45,11 @@ final class LearningPackActivity {
     LessonMode.matching => 'Matching',
     LessonMode.flashcard => 'Flashcards',
     LessonMode.handwritingScratchpad => 'Handwriting scratchpad',
+    LessonMode.dictation => 'Dictation',
+    LessonMode.speaking => 'Speaking',
+    LessonMode.shadowing => 'Shadowing',
+    LessonMode.cefrReading => 'CEFR reading',
+    LessonMode.sentenceScramble => 'Sentence scramble',
+    LessonMode.wordScramble => 'Word scramble',
   };
 }

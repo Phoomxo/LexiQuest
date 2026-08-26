@@ -4,9 +4,12 @@ import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
+import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
 import '../features/learning/application/matching_mode_adapter.dart';
+import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
+import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -14,11 +17,17 @@ import '../runtime/app_dependencies.dart';
 import '../runtime/production_feature_gate.dart';
 import '../runtime/registries/feature_registry.dart';
 import 'associative_reading_launcher_screen.dart';
+import 'cefr_article_reader_screen.dart';
 import 'definition_quiz_screen.dart';
+import 'dictation_quiz_screen.dart';
 import 'fill_in_the_blanks_screen.dart';
 import 'quiz_screen.dart';
 import 'matching_mode_screen.dart';
+import 'sentence_scramble_screen.dart';
+import 'shadowing_challenge_screen.dart';
+import 'speak_to_text_screen.dart';
 import 'srs_flashcards_screen.dart';
+import 'word_scramble_screen.dart';
 
 class ChooseModeScreen extends StatelessWidget {
   const ChooseModeScreen({super.key, this.featureRegistry, this.lessonModes});
@@ -33,6 +42,12 @@ class ChooseModeScreen extends StatelessWidget {
     final modes = lessonModes ?? dependencies?.lessonModes;
     final matching = modes?.resolve(LessonMode.matching);
     final typedRecall = modes?.resolveTypedRecall();
+    final dictation = modes?.resolve(LessonMode.dictation);
+    final speaking = modes?.resolve(LessonMode.speaking);
+    final shadowing = modes?.resolve(LessonMode.shadowing);
+    final cefrReading = modes?.resolve(LessonMode.cefrReading);
+    final sentenceScramble = modes?.resolve(LessonMode.sentenceScramble);
+    final wordScramble = modes?.resolve(LessonMode.wordScramble);
     return Scaffold(
       appBar: AppBar(title: const Text('เลือกกิจกรรมการเรียน')),
       body: ListView(
@@ -134,13 +149,144 @@ class ChooseModeScreen extends StatelessWidget {
                 ),
               ),
             ),
-          const Padding(
-            padding: EdgeInsets.only(top: 20),
-            child: Text(
-              'เกม Sentence Scramble จะเปิดในรุ่นถัดไป',
-              textAlign: TextAlign.center,
+          if (features?.isVisible(Feature.reading) == true &&
+              cefrReading != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/reading/cefr'),
+              icon: Icons.chrome_reader_mode_outlined,
+              title: 'CEFR Reading',
+              subtitle: 'Read a levelled passage and hear words in context.',
+              onTap: () =>
+                  _openMode(context, LessonMode.cefrReading, (_, adapter) {
+                    final cefrAdapter = adapter as CefrReadingModeAdapter;
+                    return NativeVocabularyLessonModeLoader(
+                      isQuestionAvailable: (question) {
+                        try {
+                          cefrAdapter.requireCanonicalCefrLevel(
+                            question.word.cefrLevel,
+                          );
+                          return true;
+                        } on StateError {
+                          return false;
+                        }
+                      },
+                      builder: (_, session, question) =>
+                          CefrArticleReaderScreen(
+                            title: 'Vocabulary reading',
+                            content:
+                                '${question.word.spelling} means '
+                                '${question.word.meaning}.',
+                            cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
+                              question.word.cefrLevel,
+                            ),
+                            sessionId: session.id,
+                            wordId: question.word.id,
+                            modeAdapter: cefrAdapter,
+                          ),
+                    );
+                  }),
             ),
-          ),
+          if (features?.isVisible(Feature.quiz) == true && dictation != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/dictation'),
+              icon: Icons.hearing_outlined,
+              title: 'Dictation',
+              subtitle: 'Listen and type the vocabulary word.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.dictation,
+                (_, adapter) => NativeVocabularyLessonModeLoader(
+                  builder: (_, session, question) => DictationQuizScreen(
+                    targetWord: question.word.spelling,
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: adapter as DictationModeAdapter,
+                  ),
+                ),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true &&
+              sentenceScramble != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/sentence-scramble'),
+              icon: Icons.format_list_numbered_outlined,
+              title: 'Sentence Scramble',
+              subtitle: 'Rebuild a vocabulary sentence in the correct order.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.sentenceScramble,
+                (_, adapter) => NativeVocabularyLessonModeLoader(
+                  builder: (_, session, question) => SentenceScrambleScreen(
+                    targetSentence:
+                        '${question.word.spelling} means '
+                        '${question.word.meaning}',
+                    translation: question.word.meaning,
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: adapter as SentenceScrambleModeAdapter,
+                  ),
+                ),
+              ),
+            ),
+          if (features?.isVisible(Feature.quiz) == true && wordScramble != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/quiz/word-scramble'),
+              icon: Icons.extension_outlined,
+              title: 'Word Scramble',
+              subtitle: 'Rebuild a vocabulary word from shuffled letters.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.wordScramble,
+                (_, adapter) => NativeVocabularyLessonModeLoader(
+                  builder: (_, session, question) => WordScrambleScreen(
+                    word: question.word.spelling,
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: adapter as WordScrambleModeAdapter,
+                  ),
+                ),
+              ),
+            ),
+          if (features?.isVisible(Feature.speechPractice) == true &&
+              speaking != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/speech/speaking'),
+              icon: Icons.mic_outlined,
+              title: 'Speaking',
+              subtitle: 'Practice a word with on-device speech recognition.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.speaking,
+                (_, adapter) => NativeVocabularyLessonModeLoader(
+                  builder: (_, session, question) => SpeakToTextScreen(
+                    correctWord: question.word.spelling,
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: adapter as SpeakingModeAdapter,
+                  ),
+                ),
+              ),
+            ),
+          if (features?.isVisible(Feature.speechPractice) == true &&
+              shadowing != null)
+            _LearningTile(
+              key: const ValueKey<String>('home/learn/speech/shadowing'),
+              icon: Icons.record_voice_over_outlined,
+              title: 'Shadowing',
+              subtitle: 'Repeat a local vocabulary prompt after the model.',
+              onTap: () => _openMode(
+                context,
+                LessonMode.shadowing,
+                (_, adapter) => NativeVocabularyLessonModeLoader(
+                  builder: (_, session, question) => ShadowingChallengeScreen(
+                    referenceSentence: question.word.spelling,
+                    sessionId: session.id,
+                    wordId: question.word.id,
+                    modeAdapter: adapter as ShadowingModeAdapter,
+                  ),
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -244,6 +390,93 @@ class ChooseModeScreen extends StatelessWidget {
           );
         },
       ),
+    );
+  }
+}
+
+typedef NativeLessonModeScreenBuilder =
+    Widget Function(
+      BuildContext context,
+      QuizSession session,
+      QuizQuestion question,
+    );
+typedef NativeLessonQuestionAvailability = bool Function(QuizQuestion question);
+
+/// Loads one repository-owned vocabulary item only after the enclosing shell
+/// exists, so flag retirement owns delayed-session compensation.
+class NativeVocabularyLessonModeLoader extends StatefulWidget {
+  const NativeVocabularyLessonModeLoader({
+    super.key,
+    required this.builder,
+    this.isQuestionAvailable,
+  });
+
+  final NativeLessonModeScreenBuilder builder;
+  final NativeLessonQuestionAvailability? isQuestionAvailable;
+
+  @override
+  State<NativeVocabularyLessonModeLoader> createState() =>
+      _NativeVocabularyModeLoaderState();
+}
+
+class _NativeVocabularyModeLoaderState
+    extends State<NativeVocabularyLessonModeLoader> {
+  Future<QuizSession>? _load;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_load != null) return;
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
+    final learning = dependencies?.learning;
+    if (learning == null || lifecycle == null) {
+      _load = Future<QuizSession>.error(
+        StateError('native lesson session authority is unavailable'),
+      );
+      return;
+    }
+    _load = _loadSession(learning, lifecycle);
+  }
+
+  Future<QuizSession> _loadSession(
+    LearningUseCases learning,
+    UnifiedLessonSessionLifecycle lifecycle,
+  ) async {
+    final session = await lifecycle.initializeSession(
+      learning.startQuiz(limit: 1),
+    );
+    if (!session.isEmpty &&
+        widget.isQuestionAvailable?.call(session.questions.single) == false) {
+      await lifecycle.abandon();
+      throw StateError('native lesson content is unavailable');
+    }
+    return session;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<QuizSession>(
+      future: _load,
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return const Scaffold(
+            body: Center(child: Text('This lesson mode is unavailable.')),
+          );
+        }
+        final session = snapshot.data;
+        if (session == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (session.isEmpty) {
+          return const Scaffold(
+            body: Center(child: Text('Add vocabulary before starting.')),
+          );
+        }
+        return widget.builder(context, session, session.questions.single);
+      },
     );
   }
 }

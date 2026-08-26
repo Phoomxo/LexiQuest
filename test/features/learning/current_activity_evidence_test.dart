@@ -79,6 +79,9 @@ void main() {
         CurrentActivityInput.speakToText: EvidenceClass.pronunciation,
         CurrentActivityInput.shadowing: EvidenceClass.pronunciation,
         CurrentActivityInput.readingExposure: EvidenceClass.exposure,
+        CurrentActivityInput.dictation: EvidenceClass.independentRecall,
+        CurrentActivityInput.sentenceScramble: EvidenceClass.recreational,
+        CurrentActivityInput.wordScramble: EvidenceClass.recreational,
       };
 
       for (final input in CurrentActivityInput.values) {

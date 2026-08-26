@@ -8,6 +8,7 @@ import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/application/learning_pack_use_cases.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/learning_pack.dart';
@@ -381,6 +382,7 @@ Widget _mainNavigationApp(FeatureRegistry registry) {
       nowUtc: () => DateTime.utc(2026, 8, 24),
       buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
     ),
+    lessonModes: buildLessonModeRegistry(),
     progress: progress,
     studyPlanning: StudyPlanningUseCases(
       packs: _NavigationLearningPacks(),

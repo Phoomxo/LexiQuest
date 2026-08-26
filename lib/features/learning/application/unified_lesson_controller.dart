@@ -152,6 +152,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   FocusTimerController? get focusTimer => _focusTimer;
   Feature? get focusTimerFeature => _focusTimerFeature;
   Object? get lastActiveLearningTimeFailure => _lastActiveLearningTimeFailure;
+  bool get sessionCompletionRetryRequired => _terminalClosePending != null;
   bool get terminalMutationInFlight =>
       _completionInFlight != null ||
       _capturedCompletionInFlight != null ||

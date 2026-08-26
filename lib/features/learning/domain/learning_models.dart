@@ -10,6 +10,7 @@ final class QuizWord {
     required this.spelling,
     required this.meaning,
     required this.partOfSpeech,
+    this.cefrLevel,
     this.normalizedSpelling,
     this.normalizedMeaning,
     this.contentRevision,
@@ -24,6 +25,7 @@ final class QuizWord {
   final String spelling;
   final String meaning;
   final String partOfSpeech;
+  final String? cefrLevel;
   final String? normalizedSpelling;
   final String? normalizedMeaning;
   final int? contentRevision;

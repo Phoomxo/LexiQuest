@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import '../features/learning/application/native_mode_adapters.dart';
+import '../features/learning/domain/lesson_mode.dart';
+import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
 import '../runtime/production_feature_gate.dart';
@@ -259,9 +262,65 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
     );
   }
 
+  void _pushRegisteredShadowing() {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final registration = dependencies?.lessonModes?.resolve(
+      LessonMode.shadowing,
+    );
+    if (registration?.adapter is! ShadowingModeAdapter) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('This lesson mode is unavailable.')),
+      );
+      return;
+    }
+    final adapter = registration!.adapter as ShadowingModeAdapter;
+    _pushDestination(
+      registration.routeName,
+      (_) => ProductionFeatureGate(
+        feature: registration.feature,
+        registry: widget.featureRegistry ?? dependencies?.features,
+        builder: (context) => _buildRegisteredShadowing(
+          context,
+          adapter: adapter,
+          feature: registration.feature,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRegisteredShadowing(
+    BuildContext context, {
+    required ShadowingModeAdapter adapter,
+    required Feature feature,
+  }) {
+    final dependencies = AppDependenciesScope.maybeOf(context);
+    final createController = dependencies?.createLessonController;
+    if (createController == null || dependencies?.learning == null) {
+      return ProductionFeatureUnavailable(
+        feature: feature,
+        reason: ProductionFeatureUnavailableReason.missingDependency,
+      );
+    }
+    return UnifiedLessonModeHost(
+      adapter: adapter,
+      createController: createController,
+      feature: feature,
+      featureRegistry: widget.featureRegistry ?? dependencies?.features,
+      learning: dependencies!.learning,
+      builder: (_) => ShadowingChallengeScreen(modeAdapter: adapter),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final features = _features(context);
+    final shadowingRegistration = AppDependenciesScope.maybeOf(
+      context,
+    )?.lessonModes?.resolve(LessonMode.shadowing);
+    final shadowingFeature =
+        shadowingRegistration?.adapter is ShadowingModeAdapter
+        ? shadowingRegistration!.feature
+        : null;
     final selectedStackIndex = _entries.indexWhere(
       (entry) => entry.id == _selectedEntryId,
     );
@@ -398,16 +457,13 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
                     (_) => const ObjectScannerScreen(),
                   ),
                 ),
-              if (features?.isVisible(Feature.speechPractice) == true)
+              if (shadowingFeature != null &&
+                  features?.isVisible(shadowingFeature) == true)
                 ListTile(
                   key: const ValueKey<String>('drawer/practice/shadowing'),
                   leading: const Icon(Icons.mic_none),
                   title: const Text('ฝึกพูดตามเสียง'),
-                  onTap: () => _pushFeatureDestination(
-                    'practice/shadowing',
-                    Feature.speechPractice,
-                    (_) => const ShadowingChallengeScreen(),
-                  ),
+                  onTap: _pushRegisteredShadowing,
                 ),
               if (features?.isVisible(Feature.ghostDuel) == true)
                 ListTile(

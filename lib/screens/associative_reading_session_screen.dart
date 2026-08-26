@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
+import '../features/learning/application/native_mode_adapters.dart';
 import '../features/learning/application/typed_recall_mode_adapter.dart';
 import '../features/learning/domain/learning_models.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
@@ -69,6 +70,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.sessionLifecycle,
     this.evidenceAdapter,
     this.modeAdapter,
+    this.nativeModeAdapter = const AssociativeReadingModeAdapter(),
     this.recallPrompts,
     this.featureRegistry,
     this.claimTerminalCompensation,
@@ -102,6 +104,10 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   final UnifiedLessonSessionLifecycle? sessionLifecycle;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
   final TypedRecallModeAdapter? modeAdapter;
+
+  /// f13 catalog/shell boundary. Stage-three correctness remains owned by the
+  /// stricter f11 typed-recall adapter and never by this screen.
+  final AssociativeReadingModeAdapter nativeModeAdapter;
   final List<TypedRecallPrompt>? recallPrompts;
   final FeatureRegistry? featureRegistry;
   final AssociativeReadingTerminalCompensationClaim? claimTerminalCompensation;

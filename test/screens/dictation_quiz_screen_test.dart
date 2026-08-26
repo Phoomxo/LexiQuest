@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -31,6 +32,16 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  test('f13 dictation delegates correctness to its typed native adapter', () {
+    final source = File(
+      'lib/screens/dictation_quiz_screen.dart',
+    ).readAsStringSync();
+    expect(source, contains('DictationModeAdapter'));
+    expect(source, contains('.evaluate('));
+    expect(source, contains('_lifecycle!.complete('));
+    expect(source, isNot(contains('userInput == expected')));
+  });
+
   testWidgets(
     'DictationQuizScreen automatically plays word at 1.0x speed on start',
     (WidgetTester tester) async {

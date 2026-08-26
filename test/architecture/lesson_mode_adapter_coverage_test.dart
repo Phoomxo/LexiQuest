@@ -9,11 +9,13 @@ import 'package:vocab_learning_app/features/learning/application/legacy_lesson_m
 import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/meaning_quiz_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
 
@@ -21,6 +23,172 @@ const _typedChecksum =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
+  test('f13 owns one typed native adapter module', () {
+    final source = File(
+      'lib/features/learning/application/native_mode_adapters.dart',
+    );
+
+    expect(source.existsSync(), isTrue);
+    final contents = source.readAsStringSync();
+    for (final adapter in const <String>[
+      'AssociativeReadingModeAdapter',
+      'DictationModeAdapter',
+      'SpeakingModeAdapter',
+      'ShadowingModeAdapter',
+      'CefrReadingModeAdapter',
+      'SentenceScrambleModeAdapter',
+      'WordScrambleModeAdapter',
+    ]) {
+      expect(contents, contains('final class $adapter'));
+    }
+  });
+
+  test(
+    'legacy native catalog entries retain the registered shell boundary',
+    () {
+      final drawer = File(
+        'lib/screens/main_navigation_screen.dart',
+      ).readAsStringSync();
+      final games = File(
+        'lib/screens/game_launcher_screen.dart',
+      ).readAsStringSync();
+
+      expect(drawer, contains('UnifiedLessonModeHost'));
+      expect(drawer, contains('LessonMode.shadowing'));
+      expect(drawer, matches(RegExp(r'registration!?\.routeName')));
+      expect(drawer, isNot(contains("'practice/shadowing'")));
+      expect(drawer, isNot(contains('feature: Feature.speechPractice')));
+      expect(drawer, isNot(contains('isVisible(Feature.speechPractice)')));
+      expect(games, contains('UnifiedLessonModeHost'));
+      expect(games, contains('NativeVocabularyLessonModeLoader'));
+      expect(games, contains('sessionId: session.id'));
+      expect(games, contains('wordId: question.word.id'));
+      expect(games, contains('LessonMode.wordScramble'));
+      expect(games, contains('LessonMode.dictation'));
+      expect(games, matches(RegExp(r'registration!?\.routeName')));
+      expect(games, isNot(contains('fallbackAdapter')));
+      expect(games, isNot(contains("'game/word-scramble'")));
+      expect(games, isNot(contains("'game/dictation'")));
+    },
+  );
+
+  test(
+    'native route literals allow exactly one legacy registry compatibility module',
+    () {
+      const canonicalRegistry =
+          'lib/features/learning/application/lesson_mode_registry.dart';
+      const compatibilityWhitelist = <String>{
+        'lib/features/learning/application/legacy_lesson_mode_adapters.dart',
+      };
+      expect(compatibilityWhitelist, hasLength(1));
+      expect(
+        compatibilityWhitelist.single,
+        'lib/features/learning/application/legacy_lesson_mode_adapters.dart',
+      );
+
+      const nativeModes = <LessonMode>{
+        LessonMode.associativeReading,
+        LessonMode.dictation,
+        LessonMode.speaking,
+        LessonMode.shadowing,
+        LessonMode.cefrReading,
+        LessonMode.sentenceScramble,
+        LessonMode.wordScramble,
+      };
+      final sources = Directory('lib')
+          .listSync(recursive: true)
+          .whereType<File>()
+          .where((file) => file.path.endsWith('.dart'))
+          .toList(growable: false);
+      final legacyContents = File(
+        compatibilityWhitelist.single,
+      ).readAsStringSync();
+      final legacyNativeRoutes = buildLessonModeRegistry().registrations
+          .where((registration) => nativeModes.contains(registration.mode))
+          .map((registration) => registration.routeName)
+          .where((routeName) => legacyContents.contains("'$routeName'"))
+          .toSet();
+      expect(legacyNativeRoutes, <String>{'learning/associative-reading'});
+
+      for (final registration in buildLessonModeRegistry().registrations.where(
+        (registration) => nativeModes.contains(registration.mode),
+      )) {
+        final owners = <String>{};
+        for (final source in sources) {
+          if (source.readAsStringSync().contains(
+            "'${registration.routeName}'",
+          )) {
+            owners.add(source.path.replaceAll('\\', '/'));
+          }
+        }
+        expect(
+          owners,
+          <String>{
+            canonicalRegistry,
+            if (legacyNativeRoutes.contains(registration.routeName))
+              ...compatibilityWhitelist,
+          },
+          reason:
+              '${registration.routeName} cannot be duplicated by production screens',
+        );
+      }
+    },
+  );
+
+  test('native screens are constructed only by authorized composition roots', () {
+    const nativeScreens = <String, String>{
+      'AssociativeReadingSessionScreen':
+          'lib/screens/associative_reading_session_screen.dart',
+      'DictationQuizScreen': 'lib/screens/dictation_quiz_screen.dart',
+      'SpeakToTextScreen': 'lib/screens/speak_to_text_screen.dart',
+      'ShadowingChallengeScreen': 'lib/screens/shadowing_challenge_screen.dart',
+      'CefrArticleReaderScreen': 'lib/screens/cefr_article_reader_screen.dart',
+      'SentenceScrambleScreen': 'lib/screens/sentence_scramble_screen.dart',
+      'WordScrambleScreen': 'lib/screens/word_scramble_screen.dart',
+    };
+    const authorizedRoots = <String>{
+      'lib/screens/associative_reading_launcher_screen.dart',
+      'lib/screens/choose_mode_screen.dart',
+      'lib/screens/game_launcher_screen.dart',
+      'lib/screens/main_navigation_screen.dart',
+    };
+    final sources = Directory('lib')
+        .listSync(recursive: true)
+        .whereType<File>()
+        .where((file) => file.path.endsWith('.dart'));
+
+    for (final source in sources) {
+      final path = source.path.replaceAll('\\', '/');
+      final contents = source.readAsStringSync();
+      for (final screen in nativeScreens.entries) {
+        if (!RegExp('\\b${screen.key}\\s*\\(').hasMatch(contents)) continue;
+        final ownsDeclaration = path.endsWith(screen.value);
+        expect(
+          ownsDeclaration || authorizedRoots.any(path.endsWith),
+          isTrue,
+          reason:
+              '${screen.key} must be built only inside an authorized shell root',
+        );
+      }
+    }
+  });
+
+  test('native completion screens expose controller-owned teardown retry', () {
+    for (final path in const <String>[
+      'lib/screens/dictation_quiz_screen.dart',
+      'lib/screens/speak_to_text_screen.dart',
+      'lib/screens/shadowing_challenge_screen.dart',
+      'lib/screens/cefr_article_reader_screen.dart',
+    ]) {
+      final source = File(path).readAsStringSync();
+      expect(
+        source,
+        contains('sessionCompletionRetryRequired'),
+        reason: '$path must surface pre-close F24/focus teardown failures',
+      );
+    }
+  });
+
   test(
     'handwriting implementation cannot import capture or transport clients',
     () {
@@ -85,6 +253,36 @@ void main() {
             feature: Feature.quiz,
             entryId: 'home/learn/quiz',
             routeName: 'learning/handwriting-scratchpad',
+          ),
+          LessonMode.dictation: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'game/dictation',
+          ),
+          LessonMode.speaking: (
+            feature: Feature.speechPractice,
+            entryId: 'drawer/practice/shadowing',
+            routeName: 'practice/speaking',
+          ),
+          LessonMode.shadowing: (
+            feature: Feature.speechPractice,
+            entryId: 'drawer/practice/shadowing',
+            routeName: 'practice/shadowing',
+          ),
+          LessonMode.cefrReading: (
+            feature: Feature.reading,
+            entryId: 'home/learn/associative-reading',
+            routeName: 'learning/cefr-reading',
+          ),
+          LessonMode.sentenceScramble: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'game/sentence-scramble',
+          ),
+          LessonMode.wordScramble: (
+            feature: Feature.quiz,
+            entryId: 'home/learn/quiz',
+            routeName: 'game/word-scramble',
           ),
         };
 
@@ -177,6 +375,42 @@ void main() {
           .adapter,
       isNot(isA<TypedRecallModeAdapter>()),
     );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.dictation)
+          .adapter,
+      isA<DictationModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.speaking)
+          .adapter,
+      isA<SpeakingModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.shadowing)
+          .adapter,
+      isA<ShadowingModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.cefrReading)
+          .adapter,
+      isA<CefrReadingModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.sentenceScramble)
+          .adapter,
+      isA<SentenceScrambleModeAdapter>(),
+    );
+    expect(
+      registrations
+          .singleWhere((entry) => entry.mode == LessonMode.wordScramble)
+          .adapter,
+      isA<WordScrambleModeAdapter>(),
+    );
     final registry = buildLessonModeRegistry();
     final typedRecall = registry.typedRecall;
     expect(typedRecall, isNotNull);
@@ -227,6 +461,135 @@ void main() {
       expect(registrations, hasLength(LessonMode.values.length));
     },
   );
+
+  test(
+    'native adapters alone derive correctness and bounded evidence class',
+    () {
+      final dynamic dictation = const DictationModeAdapter();
+      final exact = dictation.evaluate(
+        target: 'Rail Station',
+        response: '  rail   station ',
+        supportUsed: false,
+      );
+      final assisted = dictation.evaluate(
+        target: 'Rail Station',
+        response: 'rail station',
+        supportUsed: true,
+      );
+      expect(exact.isCorrect, isTrue);
+      expect(exact.evidenceClass, EvidenceClass.independentRecall);
+      expect(assisted.evidenceClass, EvidenceClass.guidedPractice);
+
+      final assessment = TranscriptPronunciationAssessment(
+        target: 'cat',
+        transcript: 'cut',
+        similarityPercent: 82,
+        isExactMatch: false,
+        method: 'transcript-edit-distance-v1',
+        engine: 'device-stt',
+        locale: 'en-US',
+        occurredAtUtc: DateTime.utc(2026, 8, 26),
+      );
+      final dynamic speaking = const SpeakingModeAdapter();
+      final dynamic shadowing = const ShadowingModeAdapter();
+      final spoken = speaking.evaluate(assessment: assessment);
+      final shadowed = shadowing.evaluate(assessment: assessment);
+      expect(spoken.isCorrect, isFalse);
+      expect(spoken.evidenceClass, EvidenceClass.pronunciation);
+      expect(shadowed.isCorrect, isTrue);
+      expect(shadowed.evidenceClass, EvidenceClass.pronunciation);
+      expect(spoken.providerProvenance, isNot(contains(assessment.transcript)));
+      expect(
+        shadowed.providerProvenance,
+        isNot(contains(assessment.transcript)),
+      );
+      expect(
+        () => speaking.evaluate(
+          assessment: TranscriptPronunciationAssessment(
+            target: 'cat',
+            transcript: 'cat',
+            similarityPercent: 100,
+            isExactMatch: true,
+            method: 'm' * 40,
+            engine: 'e' * 40,
+            locale: 'l' * 40,
+            occurredAtUtc: DateTime.utc(2026, 8, 26),
+          ),
+        ),
+        throwsArgumentError,
+      );
+
+      final dynamic reading = const CefrReadingModeAdapter();
+      final dynamic sentence = const SentenceScrambleModeAdapter();
+      final dynamic word = const WordScrambleModeAdapter();
+      expect(reading.evaluate().evidenceClass, EvidenceClass.exposure);
+      for (final level in const <String>['A1', 'A2', 'B1', 'B2', 'C1', 'C2']) {
+        expect(reading.requireCanonicalCefrLevel(level), level);
+      }
+      for (final level in <String?>[null, '', 'a2', 'B3', ' C1 ']) {
+        expect(
+          () => reading.requireCanonicalCefrLevel(level),
+          throwsStateError,
+          reason: '$level is not a canonical CEFR vocabulary classification',
+        );
+      }
+      expect(
+        sentence
+            .evaluate(
+              target: 'practice makes progress',
+              response: 'practice makes progress',
+            )
+            .evidenceClass,
+        EvidenceClass.recreational,
+      );
+      expect(
+        word.evaluate(target: 'apple', response: 'apple').evidenceClass,
+        EvidenceClass.recreational,
+      );
+    },
+  );
+
+  test('associative native adapter accepts only typed contextual recall', () {
+    const adapter = AssociativeReadingModeAdapter();
+    final evidence = EvidenceContext.legacyCompatibility(
+      evidenceClass: EvidenceClass.independentRecall,
+      skillId: 'associative-recall',
+      hintLevel: 0,
+      contentRevision:
+          'lexical-typed-recall:assoc-word@1:'
+          'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
+      engagementAllowed: true,
+    );
+    LessonResponse response({
+      String promptMode = 'associativeRecall',
+      String provenance = 'typed-recall:vocabulary-text-v1:context:exact',
+    }) => LessonResponse(
+      sourceEvidenceId: 'assoc-source',
+      occurredAtUtc: DateTime.utc(2026, 8, 26),
+      sessionId: 'assoc-session',
+      wordId: 'assoc-word',
+      promptMode: promptMode,
+      isCorrect: true,
+      responseTimeMs: 150,
+      attemptNumber: 1,
+      providerProvenance: provenance,
+      feedbackContext: const AnswerFeedbackContext(
+        canonicalCorrectAnswer: 'answer',
+      ),
+    );
+
+    expect(
+      adapter.classify(response(), LessonSupport(evidenceContext: evidence)),
+      same(evidence),
+    );
+    expect(
+      () => adapter.classify(
+        response(provenance: 'native-associative:v1:exact'),
+        LessonSupport(evidenceContext: evidence),
+      ),
+      throwsStateError,
+    );
+  });
 
   test(
     'typed recall owns versioned normalization correctness and assistance',
@@ -663,7 +1026,13 @@ void main() {
             registration.mode == LessonMode.definitionQuiz ||
             registration.mode == LessonMode.cloze ||
             registration.mode == LessonMode.matching ||
-            registration.mode == LessonMode.handwritingScratchpad) {
+            registration.mode == LessonMode.handwritingScratchpad ||
+            registration.mode == LessonMode.dictation ||
+            registration.mode == LessonMode.speaking ||
+            registration.mode == LessonMode.shadowing ||
+            registration.mode == LessonMode.cefrReading ||
+            registration.mode == LessonMode.sentenceScramble ||
+            registration.mode == LessonMode.wordScramble) {
           continue;
         }
         expect(

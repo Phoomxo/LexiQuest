@@ -50,6 +50,8 @@ final class UnifiedLessonSessionLifecycle {
   final LessonEphemeralStateRegistry _ephemeralStates;
 
   bool get acceptsOperations => _routeLifecycle?.acceptsOperations ?? true;
+  bool get sessionCompletionRetryRequired =>
+      _controller.sessionCompletionRetryRequired;
 
   void registerEphemeralState(EphemeralLessonState state) =>
       _ephemeralStates.register(state);
@@ -173,6 +175,7 @@ final class UnifiedLessonRouteLifecycle {
   Future<void>? _startInFlight;
   Future<LearningSessionSummary>? _completionInFlight;
   PendingLearningSessionClose? _acceptedClose;
+  LessonTerminalCutoff? _acceptedCloseCutoff;
   Future<void>? _terminal;
   final Set<Future<void>> _acceptedOperations = <Future<void>>{};
   final LessonEphemeralStateRegistry _ephemeralStates =
@@ -267,7 +270,13 @@ final class UnifiedLessonRouteLifecycle {
       );
     }
     _acceptedClose = close;
-    final operation = _controller.completeCapturedSession(close, _nowUtc());
+    final cutoff = _acceptedCloseCutoff ??= _controller.captureTerminalCutoff(
+      _nowUtc(),
+    );
+    final operation = _controller.completeCapturedSessionAtCutoff(
+      close,
+      cutoff,
+    );
     _completionInFlight = operation;
     unawaited(
       operation.then<void>(

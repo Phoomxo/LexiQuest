@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -50,6 +51,20 @@ class FakeVoiceProvider implements VoiceProvider {
 }
 
 void main() {
+  test(
+    'f13 speaking delegates evidence capture to its typed native adapter',
+    () {
+      final source = File(
+        'lib/screens/speak_to_text_screen.dart',
+      ).readAsStringSync();
+      expect(source, contains('SpeakingModeAdapter'));
+      expect(source, matches(RegExp(r'_modeAdapter\s*\.capture\(')));
+      expect(source, contains('_lifecycle!.complete('));
+      expect(source, isNot(contains('_evidenceAdapter!.capture(')));
+      expect(source, isNot(contains("name: 'learning/word-scramble'")));
+    },
+  );
+
   testWidgets(
     'SpeakToTextScreen automatically speaks word on start using VoiceProvider',
     (WidgetTester tester) async {
@@ -182,6 +197,9 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('speech-listen-button')));
       await tester.pump();
       expect(gateway.isListening, isTrue);
+      gateway.emitPartial('private spoken draft');
+      await tester.pump();
+      expect(find.text('private spoken draft'), findsOneWidget);
 
       tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
       await tester.pump();
@@ -193,6 +211,8 @@ void main() {
 
       expect(gateway.cancelCalls, 1);
       expect(provider.stopCalls, 1);
+      expect(find.text('private spoken draft'), findsNothing);
+      expect(find.text('ระบบจะแสดงข้อความที่ได้ยินที่นี่'), findsOneWidget);
       expect(tester.takeException(), isNull);
     } finally {
       if (tester.binding.lifecycleState != AppLifecycleState.resumed) {
@@ -512,7 +532,8 @@ void main() {
         expect(repository.lastCommand?.wordId, 'word-1');
         expect(
           repository.lastCommand?.providerProvenance,
-          'device-stt|en-US|transcript-edit-distance-v1',
+          'native-speaking:v1:'
+          'device-stt|en-US|transcript-edit-distance-v1:exact',
         );
       }
     });
@@ -600,7 +621,7 @@ void main() {
       final committedAdvanceIsEnabled =
           tester.widget<OutlinedButton>(action).onPressed != null;
       final committedActionIsSuccess = find
-          .widgetWithText(OutlinedButton, 'ไปเกมเรียงคำ')
+          .widgetWithText(OutlinedButton, 'เสร็จสิ้น')
           .evaluate()
           .isNotEmpty;
 
@@ -1168,6 +1189,7 @@ final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
 
   final Object? cancelError;
   int cancelCalls = 0;
+  SpeechEventCallback? _onEvent;
 
   @override
   bool isListening = false;
@@ -1196,7 +1218,18 @@ final class _LifecycleSpeechGateway implements SpeechRecognitionGateway {
     required SpeechEventCallback onEvent,
   }) async {
     isListening = true;
+    _onEvent = onEvent;
   }
+
+  void emitPartial(String transcript) => _onEvent!(
+    SpeechRecognitionEvent(
+      transcript: transcript,
+      isFinal: false,
+      recognizedAtUtc: DateTime.utc(2026, 8, 26),
+      engine: 'device-stt',
+      locale: 'en-US',
+    ),
+  );
 
   @override
   Future<void> stop() async {
