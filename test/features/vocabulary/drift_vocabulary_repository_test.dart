@@ -355,6 +355,36 @@ void main() {
   );
 
   test(
+    'schema-valid metadata above the former limit remains enriched',
+    () async {
+      await _insertPackagedVocabularyWord(
+        database,
+        id: 'word:station',
+        spelling: 'station',
+        meaning: 'สถานี',
+      );
+      final bytes = _maximalValidLexicalArtifact();
+      expect(bytes.length, greaterThan(8 * 1024));
+      expect(bytes.length, lessThanOrEqualTo(maxLexicalMetadataArtifactBytes));
+      final pinned = DriftVocabularyRepository(
+        database,
+        contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
+          'word:station': bytes,
+        }),
+      );
+
+      final metadata = (await pinned.readPinnedByIds(const [
+        'word:station',
+      ])).single.richMetadata;
+
+      expect(metadata, isA<RichLexicalMetadata>());
+      expect(metadata!.examples, hasLength(8));
+      expect(metadata.synonyms, hasLength(8));
+      expect(metadata.antonyms, hasLength(8));
+    },
+  );
+
+  test(
     'malformed, unbounded, or checksum-mismatched metadata falls back to core words',
     () async {
       await _insertPackagedVocabularyWord(
@@ -397,10 +427,27 @@ void main() {
           ),
         }),
       );
-      final oversized = DriftVocabularyRepository(
+      final overBudgetBytes = _validArtifactOneByteOverBudget();
+      expect(overBudgetBytes.length, maxLexicalMetadataArtifactBytes + 1);
+      expect(jsonDecode(utf8.decode(overBudgetBytes)), isA<Map>());
+      expect(
+        () => RichLexicalMetadata.fromVerifiedArtifact(
+          bytes: overBudgetBytes,
+          wordId: 'word:station',
+          contentRevision: 1,
+        ),
+        throwsA(
+          isA<FormatException>().having(
+            (error) => error.message,
+            'message',
+            'lexical metadata exceeds the byte limit',
+          ),
+        ),
+      );
+      final overBudget = DriftVocabularyRepository(
         database,
         contentManifests: _LexicalArtifactResolver(<String, Uint8List>{
-          'word:station': _maximalValidLexicalArtifact(),
+          'word:station': overBudgetBytes,
         }),
       );
       final overNested = DriftVocabularyRepository(
@@ -444,7 +491,7 @@ void main() {
         isNull,
       );
       expect(
-        (await oversized.readPinnedByIds(const [
+        (await overBudget.readPinnedByIds(const [
           'word:station',
         ])).single.richMetadata,
         isNull,
@@ -505,6 +552,14 @@ Uint8List _maximalValidLexicalArtifact() {
       }),
     ),
   );
+}
+
+Uint8List _validArtifactOneByteOverBudget() {
+  final valid = _maximalValidLexicalArtifact();
+  final result = Uint8List(maxLexicalMetadataArtifactBytes + 1);
+  result.setAll(0, valid);
+  result.fillRange(valid.length, result.length, 0x20);
+  return result;
 }
 
 Uint8List _overNestedLexicalArtifact() {

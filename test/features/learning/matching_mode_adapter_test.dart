@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' show Value, Variable;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,11 +9,13 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
+import 'package:vocab_learning_app/features/learning/application/contrastive_feedback_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
+import 'package:vocab_learning_app/features/learning/domain/contrastive_explanation.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
@@ -20,8 +24,11 @@ import 'package:vocab_learning_app/features/learning/domain/learning_event_conte
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
+import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart'
+    as vocabulary_domain;
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
 void main() {
@@ -1553,9 +1560,10 @@ void main() {
                         as Map<String, dynamic>)['state']
                     as Map<String, dynamic>)['pendingEvidence']
                 as Map<String, dynamic>;
-        expect(pending['schemaVersion'], 3);
+        expect(pending['schemaVersion'], 4);
         expect(pending['actorIdentity'], guest.id);
         expect(pending['providerProvenance'], 'pinned-lexical-matching');
+        expect(pending['contrastiveFeedback'], isNull);
         final restarted = adapter.createReview(
           session: recovered.session,
           learning: retryLearning,
@@ -1780,6 +1788,272 @@ void main() {
           ),
           hasLength(1),
         );
+      },
+    );
+
+    test(
+      'f18 restart reconstructs the exact reviewed matching explanation',
+      () async {
+        await database
+            .update(database.vocabularyWords)
+            .write(
+              VocabularyWordsCompanion(
+                contentRevision: const Value(4),
+                contentChecksumSha256: Value('a' * 64),
+              ),
+            );
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+          recordFailure: _RecordFailure.beforeWrite,
+        );
+        final retryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'f18-restart-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 14, 0, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f18-test'),
+        );
+        CurrentActivityEvidenceAdapter evidence() =>
+            CurrentActivityEvidenceAdapter(learning: retryLearning);
+        final prepared = await adapter.prepareSession(
+          learning: retryLearning,
+          evidence: evidence(),
+          categoryId: 'category:travel',
+        );
+        final lexical = _matchingLexicalArtifacts(prepared.session);
+        final first = adapter.createReview(
+          session: prepared.session,
+          learning: retryLearning,
+          evidence: evidence(),
+          recovery: prepared,
+          lexicalWords: lexical.words,
+          hintUsage: () => const HintUsageSnapshot.known(0),
+        );
+        final correct = first.pairSet.pairs.first;
+        final selectedDistractor = first.pairSet.pairs.firstWhere(
+          (pair) => pair.word.id != correct.word.id,
+        );
+        await first.selectWord(correct.word.id, responseTimeMs: 100);
+        await expectLater(
+          first.selectMeaning(selectedDistractor.word.id, responseTimeMs: 200),
+          throwsStateError,
+        );
+        first.dispose();
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+
+        final recovered = await adapter.prepareSession(
+          learning: retryLearning,
+          evidence: evidence(),
+          categoryId: 'category:travel',
+        );
+        final restarted = adapter.createReview(
+          session: recovered.session,
+          learning: retryLearning,
+          evidence: evidence(),
+          recovery: recovered,
+          lexicalWords: lexical.words,
+        );
+        addTearDown(restarted.dispose);
+        final result = await restarted.retryEvidence();
+
+        expect(result!.committedContrastiveAttempt, isNotNull);
+        expect(
+          result.committedContrastiveAttempt!.correctOptionId,
+          correct.word.id,
+        );
+        expect(
+          result.committedContrastiveAttempt!.selectedDistractorId,
+          selectedDistractor.word.id,
+        );
+        final explanation = await ContrastiveFeedbackUseCases(
+          manifests: _MatchingManifestRepository(lexical.artifacts),
+        ).resolveAfterCommit(committedFeedback: restarted.feedback!);
+        expect(explanation, isNotNull);
+        expect(explanation!.manifestIdentity.id, correct.word.id);
+        expect(explanation.selectedDistractorId, selectedDistractor.word.id);
+      },
+    );
+
+    test(
+      'f18 restart rejects legacy and mutated frozen context before writes',
+      () async {
+        await database
+            .update(database.vocabularyWords)
+            .write(
+              VocabularyWordsCompanion(
+                contentRevision: const Value(4),
+                contentChecksumSha256: Value('b' * 64),
+              ),
+            );
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+          recordFailure: _RecordFailure.beforeWrite,
+        );
+        final retryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'f18-corrupt-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 26, 14, 30, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f18-test'),
+        );
+        CurrentActivityEvidenceAdapter evidence() =>
+            CurrentActivityEvidenceAdapter(learning: retryLearning);
+        final prepared = await adapter.prepareSession(
+          learning: retryLearning,
+          evidence: evidence(),
+          categoryId: 'category:travel',
+        );
+        final lexical = _matchingLexicalArtifacts(prepared.session);
+        final first = adapter.createReview(
+          session: prepared.session,
+          learning: retryLearning,
+          evidence: evidence(),
+          recovery: prepared,
+          lexicalWords: lexical.words,
+          hintUsage: () => const HintUsageSnapshot.known(0),
+        );
+        final correct = first.pairSet.pairs.first;
+        final selectedDistractor = first.pairSet.pairs.firstWhere(
+          (pair) => pair.word.id != correct.word.id,
+        );
+        await first.selectWord(correct.word.id, responseTimeMs: 100);
+        await expectLater(
+          first.selectMeaning(selectedDistractor.word.id, responseTimeMs: 200),
+          throwsStateError,
+        );
+        first.dispose();
+
+        final rows =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventType.equals('LearningActivityCheckpoint'),
+                ))
+                .get();
+        rows.sort((left, right) {
+          final leftRevision =
+              (jsonDecode(left.payloadJson) as Map<String, dynamic>)['revision']
+                  as int;
+          final rightRevision =
+              (jsonDecode(right.payloadJson)
+                      as Map<String, dynamic>)['revision']
+                  as int;
+          return leftRevision.compareTo(rightRevision);
+        });
+        final latest = rows.last;
+        final original = jsonDecode(latest.payloadJson) as Map<String, dynamic>;
+        final originalPending =
+            (original['state'] as Map<String, dynamic>)['pendingEvidence']
+                as Map<String, dynamic>;
+        expect(originalPending['schemaVersion'], 4);
+        expect(originalPending['contrastiveFeedback'], isA<Map>());
+
+        Map<String, dynamic> copyPayload() =>
+            jsonDecode(jsonEncode(original)) as Map<String, dynamic>;
+        final mutations = <String, void Function(Map<String, dynamic>)>{
+          'legacy f18 without context': (pending) {
+            pending['schemaVersion'] = 3;
+            pending.remove('contrastiveFeedback');
+          },
+          'provider provenance hash': (pending) {
+            pending['providerProvenance'] = 'f18:v1:${'0' * 64}';
+          },
+          'manifest word identity': (pending) {
+            (pending['contrastiveFeedback']
+                    as Map<String, dynamic>)['contentId'] =
+                selectedDistractor.word.id;
+          },
+          'manifest revision': (pending) {
+            (pending['contrastiveFeedback']
+                    as Map<String, dynamic>)['contentRevision'] =
+                5;
+          },
+          'manifest checksum': (pending) {
+            (pending['contrastiveFeedback']
+                    as Map<String, dynamic>)['manifestChecksumSha256'] =
+                'c' * 64;
+          },
+          'evidence revision': (pending) {
+            (pending['contrastiveFeedback']
+                    as Map<String, dynamic>)['evidenceContentRevision'] =
+                'lexical-matching:v4:${'c' * 64}';
+          },
+          'correct option identity': (pending) {
+            (pending['contrastiveFeedback']
+                as Map<String, dynamic>)['correctOptionId'] = first
+                .pairSet
+                .pairs
+                .firstWhere(
+                  (pair) =>
+                      pair.word.id != correct.word.id &&
+                      pair.word.id != selectedDistractor.word.id,
+                )
+                .word
+                .id;
+          },
+          'selected distractor identity': (pending) {
+            (pending['contrastiveFeedback']
+                as Map<String, dynamic>)['selectedDistractorId'] = first
+                .pairSet
+                .pairs
+                .firstWhere(
+                  (pair) =>
+                      pair.word.id != correct.word.id &&
+                      pair.word.id != selectedDistractor.word.id,
+                )
+                .word
+                .id;
+          },
+        };
+        for (final mutation in mutations.entries) {
+          final payload = copyPayload();
+          final pending =
+              (payload['state'] as Map<String, dynamic>)['pendingEvidence']
+                  as Map<String, dynamic>;
+          mutation.value(pending);
+          if (mutation.key != 'legacy f18 without context' &&
+              mutation.key != 'provider provenance hash') {
+            try {
+              final frozen = FrozenContrastiveFeedbackContext.fromJson(
+                (pending['contrastiveFeedback'] as Map<String, dynamic>)
+                    .cast<String, Object?>(),
+              );
+              pending['providerProvenance'] =
+                  contrastiveFeedbackAttemptProvenance(frozen);
+            } on FormatException {
+              // Invalid context shapes must fail before provenance matters.
+            }
+          }
+          await (database.update(
+            database.eventsV2,
+          )..where((row) => row.eventId.equals(latest.eventId))).write(
+            EventsV2Companion(payloadJson: Value(jsonEncode(payload))),
+          );
+          final commandsBefore = repository.commands.length;
+          await expectLater(
+            () async {
+              final recovered = await adapter.prepareSession(
+                learning: retryLearning,
+                evidence: evidence(),
+                categoryId: 'category:travel',
+              );
+              final review = adapter.createReview(
+                session: recovered.session,
+                learning: retryLearning,
+                evidence: evidence(),
+                recovery: recovered,
+                lexicalWords: lexical.words,
+              );
+              review.dispose();
+            }(),
+            throwsStateError,
+            reason: mutation.key,
+          );
+          expect(repository.commands, hasLength(commandsBefore));
+          expect(
+            await database.select(database.answerAttempts).get(),
+            isEmpty,
+            reason: mutation.key,
+          );
+        }
       },
     );
 
@@ -3509,6 +3783,117 @@ QuizWord _word(String id, String spelling, String meaning) => QuizWord(
 EvidenceContext _context(String json) => EvidenceContext.fromJson(
   (jsonDecode(json) as Map<Object?, Object?>).cast<String, Object?>(),
 );
+
+({
+  List<vocabulary_domain.VocabularyWord> words,
+  Map<ContentIdentity, VerifiedContentManifest> artifacts,
+})
+_matchingLexicalArtifacts(QuizSession session) {
+  final words = <vocabulary_domain.VocabularyWord>[];
+  final artifacts = <ContentIdentity, VerifiedContentManifest>{};
+  for (final question in session.questions) {
+    final word = question.word;
+    final revision = word.contentRevision!;
+    final identity = ContentIdentity(
+      type: ContentType.lexicalMetadata,
+      id: word.id,
+      revision: revision,
+    );
+    final distractors = <String, String>{
+      for (final candidate in session.questions)
+        if (candidate.word.id != word.id)
+          candidate.word.id: 'Why ${candidate.word.spelling} is not the match.',
+    };
+    final bytes = Uint8List.fromList(
+      utf8.encode(
+        jsonEncode(<String, Object?>{
+          'schemaVersion': 4,
+          'wordId': word.id,
+          'contentRevision': revision,
+          'englishDefinition': word.meaning,
+          'ipa': null,
+          'examples': <String>[],
+          'synonyms': <String>[],
+          'antonyms': <String>[],
+          'acceptedSpellingVariants': <String>[],
+          'audio': null,
+          'contrastiveFeedback': <String, Object?>{
+            'matchingPair': <String, Object?>{
+              'correctOptionId': word.id,
+              'correctRationale': '${word.spelling} is the exact match.',
+              'distractorRationales': distractors,
+            },
+          },
+        }),
+      ),
+    );
+    final checksum = sha256.convert(bytes).toString();
+    final rich = vocabulary_domain.RichLexicalMetadata.fromVerifiedArtifact(
+      bytes: bytes,
+      wordId: word.id,
+      contentRevision: revision,
+      verifiedArtifactChecksumSha256: checksum,
+    );
+    words.add(
+      vocabulary_domain.VocabularyWord(
+        id: word.id,
+        ownerId: 'matching-owner',
+        categoryId: word.categoryId,
+        spelling: word.spelling,
+        normalizedSpelling: word.normalizedSpelling!,
+        meaning: word.meaning,
+        normalizedMeaning: word.normalizedMeaning!,
+        partOfSpeech: word.partOfSpeech,
+        source: 'pack:f18',
+        isGlobal: true,
+        localRevision: 1,
+        isDeleted: false,
+        createdAtUtc: DateTime.utc(2026, 8, 1),
+        updatedAtUtc: DateTime.utc(2026, 8, 1),
+        contentRevision: revision,
+        contentChecksumSha256: word.contentChecksumSha256,
+        contentProvenance: ContentProvenance.packaged,
+        contentReviewState: ContentReviewState.approved,
+        contentPublicationState: ContentPublicationState.published,
+        richMetadata: rich,
+      ),
+    );
+    artifacts[identity] = VerifiedContentManifest(
+      manifest: ContentManifest(
+        storageId: 'manifest:${word.id}:$revision',
+        identity: identity,
+        checksumSha256: checksum,
+        byteLength: bytes.length,
+        provenance: ContentProvenance.packaged,
+        sourceUri: 'asset://lexical/${word.id}.json',
+        reviewState: ContentReviewState.approved,
+        publicationState: ContentPublicationState.published,
+        createdAtUtc: DateTime.utc(2026, 8, 1),
+        reviewedAtUtc: DateTime.utc(2026, 8, 2),
+        publishedAtUtc: DateTime.utc(2026, 8, 3),
+      ),
+      bytes: bytes,
+    );
+  }
+  return (words: words, artifacts: artifacts);
+}
+
+final class _MatchingManifestRepository implements ContentManifestRepository {
+  const _MatchingManifestRepository(this.artifacts);
+
+  final Map<ContentIdentity, VerifiedContentManifest> artifacts;
+
+  @override
+  Future<VerifiedContentManifest> requireVerified(
+    ContentIdentity identity,
+  ) async {
+    final artifact = artifacts[identity];
+    if (artifact == null) {
+      throw StateError('missing matching lexical artifact');
+    }
+    return artifact;
+  }
+}
 
 Future<Map<String, Object?>> _projectionSnapshot(AppDatabase database) async =>
     <String, Object?>{

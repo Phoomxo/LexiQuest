@@ -1,5 +1,6 @@
 import '../../events/domain/event_envelope_v2.dart';
 import 'evidence_context.dart';
+import 'contrastive_explanation.dart';
 import 'learning_evidence_contract.dart';
 import 'learning_event_context.dart';
 import 'session_configuration.dart';
@@ -291,11 +292,22 @@ final class AnswerRecordResult {
     required this.inserted,
     required this.isCorrect,
     required this.srs,
+    this.committedContrastiveAttempt,
   });
 
   final bool inserted;
   final bool isCorrect;
   final SrsSnapshot? srs;
+  final CommittedContrastiveAttempt? committedContrastiveAttempt;
+
+  AnswerRecordResult withCommittedContrastiveAttempt(
+    CommittedContrastiveAttempt attempt,
+  ) => AnswerRecordResult(
+    inserted: inserted,
+    isCorrect: isCorrect,
+    srs: srs,
+    committedContrastiveAttempt: attempt,
+  );
 }
 
 final class CommittedAnswerReplay {

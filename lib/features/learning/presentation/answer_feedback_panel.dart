@@ -4,7 +4,10 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../review/domain/content_quality_report.dart';
 import '../../review/domain/learner_intent.dart';
 import '../../review/presentation/content_report_sheet.dart';
+import '../../../runtime/registries/feature_registry.dart';
+import '../application/contrastive_feedback_use_cases.dart';
 import '../domain/answer_feedback.dart';
+import 'contrastive_feedback_panel.dart';
 
 final class AnswerFeedbackPanel extends StatelessWidget {
   const AnswerFeedbackPanel({
@@ -16,6 +19,8 @@ final class AnswerFeedbackPanel extends StatelessWidget {
     this.onBookmark,
     this.reportIdentity,
     this.onReport,
+    this.contrastiveFeedback,
+    this.featureRegistry,
   });
 
   final AnswerFeedback feedback;
@@ -25,6 +30,8 @@ final class AnswerFeedbackPanel extends StatelessWidget {
   final BookmarkLearningItemAction? onBookmark;
   final ContentIdentity? reportIdentity;
   final ReportContentAction? onReport;
+  final ContrastiveFeedbackUseCases? contrastiveFeedback;
+  final FeatureRegistry? featureRegistry;
 
   @override
   Widget build(BuildContext context) {
@@ -66,6 +73,14 @@ final class AnswerFeedbackPanel extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text('Correct answer: ${feedback.canonicalCorrectAnswer}'),
+              if (feedback.committedContrastiveAttempt != null) ...[
+                const SizedBox(height: 12),
+                CommittedContrastiveFeedbackPanel(
+                  feedback: feedback,
+                  useCases: contrastiveFeedback,
+                  featureRegistry: featureRegistry,
+                ),
+              ],
               if (bookmarkIdentity case final identity?)
                 if (onBookmark case final bookmark?) ...[
                   const SizedBox(height: 12),

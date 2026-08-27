@@ -13,6 +13,7 @@ import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/learning/presentation/session_configuration_sheet.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
@@ -153,6 +154,7 @@ class _QuizScreenState extends State<QuizScreen> {
     final lifecycle = _lessonLifecycle;
     _load = _prepareSession(
       lifecycle == null ? rawLoad : lifecycle.initializeSession(rawLoad),
+      dependencies?.vocabulary?.readPinnedByIds,
     );
   }
 
@@ -219,7 +221,11 @@ class _QuizScreenState extends State<QuizScreen> {
     }
   }
 
-  Future<QuizSession> _prepareSession(Future<QuizSession> load) async {
+  Future<QuizSession> _prepareSession(
+    Future<QuizSession> load,
+    Future<List<VocabularyWord>> Function(Iterable<String> ids)?
+    loadLexicalWords,
+  ) async {
     try {
       final session = await load;
       if (!mounted) return session;
@@ -247,6 +253,12 @@ class _QuizScreenState extends State<QuizScreen> {
                 : (operation) => lifecycle.runAcceptedOperation(operation),
           )..addListener(_onReviewChanged);
         } else {
+          final lexicalWords = loadLexicalWords == null
+              ? const <VocabularyWord>[]
+              : await loadLexicalWords(
+                  session.questions.map((question) => question.word.id),
+                );
+          if (!mounted) return session;
           _meaningReview = _modeAdapter!.createReview(
             session: session,
             learning: _learning!,
@@ -261,6 +273,7 @@ class _QuizScreenState extends State<QuizScreen> {
                 : (operation) => lifecycle.runAcceptedOperation(operation),
             direction:
                 _sessionConfiguration?.direction ?? SessionDirection.mixed,
+            lexicalWords: lexicalWords,
           )..addListener(_onReviewChanged);
         }
         _responseStopwatch

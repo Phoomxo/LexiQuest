@@ -1,5 +1,9 @@
 import 'dart:typed_data';
 
+/// Bounded f04 lexical artifact envelope, including two maximum-length f18
+/// rationales encoded with four-byte Unicode scalar values.
+const int maxLexicalMetadataArtifactBytes = 48 * 1024;
+
 enum ContentType {
   learningPack,
   lexicalMetadata,

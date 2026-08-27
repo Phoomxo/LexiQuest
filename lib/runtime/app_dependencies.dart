@@ -11,6 +11,7 @@ import '../features/export/application/export_use_cases.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
+import '../features/learning/application/contrastive_feedback_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
@@ -87,6 +88,7 @@ final class AppDependencies {
     this.createActiveLearningTimeController,
     this.assessment,
     this.currentActivityEvidence,
+    this.contrastiveFeedback,
     this.learningReconciliation,
     this.contentManifests,
     this.studyPlanning,
@@ -143,6 +145,7 @@ final class AppDependencies {
   final ActiveLearningTimeControllerFactory? createActiveLearningTimeController;
   final AssessmentUseCases? assessment;
   final CurrentActivityEvidenceAdapter? currentActivityEvidence;
+  final ContrastiveFeedbackUseCases? contrastiveFeedback;
   final LearningReconciliationScheduler? learningReconciliation;
   final ContentManifestRepository? contentManifests;
   final StudyPlanningUseCases? studyPlanning;

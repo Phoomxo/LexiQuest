@@ -10,6 +10,7 @@ import '../features/learning/domain/learning_models.dart';
 import '../features/learning/domain/lesson_mode.dart';
 import '../features/learning/domain/session_configuration.dart';
 import '../features/learning/presentation/answer_feedback_panel.dart';
+import '../features/vocabulary/domain/vocabulary_word.dart';
 import '../features/learning/presentation/unified_lesson_shell.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
@@ -134,10 +135,15 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
               rawLoad,
               recoveredClose: () => _recovery?.pendingClose,
             ),
+      dependencies?.vocabulary?.readPinnedByIds,
     );
   }
 
-  Future<QuizSession> _prepareSession(Future<QuizSession> load) async {
+  Future<QuizSession> _prepareSession(
+    Future<QuizSession> load,
+    Future<List<VocabularyWord>> Function(Iterable<String> ids)?
+    loadLexicalWords,
+  ) async {
     QuizSession? session;
     try {
       session = await load;
@@ -156,6 +162,12 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
                         close.requiresRetry ? close.retry() : close.finish()
                   : lifecycle.completeRecovery,
             );
+      final lexicalWords = loadLexicalWords == null
+          ? const <VocabularyWord>[]
+          : await loadLexicalWords(
+              session.questions.map((question) => question.word.id),
+            );
+      if (!mounted) return session;
       final review = _adapter!.createReview(
         session: session,
         learning: _learning!,
@@ -166,6 +178,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
             const HintUsageSnapshot.unavailable(),
         resetHintsAfterCommit: () =>
             lifecycle?.resetHintsAfterCommittedEvidence(),
+        lexicalWords: lexicalWords,
         completeSession: lifecycle == null
             ? null
             : (close) => lifecycle.completeRecovery(close),

@@ -1,4 +1,5 @@
 import 'learning_models.dart';
+import 'contrastive_explanation.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 
 enum AnswerFeedbackAction { retry, next }
@@ -81,6 +82,7 @@ final class AnswerFeedback {
       isCorrect: result.isCorrect,
       canonicalCorrectAnswer: context.canonicalCorrectAnswer,
       bookmarkIdentity: context.bookmarkIdentity,
+      committedContrastiveAttempt: result.committedContrastiveAttempt,
     );
   }
 
@@ -88,11 +90,13 @@ final class AnswerFeedback {
     required this.isCorrect,
     required this.canonicalCorrectAnswer,
     required this.bookmarkIdentity,
+    required this.committedContrastiveAttempt,
   });
 
   final bool isCorrect;
   final String canonicalCorrectAnswer;
   final ContentIdentity? bookmarkIdentity;
+  final CommittedContrastiveAttempt? committedContrastiveAttempt;
 
   AnswerFeedbackAction get nextAction =>
       isCorrect ? AnswerFeedbackAction.next : AnswerFeedbackAction.retry;

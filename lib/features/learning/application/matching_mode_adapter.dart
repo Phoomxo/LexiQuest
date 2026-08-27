@@ -5,7 +5,10 @@ import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../vocabulary/application/vocabulary_use_cases.dart';
+import '../../vocabulary/domain/vocabulary_word.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/answer_feedback.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
@@ -29,6 +32,16 @@ typedef MatchingRecoveryOperation =
 typedef MatchingOperationAcceptance = bool Function();
 typedef MatchingHintUsage = HintUsageSnapshot Function();
 typedef MatchingHintReset = void Function();
+const String _matchingProviderProvenance = 'pinned-lexical-matching';
+
+bool _isMatchingProviderProvenance(String? value) =>
+    value == _matchingProviderProvenance ||
+    isContrastiveFeedbackAttemptProvenance(value);
+
+typedef _VerifiedContrastiveIdentity = ({
+  ContentIdentity identity,
+  String checksumSha256,
+});
 typedef _MatchingPendingPersister =
     Future<void> Function({
       required PendingCurrentActivityEvidence pending,
@@ -200,11 +213,14 @@ final class MatchingPreparedSession {
   }) => _appendState(<String, Object?>{
     ..._state,
     'pendingEvidence': <String, Object?>{
-      'schemaVersion': 3,
+      'schemaVersion': 4,
       'actorIdentity':
           pending.actorIdentity ??
           (throw StateError('Matching pending actor is unavailable.')),
-      'providerProvenance': 'pinned-lexical-matching',
+      'providerProvenance':
+          pending.providerProvenance ??
+          (throw StateError('Matching pending provenance is unavailable.')),
+      'contrastiveFeedback': pending.contrastiveFeedback?.toJson(),
       'sourceEvidenceId': pending.sourceEvidenceId,
       'occurredAtUtc': pending.occurredAtUtc.toIso8601String(),
       'wordId': pending.wordId,
@@ -707,7 +723,7 @@ final class MatchingModeAdapter
           !pairIds.contains(attempt.wordId) ||
           attempt.attemptNumber != attemptNumber + 1 ||
           attempt.attemptNumber > maximumAttempts ||
-          attempt.providerProvenance != 'pinned-lexical-matching' ||
+          !_isMatchingProviderProvenance(attempt.providerProvenance) ||
           attempt.evidenceContext.skillId != 'matching-recognition' ||
           !validMatchingEvidence) {
         throw StateError('Matching attempt cannot be reconstructed safely');
@@ -827,15 +843,18 @@ final class MatchingModeAdapter
     };
     const v2Keys = <String>{...v1Keys, 'schemaVersion', 'actorIdentity'};
     const v3Keys = <String>{...v2Keys, 'providerProvenance'};
+    const v4Keys = <String>{...v3Keys, 'contrastiveFeedback'};
     final pendingSchemaVersion = encoded['schemaVersion'];
     final keys = switch (pendingSchemaVersion) {
       2 => v2Keys,
       3 => v3Keys,
+      4 => v4Keys,
       _ => v1Keys,
     };
     if ((pendingSchemaVersion != null &&
             pendingSchemaVersion != 2 &&
-            pendingSchemaVersion != 3) ||
+            pendingSchemaVersion != 3 &&
+            pendingSchemaVersion != 4) ||
         encoded.length != keys.length ||
         !encoded.keys.every(keys.contains)) {
       throw StateError('Matching pending evidence schema is invalid');
@@ -849,12 +868,51 @@ final class MatchingModeAdapter
     }
 
     final sourceEvidenceId = requiredValue<String>('sourceEvidenceId');
-    final actorIdentity = pendingSchemaVersion == 2 || pendingSchemaVersion == 3
+    final actorIdentity =
+        pendingSchemaVersion == 2 ||
+            pendingSchemaVersion == 3 ||
+            pendingSchemaVersion == 4
         ? requiredValue<String>('actorIdentity')
         : null;
-    final providerProvenance = pendingSchemaVersion == 3
+    final providerProvenance =
+        pendingSchemaVersion == 3 || pendingSchemaVersion == 4
         ? requiredValue<String>('providerProvenance')
-        : 'pinned-lexical-matching';
+        : _matchingProviderProvenance;
+    FrozenContrastiveFeedbackContext? contrastiveFeedback;
+    if (pendingSchemaVersion == 4) {
+      final encodedContrastive = encoded['contrastiveFeedback'];
+      if (encodedContrastive != null) {
+        if (encodedContrastive is! Map<String, Object?>) {
+          throw StateError('Matching pending contrastive feedback is invalid');
+        }
+        try {
+          contrastiveFeedback = FrozenContrastiveFeedbackContext.fromJson(
+            encodedContrastive,
+          );
+        } on Object catch (error) {
+          throw StateError(
+            'Matching pending contrastive feedback is corrupt: $error',
+          );
+        }
+      }
+    }
+    final hasContrastiveProvenance = isContrastiveFeedbackAttemptProvenance(
+      providerProvenance,
+    );
+    if (hasContrastiveProvenance) {
+      if (pendingSchemaVersion != 4 ||
+          contrastiveFeedback == null ||
+          providerProvenance !=
+              contrastiveFeedbackAttemptProvenance(contrastiveFeedback)) {
+        throw StateError(
+          'Matching pending contrastive provenance cannot be reconstructed',
+        );
+      }
+    } else if (contrastiveFeedback != null) {
+      throw StateError(
+        'Matching pending contrastive feedback has no provenance',
+      );
+    }
     if (actorIdentity != null &&
         (actorIdentity.isEmpty ||
             actorIdentity != actorIdentity.trim() ||
@@ -914,6 +972,18 @@ final class MatchingModeAdapter
         canonicalCorrectAnswer != word.meaningLabel) {
       throw StateError('Matching pending content identity is corrupt');
     }
+    if (contrastiveFeedback != null &&
+        (isCorrect ||
+            contrastiveFeedback.manifestIdentity.id != wordId ||
+            contrastiveFeedback.promptMode != 'matchingPair' ||
+            contrastiveFeedback.evidenceContentRevision != contentRevision ||
+            contrastiveFeedback.correctOptionId != wordId ||
+            contrastiveFeedback.selectedDistractorId !=
+                selectedMeaningWordId)) {
+      throw StateError(
+        'Matching pending contrastive context conflicts with the selection',
+      );
+    }
     final evidenceClass = EvidenceClass.values.byName(
       requiredValue<String>('evidenceClass'),
     );
@@ -925,7 +995,7 @@ final class MatchingModeAdapter
         evidenceClass == EvidenceClass.recognition && hintLevel == 0;
     final validAssisted =
         evidenceClass == EvidenceClass.guidedPractice && hintLevel > 0;
-    if (providerProvenance != 'pinned-lexical-matching' ||
+    if (!_isMatchingProviderProvenance(providerProvenance) ||
         (!validUnassisted && !validAssisted)) {
       throw StateError('Matching pending evidence classification is invalid');
     }
@@ -975,6 +1045,8 @@ final class MatchingModeAdapter
         eventContext: frozenEventContext,
       ),
       actorIdentity: actorIdentity,
+      providerProvenance: providerProvenance,
+      contrastiveFeedback: contrastiveFeedback,
     );
     return _MatchingPendingRecovery(
       pending: pending,
@@ -1209,6 +1281,7 @@ final class MatchingModeAdapter
     MatchingOperationAcceptance? acceptsOperation,
     MatchingHintUsage? hintUsage,
     MatchingHintReset? resetHintsAfterCommit,
+    Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
   }) {
     if (session.isEmpty) {
       throw ArgumentError.value(session, 'session', 'must contain vocabulary');
@@ -1235,6 +1308,11 @@ final class MatchingModeAdapter
         'must be prepared by this learning authority for the same session',
       );
     }
+    final contrastiveIdentities = _verifiedContrastiveIdentities(lexicalWords);
+    _validateRecoveredContrastiveFeedback(
+      recovery: recovery,
+      contrastiveIdentities: contrastiveIdentities,
+    );
     return MatchingReviewController._(
       session: session,
       pairSet: pairSet,
@@ -1244,6 +1322,7 @@ final class MatchingModeAdapter
       initialAttemptNumber: recovery?.attemptNumber ?? 0,
       maximumAttemptNumber: recovery?.maximumAttemptNumber ?? maximumAttempts,
       contentRevisionFor: evidenceContentRevision,
+      contrastiveIdentities: contrastiveIdentities,
       pendingEvidence: recovery?.pendingEvidence,
       pendingFeedbackContext: recovery?.pendingFeedbackContext,
       pendingWordId: recovery?.pendingWordId,
@@ -1289,6 +1368,53 @@ final class MatchingModeAdapter
     );
   }
 
+  Map<String, _VerifiedContrastiveIdentity> _verifiedContrastiveIdentities(
+    Iterable<VocabularyWord> lexicalWords,
+  ) {
+    final result = <String, _VerifiedContrastiveIdentity>{};
+    for (final lexical in lexicalWords) {
+      final rich = lexical.richMetadata;
+      final checksum = rich?.verifiedArtifactChecksumSha256;
+      if (!lexical.isGlobal ||
+          lexical.contentProvenance != ContentProvenance.packaged ||
+          lexical.contentReviewState != ContentReviewState.approved ||
+          lexical.contentPublicationState !=
+              ContentPublicationState.published ||
+          rich?.verifiedContentRevision != lexical.contentRevision ||
+          checksum == null ||
+          !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+        continue;
+      }
+      result[lexical.id] = (
+        identity: ContentIdentity(
+          type: ContentType.lexicalMetadata,
+          id: lexical.id,
+          revision: lexical.contentRevision,
+        ),
+        checksumSha256: checksum,
+      );
+    }
+    return Map<String, _VerifiedContrastiveIdentity>.unmodifiable(result);
+  }
+
+  void _validateRecoveredContrastiveFeedback({
+    required MatchingPreparedSession? recovery,
+    required Map<String, _VerifiedContrastiveIdentity> contrastiveIdentities,
+  }) {
+    final pending = recovery?.pendingEvidence;
+    final frozen = pending?.contrastiveFeedback;
+    if (frozen == null) return;
+    final verified = contrastiveIdentities[pending!.wordId];
+    if (pending.sessionId != recovery!.session.id ||
+        verified == null ||
+        verified.identity != frozen.manifestIdentity ||
+        verified.checksumSha256 != frozen.manifestChecksumSha256) {
+      throw StateError(
+        'Recovered matching feedback does not match verified lexical content.',
+      );
+    }
+  }
+
   @override
   EvidenceContext classify(LessonResponse response, LessonSupport support) {
     final context = support.evidenceContext;
@@ -1323,6 +1449,7 @@ final class MatchingReviewController extends ChangeNotifier {
     required int initialAttemptNumber,
     required this._maximumAttemptNumber,
     required this._contentRevisionFor,
+    required Map<String, _VerifiedContrastiveIdentity> contrastiveIdentities,
     required PendingCurrentActivityEvidence? pendingEvidence,
     required this._pendingFeedbackContext,
     required this._pendingWordId,
@@ -1343,6 +1470,10 @@ final class MatchingReviewController extends ChangeNotifier {
     required this._hintUsage,
     required this._resetHintsAfterCommit,
   }) : _matchedWordIds = Set<String>.of(restoredMatchedWordIds),
+       _contrastiveIdentities =
+           Map<String, _VerifiedContrastiveIdentity>.unmodifiable(
+             contrastiveIdentities,
+           ),
        _attemptNumber = initialAttemptNumber,
        _pendingEvidence = pendingEvidence,
        _pendingCheckpointPersisted = pendingEvidence != null,
@@ -1386,6 +1517,7 @@ final class MatchingReviewController extends ChangeNotifier {
   final MatchingHintUsage _hintUsage;
   final MatchingHintReset _resetHintsAfterCommit;
   final String Function(QuizWord word) _contentRevisionFor;
+  final Map<String, _VerifiedContrastiveIdentity> _contrastiveIdentities;
   final _MatchingPendingPersister _persistPending;
   final Future<void> Function() _clearPendingCheckpoint;
   final _MatchingClosePersister _persistClose;
@@ -1562,6 +1694,22 @@ final class MatchingReviewController extends ChangeNotifier {
     );
     final nextAttempt = _attemptNumber + 1;
     final contentRevision = _contentRevisionFor(pair.word);
+    final verifiedContrastive = _contrastiveIdentities[pair.word.id];
+    final contrastiveFeedback =
+        !correct &&
+            verifiedContrastive != null &&
+            contentRevision.startsWith(
+              'lexical-matching:v${verifiedContrastive.identity.revision}:',
+            )
+        ? ContrastiveFeedbackContext(
+            manifestIdentity: verifiedContrastive.identity,
+            manifestChecksumSha256: verifiedContrastive.checksumSha256,
+            promptMode: 'matchingPair',
+            evidenceContentRevision: contentRevision,
+            correctOptionId: selectedWordId,
+            selectedDistractorId: selectedMeaningWordId,
+          )
+        : null;
     final pending = _evidence.captureMatching(
       sessionId: session.id,
       wordId: selectedWordId,
@@ -1570,6 +1718,7 @@ final class MatchingReviewController extends ChangeNotifier {
       attemptNumber: nextAttempt,
       contentRevision: contentRevision,
       classification: classification,
+      contrastiveFeedback: contrastiveFeedback,
     );
     _attemptNumber = nextAttempt;
     _pendingEvidence = pending;

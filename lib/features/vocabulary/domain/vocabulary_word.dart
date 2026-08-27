@@ -9,7 +9,6 @@ import '../../learning_packs/domain/content_manifest.dart';
 /// This is deliberately separate from the vocabulary table. It may only be
 /// constructed from a verified f04 lexical-metadata artifact.
 final class RichLexicalMetadata {
-  static const int maxArtifactBytes = 8 * 1024;
   static const int maxJsonStructuralDepth = 4;
 
   RichLexicalMetadata({
@@ -21,6 +20,8 @@ final class RichLexicalMetadata {
     Iterable<String> synonyms = const <String>[],
     Iterable<String> antonyms = const <String>[],
     Iterable<String> acceptedSpellingVariants = const <String>[],
+    Map<String, LexicalContrastiveRationale> contrastiveFeedback =
+        const <String, LexicalContrastiveRationale>{},
     this.audio,
   }) : examples = UnmodifiableListView<String>(
          examples.toList(growable: false),
@@ -33,7 +34,11 @@ final class RichLexicalMetadata {
        ),
        acceptedSpellingVariants = UnmodifiableListView<String>(
          acceptedSpellingVariants.toList(growable: false),
-       );
+       ),
+       contrastiveFeedback =
+           Map<String, LexicalContrastiveRationale>.unmodifiable(
+             contrastiveFeedback,
+           );
 
   final String? englishDefinition;
 
@@ -50,6 +55,7 @@ final class RichLexicalMetadata {
   final List<String> synonyms;
   final List<String> antonyms;
   final List<String> acceptedSpellingVariants;
+  final Map<String, LexicalContrastiveRationale> contrastiveFeedback;
   final LexicalAudioMetadata? audio;
 
   /// Strictly decodes the bounded canonical f04 lexical-metadata JSON shape.
@@ -108,6 +114,19 @@ final class RichLexicalMetadata {
         'acceptedSpellingVariants',
         'audio',
       },
+      4 => const <String>{
+        'schemaVersion',
+        'wordId',
+        'contentRevision',
+        'englishDefinition',
+        'ipa',
+        'examples',
+        'synonyms',
+        'antonyms',
+        'acceptedSpellingVariants',
+        'audio',
+        'contrastiveFeedback',
+      },
       _ => const <String>{},
     };
     if (expectedKeys.isEmpty ||
@@ -121,7 +140,8 @@ final class RichLexicalMetadata {
     }
     final ipa = _optionalText(decoded['ipa'], 'ipa', maxLength: 160);
     return RichLexicalMetadata(
-      englishDefinition: schemaVersion == 2 || schemaVersion == 3
+      englishDefinition:
+          schemaVersion == 2 || schemaVersion == 3 || schemaVersion == 4
           ? _optionalText(
               decoded['englishDefinition'],
               'englishDefinition',
@@ -134,9 +154,12 @@ final class RichLexicalMetadata {
       examples: _textList(decoded['examples'], 'examples'),
       synonyms: _textList(decoded['synonyms'], 'synonyms'),
       antonyms: _textList(decoded['antonyms'], 'antonyms'),
-      acceptedSpellingVariants: schemaVersion == 3
+      acceptedSpellingVariants: schemaVersion == 3 || schemaVersion == 4
           ? _acceptedSpellingVariants(decoded['acceptedSpellingVariants'])
           : const <String>[],
+      contrastiveFeedback: schemaVersion == 4
+          ? _contrastiveFeedback(decoded['contrastiveFeedback'])
+          : const <String, LexicalContrastiveRationale>{},
       audio: _audio(decoded['audio']),
     );
   }
@@ -154,7 +177,7 @@ final class RichLexicalMetadata {
   }
 
   static void _preflightArtifact(Uint8List bytes) {
-    if (bytes.length > maxArtifactBytes) {
+    if (bytes.length > maxLexicalMetadataArtifactBytes) {
       throw const FormatException('lexical metadata exceeds the byte limit');
     }
     var depth = 0;
@@ -246,10 +269,95 @@ final class RichLexicalMetadata {
     return LexicalAudioMetadata(language: language, assetId: assetId);
   }
 
+  static Map<String, LexicalContrastiveRationale> _contrastiveFeedback(
+    Object? value,
+  ) {
+    if (value is! Map<Object?, Object?> || value.length > 5) {
+      throw const FormatException(
+        'invalid lexical metadata contrastiveFeedback',
+      );
+    }
+    const supportedModes = <String>{
+      'meaningChoice',
+      'wordChoice',
+      'definitionChoice',
+      'clozeSelected',
+      'matchingPair',
+    };
+    final result = <String, LexicalContrastiveRationale>{};
+    for (final entry in value.entries) {
+      final promptMode = entry.key;
+      final encoded = entry.value;
+      if (promptMode is! String ||
+          !supportedModes.contains(promptMode) ||
+          encoded is! Map<Object?, Object?> ||
+          encoded.length != 3 ||
+          encoded.keys.toSet().difference(const <String>{
+            'correctOptionId',
+            'correctRationale',
+            'distractorRationales',
+          }).isNotEmpty) {
+        throw const FormatException(
+          'invalid lexical metadata contrastiveFeedback',
+        );
+      }
+      final correctOptionId = encoded['correctOptionId'];
+      final correctRationale = encoded['correctRationale'];
+      final encodedDistractors = encoded['distractorRationales'];
+      if (correctOptionId is! String ||
+          !_canonicalText(correctOptionId, maxLength: 256) ||
+          correctRationale is! String ||
+          !_canonicalText(correctRationale, maxLength: 4000) ||
+          encodedDistractors is! Map<Object?, Object?> ||
+          encodedDistractors.isEmpty ||
+          encodedDistractors.length > 32) {
+        throw const FormatException(
+          'invalid lexical metadata contrastiveFeedback',
+        );
+      }
+      final distractors = <String, String>{};
+      for (final distractor in encodedDistractors.entries) {
+        final id = distractor.key;
+        final rationale = distractor.value;
+        if (id is! String ||
+            id == correctOptionId ||
+            !_canonicalText(id, maxLength: 256) ||
+            rationale is! String ||
+            !_canonicalText(rationale, maxLength: 4000) ||
+            distractors.containsKey(id)) {
+          throw const FormatException(
+            'invalid lexical metadata contrastiveFeedback',
+          );
+        }
+        distractors[id] = rationale;
+      }
+      result[promptMode] = LexicalContrastiveRationale(
+        correctOptionId: correctOptionId,
+        correctRationale: correctRationale,
+        distractorRationales: distractors,
+      );
+    }
+    return result;
+  }
+
   static bool _canonicalText(String value, {required int maxLength}) =>
       value.isNotEmpty &&
       value == value.trim() &&
       value.runes.length <= maxLength;
+}
+
+final class LexicalContrastiveRationale {
+  LexicalContrastiveRationale({
+    required this.correctOptionId,
+    required this.correctRationale,
+    required Map<String, String> distractorRationales,
+  }) : distractorRationales = Map<String, String>.unmodifiable(
+         distractorRationales,
+       );
+
+  final String correctOptionId;
+  final String correctRationale;
+  final Map<String, String> distractorRationales;
 }
 
 final class LexicalAudioMetadata {

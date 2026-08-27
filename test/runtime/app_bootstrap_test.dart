@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
@@ -2526,6 +2527,61 @@ void main() {
         }
       },
     );
+
+    test(
+      'production lexical loader accepts two 4000-rune Unicode rationales',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        final bytes = _unicodeContrastiveLexicalArtifactBytes();
+        expect(bytes.length, greaterThan(8 * 1024));
+        expect(
+          bytes.length,
+          lessThanOrEqualTo(maxLexicalMetadataArtifactBytes),
+        );
+        await _seedPackagedLexicalArtifact(database, bytes);
+        const path = 'assets/content/lexical_metadata/station/r1.json';
+        final messenger =
+            TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+        messenger.setMockMessageHandler('flutter/assets', (message) async {
+          if (message == null) return null;
+          final requested = utf8.decode(
+            message.buffer.asUint8List(
+              message.offsetInBytes,
+              message.lengthInBytes,
+            ),
+          );
+          return requested == path ? ByteData.sublistView(bytes) : null;
+        });
+        addTearDown(
+          () => messenger.setMockMessageHandler('flutter/assets', null),
+        );
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+        AppDependencies? dependencies;
+        try {
+          dependencies = await bootstrap.initialize();
+          final words = await dependencies.vocabulary!.readPinnedByIds(const [
+            'word:station',
+          ]);
+
+          final rationale =
+              words.single.richMetadata!.contrastiveFeedback['meaningChoice']!;
+          expect(rationale.correctRationale.runes, hasLength(4000));
+          expect(
+            rationale.distractorRationales['word:terminal']!.runes,
+            hasLength(4000),
+          );
+        } finally {
+          await dependencies?.dispose();
+        }
+      },
+    );
   });
 
   group('resolveAndroidAppCheckProvider', () {
@@ -2579,6 +2635,38 @@ Uint8List _verifiedLexicalArtifactBytes() => Uint8List.fromList(
     }),
   ),
 );
+
+Uint8List _unicodeContrastiveLexicalArtifactBytes() {
+  final rationale = List<String>.filled(4000, '😀').join();
+  return Uint8List.fromList(
+    utf8.encode(
+      jsonEncode(<String, Object?>{
+        'schemaVersion': 4,
+        'wordId': _lexicalIdentity.id,
+        'contentRevision': _lexicalIdentity.revision,
+        'englishDefinition': 'A place where trains stop.',
+        'ipa': '/ˈsteɪ.ʃən/',
+        'examples': <String>['The station is near the market.'],
+        'synonyms': <String>['terminal'],
+        'antonyms': <String>[],
+        'acceptedSpellingVariants': <String>[],
+        'audio': <String, Object?>{
+          'language': 'en',
+          'assetId': 'audio:station:en',
+        },
+        'contrastiveFeedback': <String, Object?>{
+          'meaningChoice': <String, Object?>{
+            'correctOptionId': 'word:station',
+            'correctRationale': rationale,
+            'distractorRationales': <String, String>{
+              'word:terminal': rationale,
+            },
+          },
+        },
+      }),
+    ),
+  );
+}
 
 Future<void> _seedPackagedLexicalArtifact(
   AppDatabase database,

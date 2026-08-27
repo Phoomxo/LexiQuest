@@ -4,6 +4,7 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../domain/answer_feedback.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
@@ -51,6 +52,7 @@ final class ClozeQuestion {
     required this.prompt,
     required this.correctAnswer,
     required this.options,
+    this.optionIdentities = const <String, String>{},
   });
 
   final String wordId;
@@ -59,6 +61,9 @@ final class ClozeQuestion {
   final String prompt;
   final String correctAnswer;
   final List<String> options;
+  final Map<String, String> optionIdentities;
+
+  String? optionIdentity(String option) => optionIdentities[option];
 
   String get contentRevision =>
       'lexical-cloze:$wordId@${identity.revision}:$checksumSha256';
@@ -242,12 +247,16 @@ final class ClozeModeAdapter
         final correct = _canonicalDisplay(candidate.lexical.spelling);
         final answerKey = normalizeVocabularyText(correct);
         final byKey = <String, String>{};
+        final identityByKey = <String, String>{};
         for (final distractor in candidates.values) {
           if (distractor.word.id == candidate.word.id) continue;
           final display = _canonicalDisplay(distractor.lexical.spelling);
           final key = normalizeVocabularyText(display);
           if (key == answerKey) continue;
-          byKey.putIfAbsent(key, () => display);
+          if (!byKey.containsKey(key)) {
+            byKey[key] = display;
+            identityByKey[key] = distractor.word.id;
+          }
         }
         final keys = byKey.keys.toList()..sort();
         return ClozeItem.question(
@@ -269,6 +278,10 @@ final class ClozeModeAdapter
                 '${candidate.checksumSha256}',
               ),
             ),
+            optionIdentities: <String, String>{
+              correct: candidate.word.id,
+              for (final key in keys) byKey[key]!: identityByKey[key]!,
+            },
           ),
         );
       }),
@@ -494,17 +507,34 @@ final class ClozeReviewController extends ChangeNotifier {
       inputMode: inputMode,
       hint: _hintUsage(),
     );
+    final isCorrect = _scoreAnswer(question, answer);
+    final selectedOptionId = inputMode == ClozeInputMode.selected
+        ? question.optionIdentity(answer)
+        : null;
+    final correctOptionId = question.optionIdentity(question.correctAnswer);
+    final contrastiveFeedback =
+        !isCorrect && selectedOptionId != null && correctOptionId != null
+        ? ContrastiveFeedbackContext(
+            manifestIdentity: question.identity,
+            manifestChecksumSha256: question.checksumSha256,
+            promptMode: 'clozeSelected',
+            evidenceContentRevision: question.contentRevision,
+            correctOptionId: correctOptionId,
+            selectedDistractorId: selectedOptionId,
+          )
+        : null;
     _recordInteraction();
     final pending = _evidence.captureCloze(
       sessionId: session.id,
       wordId: question.wordId,
-      isCorrect: _scoreAnswer(question, answer),
+      isCorrect: isCorrect,
       responseTimeMs: responseTimeMs,
       attemptNumber: _index + 1,
       contentRevision: question.identity.revision,
       checksumSha256: question.checksumSha256,
       typed: inputMode == ClozeInputMode.typed,
       classification: classification,
+      contrastiveFeedback: contrastiveFeedback,
     );
     _pendingEvidence = pending;
     _pendingFeedbackContext = feedbackContext;

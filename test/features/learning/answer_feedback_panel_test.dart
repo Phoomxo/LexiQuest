@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
+import 'package:vocab_learning_app/features/learning/domain/contrastive_explanation.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/presentation/answer_feedback_panel.dart';
+import 'package:vocab_learning_app/features/learning/presentation/contrastive_feedback_panel.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
 import 'package:vocab_learning_app/features/review/domain/learner_intent.dart';
@@ -189,9 +191,91 @@ void main() {
 
     expect(find.bySemanticsLabel('Report content'), findsNothing);
   });
+
+  testWidgets(
+    'renders reviewed contrastive feedback with non-color semantics and no motion',
+    (tester) async {
+      final semanticsHandle = tester.ensureSemantics();
+      await tester.pumpWidget(
+        MediaQuery(
+          data: const MediaQueryData(
+            disableAnimations: true,
+            textScaler: TextScaler.linear(2),
+          ),
+          child: MaterialApp(
+            home: Scaffold(
+              body: ContrastiveFeedbackPanel(
+                explanation: ContrastiveExplanation.reviewed(
+                  manifestIdentity: _contrastiveIdentity,
+                  correctOptionId: 'option:station',
+                  selectedDistractorId: 'option:terminal',
+                  correctRationale: 'A station is where trains stop.',
+                  distractorRationale:
+                      'A terminal is broader than the requested train stop.',
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ContrastiveFeedbackPanel), findsOneWidget);
+      expect(find.byIcon(Icons.lightbulb_outline), findsOneWidget);
+      expect(find.byIcon(Icons.compare_arrows), findsOneWidget);
+      expect(find.byType(AnimatedSwitcher), findsNothing);
+      final semantics = tester.getSemantics(
+        find.byKey(const ValueKey<String>('contrastive-feedback-panel')),
+      );
+      expect(semantics.label, 'Contrastive feedback');
+      expect(
+        find.bySemanticsLabel('Why the correct answer works'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('A station is where trains stop.'),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Why your choice differs'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'A terminal is broader than the requested train stop.',
+        ),
+        findsOneWidget,
+      );
+      semanticsHandle.dispose();
+    },
+  );
+
+  testWidgets(
+    'hides contrastive feedback when no reviewed rationale resolved',
+    (tester) async {
+      await tester.pumpWidget(
+        _FeedbackHarness(
+          feedback: AnswerFeedback.fromCommittedResult(
+            result: const AnswerRecordResult(
+              inserted: true,
+              isCorrect: false,
+              srs: null,
+            ),
+            context: const AnswerFeedbackContext(
+              canonicalCorrectAnswer: 'station',
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(ContrastiveFeedbackPanel), findsNothing);
+    },
+  );
 }
 
 const _bookmarkIdentity = ContentIdentity(
+  type: ContentType.lexicalMetadata,
+  id: 'word:station',
+  revision: 4,
+);
+
+const _contrastiveIdentity = ContentIdentity(
   type: ContentType.lexicalMetadata,
   id: 'word:station',
   revision: 4,

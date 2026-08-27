@@ -4,6 +4,7 @@ import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/evidence_context.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
@@ -712,8 +713,9 @@ final class LearningUseCases {
   /// Replays/writes an owner-bound record without re-reading active-owner
   /// state. This keeps provider snapshot and canonical write on one owner.
   Future<AnswerRecordResult> recordResolvedEvidence(
-    ResolvedLearningEvidenceRecord resolved,
-  ) {
+    ResolvedLearningEvidenceRecord resolved, {
+    FrozenContrastiveFeedbackContext? contrastiveFeedback,
+  }) {
     final ownerId = _requiredId(resolved.ownerId, 'ownerId');
     final command = _canonicalEvidenceCommand(resolved.command);
     resolved.contexts.evidenceContext.validate();
@@ -726,6 +728,7 @@ final class LearningUseCases {
       command: command,
       evidenceContext: resolved.contexts.evidenceContext,
       resolvedEventContext: resolved.contexts.eventContext,
+      contrastiveFeedback: contrastiveFeedback,
     );
   }
 
@@ -740,7 +743,9 @@ final class LearningUseCases {
     required int attemptNumber,
     required EvidenceContext evidenceContext,
     String? providerProvenance,
+    ContrastiveFeedbackContext? contrastiveFeedback,
   }) async {
+    final frozenContrastiveFeedback = contrastiveFeedback?.freeze();
     final command = _canonicalEvidenceCommand(
       FrozenLearningEvidenceCommand(
         sourceEvidenceId: sourceEvidenceId,
@@ -751,7 +756,9 @@ final class LearningUseCases {
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        providerProvenance: providerProvenance,
+        providerProvenance: frozenContrastiveFeedback == null
+            ? providerProvenance
+            : contrastiveFeedbackAttemptProvenance(frozenContrastiveFeedback),
       ),
     );
     evidenceContext.validate();
@@ -760,6 +767,7 @@ final class LearningUseCases {
       ownerId: _requiredId(owner.id, 'ownerId'),
       command: command,
       evidenceContext: evidenceContext,
+      contrastiveFeedback: frozenContrastiveFeedback,
     );
   }
 
@@ -768,6 +776,7 @@ final class LearningUseCases {
     required FrozenLearningEvidenceCommand command,
     required EvidenceContext evidenceContext,
     LearningEventContext? resolvedEventContext,
+    FrozenContrastiveFeedbackContext? contrastiveFeedback,
   }) async {
     final candidate = RecordAnswerCandidate(
       id: command.sourceEvidenceId,
@@ -782,6 +791,11 @@ final class LearningUseCases {
       evidenceContext: evidenceContext,
       providerProvenance: command.providerProvenance,
       actorIdentity: command.actorIdentity,
+    );
+    _validateContrastiveFeedback(
+      command: command,
+      evidenceContext: evidenceContext,
+      contrastiveFeedback: contrastiveFeedback,
     );
     final replayRepository = repository;
     final replay = replayRepository is LearningEvidenceReplayRepository
@@ -855,7 +869,41 @@ final class LearningUseCases {
     // startup reconciliation owns replay and no side effect runs inline.
     onSideEffectsPending?.call(ownerId);
 
-    return result;
+    final committedContext = contrastiveFeedback;
+    if (committedContext == null) return result;
+    return result.withCommittedContrastiveAttempt(
+      CommittedContrastiveAttempt(
+        attemptIdentity: command.sourceEvidenceId,
+        ownerId: ownerId,
+        sessionId: command.sessionId,
+        wordId: command.wordId,
+        promptMode: command.promptMode,
+        evidenceContentRevision: evidenceContext.contentRevision,
+        manifestIdentity: committedContext.manifestIdentity,
+        manifestChecksumSha256: committedContext.manifestChecksumSha256,
+        correctOptionId: committedContext.correctOptionId,
+        selectedDistractorId: committedContext.selectedDistractorId,
+      ),
+    );
+  }
+
+  void _validateContrastiveFeedback({
+    required FrozenLearningEvidenceCommand command,
+    required EvidenceContext evidenceContext,
+    required FrozenContrastiveFeedbackContext? contrastiveFeedback,
+  }) {
+    if (contrastiveFeedback == null) return;
+    if (command.isCorrect ||
+        contrastiveFeedback.manifestIdentity.id != command.wordId ||
+        contrastiveFeedback.promptMode != command.promptMode ||
+        contrastiveFeedback.evidenceContentRevision !=
+            evidenceContext.contentRevision ||
+        command.providerProvenance !=
+            contrastiveFeedbackAttemptProvenance(contrastiveFeedback)) {
+      throw StateError(
+        'Contrastive feedback does not belong to the exact answer attempt.',
+      );
+    }
   }
 
   /// Temporary compatibility entry point while production screens migrate to

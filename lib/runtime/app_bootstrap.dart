@@ -50,6 +50,7 @@ import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
 import '../features/learning/application/current_activity_evidence.dart';
+import '../features/learning/application/contrastive_feedback_use_cases.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/learning_side_effect_reconciler.dart';
 import '../features/learning/application/lesson_mode_registry.dart';
@@ -164,7 +165,6 @@ SpeechRecognitionGateway _productionSpeechRecognitionGateway() =>
 ResearchRuntimeConfig _legacyResearchRuntimeConfig() =>
     ResearchRuntimeConfig.legacySafe();
 
-const int _maxBundledLexicalMetadataBytes = 8 * 1024;
 final RegExp _bundledLexicalWordId = RegExp(r'^word:[a-z0-9][a-z0-9_-]{0,95}$');
 
 /// Loads only bounded, packaged lexical artifacts from their canonical path.
@@ -177,7 +177,7 @@ Future<Uint8List?> _productionContentArtifactBytes(
   if (path == null) return null;
   try {
     final bytes = await rootBundle.load(path);
-    if (bytes.lengthInBytes > _maxBundledLexicalMetadataBytes) return null;
+    if (bytes.lengthInBytes > maxLexicalMetadataArtifactBytes) return null;
     return bytes.buffer.asUint8List(bytes.offsetInBytes, bytes.lengthInBytes);
   } on Object {
     return null;
@@ -331,6 +331,8 @@ final class AppBootstrap {
     this.learningTimeCaptureRollout =
         const LearningTimeCaptureRollout.implementedOff(),
     this.focusTimerRollout = const FocusTimerRollout.implementedOff(),
+    this.contrastiveFeedbackRollout =
+        const ContrastiveFeedbackRollout.implementedOff(),
     this.learningTimeSegmentSyncRollout =
         const LearningTimeSegmentSyncRollout.off(),
     this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
@@ -413,6 +415,7 @@ final class AppBootstrap {
   final Duration activeLearningIdleTimeout;
   final LearningTimeCaptureRollout learningTimeCaptureRollout;
   final FocusTimerRollout focusTimerRollout;
+  final ContrastiveFeedbackRollout contrastiveFeedbackRollout;
   final LearningTimeSegmentSyncRollout learningTimeSegmentSyncRollout;
   final LearningGoalSyncRollout learningGoalSyncRollout;
   final RuntimeFeatureExpiryScheduler? scheduleRuntimeFeatureExpiry;
@@ -707,6 +710,9 @@ final class AppBootstrap {
       database,
       loadArtifactBytes: loadContentArtifactBytes,
     );
+    final contrastiveFeedback = contrastiveFeedbackRollout.allowsPresentation
+        ? ContrastiveFeedbackUseCases(manifests: contentManifests)
+        : null;
     final vocabularyRepository = DriftVocabularyRepository(
       database,
       contentManifests: contentManifests,
@@ -1166,6 +1172,7 @@ final class AppBootstrap {
           : null,
       assessment: assessmentOverride,
       currentActivityEvidence: currentActivityEvidence,
+      contrastiveFeedback: contrastiveFeedback,
       learningReconciliation: learningReconciliation,
       contentManifests: contentManifests,
       studyPlanning: studyPlanning,

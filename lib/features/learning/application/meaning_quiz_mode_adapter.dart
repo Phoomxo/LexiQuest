@@ -1,8 +1,11 @@
 import 'package:flutter/foundation.dart';
 
 import '../../vocabulary/application/vocabulary_use_cases.dart';
+import '../../vocabulary/domain/vocabulary_word.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../domain/evidence_context.dart';
 import '../domain/answer_feedback.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
@@ -27,6 +30,9 @@ final class MeaningQuizQuestion {
     required this.prompt,
     required this.correctOption,
     required this.options,
+    this.optionIdentities = const <String, String>{},
+    this.contrastiveIdentity,
+    this.contrastiveChecksumSha256,
   });
 
   final QuizWord word;
@@ -34,6 +40,11 @@ final class MeaningQuizQuestion {
   final String prompt;
   final String correctOption;
   final List<String> options;
+  final Map<String, String> optionIdentities;
+  final ContentIdentity? contrastiveIdentity;
+  final String? contrastiveChecksumSha256;
+
+  String? optionIdentity(String option) => optionIdentities[option];
 }
 
 enum MeaningQuizReviewPhase {
@@ -83,6 +94,7 @@ final class MeaningQuizModeAdapter
     MeaningQuizOperationAcceptance? acceptsOperation,
     MeaningQuizEvidenceOperation? runEvidenceOperation,
     SessionDirection direction = SessionDirection.mixed,
+    Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
   }) {
     if (session.isEmpty) {
       throw ArgumentError.value(session, 'session', 'must contain a question');
@@ -94,7 +106,11 @@ final class MeaningQuizModeAdapter
     }
     return MeaningQuizReviewController._(
       session: session,
-      questions: pinQuestions(session, direction: direction),
+      questions: pinQuestions(
+        session,
+        direction: direction,
+        lexicalWords: lexicalWords,
+      ),
       learning: learning,
       evidence: evidence,
       completeSession:
@@ -111,7 +127,11 @@ final class MeaningQuizModeAdapter
   List<MeaningQuizQuestion> pinQuestions(
     QuizSession session, {
     SessionDirection direction = SessionDirection.mixed,
+    Iterable<VocabularyWord> lexicalWords = const <VocabularyWord>[],
   }) {
+    final lexicalById = <String, VocabularyWord>{
+      for (final word in lexicalWords) word.id: word,
+    };
     final words = session.questions
         .map((question) => question.word)
         .toList(growable: false);
@@ -136,6 +156,20 @@ final class MeaningQuizModeAdapter
           word: word,
           direction: questionDirection,
         );
+        final lexical = lexicalById[word.id];
+        final rich = lexical?.richMetadata;
+        final verifiedChecksum = rich?.verifiedArtifactChecksumSha256;
+        final hasVerifiedLexicalMetadata =
+            lexical != null &&
+            lexical.isGlobal &&
+            lexical.contentProvenance == ContentProvenance.packaged &&
+            lexical.contentReviewState == ContentReviewState.approved &&
+            lexical.contentPublicationState ==
+                ContentPublicationState.published &&
+            lexical.contentRevision == word.contentRevision &&
+            rich?.verifiedContentRevision == lexical.contentRevision &&
+            verifiedChecksum != null &&
+            RegExp(r'^[0-9a-f]{64}$').hasMatch(verifiedChecksum);
         return MeaningQuizQuestion(
           word: word,
           direction: questionDirection,
@@ -145,9 +179,23 @@ final class MeaningQuizModeAdapter
           correctOption: correctOption,
           options: _pinOptions(
             correctOption: correctOption,
-            candidates: pool,
+            candidates: pool.map((candidate) => candidate.label).toList(),
             seed: _stableSeed('${word.id}:${questionDirection.name}'),
           ),
+          optionIdentities: <String, String>{
+            correctOption: word.id,
+            for (final candidate in pool) candidate.label: candidate.wordId,
+          },
+          contrastiveIdentity: hasVerifiedLexicalMetadata
+              ? ContentIdentity(
+                  type: ContentType.lexicalMetadata,
+                  id: word.id,
+                  revision: lexical.contentRevision,
+                )
+              : null,
+          contrastiveChecksumSha256: hasVerifiedLexicalMetadata
+              ? verifiedChecksum
+              : null,
         );
       }),
     );
@@ -173,7 +221,7 @@ final class MeaningQuizModeAdapter
   );
 }
 
-List<String> _equivalentDistinctDistractors({
+List<({String wordId, String label})> _equivalentDistinctDistractors({
   required List<QuizWord> words,
   required QuizWord word,
   required MeaningQuizDirection direction,
@@ -184,7 +232,7 @@ List<String> _equivalentDistinctDistractors({
   final answerKey = direction == MeaningQuizDirection.wordToMeaning
       ? _meaningKey(word)
       : _spellingKey(word);
-  final byAnswerKey = <String, String>{};
+  final byAnswerKey = <String, ({String wordId, String label})>{};
   for (final candidate in words) {
     final candidatePromptKey = direction == MeaningQuizDirection.wordToMeaning
         ? _spellingKey(candidate)
@@ -197,9 +245,12 @@ List<String> _equivalentDistinctDistractors({
     }
     byAnswerKey.putIfAbsent(
       candidateAnswerKey,
-      () => direction == MeaningQuizDirection.wordToMeaning
-          ? candidate.meaning
-          : candidate.spelling,
+      () => (
+        wordId: candidate.id,
+        label: direction == MeaningQuizDirection.wordToMeaning
+            ? candidate.meaning
+            : candidate.spelling,
+      ),
     );
   }
   final keys = byAnswerKey.keys.toList()..sort();
@@ -312,17 +363,64 @@ final class MeaningQuizReviewController extends ChangeNotifier {
     final feedbackContext = AnswerFeedbackContext(
       canonicalCorrectAnswer: question.correctOption,
     ).freeze();
+    final isCorrect = option == question.correctOption;
+    final input = question.direction == MeaningQuizDirection.wordToMeaning
+        ? CurrentActivityInput.meaningMultipleChoice
+        : CurrentActivityInput.meaningToWordMultipleChoice;
+    final manifestIdentity = question.contrastiveIdentity;
+    final contentRevision = manifestIdentity?.revision;
+    final checksum = question.contrastiveChecksumSha256;
+    final hasPinnedLexicalIdentity =
+        contentRevision != null &&
+        contentRevision > 0 &&
+        checksum != null &&
+        RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum);
+    final selectedOptionId = question.optionIdentity(option);
+    final correctOptionId = question.optionIdentity(question.correctOption);
+    final contrastiveFeedback =
+        !isCorrect &&
+            hasPinnedLexicalIdentity &&
+            selectedOptionId != null &&
+            correctOptionId != null
+        ? ContrastiveFeedbackContext(
+            manifestIdentity: manifestIdentity!,
+            manifestChecksumSha256: checksum,
+            promptMode: input == CurrentActivityInput.meaningMultipleChoice
+                ? 'meaningChoice'
+                : 'wordChoice',
+            evidenceContentRevision: contrastiveEvidenceContentRevision(
+              promptMode: input == CurrentActivityInput.meaningMultipleChoice
+                  ? 'meaningChoice'
+                  : 'wordChoice',
+              wordId: question.word.id,
+              revision: contentRevision,
+              checksumSha256: checksum,
+            ),
+            correctOptionId: correctOptionId,
+            selectedDistractorId: selectedOptionId,
+          )
+        : null;
     _recordInteraction();
-    final pending = _evidence.capture(
-      input: question.direction == MeaningQuizDirection.wordToMeaning
-          ? CurrentActivityInput.meaningMultipleChoice
-          : CurrentActivityInput.meaningToWordMultipleChoice,
-      sessionId: session.id,
-      wordId: question.word.id,
-      isCorrect: option == question.correctOption,
-      responseTimeMs: responseTimeMs,
-      attemptNumber: _index + 1,
-    );
+    final pending = hasPinnedLexicalIdentity
+        ? _evidence.capturePinnedMeaningRecognition(
+            input: input,
+            sessionId: session.id,
+            wordId: question.word.id,
+            isCorrect: isCorrect,
+            responseTimeMs: responseTimeMs,
+            attemptNumber: _index + 1,
+            contentRevision: contentRevision,
+            checksumSha256: checksum,
+            contrastiveFeedback: contrastiveFeedback,
+          )
+        : _evidence.capture(
+            input: input,
+            sessionId: session.id,
+            wordId: question.word.id,
+            isCorrect: isCorrect,
+            responseTimeMs: responseTimeMs,
+            attemptNumber: _index + 1,
+          );
     _pendingEvidence = pending;
     _pendingFeedbackContext = feedbackContext;
     _selectedOption = option;

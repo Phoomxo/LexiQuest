@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../application/unified_lesson_controller.dart';
 import '../application/learning_use_cases.dart';
+import '../application/contrastive_feedback_use_cases.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
@@ -600,6 +601,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
     this.nowUtc,
     this.configuration,
     this.revalidateConfiguration,
+    this.contrastiveFeedback,
   });
 
   final LessonModeAdapter adapter;
@@ -611,6 +613,7 @@ final class UnifiedLessonModeHost extends StatefulWidget {
   final LessonUtcNow? nowUtc;
   final SessionConfiguration? configuration;
   final SessionConfigurationRevalidator? revalidateConfiguration;
+  final ContrastiveFeedbackUseCases? contrastiveFeedback;
 
   @override
   State<UnifiedLessonModeHost> createState() => _UnifiedLessonModeHostState();
@@ -731,6 +734,7 @@ final class _UnifiedLessonModeHostState extends State<UnifiedLessonModeHost> {
       nowUtc: widget.nowUtc,
       routeLifecycle: _routeLifecycle,
       configuration: widget.configuration,
+      contrastiveFeedback: widget.contrastiveFeedback,
       builder: widget.builder,
     );
     final features = _features;
@@ -771,6 +775,7 @@ final class UnifiedLessonShell extends StatefulWidget {
     this.lifecycleStateReader,
     this.routeLifecycle,
     this.configuration,
+    this.contrastiveFeedback,
   });
 
   final WidgetBuilder builder;
@@ -779,6 +784,7 @@ final class UnifiedLessonShell extends StatefulWidget {
   final LessonLifecycleStateReader? lifecycleStateReader;
   final UnifiedLessonRouteLifecycle? routeLifecycle;
   final SessionConfiguration? configuration;
+  final ContrastiveFeedbackUseCases? contrastiveFeedback;
 
   @override
   State<UnifiedLessonShell> createState() => _UnifiedLessonShellState();
@@ -1114,6 +1120,10 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                         onBookmark: bookmarkLearningItem,
                         reportIdentity: feedback.bookmarkIdentity,
                         onReport: reportContent,
+                        contrastiveFeedback:
+                            widget.contrastiveFeedback ??
+                            dependencies?.contrastiveFeedback,
+                        featureRegistry: dependencies?.features,
                       ),
                     if (resetRequired != null)
                       Padding(

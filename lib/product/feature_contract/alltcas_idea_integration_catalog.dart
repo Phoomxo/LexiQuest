@@ -3,7 +3,7 @@ import '../../runtime/registries/feature.dart';
 import 'compatibility_profiles.dart';
 import 'feature_contract_models.dart';
 
-const String featureContractRevision = '1.2.0';
+const String featureContractRevision = '1.3.0';
 const String featureContractInitialRevision = '1.0.0';
 const String featureContractBaselineCommit = '61a4fec';
 const int featureContractSchemaVersion = 1;
@@ -20,6 +20,7 @@ const productContractIdsByRuntimeFeature = <Feature, Set<FeatureContractId>>{
     FeatureContractId.f08,
     FeatureContractId.f09,
     FeatureContractId.f11,
+    FeatureContractId.f18,
   },
   Feature.srs: <FeatureContractId>{
     FeatureContractId.f06,
@@ -357,7 +358,10 @@ final allTcasIdeaIntegrationCatalog = ProductFeatureCatalog.validated(
       provenance: FeatureProvenance.alltcasConfirmed,
       coverage: FeatureCoverage.newCapability,
       researchRole: ResearchRole.intervention,
-      dependencies: const <FeatureContractId>{FeatureContractId.f17},
+      dependencies: const <FeatureContractId>{
+        FeatureContractId.f04,
+        FeatureContractId.f17,
+      },
       authorityDependencies: const <DomainAuthority>{
         DomainAuthority.responseEvidence,
       },

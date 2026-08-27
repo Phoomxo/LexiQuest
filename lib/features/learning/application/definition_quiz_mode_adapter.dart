@@ -4,6 +4,7 @@ import '../../learning_packs/domain/content_manifest.dart';
 import '../../vocabulary/application/vocabulary_use_cases.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../domain/answer_feedback.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
@@ -49,6 +50,7 @@ final class DefinitionQuizQuestion {
     required this.correctOption,
     required this.options,
     required this.partOfSpeech,
+    this.optionIdentities = const <String, String>{},
   });
 
   final String wordId;
@@ -58,6 +60,9 @@ final class DefinitionQuizQuestion {
   final String correctOption;
   final List<String> options;
   final String partOfSpeech;
+  final Map<String, String> optionIdentities;
+
+  String? optionIdentity(String option) => optionIdentities[option];
 
   String get contentRevision =>
       'lexical-definition:$wordId@${identity.revision}:$checksumSha256';
@@ -255,6 +260,7 @@ final class DefinitionQuizModeAdapter
         final promptKey = normalizeVocabularyText(candidate.definition);
         final answerKey = normalizeVocabularyText(correctOption);
         final byAnswerKey = <String, String>{};
+        final identityByAnswerKey = <String, String>{};
         for (final distractor in candidates.values) {
           if (distractor.word.id == candidate.word.id ||
               normalizeVocabularyText(distractor.definition) == promptKey) {
@@ -263,7 +269,10 @@ final class DefinitionQuizModeAdapter
           final display = _canonicalDisplay(distractor.lexical.spelling);
           final key = normalizeVocabularyText(display);
           if (key == answerKey) continue;
-          byAnswerKey.putIfAbsent(key, () => display);
+          if (!byAnswerKey.containsKey(key)) {
+            byAnswerKey[key] = display;
+            identityByAnswerKey[key] = distractor.word.id;
+          }
         }
         final keys = byAnswerKey.keys.toList()..sort();
         final options = _pinOptions(
@@ -287,6 +296,11 @@ final class DefinitionQuizModeAdapter
             correctOption: correctOption,
             options: options,
             partOfSpeech: candidate.lexical.partOfSpeech,
+            optionIdentities: <String, String>{
+              correctOption: candidate.word.id,
+              for (final key in keys)
+                byAnswerKey[key]!: identityByAnswerKey[key]!,
+            },
           ),
         );
       }),
@@ -440,16 +454,31 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
       bookmarkIdentity: question.identity,
     ).freeze();
     final hintClassification = _classifyHintUsage(_hintUsage());
+    final isCorrect = _scoreAnswer(question, option);
+    final selectedOptionId = question.optionIdentity(option);
+    final correctOptionId = question.optionIdentity(question.correctOption);
+    final contrastiveFeedback =
+        !isCorrect && selectedOptionId != null && correctOptionId != null
+        ? ContrastiveFeedbackContext(
+            manifestIdentity: question.identity,
+            manifestChecksumSha256: question.checksumSha256,
+            promptMode: 'definitionChoice',
+            evidenceContentRevision: question.contentRevision,
+            correctOptionId: correctOptionId,
+            selectedDistractorId: selectedOptionId,
+          )
+        : null;
     _recordInteraction();
     final pending = _evidence.captureDefinitionRecognition(
       sessionId: session.id,
       wordId: question.wordId,
-      isCorrect: _scoreAnswer(question, option),
+      isCorrect: isCorrect,
       responseTimeMs: responseTimeMs,
       attemptNumber: _index + 1,
       contentRevision: question.identity.revision,
       checksumSha256: question.checksumSha256,
       classification: hintClassification,
+      contrastiveFeedback: contrastiveFeedback,
     );
     _pendingEvidence = pending;
     _pendingFeedbackContext = feedbackContext;

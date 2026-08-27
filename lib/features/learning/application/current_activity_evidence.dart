@@ -1,6 +1,7 @@
 import '../../events/domain/event_envelope_v2.dart';
 import '../../../product/feature_contract/feature_contract_digest.dart';
 import '../domain/evidence_context.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_policy_rollout.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_event_context.dart';
@@ -206,6 +207,52 @@ final class CurrentActivityEvidenceAdapter {
     );
   }
 
+  /// Captures meaning recognition against an exact verified lexical revision.
+  PendingCurrentActivityEvidence capturePinnedMeaningRecognition({
+    required CurrentActivityInput input,
+    required String sessionId,
+    required String wordId,
+    required bool isCorrect,
+    required int responseTimeMs,
+    required int attemptNumber,
+    required int contentRevision,
+    required String checksumSha256,
+    ContrastiveFeedbackContext? contrastiveFeedback,
+  }) {
+    if (input != CurrentActivityInput.meaningMultipleChoice &&
+        input != CurrentActivityInput.meaningToWordMultipleChoice) {
+      throw ArgumentError.value(input, 'input', 'must be a meaning choice');
+    }
+    if (contentRevision <= 0 ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksumSha256)) {
+      throw ArgumentError('Pinned meaning content identity is invalid.');
+    }
+    final declaration = _declarationFor(input);
+    return _capture(
+      input: input,
+      declaration: _CurrentActivityDeclaration(
+        evidenceClass: declaration.evidenceClass,
+        skillId: declaration.skillId,
+        promptMode: declaration.promptMode,
+        contentRevision: contrastiveEvidenceContentRevision(
+          promptMode: declaration.promptMode,
+          wordId: wordId,
+          revision: contentRevision,
+          checksumSha256: checksumSha256,
+        ),
+      ),
+      sessionId: sessionId,
+      wordId: wordId,
+      isCorrect: isCorrect,
+      responseTimeMs: responseTimeMs,
+      attemptNumber: attemptNumber,
+      providerProvenance:
+          'reviewed-lexical-meaning:$contentRevision:$checksumSha256',
+      hintLevel: 0,
+      contrastiveFeedback: contrastiveFeedback,
+    );
+  }
+
   /// Captures a reviewed, version-pinned definition-recognition occurrence.
   /// The hint snapshot is resolved by the shell-owned f19 authority before
   /// this immutable pending command is created.
@@ -218,6 +265,7 @@ final class CurrentActivityEvidenceAdapter {
     required int contentRevision,
     required String checksumSha256,
     required HintEvidenceClassification classification,
+    ContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     if (contentRevision <= 0) {
       throw ArgumentError.value(
@@ -261,6 +309,7 @@ final class CurrentActivityEvidenceAdapter {
       providerProvenance:
           'reviewed-lexical-definition:$contentRevision:$checksumSha256',
       hintLevel: hintLevel,
+      contrastiveFeedback: contrastiveFeedback,
     );
   }
 
@@ -319,6 +368,7 @@ final class CurrentActivityEvidenceAdapter {
     required String checksumSha256,
     required bool typed,
     required HintEvidenceClassification classification,
+    ContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     if (contentRevision <= 0) {
       throw ArgumentError.value(
@@ -369,6 +419,7 @@ final class CurrentActivityEvidenceAdapter {
       providerProvenance:
           'reviewed-lexical-example:$contentRevision:$checksumSha256',
       hintLevel: classification.hintLevel,
+      contrastiveFeedback: contrastiveFeedback,
     );
   }
 
@@ -474,6 +525,7 @@ final class CurrentActivityEvidenceAdapter {
     required int attemptNumber,
     required String contentRevision,
     required HintEvidenceClassification classification,
+    ContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     final validUnassisted =
         classification.hintLevel == 0 &&
@@ -503,6 +555,7 @@ final class CurrentActivityEvidenceAdapter {
       attemptNumber: attemptNumber,
       providerProvenance: 'pinned-lexical-matching',
       hintLevel: classification.hintLevel,
+      contrastiveFeedback: contrastiveFeedback,
     );
   }
 
@@ -521,6 +574,8 @@ final class CurrentActivityEvidenceAdapter {
     required HintEvidenceClassification classification,
     required ResolvedLearningEvidenceContexts contexts,
     String? actorIdentity,
+    String providerProvenance = 'pinned-lexical-matching',
+    FrozenContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     final validUnassisted =
         classification.hintLevel == 0 &&
@@ -538,6 +593,22 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     final frozenEvidenceContext = contexts.evidenceContext;
+    final frozenContrastiveFeedback = contrastiveFeedback;
+    if (providerProvenance != 'pinned-lexical-matching' &&
+        !isContrastiveFeedbackAttemptProvenance(providerProvenance)) {
+      throw ArgumentError.value(
+        providerProvenance,
+        'providerProvenance',
+        'invalid restored matching provenance',
+      );
+    }
+    if (frozenContrastiveFeedback != null &&
+        providerProvenance !=
+            contrastiveFeedbackAttemptProvenance(frozenContrastiveFeedback)) {
+      throw StateError(
+        'restored matching contrastive feedback identity is corrupt',
+      );
+    }
     try {
       contexts.eventContext.validateAgainst(
         evidenceContext: frozenEvidenceContext,
@@ -566,6 +637,7 @@ final class CurrentActivityEvidenceAdapter {
       hintLevel: classification.hintLevel,
       rolloutModeProvider: rolloutModeProvider,
       researchStateProvider: researchStateProvider,
+      contrastiveFeedback: frozenContrastiveFeedback,
       restoredContexts: contexts,
       command: FrozenLearningEvidenceCommand(
         sourceEvidenceId: sourceEvidenceId,
@@ -576,7 +648,7 @@ final class CurrentActivityEvidenceAdapter {
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        providerProvenance: 'pinned-lexical-matching',
+        providerProvenance: providerProvenance,
         actorIdentity: actorIdentity,
       ),
     ).._status = PendingCurrentActivityEvidenceStatus.retryRequired;
@@ -592,6 +664,7 @@ final class CurrentActivityEvidenceAdapter {
     required int attemptNumber,
     required String? providerProvenance,
     required int hintLevel,
+    ContrastiveFeedbackContext? contrastiveFeedback,
   }) {
     final generatedId = generateId().trim();
     if (generatedId.isEmpty) {
@@ -601,6 +674,10 @@ final class CurrentActivityEvidenceAdapter {
     if (!occurredAtUtc.isUtc) {
       throw ArgumentError.value(occurredAtUtc, 'nowUtc', 'must be UTC');
     }
+    final frozenContrastiveFeedback = contrastiveFeedback?.freeze();
+    final canonicalProviderProvenance = frozenContrastiveFeedback == null
+        ? providerProvenance
+        : contrastiveFeedbackAttemptProvenance(frozenContrastiveFeedback);
     return PendingCurrentActivityEvidence._(
       learning: learning,
       input: input,
@@ -608,6 +685,7 @@ final class CurrentActivityEvidenceAdapter {
       hintLevel: hintLevel,
       rolloutModeProvider: rolloutModeProvider,
       researchStateProvider: researchStateProvider,
+      contrastiveFeedback: frozenContrastiveFeedback,
       command: FrozenLearningEvidenceCommand(
         sourceEvidenceId: 'attempt:$generatedId',
         occurredAtUtc: occurredAtUtc,
@@ -617,7 +695,7 @@ final class CurrentActivityEvidenceAdapter {
         isCorrect: isCorrect,
         responseTimeMs: responseTimeMs,
         attemptNumber: attemptNumber,
-        providerProvenance: providerProvenance,
+        providerProvenance: canonicalProviderProvenance,
       ),
     );
   }
@@ -640,6 +718,7 @@ final class PendingCurrentActivityEvidence {
     required this._rolloutModeProvider,
     required this._researchStateProvider,
     required this._command,
+    this._contrastiveFeedback,
     this._restoredContexts,
   });
 
@@ -650,6 +729,7 @@ final class PendingCurrentActivityEvidence {
   final EvidencePolicyRolloutModeProvider _rolloutModeProvider;
   final CurrentActivityResearchStateProvider _researchStateProvider;
   final FrozenLearningEvidenceCommand _command;
+  final FrozenContrastiveFeedbackContext? _contrastiveFeedback;
   final ResolvedLearningEvidenceContexts? _restoredContexts;
 
   PendingCurrentActivityEvidenceStatus _status =
@@ -671,6 +751,8 @@ final class PendingCurrentActivityEvidence {
   int get attemptNumber => _command.attemptNumber;
   String? get providerProvenance => _command.providerProvenance;
   String? get actorIdentity => _command.actorIdentity ?? _boundBasis?.ownerId;
+  FrozenContrastiveFeedbackContext? get contrastiveFeedback =>
+      _contrastiveFeedback;
   EvidenceContext? get evidenceContext => _resolved?.contexts.evidenceContext;
   PendingCurrentActivityEvidenceStatus get status => _status;
   bool get requiresRetry =>
@@ -722,7 +804,10 @@ final class PendingCurrentActivityEvidence {
       _status = PendingCurrentActivityEvidenceStatus.resolving;
       final resolved = await _resolveOnce();
       _status = PendingCurrentActivityEvidenceStatus.writing;
-      final result = await _learning.recordResolvedEvidence(resolved);
+      final result = await _learning.recordResolvedEvidence(
+        resolved,
+        contrastiveFeedback: _contrastiveFeedback,
+      );
       _result = result;
       _status = PendingCurrentActivityEvidenceStatus.committed;
       return result;

@@ -12,7 +12,7 @@ import 'package:vocab_learning_app/runtime/registries/feature.dart';
 void main() {
   group('AllTCAS 8/44 product feature contract', () {
     test('pins the catalog metadata and exact approved definitions', () {
-      expect(featureContractRevision, '1.2.0');
+      expect(featureContractRevision, '1.3.0');
       expect(featureContractBaselineCommit, '61a4fec');
       expect(featureContractSchemaVersion, 1);
       expect(featureContractGeneratorVersion, '1.0.0');
@@ -452,6 +452,17 @@ void main() {
       );
     });
 
+    test('pins f18 to f04 content and f17 committed feedback', () {
+      final f18 = allTcasIdeaIntegrationCatalog.records.singleWhere(
+        (record) => record.id == FeatureContractId.f18,
+      );
+      expect(f18.dependencies, const <FeatureContractId>{
+        FeatureContractId.f04,
+        FeatureContractId.f17,
+      });
+      expect(f18.runtimeFeatures, const <Feature>{Feature.quiz});
+    });
+
     test('resolves every profile and gives each authority one writer', () {
       for (final record in allTcasIdeaIntegrationCatalog.records) {
         expect(authorityProfiles, contains(record.authorityProfileId));
@@ -707,6 +718,7 @@ void main() {
           FeatureContractId.f08,
           FeatureContractId.f09,
           FeatureContractId.f11,
+          FeatureContractId.f18,
         },
         Feature.srs: {
           FeatureContractId.f06,

@@ -15,6 +15,7 @@ import 'drift_learning_event_store.dart'
 import 'drift_learning_projection_rebuilder.dart';
 import '../domain/evidence_eligibility_policy.dart';
 import '../domain/evidence_context.dart';
+import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
@@ -1039,7 +1040,10 @@ final class DriftLearningRepository
   }) async {
     if (session.activityType != 'matching' ||
         command.promptMode != 'matchingPair' ||
-        command.providerProvenance != 'pinned-lexical-matching' ||
+        (command.providerProvenance != 'pinned-lexical-matching' &&
+            !isContrastiveFeedbackAttemptProvenance(
+              command.providerProvenance,
+            )) ||
         command.evidenceContext.skillId != 'matching-recognition' ||
         (command.evidenceContext.evidenceClass != EvidenceClass.recognition &&
             command.evidenceContext.evidenceClass !=
@@ -1119,13 +1123,18 @@ final class DriftLearningRepository
       'actorIdentity',
     };
     const pendingV3Keys = <String>{...pendingV2Keys, 'providerProvenance'};
+    const pendingV4Keys = <String>{...pendingV3Keys, 'contrastiveFeedback'};
     final pendingVersion = pending['schemaVersion'];
     final expectedPendingKeys = switch (pendingVersion) {
       2 => pendingV2Keys,
       3 => pendingV3Keys,
+      4 => pendingV4Keys,
       _ => pendingV1Keys,
     };
-    if (pendingVersion != null && pendingVersion != 2 && pendingVersion != 3) {
+    if (pendingVersion != null &&
+        pendingVersion != 2 &&
+        pendingVersion != 3 &&
+        pendingVersion != 4) {
       return false;
     }
     if (pending.length != expectedPendingKeys.length ||
@@ -1140,9 +1149,49 @@ final class DriftLearningRepository
     final frozenEvidenceJson = pending['evidenceContext'];
     final frozenEventJson = pending['eventContext'];
     final event = command.event;
-    final pendingActor = pendingVersion == 2 || pendingVersion == 3
+    final pendingActor =
+        pendingVersion == 2 || pendingVersion == 3 || pendingVersion == 4
         ? pending['actorIdentity']
         : command.ownerId;
+    final pendingProvider = pendingVersion == 3 || pendingVersion == 4
+        ? pending['providerProvenance']
+        : 'pinned-lexical-matching';
+    FrozenContrastiveFeedbackContext? contrastiveFeedback;
+    final encodedContrastive = pendingVersion == 4
+        ? pending['contrastiveFeedback']
+        : null;
+    if (encodedContrastive is Map<String, Object?>) {
+      try {
+        contrastiveFeedback = FrozenContrastiveFeedbackContext.fromJson(
+          encodedContrastive,
+        );
+      } on Object {
+        return false;
+      }
+    } else if (encodedContrastive != null) {
+      return false;
+    }
+    final contrastiveProvenance = isContrastiveFeedbackAttemptProvenance(
+      command.providerProvenance,
+    );
+    if (contrastiveProvenance) {
+      if (pendingVersion != 4 ||
+          contrastiveFeedback == null ||
+          pendingProvider != command.providerProvenance ||
+          command.providerProvenance !=
+              contrastiveFeedbackAttemptProvenance(contrastiveFeedback) ||
+          contrastiveFeedback.manifestIdentity.id != command.wordId ||
+          contrastiveFeedback.promptMode != command.promptMode ||
+          contrastiveFeedback.evidenceContentRevision != contentIdentity ||
+          contrastiveFeedback.correctOptionId != command.wordId ||
+          contrastiveFeedback.selectedDistractorId !=
+              pending['selectedMeaningWordId'] ||
+          command.isCorrect) {
+        return false;
+      }
+    } else if (contrastiveFeedback != null) {
+      return false;
+    }
     if (occurredAtUtc == null ||
         !occurredAtUtc.isUtc ||
         event == null ||
@@ -1156,8 +1205,8 @@ final class DriftLearningRepository
         pending['isCorrect'] != command.isCorrect ||
         pending['responseTimeMs'] != command.responseTimeMs ||
         pending['attemptNumber'] != command.attemptNumber ||
-        (pendingVersion == 3 &&
-            pending['providerProvenance'] != command.providerProvenance) ||
+        ((pendingVersion == 3 || pendingVersion == 4) &&
+            pendingProvider != command.providerProvenance) ||
         pending['evidenceClass'] !=
             command.evidenceContext.evidenceClass.name ||
         pending['hintLevel'] != command.evidenceContext.hintLevel ||
