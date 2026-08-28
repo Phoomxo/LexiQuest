@@ -24,7 +24,7 @@ abstract final class QuestCatalogProvider {
     title: 'Daily Vocabulary Practice',
     description: 'Answer 5 vocabulary questions correctly today.',
     type: QuestType.daily,
-    objectives: const [
+    objectives: List<QuestObjective>.unmodifiable(const [
       QuestObjective(
         objectiveId: 'obj-daily-correct',
         description: 'Correct answers',
@@ -34,7 +34,7 @@ abstract final class QuestCatalogProvider {
           filters: {'correct': true},
         ),
       ),
-    ],
+    ]),
     reward: const RewardSpec(xpAmount: 50),
     expiresIn: const Duration(hours: 24),
   );
@@ -48,7 +48,7 @@ abstract final class QuestCatalogProvider {
     title: 'Weekly Vocabulary Champion',
     description: 'Answer 20 vocabulary questions correctly this week.',
     type: QuestType.weekly,
-    objectives: const [
+    objectives: List<QuestObjective>.unmodifiable(const [
       QuestObjective(
         objectiveId: 'obj-weekly-correct',
         description: 'Correct answers this week',
@@ -58,21 +58,28 @@ abstract final class QuestCatalogProvider {
           filters: {'correct': true},
         ),
       ),
-    ],
+    ]),
     reward: const RewardSpec(xpAmount: 200),
     expiresIn: const Duration(days: 7),
   );
 
   // ── Combined lists ─────────────────────────────────────────────────────────
 
-  static List<QuestDefinition> get dailyQuests => [dailyCorrectAnswers];
-  static List<QuestDefinition> get weeklyQuests => [weeklyCorrectAnswers];
+  static final List<QuestDefinition> _dailyQuests =
+      List<QuestDefinition>.unmodifiable([dailyCorrectAnswers]);
+  static final List<QuestDefinition> _weeklyQuests =
+      List<QuestDefinition>.unmodifiable([weeklyCorrectAnswers]);
+  static final List<QuestDefinition> _allQuests =
+      List<QuestDefinition>.unmodifiable([
+        dailyCorrectAnswers,
+        weeklyCorrectAnswers,
+      ]);
+
+  static List<QuestDefinition> get dailyQuests => _dailyQuests;
+  static List<QuestDefinition> get weeklyQuests => _weeklyQuests;
 
   /// All built-in quests — daily first, then weekly.
-  static List<QuestDefinition> get allQuests => [
-    ...dailyQuests,
-    ...weeklyQuests,
-  ];
+  static List<QuestDefinition> get allQuests => _allQuests;
 
   // ── Startup helper ─────────────────────────────────────────────────────────
 

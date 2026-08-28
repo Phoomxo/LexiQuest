@@ -52,11 +52,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Active'), findsOneWidget);
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('Expired'), findsOneWidget);
-    expect(find.text('Abandoned'), findsOneWidget);
-    expect(find.text('1 / 2'), findsNWidgets(4));
+    expect(find.text('In progress'), findsOneWidget);
+    expect(find.text('Complete'), findsOneWidget);
+    expect(find.text('Available next time'), findsOneWidget);
+    expect(find.text('Paused'), findsOneWidget);
+    expect(find.text('1 of 2 steps'), findsNWidgets(4));
 
     final renderedText = tester
         .widgetList<Text>(find.byType(Text))
@@ -79,6 +79,10 @@ void main() {
     expect(find.byType(ElevatedButton), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
     expect(find.byType(TextButton), findsNothing);
+    expect(find.textContaining('lost'), findsNothing);
+    expect(find.textContaining('failed'), findsNothing);
+    expect(find.textContaining('XP'), findsNothing);
+    expect(find.textContaining('Coins'), findsNothing);
   });
 
   testWidgets('renders typed failure without a mutation or retry affordance', (
@@ -126,7 +130,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('Active'), findsOneWidget);
+    expect(find.text('In progress'), findsOneWidget);
     expect(repositoryA.readCalls, 1);
 
     await tester.pumpWidget(
@@ -139,8 +143,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Completed'), findsOneWidget);
-    expect(find.text('Active'), findsNothing);
+    expect(find.text('Complete'), findsOneWidget);
+    expect(find.text('In progress'), findsNothing);
     expect(repositoryA.readCalls, 1);
     expect(repositoryB.readCalls, 1);
     expect(repositoryB.lastLimit, 50);

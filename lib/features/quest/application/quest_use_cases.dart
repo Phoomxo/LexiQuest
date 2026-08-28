@@ -73,11 +73,29 @@ final class QuestUseCases {
   ///
   /// Returns the new [QuestInstance], or null when the quest is already active.
   Future<QuestInstance?> startQuest(QuestDefinition def) async {
+    _validateDefinition(def);
     final owner = await owners.getOrCreateActiveOwner();
-    await repository.upsertDefinition(def);
-
     final existing = await repository.getActiveInstances(owner.id);
-    if (existing.any((i) => i.questId == def.questId)) return null;
+    QuestInstance? active;
+    for (final instance in existing) {
+      if (instance.questId != def.questId) continue;
+      if (active != null) {
+        throw StateError('duplicate active quest authority state');
+      }
+      active = instance;
+    }
+    if (active != null) {
+      final stored = await repository.getDefinition(def.questId);
+      _requirePinnedInstance(
+        instance: active,
+        catalogDefinition: def,
+        storedDefinition: stored,
+        expectedOwnerId: owner.id,
+      );
+      return null;
+    }
+
+    await repository.upsertDefinition(def);
 
     final now = _now();
     final instance = QuestInstance(
@@ -101,28 +119,18 @@ final class QuestUseCases {
     return instance;
   }
 
-  /// Feed [event] into all active quest instances for the event's owner.
-  ///
-  /// For each instance whose objectives advance, the updated progress is
-  /// persisted.  If all objectives complete, the instance is marked completed
-  /// and a [QuestCompletedEvent] is returned (and optionally forwarded to the
-  /// shadow orchestrator).
-  ///
-  /// Returns all [QuestCompletedEvent]s produced in this call (typically 0 or
-  /// 1, but multiple quests may complete from a single event).
-  @Deprecated('Use projectEvent and reconcileReward through durable replay.')
+  /// Retained only so older callers fail closed instead of silently bypassing
+  /// evidence eligibility, receipt versioning, and prerequisite ordering.
+  @Deprecated(
+    'Direct Quest events are unsupported; use durable reconciliation.',
+  )
   Future<List<QuestCompletedEvent>> processEvent(
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
   ) async {
-    final projection = await projectEvent(event, catalog);
-    for (final completion in projection.completed) {
-      final definition = catalog.firstWhere(
-        (candidate) => candidate.questId == completion.questId,
-      );
-      await _grantReward(definition, completion);
-    }
-    return projection.completed;
+    throw UnsupportedError(
+      'Quest progress requires the durable evidence projection reconciler.',
+    );
   }
 
   /// Projects one event and reports whether any active quest existed at the
@@ -131,15 +139,28 @@ final class QuestUseCases {
     EventEnvelopeV2 event,
     List<QuestDefinition> catalog,
   ) async {
+    final catalogById = _validatedCatalog(catalog);
     final active = await repository.getActiveInstances(event.ownerIdentity);
     final completedByEvent = await repository
         .getCompletedInstancesForSourceEvent(
           ownerId: event.ownerIdentity,
           sourceEventId: event.eventId,
-          questIds: catalog.map((definition) => definition.questId),
+          questIds: catalogById.keys,
         );
     if (active.isEmpty && completedByEvent.isEmpty) {
       return const QuestProjectionEvaluation(eligible: false, completed: []);
+    }
+
+    final relevant = <QuestInstance>[...active, ...completedByEvent];
+    for (final instance in relevant) {
+      final definition = catalogById[instance.questId];
+      final stored = await repository.getDefinition(instance.questId);
+      _requirePinnedInstance(
+        instance: instance,
+        catalogDefinition: definition,
+        storedDefinition: stored,
+        expectedOwnerId: event.ownerIdentity,
+      );
     }
 
     final completed = <QuestCompletedEvent>[];
@@ -149,13 +170,7 @@ final class QuestUseCases {
     for (final instance in active) {
       if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
       eligible = true;
-      final def = catalog.firstWhere(
-        (d) => d.questId == instance.questId,
-        orElse: () => throw StateError(
-          'QuestUseCases.processEvent: no catalog entry for '
-          'questId=${instance.questId}',
-        ),
-      );
+      final def = catalogById[instance.questId]!;
 
       final updated = instance.advanceIfMatches(
         _eventForObjectiveMatching(event),
@@ -177,13 +192,6 @@ final class QuestUseCases {
     for (final instance in completedByEvent) {
       if (event.occurredAtUtc.isBefore(instance.assignedAtUtc)) continue;
       eligible = true;
-      catalog.firstWhere(
-        (candidate) => candidate.questId == instance.questId,
-        orElse: () => throw StateError(
-          'QuestUseCases.processEvent: no catalog entry for '
-          'questId=${instance.questId}',
-        ),
-      );
       final completion = instance.complete(
         now: instance.completedAtUtc ?? event.recordedAtUtc,
       );
@@ -290,6 +298,133 @@ final class QuestUseCases {
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
+
+  Map<String, QuestDefinition> _validatedCatalog(
+    List<QuestDefinition> catalog,
+  ) {
+    if (catalog.length > 64) {
+      throw StateError('quest projection catalog exceeds 64 definitions');
+    }
+    final byId = <String, QuestDefinition>{};
+    for (final definition in catalog) {
+      _validateDefinition(definition);
+      if (byId.containsKey(definition.questId)) {
+        throw StateError('duplicate quest catalog definition');
+      }
+      byId[definition.questId] = definition;
+    }
+    return Map<String, QuestDefinition>.unmodifiable(byId);
+  }
+
+  void _requirePinnedInstance({
+    required QuestInstance instance,
+    required QuestDefinition? catalogDefinition,
+    required QuestDefinition? storedDefinition,
+    required String expectedOwnerId,
+  }) {
+    final definition = catalogDefinition;
+    final stored = storedDefinition;
+    if (instance.ownerId != expectedOwnerId ||
+        definition == null ||
+        stored == null ||
+        instance.catalogVersion != definition.catalogVersion ||
+        !_sameDefinition(stored, definition) ||
+        !_progressMatchesDefinition(instance.progress, definition)) {
+      throw StateError('quest catalog pin does not match durable instance');
+    }
+  }
+
+  void _validateDefinition(QuestDefinition definition) {
+    if (!_validIdentifier(definition.questId) ||
+        definition.catalogVersion < 1 ||
+        definition.objectives.isEmpty ||
+        definition.objectives.length > 64 ||
+        definition.reward.xpAmount < 0) {
+      throw StateError('invalid quest catalog definition');
+    }
+    final objectiveIds = <String>{};
+    for (final objective in definition.objectives) {
+      if (!_validIdentifier(objective.objectiveId) ||
+          !_validIdentifier(objective.criteria.eventType) ||
+          objective.targetCount < 1 ||
+          !objectiveIds.add(objective.objectiveId)) {
+        throw StateError('invalid quest catalog objective');
+      }
+    }
+  }
+
+  bool _progressMatchesDefinition(
+    List<ObjectiveProgress> progress,
+    QuestDefinition definition,
+  ) {
+    if (progress.length != definition.objectives.length) return false;
+    final byId = <String, ObjectiveProgress>{};
+    for (final value in progress) {
+      if (byId.containsKey(value.objectiveId) ||
+          value.currentCount < 0 ||
+          value.currentCount > value.targetCount ||
+          value.sourceEventIds.length != value.sourceEventIds.toSet().length) {
+        return false;
+      }
+      byId[value.objectiveId] = value;
+    }
+    for (final objective in definition.objectives) {
+      final value = byId[objective.objectiveId];
+      if (value == null || value.targetCount != objective.targetCount) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameDefinition(QuestDefinition left, QuestDefinition right) {
+    if (left.questId != right.questId ||
+        left.catalogVersion != right.catalogVersion ||
+        left.title != right.title ||
+        left.description != right.description ||
+        left.type != right.type ||
+        left.reward.xpAmount != right.reward.xpAmount ||
+        left.reward.rewardItemId != right.reward.rewardItemId ||
+        left.expiresIn != right.expiresIn ||
+        !_sameList(left.tags, right.tags) ||
+        left.objectives.length != right.objectives.length) {
+      return false;
+    }
+    for (var index = 0; index < left.objectives.length; index++) {
+      final a = left.objectives[index];
+      final b = right.objectives[index];
+      if (a.objectiveId != b.objectiveId ||
+          a.description != b.description ||
+          a.targetCount != b.targetCount ||
+          a.criteria.eventType != b.criteria.eventType ||
+          !_sameValue(a.criteria.filters, b.criteria.filters)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  bool _sameList(List<Object?> left, List<Object?> right) {
+    if (left.length != right.length) return false;
+    for (var index = 0; index < left.length; index++) {
+      if (!_sameValue(left[index], right[index])) return false;
+    }
+    return true;
+  }
+
+  bool _sameValue(Object? left, Object? right) {
+    if (left is Map && right is Map) {
+      if (left.length != right.length || !left.keys.every(right.containsKey)) {
+        return false;
+      }
+      return left.keys.every((key) => _sameValue(left[key], right[key]));
+    }
+    if (left is List && right is List) return _sameList(left, right);
+    return left == right;
+  }
+
+  bool _validIdentifier(String value) =>
+      value.trim() == value && value.isNotEmpty && value.runes.length <= 256;
 
   String _nextId() => generateId().trim();
 
@@ -485,29 +620,6 @@ final class QuestUseCases {
   /// Extracts quest type hint from the deterministic idempotency key.
   /// Falls back to 'daily' which maps to the lowest reward tier.
   String _questTypeFromIdempotencyKey(String key) => 'daily';
-
-  /// Grants the quest-completion economy award via [rewardSink] when wired.
-  /// Idempotent by `completedEvent.idempotencyKey`. Errors are swallowed.
-  Future<void> _grantReward(
-    QuestDefinition def,
-    QuestCompletedEvent completedEvent,
-  ) async {
-    final sink = rewardSink;
-    if (sink == null) return;
-    if (def.reward.xpAmount <= 0) return;
-    try {
-      await sink(
-        ownerId: completedEvent.ownerId,
-        idempotencyKey: completedEvent.idempotencyKey,
-        xpAmount: def.reward.xpAmount,
-        sourceEventId: completedEvent.idempotencyKey,
-        occurredAtUtc: completedEvent.completedAtUtc,
-        rewardItemId: def.reward.rewardItemId,
-      );
-    } catch (_) {
-      // Reward grant failure must never break the learning flow.
-    }
-  }
 }
 
 final class _ValidatedQuestRewardGrant {

@@ -7,6 +7,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/quest/application/quest_catalog_provider.dart';
 import 'package:vocab_learning_app/features/quest/application/quest_use_cases.dart';
 import 'package:vocab_learning_app/features/quest/data/drift_quest_repository.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
@@ -231,9 +232,10 @@ QuestDefinition _singleObjectiveDef({
   String questId = 'q-uc-daily',
   int targetCount = 2,
   QuestType type = QuestType.daily,
+  int catalogVersion = 1,
 }) => QuestDefinition(
   questId: questId,
-  catalogVersion: 1,
+  catalogVersion: catalogVersion,
   title: 'Test Quest',
   description: 'Complete $targetCount quiz questions',
   type: type,
@@ -250,6 +252,37 @@ QuestDefinition _singleObjectiveDef({
   ],
   reward: const RewardSpec(xpAmount: 50),
 );
+
+QuestDefinition _orderedDefinition({
+  String questId = 'q-ordered',
+  int catalogVersion = 1,
+  bool reversed = false,
+}) {
+  const first = QuestObjective(
+    objectiveId: 'objective-a',
+    description: 'First objective',
+    targetCount: 2,
+    criteria: ObjectiveCriteria(
+      eventType: 'QuizCompleted',
+      filters: {'correct': true},
+    ),
+  );
+  const second = QuestObjective(
+    objectiveId: 'objective-b',
+    description: 'Second objective',
+    targetCount: 3,
+    criteria: ObjectiveCriteria(eventType: 'SrsReviewCompleted'),
+  );
+  return QuestDefinition(
+    questId: questId,
+    catalogVersion: catalogVersion,
+    title: 'Ordered quest',
+    description: 'A definition whose objective order is pinned',
+    type: QuestType.daily,
+    objectives: reversed ? const [second, first] : const [first, second],
+    reward: const RewardSpec(xpAmount: 50),
+  );
+}
 
 // ── Tests ─────────────────────────────────────────────────────────────────────
 
@@ -315,6 +348,55 @@ void main() {
       expect(stored!.title, def.title);
     });
 
+    test('built-in catalog lists are immutable version-pinned snapshots', () {
+      expect(QuestCatalogProvider.allQuests, hasLength(2));
+      expect(
+        QuestCatalogProvider.allQuests,
+        everyElement(
+          isA<QuestDefinition>().having(
+            (definition) => definition.catalogVersion,
+            'catalogVersion',
+            QuestCatalogProvider.version,
+          ),
+        ),
+      );
+      expect(
+        () => QuestCatalogProvider.allQuests.add(_singleObjectiveDef()),
+        throwsUnsupportedError,
+      );
+    });
+
+    test(
+      'startQuest rejects a changed active definition without mutating the pin',
+      () async {
+        final pinned = _orderedDefinition();
+        final instance = await useCases.startQuest(pinned);
+        final storedBefore = await repo.getDefinition(pinned.questId);
+
+        await expectLater(
+          useCases.startQuest(
+            _orderedDefinition(catalogVersion: 2, reversed: true),
+          ),
+          throwsStateError,
+        );
+
+        final storedAfter = await repo.getDefinition(pinned.questId);
+        final active = await repo.getActiveInstances(testOwner.id);
+        expect(storedAfter?.catalogVersion, storedBefore?.catalogVersion);
+        expect(
+          storedAfter?.objectives.map((objective) => objective.objectiveId),
+          storedBefore?.objectives.map((objective) => objective.objectiveId),
+        );
+        expect(active.single.instanceId, instance?.instanceId);
+        expect(active.single.catalogVersion, pinned.catalogVersion);
+        expect(active.single.progress, everyElement(isA<ObjectiveProgress>()));
+        expect(
+          active.single.progress.map((objective) => objective.currentCount),
+          everyElement(0),
+        );
+      },
+    );
+
     test('bounded status read forwards current owner and limit', () async {
       final capturingRepository = _ThrowAfterProgressRepository(repo);
       final statusUseCases = QuestUseCases(
@@ -358,24 +440,30 @@ void main() {
       },
     );
 
-    // ── processEvent ─────────────────────────────────────────────────────────
+    // ── evidence projection ──────────────────────────────────────────────────
 
-    test('processEvent advances matching objective', () async {
-      final def = _singleObjectiveDef(targetCount: 3);
-      await useCases.startQuest(def);
+    test(
+      'deprecated processEvent cannot bypass durable reconciliation',
+      () async {
+        final def = _singleObjectiveDef(targetCount: 3);
+        await useCases.startQuest(def);
 
-      final completed = await useCases.processEvent(_makeEvent(), [def]);
+        await expectLater(
+          useCases.processEvent(_makeEvent(), [def]),
+          throwsUnsupportedError,
+        );
 
-      expect(completed, isEmpty, reason: 'one event should not complete quest');
-      final instances = await useCases.getActiveInstances();
-      expect(instances.first.progress.first.currentCount, 1);
-    });
+        final instances = await useCases.getActiveInstances();
+        expect(instances.first.progress.first.currentCount, 0);
+        expect(instances.first.progress.first.sourceEventIds, isEmpty);
+      },
+    );
 
-    test('processEvent ignores non-matching events', () async {
+    test('projectEvent ignores non-matching events', () async {
       final def = _singleObjectiveDef();
       await useCases.startQuest(def);
 
-      await useCases.processEvent(_makeEvent(eventType: 'SrsReviewCompleted'), [
+      await useCases.projectEvent(_makeEvent(eventType: 'SrsReviewCompleted'), [
         def,
       ]);
 
@@ -431,15 +519,90 @@ void main() {
     );
 
     test(
-      'processEvent returns QuestCompletedEvent when all objectives met',
+      'projectEvent preflights every pinned definition before any progress',
+      () async {
+        final first = _singleObjectiveDef(questId: 'q-first', targetCount: 3);
+        final second = _singleObjectiveDef(questId: 'q-second', targetCount: 3);
+        await useCases.startQuest(first);
+        await useCases.startQuest(second);
+
+        await expectLater(
+          useCases.projectEvent(_makeEvent(), [
+            first,
+            _singleObjectiveDef(
+              questId: second.questId,
+              targetCount: 3,
+              catalogVersion: 2,
+            ),
+          ]),
+          throwsStateError,
+        );
+
+        final active = await repo.getActiveInstances(testOwner.id);
+        expect(active, hasLength(2));
+        expect(
+          active
+              .expand((instance) => instance.progress)
+              .map((objective) => objective.currentCount),
+          everyElement(0),
+          reason: 'catalog rejection must happen before the first write',
+        );
+      },
+    );
+
+    test(
+      'projectEvent fails closed for removed or reordered quest definitions',
+      () async {
+        final definition = _orderedDefinition();
+        await useCases.startQuest(definition);
+
+        for (final invalidCatalog in <List<QuestDefinition>>[
+          const <QuestDefinition>[],
+          [_orderedDefinition(reversed: true)],
+        ]) {
+          await expectLater(
+            useCases.projectEvent(_makeEvent(), invalidCatalog),
+            throwsStateError,
+          );
+          expect(
+            (await repo.getActiveInstances(
+              testOwner.id,
+            )).single.progress.map((objective) => objective.currentCount),
+            everyElement(0),
+          );
+        }
+      },
+    );
+
+    test('concurrent duplicate evidence advances exactly once', () async {
+      final definition = _singleObjectiveDef(targetCount: 3);
+      await useCases.startQuest(definition);
+      final event = _makeEvent();
+
+      await Future.wait<QuestProjectionEvaluation>(
+        List<Future<QuestProjectionEvaluation>>.generate(
+          12,
+          (_) => useCases.projectEvent(event, [definition]),
+        ),
+      );
+
+      final progress = (await repo.getActiveInstances(
+        testOwner.id,
+      )).single.progress.single;
+      expect(progress.currentCount, 1);
+      expect(progress.sourceEventIds, [event.eventId]);
+    });
+
+    test(
+      'projectEvent returns QuestCompletedEvent when all objectives met',
       () async {
         final def = _singleObjectiveDef(targetCount: 2);
         await useCases.startQuest(def);
 
-        await useCases.processEvent(_makeEvent(), [def]); // count=1
-        final completed = await useCases.processEvent(_makeEvent(), [
+        await useCases.projectEvent(_makeEvent(), [def]); // count=1
+        final completed = (await useCases.projectEvent(_makeEvent(), [
           def,
-        ]); // count=2→complete
+        ])).completed; // count=2→complete
 
         expect(completed, hasLength(1));
         expect(completed.first.questInstanceId, isNotEmpty);
@@ -453,7 +616,7 @@ void main() {
       () async {
         final def = _singleObjectiveDef(targetCount: 1);
         await useCases.startQuest(def);
-        await useCases.processEvent(_makeEvent(), [def]);
+        await useCases.projectEvent(_makeEvent(), [def]);
 
         final active = await useCases.getActiveInstances();
         expect(
@@ -476,7 +639,7 @@ void main() {
         timezoneId: 'Asia/Bangkok',
       );
 
-      await expectLater(crashing.processEvent(event, [def]), throwsStateError);
+      await expectLater(crashing.projectEvent(event, [def]), throwsStateError);
       expect(
         (await repo.getActiveInstances(
           testOwner.id,
@@ -484,7 +647,7 @@ void main() {
         1,
       );
 
-      final completed = await useCases.processEvent(event, [def]);
+      final completed = (await useCases.projectEvent(event, [def])).completed;
       expect(completed, hasLength(1));
       expect(await repo.getActiveInstances(testOwner.id), isEmpty);
     });

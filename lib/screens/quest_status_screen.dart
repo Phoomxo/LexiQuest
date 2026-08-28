@@ -124,7 +124,7 @@ class _QuestStatusList extends StatelessWidget {
           child: ListTile(
             leading: Icon(_icon(instance.state)),
             title: Text(_label(instance.state)),
-            subtitle: Text('$current / $target'),
+            subtitle: Text('$current of $target steps'),
           ),
         );
       },
@@ -132,10 +132,10 @@ class _QuestStatusList extends StatelessWidget {
   }
 
   static String _label(QuestInstanceState state) => switch (state) {
-    QuestInstanceState.active => 'Active',
-    QuestInstanceState.completed => 'Completed',
-    QuestInstanceState.expired => 'Expired',
-    QuestInstanceState.abandoned => 'Abandoned',
+    QuestInstanceState.active => 'In progress',
+    QuestInstanceState.completed => 'Complete',
+    QuestInstanceState.expired => 'Available next time',
+    QuestInstanceState.abandoned => 'Paused',
   };
 
   static IconData _icon(QuestInstanceState state) => switch (state) {
