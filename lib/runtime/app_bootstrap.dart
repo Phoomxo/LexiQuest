@@ -49,6 +49,7 @@ import '../features/goals/data/drift_learning_goal_repository.dart';
 import '../features/identity/data/drift_local_owner_repository.dart';
 import '../features/identity/application/upgrade_guest_owner.dart';
 import '../features/identity/data/drift_owner_upgrade_repository.dart';
+import '../features/identity/domain/owner_upgrade.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/contrastive_feedback_use_cases.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -92,6 +93,10 @@ import '../features/rewards/domain/reward_models.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
 import '../features/research/application/experiment_assignment_use_cases.dart';
 import '../features/research/data/drift_experiment_assignment_repository.dart';
+import '../features/reminders/application/study_reminder_use_cases.dart';
+import '../features/reminders/data/drift_study_reminder_repository.dart';
+import '../features/reminders/data/platform_reminder_scheduler.dart';
+import '../features/reminders/domain/reminder_scheduler.dart';
 import '../features/session/data/shared_preferences_app_entry_state_store.dart';
 import '../features/session/domain/app_entry_state.dart';
 import '../features/sync/application/sync_backoff.dart';
@@ -140,6 +145,7 @@ typedef AppEntryStateStoreFactory = Future<AppEntryStateStore> Function();
 typedef ExportArtifactStoreFactory = ExportArtifactStore Function();
 typedef CameraGatewayFactory = CameraGateway Function();
 typedef SpeechRecognitionGatewayFactory = SpeechRecognitionGateway Function();
+typedef ReminderSchedulerFactory = ReminderScheduler Function();
 typedef ManagedAiTutorBuilder =
     FutureOr<ManagedAiTutor> Function(AiTutorBuildContext context);
 typedef ManagedVoiceBuilder =
@@ -311,6 +317,7 @@ final class AppBootstrap {
     this.syncGatewayFactory,
     this.accountGatewayFactory,
     this.cloudSyncEnabled = true,
+    this.buildFeatureRegistry = const BuildFeatureRegistry.fieldDefaults(),
     DateTime Function()? runtimeFeatureNowUtc,
     DateTime Function()? aiNowUtc,
     String Function()? learningTimezoneId,
@@ -318,6 +325,7 @@ final class AppBootstrap {
     ExportArtifactStoreFactory? exportStoreFactory,
     CameraGatewayFactory? cameraGatewayFactory,
     SpeechRecognitionGatewayFactory? speechRecognitionGatewayFactory,
+    this.reminderSchedulerFactory,
     ManagedAiTutorBuilder? buildAiTutor,
     ManagedVoiceBuilder? buildVoice,
     ResearchRuntimeConfigLoader? loadResearchRuntimeConfig,
@@ -390,6 +398,7 @@ final class AppBootstrap {
       cloudSyncEnabled: productionCloudSyncEnabledByDefault,
       learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
       learningGoalSyncRollout: learningGoalSyncRollout,
+      reminderSchedulerFactory: PlatformReminderScheduler.production,
     );
   }
 
@@ -408,6 +417,7 @@ final class AppBootstrap {
   final SyncGatewayFactory? syncGatewayFactory;
   final AccountGatewayFactory? accountGatewayFactory;
   final bool cloudSyncEnabled;
+  final FeatureRegistry buildFeatureRegistry;
   final DateTime Function() runtimeFeatureNowUtc;
   final DateTime Function() aiNowUtc;
   final String Function() learningTimezoneId;
@@ -422,6 +432,7 @@ final class AppBootstrap {
   final ExportArtifactStoreFactory exportStoreFactory;
   final CameraGatewayFactory cameraGatewayFactory;
   final SpeechRecognitionGatewayFactory speechRecognitionGatewayFactory;
+  final ReminderSchedulerFactory? reminderSchedulerFactory;
   final ManagedAiTutorBuilder buildAiTutor;
   final ManagedVoiceBuilder buildVoice;
   final ContentArtifactBytesLoader loadContentArtifactBytes;
@@ -461,6 +472,37 @@ final class AppBootstrap {
     await localOwners.getOrCreateActiveOwner();
     Future<String> activeOwnerId() async =>
         (await localOwners.getOrCreateActiveOwner()).id;
+    final featureOverrideStore = RuntimeFeatureOverrideStore(database);
+    final runtimeFeatures = RuntimeFeatureRegistry(buildFeatureRegistry);
+    resources.own(runtimeFeatures.dispose);
+    final reminderProductState = buildFeatureRegistry.stateOf(
+      Feature.studyPlanning,
+    );
+    final reminderProductAvailable = buildFeatureRegistry.isEnabled(
+      Feature.studyPlanning,
+    );
+    var reminderFeatureEnabled = false;
+    final reminderOperationCoordinator = StudyReminderOperationCoordinator();
+    final studyReminders = StudyReminderUseCases(
+      repository: DriftStudyReminderRepository(database, owners: localOwners),
+      scheduler:
+          reminderSchedulerFactory?.call() ??
+          const UnsupportedReminderScheduler(),
+      nowUtc: () => DateTime.now().toUtc(),
+      generateId: () => idGenerator.v4(),
+      loadFeatureEligibility: () async {
+        final durable = await featureOverrideStore.loadDecision(
+          Feature.studyPlanning,
+          nowUtc: runtimeFeatureNowUtc(),
+        );
+        return StudyReminderFeatureEligibility(
+          enabled: reminderProductAvailable && !durable.emergencyOff,
+          epoch: (productState: reminderProductState, durable: durable.epoch),
+        );
+      },
+      operationCoordinator: reminderOperationCoordinator,
+    );
+    final reminderInitialization = await studyReminders.initialize();
     final experimentAssignmentRepository = DriftExperimentAssignmentRepository(
       database,
     );
@@ -542,6 +584,17 @@ final class AppBootstrap {
           });
         });
       },
+      coordinateReminderErasure: (ownerId, operation) {
+        final operationToken = OwnerOperationCoordinator.currentLeaseToken;
+        if (operationToken == null) {
+          throw StateError('Reminder erasure requires the owner lease.');
+        }
+        return studyReminders.coordinateOwnerErasure(
+          ownerId: ownerId,
+          operationToken: operationToken,
+          operation: operation,
+        );
+      },
     );
     final ownerUpgrades = DriftOwnerUpgradeRepository(
       database,
@@ -560,13 +613,35 @@ final class AppBootstrap {
       ownerUpgrades,
       coordinate: (sourceOwnerId, operation) {
         final scheduler = ownerLearningReconciliation;
-        return scheduler == null
+        Future<OwnerUpgradeResult> coordinateLearning() => scheduler == null
             ? operation()
             : scheduler.coordinateOwnerChange(
                 sourceOwnerId,
                 operation,
                 (result) => result.targetOwnerId,
               );
+        return studyReminders.coordinateOwnerChange(
+          sourceOwnerId: sourceOwnerId,
+          operation: coordinateLearning,
+          targetOwnerId: (result) => result.targetOwnerId,
+          featureEnabled: reminderFeatureEnabled,
+        );
+      },
+      coordinateRollback: (previousOwnerId, guestOwnerId, operation) {
+        final scheduler = ownerLearningReconciliation;
+        Future<void> coordinateLearning() => scheduler == null
+            ? operation()
+            : scheduler.coordinateOwnerChange(
+                guestOwnerId,
+                operation,
+                (_) => previousOwnerId,
+              );
+        return studyReminders.coordinateOwnerChange(
+          sourceOwnerId: guestOwnerId,
+          operation: coordinateLearning,
+          targetOwnerId: (_) => previousOwnerId,
+          featureEnabled: reminderFeatureEnabled,
+        );
       },
     );
     var firebase = await _availability(initializeFirebase);
@@ -1078,11 +1153,6 @@ final class AppBootstrap {
     }
 
     // ── Wrap feature registry with runtime kill-switch support ────────────
-    final featureOverrideStore = RuntimeFeatureOverrideStore(database);
-    final runtimeFeatures = RuntimeFeatureRegistry(
-      const BuildFeatureRegistry.fieldDefaults(),
-    );
-    resources.own(runtimeFeatures.dispose);
     final featureControls = RuntimeFeatureControls(
       store: featureOverrideStore,
       registry: runtimeFeatures,
@@ -1091,6 +1161,27 @@ final class AppBootstrap {
     );
     resources.own(featureControls.dispose);
     await featureControls.initialize();
+    reminderFeatureEnabled = runtimeFeatures.isEnabled(Feature.studyPlanning);
+    Future<void> reconcileStudyReminders() =>
+        studyReminders.reconcile(featureEnabled: reminderFeatureEnabled);
+    void onReminderFeatureStateChanged() {
+      reminderFeatureEnabled = runtimeFeatures.isEnabled(Feature.studyPlanning);
+      unawaited(
+        reconcileStudyReminders().then<void>(
+          (_) {},
+          onError: (Object _, StackTrace _) {},
+        ),
+      );
+    }
+
+    runtimeFeatures.addListener(onReminderFeatureStateChanged);
+    resources.own(
+      () => runtimeFeatures.removeListener(onReminderFeatureStateChanged),
+    );
+    if (reminderInitialization != StudyReminderAvailability.degraded ||
+        !reminderFeatureEnabled) {
+      await reconcileStudyReminders();
+    }
     final initialRoute = await AppStartRouteResolver(
       entryState: entryState,
     ).resolve(hasAuthenticatedSession: account?.currentSession != null);
@@ -1177,6 +1268,7 @@ final class AppBootstrap {
       contentManifests: contentManifests,
       studyPlanning: studyPlanning,
       learningGoals: learningGoals,
+      studyReminders: studyReminders,
       progress: progress,
       rewards: rewards,
       learnerIntents: learnerIntents,

@@ -34,6 +34,7 @@ import '../features/review/domain/content_quality_report.dart';
 import '../features/review/domain/content_quality_report_repository.dart';
 import '../features/review/domain/learner_intent.dart';
 import '../features/review/domain/learner_intent_repository.dart';
+import '../features/reminders/application/study_reminder_use_cases.dart';
 import '../features/sync/application/sync_engine.dart';
 import '../features/sync/application/sync_trigger.dart';
 import '../features/time_tracking/application/active_learning_time_controller.dart';
@@ -93,6 +94,7 @@ final class AppDependencies {
     this.contentManifests,
     this.studyPlanning,
     this.learningGoals,
+    this.studyReminders,
     this.progress,
     this.rewards,
     this.learnerIntents,
@@ -150,6 +152,7 @@ final class AppDependencies {
   final ContentManifestRepository? contentManifests;
   final StudyPlanningUseCases? studyPlanning;
   final LearningGoalUseCases? learningGoals;
+  final StudyReminderUseCases? studyReminders;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;
   final LearnerIntentRepository? learnerIntents;

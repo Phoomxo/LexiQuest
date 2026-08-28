@@ -30,7 +30,9 @@ final class AccountUseCases {
       return;
     }
     if (owner.firebaseUid != null) {
-      await upgradeGuestOwner.createLocalGuestAfterLogout();
+      await upgradeGuestOwner.createLocalGuestAfterLogout(
+        sourceOwnerId: owner.id,
+      );
     }
   }
 
@@ -95,7 +97,9 @@ final class AccountUseCases {
     OwnerUpgradeResult? guest;
     try {
       previous = await owners.getOrCreateActiveOwner();
-      guest = await upgradeGuestOwner.createLocalGuestAfterLogout();
+      guest = await upgradeGuestOwner.createLocalGuestAfterLogout(
+        sourceOwnerId: previous.id,
+      );
       await gateway.signOut();
       return guest;
     } catch (error, stackTrace) {

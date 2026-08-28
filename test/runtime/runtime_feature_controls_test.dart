@@ -30,6 +30,62 @@ void main() {
     },
   );
 
+  test('durable feature decision epochs distinguish off and clear', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final store = RuntimeFeatureOverrideStore(database);
+    final registry = RuntimeFeatureRegistry(
+      const BuildFeatureRegistry.allEnabled(),
+    );
+    var now = DateTime.utc(2026, 8, 9, 12);
+    final controls = RuntimeFeatureControls(
+      store: store,
+      registry: registry,
+      nowUtc: () => now,
+    );
+    addTearDown(() async {
+      controls.dispose();
+      registry.dispose();
+      await database.close();
+    });
+
+    final missing = await store.loadDecision(
+      Feature.studyPlanning,
+      nowUtc: now,
+    );
+    await controls.emergencyOff(Feature.studyPlanning);
+    final off = await store.loadDecision(Feature.studyPlanning, nowUtc: now);
+    now = now.add(const Duration(seconds: 1));
+    await controls.clear(Feature.studyPlanning);
+    final cleared = await store.loadDecision(
+      Feature.studyPlanning,
+      nowUtc: now,
+    );
+
+    expect(missing.emergencyOff, isFalse);
+    expect(off.emergencyOff, isTrue);
+    expect(cleared.emergencyOff, isFalse);
+    expect({missing.epoch, off.epoch, cleared.epoch}, hasLength(3));
+  });
+
+  test('corrupt durable feature decision is rejected', () async {
+    final database = AppDatabase(NativeDatabase.memory());
+    final store = RuntimeFeatureOverrideStore(database);
+    addTearDown(database.close);
+    await database.customInsert(
+      "INSERT INTO runtime_flags "
+      "(key, bool_value, source, updated_at_utc_ms, expires_at_utc_ms) "
+      "VALUES ('feature_emergency_off:studyPlanning', 1, '', -1, -2)",
+    );
+
+    await expectLater(
+      store.loadDecision(
+        Feature.studyPlanning,
+        nowUtc: DateTime.utc(2026, 8, 9, 12),
+      ),
+      throwsStateError,
+    );
+  });
+
   test('TTL override is active strictly before its UTC expiry', () async {
     final database = AppDatabase(NativeDatabase.memory());
     final store = RuntimeFeatureOverrideStore(database);
@@ -436,7 +492,7 @@ final class _DelayedOverrideStore implements RuntimeFeatureOverrideRepository {
   }
 
   @override
-  Future<void> clear(Feature feature) async {}
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc}) async {}
 
   @override
   Future<Map<Feature, FeatureState>> load({required DateTime nowUtc}) async =>
@@ -479,7 +535,7 @@ final class _DelayedMutationStore implements RuntimeFeatureOverrideRepository {
   final Map<Feature, FeatureState> _overrides = <Feature, FeatureState>{};
 
   @override
-  Future<void> clear(Feature feature) async {
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc}) async {
     _overrides.remove(feature);
   }
 
@@ -517,7 +573,7 @@ final class _WriteThenFailLoadStore
   var _remainingLoadFailures = 1;
 
   @override
-  Future<void> clear(Feature feature) async {
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc}) async {
     _expiry = null;
   }
 
@@ -561,7 +617,7 @@ final class _BlockedSecondMutationStore
   final Map<Feature, FeatureState> _overrides = <Feature, FeatureState>{};
 
   @override
-  Future<void> clear(Feature feature) async {
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc}) async {
     _overrides.remove(feature);
   }
 

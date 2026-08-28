@@ -310,6 +310,15 @@ void main() {
         ownerLifecyclePhysicalDeletionOrder.indexOf('study_reminders'),
         lessThan(ownerLifecyclePhysicalDeletionOrder.indexOf('learning_goals')),
       );
+      expect(studyReminders.allowedExportFields.toSet(), {
+        'recordCount',
+        'goalId',
+        'sourceKind',
+        'scheduledAtUtc',
+        'timezoneId',
+        'timezoneOffsetMinutes',
+        'isEnabled',
+      });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
       );
@@ -343,6 +352,7 @@ void main() {
         runtimeFlagLifecycleNamespaces.map((entry) => entry.name).toSet(),
         const {
           'ownerOperationGate',
+          'ownerOperationFences',
           'cloudSyncEnabled',
           'featureOverrides',
           'downloadCounters',
@@ -1200,9 +1210,9 @@ void main() {
       // v20 also deletes the owner's durable session-configuration binding.
       expect(deleted, 36);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v19 retains exactly one row for every direct-owner lifecycle entry,
+      // v20 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
-      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 35);
+      expect(await _ownerPhysicalRowCount(database, 'owner-b'), 36);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-a'), 0);
       expect(await _experimentAssignmentOwnerCount(database, 'owner-b'), 1);
       expect(await _assessmentRunOwnerCount(database, 'owner-a'), 0);

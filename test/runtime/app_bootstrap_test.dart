@@ -12,6 +12,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/config/research_runtime_config.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
+import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/assessment/application/assessment_use_cases.dart';
@@ -34,19 +36,26 @@ import 'package:vocab_learning_app/features/learning_packs/domain/content_manife
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
+import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
 import 'package:vocab_learning_app/features/review/domain/content_quality_report.dart';
+import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
+import 'package:vocab_learning_app/features/reminders/application/study_reminder_use_cases.dart';
+import 'package:vocab_learning_app/features/reminders/domain/study_reminder.dart';
+import 'package:vocab_learning_app/features/reminders/domain/study_reminder_repository.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
+import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/domain/cloud_sync_policy.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/learning_time_capture_rollout.dart';
+import 'package:vocab_learning_app/runtime/runtime_flag_namespaces.dart';
 import 'package:vocab_learning_app/features/time_tracking/application/focus_timer_rollout.dart';
 import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
@@ -567,6 +576,218 @@ void main() {
       expect(lessonController.state.status, LessonSessionStatus.planned);
       lessonController.dispose();
     });
+
+    test(
+      'bootstrap composes reminders without requesting permission',
+      () async {
+        final scheduler = _BootstrapReminderScheduler();
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        expect(dependencies.studyReminders, isNotNull);
+        expect(scheduler.initializeCalls, 1);
+        expect(scheduler.permissionRequests, 0);
+        expect(scheduler.schedules, 0);
+      },
+    );
+
+    for (final failure in const <_BootstrapReminderFailure>[
+      _BootstrapReminderFailure.initialize,
+      _BootstrapReminderFailure.isSupported,
+      _BootstrapReminderFailure.permissionState,
+      _BootstrapReminderFailure.pendingEntries,
+    ])
+      test(
+        'optional reminder ${failure.name} failure does not abort bootstrap',
+        () async {
+          final scheduler = _BootstrapReminderScheduler()
+            ..permission = ReminderPermissionState.granted
+            ..failNext(failure);
+
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            reminderSchedulerFactory: () => scheduler,
+            buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+          ).initialize();
+          addTearDown(dependencies.dispose);
+
+          expect(dependencies.learningGoals, isNotNull);
+          expect(dependencies.studyPlanning, isNotNull);
+          expect(dependencies.studyReminders, isNotNull);
+          expect(
+            dependencies.studyReminders!.availability,
+            StudyReminderAvailability.degraded,
+          );
+          expect(
+            dependencies.studyReminders!.lastFailureKinds,
+            contains(switch (failure) {
+              _BootstrapReminderFailure.initialize =>
+                StudyReminderFailureKind.initialization,
+              _BootstrapReminderFailure.isSupported =>
+                StudyReminderFailureKind.supportStatus,
+              _BootstrapReminderFailure.permissionState =>
+                StudyReminderFailureKind.permissionStatus,
+              _BootstrapReminderFailure.pendingEntries =>
+                StudyReminderFailureKind.pendingEntries,
+              _BootstrapReminderFailure.schedule =>
+                StudyReminderFailureKind.platformSideEffect,
+              _BootstrapReminderFailure.cancel =>
+                StudyReminderFailureKind.platformSideEffect,
+            }),
+          );
+          expect(scheduler.schedules, 0);
+          expect(scheduler.initializeCalls, 1);
+          expect(scheduler.permissionRequests, 0);
+        },
+      );
+
+    test(
+      'feature-off cleanup contains one cancellation failure and continues',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.studyReminders!.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+        final durablePlatformId = scheduler.pending.keys.single;
+        final durable = await dependencies.database!
+            .select(dependencies.database!.studyReminders)
+            .getSingle();
+        final extraPlatformId = studyReminderPlatformId(
+          durable.ownerId,
+          'reminder:captured-extra',
+        );
+        scheduler.pending[extraPlatformId] = ReminderPlatformEntry(
+          platformId: extraPlatformId,
+          ownerId: durable.ownerId,
+          reminderId: 'reminder:captured-extra',
+        );
+        scheduler.failNext(_BootstrapReminderFailure.cancel);
+        final failureObserved = scheduler.failureObserved(
+          _BootstrapReminderFailure.cancel,
+        );
+
+        await dependencies.featureControls!.emergencyOff(Feature.studyPlanning);
+        await failureObserved;
+        for (
+          var pass = 0;
+          pass < 20 && !scheduler.cancelled.contains(extraPlatformId);
+          pass += 1
+        ) {
+          await Future<void>.delayed(Duration.zero);
+        }
+
+        expect(scheduler.pending, contains(durablePlatformId));
+        expect(scheduler.pending, isNot(contains(extraPlatformId)));
+        expect(scheduler.cancelled, contains(extraPlatformId));
+        expect(
+          dependencies.studyReminders!.lastFailureKinds,
+          contains(StudyReminderFailureKind.platformSideEffect),
+        );
+        final reminder = await dependencies.database!
+            .select(dependencies.database!.studyReminders)
+            .getSingle();
+        expect(reminder.isEnabled, isTrue);
+        expect(reminder.isDeleted, isFalse);
+      },
+    );
+
+    for (final failure in const <_BootstrapReminderFailure>[
+      _BootstrapReminderFailure.isSupported,
+      _BootstrapReminderFailure.permissionState,
+      _BootstrapReminderFailure.pendingEntries,
+    ])
+      test(
+        'feature-off reminder cleanup survives ${failure.name} failure',
+        () async {
+          final scheduler = _BootstrapReminderScheduler()
+            ..permission = ReminderPermissionState.granted;
+          final dependencies = await AppBootstrap(
+            createDatabase: _testDatabase,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+            reminderSchedulerFactory: () => scheduler,
+            buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+          ).initialize();
+          addTearDown(dependencies.dispose);
+          await dependencies.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final platformId = scheduler.pending.keys.single;
+          scheduler.failNext(failure);
+          final failureObserved = scheduler.failureObserved(failure);
+
+          await dependencies.featureControls!.emergencyOff(
+            Feature.studyPlanning,
+          );
+          await failureObserved;
+          for (
+            var pass = 0;
+            pass < 20 && !scheduler.cancelled.contains(platformId);
+            pass += 1
+          ) {
+            await Future<void>.delayed(Duration.zero);
+          }
+
+          expect(scheduler.pending, isEmpty);
+          expect(scheduler.cancelled, contains(platformId));
+          expect(
+            dependencies.studyReminders!.availability,
+            StudyReminderAvailability.degraded,
+          );
+          expect(
+            dependencies.studyReminders!.lastFailureKinds,
+            contains(switch (failure) {
+              _BootstrapReminderFailure.isSupported =>
+                StudyReminderFailureKind.supportStatus,
+              _BootstrapReminderFailure.permissionState =>
+                StudyReminderFailureKind.permissionStatus,
+              _BootstrapReminderFailure.pendingEntries =>
+                StudyReminderFailureKind.pendingEntries,
+              _ => throw StateError('unexpected failure'),
+            }),
+          );
+          final reminder = await dependencies.database!
+              .select(dependencies.database!.studyReminders)
+              .getSingle();
+          expect(reminder.isEnabled, isTrue);
+          expect(reminder.isDeleted, isFalse);
+        },
+      );
 
     test(
       'learning-time sync bootstrap is exact-revision gated and pull-aware',
@@ -2294,6 +2515,840 @@ void main() {
     });
 
     test(
+      'logout cancels the exact source-owner reminder before switching owners',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final gateway = _BootstrapAccountGateway(
+          currentSession: const AccountSession(
+            uid: 'account-user',
+            email: 'student@example.com',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        );
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          accountGatewayFactory: () => gateway,
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.studyReminders!.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+        final oldOwnerId = scheduler.pending.values.single.ownerId;
+        final oldPlatformId = scheduler.pending.keys.single;
+
+        await dependencies.account!.signOutToLocalGuest();
+
+        expect(scheduler.pending, isEmpty);
+        expect(scheduler.cancelled, contains(oldPlatformId));
+        final rows = await dependencies.database!
+            .select(dependencies.database!.studyReminders)
+            .get();
+        expect(rows.single.ownerId, oldOwnerId);
+        expect(rows.single.isEnabled, isTrue);
+        expect(
+          (await dependencies.localOwners!.getOrCreateActiveOwner()).id,
+          isNot(oldOwnerId),
+        );
+      },
+    );
+
+    test(
+      'post-commit target reminder failure does not corrupt logout state',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final entryState = _MemoryAppEntryStateStore(AppEntryMode.guest);
+        final gateway = _BootstrapAccountGateway(
+          currentSession: const AccountSession(
+            uid: 'account-user',
+            email: 'student@example.com',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        );
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          accountGatewayFactory: () => gateway,
+          createEntryStateStore: () async => entryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.studyReminders!.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+        final oldOwnerId = scheduler.pending.values.single.ownerId;
+        final sourcePlatformId = scheduler.pending.keys.single;
+        scheduler.failPendingEntriesOnCall = scheduler.pendingEntriesCalls + 2;
+
+        final result = await dependencies.account!.signOutToLocalGuest();
+
+        expect(result.mode, OwnerUpgradeMode.localGuestCreated);
+        expect(gateway.signOutCalls, 1);
+        expect(entryState.mode, AppEntryMode.signedOut);
+        expect(scheduler.pending, isEmpty);
+        expect(scheduler.cancelled, contains(sourcePlatformId));
+        expect(
+          (await dependencies.localOwners!.getOrCreateActiveOwner()).id,
+          isNot(oldOwnerId),
+        );
+      },
+    );
+
+    test(
+      'local erase path cancels owner reminders before secure-store work',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+          buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+        ).initialize();
+        addTearDown(dependencies.dispose);
+        await dependencies.studyReminders!.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+        final ownerId =
+            (await dependencies.localOwners!.getOrCreateActiveOwner()).id;
+        final platformId = scheduler.pending.keys.single;
+
+        await expectLater(
+          dependencies.localDataEraser!.eraseAll(ownerId: ownerId),
+          throwsA(anything),
+        );
+
+        expect(scheduler.pending, isEmpty);
+        expect(scheduler.cancelled, contains(platformId));
+        expect(
+          await dependencies.database!
+              .select(dependencies.database!.studyReminders)
+              .get(),
+          hasLength(1),
+        );
+        expect(await _ownerOperationRuntimeRows(dependencies.database!), 0);
+      },
+    );
+
+    for (final releaseAfterSweep in <bool>[false, true])
+      test(
+        'independent bootstrap stale schedule self-cancels '
+        '${releaseAfterSweep ? 'after the post-delete sweep' : 'during secret deletion'}',
+        () async {
+          final directory = await Directory.systemTemp.createTemp(
+            'lexiquest-reminder-erasure-race-',
+          );
+          final file = File(
+            '${directory.path}${Platform.pathSeparator}app.sqlite',
+          );
+          final scheduler = _BootstrapReminderScheduler()
+            ..permission = ReminderPermissionState.granted;
+          AppDependencies? foreground;
+          AppDependencies? background;
+          final releaseSecretDeletion = Completer<void>();
+          final secretDeletionStarted = Completer<void>();
+          addTearDown(() {
+            if (!releaseSecretDeletion.isCompleted) {
+              releaseSecretDeletion.complete();
+            }
+            scheduler.releaseBlockedSchedule();
+          });
+          try {
+            foreground = await _reminderRaceBootstrap(file, scheduler);
+            background = await _reminderRaceBootstrap(file, scheduler);
+            await foreground.studyReminders!.optIn(
+              source: const StudyReminderSource.dueReview(),
+              scheduledAtUtc: DateTime.now().toUtc().add(
+                const Duration(days: 1),
+              ),
+              timezoneId: 'Asia/Bangkok',
+              mutationAllowed: () => true,
+            );
+            final ownerId =
+                (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+            final platformId = scheduler.pending.keys.single;
+            scheduler
+              ..pending.clear()
+              ..cancelled.clear()
+              ..blockNextSchedule();
+
+            final staleReconcile = background.studyReminders!.reconcile(
+              featureEnabled: true,
+            );
+            final staleRequest = await scheduler.blockedScheduleStarted;
+            expect(staleRequest.ownerId, ownerId);
+            expect(staleRequest.platformId, platformId);
+
+            final erasure = _coordinatedReminderErasure(
+              dependencies: foreground,
+              ownerId: ownerId,
+              secretDeletionStarted: secretDeletionStarted,
+              releaseSecretDeletion: releaseSecretDeletion,
+            ).eraseAll(ownerId: ownerId);
+            await secretDeletionStarted.future;
+
+            if (releaseAfterSweep) {
+              releaseSecretDeletion.complete();
+              await erasure;
+              scheduler.releaseBlockedSchedule();
+              await staleReconcile;
+            } else {
+              scheduler.releaseBlockedSchedule();
+              await staleReconcile;
+              releaseSecretDeletion.complete();
+              await erasure;
+            }
+
+            expect(scheduler.pending, isEmpty);
+            expect(scheduler.cancelled, contains(platformId));
+            expect(
+              await foreground.database!
+                  .select(foreground.database!.studyReminders)
+                  .get(),
+              isEmpty,
+            );
+            expect(
+              await foreground.database!
+                  .select(foreground.database!.outboxOperations)
+                  .get(),
+              isEmpty,
+            );
+            expect(await _ownerOperationRuntimeRows(foreground.database!), 0);
+          } finally {
+            await background?.dispose();
+            await foreground?.dispose();
+            if (await directory.exists()) {
+              await directory.delete(recursive: true);
+            }
+          }
+        },
+      );
+
+    test(
+      'background bootstrap fails closed for only the owner already fenced',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-fenced-bootstrap-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        final releaseSecretDeletion = Completer<void>();
+        final secretDeletionStarted = Completer<void>();
+        addTearDown(() {
+          if (!releaseSecretDeletion.isCompleted) {
+            releaseSecretDeletion.complete();
+          }
+        });
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final ownerId =
+              (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+          final platformId = scheduler.pending.keys.single;
+          final otherPlatformId = studyReminderPlatformId(
+            'owner-not-being-erased',
+            'reminder:other-owner',
+          );
+          scheduler.pending[otherPlatformId] = ReminderPlatformEntry(
+            platformId: otherPlatformId,
+            ownerId: 'owner-not-being-erased',
+            reminderId: 'reminder:other-owner',
+          );
+
+          final erasure = _coordinatedReminderErasure(
+            dependencies: foreground,
+            ownerId: ownerId,
+            secretDeletionStarted: secretDeletionStarted,
+            releaseSecretDeletion: releaseSecretDeletion,
+          ).eraseAll(ownerId: ownerId);
+          await secretDeletionStarted.future;
+          expect(scheduler.pending, isNot(contains(platformId)));
+
+          background = await _reminderRaceBootstrap(file, scheduler);
+          final listed = await background.studyReminders!.list();
+          await background.studyReminders!.reconcile(featureEnabled: true);
+
+          expect(listed, isEmpty);
+          expect(scheduler.pending, contains(otherPlatformId));
+          expect(scheduler.cancelled, isNot(contains(otherPlatformId)));
+          expect(scheduler.pending, isNot(contains(platformId)));
+
+          releaseSecretDeletion.complete();
+          await erasure;
+          expect(scheduler.pending.keys, [otherPlatformId]);
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'background bootstrap after deletion leaves other-owner platform work untouched',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-deleted-bootstrap-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        final releaseSecretDeletion = Completer<void>()..complete();
+        final secretDeletionStarted = Completer<void>();
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final deletedOwnerId =
+              (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+          await _coordinatedReminderErasure(
+            dependencies: foreground,
+            ownerId: deletedOwnerId,
+            secretDeletionStarted: secretDeletionStarted,
+            releaseSecretDeletion: releaseSecretDeletion,
+          ).eraseAll(ownerId: deletedOwnerId);
+          await secretDeletionStarted.future;
+
+          final otherPlatformId = studyReminderPlatformId(
+            'owner-not-being-erased',
+            'reminder:other-owner-after-delete',
+          );
+          scheduler.pending[otherPlatformId] = ReminderPlatformEntry(
+            platformId: otherPlatformId,
+            ownerId: 'owner-not-being-erased',
+            reminderId: 'reminder:other-owner-after-delete',
+          );
+
+          background = await _reminderRaceBootstrap(file, scheduler);
+          final newOwner = await background.localOwners!
+              .getOrCreateActiveOwner();
+
+          expect(newOwner.id, isNot(deletedOwnerId));
+          expect(scheduler.pending, contains(otherPlatformId));
+          expect(scheduler.cancelled, isNot(contains(otherPlatformId)));
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'stale owner marker without a live matching lease does not block a legitimate owner',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-stale-fence-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final ownerId =
+              (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+          final platformId = scheduler.pending.keys.single;
+          scheduler.pending.clear();
+
+          final now = DateTime.now().toUtc();
+          final gate = DriftOwnerOperationGate(foreground.database!);
+          expect(
+            await gate.tryAcquire(
+              token: 'abandoned-erasure',
+              nowUtc: now,
+              leaseDuration: const Duration(minutes: 1),
+            ),
+            isTrue,
+          );
+          await gate.beginOwnerFence(
+            ownerId: ownerId,
+            token: 'abandoned-erasure',
+            nowUtc: now,
+          );
+          await gate.release(token: 'abandoned-erasure');
+          expect(await _ownerOperationRuntimeRows(foreground.database!), 1);
+
+          expect(
+            await gate.tryAcquire(
+              token: 'legitimate-owner-operation',
+              nowUtc: now.add(const Duration(seconds: 1)),
+              leaseDuration: const Duration(minutes: 1),
+            ),
+            isTrue,
+          );
+          background = await _reminderRaceBootstrap(file, scheduler);
+          final listed = await background.studyReminders!.list();
+          await background.studyReminders!.reconcile(featureEnabled: true);
+
+          expect(listed, hasLength(1));
+          expect(scheduler.pending, contains(platformId));
+          expect(
+            await gate.isOwnerFenced(
+              ownerId: ownerId,
+              nowUtc: now.add(const Duration(seconds: 1)),
+            ),
+            isFalse,
+          );
+          await gate.release(token: 'legitimate-owner-operation');
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'Workmanager-style bootstrap degrades once and explicit reconcile recovers durable intent',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-degraded-bootstrap-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          scheduler.failNext(_BootstrapReminderFailure.schedule);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final ownerId =
+              (await foreground.localOwners!.getOrCreateActiveOwner()).id;
+          final reminder = await foreground.database!
+              .select(foreground.database!.studyReminders)
+              .getSingle();
+          final platformId = studyReminderPlatformId(ownerId, reminder.id);
+          expect(await _pendingReminderIntents(foreground.database!), 1);
+          final schedulesBeforeBackground = scheduler.schedules;
+
+          scheduler.failNext(_BootstrapReminderFailure.initialize);
+          background = await _reminderRaceBootstrap(file, scheduler);
+
+          expect(background.learningGoals, isNotNull);
+          expect(background.studyPlanning, isNotNull);
+          expect(background.localOwners, isNotNull);
+          expect(
+            background.studyReminders!.availability,
+            StudyReminderAvailability.degraded,
+          );
+          expect(scheduler.initializeCalls, 2);
+          expect(scheduler.schedules, schedulesBeforeBackground);
+          expect(await _pendingReminderIntents(background.database!), 1);
+
+          await background.studyReminders!.reconcile(featureEnabled: true);
+
+          expect(scheduler.initializeCalls, 3);
+          expect(scheduler.pending, contains(platformId));
+          expect(await _pendingReminderIntents(background.database!), 0);
+          expect(
+            background.studyReminders!.availability,
+            StudyReminderAvailability.available,
+          );
+          expect(background.studyReminders!.lastFailureKinds, isEmpty);
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'independent bootstrap compensates a schedule landing after durable study-planning emergency-off',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-feature-fence-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          background = await _reminderRaceBootstrap(file, scheduler);
+          scheduler.blockNextSchedule();
+
+          final optIn = background.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final blockedRequest = await scheduler.blockedScheduleStarted;
+          final platformId = blockedRequest.platformId;
+
+          await foreground.featureControls!.emergencyOff(Feature.studyPlanning);
+          for (
+            var pass = 0;
+            pass < 20 && !scheduler.cancelled.contains(platformId);
+            pass += 1
+          ) {
+            await Future<void>.delayed(Duration.zero);
+          }
+          expect(scheduler.cancelled, contains(platformId));
+          expect(scheduler.pending, isEmpty);
+
+          scheduler.releaseBlockedSchedule();
+          await optIn;
+
+          expect(scheduler.pending, isEmpty);
+          expect(
+            scheduler.cancelled.where((id) => id == platformId),
+            hasLength(greaterThanOrEqualTo(2)),
+          );
+          expect(await _pendingReminderIntents(background.database!), 1);
+        } finally {
+          scheduler.releaseBlockedSchedule();
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'stale feature-off cleanup repairs a reminder enabled by another bootstrap while cancel was blocked',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-stale-feature-off-rollback-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          background = await _reminderRaceBootstrap(file, scheduler);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final platformId = scheduler.pending.keys.single;
+
+          await foreground.featureControls!.emergencyOff(Feature.studyPlanning);
+          await foreground.studyReminders!.reconcile(featureEnabled: false);
+          expect(scheduler.pending, isEmpty);
+
+          scheduler.blockNextCancel();
+          final staleCleanup = background.studyReminders!.reconcile(
+            // This isolate's process-local registry is still enabled. The
+            // durable off decision must nevertheless select cleanup.
+            featureEnabled: true,
+          );
+          expect(await scheduler.blockedCancelStarted, platformId);
+
+          await foreground.featureControls!.clear(Feature.studyPlanning);
+          await foreground.studyReminders!.reconcile(featureEnabled: true);
+          expect(scheduler.pending.keys, contains(platformId));
+          final schedulesBeforeStaleCancelLands = scheduler.schedules;
+
+          scheduler.releaseBlockedCancel();
+          await staleCleanup;
+
+          expect(scheduler.pending.keys, orderedEquals(<int>[platformId]));
+          expect(scheduler.schedules, schedulesBeforeStaleCancelLands + 1);
+          final desired = await background.database!
+              .select(background.database!.studyReminders)
+              .getSingle();
+          expect(desired.isEnabled, isTrue);
+          expect(desired.isDeleted, isFalse);
+          expect(await _pendingReminderIntents(background.database!), 0);
+        } finally {
+          scheduler.releaseBlockedCancel();
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'implemented-off study planning rejects reminder opt-in before durability',
+      () async {
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        final dependencies = await AppBootstrap(
+          createDatabase: _testDatabase,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+          reminderSchedulerFactory: () => scheduler,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        final result = await dependencies.studyReminders!.optIn(
+          source: const StudyReminderSource.dueReview(),
+          scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+          timezoneId: 'Asia/Bangkok',
+          mutationAllowed: () => true,
+        );
+
+        expect(result, StudyReminderOptInResult.unavailable);
+        expect(scheduler.schedules, 0);
+        expect(
+          await dependencies.database!
+              .select(dependencies.database!.studyReminders)
+              .get(),
+          isEmpty,
+        );
+        expect(await _pendingReminderIntents(dependencies.database!), 0);
+      },
+    );
+
+    test(
+      'durable study-planning off and clear cancel then restore scheduling',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-feature-toggle-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? dependencies;
+        try {
+          dependencies = await _reminderRaceBootstrap(file, scheduler);
+          await dependencies.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final platformId = scheduler.pending.keys.single;
+          final schedulesBeforeOff = scheduler.schedules;
+
+          await dependencies.featureControls!.emergencyOff(
+            Feature.studyPlanning,
+          );
+          await dependencies.studyReminders!.reconcile(featureEnabled: false);
+          expect(scheduler.pending, isEmpty);
+
+          await dependencies.featureControls!.clear(Feature.studyPlanning);
+          await dependencies.studyReminders!.reconcile(featureEnabled: true);
+
+          expect(scheduler.pending, contains(platformId));
+          expect(scheduler.schedules, greaterThan(schedulesBeforeOff));
+        } finally {
+          await dependencies?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'Workmanager-style bootstrap contains corrupt durable study-planning override',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-feature-corrupt-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          scheduler.failNext(_BootstrapReminderFailure.schedule);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          expect(await _pendingReminderIntents(foreground.database!), 1);
+          await foreground.database!.customInsert(
+            "INSERT OR REPLACE INTO runtime_flags "
+            "(key, bool_value, source, updated_at_utc_ms, expires_at_utc_ms) "
+            "VALUES ('feature_emergency_off:studyPlanning', 1, '', 1, NULL)",
+          );
+          final schedulesBeforeBackground = scheduler.schedules;
+
+          background = await _reminderRaceBootstrap(file, scheduler);
+
+          expect(background.learningGoals, isNotNull);
+          expect(background.localOwners, isNotNull);
+          expect(
+            background.studyReminders!.availability,
+            StudyReminderAvailability.degraded,
+          );
+          expect(
+            background.studyReminders!.lastFailureKinds,
+            contains(StudyReminderFailureKind.featureEligibility),
+          );
+          expect(scheduler.schedules, schedulesBeforeBackground);
+          expect(await _pendingReminderIntents(background.database!), 1);
+          expect(scheduler.pending, isEmpty);
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
+      'enabled bootstrap hint fails closed on corrupt durable decision and later recovers authority',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-reminder-corrupt-feature-fail-closed-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        final scheduler = _BootstrapReminderScheduler()
+          ..permission = ReminderPermissionState.granted;
+        AppDependencies? foreground;
+        AppDependencies? background;
+        try {
+          foreground = await _reminderRaceBootstrap(file, scheduler);
+          await foreground.studyReminders!.optIn(
+            source: const StudyReminderSource.dueReview(),
+            scheduledAtUtc: DateTime.now().toUtc().add(const Duration(days: 1)),
+            timezoneId: 'Asia/Bangkok',
+            mutationAllowed: () => true,
+          );
+          final platformId = scheduler.pending.keys.single;
+          await foreground.database!.customInsert(
+            "INSERT OR REPLACE INTO runtime_flags "
+            "(key, bool_value, source, updated_at_utc_ms, expires_at_utc_ms) "
+            "VALUES ('feature_emergency_off:studyPlanning', 0, '', -1, NULL)",
+          );
+
+          background = await _reminderRaceBootstrap(file, scheduler);
+
+          expect(scheduler.pending, isEmpty);
+          expect(
+            background.studyReminders!.availability,
+            StudyReminderAvailability.degraded,
+          );
+          expect(
+            background.studyReminders!.lastFailureKinds,
+            contains(StudyReminderFailureKind.featureEligibility),
+          );
+          var desired = await background.database!
+              .select(background.database!.studyReminders)
+              .getSingle();
+          expect(desired.isEnabled, isTrue);
+          expect(desired.isDeleted, isFalse);
+          expect(await _pendingReminderIntents(background.database!), 0);
+
+          await foreground.featureControls!.clear(Feature.studyPlanning);
+          await background.studyReminders!.reconcile(featureEnabled: true);
+
+          expect(scheduler.pending.keys, orderedEquals(<int>[platformId]));
+          expect(
+            background.studyReminders!.availability,
+            StudyReminderAvailability.available,
+          );
+          desired = await background.database!
+              .select(background.database!.studyReminders)
+              .getSingle();
+          expect(desired.isEnabled, isTrue);
+          expect(desired.isDeleted, isFalse);
+          expect(await _pendingReminderIntents(background.database!), 0);
+        } finally {
+          await background?.dispose();
+          await foreground?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
+
+    test(
       'disposal cancels owner binding before closing the database',
       () async {
         final database = AppDatabase(NativeDatabase.memory());
@@ -2920,6 +3975,8 @@ final class _MemoryAppEntryStateStore implements AppEntryStateStore {
 final class _BootstrapAccountGateway implements AccountGateway {
   _BootstrapAccountGateway({this.currentSession});
 
+  int signOutCalls = 0;
+
   @override
   AccountSession? currentSession;
 
@@ -2942,6 +3999,7 @@ final class _BootstrapAccountGateway implements AccountGateway {
 
   @override
   Future<void> signOut() async {
+    signOutCalls += 1;
     currentSession = null;
   }
 
@@ -3100,4 +4158,254 @@ final class _BlockingBootstrapSyncGateway implements SyncGateway {
       acknowledgedAtUtc: DateTime.now().toUtc(),
     );
   }
+}
+
+Future<AppDependencies> _reminderRaceBootstrap(
+  File databaseFile,
+  _BootstrapReminderScheduler scheduler,
+) {
+  return AppBootstrap(
+    createDatabase: () => AppDatabase(NativeDatabase(databaseFile)),
+    initializeFirebase: () async {},
+    initializeSupabase: () async {},
+    loadConfig: _validConfig,
+    guestSessionService: _StubGuestSessionService(),
+    createEntryStateStore: _createSignedOutEntryState,
+    reminderSchedulerFactory: () => scheduler,
+    buildFeatureRegistry: const BuildFeatureRegistry.allEnabled(),
+  ).initialize();
+}
+
+LocalDataDeletion _coordinatedReminderErasure({
+  required AppDependencies dependencies,
+  required String ownerId,
+  required Completer<void> secretDeletionStarted,
+  required Completer<void> releaseSecretDeletion,
+}) {
+  final database = dependencies.database!;
+  final gate = DriftOwnerOperationGate(database);
+  final coordinator = OwnerOperationCoordinator(
+    gate: gate,
+    activeOwnerId: () async => ownerId,
+    nowUtc: () => DateTime.now().toUtc(),
+    generateToken: () => 'erase-reminders:$ownerId',
+    leaseDuration: const Duration(minutes: 1),
+    heartbeatInterval: const Duration(seconds: 20),
+  );
+  return LocalDataDeletion(
+    database,
+    deleteOwnerSecrets: (_) async {},
+    deleteOwnerSecretsFenced: (erasedOwnerId, operationToken) async {
+      expect(erasedOwnerId, ownerId);
+      expect(operationToken, 'erase-reminders:$ownerId');
+      if (!secretDeletionStarted.isCompleted) {
+        secretDeletionStarted.complete();
+      }
+      await releaseSecretDeletion.future;
+    },
+    fenceOwnerOperation: (operationToken) => gate.requireOwned(
+      token: operationToken,
+      nowUtc: DateTime.now().toUtc(),
+    ),
+    coordinate: (erasedOwnerId, operation) {
+      return coordinator.run(AiCancellation(), (activeOwnerId) async {
+        expect(activeOwnerId, erasedOwnerId);
+        final operationToken = OwnerOperationCoordinator.currentLeaseToken;
+        expect(operationToken, isNotNull);
+        final deleted = await operation(operationToken!);
+        coordinator.markCurrentOperationResultCommitted();
+        return deleted;
+      });
+    },
+    coordinateReminderErasure: (erasedOwnerId, operation) {
+      final operationToken = OwnerOperationCoordinator.currentLeaseToken;
+      expect(operationToken, isNotNull);
+      return dependencies.studyReminders!.coordinateOwnerErasure(
+        ownerId: erasedOwnerId,
+        operationToken: operationToken!,
+        operation: operation,
+      );
+    },
+  );
+}
+
+Future<int> _ownerOperationRuntimeRows(AppDatabase database) => database
+    .customSelect(
+      'SELECT COUNT(*) AS count FROM runtime_flags '
+      'WHERE "key" = ? OR instr("key", ?) = 1',
+      variables: const [
+        Variable<String>(RuntimeFlagNamespaces.ownerOperationGate),
+        Variable<String>(RuntimeFlagNamespaces.ownerOperationFencePrefix),
+      ],
+    )
+    .map((row) => row.read<int>('count'))
+    .getSingle();
+
+Future<int> _pendingReminderIntents(AppDatabase database) => database
+    .customSelect(
+      'SELECT COUNT(*) AS count FROM outbox_operations '
+      'WHERE entity_type = ? AND state = ?',
+      variables: const [
+        Variable<String>(studyReminderPlatformOutboxEntityType),
+        Variable<String>(studyReminderPlatformPendingState),
+      ],
+    )
+    .map((row) => row.read<int>('count'))
+    .getSingle();
+
+final class _BootstrapReminderScheduler implements ReminderScheduler {
+  int initializeCalls = 0;
+  int permissionRequests = 0;
+  ReminderPermissionState permission = ReminderPermissionState.unknown;
+  final Map<int, ReminderPlatformEntry> pending = {};
+  final List<int> cancelled = [];
+  int schedules = 0;
+  int pendingEntriesCalls = 0;
+  int? failPendingEntriesOnCall;
+  final Map<_BootstrapReminderFailure, int> _remainingFailures = {};
+  final Map<_BootstrapReminderFailure, Completer<void>> _failureObservers = {};
+  Completer<ReminderScheduleRequest>? _blockedScheduleStarted;
+  Completer<void>? _blockedScheduleRelease;
+  Completer<int>? _blockedCancelStarted;
+  Completer<void>? _blockedCancelRelease;
+
+  void failNext(_BootstrapReminderFailure failure) {
+    _remainingFailures[failure] = (_remainingFailures[failure] ?? 0) + 1;
+    _failureObservers[failure] = Completer<void>();
+  }
+
+  Future<void> failureObserved(_BootstrapReminderFailure failure) =>
+      _failureObservers[failure]!.future;
+
+  void _throwIfConfigured(_BootstrapReminderFailure failure) {
+    final remaining = _remainingFailures[failure] ?? 0;
+    if (remaining <= 0) return;
+    _remainingFailures[failure] = remaining - 1;
+    final observer = _failureObservers.remove(failure);
+    if (observer != null && !observer.isCompleted) observer.complete();
+    throw StateError('injected reminder ${failure.name} failure');
+  }
+
+  void blockNextSchedule() {
+    if (_blockedScheduleRelease != null) {
+      throw StateError('a reminder schedule is already blocked');
+    }
+    _blockedScheduleStarted = Completer<ReminderScheduleRequest>();
+    _blockedScheduleRelease = Completer<void>();
+  }
+
+  Future<ReminderScheduleRequest> get blockedScheduleStarted {
+    final started = _blockedScheduleStarted;
+    if (started == null) {
+      throw StateError('no reminder schedule is configured to block');
+    }
+    return started.future;
+  }
+
+  void releaseBlockedSchedule() {
+    final release = _blockedScheduleRelease;
+    if (release != null && !release.isCompleted) release.complete();
+  }
+
+  void blockNextCancel() {
+    if (_blockedCancelRelease != null) {
+      throw StateError('a reminder cancellation is already blocked');
+    }
+    _blockedCancelStarted = Completer<int>();
+    _blockedCancelRelease = Completer<void>();
+  }
+
+  Future<int> get blockedCancelStarted {
+    final started = _blockedCancelStarted;
+    if (started == null) {
+      throw StateError('no reminder cancellation is configured to block');
+    }
+    return started.future;
+  }
+
+  void releaseBlockedCancel() {
+    final release = _blockedCancelRelease;
+    if (release != null && !release.isCompleted) release.complete();
+  }
+
+  @override
+  Future<void> initialize() async {
+    initializeCalls += 1;
+    _throwIfConfigured(_BootstrapReminderFailure.initialize);
+  }
+
+  @override
+  Future<bool> isSupported() async {
+    _throwIfConfigured(_BootstrapReminderFailure.isSupported);
+    return true;
+  }
+
+  @override
+  Future<ReminderPermissionState> permissionState() async {
+    _throwIfConfigured(_BootstrapReminderFailure.permissionState);
+    return permission;
+  }
+
+  @override
+  Future<ReminderPermissionState> requestPermission() async {
+    permissionRequests += 1;
+    return permission;
+  }
+
+  @override
+  Future<List<ReminderPlatformEntry>> pendingEntries() async {
+    pendingEntriesCalls += 1;
+    _throwIfConfigured(_BootstrapReminderFailure.pendingEntries);
+    if (pendingEntriesCalls == failPendingEntriesOnCall) {
+      throw StateError('injected target reminder read failure');
+    }
+    return pending.values.toList(growable: false);
+  }
+
+  @override
+  Future<void> schedule(ReminderScheduleRequest request) async {
+    schedules += 1;
+    _throwIfConfigured(_BootstrapReminderFailure.schedule);
+    final started = _blockedScheduleStarted;
+    final release = _blockedScheduleRelease;
+    if (started != null && release != null) {
+      if (!started.isCompleted) started.complete(request);
+      await release.future;
+      if (identical(release, _blockedScheduleRelease)) {
+        _blockedScheduleStarted = null;
+        _blockedScheduleRelease = null;
+      }
+    }
+    pending[request.platformId] = ReminderPlatformEntry(
+      platformId: request.platformId,
+      ownerId: request.ownerId,
+      reminderId: request.reminderId,
+    );
+  }
+
+  @override
+  Future<void> cancel(int platformId) async {
+    _throwIfConfigured(_BootstrapReminderFailure.cancel);
+    final started = _blockedCancelStarted;
+    final release = _blockedCancelRelease;
+    if (started != null && release != null) {
+      if (!started.isCompleted) started.complete(platformId);
+      await release.future;
+      if (identical(release, _blockedCancelRelease)) {
+        _blockedCancelStarted = null;
+        _blockedCancelRelease = null;
+      }
+    }
+    pending.remove(platformId);
+    cancelled.add(platformId);
+  }
+}
+
+enum _BootstrapReminderFailure {
+  initialize,
+  isSupported,
+  permissionState,
+  pendingEntries,
+  schedule,
+  cancel,
 }

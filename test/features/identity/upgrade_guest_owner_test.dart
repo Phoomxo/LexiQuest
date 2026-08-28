@@ -25,6 +25,30 @@ void main() {
     expect(repository.lastOwnerId, 'guest-owner');
     expect(repository.lastFirebaseUid, 'firebase-user');
   });
+
+  test(
+    'coordinates logout guest creation with the exact source owner',
+    () async {
+      final repository = _FakeOwnerUpgradeRepository();
+      final transitions = <String>[];
+      final upgrade = UpgradeGuestOwner(
+        repository,
+        coordinate: (sourceOwnerId, operation) async {
+          transitions.add('coordinate:$sourceOwnerId');
+          final result = await operation();
+          transitions.add('created:${result.targetOwnerId}');
+          return result;
+        },
+      );
+
+      final result = await upgrade.createLocalGuestAfterLogout(
+        sourceOwnerId: ' owner-a ',
+      );
+
+      expect(result.targetOwnerId, 'new-owner');
+      expect(transitions, ['coordinate:owner-a', 'created:new-owner']);
+    },
+  );
 }
 
 final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
@@ -34,7 +58,13 @@ final class _FakeOwnerUpgradeRepository implements OwnerUpgradeRepository {
 
   @override
   Future<OwnerUpgradeResult> createLocalGuestAfterLogout() {
-    throw UnimplementedError();
+    return Future.value(
+      const OwnerUpgradeResult(
+        targetOwnerId: 'new-owner',
+        mode: OwnerUpgradeMode.localGuestCreated,
+        conflictCount: 0,
+      ),
+    );
   }
 
   @override

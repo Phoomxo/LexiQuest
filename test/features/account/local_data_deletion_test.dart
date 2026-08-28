@@ -3,15 +3,23 @@ import 'dart:async';
 import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest_all.dart' as timezone_data;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/account/application/local_data_deletion.dart';
 import 'package:vocab_learning_app/features/ai_tutor/application/owner_operation_coordinator.dart';
 import 'package:vocab_learning_app/features/ai_tutor/domain/ai_tutor_contracts.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/reminders/application/study_reminder_use_cases.dart';
+import 'package:vocab_learning_app/features/reminders/data/drift_study_reminder_repository.dart';
+import 'package:vocab_learning_app/features/reminders/domain/reminder_scheduler.dart';
+import 'package:vocab_learning_app/features/reminders/domain/study_reminder.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 
 void main() {
+  setUpAll(timezone_data.initializeTimeZones);
+
   test('deletion inventory stays aligned with every owner-scoped table', () {
     expect(localDataDeletionInventory, ownerLifecyclePhysicalDeletionOrder);
     expect(
@@ -113,6 +121,122 @@ void main() {
     expect(await _ownerRows(database, 'ai_usage_events', 'owner-a'), 1);
     expect(await _ownerRows(database, 'vocabulary_imports', 'owner-a'), 1);
   });
+
+  test(
+    'owner reminder cleanup runs while exact rows exist and before local erase',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      await _seedOwner(database, 'owner-a');
+      await _seedOwner(database, 'owner-b');
+      await _seedReminder(database, 'owner-a');
+      await _seedReminder(database, 'owner-b');
+      final cleanupOwners = <String>[];
+
+      await LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
+        beforeOwnerDeletion: (ownerId) async {
+          cleanupOwners.add(ownerId);
+          expect(await _ownerRows(database, 'study_reminders', ownerId), 1);
+          expect(await _ownerRows(database, 'outbox_operations', ownerId), 1);
+          expect(await _ownerRows(database, 'study_reminders', 'owner-b'), 1);
+        },
+      ).eraseAll(ownerId: 'owner-a');
+
+      expect(cleanupOwners, ['owner-a']);
+      expect(await _ownerRows(database, 'study_reminders', 'owner-a'), 0);
+      expect(await _ownerRows(database, 'outbox_operations', 'owner-a'), 0);
+      expect(await _ownerRows(database, 'study_reminders', 'owner-b'), 1);
+      expect(await _ownerRows(database, 'outbox_operations', 'owner-b'), 1);
+    },
+  );
+
+  test(
+    'reminder serialization spans cancellation through the complete local erase',
+    () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      addTearDown(database.close);
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'erasure-owner',
+        nowUtc: () => DateTime.utc(2026, 8, 28),
+      );
+      final repository = DriftStudyReminderRepository(database, owners: owners);
+      final scheduler = _DeletionReminderScheduler();
+      final reminders = StudyReminderUseCases(
+        repository: repository,
+        scheduler: scheduler,
+        nowUtc: () => DateTime.utc(2026, 8, 28),
+        generateId: () => 'erasure-reminder',
+      );
+      await reminders.optIn(
+        source: const StudyReminderSource.dueReview(),
+        scheduledAtUtc: DateTime.utc(2026, 8, 29, 2),
+        timezoneId: 'Asia/Bangkok',
+        mutationAllowed: () => true,
+      );
+      final ownerId = await repository.activeOwnerId();
+      final secretDeletionStarted = Completer<void>();
+      final releaseSecretDeletion = Completer<void>();
+      final ownerGate = DriftOwnerOperationGate(database);
+      final ownerCoordinator = OwnerOperationCoordinator(
+        gate: ownerGate,
+        activeOwnerId: () async => ownerId,
+        nowUtc: () => DateTime.utc(2026, 8, 28),
+        generateToken: () => 'reminder-erasure-token',
+        leaseDuration: const Duration(minutes: 1),
+        heartbeatInterval: const Duration(seconds: 20),
+      );
+      final deletion = LocalDataDeletion(
+        database,
+        deleteOwnerSecrets: (_) async {},
+        deleteOwnerSecretsFenced: (_, _) async {
+          secretDeletionStarted.complete();
+          await releaseSecretDeletion.future;
+        },
+        fenceOwnerOperation: (operationToken) => ownerGate.requireOwned(
+          token: operationToken,
+          nowUtc: DateTime.utc(2026, 8, 28),
+        ),
+        coordinate: (erasedOwnerId, operation) => ownerCoordinator.run(
+          AiCancellation(),
+          (activeOwnerId) async {
+            expect(activeOwnerId, erasedOwnerId);
+            final operationToken = OwnerOperationCoordinator.currentLeaseToken!;
+            final deleted = await operation(operationToken);
+            ownerCoordinator.markCurrentOperationResultCommitted();
+            return deleted;
+          },
+        ),
+        coordinateReminderErasure: (erasedOwnerId, operation) {
+          return reminders.coordinateOwnerErasure(
+            ownerId: erasedOwnerId,
+            operationToken: OwnerOperationCoordinator.currentLeaseToken!,
+            operation: operation,
+          );
+        },
+      );
+
+      final erasure = deletion.eraseAll(ownerId: ownerId);
+      await secretDeletionStarted.future;
+      expect(scheduler.pending, isEmpty);
+      var reconciliationCompleted = false;
+      final reconciliation = reminders
+          .reconcile(featureEnabled: true)
+          .then((_) => reconciliationCompleted = true);
+      await Future<void>.delayed(Duration.zero);
+      expect(reconciliationCompleted, isFalse);
+
+      releaseSecretDeletion.complete();
+      await erasure;
+      await reconciliation;
+
+      expect(scheduler.pending, isEmpty);
+      expect(await database.select(database.studyReminders).get(), isEmpty);
+      expect(await database.select(database.outboxOperations).get(), isEmpty);
+    },
+  );
 
   test(
     'one shared owner lease spans secret cleanup and the database erase',
@@ -433,6 +557,38 @@ Future<void> _seedOwner(AppDatabase database, String ownerId) async {
       );
 }
 
+Future<void> _seedReminder(AppDatabase database, String ownerId) async {
+  await database.customInsert(
+    'INSERT INTO study_reminders '
+    '(id, owner_id, source_kind, scheduled_at_utc_ms, timezone_id, '
+    'timezone_offset_minutes, is_enabled, created_at_utc_ms, '
+    'updated_at_utc_ms, local_revision, is_deleted) '
+    'VALUES (?, ?, ?, ?, ?, ?, 1, 1, 1, 1, 0)',
+    variables: [
+      Variable<String>('reminder:$ownerId'),
+      Variable<String>(ownerId),
+      const Variable<String>('dueReview'),
+      Variable<int>(DateTime.utc(2026, 8, 29).millisecondsSinceEpoch),
+      const Variable<String>('Asia/Bangkok'),
+      const Variable<int>(420),
+    ],
+  );
+  await database.customInsert(
+    'INSERT INTO outbox_operations '
+    '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+    'base_revision, state, created_at_utc_ms, attempt_count) '
+    'VALUES (?, ?, ?, ?, ?, 1, ?, 1, 0)',
+    variables: [
+      Variable<String>('studyReminderPlatform:reminder:$ownerId:1:schedule'),
+      Variable<String>(ownerId),
+      const Variable<String>('studyReminderPlatform'),
+      Variable<String>('reminder:$ownerId'),
+      const Variable<String>('schedule'),
+      const Variable<String>('platformPending'),
+    ],
+  );
+}
+
 Future<int> _ownerRows(AppDatabase database, String table, String ownerId) =>
     database
         .customSelect(
@@ -477,3 +633,39 @@ Future<int> _questDefinitionCount(AppDatabase database, String ownerId) =>
         )
         .map((row) => row.read<int>('count'))
         .getSingle();
+
+final class _DeletionReminderScheduler implements ReminderScheduler {
+  final Map<int, ReminderPlatformEntry> pending = {};
+
+  @override
+  Future<void> initialize() async {}
+
+  @override
+  Future<bool> isSupported() async => true;
+
+  @override
+  Future<ReminderPermissionState> permissionState() async =>
+      ReminderPermissionState.granted;
+
+  @override
+  Future<ReminderPermissionState> requestPermission() async =>
+      ReminderPermissionState.granted;
+
+  @override
+  Future<List<ReminderPlatformEntry>> pendingEntries() async =>
+      pending.values.toList(growable: false);
+
+  @override
+  Future<void> schedule(ReminderScheduleRequest request) async {
+    pending[request.platformId] = ReminderPlatformEntry(
+      platformId: request.platformId,
+      ownerId: request.ownerId,
+      reminderId: request.reminderId,
+    );
+  }
+
+  @override
+  Future<void> cancel(int platformId) async {
+    pending.remove(platformId);
+  }
+}

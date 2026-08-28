@@ -24,7 +24,7 @@ abstract interface class RuntimeFeatureOverrideRepository {
     String source = 'local',
   });
 
-  Future<void> clear(Feature feature);
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc});
 }
 
 final class RuntimeFeatureOverrideStore
@@ -76,6 +76,40 @@ final class RuntimeFeatureOverrideStore
     );
   }
 
+  Future<RuntimeFeatureDurableDecision> loadDecision(
+    Feature feature, {
+    required DateTime nowUtc,
+  }) async {
+    _requireUtc(nowUtc, 'nowUtc');
+    final row =
+        await (_database.select(_database.runtimeFlags)..where(
+              (candidate) => candidate.key.equals('$_keyPrefix${feature.name}'),
+            ))
+            .getSingleOrNull();
+    if (row == null) return const RuntimeFeatureDurableDecision.missing();
+    final source = row.source;
+    final expiresAtUtcMs = row.expiresAtUtcMs;
+    if (source.isEmpty ||
+        source != source.trim() ||
+        row.updatedAtUtcMs < 0 ||
+        (expiresAtUtcMs != null && expiresAtUtcMs <= row.updatedAtUtcMs)) {
+      throw StateError('corrupt durable runtime feature override');
+    }
+    return RuntimeFeatureDurableDecision(
+      emergencyOff:
+          row.boolValue &&
+          (expiresAtUtcMs == null ||
+              nowUtc.millisecondsSinceEpoch < expiresAtUtcMs),
+      epoch: (
+        present: true,
+        storedEmergencyOff: row.boolValue,
+        source: source,
+        updatedAtUtcMs: row.updatedAtUtcMs,
+        expiresAtUtcMs: expiresAtUtcMs,
+      ),
+    );
+  }
+
   @override
   Future<void> setEmergencyOff(
     Feature feature, {
@@ -113,10 +147,20 @@ final class RuntimeFeatureOverrideStore
   }
 
   @override
-  Future<void> clear(Feature feature) {
-    return (_database.delete(
-      _database.runtimeFlags,
-    )..where((row) => row.key.equals('$_keyPrefix${feature.name}'))).go();
+  Future<void> clear(Feature feature, {required DateTime updatedAtUtc}) {
+    _requireUtc(updatedAtUtc, 'updatedAtUtc');
+    return _database
+        .into(_database.runtimeFlags)
+        .insert(
+          db.RuntimeFlagsCompanion.insert(
+            key: '$_keyPrefix${feature.name}',
+            boolValue: false,
+            source: const Value('local-clear'),
+            updatedAtUtcMs: updatedAtUtc.millisecondsSinceEpoch,
+            expiresAtUtcMs: const Value(null),
+          ),
+          mode: InsertMode.insertOrReplace,
+        );
   }
 
   static Feature? _featureNamed(String name) {
@@ -141,6 +185,34 @@ final class RuntimeFeatureOverrideSnapshot {
 
   final Map<Feature, FeatureState> overrides;
   final DateTime? nextExpiryUtc;
+}
+
+typedef RuntimeFeatureDecisionEpoch = ({
+  bool present,
+  bool storedEmergencyOff,
+  String source,
+  int? updatedAtUtcMs,
+  int? expiresAtUtcMs,
+});
+
+final class RuntimeFeatureDurableDecision {
+  const RuntimeFeatureDurableDecision({
+    required this.emergencyOff,
+    required this.epoch,
+  });
+
+  const RuntimeFeatureDurableDecision.missing()
+    : emergencyOff = false,
+      epoch = const (
+        present: false,
+        storedEmergencyOff: false,
+        source: '',
+        updatedAtUtcMs: null,
+        expiresAtUtcMs: null,
+      );
+
+  final bool emergencyOff;
+  final RuntimeFeatureDecisionEpoch epoch;
 }
 
 typedef RuntimeFeatureTimerCancellation = void Function();
@@ -226,7 +298,7 @@ final class RuntimeFeatureControls {
     final generation = _beginGeneration();
     return _enqueue(() async {
       try {
-        await store.clear(feature);
+        await store.clear(feature, updatedAtUtc: nowUtc());
       } catch (error, stackTrace) {
         await _reloadAfterRejectedMutation(generation);
         Error.throwWithStackTrace(error, stackTrace);

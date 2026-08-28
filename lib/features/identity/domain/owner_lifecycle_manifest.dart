@@ -64,6 +64,14 @@ const runtimeFlagLifecycleNamespaces =
         allowedDiagnosticFields: {},
       ),
       RuntimeFlagLifecycleNamespaceDescriptor(
+        name: 'ownerOperationFences',
+        match: RuntimeFlagNamespaceMatch.prefix,
+        keyPattern: RuntimeFlagNamespaces.ownerOperationFencePrefix,
+        exportDisposition: RuntimeFlagExportDisposition.omitInternal,
+        deletionDisposition: RuntimeFlagDeletionDisposition.preserve,
+        allowedDiagnosticFields: {},
+      ),
+      RuntimeFlagLifecycleNamespaceDescriptor(
         name: 'cloudSyncEnabled',
         match: RuntimeFlagNamespaceMatch.exact,
         keyPattern: RuntimeFlagNamespaces.cloudSyncEnabled,

@@ -3,13 +3,24 @@ import 'package:flutter/material.dart';
 import '../features/goals/application/learning_goal_use_cases.dart';
 import '../features/goals/domain/learning_goal.dart';
 import '../features/goals/domain/learning_goal_repository.dart';
+import '../features/reminders/application/study_reminder_use_cases.dart';
+import '../features/reminders/domain/study_reminder.dart';
+import '../features/reminders/domain/study_reminder_repository.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/registries/feature_registry.dart';
+import 'study_reminder_settings_screen.dart';
 
 final class LearningGoalsScreen extends StatefulWidget {
-  const LearningGoalsScreen({super.key, this.useCases});
+  const LearningGoalsScreen({
+    super.key,
+    this.useCases,
+    this.reminderUseCases,
+    this.reminderRuntimeEnabled,
+  });
 
   final LearningGoalUseCases? useCases;
+  final StudyReminderUseCases? reminderUseCases;
+  final bool? reminderRuntimeEnabled;
 
   @override
   State<LearningGoalsScreen> createState() => _LearningGoalsScreenState();
@@ -17,6 +28,8 @@ final class LearningGoalsScreen extends StatefulWidget {
 
 final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   Future<List<LearningGoal>>? _goals;
+  Future<bool>? _reminderEntryAvailable;
+  Listenable? _registryChanges;
 
   LearningGoalUseCases? _resolveUseCases() =>
       widget.useCases ?? AppDependenciesScope.maybeOf(context)?.learningGoals;
@@ -24,16 +37,73 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   FeatureRegistry? _resolveFeatureRegistry() =>
       AppDependenciesScope.maybeOf(context)?.features;
 
+  StudyReminderUseCases? _resolveReminderUseCases() =>
+      widget.reminderUseCases ??
+      AppDependenciesScope.maybeOf(context)?.studyReminders;
+
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     _goals ??= _resolveUseCases()?.list();
+    final registry = _resolveFeatureRegistry();
+    final Listenable? changes = registry is Listenable
+        ? registry as Listenable
+        : null;
+    if (!identical(changes, _registryChanges)) {
+      _registryChanges?.removeListener(_onRegistryChanged);
+      _registryChanges = changes;
+      _registryChanges?.addListener(_onRegistryChanged);
+    }
+    _refreshReminderAvailability();
+  }
+
+  @override
+  void didUpdateWidget(LearningGoalsScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.reminderUseCases, widget.reminderUseCases) ||
+        oldWidget.reminderRuntimeEnabled != widget.reminderRuntimeEnabled) {
+      _refreshReminderAvailability();
+    }
+  }
+
+  void _onRegistryChanged() {
+    if (!mounted) return;
+    setState(_refreshReminderAvailability);
+  }
+
+  void _refreshReminderAvailability() {
+    final reminders = _resolveReminderUseCases();
+    final registry = _resolveFeatureRegistry();
+    final runtimeEnabled =
+        widget.reminderRuntimeEnabled ??
+        registry?.isEnabled(Feature.studyPlanning) ??
+        false;
+    _reminderEntryAvailable = reminders == null || !runtimeEnabled
+        ? Future<bool>.value(false)
+        : reminders.canOpenSettings();
   }
 
   void _reload(LearningGoalUseCases useCases) {
     setState(() {
       _goals = useCases.list();
     });
+  }
+
+  Future<void> _openReminder(
+    LearningGoal goal,
+    StudyReminderUseCases reminders,
+    StudyReminderMutationGuard mutationAllowed,
+  ) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => StudyReminderSettingsScreen(
+          useCases: reminders,
+          source: StudyReminderSource.goalDeadline(goal.id),
+          sourceLabel: goal.title,
+          mutationAllowed: mutationAllowed,
+        ),
+      ),
+    );
   }
 
   Future<void> _createGoal(
@@ -55,6 +125,7 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
   @override
   Widget build(BuildContext context) {
     final useCases = _resolveUseCases();
+    final reminders = _resolveReminderUseCases();
     final registry = _resolveFeatureRegistry();
     final allowWithoutRegistry = widget.useCases != null;
     bool mutationAllowed() =>
@@ -104,12 +175,38 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
                       key: ValueKey<String>('learning-goal/${goal.id}'),
                       title: Text(goal.title),
                       subtitle: Text('${goal.kind.name} · $label'),
-                      trailing: _LearningGoalStatusMenu(
-                        goal: goal,
-                        useCases: useCases,
-                        registry: registry,
-                        mutationAllowed: mutationAllowed,
-                        onChanged: () => _reload(useCases),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (reminders != null)
+                            FutureBuilder<bool>(
+                              future: _reminderEntryAvailable,
+                              builder: (context, snapshot) =>
+                                  snapshot.data == true
+                                  ? IconButton(
+                                      key: ValueKey<String>(
+                                        'learning-goal/${goal.id}/reminder',
+                                      ),
+                                      tooltip: 'Set a study reminder',
+                                      onPressed: () => _openReminder(
+                                        goal,
+                                        reminders,
+                                        mutationAllowed,
+                                      ),
+                                      icon: const Icon(
+                                        Icons.notifications_outlined,
+                                      ),
+                                    )
+                                  : const SizedBox.shrink(),
+                            ),
+                          _LearningGoalStatusMenu(
+                            goal: goal,
+                            useCases: useCases,
+                            registry: registry,
+                            mutationAllowed: mutationAllowed,
+                            onChanged: () => _reload(useCases),
+                          ),
+                        ],
                       ),
                     );
                   },
@@ -117,6 +214,12 @@ final class _LearningGoalsScreenState extends State<LearningGoalsScreen> {
               },
             ),
     );
+  }
+
+  @override
+  void dispose() {
+    _registryChanges?.removeListener(_onRegistryChanged);
+    super.dispose();
   }
 }
 

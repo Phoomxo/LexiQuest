@@ -7,6 +7,9 @@ typedef DeleteOwnerSecrets = Future<void> Function(String ownerId);
 typedef DeleteOwnerSecretsFenced =
     Future<void> Function(String ownerId, String operationToken);
 typedef FenceOwnerOperation = Future<void> Function(String operationToken);
+typedef BeforeOwnerDeletion = Future<void> Function(String ownerId);
+typedef CoordinateReminderErasure =
+    Future<int> Function(String ownerId, Future<int> Function() operation);
 typedef CoordinateLocalDataErasure =
     Future<int> Function(
       String ownerId,
@@ -40,6 +43,8 @@ class LocalDataDeletion implements LocalDataEraser {
     this.deleteOwnerSecretsFenced,
     this.fenceOwnerOperation,
     this.coordinate,
+    this.beforeOwnerDeletion,
+    this.coordinateReminderErasure,
   }) {
     if (coordinate != null && fenceOwnerOperation == null) {
       throw ArgumentError(
@@ -53,6 +58,8 @@ class LocalDataDeletion implements LocalDataEraser {
   final DeleteOwnerSecretsFenced? deleteOwnerSecretsFenced;
   final FenceOwnerOperation? fenceOwnerOperation;
   final CoordinateLocalDataErasure? coordinate;
+  final BeforeOwnerDeletion? beforeOwnerDeletion;
+  final CoordinateReminderErasure? coordinateReminderErasure;
 
   /// Deletes all owner-scoped data for [ownerId].
   ///
@@ -65,17 +72,27 @@ class LocalDataDeletion implements LocalDataEraser {
     }
     final coordinator = coordinate;
     if (coordinator != null) {
-      return coordinator(
-        normalizedOwnerId,
-        (operationToken) => _eraseAllCoordinated(
+      return coordinator(normalizedOwnerId, (operationToken) {
+        Future<int> operation() => _eraseAllCoordinated(
           ownerId: normalizedOwnerId,
           operationToken: operationToken,
-        ),
-      );
+        );
+        return coordinateReminderErasure?.call(normalizedOwnerId, operation) ??
+            operation();
+      });
     }
-    await deleteOwnerSecrets(normalizedOwnerId);
+
+    Future<int> operation() =>
+        _eraseAllUncoordinated(ownerId: normalizedOwnerId);
+    return coordinateReminderErasure?.call(normalizedOwnerId, operation) ??
+        operation();
+  }
+
+  Future<int> _eraseAllUncoordinated({required String ownerId}) async {
+    await beforeOwnerDeletion?.call(ownerId);
+    await deleteOwnerSecrets(ownerId);
     return _database.transaction(
-      () => _eraseAllInTransaction(ownerId: normalizedOwnerId),
+      () => _eraseAllInTransaction(ownerId: ownerId),
     );
   }
 
@@ -83,6 +100,7 @@ class LocalDataDeletion implements LocalDataEraser {
     required String ownerId,
     required String operationToken,
   }) async {
+    await beforeOwnerDeletion?.call(ownerId);
     final fencedDelete = deleteOwnerSecretsFenced;
     if (fencedDelete == null) {
       await deleteOwnerSecrets(ownerId);

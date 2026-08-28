@@ -40,13 +40,14 @@ val releaseProvenanceReady =
 
 android {
     namespace = "com.lexiquest.app"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     // Pinned because the APK integrity gate verifies locally compiled LiteRT
     // custom ops with build-id-descriptor-insensitive canonical hashing while
     // retaining exact source, ABI, mode, and all other byte integrity.
     ndkVersion = "28.2.13676358"
 
     compileOptions {
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -59,6 +60,7 @@ android {
         // procured trial device (vivo V2041 = API 33, HONOR DNP-NX9 = API 36).
         minSdk = 26
         targetSdk = flutter.targetSdkVersion
+        multiDexEnabled = true
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
@@ -127,5 +129,7 @@ flutter {
 }
 
 dependencies {
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    implementation("androidx.multidex:multidex:2.0.1")
     implementation(platform("com.google.firebase:firebase-bom:34.16.0"))
 }
