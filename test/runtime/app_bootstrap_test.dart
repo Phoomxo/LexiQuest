@@ -1577,6 +1577,19 @@ void main() {
         );
 
         final dependencies = await bootstrap.initialize();
+        final cutovers =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals('streak-cutover:$ownerId:v1'),
+                ))
+                .get();
+        expect(cutovers, hasLength(1));
+        final cutoverPayload =
+            jsonDecode(cutovers.single.payloadJson) as Map<String, dynamic>;
+        expect(
+          cutoverPayload['horizonEventId'],
+          'learning-event:bootstrap-history',
+        );
+        expect(cutoverPayload['establishedAtUtcMs'], isA<int>());
         await dependencies.learningReconciliation!.drain();
 
         final active = await dependencies.quest.getActiveInstances();
@@ -2188,6 +2201,85 @@ void main() {
     );
 
     test(
+      'concurrent bootstrap instances establish one owner cutover',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        AppDependencies? firstDependencies;
+        AppDependencies? secondDependencies;
+        try {
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'concurrent-cutover-owner',
+                  createdAtUtcMs: DateTime.utc(
+                    2026,
+                    8,
+                    4,
+                  ).millisecondsSinceEpoch,
+                ),
+              );
+          AppBootstrap bootstrap() => AppBootstrap(
+            createDatabase: () => database,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+          );
+
+          final initialized = await Future.wait<AppDependencies>([
+            bootstrap().initialize(),
+            bootstrap().initialize(),
+          ]);
+          firstDependencies = initialized.first;
+          secondDependencies = initialized.last;
+
+          final cutovers =
+              await (firstDependencies.database!.select(
+                    firstDependencies.database!.eventsV2,
+                  )..where(
+                    (row) =>
+                        row.ownerId.equals('concurrent-cutover-owner') &
+                        row.eventType.equals('StreakPolicyCutover'),
+                  ))
+                  .get();
+          expect(cutovers, hasLength(1));
+          final payload =
+              jsonDecode(cutovers.single.payloadJson) as Map<String, dynamic>;
+          expect(payload['horizonEventId'], isNull);
+          expect(payload['horizonOccurredAtUtcMs'], isNull);
+        } finally {
+          await firstDependencies?.dispose();
+          await secondDependencies?.dispose();
+          if (firstDependencies == null && secondDependencies == null) {
+            await database.close();
+          }
+        }
+      },
+    );
+
+    test('bootstrap fails closed when cutover cannot persist', () async {
+      final database = AppDatabase(NativeDatabase.memory());
+      await database.customStatement('''
+        CREATE TEMP TRIGGER reject_streak_cutover
+        BEFORE INSERT ON events_v2
+        WHEN NEW.event_type = 'StreakPolicyCutover'
+        BEGIN SELECT RAISE(ABORT, 'injected cutover failure'); END
+      ''');
+      final bootstrap = AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+      );
+
+      await expectLater(bootstrap.initialize(), throwsA(anything));
+    });
+
+    test(
       'production lesson factory persists one trustworthy monotonic segment',
       () async {
         var monotonicMicros = 1000;
@@ -2436,6 +2528,34 @@ void main() {
         )..where((row) => row.ownerId.equals(owner.id))).getSingleOrNull();
         expect(streakState, isNotNull);
         expect(streakState!.currentStreakDays, 1);
+        final streakReceipt =
+            await (database.select(database.eventsV2)..where(
+                  (row) => row.eventId.equals(
+                    'learning-projection:streak:'
+                    'learning-event:${pending.sourceEvidenceId}:v2',
+                  ),
+                ))
+                .getSingle();
+        final streakPayload =
+            jsonDecode(streakReceipt.payloadJson) as Map<String, dynamic>;
+        expect(streakPayload['outcome'], 'applied');
+        expect(
+          streakPayload['result'],
+          containsPair('ownerId', owner.id),
+          reason: 'production wiring must preserve the validated policy result',
+        );
+        expect(streakPayload['result'], containsPair('policyVersion', 2));
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'streak-application:'
+                  'learning-event:${pending.sourceEvidenceId}',
+                ),
+              ))
+              .get(),
+          hasLength(1),
+          reason: 'production wiring uses the source-stable Streak marker',
+        );
       },
     );
 
@@ -2507,12 +2627,184 @@ void main() {
 
       final dependencies = await bootstrap.initialize();
       await dependencies.account!.signOutToLocalGuest();
+      final signedOutGuest = await dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      final signedOutGuestCutovers =
+          await (dependencies.database!.select(dependencies.database!.eventsV2)
+                ..where(
+                  (row) =>
+                      row.ownerId.equals(signedOutGuest.id) &
+                      row.eventType.equals('StreakPolicyCutover'),
+                ))
+              .get();
+      final target = await _insertBootstrapCurrentActivityTarget(
+        dependencies.database!,
+        ownerId: signedOutGuest.id,
+        startedAtUtc: DateTime.now().toUtc(),
+      );
+      final pending = dependencies.currentActivityEvidence!.capture(
+        input: CurrentActivityInput.meaningMultipleChoice,
+        sessionId: target.sessionId,
+        wordId: target.wordId,
+        isCorrect: true,
+        responseTimeMs: 500,
+        attemptNumber: 1,
+      );
+      await pending.record();
+      await dependencies.learningReconciliation!.drain();
 
       expect(factoryCalls, 1);
       expect(dependencies.initialRoute, AppRoute.home);
       expect(entryState.clearCalls, 1);
       expect(entryState.mode, AppEntryMode.signedOut);
+      expect(signedOutGuest.firebaseUid, isNull);
+      expect(signedOutGuestCutovers, hasLength(1));
+      expect(
+        (jsonDecode(signedOutGuestCutovers.single.payloadJson)
+            as Map<String, dynamic>)['horizonEventId'],
+        isNull,
+      );
+      expect(
+        (await dependencies.streak!.getCurrentStreak()).currentStreakDays,
+        1,
+      );
+      expect(
+        await (dependencies.database!.select(dependencies.database!.eventsV2)
+              ..where(
+                (row) => row.eventId.equals(
+                  'streak-application:learning-event:'
+                  '${pending.sourceEvidenceId}',
+                ),
+              ))
+            .get(),
+        hasLength(1),
+      );
     });
+
+    test(
+      'signed-out startup cuts over final guest before first streak and replay',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-final-guest-cutover-',
+        );
+        final file = File('${directory.path}${Platform.pathSeparator}app.db');
+        AppDependencies? first;
+        AppDependencies? restarted;
+        try {
+          final seed = AppDatabase(NativeDatabase(file));
+          await seed
+              .into(seed.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'firebase-bound-bootstrap-owner',
+                  firebaseUid: const Value('signed-out-firebase-user'),
+                  accountState: const Value('firebaseBound'),
+                  createdAtUtcMs: DateTime.utc(
+                    2026,
+                    8,
+                    4,
+                  ).millisecondsSinceEpoch,
+                ),
+              );
+          await seed.close();
+          AppBootstrap bootstrap() => AppBootstrap(
+            createDatabase: () => AppDatabase(NativeDatabase(file)),
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            accountGatewayFactory: _BootstrapAccountGateway.new,
+            createEntryStateStore: _createSignedOutEntryState,
+          );
+
+          first = await bootstrap().initialize();
+          final guest = await first.localOwners!.getOrCreateActiveOwner();
+          expect(guest.id, isNot('firebase-bound-bootstrap-owner'));
+          expect(guest.firebaseUid, isNull);
+          final cutovers =
+              await (first.database!.select(first.database!.eventsV2)..where(
+                    (row) =>
+                        row.ownerId.equals(guest.id) &
+                        row.eventType.equals('StreakPolicyCutover'),
+                  ))
+                  .get();
+          expect(cutovers, hasLength(1));
+          final cutoverPayload =
+              jsonDecode(cutovers.single.payloadJson) as Map<String, dynamic>;
+          expect(cutoverPayload['horizonEventId'], isNull);
+
+          final target = await _insertBootstrapCurrentActivityTarget(
+            first.database!,
+            ownerId: guest.id,
+            startedAtUtc: DateTime.now().toUtc(),
+          );
+          final pending = first.currentActivityEvidence!.capture(
+            input: CurrentActivityInput.meaningMultipleChoice,
+            sessionId: target.sessionId,
+            wordId: target.wordId,
+            isCorrect: true,
+            responseTimeMs: 500,
+            attemptNumber: 1,
+          );
+          await pending.record();
+          await first.learningReconciliation!.drain();
+          expect((await first.streak!.getCurrentStreak()).currentStreakDays, 1);
+          final markerId =
+              'streak-application:'
+              'learning-event:${pending.sourceEvidenceId}';
+          final receiptId =
+              'learning-projection:streak:'
+              'learning-event:${pending.sourceEvidenceId}:v2';
+          expect(
+            await (first.database!.select(
+              first.database!.eventsV2,
+            )..where((row) => row.eventId.equals(markerId))).get(),
+            hasLength(1),
+          );
+
+          await first.dispose();
+          first = null;
+          restarted = await bootstrap().initialize();
+          await restarted.learningReconciliation!.drain();
+
+          final reopenedOwner = await restarted.localOwners!
+              .getOrCreateActiveOwner();
+          expect(reopenedOwner.id, guest.id);
+          expect(
+            (await restarted.streak!.getCurrentStreak()).currentStreakDays,
+            1,
+          );
+          expect(
+            await (restarted.database!.select(
+              restarted.database!.eventsV2,
+            )..where((row) => row.eventId.equals(markerId))).get(),
+            hasLength(1),
+          );
+          expect(
+            await (restarted.database!.select(
+              restarted.database!.eventsV2,
+            )..where((row) => row.eventId.equals(receiptId))).get(),
+            hasLength(1),
+          );
+          expect(
+            await (restarted.database!.select(restarted.database!.eventsV2)
+                  ..where(
+                    (row) =>
+                        row.ownerId.equals(guest.id) &
+                        row.eventType.equals('StreakPolicyCutover'),
+                  ))
+                .get(),
+            hasLength(1),
+          );
+        } finally {
+          await first?.dispose();
+          await restarted?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
+      },
+    );
 
     test(
       'logout cancels the exact source-owner reminder before switching owners',
@@ -2654,6 +2946,116 @@ void main() {
           hasLength(1),
         );
         expect(await _ownerOperationRuntimeRows(dependencies.database!), 0);
+      },
+    );
+
+    test(
+      'local erase creates a streak-ready replacement owner in the same runtime',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-erasure-replacement-cutover-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        AppDependencies? active;
+        AppDependencies? restarted;
+        try {
+          AppBootstrap bootstrap() => AppBootstrap(
+            createDatabase: () => AppDatabase(NativeDatabase(file)),
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+          );
+          active = await bootstrap().initialize();
+          final erasedOwner = await active.localOwners!
+              .getOrCreateActiveOwner();
+
+          final secretDeletionStarted = Completer<void>();
+          final releaseSecretDeletion = Completer<void>()..complete();
+          await _coordinatedReminderErasure(
+            dependencies: active,
+            ownerId: erasedOwner.id,
+            secretDeletionStarted: secretDeletionStarted,
+            releaseSecretDeletion: releaseSecretDeletion,
+          ).eraseAll(ownerId: erasedOwner.id);
+          await secretDeletionStarted.future;
+          final replacement = await active.localOwners!
+              .getOrCreateActiveOwner();
+          expect(replacement.id, isNot(erasedOwner.id));
+          final cutovers =
+              await (active.database!.select(active.database!.eventsV2)..where(
+                    (row) =>
+                        row.ownerId.equals(replacement.id) &
+                        row.eventType.equals('StreakPolicyCutover'),
+                  ))
+                  .get();
+          expect(cutovers, hasLength(1));
+
+          final target = await _insertBootstrapCurrentActivityTarget(
+            active.database!,
+            ownerId: replacement.id,
+            startedAtUtc: DateTime.now().toUtc(),
+          );
+          final pending = active.currentActivityEvidence!.capture(
+            input: CurrentActivityInput.meaningMultipleChoice,
+            sessionId: target.sessionId,
+            wordId: target.wordId,
+            isCorrect: true,
+            responseTimeMs: 500,
+            attemptNumber: 1,
+          );
+          await pending.record();
+          await active.learningReconciliation!.drain();
+          expect(
+            (await active.streak!.getCurrentStreak()).currentStreakDays,
+            1,
+          );
+          final markerId =
+              'streak-application:'
+              'learning-event:${pending.sourceEvidenceId}';
+          final receiptId =
+              'learning-projection:streak:'
+              'learning-event:${pending.sourceEvidenceId}:v2';
+          expect(
+            await (active.database!.select(
+              active.database!.eventsV2,
+            )..where((row) => row.eventId.equals(markerId))).get(),
+            hasLength(1),
+          );
+
+          await active.dispose();
+          active = null;
+          restarted = await bootstrap().initialize();
+          await restarted.learningReconciliation!.drain();
+          final reopenedOwner = await restarted.localOwners!
+              .getOrCreateActiveOwner();
+          expect(reopenedOwner.id, replacement.id);
+          expect(
+            (await restarted.streak!.getCurrentStreak()).currentStreakDays,
+            1,
+          );
+          expect(
+            await (restarted.database!.select(
+              restarted.database!.eventsV2,
+            )..where((row) => row.eventId.equals(markerId))).get(),
+            hasLength(1),
+          );
+          expect(
+            await (restarted.database!.select(
+              restarted.database!.eventsV2,
+            )..where((row) => row.eventId.equals(receiptId))).get(),
+            hasLength(1),
+          );
+        } finally {
+          await active?.dispose();
+          await restarted?.dispose();
+          if (await directory.exists()) {
+            await directory.delete(recursive: true);
+          }
+        }
       },
     );
 

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -32,11 +33,19 @@ void main() {
 
   test('first access creates a stable local guest owner', () async {
     final owner = await repository().getOrCreateActiveOwner();
+    final cutovers =
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.equals(owner.id) &
+                  row.eventType.equals('StreakPolicyCutover'),
+            ))
+            .get();
 
     expect(owner.id, 'local:owner-1');
     expect(owner.firebaseUid, isNull);
     expect(owner.createdAtUtc, nowUtc);
     expect(owner.upgradedAtUtc, isNull);
+    expect(cutovers, hasLength(1));
   });
 
   test(
@@ -64,6 +73,27 @@ void main() {
 
     expect(owners.map((owner) => owner.id).toSet(), {'local:owner-1'});
     expect(await database.select(database.localOwners).get(), hasLength(1));
+    expect(
+      await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventType.equals('StreakPolicyCutover'))).get(),
+      hasLength(1),
+    );
+  });
+
+  test('cutover persistence failure rolls back fresh owner creation', () async {
+    await database.customStatement('''
+      CREATE TEMP TRIGGER reject_fresh_owner_cutover
+      BEFORE INSERT ON events_v2
+      WHEN NEW.event_type = 'StreakPolicyCutover'
+      BEGIN SELECT RAISE(ABORT, 'injected fresh owner cutover failure'); END
+    ''');
+
+    await expectLater(repository().getOrCreateActiveOwner(), throwsA(anything));
+    await database.customStatement('DROP TRIGGER reject_fresh_owner_cutover');
+
+    expect(await database.select(database.localOwners).get(), isEmpty);
+    expect(await database.select(database.eventsV2).get(), isEmpty);
   });
 
   test(

@@ -25,6 +25,8 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
+import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
+import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_backoff.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_mutex.dart';
@@ -1384,6 +1386,23 @@ void main() {
         await database.close();
         database = openDatabase();
         await database.customSelect('SELECT 1').getSingle();
+        final restartedStreak = StreakUseCases(
+          repository: DriftStreakRepository(database),
+          owners: DriftLocalOwnerRepository(
+            database,
+            generateId: () => 'unexpected-streak-owner',
+            nowUtc: () => nowUtc,
+          ),
+          nowUtc: () => nowUtc,
+          timezoneId: 'UTC',
+        );
+        expect((await restartedStreak.getGentleStreak()).freezeCount, 5);
+        await expectLater(
+          restartedStreak.grantFreezeTokens(1),
+          throwsRangeError,
+        );
+        expect(await restartedStreak.useFreezeToken(), isTrue);
+        expect((await restartedStreak.getGentleStreak()).freezeCount, 4);
         final replay = await UpgradeGuestOwner(
           DriftOwnerUpgradeRepository(
             database,

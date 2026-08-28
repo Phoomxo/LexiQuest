@@ -113,13 +113,20 @@ void main() {
 
     // ── Streak reset ─────────────────────────────────────────────────────────
 
-    test('missing two days resets streak', () async {
-      await useCases.recordLearningDay(); // Day 1
-      clock = DateTime.utc(2026, 8, 7, 10, 0); // Day 4 — missed 2+3
-      final update = await useCases.recordLearningDay();
-      expect(update.outcome, StreakOutcome.reset);
-      expect(update.after.currentStreakDays, 1);
-    });
+    test(
+      'a longer gap begins a gentle recovery and retains the best',
+      () async {
+        await useCases.recordLearningDay(); // Day 1
+        clock = DateTime.utc(2026, 8, 7, 10, 0); // Day 4 — missed 2+3
+        final update = await useCases.recordLearningDay();
+        expect(update.outcome, StreakOutcome.recovered);
+        expect(update.after.currentStreakDays, 1);
+        expect(update.after.longestStreakDays, 1);
+        expect(update.reaction.title, 'Welcome back');
+        expect(update.reaction.message, isNot(contains('lost')));
+        expect(update.reaction.message, isNot(contains('broken')));
+      },
+    );
 
     // ── Freeze tokens ─────────────────────────────────────────────────────────
 
@@ -145,6 +152,164 @@ void main() {
       expect(used, isTrue);
       final state = await useCases.getCurrentStreak();
       expect(state.freezeCount, 1);
+    });
+
+    test('freeze inventory is bounded and rejects invalid grants', () async {
+      await useCases.grantFreezeTokens(StreakPolicy.maxFreezeInventory);
+
+      await expectLater(useCases.grantFreezeTokens(1), throwsRangeError);
+      await expectLater(useCases.grantFreezeTokens(0), throwsRangeError);
+
+      final state = await useCases.getCurrentStreak();
+      expect(state.freezeCount, StreakPolicy.maxFreezeInventory);
+    });
+
+    test('grandfathered freeze surplus stays visible and consumable', () async {
+      await DriftStreakRepository(database).save(
+        StreakState(
+          ownerId: owner.id,
+          currentStreakDays: 2,
+          longestStreakDays: 4,
+          freezeCount: 5,
+          lastLearnedAtUtcMs: clock.millisecondsSinceEpoch,
+          updatedAtUtcMs: clock.millisecondsSinceEpoch,
+        ),
+      );
+
+      expect((await useCases.getGentleStreak()).freezeCount, 5);
+      await expectLater(useCases.grantFreezeTokens(1), throwsRangeError);
+      expect((await useCases.getCurrentStreak()).freezeCount, 5);
+
+      expect(await useCases.useFreezeToken(), isTrue);
+      expect((await useCases.getGentleStreak()).freezeCount, 4);
+    });
+
+    test('policy receipt pins exact owner day and version', () async {
+      final update = await useCases.recordLearningDay();
+
+      expect(update.receipt.ownerId, owner.id);
+      expect(update.receipt.learningDay, '2026-08-04');
+      expect(update.receipt.policyVersion, StreakPolicy.version);
+      expect(
+        update.receipt.receiptId,
+        'gentle-streak:${owner.id}:2026-08-04:v${StreakPolicy.version}',
+      );
+    });
+
+    test('future event fails closed without a learning day write', () async {
+      await expectLater(
+        useCases.recordLearningDay(
+          occurredAtUtc: clock.add(const Duration(seconds: 1)),
+        ),
+        throwsArgumentError,
+      );
+
+      expect(
+        await DriftStreakRepository(database).getLearningDays(owner.id),
+        isEmpty,
+      );
+      expect((await useCases.getCurrentStreak()).currentStreakDays, 0);
+    });
+
+    test('clock rollback fails closed and retains durable state', () async {
+      await useCases.recordLearningDay();
+      clock = clock.add(const Duration(hours: 4));
+
+      await expectLater(
+        useCases.recordLearningDay(
+          occurredAtUtc: DateTime.utc(2026, 8, 4, 9, 59, 59),
+        ),
+        throwsStateError,
+      );
+
+      final state = await useCases.getCurrentStreak();
+      expect(state.currentStreakDays, 1);
+      expect(
+        state.lastLearnedAtUtcMs,
+        DateTime.utc(2026, 8, 4, 10).millisecondsSinceEpoch,
+      );
+      expect(await DriftStreakRepository(database).getLearningDays(owner.id), [
+        '2026-08-04',
+      ]);
+    });
+
+    test('same instant under a timezone change remains the same day', () async {
+      await useCases.recordLearningDay();
+      final shifted = StreakUseCases(
+        repository: DriftStreakRepository(database),
+        owners: _FakeOwners(owner),
+        nowUtc: () => clock,
+        timezoneId: 'Pacific/Pago_Pago',
+      );
+
+      final update = await shifted.recordLearningDay(occurredAtUtc: clock);
+
+      expect(update.outcome, StreakOutcome.sameDay);
+      expect(update.after.currentStreakDays, 1);
+      expect(
+        update.receipt.learningDay,
+        '2026-08-04',
+        reason: 'an exact replay keeps the durable day pinned across zones',
+      );
+      expect(await DriftStreakRepository(database).getLearningDays(owner.id), [
+        '2026-08-04',
+      ]);
+    });
+
+    test(
+      'DST transition counts consecutive local dates exactly once',
+      () async {
+        final newYork = StreakUseCases(
+          repository: DriftStreakRepository(database),
+          owners: _FakeOwners(owner),
+          nowUtc: () => clock,
+          timezoneId: 'America/New_York',
+        );
+        clock = DateTime.utc(2026, 3, 7, 12);
+        await newYork.recordLearningDay();
+        clock = DateTime.utc(2026, 3, 8, 11);
+
+        final update = await newYork.recordLearningDay();
+
+        expect(update.outcome, StreakOutcome.extended);
+        expect(update.after.currentStreakDays, 2);
+      },
+    );
+
+    test(
+      'gentle status exposes grace and recovery without mutating state',
+      () async {
+        await useCases.recordLearningDay();
+        clock = DateTime.utc(2026, 8, 5, 10);
+        final grace = await useCases.getGentleStreak();
+        clock = DateTime.utc(2026, 8, 7, 10);
+        final recovery = await useCases.getGentleStreak();
+
+        expect(grace.phase, GentleStreakPhase.grace);
+        expect(grace.recoveryPromptVisible, isFalse);
+        expect(recovery.phase, GentleStreakPhase.recovery);
+        expect(recovery.recoveryPromptVisible, isTrue);
+        expect((await useCases.getCurrentStreak()).currentStreakDays, 1);
+      },
+    );
+
+    test('concurrent duplicate learning day advances exactly once', () async {
+      await useCases.recordLearningDay();
+      clock = DateTime.utc(2026, 8, 5, 10);
+
+      await Future.wait<StreakUpdate>(
+        List<Future<StreakUpdate>>.generate(
+          12,
+          (_) => useCases.recordLearningDay(occurredAtUtc: clock),
+        ),
+      );
+
+      final state = await useCases.getCurrentStreak();
+      expect(state.currentStreakDays, 2);
+      expect(
+        await DriftStreakRepository(database).getLearningDays(owner.id),
+        hasLength(2),
+      );
     });
 
     // ── Longest streak ────────────────────────────────────────────────────────

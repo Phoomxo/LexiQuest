@@ -469,7 +469,12 @@ final class AppBootstrap {
       ownerOperationGate: ownerOperationGate,
       generateOwnerOperationToken: idGenerator.v4,
     );
-    await localOwners.getOrCreateActiveOwner();
+    final bootstrapOwner = await localOwners.getOrCreateActiveOwner();
+    final streakRepository = DriftStreakRepository(database);
+    await streakRepository.establishCutover(
+      ownerId: bootstrapOwner.id,
+      establishedAtUtc: DateTime.now().toUtc(),
+    );
     Future<String> activeOwnerId() async =>
         (await localOwners.getOrCreateActiveOwner()).id;
     final featureOverrideStore = RuntimeFeatureOverrideStore(database);
@@ -661,6 +666,11 @@ final class AppBootstrap {
         firebase = RuntimeAvailability.unavailable;
       }
     }
+    final reconciledOwner = await localOwners.getOrCreateActiveOwner();
+    await streakRepository.establishCutover(
+      ownerId: reconciledOwner.id,
+      establishedAtUtc: DateTime.now().toUtc(),
+    );
     final supabase = await _availability(initializeSupabase);
     final config = _loadConfig();
     SyncEngine? syncEngine;
@@ -880,7 +890,7 @@ final class AppBootstrap {
 
     // ── Streak tracking (must precede learning wiring) ───────────────────
     final streak = StreakUseCases(
-      repository: DriftStreakRepository(database),
+      repository: streakRepository,
       owners: localOwners,
       nowUtc: () => DateTime.now().toUtc(),
       timezoneId: resolvedLearningTimezoneId,
@@ -962,11 +972,19 @@ final class AppBootstrap {
             : LearningProjectionResult.notApplicable(payload: payload);
       },
       streakSink: (event) async {
-        await streak.recordLearningDayForOwner(
-          ownerId: event.ownerIdentity,
-          occurredAtUtc: event.occurredAtUtc,
-        );
-        return const LearningProjectionResult.applied();
+        final projection = await streak.projectEvent(event);
+        return switch (projection.disposition) {
+          StreakProjectionDisposition.applied =>
+            LearningProjectionResult.applied(payload: projection.payload),
+          StreakProjectionDisposition.notApplicable =>
+            LearningProjectionResult.notApplicable(
+              payload: <String, dynamic>{'reasonCode': projection.reasonCode},
+            ),
+          StreakProjectionDisposition.blocked =>
+            LearningProjectionResult.blocked(
+              reasonCode: projection.reasonCode!,
+            ),
+        };
       },
       rewardSink: (event, questResult) async {
         final applied = await quest.reconcileReward(event, questResult);

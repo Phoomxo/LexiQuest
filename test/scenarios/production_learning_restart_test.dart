@@ -1153,7 +1153,7 @@ void main() {
         final streak = StreakUseCases(
           repository: DriftStreakRepository(database),
           owners: owners,
-          nowUtc: () => firstDay,
+          nowUtc: () => firstDay.add(const Duration(days: 1)),
           timezoneId: 'UTC',
         );
         final failing = LearningSideEffectReconciler(
@@ -1184,7 +1184,7 @@ void main() {
         final restartedStreak = StreakUseCases(
           repository: DriftStreakRepository(database),
           owners: restartedOwners,
-          nowUtc: () => firstDay,
+          nowUtc: () => firstDay.add(const Duration(days: 1)),
           timezoneId: 'UTC',
         );
         final real = LearningSideEffectReconciler(

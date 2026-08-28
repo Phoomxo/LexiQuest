@@ -16,6 +16,7 @@ import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning/domain/session_configuration.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
+import '../../motivation/data/drift_streak_repository.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
@@ -106,6 +107,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             throw StateError('active local owner was not found');
           }
           if (source.firebaseUid == uid) {
+            await DriftStreakRepository(_database).establishCutover(
+              ownerId: source.id,
+              establishedAtUtc: _requireUtc(nowUtc()),
+            );
             await DriftEconomyCutover(_database).ensureSeparated(source.id);
             await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
             return OwnerUpgradeResult(
@@ -116,8 +121,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           }
 
           final target = await _ownerByFirebaseUid(uid);
-          final upgradedAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+          final upgradedAtUtc = _requireUtc(nowUtc());
+          final upgradedAt = upgradedAtUtc.millisecondsSinceEpoch;
           if (target == null) {
+            await DriftStreakRepository(_database).establishCutover(
+              ownerId: source.id,
+              establishedAtUtc: upgradedAtUtc,
+            );
             await DriftEconomyCutover(_database).ensureSeparated(source.id);
             await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
             await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
@@ -142,6 +152,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             );
           }
 
+          await DriftStreakRepository(_database).mergeCutovers(
+            sourceId: source.id,
+            targetId: target.id,
+            establishedAtUtc: upgradedAtUtc,
+          );
           var conflicts = 0;
           conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
           conflicts += await _mergeWords(source.id, target.id, upgradedAt);
@@ -258,7 +273,8 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             throw StateError('owner-operation gate was lost');
           }
           final ownerId = 'local:${_requiredId(generateOwnerId(), 'ownerId')}';
-          final createdAt = _requireUtc(nowUtc()).millisecondsSinceEpoch;
+          final createdAtUtc = _requireUtc(nowUtc());
+          final createdAt = createdAtUtc.millisecondsSinceEpoch;
           await _database.customUpdate(
             'UPDATE local_owners SET is_active = 0 WHERE is_active = 1',
             updates: {_database.localOwners},
@@ -271,6 +287,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
                   createdAtUtcMs: createdAt,
                 ),
               );
+          await DriftStreakRepository(
+            _database,
+          ).establishCutover(ownerId: ownerId, establishedAtUtc: createdAtUtc);
           return OwnerUpgradeResult(
             targetOwnerId: ownerId,
             mode: OwnerUpgradeMode.localGuestCreated,
@@ -302,6 +321,13 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
               guestRow.firebaseUid != null) {
             throw StateError('logout rollback state is no longer safe');
           }
+          await DriftStreakRepository(_database).rollbackTransitionCutover(
+            ownerId: guest,
+            establishedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+              guestRow.createdAtUtcMs,
+              isUtc: true,
+            ),
+          );
           await (_database.delete(
             _database.localOwners,
           )..where((row) => row.id.equals(guest))).go();
@@ -2843,7 +2869,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       }
     }
 
-    final questResults =
+    final projectionResults =
         await (_database.select(_database.eventsV2)..where(
               (row) =>
                   row.ownerId.isIn([sourceId, targetId]) &
@@ -2852,8 +2878,23 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
                       row.eventType.equals('LearningProjectionSkipped')),
             ))
             .get();
-    for (final receipt in questResults) {
+    for (final receipt in projectionResults) {
       final payload = jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+      if (payload['projection'] == 'streak') {
+        final changed = _normalizeStreakReceiptOwner(
+          payload: payload,
+          sourceId: sourceId,
+          targetId: targetId,
+        );
+        if (changed) {
+          await (_database.update(
+            _database.eventsV2,
+          )..where((row) => row.eventId.equals(receipt.eventId))).write(
+            db.EventsV2Companion(payloadJson: Value(jsonEncode(payload))),
+          );
+        }
+        continue;
+      }
       if (payload['projection'] != 'quest') continue;
       final result = payload['result'];
       if (result is! Map) continue;
@@ -2871,6 +2912,60 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             ..where((row) => row.eventId.equals(receipt.eventId)))
           .write(db.EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
     }
+
+    final streakApplications =
+        await (_database.select(_database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.isIn([sourceId, targetId]) &
+                  row.eventType.equals('StreakPolicyApplied'),
+            ))
+            .get();
+    for (final application in streakApplications) {
+      final decoded = jsonDecode(application.payloadJson);
+      if (decoded is! Map) {
+        throw StateError('invalid streak application during owner upgrade');
+      }
+      final payload = decoded.cast<String, dynamic>();
+      final changed = _normalizeStreakReceiptOwner(
+        payload: payload,
+        sourceId: sourceId,
+        targetId: targetId,
+      );
+      if (!changed) continue;
+      await (_database.update(_database.eventsV2)
+            ..where((row) => row.eventId.equals(application.eventId)))
+          .write(db.EventsV2Companion(payloadJson: Value(jsonEncode(payload))));
+    }
+  }
+
+  bool _normalizeStreakReceiptOwner({
+    required Map<String, dynamic> payload,
+    required String sourceId,
+    required String targetId,
+  }) {
+    final rawResult = payload['result'];
+    if (rawResult is! Map) return false;
+    final result = rawResult.cast<String, dynamic>();
+    if (!result.containsKey('ownerId') && !result.containsKey('receiptId')) {
+      return false;
+    }
+    final ownerId = result['ownerId'];
+    final learningDay = result['learningDay'];
+    final policyVersion = result['policyVersion'];
+    final receiptId = result['receiptId'];
+    if ((ownerId != sourceId && ownerId != targetId) ||
+        learningDay is! String ||
+        policyVersion is! int ||
+        policyVersion < 1 ||
+        receiptId != 'gentle-streak:$ownerId:$learningDay:v$policyVersion') {
+      throw StateError('invalid streak receipt during owner upgrade');
+    }
+    if (ownerId == targetId) return false;
+    result['ownerId'] = targetId;
+    result['receiptId'] =
+        'gentle-streak:$targetId:$learningDay:v$policyVersion';
+    payload['result'] = result;
+    return true;
   }
 
   Future<bool> _hasLearningEvents(String ownerId) async {

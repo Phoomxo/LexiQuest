@@ -5,11 +5,14 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:drift/drift.dart' hide isNull;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:timezone/data/latest.dart' as tz;
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/assessment/data/drift_assessment_repository.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_models.dart';
 import 'package:vocab_learning_app/features/assessment/domain/assessment_repository.dart';
+import 'package:vocab_learning_app/features/events/domain/event_envelope_v2.dart';
 import 'package:vocab_learning_app/features/identity/application/upgrade_guest_owner.dart';
+import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_owner_upgrade_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
@@ -23,6 +26,8 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_eligibility
 import 'package:vocab_learning_app/features/learning/domain/learning_evidence_contract.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
+import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
+import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -37,6 +42,8 @@ import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
 import 'package:vocab_learning_app/product/feature_contract/feature_contract_digest.dart';
 
 void main() {
+  setUpAll(tz.initializeTimeZones);
+
   late AppDatabase database;
   late DriftOwnerUpgradeRepository repository;
   late List<String> deletedSecretOwnerIds;
@@ -1313,6 +1320,252 @@ void main() {
   );
 
   test(
+    'guest streak marker crash rebinds and replays once after owner merge',
+    () async {
+      final firstAt = DateTime.utc(2026, 7, 30, 10);
+      final laterAt = DateTime.utc(2026, 7, 31, 10);
+      await DriftStreakRepository(database).establishCutover(
+        ownerId: 'guest-owner',
+        establishedAtUtc: DateTime.utc(2026, 7, 30, 9),
+      );
+      final guestSource = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'guest-owner',
+        attemptId: 'guest-streak-crash',
+        occurredAt: firstAt,
+      );
+      final guestStreak = StreakUseCases(
+        repository: DriftStreakRepository(database),
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => firstAt,
+        ),
+        nowUtc: () => firstAt,
+        timezoneId: 'Asia/Bangkok',
+      );
+      await database.customStatement('''
+        CREATE TEMP TRIGGER fail_guest_streak_receipt
+        BEFORE INSERT ON events_v2
+        WHEN NEW.event_type = 'LearningProjectionApplied'
+          AND NEW.aggregate_id = '${guestSource.eventId}'
+        BEGIN SELECT RAISE(ABORT, 'injected guest streak receipt crash'); END
+      ''');
+      await _streakReconciler(
+        database,
+        guestStreak,
+      ).reconcileOwner('guest-owner');
+      await database.customStatement('DROP TRIGGER fail_guest_streak_receipt');
+      const markerId = 'streak-application:learning-event:guest-streak-crash';
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(markerId))).get(),
+        hasLength(1),
+      );
+      const receiptId =
+          'learning-projection:streak:'
+          'learning-event:guest-streak-crash:v2';
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.eventId.equals(receiptId))).get(),
+        isEmpty,
+      );
+
+      final upgraded = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      expect(upgraded.targetOwnerId, 'account-owner');
+      final accountStreak = StreakUseCases(
+        repository: DriftStreakRepository(database),
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => laterAt,
+        ),
+        nowUtc: () => laterAt,
+        timezoneId: 'Pacific/Pago_Pago',
+      );
+      final restarted = _streakReconciler(database, accountStreak);
+      await Future.wait<void>([
+        restarted.reconcileOwner('account-owner'),
+        restarted.reconcileOwner('account-owner'),
+      ]);
+
+      final marker = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(markerId))).getSingle();
+      final markerPayload =
+          jsonDecode(marker.payloadJson) as Map<String, dynamic>;
+      final markerResult = (markerPayload['result'] as Map)
+          .cast<String, dynamic>();
+      expect(marker.ownerId, 'account-owner');
+      expect(markerResult['ownerId'], 'account-owner');
+      expect(
+        markerResult['receiptId'],
+        'gentle-streak:account-owner:2026-07-30:v2',
+      );
+      final receipt = await (database.select(
+        database.eventsV2,
+      )..where((row) => row.eventId.equals(receiptId))).getSingle();
+      final receiptPayload =
+          jsonDecode(receipt.payloadJson) as Map<String, dynamic>;
+      expect(receipt.ownerId, 'account-owner');
+      expect(receiptPayload['result'], markerResult);
+      expect(
+        await database
+            .customSelect(
+              'SELECT 1 FROM events_v2 WHERE owner_id = ? LIMIT 1',
+              variables: const [Variable<String>('guest-owner')],
+              readsFrom: {database.eventsV2},
+            )
+            .getSingleOrNull(),
+        isNull,
+      );
+
+      await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'account-owner',
+        attemptId: 'account-streak-later',
+        occurredAt: laterAt,
+      );
+      await restarted.reconcileOwner('account-owner');
+      final state = await accountStreak.getCurrentStreak();
+      expect(state.currentStreakDays, 2);
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.equals('account-owner') &
+                  row.eventType.equals('StreakPolicyApplied'),
+            ))
+            .get(),
+        hasLength(2),
+      );
+    },
+  );
+
+  test(
+    'marker-era target merge blocks markerless legacy source at cutover',
+    () async {
+      final targetAt = DateTime.utc(2026, 7, 29, 10);
+      final legacySourceAt = DateTime.utc(2026, 7, 30, 10);
+      final laterAt = DateTime.utc(2026, 7, 31, 10);
+      final streakRepository = DriftStreakRepository(database);
+      await streakRepository.establishCutover(
+        ownerId: 'account-owner',
+        establishedAtUtc: DateTime.utc(2026, 7, 29, 9),
+      );
+      final targetSource = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'account-owner',
+        attemptId: 'account-marker-era',
+        occurredAt: targetAt,
+      );
+      await streakRepository.applyProjection(
+        source: targetSource,
+        timezoneId: 'Asia/Bangkok',
+      );
+      await (database.delete(database.eventsV2)..where(
+            (row) =>
+                row.ownerId.equals('account-owner') &
+                row.eventType.equals('StreakPolicyCutover'),
+          ))
+          .go();
+      final legacySource = await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'guest-owner',
+        attemptId: 'guest-markerless-legacy',
+        occurredAt: legacySourceAt,
+      );
+
+      final upgraded = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+      expect(upgraded.targetOwnerId, 'account-owner');
+      final accountStreak = StreakUseCases(
+        repository: DriftStreakRepository(database),
+        owners: DriftLocalOwnerRepository(
+          database,
+          generateId: () => 'unexpected-owner',
+          nowUtc: () => laterAt,
+        ),
+        nowUtc: () => laterAt,
+        timezoneId: 'Asia/Bangkok',
+      );
+      final restarted = _streakReconciler(database, accountStreak);
+
+      await restarted.reconcileOwner('account-owner');
+
+      final legacyReceipt =
+          await (database.select(database.eventsV2)..where(
+                (row) => row.eventId.equals(
+                  'learning-projection:streak:${legacySource.eventId}:v2',
+                ),
+              ))
+              .getSingle();
+      final legacyPayload =
+          jsonDecode(legacyReceipt.payloadJson) as Map<String, dynamic>;
+      expect(legacyReceipt.eventType, 'LearningProjectionBlocked');
+      expect(legacyPayload['reasonCode'], 'preMarkerCutover');
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'streak-application:${legacySource.eventId}',
+              ),
+            ))
+            .get(),
+        isEmpty,
+      );
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) => row.eventId.equals(
+                'streak-application:${targetSource.eventId}',
+              ),
+            ))
+            .get(),
+        hasLength(1),
+      );
+
+      await _insertCanonicalStreakEvent(
+        database,
+        ownerId: 'account-owner',
+        attemptId: 'account-after-merged-cutover',
+        occurredAt: laterAt,
+      );
+      await restarted.reconcileOwner('account-owner');
+
+      final state = await accountStreak.getCurrentStreak();
+      expect(state.currentStreakDays, 1);
+      expect(state.lastLearnedAtUtcMs, laterAt.millisecondsSinceEpoch);
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.ownerId.equals('account-owner') &
+                  row.eventType.equals('StreakPolicyApplied'),
+            ))
+            .get(),
+        hasLength(2),
+      );
+      final cutovers =
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.ownerId.equals('account-owner') &
+                    row.eventType.equals('StreakPolicyCutover'),
+              ))
+              .get();
+      expect(cutovers, hasLength(1));
+      expect(
+        (jsonDecode(cutovers.single.payloadJson)
+            as Map<String, dynamic>)['horizonEventId'],
+        legacySource.eventId,
+      );
+    },
+  );
+
+  test(
     'owner upgrade drains guest replay and schedules buffered work on account',
     () async {
       final firstAt = DateTime.utc(2026, 8, 9, 10);
@@ -1573,6 +1826,57 @@ void main() {
       )..where((row) => row.isActive.equals(true))).getSingle();
       expect(active.id, 'local:new-guest-owner');
       expect(active.firebaseUid, isNull);
+      final cutovers =
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.ownerId.equals(active.id) &
+                    row.eventType.equals('StreakPolicyCutover'),
+              ))
+              .get();
+      expect(cutovers, hasLength(1));
+      final payload =
+          jsonDecode(cutovers.single.payloadJson) as Map<String, dynamic>;
+      expect(payload['ownerId'], active.id);
+      expect(payload['horizonEventId'], isNull);
+      expect(payload['horizonOccurredAtUtcMs'], isNull);
+    },
+  );
+
+  test(
+    'logout cutover failure rolls back owner activation atomically',
+    () async {
+      await database.customStatement('''
+        CREATE TEMP TRIGGER reject_logout_streak_cutover
+        BEFORE INSERT ON events_v2
+        WHEN NEW.event_type = 'StreakPolicyCutover'
+          AND NEW.owner_id = 'local:new-guest-owner'
+        BEGIN SELECT RAISE(ABORT, 'injected logout cutover failure'); END
+      ''');
+
+      await expectLater(
+        repository.createLocalGuestAfterLogout(),
+        throwsA(anything),
+      );
+      await database.customStatement(
+        'DROP TRIGGER reject_logout_streak_cutover',
+      );
+
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).getSingle();
+      expect(active.id, 'guest-owner');
+      expect(
+        await (database.select(
+          database.localOwners,
+        )..where((row) => row.id.equals('local:new-guest-owner'))).get(),
+        isEmpty,
+      );
+      expect(
+        await (database.select(
+          database.eventsV2,
+        )..where((row) => row.ownerId.equals('local:new-guest-owner'))).get(),
+        isEmpty,
+      );
     },
   );
 
@@ -1593,6 +1897,14 @@ void main() {
         database.localOwners,
       )..where((row) => row.id.equals(guest.targetOwnerId))).getSingleOrNull(),
       isNull,
+    );
+    expect(
+      await (database.select(database.eventsV2)..where(
+            (row) =>
+                row.eventId.equals('streak-cutover:${guest.targetOwnerId}:v1'),
+          ))
+          .get(),
+      isEmpty,
     );
   });
 
@@ -3499,6 +3811,138 @@ Future<void> _insertLearningEvent(
           payloadJson: jsonEncode(<String, dynamic>{'attemptId': attemptId}),
         ),
       );
+}
+
+LearningSideEffectReconciler _streakReconciler(
+  AppDatabase database,
+  StreakUseCases streak,
+) => LearningSideEffectReconciler(
+  database,
+  streakSink: (event) async {
+    final projection = await streak.projectEvent(event);
+    return switch (projection.disposition) {
+      StreakProjectionDisposition.applied => LearningProjectionResult.applied(
+        payload: projection.payload,
+      ),
+      StreakProjectionDisposition.notApplicable =>
+        LearningProjectionResult.notApplicable(
+          payload: <String, dynamic>{'reasonCode': projection.reasonCode},
+        ),
+      StreakProjectionDisposition.blocked => LearningProjectionResult.blocked(
+        reasonCode: projection.reasonCode!,
+      ),
+    };
+  },
+);
+
+Future<EventEnvelopeV2> _insertCanonicalStreakEvent(
+  AppDatabase database, {
+  required String ownerId,
+  required String attemptId,
+  required DateTime occurredAt,
+}) async {
+  final categoryId = 'streak-category:$attemptId';
+  final wordId = 'streak-word:$attemptId';
+  final sessionId = 'streak-session:$attemptId';
+  final context = EvidenceContext.forNewEvidence(
+    evidenceClass: EvidenceClass.independentRecall,
+    skillId: 'streak-skill',
+    hintLevel: 0,
+    contentRevision: 'streak-content-v1',
+    rolloutMode: EvidencePolicyRolloutMode.legacy,
+    engagementAllowed: true,
+  );
+  await database
+      .into(database.vocabularyCategories)
+      .insert(
+        VocabularyCategoriesCompanion.insert(
+          id: categoryId,
+          ownerId: ownerId,
+          name: 'Streak replay $attemptId',
+          normalizedName: 'streak replay $attemptId',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.vocabularyWords)
+      .insert(
+        VocabularyWordsCompanion.insert(
+          id: wordId,
+          ownerId: ownerId,
+          categoryId: categoryId,
+          spelling: 'streak-$attemptId',
+          normalizedSpelling: 'streak-$attemptId',
+          meaning: 'streak',
+          normalizedMeaning: 'streak',
+          partOfSpeech: 'noun',
+          createdAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          updatedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.learningSessions)
+      .insert(
+        LearningSessionsCompanion.insert(
+          id: sessionId,
+          ownerId: ownerId,
+          activityType: 'quiz',
+          state: 'completed',
+          startedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          appVersion: '1.0.0',
+          buildId: 'owner-upgrade-streak-test',
+        ),
+        mode: InsertMode.insertOrIgnore,
+      );
+  await database
+      .into(database.answerAttempts)
+      .insert(
+        AnswerAttemptsCompanion.insert(
+          id: attemptId,
+          ownerId: ownerId,
+          sessionId: sessionId,
+          wordId: wordId,
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          attemptNumber: 1,
+          occurredAtUtcMs: occurredAt.millisecondsSinceEpoch,
+          evidenceClass: Value(context.evidenceClass.name),
+          evidenceContextJson: Value(jsonEncode(context.toJson())),
+        ),
+      );
+  final event = EventEnvelopeV2(
+    eventId: LearningEvidenceContract.learningEventId(attemptId),
+    eventType: 'QuizCompleted',
+    eventVersion: 2,
+    occurredAtUtc: occurredAt,
+    recordedAtUtc: occurredAt,
+    actorIdentity: ownerId,
+    ownerIdentity: ownerId,
+    aggregateType: 'LearningSession',
+    aggregateId: sessionId,
+    idempotencyKey: LearningEvidenceContract.learningAttemptIdempotencyKey(
+      attemptId,
+    ),
+    consentContext: const ConsentContext.none(),
+    contentRevision: context.contentRevision,
+    policyVersion: context.policyVersion,
+    appVersion: '1.0.0',
+    buildId: 'owner-upgrade-streak-test',
+    privacyClassification: PrivacyClassification.anonymized,
+    payload: <String, dynamic>{
+      'attemptId': attemptId,
+      'wordId': wordId,
+      'promptMode': 'meaningChoice',
+      'correct': true,
+      'score': 100,
+      'attemptNumber': 1,
+      'evidenceContext': context.toJson(),
+    },
+  );
+  await DriftLearningEventStore(database).append(event);
+  return event;
 }
 
 Future<void> _insertProjectionResult(

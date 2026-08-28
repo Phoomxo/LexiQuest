@@ -4,6 +4,7 @@ import 'package:drift/drift.dart';
 import 'package:uuid/uuid.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../motivation/data/drift_streak_repository.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
 import '../domain/local_owner.dart';
@@ -66,6 +67,9 @@ final class DriftLocalOwnerRepository implements LocalOwnerRepository {
                 createdAtUtcMs: now.millisecondsSinceEpoch,
               ),
             );
+        await DriftStreakRepository(
+          _database,
+        ).establishCutover(ownerId: ownerId, establishedAtUtc: now);
         return LocalOwner(id: ownerId, createdAtUtc: now);
       });
     });
