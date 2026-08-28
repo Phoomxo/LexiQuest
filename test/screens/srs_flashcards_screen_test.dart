@@ -85,6 +85,46 @@ void main() {
     expect(fakeVoice.spokenRequests.length, 1);
   });
 
+  test(
+    'flashcard close and retry stay pinned after active owner switch',
+    () async {
+      final owners = _ScenarioOwnerRepository();
+      final repository = _RetryLearningRepository(
+        failAnswerOnce: false,
+        failFinishOnce: true,
+      );
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'flashcard-owner-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 11, 9, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final session = await learning.startDueReview(limit: 1);
+      final review = const FlashcardModeAdapter().createReview(
+        session: session,
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+      );
+      addTearDown(review.dispose);
+      await review.reveal(responseTimeMs: 100);
+      owners.activeOwnerId = 'owner-b';
+
+      await expectLater(review.advanceAfterReveal(), throwsStateError);
+      await review.retry();
+
+      expect(repository.finishCalls, hasLength(2));
+      expect(
+        repository.finishCalls.map((call) => call.ownerId),
+        everyElement('owner-a'),
+      );
+      expect(repository.successfulFinishCalls, hasLength(1));
+      expect(repository.successfulFinishCalls.single.ownerId, 'owner-a');
+      expect(review.phase, FlashcardReviewPhase.completed);
+    },
+  );
+
   testWidgets('background stops the auto-play route session', (tester) async {
     final provider = FakeVoiceProvider();
     final voice = VoiceUseCases(
@@ -852,9 +892,11 @@ final class _GuestSession implements GuestSessionService {
 }
 
 final class _ScenarioOwnerRepository implements LocalOwnerRepository {
+  String activeOwnerId = 'owner-a';
+
   @override
   Future<LocalOwner> getOrCreateActiveOwner() async =>
-      LocalOwner(id: 'owner-a', createdAtUtc: DateTime.utc(2026, 8, 11));
+      LocalOwner(id: activeOwnerId, createdAtUtc: DateTime.utc(2026, 8, 11));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -893,6 +935,9 @@ final class _RetryLearningRepository implements LearningRepository {
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
   finishCalls = <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
+  final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
+  successfulFinishCalls =
+      <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
   var _answerFailed = false;
 
   @override
@@ -943,6 +988,11 @@ final class _RetryLearningRepository implements LearningRepository {
       await firstFinishRelease?.future;
       throw StateError('simulated session-close failure');
     }
+    successfulFinishCalls.add((
+      ownerId: ownerId,
+      sessionId: sessionId,
+      endedAtUtc: endedAtUtc,
+    ));
     return LearningSessionSummary(
       id: sessionId,
       ownerId: ownerId,

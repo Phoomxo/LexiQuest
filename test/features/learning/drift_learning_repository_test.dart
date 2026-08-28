@@ -88,16 +88,148 @@ void main() {
     );
   });
 
-  test('quiz words come from active local vocabulary for the owner', () async {
-    final words = await repository.listQuizWords(
-      ownerId: 'owner-1',
+  test(
+    'current-schema null checksum rows receive a canonical read identity',
+    () async {
+      final words = await repository.listQuizWords(
+        ownerId: 'owner-1',
+        categoryId: 'category-1',
+        limit: 10,
+      );
+
+      expect(words.map((word) => word.id), ['word-1', 'word-2']);
+      expect(words.first.meaning, 'สถานี');
+      expect(
+        words.first.contentChecksumSha256,
+        ContentQualityPolicy.vocabularyChecksumSha256(
+          categoryId: 'category-1',
+          spelling: 'station',
+          normalizedSpelling: 'station',
+          meaning: 'สถานี',
+          normalizedMeaning: 'สถานี',
+          partOfSpeech: 'noun',
+          cefrLevel: null,
+          source: 'manual',
+          isGlobal: false,
+        ),
+      );
+      expect(
+        (await database.select(database.vocabularyWords).get()).every(
+          (word) => word.contentChecksumSha256 == null,
+        ),
+        isTrue,
+        reason: 'compatibility identity is deterministic and read-only',
+      );
+    },
+  );
+
+  test(
+    'valid-shaped wrong core checksum fails before learning mutation',
+    () async {
+      await (database.update(
+        database.vocabularyWords,
+      )..where((word) => word.id.equals('word-1'))).write(
+        VocabularyWordsCompanion(contentChecksumSha256: Value('a' * 64)),
+      );
+
+      await expectLater(
+        repository.listQuizWords(
+          ownerId: 'owner-1',
+          categoryId: 'category-1',
+          limit: 10,
+        ),
+        throwsA(
+          isA<ContentQualityFailure>().having(
+            (failure) => failure.code,
+            'code',
+            ContentQualityFailureCode.checksumMismatch,
+          ),
+        ),
+      );
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+    },
+  );
+
+  test('typed recall records from a null legacy checksum identity', () async {
+    final owners = DriftLocalOwnerRepository(
+      database,
+      generateId: () => 'unexpected-owner',
+      nowUtc: () => DateTime.utc(2026, 8, 28, 9),
+    );
+    var generatedId = 0;
+    final learning = LearningUseCases(
+      owners: owners,
+      repository: repository,
+      generateId: () => 'legacy-typed-${++generatedId}',
+      nowUtc: () => DateTime.utc(2026, 8, 28, 9, generatedId),
+      buildInfo: const AppBuildInfo(version: 'test', buildId: 'legacy-typed'),
+    );
+    final session = await learning.startQuiz(
       categoryId: 'category-1',
-      limit: 10,
+      limit: 1,
+    );
+    final prompt = const TypedRecallModeAdapter().pinQuizPrompt(
+      session.questions.single.word,
+    );
+    final captured = const TypedRecallModeAdapter().capture(
+      evidence: CurrentActivityEvidenceAdapter(learning: learning),
+      ownerId: session.ownerId,
+      sessionId: session.id,
+      prompt: prompt,
+      response: 'station',
+      responseTimeMs: 100,
+      attemptNumber: 1,
+      support: const TypedRecallSupport.unassisted(),
     );
 
-    expect(words.map((word) => word.id), ['word-1', 'word-2']);
-    expect(words.first.meaning, 'สถานี');
+    expect((await captured.pending.record()).isCorrect, isTrue);
+    expect(await database.select(database.answerAttempts).get(), hasLength(1));
+    expect(
+      (await database.select(database.vocabularyWords).get()).every(
+        (word) => word.contentChecksumSha256 == null,
+      ),
+      isTrue,
+    );
   });
+
+  test(
+    'typed recall rejects wrong checksum before creating its session',
+    () async {
+      await (database.update(
+        database.vocabularyWords,
+      )..where((word) => word.id.equals('word-1'))).write(
+        VocabularyWordsCompanion(contentChecksumSha256: Value('b' * 64)),
+      );
+      final owners = DriftLocalOwnerRepository(
+        database,
+        generateId: () => 'unexpected-owner',
+        nowUtc: () => DateTime.utc(2026, 8, 28, 10),
+      );
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'wrong-typed',
+        nowUtc: () => DateTime.utc(2026, 8, 28, 10),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'wrong-typed'),
+      );
+
+      await expectLater(
+        learning.startQuiz(categoryId: 'category-1', limit: 1),
+        throwsA(
+          isA<ContentQualityFailure>().having(
+            (failure) => failure.code,
+            'code',
+            ContentQualityFailureCode.checksumMismatch,
+          ),
+        ),
+      );
+      expect(await database.select(database.learningSessions).get(), isEmpty);
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+    },
+  );
 
   test(
     'verified lexical variants reach typed evidence and stale artifacts fail closed',

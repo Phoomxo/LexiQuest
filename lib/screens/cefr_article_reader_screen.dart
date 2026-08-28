@@ -14,6 +14,7 @@ class CefrArticleReaderScreen extends StatefulWidget {
   final String cefrLevel;
   final VoiceUseCases? voice;
   final LearningUseCases? learning;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -27,6 +28,7 @@ class CefrArticleReaderScreen extends StatefulWidget {
     required this.cefrLevel,
     this.voice,
     this.learning,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -123,6 +125,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
     final pending = _pendingEvidence = _modeAdapter
         .capture(
           evidence: evidence,
+          ownerId: widget.ownerId,
           sessionId: sessionId,
           wordId: wordId,
           responseTimeMs: DateTime.now()
@@ -152,6 +155,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
     }
     final close = _pendingSessionClose ??= learning.captureSessionClose(
       sessionId: sessionId,
+      ownerId: widget.ownerId,
     );
     if (mounted) setState(() {});
     try {

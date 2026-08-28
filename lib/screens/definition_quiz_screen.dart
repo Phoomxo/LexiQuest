@@ -163,6 +163,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
           await lifecycle.abandon();
         } else {
           await _learning!.abandonSession(
+            ownerId: session.ownerId,
             sessionId: session.id,
             abandonedAtUtc: DateTime.now().toUtc(),
           );
@@ -426,6 +427,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
         await lifecycle.abandon();
       } else {
         await _learning!.abandonSession(
+          ownerId: session.ownerId,
           sessionId: session.id,
           abandonedAtUtc: DateTime.now().toUtc(),
         );

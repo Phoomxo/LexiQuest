@@ -514,6 +514,7 @@ VocabularyWord _lexicalWord({
   contentReviewState: reviewState,
   contentPublicationState: ContentPublicationState.published,
   richMetadata: RichLexicalMetadata(
+    verifiedContentRevision: revision,
     verifiedArtifactChecksumSha256: checksum,
     examples: examples,
   ),

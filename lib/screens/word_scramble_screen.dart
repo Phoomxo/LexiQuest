@@ -26,6 +26,7 @@ List<String> createStableScramble(String word) {
 
 class WordScrambleScreen extends StatefulWidget {
   final String word;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -35,6 +36,7 @@ class WordScrambleScreen extends StatefulWidget {
   const WordScrambleScreen({
     super.key,
     required this.word,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -116,6 +118,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
     final pending = _pendingEvidence = _modeAdapter
         .capture(
           evidence: evidence,
+          ownerId: widget.ownerId,
           sessionId: sessionId,
           wordId: wordId,
           target: widget.word,
@@ -179,6 +182,7 @@ class _WordScrambleScreenState extends State<WordScrambleScreen> {
     }
     final close = _pendingSessionClose ??= learning.captureSessionClose(
       sessionId: sessionId,
+      ownerId: widget.ownerId,
     );
     if (mounted) setState(() {});
     try {

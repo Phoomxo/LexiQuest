@@ -846,56 +846,48 @@ void main() {
           expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
           expect(screen.cefrLevel, 'C2');
           expect(screen.sessionId, controller.state.sessionId);
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(screen.wordId, startsWith('word:choose-mode-vocabulary-id'));
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.dictation) {
-          expect(
-            tester
-                .widget<DictationQuizScreen>(find.byType(DictationQuizScreen))
-                .modeAdapter,
-            same(modes.find(routeCase.mode)!.adapter),
+          final screen = tester.widget<DictationQuizScreen>(
+            find.byType(DictationQuizScreen),
           );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.sentenceScramble) {
-          expect(
-            tester
-                .widget<SentenceScrambleScreen>(
-                  find.byType(SentenceScrambleScreen),
-                )
-                .modeAdapter,
-            same(modes.find(routeCase.mode)!.adapter),
+          final screen = tester.widget<SentenceScrambleScreen>(
+            find.byType(SentenceScrambleScreen),
           );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.wordScramble) {
-          expect(
-            tester
-                .widget<WordScrambleScreen>(find.byType(WordScrambleScreen))
-                .modeAdapter,
-            same(modes.find(routeCase.mode)!.adapter),
+          final screen = tester.widget<WordScrambleScreen>(
+            find.byType(WordScrambleScreen),
           );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.speaking) {
-          expect(
-            tester
-                .widget<SpeakToTextScreen>(find.byType(SpeakToTextScreen))
-                .modeAdapter,
-            same(modes.find(routeCase.mode)!.adapter),
+          final screen = tester.widget<SpeakToTextScreen>(
+            find.byType(SpeakToTextScreen),
           );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
         if (routeCase.mode == LessonMode.shadowing) {
-          expect(
-            tester
-                .widget<ShadowingChallengeScreen>(
-                  find.byType(ShadowingChallengeScreen),
-                )
-                .modeAdapter,
-            same(modes.find(routeCase.mode)!.adapter),
+          final screen = tester.widget<ShadowingChallengeScreen>(
+            find.byType(ShadowingChallengeScreen),
           );
+          expect(screen.modeAdapter, same(modes.find(routeCase.mode)!.adapter));
+          expect(screen.ownerId, 'local:choose-mode-owner');
           expect(controller.state.status, LessonSessionStatus.active);
         }
 
@@ -1388,6 +1380,90 @@ void main() {
       expect(find.byType(MatchingModeScreen), findsOneWidget);
       expect(harness.repository.abandonCalls, 1);
       expect(harness.controllers.single.sessionConfiguration?.itemCount, 3);
+    },
+  );
+
+  testWidgets(
+    'Matching recovery load and discard retain the owner captured before awaits',
+    (tester) async {
+      final harness = await _SrsGateHarness.create(
+        enableMatching: true,
+        switchOwnerDuringProtocolResolution: true,
+      );
+      addTearDown(harness.close);
+      final learning = harness.dependencies.learning!;
+      final originalOwner = await harness.dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      final registration = harness.dependencies.lessonModes!.resolve(
+        LessonMode.matching,
+      )!;
+      const policy = SessionConfigurationPolicy();
+      const limits = SessionConfigurationProtocolLimits.standard();
+      final pinned = policy.validate(
+        draft: policy
+            .defaultsFor(registration: registration, limits: limits)
+            .copyWith(itemCount: 2),
+        registration: registration,
+        limits: limits,
+        ownerId: originalOwner.id,
+        availablePackIdentities: const <ContentIdentity>[],
+      );
+      final prepared = await const MatchingModeAdapter().prepareSession(
+        learning: learning,
+        evidence: CurrentActivityEvidenceAdapter(learning: learning),
+        itemCount: pinned.itemCount,
+        sessionConfiguration: pinned,
+      );
+
+      await harness.pump(tester);
+      await _openConfiguredMode(
+        tester,
+        find.byKey(const ValueKey<String>('home/learn/quiz/matching')),
+        itemCount: 3,
+      );
+
+      expect(
+        find.byKey(const ValueKey('session-configuration-recovery-prompt')),
+        findsOneWidget,
+        reason: 'the pre-await owner must still recover its active session',
+      );
+      await harness.database
+          .into(harness.database.learningSessions)
+          .insert(
+            LearningSessionsCompanion.insert(
+              id: 'matching-next-owner-active',
+              ownerId: _OwnerSwitchingProtocolProvider.nextOwnerId,
+              activityType: 'quiz',
+              state: 'active',
+              startedAtUtcMs: DateTime.utc(
+                2026,
+                8,
+                25,
+                15,
+                1,
+              ).millisecondsSinceEpoch,
+              appVersion: 'test',
+              buildId: 'next-owner',
+            ),
+          );
+      await tester.tap(
+        find.byKey(const ValueKey('session-config-recovery-discard')),
+      );
+      await tester.pumpAndSettle();
+
+      final sessions = await harness.database
+          .select(harness.database.learningSessions)
+          .get();
+      expect(
+        sessions.singleWhere((row) => row.id == prepared.session.id).state,
+        'abandoned',
+      );
+      expect(
+        sessions
+            .singleWhere((row) => row.id == 'matching-next-owner-active')
+            .state,
+        'active',
+      );
     },
   );
 
@@ -2561,6 +2637,50 @@ final class _StaleSessionConfigurationProtocolProvider
       );
 }
 
+final class _OwnerSwitchingProtocolProvider
+    implements SessionConfigurationProtocolProvider {
+  _OwnerSwitchingProtocolProvider({
+    required this.delegate,
+    required this.database,
+  });
+
+  static const nextOwnerId = 'matching-recovery-next-owner';
+
+  final SessionConfigurationProtocolProvider delegate;
+  final AppDatabase database;
+  bool _switched = false;
+
+  @override
+  Future<SessionConfigurationProtocolLimits> resolveForOwner(
+    String ownerId,
+  ) async {
+    final limits = await delegate.resolveForOwner(ownerId);
+    if (_switched) return limits;
+    _switched = true;
+    await database.transaction(() async {
+      await database.customStatement(
+        'UPDATE local_owners SET is_active = 0 WHERE id = ?',
+        <Object?>[ownerId],
+      );
+      await database
+          .into(database.localOwners)
+          .insert(
+            LocalOwnersCompanion.insert(
+              id: nextOwnerId,
+              createdAtUtcMs: DateTime.utc(
+                2026,
+                8,
+                25,
+                15,
+                1,
+              ).millisecondsSinceEpoch,
+            ),
+          );
+    });
+    return limits;
+  }
+}
+
 final class _PinnedPackRepository implements LearningPackRepository {
   const _PinnedPackRepository(this.detail);
 
@@ -2617,6 +2737,7 @@ final class _SrsGateHarness {
     String? vocabularyCefrLevel = 'A1',
     LearningPackDetail? pinnedPack,
     bool staleProtocol = false,
+    bool switchOwnerDuringProtocolResolution = false,
   }) async {
     final database = AppDatabase(NativeDatabase.memory());
     final now = DateTime.utc(2026, 8, 25, 15);
@@ -2733,6 +2854,24 @@ final class _SrsGateHarness {
     );
     final research = InertResearchDependencies(database);
     final sessionConfigurations = DriftSessionConfigurationStore(database);
+    final persistedSessionConfigurationProtocols =
+        PersistedSessionConfigurationProtocolProvider(
+          currentResearchState: research.assignedLearningEventContext,
+          rolloutMode: research.evidencePolicyRolloutModeProvider,
+          nowUtc: () => now,
+          catalog: SessionConfigurationProtocolCatalog(
+            baseline: const SessionConfigurationProtocolLimits.standard(),
+          ),
+        );
+    final SessionConfigurationProtocolProvider sessionConfigurationProtocols =
+        staleProtocol
+        ? const _StaleSessionConfigurationProtocolProvider()
+        : switchOwnerDuringProtocolResolution
+        ? _OwnerSwitchingProtocolProvider(
+            delegate: persistedSessionConfigurationProtocols,
+            database: database,
+          )
+        : persistedSessionConfigurationProtocols;
     final studyPlanning = pinnedPack == null
         ? null
         : StudyPlanningUseCases(
@@ -2767,16 +2906,7 @@ final class _SrsGateHarness {
       learning: learning,
       vocabulary: vocabulary,
       lessonModes: modes,
-      sessionConfigurationProtocols: staleProtocol
-          ? const _StaleSessionConfigurationProtocolProvider()
-          : PersistedSessionConfigurationProtocolProvider(
-              currentResearchState: research.assignedLearningEventContext,
-              rolloutMode: research.evidencePolicyRolloutModeProvider,
-              nowUtc: () => now,
-              catalog: SessionConfigurationProtocolCatalog(
-                baseline: const SessionConfigurationProtocolLimits.standard(),
-              ),
-            ),
+      sessionConfigurationProtocols: sessionConfigurationProtocols,
       sessionConfigurations: sessionConfigurations,
       currentActivityEvidence: CurrentActivityEvidenceAdapter(
         learning: learning,

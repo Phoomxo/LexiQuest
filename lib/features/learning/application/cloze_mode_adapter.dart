@@ -8,6 +8,7 @@ import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
@@ -49,6 +50,7 @@ final class ClozeQuestion {
     required this.wordId,
     required this.identity,
     required this.checksumSha256,
+    required this.manifestChecksumSha256,
     required this.prompt,
     required this.correctAnswer,
     required this.options,
@@ -58,6 +60,7 @@ final class ClozeQuestion {
   final String wordId;
   final ContentIdentity identity;
   final String checksumSha256;
+  final String manifestChecksumSha256;
   final String prompt;
   final String correctAnswer;
   final List<String> options;
@@ -96,12 +99,14 @@ final class _PinnedClozeCandidate {
     required this.lexical,
     required this.prompt,
     required this.checksumSha256,
+    required this.manifestChecksumSha256,
   });
 
   final QuizWord word;
   final VocabularyWord lexical;
   final String prompt;
   final String checksumSha256;
+  final String manifestChecksumSha256;
 }
 
 /// Typed production boundary for reviewed, pinned cloze evidence.
@@ -162,14 +167,11 @@ final class ClozeModeAdapter
   bool hasDeliverableReviewedExample(Iterable<VocabularyWord> words) =>
       words.any((word) {
         final checksum = word.contentChecksumSha256;
-        final artifactChecksum =
-            word.richMetadata?.verifiedArtifactChecksumSha256;
         if (!_isReviewedPackagedWord(word) ||
             word.contentRevision <= 0 ||
             checksum == null ||
             !_isCanonicalSha256(checksum) ||
-            artifactChecksum == null ||
-            !_isCanonicalSha256(artifactChecksum)) {
+            _artifactIdentity(word) == null) {
           return false;
         }
         return word.richMetadata!.examples.any(
@@ -209,9 +211,8 @@ final class ClozeModeAdapter
         skips[word.id] = ClozeSkipReason.staleContent;
         continue;
       }
-      final artifactChecksum =
-          lexical.richMetadata?.verifiedArtifactChecksumSha256;
-      if (artifactChecksum == null || !_isCanonicalSha256(artifactChecksum)) {
+      final artifactIdentity = _artifactIdentity(lexical);
+      if (artifactIdentity == null) {
         skips[word.id] = ClozeSkipReason.missingExample;
         continue;
       }
@@ -232,7 +233,9 @@ final class ClozeModeAdapter
         word: word,
         lexical: lexical,
         prompt: prompt,
-        checksumSha256: artifactChecksum,
+        checksumSha256: artifactIdentity.checksumSha256,
+        manifestChecksumSha256:
+            artifactIdentity.verifiedArtifactChecksumSha256!,
       );
     }
 
@@ -268,6 +271,7 @@ final class ClozeModeAdapter
               revision: candidate.lexical.contentRevision,
             ),
             checksumSha256: candidate.checksumSha256,
+            manifestChecksumSha256: candidate.manifestChecksumSha256,
             prompt: candidate.prompt,
             correctAnswer: correct,
             options: _pinOptions(
@@ -334,6 +338,17 @@ final class ClozeModeAdapter
       word.contentProvenance == ContentProvenance.packaged &&
       word.contentReviewState == ContentReviewState.approved &&
       word.contentPublicationState == ContentPublicationState.published;
+
+  LexicalPromptArtifactIdentity? _artifactIdentity(VocabularyWord word) =>
+      LexicalPromptArtifactResolver.resolveForAdapter(
+        promptMode: 'clozeSelected',
+        wordId: word.id,
+        coreRevision: word.contentRevision,
+        coreChecksumSha256: word.contentChecksumSha256,
+        verifiedArtifactRevision: word.richMetadata?.verifiedContentRevision,
+        verifiedArtifactChecksumSha256:
+            word.richMetadata?.verifiedArtifactChecksumSha256,
+      );
 
   @override
   EvidenceContext classify(LessonResponse response, LessonSupport support) {
@@ -516,7 +531,7 @@ final class ClozeReviewController extends ChangeNotifier {
         !isCorrect && selectedOptionId != null && correctOptionId != null
         ? ContrastiveFeedbackContext(
             manifestIdentity: question.identity,
-            manifestChecksumSha256: question.checksumSha256,
+            manifestChecksumSha256: question.manifestChecksumSha256,
             promptMode: 'clozeSelected',
             evidenceContentRevision: question.contentRevision,
             correctOptionId: correctOptionId,
@@ -525,6 +540,7 @@ final class ClozeReviewController extends ChangeNotifier {
         : null;
     _recordInteraction();
     final pending = _evidence.captureCloze(
+      ownerId: session.ownerId,
       sessionId: session.id,
       wordId: question.wordId,
       isCorrect: isCorrect,
@@ -639,6 +655,7 @@ final class ClozeReviewController extends ChangeNotifier {
     _requireOperationAccepted();
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
+      ownerId: session.ownerId,
     );
     _setPhase(ClozeReviewPhase.completing);
     try {

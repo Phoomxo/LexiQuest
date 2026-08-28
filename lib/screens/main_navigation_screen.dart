@@ -402,6 +402,7 @@ class _MainNavigationScreenState extends State<MainNavigationScreen> {
         builder: (_, session, question) => ShadowingChallengeScreen(
           referenceSentence: question.word.spelling,
           sessionId: session.id,
+          ownerId: session.ownerId,
           wordId: question.word.id,
           modeAdapter: adapter,
         ),

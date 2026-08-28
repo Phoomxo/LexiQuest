@@ -44,7 +44,7 @@ void main() {
     await repository.submit(_report(id: 'report:local-only'));
 
     final rows = await database.select(database.contentQualityReports).get();
-    expect(database.schemaVersion, 17);
+    expect(database.schemaVersion, AppDatabase.currentSchemaVersion);
     expect(rows, hasLength(1));
     expect(rows.single.ownerId, ownerId);
     expect(rows.single.contentType, ContentType.lexicalMetadata.name);

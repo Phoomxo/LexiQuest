@@ -214,6 +214,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                     cefrLevel: cefrAdapter.requireCanonicalCefrLevel(
                       question.word.cefrLevel,
                     ),
+                    ownerId: session.ownerId,
                     sessionId: session.id,
                     wordId: question.word.id,
                     modeAdapter: cefrAdapter,
@@ -235,6 +236,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       sessionConfiguration: configuration,
                       builder: (_, session, question) => DictationQuizScreen(
                         targetWord: question.word.spelling,
+                        ownerId: session.ownerId,
                         sessionId: session.id,
                         wordId: question.word.id,
                         modeAdapter: adapter as DictationModeAdapter,
@@ -260,6 +262,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                             '${question.word.spelling} means '
                             '${question.word.meaning}',
                         translation: question.word.meaning,
+                        ownerId: session.ownerId,
                         sessionId: session.id,
                         wordId: question.word.id,
                         modeAdapter: adapter as SentenceScrambleModeAdapter,
@@ -281,6 +284,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       sessionConfiguration: configuration,
                       builder: (_, session, question) => WordScrambleScreen(
                         word: question.word.spelling,
+                        ownerId: session.ownerId,
                         sessionId: session.id,
                         wordId: question.word.id,
                         modeAdapter: adapter as WordScrambleModeAdapter,
@@ -303,6 +307,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       sessionConfiguration: configuration,
                       builder: (_, session, question) => SpeakToTextScreen(
                         correctWord: question.word.spelling,
+                        ownerId: session.ownerId,
                         sessionId: session.id,
                         wordId: question.word.id,
                         modeAdapter: adapter as SpeakingModeAdapter,
@@ -326,6 +331,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
                       builder: (_, session, question) =>
                           ShadowingChallengeScreen(
                             referenceSentence: question.word.spelling,
+                            ownerId: session.ownerId,
                             sessionId: session.id,
                             wordId: question.word.id,
                             modeAdapter: adapter as ShadowingModeAdapter,
@@ -465,6 +471,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
             );
           }
           await learning.abandonSession(
+            ownerId: recovery.session.ownerId,
             sessionId: recovery.session.id,
             abandonedAtUtc: learning.nowUtc(),
           );
@@ -628,6 +635,7 @@ class _ChooseModeScreenState extends State<ChooseModeScreen> {
       try {
         recovery = await dependencies!.learning!.loadActivityRecovery(
           activityType: MatchingModeAdapter.activityType,
+          ownerId: ownerId,
         );
         if (recovery?.session.state == 'completed' &&
             recovery?.checkpoint?.terminalAcknowledged == true &&

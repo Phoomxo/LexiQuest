@@ -106,7 +106,8 @@ void main() {
       items[0].question!.definition,
       'A place where trains stop for passengers.',
     );
-    expect(items[0].question!.checksumSha256, _artifactChecksum);
+    expect(items[0].question!.checksumSha256, isNot(_artifactChecksum));
+    expect(items[0].question!.manifestChecksumSha256, _artifactChecksum);
     expect(items[1].skipReason, DefinitionQuizSkipReason.staleDefinition);
     expect(items[2].skipReason, DefinitionQuizSkipReason.missingDefinition);
     expect(items[3].skipReason, DefinitionQuizSkipReason.unreviewedDefinition);
@@ -116,6 +117,35 @@ void main() {
       isTrue,
       reason: 'invalid definitions must remain auditable skips, not evidence',
     );
+  });
+
+  test('real definition prompts bind both core and rich artifact identity', () {
+    String identity({required String core, required String rich}) => adapter
+        .pinItems(
+          session: _session(<QuizWord>[
+            _quizWord('word:station', revision: 3, checksum: core),
+          ]),
+          lexicalWords: <VocabularyWord>[
+            _lexicalWord(
+              id: 'word:station',
+              revision: 3,
+              checksum: core,
+              artifactChecksum: rich,
+              definition: 'A place where trains stop for passengers.',
+            ),
+          ],
+        )
+        .single
+        .question!
+        .contentRevision;
+
+    final baseline = identity(core: _checksumA, rich: _artifactChecksum);
+
+    expect(
+      identity(core: _checksumB, rich: _artifactChecksum),
+      isNot(baseline),
+    );
+    expect(identity(core: _checksumA, rich: _checksumC), isNot(baseline));
   });
 
   test('pins reproducible ambiguity-safe distractors by canonical text', () {
@@ -346,6 +376,9 @@ void main() {
           resetHintsAfterCommit: () => hintResets += 1,
         );
         addTearDown(review.dispose);
+        final expectedContentRevisions = review.items
+            .map((item) => item.question!.contentRevision)
+            .toList(growable: false);
 
         await review.answer(
           option: review.currentItem.question!.correctOption,
@@ -377,10 +410,10 @@ void main() {
           EvidenceClass.guidedPractice.name,
         ]);
         expect(contexts.map((context) => context.hintLevel), <int>[0, 1]);
-        expect(contexts.map((context) => context.contentRevision), <String>[
-          'lexical-definition:word:airport@2:$_checksumB',
-          'lexical-definition:word:station@3:$_checksumA',
-        ]);
+        expect(
+          contexts.map((context) => context.contentRevision),
+          expectedContentRevisions,
+        );
         expect(await database.select(database.srsStates).get(), isEmpty);
         expect(hintResets, 2);
       },
@@ -532,6 +565,7 @@ VocabularyWord _lexicalWord({
   contentPublicationState: ContentPublicationState.published,
   richMetadata: RichLexicalMetadata(
     englishDefinition: definition,
+    verifiedContentRevision: revision,
     verifiedArtifactChecksumSha256: includeArtifactChecksum
         ? artifactChecksum ?? checksum
         : null,

@@ -9,7 +9,7 @@ import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
-import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
+import 'package:vocab_learning_app/features/learning/application/lesson_mode_registry.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_associative_learning_adapter.dart';
@@ -63,7 +63,7 @@ void main() {
     LearningTimeIdleScheduler? scheduleLearningTimeIdle,
   }) {
     final research = InertResearchDependencies(database);
-    final lessonModes = buildLegacyLessonModeRegistry();
+    final lessonModes = buildLessonModeRegistry();
     final learningTime = DriftLearningTimeRepository(database, owners: owners);
     return AppDependencies(
       initialRoute: AppRoute.home,
@@ -196,6 +196,18 @@ void main() {
 
       expect(find.text('Associative Reading'), findsOneWidget);
       await tester.tap(find.text('Associative Reading'));
+      await pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey<String>('session-config-start')),
+      );
+      final configurationStart = find.byKey(
+        const ValueKey<String>('session-config-start'),
+      );
+      tester.testTextInput.hide();
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(configurationStart);
+      await tester.pump();
+      await tester.tap(configurationStart);
       await pumpUntilFound(tester, find.text('Start reading'));
       expect(find.byType(AssociativeReadingLauncherScreen), findsOneWidget);
       expect(find.text('Start reading'), findsOneWidget);
@@ -1098,6 +1110,22 @@ void main() {
         await tester.tap(
           find.byKey(const ValueKey<String>('home/learn/associative-reading')),
         );
+        await pumpUntilFound(
+          tester,
+          find.byKey(const ValueKey<String>('session-config-start')),
+        );
+        final configurationStart = find.byKey(
+          const ValueKey<String>('session-config-start'),
+        );
+        await tester.enterText(
+          find.byKey(const ValueKey<String>('session-item-count')),
+          '1',
+        );
+        tester.testTextInput.hide();
+        await tester.pumpAndSettle();
+        await tester.ensureVisible(configurationStart);
+        await tester.pump();
+        await tester.tap(configurationStart);
         await pumpUntilFound(tester, find.text('Start reading'));
         await tester.tap(find.text('Start reading'));
         await pumpUntilFound(

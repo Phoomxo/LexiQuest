@@ -1,3 +1,4 @@
+import '../../learning_packs/domain/content_manifest.dart';
 import 'learning_models.dart';
 
 abstract interface class LearningEvidenceReplayRepository {
@@ -34,6 +35,15 @@ abstract interface class PinnedLearningContentRepository {
   Future<List<QuizWord>> listPinnedQuizWords({
     required String ownerId,
     required List<String> wordIds,
+  });
+}
+
+/// Revalidates an exact review selection and persists its canonical session
+/// in one repository snapshot.
+abstract interface class ReviewSessionLearningRepository {
+  Future<PinnedReviewSessionLaunch> startPinnedReviewSession({
+    required LearningSessionDraft session,
+    required List<ReviewedLexicalContentSnapshot> items,
   });
 }
 

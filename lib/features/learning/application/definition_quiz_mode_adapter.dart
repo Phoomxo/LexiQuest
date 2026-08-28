@@ -8,6 +8,7 @@ import '../domain/contrastive_explanation.dart';
 import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
@@ -46,6 +47,7 @@ final class DefinitionQuizQuestion {
     required this.wordId,
     required this.identity,
     required this.checksumSha256,
+    required this.manifestChecksumSha256,
     required this.definition,
     required this.correctOption,
     required this.options,
@@ -56,6 +58,7 @@ final class DefinitionQuizQuestion {
   final String wordId;
   final ContentIdentity identity;
   final String checksumSha256;
+  final String manifestChecksumSha256;
   final String definition;
   final String correctOption;
   final List<String> options;
@@ -93,12 +96,14 @@ final class _PinnedDefinitionCandidate {
     required this.lexical,
     required this.definition,
     required this.checksumSha256,
+    required this.manifestChecksumSha256,
   });
 
   final QuizWord word;
   final VocabularyWord lexical;
   final String definition;
   final String checksumSha256;
+  final String manifestChecksumSha256;
 }
 
 /// Typed production boundary for reviewed English-definition recognition.
@@ -244,6 +249,7 @@ final class DefinitionQuizModeAdapter
         lexical: lexical,
         definition: artifact.definition,
         checksumSha256: artifact.checksumSha256,
+        manifestChecksumSha256: artifact.manifestChecksumSha256,
       );
     }
 
@@ -292,6 +298,7 @@ final class DefinitionQuizModeAdapter
               revision: candidate.lexical.contentRevision,
             ),
             checksumSha256: candidate.checksumSha256,
+            manifestChecksumSha256: candidate.manifestChecksumSha256,
             definition: candidate.definition,
             correctOption: correctOption,
             options: options,
@@ -316,20 +323,29 @@ final class DefinitionQuizModeAdapter
       word.contentReviewState == ContentReviewState.approved &&
       word.contentPublicationState == ContentPublicationState.published;
 
-  ({String definition, String checksumSha256})? _verifiedDefinitionArtifact(
-    VocabularyWord word,
-  ) {
+  ({String definition, String checksumSha256, String manifestChecksumSha256})?
+  _verifiedDefinitionArtifact(VocabularyWord word) {
     final metadata = word.richMetadata;
     final definition = metadata?.englishDefinition;
-    final checksum = metadata?.verifiedArtifactChecksumSha256;
+    final identity = LexicalPromptArtifactResolver.resolveForAdapter(
+      promptMode: 'definitionChoice',
+      wordId: word.id,
+      coreRevision: word.contentRevision,
+      coreChecksumSha256: word.contentChecksumSha256,
+      verifiedArtifactRevision: metadata?.verifiedContentRevision,
+      verifiedArtifactChecksumSha256: metadata?.verifiedArtifactChecksumSha256,
+    );
     if (definition == null ||
         definition.trim().isEmpty ||
         definition != definition.trim() ||
-        checksum == null ||
-        !_isCanonicalSha256(checksum)) {
+        identity == null) {
       return null;
     }
-    return (definition: definition, checksumSha256: checksum);
+    return (
+      definition: definition,
+      checksumSha256: identity.checksumSha256,
+      manifestChecksumSha256: identity.verifiedArtifactChecksumSha256!,
+    );
   }
 
   @override
@@ -461,7 +477,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
         !isCorrect && selectedOptionId != null && correctOptionId != null
         ? ContrastiveFeedbackContext(
             manifestIdentity: question.identity,
-            manifestChecksumSha256: question.checksumSha256,
+            manifestChecksumSha256: question.manifestChecksumSha256,
             promptMode: 'definitionChoice',
             evidenceContentRevision: question.contentRevision,
             correctOptionId: correctOptionId,
@@ -470,6 +486,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
         : null;
     _recordInteraction();
     final pending = _evidence.captureDefinitionRecognition(
+      ownerId: session.ownerId,
       sessionId: session.id,
       wordId: question.wordId,
       isCorrect: isCorrect,
@@ -587,6 +604,7 @@ final class DefinitionQuizReviewController extends ChangeNotifier {
     _requireOperationAccepted();
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
+      ownerId: session.ownerId,
     );
     _setPhase(DefinitionQuizReviewPhase.completing);
     try {

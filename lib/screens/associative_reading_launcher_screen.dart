@@ -263,6 +263,7 @@ class _AssociativeReadingLauncherScreenState
 
     setState(() => _starting = true);
     String? createdSessionId;
+    String? createdSessionOwnerId;
     var compensationAttempted = false;
     try {
       final configuration = widget.sessionConfiguration;
@@ -305,8 +306,10 @@ class _AssociativeReadingLauncherScreenState
         sessionConfiguration: configuration,
       );
       createdSessionId = session.id;
+      createdSessionOwnerId = session.ownerId;
       if (!mounted) {
         await learning.abandonSession(
+          ownerId: session.ownerId,
           sessionId: session.id,
           abandonedAtUtc: DateTime.now().toUtc(),
         );
@@ -331,6 +334,7 @@ class _AssociativeReadingLauncherScreenState
                   learning: learning,
                   associativeLearning: associativeLearning,
                   sessionId: session.id,
+                  ownerId: session.ownerId,
                   sessionStartedAtUtc: session.startedAtUtc,
                   evidenceAdapter: _currentActivityEvidence,
                   modeAdapter: typedRecallAdapter,
@@ -353,6 +357,7 @@ class _AssociativeReadingLauncherScreenState
                 features: features,
                 learning: learning,
                 sessionId: session.id,
+                ownerId: session.ownerId,
                 adapter: lessonAdapter,
                 createController: createLessonController,
                 configuration: configuration,
@@ -380,22 +385,27 @@ class _AssociativeReadingLauncherScreenState
       if (!terminalAuthority.durableTerminal) {
         compensationAttempted = true;
         await learning.abandonSession(
+          ownerId: session.ownerId,
           sessionId: session.id,
           abandonedAtUtc: DateTime.now().toUtc(),
         );
         terminalAuthority.markDurableTerminal();
       }
       createdSessionId = null;
+      createdSessionOwnerId = null;
     } catch (_) {
       final sessionId = createdSessionId;
+      final ownerId = createdSessionOwnerId;
       if (sessionId != null && !compensationAttempted) {
         try {
           compensationAttempted = true;
           await learning.abandonSession(
+            ownerId: ownerId,
             sessionId: sessionId,
             abandonedAtUtc: DateTime.now().toUtc(),
           );
           createdSessionId = null;
+          createdSessionOwnerId = null;
         } catch (_) {
           // Keep the launcher fail-closed. The existing active-session
           // bootstrap recovery remains the final bounded compensator.
@@ -512,6 +522,7 @@ final class _AssociativeReadingSessionRoute extends StatefulWidget {
     required this.features,
     required this.learning,
     required this.sessionId,
+    required this.ownerId,
     required this.adapter,
     required this.createController,
     this.configuration,
@@ -523,6 +534,7 @@ final class _AssociativeReadingSessionRoute extends StatefulWidget {
   final FeatureRegistry features;
   final LearningUseCases learning;
   final String sessionId;
+  final String ownerId;
   final LessonModeAdapter adapter;
   final UnifiedLessonControllerFactory createController;
   final SessionConfiguration? configuration;
@@ -651,6 +663,7 @@ final class _AssociativeReadingSessionRouteState
       if (_controller.state.status == LessonSessionStatus.completed) return;
     }
     await widget.learning.abandonSession(
+      ownerId: widget.ownerId,
       sessionId: widget.sessionId,
       abandonedAtUtc: DateTime.now().toUtc(),
     );

@@ -66,6 +66,7 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
     this.associativeLearning,
     this.targetWordIds,
     this.sessionId,
+    this.ownerId,
     this.sessionStartedAtUtc,
     this.sessionLifecycle,
     this.evidenceAdapter,
@@ -100,6 +101,9 @@ class AssociativeReadingSessionScreen extends StatefulWidget {
   /// Created externally (e.g. by [LearningUseCases.startQuiz]) before
   /// navigating to this screen.
   final String? sessionId;
+
+  /// Exact owner captured when the durable session was created.
+  final String? ownerId;
   final DateTime? sessionStartedAtUtc;
   final UnifiedLessonSessionLifecycle? sessionLifecycle;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
@@ -392,6 +396,7 @@ class _AssociativeReadingSessionScreenState
     late final ReadingProgressSnapshot? progress;
     try {
       progress = await learning.loadReadingProgress(
+        ownerId: widget.ownerId,
         documentId: _documentId,
         documentRevision: widget.documentRevision,
       );
@@ -424,6 +429,7 @@ class _AssociativeReadingSessionScreenState
     try {
       await lifecycle.start(
         sessionId: sessionId,
+        ownerId: widget.ownerId,
         startedAtUtc: startedAtUtc,
         itemCount: widget.targetWords.length,
       );
@@ -459,6 +465,7 @@ class _AssociativeReadingSessionScreenState
       try {
         Future<void> abandon() async {
           await learning.abandonSession(
+            ownerId: widget.ownerId,
             sessionId: sessionId,
             abandonedAtUtc: DateTime.now().toUtc(),
           );
@@ -615,6 +622,7 @@ class _AssociativeReadingSessionScreenState
     if (sessionId != null) {
       final close = _pendingSessionClose ??= _learning!.captureSessionClose(
         sessionId: sessionId,
+        ownerId: widget.ownerId,
       );
       try {
         final lifecycle = _lessonLifecycle;
@@ -661,6 +669,7 @@ class _AssociativeReadingSessionScreenState
   Future<void> _saveCompletionProgress() async {
     final progress = _pendingCompletionProgress ??= _learning!
         .captureReadingProgress(
+          ownerId: widget.ownerId,
           documentId: _documentId,
           documentRevision: widget.documentRevision,
           position: 6,
@@ -745,6 +754,7 @@ class _AssociativeReadingSessionScreenState
           final hint = lifecycle?.snapshotHintUsage();
           final captured = _modeAdapter!.capture(
             evidence: _evidenceAdapter!,
+            ownerId: widget.ownerId,
             sessionId: sessionId,
             prompt: _frozenRecallPrompts![index],
             response: _frozenRecallResponses![index],
@@ -917,7 +927,8 @@ class _AssociativeReadingSessionScreenState
     required AssociativeLearningPort associativeLearning,
     required _AssociationBatchDraft draft,
   }) async {
-    final ownerId = (await learning.owners.getOrCreateActiveOwner()).id;
+    final ownerId =
+        widget.ownerId ?? (await learning.owners.getOrCreateActiveOwner()).id;
     final writes = <_AssociationWrite>[];
     for (final entry in draft.entries) {
       if (entry.cue.isEmpty) {
@@ -986,6 +997,7 @@ class _AssociativeReadingSessionScreenState
     if (_pendingCheckpointProgress != null) return false;
     final checkpointPosition = position ?? _currentStage;
     final pending = learning.captureReadingProgress(
+      ownerId: widget.ownerId,
       documentId: _documentId,
       documentRevision: widget.documentRevision,
       position: checkpointPosition,

@@ -22,6 +22,7 @@ class ShadowingChallengeScreen extends StatefulWidget {
     this.speechPractice,
     this.learning,
     this.evidenceAdapter,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.modeAdapter = const ShadowingModeAdapter(),
@@ -32,6 +33,7 @@ class ShadowingChallengeScreen extends StatefulWidget {
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
   final CurrentActivityEvidenceAdapter? evidenceAdapter;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final ShadowingModeAdapter modeAdapter;
@@ -52,6 +54,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   LearningUseCases? _learning;
   String? _referenceSentence;
   String? _wordId;
+  String? _ownerId;
   String? _sessionId;
   Future<void>? _learningLoad;
   bool _evidenceSaved = false;
@@ -96,6 +99,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
   void initState() {
     super.initState();
     _referenceSentence = widget.referenceSentence;
+    _ownerId = widget.ownerId;
     _sessionId = widget.sessionId;
     _wordId = widget.wordId;
   }
@@ -174,6 +178,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
         return;
       }
       setState(() {
+        _ownerId = session.ownerId;
         _sessionId = session.id;
         _wordId = session.questions.single.word.id;
         _referenceSentence = session.questions.single.word.spelling;
@@ -324,6 +329,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final pending = _pendingEvidence ??= _modeAdapter
         .capture(
           evidence: _evidenceAdapter!,
+          ownerId: _ownerId,
           sessionId: sessionId,
           wordId: wordId,
           assessment: assessment,
@@ -377,6 +383,7 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     try {
       final pending = _pendingSessionClose ??= learning.captureSessionClose(
         sessionId: sessionId,
+        ownerId: _ownerId,
       );
       _pendingEvidence = null;
       if (mounted) setState(() {});

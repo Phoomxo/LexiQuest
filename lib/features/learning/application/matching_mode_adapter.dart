@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../../vocabulary/application/vocabulary_use_cases.dart';
@@ -14,6 +13,7 @@ import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
@@ -284,6 +284,7 @@ final class MatchingPreparedSession {
     final close = learning.restoreSessionClose(
       sessionId: session.id,
       completedAtUtc: terminalAtUtc,
+      ownerId: session.ownerId,
     );
     final reconciled = await completeSession(close);
     if (reconciled.id != summary.id ||
@@ -360,7 +361,10 @@ final class MatchingPreparedSession {
           terminalAcknowledged: requestedAcknowledged,
         );
     _pendingAppend = checkpoint;
-    await learning.appendActivityCheckpoint(checkpoint);
+    await learning.appendActivityCheckpoint(
+      checkpoint,
+      ownerId: session.ownerId,
+    );
     _checkpoint = checkpoint;
     _state = Map<String, Object?>.of(nextState);
     _pendingAppend = null;
@@ -594,6 +598,7 @@ final class MatchingModeAdapter
     }
     if (recovery != null && recovery.checkpoint == null) {
       await learning.abandonSession(
+        ownerId: recovery.session.ownerId,
         sessionId: recovery.session.id,
         abandonedAtUtc: learning.nowUtc(),
       );
@@ -617,6 +622,7 @@ final class MatchingModeAdapter
           return _encodeCheckpointState(
             QuizSession(
               id: candidate.id,
+              ownerId: candidate.ownerId,
               startedAtUtc: candidate.startedAtUtc,
               questions: pairSet.pairs
                   .map(
@@ -657,6 +663,7 @@ final class MatchingModeAdapter
       }
       recovery = await learning.loadActivityRecovery(
         activityType: activityType,
+        ownerId: session.ownerId,
       );
       if (recovery == null || recovery.session.id != session.id) {
         throw StateError('checkpointed Matching session could not be read');
@@ -690,6 +697,7 @@ final class MatchingModeAdapter
     final session = _decodeCheckpointSession(
       checkpoint,
       recovery.session.startedAtUtc,
+      recovery.session.ownerId,
       recovery.session.sessionConfiguration,
     );
     final timeout = _decodeTimeoutContract(
@@ -807,6 +815,7 @@ final class MatchingModeAdapter
           : learning.restoreSessionClose(
               sessionId: session.id,
               completedAtUtc: pendingCloseAtUtc,
+              ownerId: session.ownerId,
             ),
       completedSummary: completed ? recovery.session : null,
       timeoutRequested: timeoutRequested is bool && timeoutRequested,
@@ -1031,6 +1040,7 @@ final class MatchingModeAdapter
       return const _MatchingPendingRecovery.committed();
     }
     final pending = evidence.restoreMatching(
+      ownerId: session.ownerId,
       sourceEvidenceId: sourceEvidenceId,
       occurredAtUtc: occurredAtUtc,
       sessionId: session.id,
@@ -1155,6 +1165,7 @@ final class MatchingModeAdapter
   QuizSession _decodeCheckpointSession(
     LearningActivityCheckpoint checkpoint,
     DateTime startedAtUtc,
+    String ownerId,
     SessionConfiguration? sessionConfiguration,
   ) {
     final state = checkpoint.state;
@@ -1202,6 +1213,7 @@ final class MatchingModeAdapter
     }
     return QuizSession(
       id: checkpoint.sessionId,
+      ownerId: ownerId,
       startedAtUtc: startedAtUtc,
       sessionConfiguration: sessionConfiguration,
       questions: words
@@ -1259,14 +1271,16 @@ final class MatchingModeAdapter
   String evidenceContentRevision(QuizWord word) {
     final revision = word.contentRevision;
     final checksum = word.contentChecksumSha256;
-    if (revision != null &&
-        revision > 0 &&
-        checksum != null &&
-        RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
-      return 'lexical-matching:v$revision:$checksum';
+    final identity = LexicalPromptArtifactResolver.resolveForAdapter(
+      promptMode: 'matchingPair',
+      wordId: word.id,
+      coreRevision: revision ?? 0,
+      coreChecksumSha256: checksum,
+    );
+    if (identity != null) {
+      return identity.evidenceContentRevision;
     }
-    final snapshot = jsonEncode(_encodeWord(word));
-    return 'lexical-matching:snapshot:${sha256.convert(utf8.encode(snapshot))}';
+    throw StateError('matching prompt artifact identity is unavailable');
   }
 
   MatchingReviewController createReview({
@@ -1711,6 +1725,7 @@ final class MatchingReviewController extends ChangeNotifier {
           )
         : null;
     final pending = _evidence.captureMatching(
+      ownerId: session.ownerId,
       sessionId: session.id,
       wordId: selectedWordId,
       isCorrect: correct,
@@ -1945,6 +1960,7 @@ final class MatchingReviewController extends ChangeNotifier {
   Future<LearningSessionSummary> _completeRecovery() async {
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
+      ownerId: session.ownerId,
     );
     _ownClose(close, _ensureCloseCheckpoint);
     _setPhase(MatchingReviewPhase.completing);

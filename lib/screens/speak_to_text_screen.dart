@@ -21,6 +21,7 @@ class SpeakToTextScreen extends StatefulWidget {
     this.voice,
     this.speechPractice,
     this.learning,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -32,6 +33,7 @@ class SpeakToTextScreen extends StatefulWidget {
   final VoiceUseCases? voice;
   final SpeechPracticeUseCases? speechPractice;
   final LearningUseCases? learning;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -285,6 +287,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final pending = _pendingEvidence ??= _modeAdapter
         .capture(
           evidence: _evidenceAdapter!,
+          ownerId: widget.ownerId,
           sessionId: sessionId,
           wordId: wordId,
           assessment: assessment,
@@ -333,6 +336,7 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     }
     final close = _pendingSessionClose ??= learning.captureSessionClose(
       sessionId: sessionId,
+      ownerId: widget.ownerId,
     );
     if (mounted) setState(() {});
     try {

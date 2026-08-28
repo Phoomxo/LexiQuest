@@ -24,6 +24,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_session_state.dart';
+import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artifact_identity.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
@@ -150,11 +151,13 @@ void main() {
         final handle = (await tester.runAsync(
           learning.startAssociativeReadingSessionHandle,
         ))!;
+        final switchedOwners = _FixedOwnerRepository('owner-b');
+        final failingRepository = _FailingProgressLearningRepository(
+          DriftLearningRepository(database),
+        );
         final failingLearning = LearningUseCases(
-          owners: owners,
-          repository: _FailingProgressLearningRepository(
-            DriftLearningRepository(database),
-          ),
+          owners: switchedOwners,
+          repository: failingRepository,
           generateId: () => 'reading-failure-${++id}',
           nowUtc: () => DateTime.utc(2026, 8, 9, 10, 1),
           buildInfo: const AppBuildInfo(
@@ -176,6 +179,7 @@ void main() {
               ),
               associativeLearning: associativeLearning,
               sessionId: handle.id,
+              ownerId: handle.ownerId,
               sessionStartedAtUtc: handle.startedAtUtc,
             ),
           ),
@@ -219,6 +223,9 @@ void main() {
           )..where((row) => row.id.equals(handle.id))).getSingle(),
         ))!;
         expect(stored.state, 'abandoned');
+        expect(failingRepository.readOwnerIds, <String>[handle.ownerId]);
+        expect(failingRepository.abandonOwnerIds, <String>[handle.ownerId]);
+        expect(switchedOwners.calls, 0);
       },
     );
 
@@ -522,7 +529,16 @@ void main() {
       );
       expect(
         retry.evidenceContext.contentRevision,
-        'lexical-typed-recall:word-rail-station@7:$_typedChecksum',
+        LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+          promptMode: 'associativeRecall',
+          wordId: 'word-rail-station',
+          revision: 7,
+          checksumSha256:
+              LexicalPromptArtifactResolver.canonicalPromptChecksumSha256(
+                promptMode: 'associativeRecall',
+                coreChecksumSha256: _typedChecksum,
+              ),
+        ),
       );
       expect(retry.providerProvenance, isNot(contains('RAIL   STATION')));
     });
@@ -1129,9 +1145,10 @@ void main() {
           failCompletedProgressOnce: true,
           firstFinishRelease: firstFinishRelease,
         );
+        final switchedOwners = _FixedOwnerRepository('owner-b');
         var nextId = 0;
         final orderedLearning = LearningUseCases(
-          owners: owners,
+          owners: switchedOwners,
           repository: repository,
           generateId: () => 'ordered-${++nextId}',
           nowUtc: () => DateTime.utc(2026, 8, 14, 13, 0, nextId),
@@ -1163,6 +1180,7 @@ void main() {
                           ),
                           associativeLearning: associativeLearning,
                           sessionId: 'session-1',
+                          ownerId: 'owner-a',
                         ),
                       ),
                     );
@@ -1296,6 +1314,34 @@ void main() {
           find.byKey(const ValueKey<String>('open-associative-route')),
           findsOneWidget,
         );
+        expect(repository.readOwnerIds, <String>['owner-a']);
+        expect(
+          repository.progressCommands.map((command) => command.ownerId).toSet(),
+          <String>{'owner-a'},
+        );
+        expect(
+          repository.answerCommands.map((command) => command.ownerId).toSet(),
+          <String>{'owner-a'},
+        );
+        expect(
+          repository.finishCalls.map((call) => call.ownerId).toSet(),
+          <String>{'owner-a'},
+        );
+        expect(
+          (await associativeLearning.getAssociationsForWord(
+            'owner-a',
+            'word-banana',
+          )),
+          hasLength(1),
+        );
+        expect(
+          await associativeLearning.getAssociationsForWord(
+            'owner-b',
+            'word-banana',
+          ),
+          isEmpty,
+        );
+        expect(switchedOwners.calls, 0);
       },
     );
 
@@ -1632,6 +1678,7 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
   final Completer<void>? firstFinishRelease;
   final Completer<void>? firstIncompleteProgressRelease;
   final List<RecordAnswerCommand> answerCommands = <RecordAnswerCommand>[];
+  final List<String> readOwnerIds = <String>[];
   final List<ReadingProgressCommand> progressCommands =
       <ReadingProgressCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})>
@@ -1647,7 +1694,10 @@ final class _OrderedCompletionLearningRepository implements LearningRepository {
     required String ownerId,
     required String documentId,
     required int documentRevision,
-  }) async => null;
+  }) async {
+    readOwnerIds.add(ownerId);
+    return null;
+  }
 
   @override
   Future<ReadingProgressSnapshot> saveReadingProgress(
@@ -1723,15 +1773,20 @@ final class _FailingProgressLearningRepository
   _FailingProgressLearningRepository(this._delegate);
 
   final DriftLearningRepository _delegate;
+  final List<String> readOwnerIds = <String>[];
+  final List<String> abandonOwnerIds = <String>[];
 
   @override
   Future<ReadingProgressSnapshot?> readReadingProgress({
     required String ownerId,
     required String documentId,
     required int documentRevision,
-  }) => Future<ReadingProgressSnapshot?>.error(
-    StateError('simulated reading-progress load failure'),
-  );
+  }) {
+    readOwnerIds.add(ownerId);
+    return Future<ReadingProgressSnapshot?>.error(
+      StateError('simulated reading-progress load failure'),
+    );
+  }
 
   @override
   Future<ReadingProgressSnapshot> saveReadingProgress(
@@ -1743,11 +1798,14 @@ final class _FailingProgressLearningRepository
     required String ownerId,
     required String sessionId,
     required DateTime abandonedAtUtc,
-  }) => _delegate.abandonSession(
-    ownerId: ownerId,
-    sessionId: sessionId,
-    abandonedAtUtc: abandonedAtUtc,
-  );
+  }) {
+    abandonOwnerIds.add(ownerId);
+    return _delegate.abandonSession(
+      ownerId: ownerId,
+      sessionId: sessionId,
+      abandonedAtUtc: abandonedAtUtc,
+    );
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -1922,6 +1980,23 @@ final class _SwitchableOwnerRepository implements LocalOwnerRepository {
   @override
   Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
       _delegate.bindFirebaseUid(ownerId, firebaseUid);
+}
+
+final class _FixedOwnerRepository implements LocalOwnerRepository {
+  _FixedOwnerRepository(this.ownerId);
+
+  final String ownerId;
+  var calls = 0;
+
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async {
+    calls++;
+    return LocalOwner(id: ownerId, createdAtUtc: DateTime.utc(2026, 8, 27));
+  }
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      throw UnsupportedError('not needed by this test');
 }
 
 final class _StageFiveCheckpointRepository implements LearningRepository {

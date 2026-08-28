@@ -1,6 +1,7 @@
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
+import '../../learning_packs/domain/content_quality_policy.dart';
 import '../domain/vocabulary_import.dart';
 import '../domain/vocabulary_import_repository.dart';
 import '../domain/vocabulary_word.dart';
@@ -156,7 +157,23 @@ final class DriftVocabularyImportRepository
             meaning: word.meaning,
             normalizedMeaning: word.normalizedMeaning,
             partOfSpeech: word.partOfSpeech,
-            source: const Value('import'),
+            cefrLevel: Value(word.cefrLevel),
+            source: Value(word.source),
+            isGlobal: Value(word.isGlobal),
+            contentRevision: const Value(1),
+            contentChecksumSha256: Value(
+              ContentQualityPolicy.vocabularyChecksumSha256(
+                categoryId: word.categoryId,
+                spelling: word.spelling,
+                normalizedSpelling: word.normalizedSpelling,
+                meaning: word.meaning,
+                normalizedMeaning: word.normalizedMeaning,
+                partOfSpeech: word.partOfSpeech,
+                cefrLevel: word.cefrLevel,
+                source: word.source,
+                isGlobal: word.isGlobal,
+              ),
+            ),
             createdAtUtcMs: word.createdAtUtc.millisecondsSinceEpoch,
             updatedAtUtcMs: word.updatedAtUtc.millisecondsSinceEpoch,
           ),

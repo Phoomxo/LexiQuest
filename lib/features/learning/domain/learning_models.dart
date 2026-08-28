@@ -1,4 +1,5 @@
 import '../../events/domain/event_envelope_v2.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import 'evidence_context.dart';
 import 'contrastive_explanation.dart';
 import 'learning_evidence_contract.dart';
@@ -46,27 +47,73 @@ final class QuizQuestion {
   String get correctAnswer => word.meaning;
 }
 
+/// Deterministic question construction shared by learning orchestration and
+/// the atomic pinned-review repository boundary.
+List<QuizQuestion> canonicalQuizQuestions(Iterable<QuizWord> source) {
+  final words = source.toList(growable: false);
+  final allMeanings = words.map((word) => word.meaning).toSet().toList()
+    ..sort();
+  return List<QuizQuestion>.unmodifiable(
+    words.map((word) {
+      final distractors = allMeanings
+          .where((meaning) => meaning != word.meaning)
+          .take(3)
+          .toList(growable: true);
+      final options = <String>[word.meaning, ...distractors];
+      final offset =
+          word.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
+          options.length;
+      return QuizQuestion(
+        word: word,
+        options: List<String>.unmodifiable(<String>[
+          ...options.skip(offset),
+          ...options.take(offset),
+        ]),
+      );
+    }),
+  );
+}
+
 final class QuizSession {
   const QuizSession({
     required this.id,
     required this.questions,
     required this.startedAtUtc,
+    this.ownerId,
     this.sessionConfiguration,
   });
 
   final String id;
   final List<QuizQuestion> questions;
   final DateTime? startedAtUtc;
+  final String? ownerId;
   final SessionConfiguration? sessionConfiguration;
 
   bool get isEmpty => questions.isEmpty;
 }
 
 final class LearningSessionHandle {
-  const LearningSessionHandle({required this.id, required this.startedAtUtc});
+  const LearningSessionHandle({
+    required this.id,
+    required this.ownerId,
+    required this.startedAtUtc,
+  });
 
   final String id;
+  final String ownerId;
   final DateTime startedAtUtc;
+}
+
+/// Atomic result of a reviewed-content launch. [content] is reconstructed
+/// from the rows verified by the same transaction that inserted [session].
+final class PinnedReviewSessionLaunch {
+  PinnedReviewSessionLaunch({
+    required this.session,
+    required Iterable<ReviewedLexicalContentSnapshot> content,
+  }) : content = List<ReviewedLexicalContentSnapshot>.unmodifiable(content);
+
+  final QuizSession session;
+  final List<ReviewedLexicalContentSnapshot> content;
 }
 
 final class LearningSessionDraft {

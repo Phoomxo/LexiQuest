@@ -41,6 +41,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   final List<String> _log = <String>[];
   CurrentActivityEvidenceAdapter? _evidenceAdapter;
   PendingCurrentActivityEvidence? _pendingEvidence;
+  PendingLearningSessionClose? _pendingSessionClose;
 
   @override
   void didChangeDependencies() {
@@ -116,6 +117,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     final responseMs = _stopwatch.elapsedMilliseconds;
     final correct = input == question.word.spelling.trim().toLowerCase();
     final pending = _evidenceAdapter!.capture(
+      ownerId: data.session.ownerId,
       input: CurrentActivityInput.ghostDuel,
       sessionId: data.session.id,
       wordId: question.word.id,
@@ -183,7 +185,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
           ..reset()
           ..start();
       });
-      if (_finished) await _closeSession(data.session.id);
+      if (_finished) await _closeSession(data.session);
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -195,10 +197,37 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     }
   }
 
-  Future<void> _closeSession(String sessionId) async {
+  Future<void> _closeSession(QuizSession session) async {
     if (_sessionClosed) return;
+    final learning = _learning;
+    if (learning == null) return;
+    final close = _pendingSessionClose ??= learning.captureSessionClose(
+      sessionId: session.id,
+      ownerId: session.ownerId,
+    );
+    if (close.requiresRetry) {
+      await close.retry();
+    } else {
+      await close.finish();
+    }
+    _pendingSessionClose = null;
     _sessionClosed = true;
-    await _learning?.finishSession(sessionId);
+  }
+
+  Future<void> _retrySessionClose(_DuelData data) async {
+    if (_saving || _pendingSessionClose?.requiresRetry != true) return;
+    setState(() => _saving = true);
+    try {
+      await _closeSession(data.session);
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ปิดเซสชันไม่สำเร็จ กรุณาลองใหม่')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
   }
 
   @override
@@ -207,7 +236,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
     if (load != null) {
       unawaited(
         load.then((data) {
-          if (!data.session.isEmpty) return _closeSession(data.session.id);
+          if (!data.session.isEmpty) return _closeSession(data.session);
         }),
       );
     }
@@ -219,7 +248,7 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
   @override
   Widget build(BuildContext context) {
     return PopScope(
-      canPop: _pendingEvidence == null,
+      canPop: _pendingEvidence == null && _pendingSessionClose == null,
       child: Scaffold(
         appBar: AppBar(title: const Text('ดวลกับสถิติเดิม')),
         body: FutureBuilder<_DuelData>(
@@ -309,12 +338,25 @@ class _GhostShadowDuelScreenState extends State<GhostShadowDuelScreen> {
                       ),
                     ),
                   ),
-                ] else
+                ] else ...[
                   Text(
                     'จบเกมแล้ว · บันทึก ${_log.length} คำตอบจริง',
                     textAlign: TextAlign.center,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
+                  if (_pendingSessionClose?.requiresRetry ?? false) ...[
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      key: const ValueKey<String>('ghost-session-close-retry'),
+                      onPressed: _saving
+                          ? null
+                          : () => _retrySessionClose(data),
+                      child: Text(
+                        _saving ? 'กำลังปิดเซสชัน' : 'ลองปิดเซสชันอีกครั้ง',
+                      ),
+                    ),
+                  ],
+                ],
                 const SizedBox(height: 16),
                 for (final entry in _log) ListTile(title: Text(entry)),
               ],

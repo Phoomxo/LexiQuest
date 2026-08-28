@@ -634,6 +634,7 @@ class _QuizScreenState extends State<QuizScreen> {
         await lifecycle.abandon();
       } else {
         await _learning!.abandonSession(
+          ownerId: session.ownerId,
           sessionId: session.id,
           abandonedAtUtc: DateTime.now().toUtc(),
         );

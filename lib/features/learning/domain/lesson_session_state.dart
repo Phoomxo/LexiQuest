@@ -9,6 +9,7 @@ final class LessonStartCommand {
     required this.sessionId,
     required this.startedAtUtc,
     required this.itemCount,
+    this.ownerId,
     this.configuration,
   });
 
@@ -16,6 +17,7 @@ final class LessonStartCommand {
   final String sessionId;
   final DateTime startedAtUtc;
   final int itemCount;
+  final String? ownerId;
   final SessionConfiguration? configuration;
 }
 

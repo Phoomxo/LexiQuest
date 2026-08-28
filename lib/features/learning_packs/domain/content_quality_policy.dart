@@ -103,6 +103,119 @@ final class ContentQualityPolicy {
       )
       .toString();
 
+  /// Resolves the canonical checksum for legacy rows that predate persisted
+  /// content identity, while rejecting every present-but-noncanonical value.
+  static String effectiveVocabularyChecksumSha256({
+    required String categoryId,
+    required String spelling,
+    required String normalizedSpelling,
+    required String meaning,
+    required String normalizedMeaning,
+    required String partOfSpeech,
+    required String? cefrLevel,
+    required String source,
+    required bool isGlobal,
+    required String? storedChecksumSha256,
+  }) {
+    final canonical = vocabularyChecksumSha256(
+      categoryId: categoryId,
+      spelling: spelling,
+      normalizedSpelling: normalizedSpelling,
+      meaning: meaning,
+      normalizedMeaning: normalizedMeaning,
+      partOfSpeech: partOfSpeech,
+      cefrLevel: cefrLevel,
+      source: source,
+      isGlobal: isGlobal,
+    );
+    final stored = storedChecksumSha256;
+    if (stored == null) return canonical;
+    if (!_sha256.hasMatch(stored)) {
+      throw const ContentQualityFailure(
+        ContentQualityFailureCode.invalidChecksum,
+      );
+    }
+    if (stored != canonical) {
+      throw const ContentQualityFailure(
+        ContentQualityFailureCode.checksumMismatch,
+      );
+    }
+    return stored;
+  }
+
+  /// One fail-closed authority for deciding whether an exact vocabulary row
+  /// can be composed or launched as learning content.
+  static bool isAvailableVocabulary({
+    required bool categoryAvailable,
+    required String id,
+    required String categoryId,
+    required String spelling,
+    required String normalizedSpelling,
+    required String meaning,
+    required String normalizedMeaning,
+    required String partOfSpeech,
+    required String? cefrLevel,
+    required String source,
+    required bool isGlobal,
+    required int contentRevision,
+    required String? contentChecksumSha256,
+    required String contentProvenance,
+    required String contentReviewState,
+    required String contentPublicationState,
+    required bool isDeleted,
+  }) {
+    if (!categoryAvailable ||
+        isDeleted ||
+        !_canonicalText(id) ||
+        !_canonicalText(categoryId) ||
+        !_canonicalText(spelling) ||
+        !_canonicalText(normalizedSpelling) ||
+        !_canonicalText(meaning) ||
+        !_canonicalText(normalizedMeaning) ||
+        !_canonicalText(partOfSpeech) ||
+        !_canonicalText(source) ||
+        contentRevision <= 0) {
+      return false;
+    }
+    final checksum = contentChecksumSha256;
+    if (checksum == null ||
+        !_sha256.hasMatch(checksum) ||
+        checksum !=
+            vocabularyChecksumSha256(
+              categoryId: categoryId,
+              spelling: spelling,
+              normalizedSpelling: normalizedSpelling,
+              meaning: meaning,
+              normalizedMeaning: normalizedMeaning,
+              partOfSpeech: partOfSpeech,
+              cefrLevel: cefrLevel,
+              source: source,
+              isGlobal: isGlobal,
+            )) {
+      return false;
+    }
+    final provenance = _enumByName(ContentProvenance.values, contentProvenance);
+    final reviewState = _enumByName(
+      ContentReviewState.values,
+      contentReviewState,
+    );
+    final publicationState = _enumByName(
+      ContentPublicationState.values,
+      contentPublicationState,
+    );
+    return switch (provenance) {
+      ContentProvenance.userAuthored =>
+        !isGlobal &&
+            reviewState == ContentReviewState.unreviewed &&
+            publicationState == ContentPublicationState.private,
+      ContentProvenance.packaged =>
+        isGlobal &&
+            reviewState == ContentReviewState.approved &&
+            publicationState == ContentPublicationState.published,
+      null => false,
+    };
+  }
+
   VerifiedContentManifest requireVerified({
     required ContentManifest manifest,
     required Uint8List bytes,
@@ -207,4 +320,11 @@ final class ContentQualityPolicy {
 
   static bool _validUtc(DateTime value) =>
       value.isUtc && value.millisecondsSinceEpoch >= 0;
+
+  static T? _enumByName<T extends Enum>(Iterable<T> values, String name) {
+    for (final value in values) {
+      if (value.name == name) return value;
+    }
+    return null;
+  }
 }

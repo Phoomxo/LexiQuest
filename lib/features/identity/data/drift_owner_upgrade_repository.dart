@@ -15,6 +15,7 @@ import '../../learning/domain/evidence_context.dart';
 import '../../learning/domain/learning_evidence_contract.dart';
 import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning/domain/session_configuration.dart';
+import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
@@ -335,14 +336,47 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     for (final collision in collisions) {
       final guestId = collision.read<String>('guest_id');
       final targetCategoryId = collision.read<String>('target_id');
-      await _database.customUpdate(
-        'UPDATE vocabulary_words SET category_id = ? WHERE category_id = ?',
-        variables: [
-          Variable<String>(targetCategoryId),
-          Variable<String>(guestId),
-        ],
-        updates: {_database.vocabularyWords},
-      );
+      final remappedWords = await (_database.select(
+        _database.vocabularyWords,
+      )..where((row) => row.categoryId.equals(guestId))).get();
+      for (final word in remappedWords) {
+        String? remappedChecksum;
+        if (!word.isDeleted) {
+          ContentQualityPolicy.effectiveVocabularyChecksumSha256(
+            categoryId: word.categoryId,
+            spelling: word.spelling,
+            normalizedSpelling: word.normalizedSpelling,
+            meaning: word.meaning,
+            normalizedMeaning: word.normalizedMeaning,
+            partOfSpeech: word.partOfSpeech,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
+            isGlobal: word.isGlobal,
+            storedChecksumSha256: word.contentChecksumSha256,
+          );
+          remappedChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+            categoryId: targetCategoryId,
+            spelling: word.spelling,
+            normalizedSpelling: word.normalizedSpelling,
+            meaning: word.meaning,
+            normalizedMeaning: word.normalizedMeaning,
+            partOfSpeech: word.partOfSpeech,
+            cefrLevel: word.cefrLevel,
+            source: word.source,
+            isGlobal: word.isGlobal,
+          );
+        }
+        await (_database.update(
+          _database.vocabularyWords,
+        )..where((row) => row.id.equals(word.id))).write(
+          remappedChecksum == null
+              ? db.VocabularyWordsCompanion(categoryId: Value(targetCategoryId))
+              : db.VocabularyWordsCompanion(
+                  categoryId: Value(targetCategoryId),
+                  contentChecksumSha256: Value(remappedChecksum),
+                ),
+        );
+      }
       await _database.customUpdate(
         'UPDATE vocabulary_imports SET category_id = ? WHERE category_id = ?',
         variables: [

@@ -184,6 +184,7 @@ final class DictationModeAdapter extends _NativeModeAdapter
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required String target,
@@ -200,6 +201,7 @@ final class DictationModeAdapter extends _NativeModeAdapter
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.dictation,
         sessionId: sessionId,
         wordId: wordId,
@@ -238,6 +240,7 @@ final class SpeakingModeAdapter extends _NativeModeAdapter
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required TranscriptPronunciationAssessment assessment,
@@ -248,6 +251,7 @@ final class SpeakingModeAdapter extends _NativeModeAdapter
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.speakToText,
         sessionId: sessionId,
         wordId: wordId,
@@ -291,6 +295,7 @@ final class ShadowingModeAdapter extends _NativeModeAdapter
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required TranscriptPronunciationAssessment assessment,
@@ -301,6 +306,7 @@ final class ShadowingModeAdapter extends _NativeModeAdapter
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.shadowing,
         sessionId: sessionId,
         wordId: wordId,
@@ -354,6 +360,7 @@ final class CefrReadingModeAdapter extends _NativeModeAdapter
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required int responseTimeMs,
@@ -363,6 +370,7 @@ final class CefrReadingModeAdapter extends _NativeModeAdapter
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.readingExposure,
         sessionId: sessionId,
         wordId: wordId,
@@ -408,6 +416,7 @@ final class SentenceScrambleModeAdapter extends _NativeModeAdapter {
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required String target,
@@ -419,6 +428,7 @@ final class SentenceScrambleModeAdapter extends _NativeModeAdapter {
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.sentenceScramble,
         sessionId: sessionId,
         wordId: wordId,
@@ -464,6 +474,7 @@ final class WordScrambleModeAdapter extends _NativeModeAdapter {
 
   CapturedNativeModeSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required String target,
@@ -475,6 +486,7 @@ final class WordScrambleModeAdapter extends _NativeModeAdapter {
     return CapturedNativeModeSubmission(
       evaluation: evaluation,
       pending: evidence.capture(
+        ownerId: ownerId,
         input: CurrentActivityInput.wordScramble,
         sessionId: sessionId,
         wordId: wordId,

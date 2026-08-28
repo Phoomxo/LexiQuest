@@ -2,6 +2,7 @@ import '../../identity/domain/local_owner_repository.dart';
 import '../../../runtime/app_build_info.dart';
 import '../../events/application/event_v1_to_v2_adapter.dart';
 import '../../events/domain/event_envelope_v2.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../../rewards/application/shadow_reward_orchestrator.dart';
 import '../domain/evidence_context.dart';
 import '../domain/contrastive_explanation.dart';
@@ -100,6 +101,7 @@ final class PendingLearningSessionClose {
     required this._learning,
     required this.sessionId,
     required this.completedAtUtc,
+    this._ownerId,
   });
 
   final LearningUseCases _learning;
@@ -119,6 +121,20 @@ final class PendingLearningSessionClose {
   bool get isCommitted =>
       _status == PendingLearningSessionCloseStatus.committed;
   bool get isInFlight => _finishInFlight != null;
+
+  String? get ownerId => _ownerId;
+
+  void pinOwner(String ownerId) {
+    final canonical = _learning._requiredId(ownerId, 'ownerId');
+    final current = _ownerId;
+    if (current != null && current != canonical) {
+      throw StateError('pending session close owner identity changed');
+    }
+    if (_ownerBindingInFlight != null && current == null) {
+      throw StateError('pending session close owner binding is in flight');
+    }
+    _ownerId = canonical;
+  }
 
   Future<LearningSessionSummary> finish() {
     final inFlight = _finishInFlight;
@@ -202,6 +218,7 @@ enum PendingReadingProgressStatus {
 final class PendingReadingProgress {
   PendingReadingProgress._({
     required this._learning,
+    this._ownerId,
     required this.eventId,
     required this.documentId,
     required this.documentRevision,
@@ -390,6 +407,13 @@ final class LearningUseCases {
       return const QuizSession(id: '', questions: [], startedAtUtc: null);
     }
     final now = _now();
+    if (now.millisecondsSinceEpoch < 0) {
+      throw ArgumentError.value(
+        now,
+        'nowUtc',
+        'must return a nonnegative UTC time',
+      );
+    }
     final sessionId = 'session:${_nextId()}';
     await repository.startSession(
       LearningSessionDraft(
@@ -404,10 +428,62 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
+      ownerId: owner.id,
       startedAtUtc: now,
       questions: _questions(words),
       sessionConfiguration: sessionConfiguration,
     );
+  }
+
+  /// Starts a review session for an already-authorized owner and an exact,
+  /// ordered lexical content identity set. Review composition remains read
+  /// only; canonical session identity and persistence stay in this authority.
+  Future<PinnedReviewSessionLaunch> startPinnedReviewSession({
+    required String ownerId,
+    required List<ReviewedLexicalContentSnapshot> items,
+  }) async {
+    final canonicalOwnerId = _requiredId(ownerId, 'ownerId');
+    if (repository is! ReviewSessionLearningRepository) {
+      throw StateError('Pinned review content authority is unavailable.');
+    }
+    if (items.isEmpty || items.length > 100) {
+      throw ArgumentError.value(items, 'items', 'must contain 1–100 items');
+    }
+    final wordIds = <String>{};
+    for (final item in items) {
+      final identity = item.identity;
+      final itemId = _requiredId(identity.id, 'items.id');
+      if (identity.type != ContentType.lexicalMetadata ||
+          identity.revision <= 0 ||
+          !wordIds.add(itemId)) {
+        throw ArgumentError.value(
+          item,
+          'items',
+          'must contain unique positive lexical identities',
+        );
+      }
+    }
+    final sessionId = _reviewSessionId();
+    final now = _now();
+    if (now.millisecondsSinceEpoch < 0) {
+      throw ArgumentError.value(
+        now,
+        'nowUtc',
+        'must return a nonnegative UTC time',
+      );
+    }
+    return (repository as ReviewSessionLearningRepository)
+        .startPinnedReviewSession(
+          session: LearningSessionDraft(
+            id: sessionId,
+            ownerId: canonicalOwnerId,
+            activityType: 'reviewCenter',
+            startedAtUtc: now,
+            appVersion: _requiredId(buildInfo.version, 'appVersion'),
+            buildId: _requiredId(buildInfo.buildId, 'buildId'),
+          ),
+          items: items,
+        );
   }
 
   /// Starts a quiz-shaped activity and its reconstruction checkpoint in one
@@ -447,6 +523,7 @@ final class LearningUseCases {
     final sessionId = 'session:${_nextId()}';
     final session = QuizSession(
       id: sessionId,
+      ownerId: owner.id,
       startedAtUtc: now,
       questions: _questions(words),
       sessionConfiguration: sessionConfiguration,
@@ -477,27 +554,36 @@ final class LearningUseCases {
 
   Future<LearningActivityRecovery?> loadActivityRecovery({
     required String activityType,
+    String? ownerId,
   }) async {
     if (repository is! LearningActivityRecoveryRepository) return null;
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return (repository as LearningActivityRecoveryRepository)
         .loadLatestActivityRecovery(
-          ownerId: owner.id,
+          ownerId: pinnedOwnerId,
           activityType: _requiredId(activityType, 'activityType'),
         );
   }
 
   Future<void> appendActivityCheckpoint(
-    LearningActivityCheckpoint checkpoint,
-  ) async {
+    LearningActivityCheckpoint checkpoint, {
+    String? ownerId,
+  }) async {
     if (repository is! LearningActivityRecoveryRepository) {
       throw StateError(
         'Learning repository does not support activity reconstruction.',
       );
     }
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? (await owners.getOrCreateActiveOwner()).id
+        : _requiredId(ownerId, 'ownerId');
     await (repository as LearningActivityRecoveryRepository)
-        .appendActivityCheckpoint(ownerId: owner.id, checkpoint: checkpoint);
+        .appendActivityCheckpoint(
+          ownerId: pinnedOwnerId,
+          checkpoint: checkpoint,
+        );
     onLocalMutation?.call();
   }
 
@@ -537,6 +623,7 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
+      ownerId: owner.id,
       questions: _questions(words),
       startedAtUtc: now,
       sessionConfiguration: sessionConfiguration,
@@ -577,6 +664,7 @@ final class LearningUseCases {
     );
     return QuizSession(
       id: sessionId,
+      ownerId: owner.id,
       questions: _questions(selected),
       startedAtUtc: now,
     );
@@ -603,25 +691,33 @@ final class LearningUseCases {
         sessionConfiguration: sessionConfiguration,
       ),
     );
-    return LearningSessionHandle(id: sessionId, startedAtUtc: startedAtUtc);
+    return LearningSessionHandle(
+      id: sessionId,
+      ownerId: _requiredId(owner.id, 'ownerId'),
+      startedAtUtc: startedAtUtc,
+    );
   }
 
   Future<LearningSessionSummary?> loadSessionConfigurationState(
-    String sessionId,
-  ) async {
+    String sessionId, {
+    String? ownerId,
+  }) async {
     final configuredRepository = repository;
     if (configuredRepository is! SessionConfiguredLearningRepository) {
       throw StateError('Session configuration persistence is unavailable.');
     }
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return (configuredRepository as SessionConfiguredLearningRepository)
         .loadSessionConfigurationState(
-          ownerId: owner.id,
+          ownerId: pinnedOwnerId,
           sessionId: _requiredId(sessionId, 'sessionId'),
         );
   }
 
   Future<Duration> addSessionConfigurationActiveEffort({
+    String? ownerId,
     required String sessionId,
     required String configurationIdentity,
     required Duration delta,
@@ -630,10 +726,12 @@ final class LearningUseCases {
     if (configuredRepository is! SessionConfiguredLearningRepository) {
       throw StateError('Session configuration persistence is unavailable.');
     }
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return (configuredRepository as SessionConfiguredLearningRepository)
         .addSessionConfigurationActiveEffort(
-          ownerId: owner.id,
+          ownerId: pinnedOwnerId,
           sessionId: _requiredId(sessionId, 'sessionId'),
           configurationIdentity: _requiredId(
             configurationIdentity,
@@ -666,8 +764,12 @@ final class LearningUseCases {
   Future<ResolvedLearningEvidenceRecord> resolveEvidenceForRecording({
     required FrozenLearningEvidenceCommand command,
     required LearningEvidenceContextsResolver resolveContexts,
+    String? ownerId,
   }) async {
-    final basis = await bindEvidenceForRecording(command: command);
+    final basis = await bindEvidenceForRecording(
+      command: command,
+      ownerId: ownerId,
+    );
     return resolveOwnerBoundEvidenceForRecording(
       basis: basis,
       resolveContexts: resolveContexts,
@@ -677,11 +779,14 @@ final class LearningUseCases {
   /// Canonicalizes the captured response and binds it to one active owner.
   Future<OwnerBoundLearningEvidenceBasis> bindEvidenceForRecording({
     required FrozenLearningEvidenceCommand command,
+    String? ownerId,
   }) async {
     final canonical = _canonicalEvidenceCommand(command);
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return OwnerBoundLearningEvidenceBasis._(
-      ownerId: _requiredId(owner.id, 'ownerId'),
+      ownerId: pinnedOwnerId,
       command: canonical,
     );
   }
@@ -733,6 +838,7 @@ final class LearningUseCases {
   }
 
   Future<AnswerRecordResult> recordEvidence({
+    String? ownerId,
     required String sourceEvidenceId,
     required DateTime occurredAtUtc,
     required String sessionId,
@@ -762,9 +868,11 @@ final class LearningUseCases {
       ),
     );
     evidenceContext.validate();
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return _recordCanonicalEvidence(
-      ownerId: _requiredId(owner.id, 'ownerId'),
+      ownerId: pinnedOwnerId,
       command: command,
       evidenceContext: evidenceContext,
       contrastiveFeedback: frozenContrastiveFeedback,
@@ -910,6 +1018,7 @@ final class LearningUseCases {
   /// caller-owned evidence identity in Foundation Task 8.
   @Deprecated('Use recordEvidence with a retained caller-owned identity.')
   Future<AnswerRecordResult> recordAnswer({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required String promptMode,
@@ -921,6 +1030,7 @@ final class LearningUseCases {
     final sourceEvidenceId = 'attempt:${_nextId()}';
     final occurredAtUtc = _now();
     return recordEvidence(
+      ownerId: ownerId,
       sourceEvidenceId: sourceEvidenceId,
       occurredAtUtc: occurredAtUtc,
       sessionId: sessionId,
@@ -940,30 +1050,40 @@ final class LearningUseCases {
     );
   }
 
-  PendingLearningSessionClose captureSessionClose({required String sessionId}) {
+  PendingLearningSessionClose captureSessionClose({
+    required String sessionId,
+    String? ownerId,
+  }) {
     return PendingLearningSessionClose._(
       learning: this,
       sessionId: _requiredId(sessionId, 'sessionId'),
       completedAtUtc: _now(),
+      ownerId: ownerId == null ? null : _requiredId(ownerId, 'ownerId'),
     );
   }
 
   PendingLearningSessionClose restoreSessionClose({
     required String sessionId,
     required DateTime completedAtUtc,
+    String? ownerId,
   }) {
     return PendingLearningSessionClose._(
       learning: this,
       sessionId: _requiredId(sessionId, 'sessionId'),
       completedAtUtc: _requiredUtc(completedAtUtc, 'completedAtUtc'),
+      ownerId: ownerId == null ? null : _requiredId(ownerId, 'ownerId'),
     );
   }
 
-  Future<LearningSessionSummary> finishSession(String sessionId) {
-    return captureSessionClose(sessionId: sessionId).finish();
+  Future<LearningSessionSummary> finishSession(
+    String sessionId, {
+    String? ownerId,
+  }) {
+    return captureSessionClose(sessionId: sessionId, ownerId: ownerId).finish();
   }
 
   Future<LearningSessionSummary> abandonSession({
+    String? ownerId,
     required String sessionId,
     required DateTime abandonedAtUtc,
   }) async {
@@ -976,9 +1096,11 @@ final class LearningUseCases {
     }
     final lifecycleRepository =
         repository as LearningSessionLifecycleRepository;
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     final result = await lifecycleRepository.abandonSession(
-      ownerId: owner.id,
+      ownerId: pinnedOwnerId,
       sessionId: requiredSessionId,
       abandonedAtUtc: terminalAt,
     );
@@ -1022,24 +1144,29 @@ final class LearningUseCases {
   }
 
   Future<ReadingProgressSnapshot?> loadReadingProgress({
+    String? ownerId,
     required String documentId,
     required int documentRevision,
   }) async {
-    final owner = await owners.getOrCreateActiveOwner();
+    final pinnedOwnerId = ownerId == null
+        ? _requiredId((await owners.getOrCreateActiveOwner()).id, 'ownerId')
+        : _requiredId(ownerId, 'ownerId');
     return repository.readReadingProgress(
-      ownerId: owner.id,
+      ownerId: pinnedOwnerId,
       documentId: _requiredId(documentId, 'documentId'),
       documentRevision: documentRevision,
     );
   }
 
   Future<ReadingProgressSnapshot> saveReadingProgress({
+    String? ownerId,
     required String documentId,
     required int documentRevision,
     required int position,
     required bool isCompleted,
   }) {
     return captureReadingProgress(
+      ownerId: ownerId,
       documentId: documentId,
       documentRevision: documentRevision,
       position: position,
@@ -1048,6 +1175,7 @@ final class LearningUseCases {
   }
 
   PendingReadingProgress captureReadingProgress({
+    String? ownerId,
     required String documentId,
     required int documentRevision,
     required int position,
@@ -1055,6 +1183,7 @@ final class LearningUseCases {
   }) {
     return PendingReadingProgress._(
       learning: this,
+      ownerId: ownerId == null ? null : _requiredId(ownerId, 'ownerId'),
       eventId: 'reading-event:${_nextId()}',
       documentId: _requiredId(documentId, 'documentId'),
       documentRevision: documentRevision,
@@ -1073,26 +1202,29 @@ final class LearningUseCases {
   }
 
   List<QuizQuestion> _questions(List<QuizWord> words) {
-    final allMeanings =
-        words.map((word) => word.meaning).toSet().toList(growable: false)
-          ..sort();
-    return words
-        .map((word) {
-          final distractors = allMeanings
-              .where((meaning) => meaning != word.meaning)
-              .take(3)
-              .toList(growable: true);
-          final options = <String>[word.meaning, ...distractors];
-          final offset =
-              word.id.codeUnits.fold<int>(0, (sum, unit) => sum + unit) %
-              options.length;
-          final rotated = <String>[
-            ...options.skip(offset),
-            ...options.take(offset),
-          ];
-          return QuizQuestion(word: word, options: List.unmodifiable(rotated));
-        })
-        .toList(growable: false);
+    return canonicalQuizQuestions(words);
+  }
+
+  String _reviewSessionId() {
+    final generated = generateId();
+    if (generated.isEmpty ||
+        generated != generated.trim() ||
+        _identifierControl.hasMatch(generated)) {
+      throw ArgumentError.value(
+        generated,
+        'generateId',
+        'must return a canonical identifier fragment',
+      );
+    }
+    final sessionId = 'session:$generated';
+    if (!LearningEvidenceContract.validIdentifier(sessionId)) {
+      throw ArgumentError.value(
+        generated,
+        'generateId',
+        'session identifier exceeds the canonical budget',
+      );
+    }
+    return sessionId;
   }
 
   String _nextId() {
@@ -1158,3 +1290,8 @@ final class LearningUseCases {
     return value == null ? null : _requiredId(value, field);
   }
 }
+
+final RegExp _identifierControl = RegExp(
+  r'[\u0000-\u001f\u007f-\u009f]',
+  unicode: true,
+);

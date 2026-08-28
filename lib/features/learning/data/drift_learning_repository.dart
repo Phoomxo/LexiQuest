@@ -7,6 +7,8 @@ import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../vocabulary/domain/vocabulary_repository.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
+import '../../learning_packs/domain/content_manifest.dart';
+import '../../learning_packs/domain/content_quality_policy.dart';
 import 'drift_learning_event_store.dart'
     hide
         ContextEvidencePolicyRolloutModeProvider,
@@ -20,6 +22,7 @@ import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_evidence_contract.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/learning_repository.dart';
 import '../domain/session_configuration.dart';
 import '../domain/srs_policy.dart';
@@ -32,7 +35,8 @@ final class DriftLearningRepository
         LearningSessionLifecycleRepository,
         SessionConfiguredLearningRepository,
         LearningActivityRecoveryRepository,
-        PinnedLearningContentRepository {
+        PinnedLearningContentRepository,
+        ReviewSessionLearningRepository {
   static const int maxActivityRecoveryCheckpoints = 64;
   static const int maxActivityRecoveryAttempts = 128;
 
@@ -84,22 +88,7 @@ final class DriftLearningRepository
       ..orderBy([(row) => OrderingTerm.asc(row.id)])
       ..limit(limit);
     final rows = await query.get();
-    final coreWords = rows
-        .map(
-          (row) => QuizWord(
-            id: row.id,
-            categoryId: row.categoryId,
-            spelling: row.spelling,
-            meaning: row.meaning,
-            partOfSpeech: row.partOfSpeech,
-            cefrLevel: row.cefrLevel,
-            normalizedSpelling: row.normalizedSpelling,
-            normalizedMeaning: row.normalizedMeaning,
-            contentRevision: row.contentRevision,
-            contentChecksumSha256: row.contentChecksumSha256,
-          ),
-        )
-        .toList(growable: false);
+    final coreWords = rows.map(_quizWordFromRow).toList(growable: false);
     final vocabulary = lexicalVocabulary;
     if (vocabulary == null || coreWords.isEmpty) return coreWords;
     List<VocabularyWord> enriched;
@@ -150,19 +139,7 @@ final class DriftLearningRepository
       );
     final rows = await query.get();
     final byId = <String, QuizWord>{
-      for (final row in rows)
-        row.id: QuizWord(
-          id: row.id,
-          categoryId: row.categoryId,
-          spelling: row.spelling,
-          meaning: row.meaning,
-          partOfSpeech: row.partOfSpeech,
-          cefrLevel: row.cefrLevel,
-          normalizedSpelling: row.normalizedSpelling,
-          normalizedMeaning: row.normalizedMeaning,
-          contentRevision: row.contentRevision,
-          contentChecksumSha256: row.contentChecksumSha256,
-        ),
+      for (final row in rows) row.id: _quizWordFromRow(row),
     };
     final ordered = <QuizWord>[for (final id in wordIds) ?byId[id]];
     final vocabulary = lexicalVocabulary;
@@ -180,6 +157,147 @@ final class DriftLearningRepository
     } on Object {
       return ordered;
     }
+  }
+
+  @override
+  Future<PinnedReviewSessionLaunch> startPinnedReviewSession({
+    required LearningSessionDraft session,
+    required List<ReviewedLexicalContentSnapshot> items,
+  }) {
+    final sessionId = _required(session.id, 'session.id');
+    final ownerId = _required(session.ownerId, 'session.ownerId');
+    final startedAtUtc = _requiredUtc(session.startedAtUtc, 'startedAtUtc');
+    final appVersion = _required(session.appVersion, 'session.appVersion');
+    final buildId = _required(session.buildId, 'session.buildId');
+    if (session.activityType != 'reviewCenter' ||
+        session.sessionConfiguration != null ||
+        startedAtUtc.millisecondsSinceEpoch < 0 ||
+        items.isEmpty ||
+        items.length > 100) {
+      throw ArgumentError('invalid pinned review session');
+    }
+    return database.transaction(() async {
+      final activeOwners =
+          await (database.select(database.localOwners)
+                ..where((row) => row.isActive.equals(true))
+                ..orderBy([(row) => OrderingTerm.asc(row.id)])
+                ..limit(2))
+              .get();
+      if (activeOwners.length != 1 || activeOwners.single.id != ownerId) {
+        throw StateError(
+          'Pinned review session owner is no longer uniquely active.',
+        );
+      }
+      final categories =
+          await (database.select(database.vocabularyCategories)..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) & row.isDeleted.equals(false),
+              ))
+              .get();
+      final categoryIds = categories.map((row) => row.id).toSet();
+      final wordIds = items
+          .map((item) => item.identity.id)
+          .toList(growable: false);
+      final rows =
+          await (database.select(database.vocabularyWords)..where(
+                (row) => row.ownerId.equals(ownerId) & row.id.isIn(wordIds),
+              ))
+              .get();
+      final byId = <String, db.VocabularyWord>{
+        for (final row in rows) row.id: row,
+      };
+      final words = <QuizWord>[];
+      final validatedContent = <ReviewedLexicalContentSnapshot>[];
+      for (final item in items) {
+        final identity = item.identity;
+        final row = byId[identity.id];
+        if (identity.type != ContentType.lexicalMetadata ||
+            row == null ||
+            !_matchesReviewedLexicalSnapshot(row, item) ||
+            !ContentQualityPolicy.isAvailableVocabulary(
+              categoryAvailable: categoryIds.contains(row.categoryId),
+              id: row.id,
+              categoryId: row.categoryId,
+              spelling: row.spelling,
+              normalizedSpelling: row.normalizedSpelling,
+              meaning: row.meaning,
+              normalizedMeaning: row.normalizedMeaning,
+              partOfSpeech: row.partOfSpeech,
+              cefrLevel: row.cefrLevel,
+              source: row.source,
+              isGlobal: row.isGlobal,
+              contentRevision: row.contentRevision,
+              contentChecksumSha256: row.contentChecksumSha256,
+              contentProvenance: row.contentProvenance,
+              contentReviewState: row.contentReviewState,
+              contentPublicationState: row.contentPublicationState,
+              isDeleted: row.isDeleted,
+            )) {
+          throw StateError('Pinned review content is unavailable.');
+        }
+        final manifest =
+            await (database.select(database.contentManifests)..where(
+                  (candidate) =>
+                      candidate.contentType.equals(
+                        ContentType.lexicalMetadata.name,
+                      ) &
+                      candidate.contentId.equals(identity.id) &
+                      candidate.revision.equals(identity.revision),
+                ))
+                .getSingleOrNull();
+        final currentArtifact = manifest == null
+            ? null
+            : _reviewedLexicalArtifactSnapshot(manifest);
+        if (currentArtifact != item.artifact) {
+          throw StateError('Pinned review artifact identity changed.');
+        }
+        validatedContent.add(
+          _reviewedLexicalContentSnapshot(row, currentArtifact),
+        );
+        words.add(_quizWordFromRow(row));
+      }
+      final quizSession = QuizSession(
+        id: sessionId,
+        ownerId: ownerId,
+        questions: canonicalQuizQuestions(words),
+        startedAtUtc: startedAtUtc,
+      );
+      if (quizSession.questions.length != items.length) {
+        throw StateError('Pinned review content is unavailable.');
+      }
+      for (var index = 0; index < items.length; index += 1) {
+        final item = items[index];
+        final word = quizSession.questions[index].word;
+        if (word.id != item.identity.id ||
+            word.contentRevision != item.identity.revision ||
+            word.contentChecksumSha256 != item.coreChecksumSha256) {
+          throw StateError('Pinned review content identity changed.');
+        }
+      }
+      final collision = await (database.select(
+        database.learningSessions,
+      )..where((row) => row.id.equals(sessionId))).getSingleOrNull();
+      if (collision != null) {
+        throw StateError('Pinned review session identity already exists.');
+      }
+      await database
+          .into(database.learningSessions)
+          .insert(
+            db.LearningSessionsCompanion.insert(
+              id: sessionId,
+              ownerId: ownerId,
+              activityType: 'reviewCenter',
+              state: 'active',
+              startedAtUtcMs: startedAtUtc.millisecondsSinceEpoch,
+              appVersion: appVersion,
+              buildId: buildId,
+            ),
+          );
+      return PinnedReviewSessionLaunch(
+        session: quizSession,
+        content: validatedContent,
+      );
+    });
   }
 
   QuizWord _withAcceptedSpellingVariants(
@@ -1091,15 +1209,17 @@ final class DriftLearningRepository
     }
     final revision = snapshot['contentRevision'];
     final checksum = snapshot['contentChecksumSha256'];
-    final contentIdentity =
-        revision is int &&
-            revision > 0 &&
-            checksum is String &&
-            RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)
-        ? 'lexical-matching:v$revision:$checksum'
-        : 'lexical-matching:snapshot:'
-              '${sha256.convert(utf8.encode(jsonEncode(snapshot)))}';
-    if (command.evidenceContext.contentRevision != contentIdentity) {
+    final contentIdentity = revision is int && checksum is String
+        ? LexicalPromptArtifactResolver.resolveForAdapter(
+            promptMode: 'matchingPair',
+            wordId: command.wordId,
+            coreRevision: revision,
+            coreChecksumSha256: checksum,
+          )
+        : null;
+    final evidenceContentRevision = contentIdentity?.evidenceContentRevision;
+    if (evidenceContentRevision == null ||
+        command.evidenceContext.contentRevision != evidenceContentRevision) {
       return false;
     }
     const pendingV1Keys = <String>{
@@ -1182,7 +1302,8 @@ final class DriftLearningRepository
               contrastiveFeedbackAttemptProvenance(contrastiveFeedback) ||
           contrastiveFeedback.manifestIdentity.id != command.wordId ||
           contrastiveFeedback.promptMode != command.promptMode ||
-          contrastiveFeedback.evidenceContentRevision != contentIdentity ||
+          contrastiveFeedback.evidenceContentRevision !=
+              evidenceContentRevision ||
           contrastiveFeedback.correctOptionId != command.wordId ||
           contrastiveFeedback.selectedDistractorId !=
               pending['selectedMeaningWordId'] ||
@@ -1210,7 +1331,7 @@ final class DriftLearningRepository
         pending['evidenceClass'] !=
             command.evidenceContext.evidenceClass.name ||
         pending['hintLevel'] != command.evidenceContext.hintLevel ||
-        pending['contentRevision'] != contentIdentity ||
+        pending['contentRevision'] != evidenceContentRevision ||
         pending['canonicalCorrectAnswer'] !=
             (snapshot['meaning'] as String).trim().replaceAll(
               RegExp(r'\s+'),
@@ -1353,18 +1474,7 @@ final class DriftLearningRepository
     final rows = await query.get();
     return rows
         .map((row) => row.readTable(database.vocabularyWords))
-        .map(
-          (word) => QuizWord(
-            id: word.id,
-            categoryId: word.categoryId,
-            spelling: word.spelling,
-            meaning: word.meaning,
-            partOfSpeech: word.partOfSpeech,
-            cefrLevel: word.cefrLevel,
-            normalizedSpelling: word.normalizedSpelling,
-            normalizedMeaning: word.normalizedMeaning,
-          ),
-        )
+        .map(_quizWordFromRow)
         .toList(growable: false);
   }
 
@@ -1890,3 +2000,110 @@ final class DriftLearningRepository
     return configuration;
   }
 }
+
+QuizWord _quizWordFromRow(db.VocabularyWord row) => QuizWord(
+  id: row.id,
+  categoryId: row.categoryId,
+  spelling: row.spelling,
+  meaning: row.meaning,
+  partOfSpeech: row.partOfSpeech,
+  cefrLevel: row.cefrLevel,
+  normalizedSpelling: row.normalizedSpelling,
+  normalizedMeaning: row.normalizedMeaning,
+  contentRevision: row.contentRevision,
+  contentChecksumSha256: ContentQualityPolicy.effectiveVocabularyChecksumSha256(
+    categoryId: row.categoryId,
+    spelling: row.spelling,
+    normalizedSpelling: row.normalizedSpelling,
+    meaning: row.meaning,
+    normalizedMeaning: row.normalizedMeaning,
+    partOfSpeech: row.partOfSpeech,
+    cefrLevel: row.cefrLevel,
+    source: row.source,
+    isGlobal: row.isGlobal,
+    storedChecksumSha256: row.contentChecksumSha256,
+  ),
+);
+
+bool _matchesReviewedLexicalSnapshot(
+  db.VocabularyWord row,
+  ReviewedLexicalContentSnapshot snapshot,
+) =>
+    snapshot.identity.id == row.id &&
+    snapshot.identity.revision == row.contentRevision &&
+    snapshot.categoryId == row.categoryId &&
+    snapshot.spelling == row.spelling &&
+    snapshot.normalizedSpelling == row.normalizedSpelling &&
+    snapshot.meaning == row.meaning &&
+    snapshot.normalizedMeaning == row.normalizedMeaning &&
+    snapshot.partOfSpeech == row.partOfSpeech &&
+    snapshot.cefrLevel == row.cefrLevel &&
+    snapshot.source == row.source &&
+    snapshot.isGlobal == row.isGlobal &&
+    snapshot.coreChecksumSha256 == row.contentChecksumSha256 &&
+    snapshot.provenance.name == row.contentProvenance &&
+    snapshot.reviewState.name == row.contentReviewState &&
+    snapshot.publicationState.name == row.contentPublicationState &&
+    !row.isDeleted;
+
+ReviewedLexicalArtifactSnapshot? _reviewedLexicalArtifactSnapshot(
+  db.ContentManifestRow row,
+) {
+  if (row.contentType != ContentType.lexicalMetadata.name ||
+      row.contentId.isEmpty ||
+      row.contentId != row.contentId.trim() ||
+      row.revision <= 0 ||
+      !_reviewArtifactSha256.hasMatch(row.checksumSha256) ||
+      row.byteLength <= 0 ||
+      row.provenance != ContentProvenance.packaged.name ||
+      row.sourceUri.isEmpty ||
+      row.sourceUri != row.sourceUri.trim() ||
+      row.reviewState != ContentReviewState.approved.name ||
+      row.publicationState != ContentPublicationState.published.name ||
+      row.createdAtUtcMs < 0 ||
+      row.reviewedAtUtcMs == null ||
+      row.reviewedAtUtcMs! < 0 ||
+      row.publishedAtUtcMs == null ||
+      row.publishedAtUtcMs! < 0) {
+    return null;
+  }
+  return ReviewedLexicalArtifactSnapshot(
+    storageId: row.id,
+    identity: ContentIdentity(
+      type: ContentType.lexicalMetadata,
+      id: row.contentId,
+      revision: row.revision,
+    ),
+    checksumSha256: row.checksumSha256,
+    byteLength: row.byteLength,
+  );
+}
+
+ReviewedLexicalContentSnapshot _reviewedLexicalContentSnapshot(
+  db.VocabularyWord row,
+  ReviewedLexicalArtifactSnapshot? artifact,
+) => ReviewedLexicalContentSnapshot(
+  identity: ContentIdentity(
+    type: ContentType.lexicalMetadata,
+    id: row.id,
+    revision: row.contentRevision,
+  ),
+  categoryId: row.categoryId,
+  spelling: row.spelling,
+  normalizedSpelling: row.normalizedSpelling,
+  meaning: row.meaning,
+  normalizedMeaning: row.normalizedMeaning,
+  partOfSpeech: row.partOfSpeech,
+  cefrLevel: row.cefrLevel,
+  source: row.source,
+  isGlobal: row.isGlobal,
+  coreChecksumSha256: row.contentChecksumSha256!,
+  provenance: ContentProvenance.values.byName(row.contentProvenance),
+  reviewState: ContentReviewState.values.byName(row.contentReviewState),
+  publicationState: ContentPublicationState.values.byName(
+    row.contentPublicationState,
+  ),
+  artifact: artifact,
+);
+
+final RegExp _reviewArtifactSha256 = RegExp(r'^[0-9a-f]{64}$');

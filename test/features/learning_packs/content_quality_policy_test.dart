@@ -175,6 +175,59 @@ void main() {
     );
   });
 
+  test(
+    'legacy null checksum normalizes but a stored mismatch fails closed',
+    () {
+      String effective(String? stored) =>
+          ContentQualityPolicy.effectiveVocabularyChecksumSha256(
+            categoryId: 'category:user',
+            spelling: 'station',
+            normalizedSpelling: 'station',
+            meaning: 'สถานี',
+            normalizedMeaning: 'สถานี',
+            partOfSpeech: 'noun',
+            cefrLevel: null,
+            source: 'manual',
+            isGlobal: false,
+            storedChecksumSha256: stored,
+          );
+      final canonical = ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: 'category:user',
+        spelling: 'station',
+        normalizedSpelling: 'station',
+        meaning: 'สถานี',
+        normalizedMeaning: 'สถานี',
+        partOfSpeech: 'noun',
+        cefrLevel: null,
+        source: 'manual',
+        isGlobal: false,
+      );
+
+      expect(effective(null), canonical);
+      expect(effective(canonical), canonical);
+      expect(
+        () => effective('a' * 64),
+        throwsA(
+          isA<ContentQualityFailure>().having(
+            (failure) => failure.code,
+            'code',
+            ContentQualityFailureCode.checksumMismatch,
+          ),
+        ),
+      );
+      expect(
+        () => effective('not-a-checksum'),
+        throwsA(
+          isA<ContentQualityFailure>().having(
+            (failure) => failure.code,
+            'code',
+            ContentQualityFailureCode.invalidChecksum,
+          ),
+        ),
+      );
+    },
+  );
+
   test('persisted manifest revisions reject update and delete', () async {
     final database = AppDatabase(NativeDatabase.memory());
     addTearDown(database.close);

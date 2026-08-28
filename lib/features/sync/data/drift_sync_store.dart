@@ -2499,35 +2499,47 @@ final class DriftSyncStore implements SyncStore {
     final source = payload['source']! as String;
     final isGlobal = payload['isGlobal']! as bool;
     final createdAtUtcMs = payload['createdAtUtcMs']! as int;
+    final incomingChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: categoryId,
+      spelling: spelling,
+      normalizedSpelling: normalizedSpelling,
+      meaning: meaning,
+      normalizedMeaning: normalizedMeaning,
+      partOfSpeech: partOfSpeech,
+      cefrLevel: cefrLevel,
+      source: source,
+      isGlobal: isGlobal,
+    );
     late final int contentRevision;
     late final String? contentChecksumSha256;
     if (entity.payloadVersion == 2) {
       contentRevision = payload['contentRevision']! as int;
       contentChecksumSha256 = payload['contentChecksumSha256']! as String;
-    } else if (existing?.contentChecksumSha256 != null) {
-      final existingVersioned = existing!;
+    } else if (existing != null) {
+      final existingVersioned = existing;
       if (existingVersioned.contentRevision <= 0) {
         throw const InvalidSyncPayloadFailure();
       }
-      final incomingChecksum = ContentQualityPolicy.vocabularyChecksumSha256(
-        categoryId: categoryId,
-        spelling: spelling,
-        normalizedSpelling: normalizedSpelling,
-        meaning: meaning,
-        normalizedMeaning: normalizedMeaning,
-        partOfSpeech: partOfSpeech,
-        cefrLevel: cefrLevel,
-        source: source,
-        isGlobal: isGlobal,
-      );
-      contentRevision =
-          existingVersioned.contentChecksumSha256 == incomingChecksum
+      final existingChecksum =
+          ContentQualityPolicy.effectiveVocabularyChecksumSha256(
+            categoryId: existingVersioned.categoryId,
+            spelling: existingVersioned.spelling,
+            normalizedSpelling: existingVersioned.normalizedSpelling,
+            meaning: existingVersioned.meaning,
+            normalizedMeaning: existingVersioned.normalizedMeaning,
+            partOfSpeech: existingVersioned.partOfSpeech,
+            cefrLevel: existingVersioned.cefrLevel,
+            source: existingVersioned.source,
+            isGlobal: existingVersioned.isGlobal,
+            storedChecksumSha256: existingVersioned.contentChecksumSha256,
+          );
+      contentRevision = existingChecksum == incomingChecksum
           ? existingVersioned.contentRevision
           : existingVersioned.contentRevision + 1;
       contentChecksumSha256 = incomingChecksum;
     } else {
       contentRevision = 1;
-      contentChecksumSha256 = null;
+      contentChecksumSha256 = incomingChecksum;
     }
     await database
         .into(database.vocabularyWords)

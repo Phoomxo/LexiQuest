@@ -267,7 +267,33 @@ void main() {
           await tester.tap(entry);
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));
+          if (entryCase.feature == Feature.speechPractice) {
+            expect(find.byType(SessionConfigurationSheet), findsOneWidget);
+            final start = find.byKey(
+              const ValueKey<String>('session-config-start'),
+            );
+            await tester.ensureVisible(start);
+            await tester.tap(start);
+            for (
+              var attempt = 0;
+              attempt < 20 &&
+                  find.byType(entryCase.destinationType).evaluate().isEmpty;
+              attempt += 1
+            ) {
+              await tester.pump(const Duration(milliseconds: 100));
+            }
+          }
           _expectEnabledDestination(tester, entryCase);
+          if (entryCase.feature == Feature.speechPractice) {
+            expect(
+              tester
+                  .widget<ShadowingChallengeScreen>(
+                    find.byType(ShadowingChallengeScreen),
+                  )
+                  .ownerId,
+              _OwnerRepository.owner.id,
+            );
+          }
           features.emergencyOff(entryCase.feature);
           await tester.pump();
           await tester.pump(const Duration(milliseconds: 500));

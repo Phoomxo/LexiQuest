@@ -144,6 +144,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   final SessionConfigurationMonotonicMicros _configurationMonotonicMicros;
   final Duration _configurationIdleTimeout;
   LessonSessionState _state;
+  String? _sessionOwnerId;
   AnswerFeedback? _feedback;
   final Map<String, _PendingSubmission> _submissions =
       <String, _PendingSubmission>{};
@@ -200,6 +201,8 @@ final class UnifiedLessonController extends ChangeNotifier {
   Feature? get focusTimerFeature => _focusTimerFeature;
   Object? get lastActiveLearningTimeFailure => _lastActiveLearningTimeFailure;
   bool get sessionCompletionRetryRequired => _terminalClosePending != null;
+  bool usesLearningAuthority(LearningUseCases learning) =>
+      identical(_learning, learning);
   bool get terminalMutationInFlight =>
       _completionInFlight != null ||
       _capturedCompletionInFlight != null ||
@@ -277,6 +280,9 @@ final class UnifiedLessonController extends ChangeNotifier {
       await _revalidateStartConfiguration(command.configuration);
       final sessionId = _required(command.sessionId, 'sessionId');
       final startedAtUtc = _requiredUtc(command.startedAtUtc, 'startedAtUtc');
+      final ownerId = command.ownerId == null
+          ? null
+          : _required(command.ownerId!, 'ownerId');
       if (command.itemCount < 0) {
         throw ArgumentError.value(
           command.itemCount,
@@ -301,6 +307,7 @@ final class UnifiedLessonController extends ChangeNotifier {
         try {
           final durable = await _learning.loadSessionConfigurationState(
             sessionId,
+            ownerId: ownerId,
           );
           if (durable == null ||
               durable.sessionConfiguration != configuration) {
@@ -379,6 +386,7 @@ final class UnifiedLessonController extends ChangeNotifier {
           itemCount: command.itemCount,
         ),
       );
+      _sessionOwnerId = ownerId;
       if (completedConfigurationRecovery) {
         _restoreConfigurationEffortForTerminalReconciliation(
           restoredConfigurationEffort,
@@ -631,6 +639,7 @@ final class UnifiedLessonController extends ChangeNotifier {
                 terminalClose ??
                 (_pendingClose ??= _learning.captureSessionClose(
                   sessionId: _state.sessionId!,
+                  ownerId: _sessionOwnerId,
                 ));
             _pendingClose ??= close;
             await _finish(close, occurredAt, timeOccurrence);
@@ -791,6 +800,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     LessonResponse response,
   ) async {
     final result = await _learning.recordEvidence(
+      ownerId: _sessionOwnerId,
       sourceEvidenceId: response.sourceEvidenceId,
       occurredAtUtc: response.occurredAtUtc,
       sessionId: response.sessionId,
@@ -821,6 +831,10 @@ final class UnifiedLessonController extends ChangeNotifier {
     DateTime occurredAtUtc,
     LearningTimeObservation? timeOccurrence,
   ) async {
+    final sessionOwnerId = _sessionOwnerId;
+    if (sessionOwnerId != null) {
+      close.pinOwner(sessionOwnerId);
+    }
     final terminalClose = _terminalClosePending;
     if (terminalClose != null && !identical(terminalClose, close)) {
       throw StateError(
@@ -878,6 +892,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     try {
       await _finishConfigurationEffort();
       await _learning.abandonSession(
+        ownerId: _sessionOwnerId,
         sessionId: _state.sessionId!,
         abandonedAtUtc: occurredAtUtc,
       );
@@ -1453,6 +1468,7 @@ final class UnifiedLessonController extends ChangeNotifier {
         const Duration(minutes: 5).inMicroseconds,
       );
       final restored = await _learning.addSessionConfigurationActiveEffort(
+        ownerId: _sessionOwnerId,
         sessionId: sessionId,
         configurationIdentity: configuration.contentIdentity,
         delta: Duration(microseconds: chunkMicros),

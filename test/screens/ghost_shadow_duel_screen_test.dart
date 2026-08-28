@@ -168,23 +168,92 @@ void main() {
       );
     },
   );
+
+  testWidgets(
+    'owner switch keeps Ghost evidence and terminal retry on the session owner',
+    (tester) async {
+      final owners = _OwnerRepository();
+      final repository = _RetryLearningRepository(
+        failFirstAnswer: false,
+        failFirstFinish: true,
+      );
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: owners,
+        repository: repository,
+        generateId: () => 'ghost-owner-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 28, 10, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: GhostShadowDuelScreen(
+            progressLoader: () async => _duelProgress,
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      owners.activeOwnerId = 'owner-2';
+      await tester.enterText(find.byType(TextField), 'durable');
+      await tester.tap(find.text('ตอบ'));
+      await tester.pumpAndSettle();
+
+      expect(repository.commands.single.ownerId, 'owner-1');
+      expect(repository.finishOwnerIds, <String>['owner-1']);
+      expect(repository.successfulFinishes, 0);
+      expect(
+        find.byKey(const ValueKey<String>('ghost-session-close-retry')),
+        findsOneWidget,
+      );
+
+      await tester.tap(
+        find.byKey(const ValueKey<String>('ghost-session-close-retry')),
+      );
+      await tester.pumpAndSettle();
+      expect(repository.finishOwnerIds, <String>['owner-1', 'owner-1']);
+      expect(repository.successfulFinishes, 1);
+      expect(
+        repository.finishOwnerIds.where((ownerId) => ownerId == 'owner-2'),
+        isEmpty,
+      );
+
+      await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+      await tester.pumpAndSettle();
+      expect(repository.finishOwnerIds, <String>['owner-1', 'owner-1']);
+      expect(repository.successfulFinishes, 1);
+    },
+  );
 }
 
 final class _OwnerRepository implements LocalOwnerRepository {
+  String activeOwnerId = 'owner-1';
+
   @override
   Future<LocalOwner> getOrCreateActiveOwner() async =>
-      LocalOwner(id: 'owner-1', createdAtUtc: DateTime.utc(2026, 8, 14));
+      LocalOwner(id: activeOwnerId, createdAtUtc: DateTime.utc(2026, 8, 14));
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 final class _RetryLearningRepository implements LearningRepository {
-  _RetryLearningRepository({this.firstAnswerRelease});
+  _RetryLearningRepository({
+    this.firstAnswerRelease,
+    this.failFirstAnswer = true,
+    this.failFirstFinish = false,
+  });
 
   final Completer<void>? firstAnswerRelease;
+  final bool failFirstAnswer;
+  final bool failFirstFinish;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
-  var _failed = false;
+  final List<String> finishOwnerIds = <String>[];
+  var _answerFailed = false;
+  var _finishFailed = false;
+  int successfulFinishes = 0;
 
   @override
   Future<List<QuizWord>> listQuizWords({
@@ -207,8 +276,8 @@ final class _RetryLearningRepository implements LearningRepository {
   @override
   Future<AnswerRecordResult> recordAnswer(RecordAnswerCommand command) async {
     commands.add(command);
-    if (!_failed) {
-      _failed = true;
+    if (failFirstAnswer && !_answerFailed) {
+      _answerFailed = true;
       await firstAnswerRelease?.future;
       throw StateError('simulated local failure');
     }
@@ -224,17 +293,25 @@ final class _RetryLearningRepository implements LearningRepository {
     required String ownerId,
     required String sessionId,
     required DateTime endedAtUtc,
-  }) async => LearningSessionSummary(
-    id: sessionId,
-    ownerId: ownerId,
-    activityType: 'ghostDuel',
-    state: 'completed',
-    startedAtUtc: endedAtUtc,
-    endedAtUtc: endedAtUtc,
-    correctCount: 1,
-    wrongCount: 0,
-    score: 1,
-  );
+  }) async {
+    finishOwnerIds.add(ownerId);
+    if (failFirstFinish && !_finishFailed) {
+      _finishFailed = true;
+      throw StateError('simulated terminal failure');
+    }
+    successfulFinishes += 1;
+    return LearningSessionSummary(
+      id: sessionId,
+      ownerId: ownerId,
+      activityType: 'ghostDuel',
+      state: 'completed',
+      startedAtUtc: endedAtUtc,
+      endedAtUtc: endedAtUtc,
+      correctCount: 1,
+      wrongCount: 0,
+      score: 1,
+    );
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

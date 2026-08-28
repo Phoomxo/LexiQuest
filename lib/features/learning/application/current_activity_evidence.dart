@@ -6,6 +6,7 @@ import '../domain/evidence_policy_rollout.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_event_context.dart';
 import '../domain/learning_models.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import 'learning_use_cases.dart';
 
 enum CurrentActivityInput {
@@ -176,6 +177,7 @@ final class CurrentActivityEvidenceAdapter {
 
   /// Captures occurrence identity and every response semantic synchronously.
   PendingCurrentActivityEvidence capture({
+    String? ownerId,
     required CurrentActivityInput input,
     required String sessionId,
     required String wordId,
@@ -195,6 +197,7 @@ final class CurrentActivityEvidenceAdapter {
     }
     final declaration = _declarationFor(input);
     return _capture(
+      ownerId: ownerId,
       input: input,
       declaration: declaration,
       sessionId: sessionId,
@@ -209,6 +212,7 @@ final class CurrentActivityEvidenceAdapter {
 
   /// Captures meaning recognition against an exact verified lexical revision.
   PendingCurrentActivityEvidence capturePinnedMeaningRecognition({
+    String? ownerId,
     required CurrentActivityInput input,
     required String sessionId,
     required String wordId,
@@ -229,6 +233,7 @@ final class CurrentActivityEvidenceAdapter {
     }
     final declaration = _declarationFor(input);
     return _capture(
+      ownerId: ownerId,
       input: input,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: declaration.evidenceClass,
@@ -257,6 +262,7 @@ final class CurrentActivityEvidenceAdapter {
   /// The hint snapshot is resolved by the shell-owned f19 authority before
   /// this immutable pending command is created.
   PendingCurrentActivityEvidence captureDefinitionRecognition({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required bool isCorrect,
@@ -293,13 +299,19 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     return _capture(
+      ownerId: ownerId,
       input: CurrentActivityInput.definitionMultipleChoice,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: evidenceClass,
         skillId: 'definition-recognition',
         promptMode: 'definitionChoice',
         contentRevision:
-            'lexical-definition:$wordId@$contentRevision:$checksumSha256',
+            LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+              promptMode: 'definitionChoice',
+              wordId: wordId,
+              revision: contentRevision,
+              checksumSha256: checksumSha256,
+            ),
       ),
       sessionId: sessionId,
       wordId: wordId,
@@ -317,6 +329,7 @@ final class CurrentActivityEvidenceAdapter {
   /// The legacy f07 quiz remains unassisted recognition; this ingress accepts
   /// only the shell-owned support classification frozen by the typed adapter.
   PendingCurrentActivityEvidence captureSupportedMeaningRecognition({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required bool isCorrect,
@@ -339,6 +352,7 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     return _capture(
+      ownerId: ownerId,
       input: CurrentActivityInput.meaningMultipleChoice,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: classification.evidenceClass,
@@ -359,6 +373,7 @@ final class CurrentActivityEvidenceAdapter {
   /// owns response scoring and assistance classification; this gateway owns
   /// the sole canonical evidence write.
   PendingCurrentActivityEvidence captureCloze({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required bool isCorrect,
@@ -401,6 +416,7 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     return _capture(
+      ownerId: ownerId,
       input: typed
           ? CurrentActivityInput.clozeTyped
           : CurrentActivityInput.clozeSelected,
@@ -409,7 +425,12 @@ final class CurrentActivityEvidenceAdapter {
         skillId: 'cloze-context',
         promptMode: typed ? 'clozeTyped' : 'clozeSelected',
         contentRevision:
-            'lexical-cloze:$wordId@$contentRevision:$checksumSha256',
+            LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+              promptMode: typed ? 'clozeTyped' : 'clozeSelected',
+              wordId: wordId,
+              revision: contentRevision,
+              checksumSha256: checksumSha256,
+            ),
       ),
       sessionId: sessionId,
       wordId: wordId,
@@ -427,6 +448,7 @@ final class CurrentActivityEvidenceAdapter {
   /// and assistance classification are owned by the typed-recall adapter;
   /// this gateway only freezes the resulting controlled evidence command.
   PendingCurrentActivityEvidence captureTypedRecall({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required bool isCorrect,
@@ -472,13 +494,19 @@ final class CurrentActivityEvidenceAdapter {
         ? CurrentActivityInput.associativeRecall
         : CurrentActivityInput.typedRecall;
     return _capture(
+      ownerId: ownerId,
       input: input,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: classification.evidenceClass,
         skillId: contextual ? 'associative-recall' : 'typed-recall',
         promptMode: contextual ? 'associativeRecall' : 'typedRecall',
         contentRevision:
-            'lexical-typed-recall:$wordId@$contentRevision:$checksumSha256',
+            LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+              promptMode: contextual ? 'associativeRecall' : 'typedRecall',
+              wordId: wordId,
+              revision: contentRevision,
+              checksumSha256: checksumSha256,
+            ),
       ),
       sessionId: sessionId,
       wordId: wordId,
@@ -494,11 +522,13 @@ final class CurrentActivityEvidenceAdapter {
   /// still resolves against the SRS activity while the durable declaration is
   /// exposure, so a reveal can never masquerade as independent recall.
   PendingCurrentActivityEvidence captureFlashcardExposure({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required int? responseTimeMs,
     required int attemptNumber,
   }) => _capture(
+    ownerId: ownerId,
     input: CurrentActivityInput.srsRecall,
     declaration: const _CurrentActivityDeclaration(
       evidenceClass: EvidenceClass.exposure,
@@ -518,6 +548,7 @@ final class CurrentActivityEvidenceAdapter {
   /// authority. Matching is recognition unless the shell-owned hint/support
   /// snapshot proves any assistance, in which case it is guided practice.
   PendingCurrentActivityEvidence captureMatching({
+    String? ownerId,
     required String sessionId,
     required String wordId,
     required bool isCorrect,
@@ -541,6 +572,7 @@ final class CurrentActivityEvidenceAdapter {
       );
     }
     return _capture(
+      ownerId: ownerId,
       input: CurrentActivityInput.matchingPair,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: classification.evidenceClass,
@@ -563,6 +595,7 @@ final class CurrentActivityEvidenceAdapter {
   /// exact caller-owned identity. The returned command deliberately requires
   /// an explicit retry before any canonical write can occur.
   PendingCurrentActivityEvidence restoreMatching({
+    String? ownerId,
     required String sourceEvidenceId,
     required DateTime occurredAtUtc,
     required String sessionId,
@@ -627,6 +660,7 @@ final class CurrentActivityEvidenceAdapter {
     }
     return PendingCurrentActivityEvidence._(
       learning: learning,
+      ownerId: ownerId,
       input: CurrentActivityInput.matchingPair,
       declaration: _CurrentActivityDeclaration(
         evidenceClass: classification.evidenceClass,
@@ -655,6 +689,7 @@ final class CurrentActivityEvidenceAdapter {
   }
 
   PendingCurrentActivityEvidence _capture({
+    required String? ownerId,
     required CurrentActivityInput input,
     required _CurrentActivityDeclaration declaration,
     required String sessionId,
@@ -680,6 +715,7 @@ final class CurrentActivityEvidenceAdapter {
         : contrastiveFeedbackAttemptProvenance(frozenContrastiveFeedback);
     return PendingCurrentActivityEvidence._(
       learning: learning,
+      ownerId: ownerId,
       input: input,
       declaration: declaration,
       hintLevel: hintLevel,
@@ -712,6 +748,7 @@ enum PendingCurrentActivityEvidenceStatus {
 final class PendingCurrentActivityEvidence {
   PendingCurrentActivityEvidence._({
     required this._learning,
+    required this._ownerId,
     required this._input,
     required this._declaration,
     required this._hintLevel,
@@ -723,6 +760,7 @@ final class PendingCurrentActivityEvidence {
   });
 
   final LearningUseCases _learning;
+  final String? _ownerId;
   final CurrentActivityInput _input;
   final _CurrentActivityDeclaration _declaration;
   final int _hintLevel;
@@ -916,7 +954,10 @@ final class PendingCurrentActivityEvidence {
 
   Future<OwnerBoundLearningEvidenceBasis> _bindAndMemoize() async {
     try {
-      final basis = await _learning.bindEvidenceForRecording(command: _command);
+      final basis = await _learning.bindEvidenceForRecording(
+        command: _command,
+        ownerId: _ownerId,
+      );
       _boundBasis = basis;
       return basis;
     } finally {

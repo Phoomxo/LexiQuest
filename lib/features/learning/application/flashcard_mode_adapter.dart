@@ -237,12 +237,14 @@ final class FlashcardReviewController extends ChangeNotifier {
       _requirePhase(FlashcardReviewPhase.awaitingRecall, 'record evidence');
       final pending = kind == _FlashcardEvidenceKind.exposure
           ? _evidence.captureFlashcardExposure(
+              ownerId: _session.ownerId,
               sessionId: _session.id,
               wordId: currentQuestion.word.id,
               responseTimeMs: responseTimeMs,
               attemptNumber: _index + 1,
             )
           : _evidence.capture(
+              ownerId: _session.ownerId,
               input: input!,
               sessionId: _session.id,
               wordId: currentQuestion.word.id,
@@ -285,6 +287,7 @@ final class FlashcardReviewController extends ChangeNotifier {
   Future<void> _complete() async {
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: _session.id,
+      ownerId: _session.ownerId,
     );
     _setPhase(FlashcardReviewPhase.completing);
     try {

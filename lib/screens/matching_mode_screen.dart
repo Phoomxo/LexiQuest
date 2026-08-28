@@ -223,6 +223,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
           await lifecycle.abandon();
         } else {
           await _learning!.abandonSession(
+            ownerId: session.ownerId,
             sessionId: session.id,
             abandonedAtUtc: DateTime.now().toUtc(),
           );
@@ -555,6 +556,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
         await lifecycle.abandon();
       } else {
         await _learning!.abandonSession(
+          ownerId: session.ownerId,
           sessionId: session.id,
           abandonedAtUtc: DateTime.now().toUtc(),
         );

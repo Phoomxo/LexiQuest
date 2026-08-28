@@ -23,8 +23,10 @@ import 'package:vocab_learning_app/features/learning/domain/learning_evidence_co
 import 'package:vocab_learning_app/features/learning/domain/learning_event_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artifact_identity.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart'
@@ -214,12 +216,32 @@ void main() {
         ('word:station', 'station', 'place for trains'),
         ('word:market', 'market', 'place to buy goods'),
       ]) {
+        final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
+          categoryId: 'category:travel',
+          spelling: entry.$2,
+          normalizedSpelling: entry.$2,
+          meaning: entry.$3,
+          normalizedMeaning: entry.$3,
+          partOfSpeech: 'noun',
+          cefrLevel: null,
+          source: 'manual',
+          isGlobal: false,
+        );
         await database.customStatement(
           'INSERT INTO vocabulary_words '
           '(id, owner_id, category_id, spelling, normalized_spelling, meaning, '
-          'normalized_meaning, part_of_speech, created_at_utc_ms, updated_at_utc_ms) '
-          "VALUES (?, ?, 'category:travel', ?, ?, ?, ?, 'noun', 1, 1)",
-          <Object?>[entry.$1, owner.id, entry.$2, entry.$2, entry.$3, entry.$3],
+          'normalized_meaning, part_of_speech, content_checksum_sha256, '
+          'created_at_utc_ms, updated_at_utc_ms) '
+          "VALUES (?, ?, 'category:travel', ?, ?, ?, ?, 'noun', ?, 1, 1)",
+          <Object?>[
+            entry.$1,
+            owner.id,
+            entry.$2,
+            entry.$2,
+            entry.$3,
+            entry.$3,
+            checksum,
+          ],
         );
       }
       learning = LearningUseCases(
@@ -232,6 +254,142 @@ void main() {
     });
 
     tearDown(() => database.close());
+
+    test(
+      'missing canonical matching identity fails before durable mutation',
+      () async {
+        final session = await learning.startQuiz(categoryId: 'category:travel');
+        final missingIdentitySession = QuizSession(
+          id: session.id,
+          ownerId: session.ownerId,
+          startedAtUtc: session.startedAtUtc,
+          questions: <QuizQuestion>[
+            for (final question in session.questions)
+              QuizQuestion(
+                word: QuizWord(
+                  id: question.word.id,
+                  categoryId: question.word.categoryId,
+                  spelling: question.word.spelling,
+                  meaning: question.word.meaning,
+                  partOfSpeech: question.word.partOfSpeech,
+                  contentRevision: question.word.contentRevision,
+                  contentChecksumSha256: null,
+                ),
+                options: question.options,
+              ),
+          ],
+        );
+        final review = adapter.createReview(
+          session: missingIdentitySession,
+          learning: learning,
+          evidence: CurrentActivityEvidenceAdapter(learning: learning),
+          hintUsage: () => const HintUsageSnapshot.known(0),
+        );
+        addTearDown(review.dispose);
+        final pair = review.pairSet.pairs.first;
+
+        await review.selectWord(pair.word.id, responseTimeMs: 100);
+        expect(
+          () => review.selectMeaning(pair.word.id, responseTimeMs: 100),
+          throwsStateError,
+        );
+
+        expect(review.nextAttemptNumber, 1);
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        expect(await database.select(database.eventsV2).get(), isEmpty);
+      },
+    );
+
+    test(
+      'legacy null rows complete a real pair and restart from canonical identity',
+      () async {
+        await database
+            .update(database.vocabularyWords)
+            .write(
+              const VocabularyWordsCompanion(
+                contentChecksumSha256: Value(null),
+              ),
+            );
+        final evidence = CurrentActivityEvidenceAdapter(learning: learning);
+        final prepared = await adapter.prepareSession(
+          learning: learning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        final first = adapter.createReview(
+          session: prepared.session,
+          learning: learning,
+          evidence: evidence,
+          recovery: prepared,
+          hintUsage: () => const HintUsageSnapshot.known(0),
+        );
+        final pair = first.pairSet.pairs.first;
+        expect(pair.word.contentChecksumSha256, isNotNull);
+        await first.selectWord(pair.word.id, responseTimeMs: 100);
+        await first.selectMeaning(pair.word.id, responseTimeMs: 200);
+        first.dispose();
+
+        final restarted = await adapter.prepareSession(
+          learning: learning,
+          evidence: CurrentActivityEvidenceAdapter(learning: learning),
+          categoryId: 'category:travel',
+        );
+        final review = adapter.createReview(
+          session: restarted.session,
+          learning: learning,
+          evidence: CurrentActivityEvidenceAdapter(learning: learning),
+          recovery: restarted,
+        );
+        addTearDown(review.dispose);
+
+        expect(restarted.session.id, prepared.session.id);
+        expect(review.matchedWordIds, contains(pair.word.id));
+        expect(
+          await database.select(database.learningSessions).get(),
+          hasLength(1),
+        );
+        expect(
+          await database.select(database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(
+          (await database.select(database.vocabularyWords).get()).every(
+            (word) => word.contentChecksumSha256 == null,
+          ),
+          isTrue,
+          reason: 'legacy compatibility is a read identity, not a write',
+        );
+      },
+    );
+
+    test(
+      'wrong stored checksum rejects before matching session or checkpoint',
+      () async {
+        await (database.update(
+          database.vocabularyWords,
+        )..where((word) => word.id.equals('word:airport'))).write(
+          VocabularyWordsCompanion(contentChecksumSha256: Value('f' * 64)),
+        );
+
+        await expectLater(
+          adapter.prepareSession(
+            learning: learning,
+            evidence: CurrentActivityEvidenceAdapter(learning: learning),
+            categoryId: 'category:travel',
+          ),
+          throwsA(
+            isA<ContentQualityFailure>().having(
+              (failure) => failure.code,
+              'code',
+              ContentQualityFailureCode.checksumMismatch,
+            ),
+          ),
+        );
+        expect(await database.select(database.learningSessions).get(), isEmpty);
+        expect(await database.select(database.answerAttempts).get(), isEmpty);
+        expect(await database.select(database.eventsV2).get(), isEmpty);
+      },
+    );
 
     test(
       'duplicate taps are idempotent and default policy isolates projections',
@@ -393,14 +551,7 @@ void main() {
     test(
       'production restart reconstructs the pinned board and canonical attempts',
       () async {
-        await database
-            .update(database.vocabularyWords)
-            .write(
-              VocabularyWordsCompanion(
-                contentRevision: const Value(7),
-                contentChecksumSha256: Value('a' * 64),
-              ),
-            );
+        await _setCanonicalCoreIdentities(database, revision: 7);
         final prepared = await adapter.prepareSession(
           learning: learning,
           evidence: CurrentActivityEvidenceAdapter(learning: learning),
@@ -459,21 +610,17 @@ void main() {
         final attempt =
             (await database.select(database.answerAttempts).get()).single;
         final context = _context(attempt.evidenceContextJson);
-        expect(context.contentRevision, 'lexical-matching:v7:${'a' * 64}');
+        expect(
+          context.contentRevision,
+          _matchingRevision(7, pair.word.contentChecksumSha256!),
+        );
       },
     );
 
     test(
       'validated pinned evidence can answer after live word deletion',
       () async {
-        await database
-            .update(database.vocabularyWords)
-            .write(
-              VocabularyWordsCompanion(
-                contentRevision: const Value(9),
-                contentChecksumSha256: Value('c' * 64),
-              ),
-            );
+        await _setCanonicalCoreIdentities(database, revision: 9);
         final evidence = CurrentActivityEvidenceAdapter(learning: learning);
         final prepared = await adapter.prepareSession(
           learning: learning,
@@ -506,7 +653,7 @@ void main() {
         expect(attempt.wordId, pair.word.id);
         expect(
           _context(attempt.evidenceContextJson).contentRevision,
-          'lexical-matching:v9:${'c' * 64}',
+          _matchingRevision(9, pair.word.contentChecksumSha256!),
         );
       },
     );
@@ -1794,14 +1941,7 @@ void main() {
     test(
       'f18 restart reconstructs the exact reviewed matching explanation',
       () async {
-        await database
-            .update(database.vocabularyWords)
-            .write(
-              VocabularyWordsCompanion(
-                contentRevision: const Value(4),
-                contentChecksumSha256: Value('a' * 64),
-              ),
-            );
+        await _setCanonicalCoreIdentities(database, revision: 4);
         final repository = _RestartRecoveryRepository(
           DriftLearningRepository(database),
           recordFailure: _RecordFailure.beforeWrite,
@@ -1877,14 +2017,7 @@ void main() {
     test(
       'f18 restart rejects legacy and mutated frozen context before writes',
       () async {
-        await database
-            .update(database.vocabularyWords)
-            .write(
-              VocabularyWordsCompanion(
-                contentRevision: const Value(4),
-                contentChecksumSha256: Value('b' * 64),
-              ),
-            );
+        await _setCanonicalCoreIdentities(database, revision: 4);
         final repository = _RestartRecoveryRepository(
           DriftLearningRepository(database),
           recordFailure: _RecordFailure.beforeWrite,
@@ -2709,6 +2842,348 @@ void main() {
         expect(emergencySummary.state, 'completed');
         expect(restartRepository.closes, hasLength(2));
         expect(restartRepository.closes.last.endedAtUtc, closeAtUtc);
+      },
+    );
+
+    test(
+      'reconstructed active board closes only its original owner after switch',
+      () async {
+        final originalOwner = await owners.getOrCreateActiveOwner();
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+        );
+        final recoveryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'owner-recovery-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 14, 30, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+        );
+        final evidence = CurrentActivityEvidenceAdapter(
+          learning: recoveryLearning,
+        );
+        final prepared = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        final recovered = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        expect(recovered.session.id, prepared.session.id);
+
+        await database.transaction(() async {
+          await (database.update(database.localOwners)
+                ..where((row) => row.id.equals(originalOwner.id)))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'matching-next-owner',
+                  createdAtUtcMs: DateTime.utc(
+                    2026,
+                    8,
+                    25,
+                    14,
+                    31,
+                  ).millisecondsSinceEpoch,
+                ),
+              );
+        });
+
+        final review = adapter.createReview(
+          session: recovered.session,
+          learning: recoveryLearning,
+          evidence: evidence,
+          recovery: recovered,
+        );
+        addTearDown(review.dispose);
+        final summary = await review.timeout();
+
+        expect(summary.ownerId, originalOwner.id);
+        expect(repository.closes, hasLength(1));
+        expect(repository.closes.single.ownerId, originalOwner.id);
+        final originalSession = await (database.select(
+          database.learningSessions,
+        )..where((row) => row.id.equals(prepared.session.id))).getSingle();
+        expect(originalSession.state, 'completed');
+        expect(
+          await (database.select(
+            database.learningSessions,
+          )..where((row) => row.ownerId.equals('matching-next-owner'))).get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'restored pending close retry remains pinned across an owner switch',
+      () async {
+        final originalOwner = await owners.getOrCreateActiveOwner();
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+          finishFailuresRemaining: 1,
+        );
+        final recoveryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'owner-close-recovery-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 14, 45, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+        );
+        final evidence = CurrentActivityEvidenceAdapter(
+          learning: recoveryLearning,
+        );
+        final prepared = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        final first = adapter.createReview(
+          session: prepared.session,
+          learning: recoveryLearning,
+          evidence: evidence,
+          recovery: prepared,
+        );
+        await expectLater(first.timeout(), throwsStateError);
+        first.dispose();
+
+        final recovered = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        expect(recovered.pendingClose, isNotNull);
+        await database.transaction(() async {
+          await (database.update(database.localOwners)
+                ..where((row) => row.id.equals(originalOwner.id)))
+              .write(const LocalOwnersCompanion(isActive: Value(false)));
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'matching-retry-next-owner',
+                  createdAtUtcMs: DateTime.utc(
+                    2026,
+                    8,
+                    25,
+                    14,
+                    46,
+                  ).millisecondsSinceEpoch,
+                ),
+              );
+        });
+
+        final restarted = adapter.createReview(
+          session: recovered.session,
+          learning: recoveryLearning,
+          evidence: evidence,
+          recovery: recovered,
+        );
+        addTearDown(restarted.dispose);
+        final summary = await restarted.retryCompletion();
+
+        expect(summary.ownerId, originalOwner.id);
+        expect(repository.closes, hasLength(2));
+        expect(
+          repository.closes.map((close) => close.ownerId),
+          everyElement(originalOwner.id),
+        );
+        final originalSession = await (database.select(
+          database.learningSessions,
+        )..where((row) => row.id.equals(prepared.session.id))).getSingle();
+        expect(originalSession.state, 'completed');
+        expect(
+          await (database.select(database.learningSessions)..where(
+                (row) => row.ownerId.equals('matching-retry-next-owner'),
+              ))
+              .get(),
+          isEmpty,
+        );
+      },
+    );
+
+    test(
+      'checkpoint-less recovery abandons its pinned owner across a load race',
+      () async {
+        final originalOwner = await owners.getOrCreateActiveOwner();
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+        );
+        await repository.delegate.startSession(
+          LearningSessionDraft(
+            id: 'matching-checkpointless-owner-race',
+            ownerId: originalOwner.id,
+            activityType: MatchingModeAdapter.activityType,
+            startedAtUtc: DateTime.utc(2026, 8, 25, 14, 50),
+            appVersion: 'test',
+            buildId: 'f10-test',
+          ),
+        );
+        repository.afterRecoveryLoad = (recovery) async {
+          expect(recovery?.session.id, 'matching-checkpointless-owner-race');
+          await database.transaction(() async {
+            await (database.update(database.localOwners)
+                  ..where((row) => row.id.equals(originalOwner.id)))
+                .write(const LocalOwnersCompanion(isActive: Value(false)));
+            await database
+                .into(database.localOwners)
+                .insert(
+                  LocalOwnersCompanion.insert(
+                    id: 'matching-checkpointless-next-owner',
+                    createdAtUtcMs: DateTime.utc(
+                      2026,
+                      8,
+                      25,
+                      14,
+                      51,
+                    ).millisecondsSinceEpoch,
+                  ),
+                );
+            await database
+                .into(database.learningSessions)
+                .insert(
+                  LearningSessionsCompanion.insert(
+                    id: 'matching-checkpointless-next-active',
+                    ownerId: 'matching-checkpointless-next-owner',
+                    activityType: 'quiz',
+                    state: 'active',
+                    startedAtUtcMs: DateTime.utc(
+                      2026,
+                      8,
+                      25,
+                      14,
+                      51,
+                    ).millisecondsSinceEpoch,
+                    appVersion: 'test',
+                    buildId: 'next-owner',
+                  ),
+                );
+          });
+        };
+        final recoveryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'checkpointless-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 14, 52, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+        );
+
+        final prepared = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: CurrentActivityEvidenceAdapter(learning: recoveryLearning),
+          categoryId: 'category:travel',
+        );
+
+        expect(prepared.session.isEmpty, isTrue);
+        final sessions = await database.select(database.learningSessions).get();
+        expect(
+          sessions
+              .singleWhere(
+                (row) => row.id == 'matching-checkpointless-owner-race',
+              )
+              .state,
+          'abandoned',
+        );
+        expect(
+          sessions
+              .singleWhere(
+                (row) => row.id == 'matching-checkpointless-next-active',
+              )
+              .state,
+          'active',
+        );
+      },
+    );
+
+    test(
+      'fresh checkpointed session reload remains scoped across owner switch',
+      () async {
+        final originalOwner = await owners.getOrCreateActiveOwner();
+        final repository = _RestartRecoveryRepository(
+          DriftLearningRepository(database),
+        );
+        repository.afterCheckpointedStart = () async {
+          await database.transaction(() async {
+            await (database.update(database.localOwners)
+                  ..where((row) => row.id.equals(originalOwner.id)))
+                .write(const LocalOwnersCompanion(isActive: Value(false)));
+            await database
+                .into(database.localOwners)
+                .insert(
+                  LocalOwnersCompanion.insert(
+                    id: 'matching-reload-next-owner',
+                    createdAtUtcMs: DateTime.utc(
+                      2026,
+                      8,
+                      25,
+                      14,
+                      56,
+                    ).millisecondsSinceEpoch,
+                  ),
+                );
+            await database
+                .into(database.learningSessions)
+                .insert(
+                  LearningSessionsCompanion.insert(
+                    id: 'matching-reload-next-active',
+                    ownerId: 'matching-reload-next-owner',
+                    activityType: 'quiz',
+                    state: 'active',
+                    startedAtUtcMs: DateTime.utc(
+                      2026,
+                      8,
+                      25,
+                      14,
+                      56,
+                    ).millisecondsSinceEpoch,
+                    appVersion: 'test',
+                    buildId: 'next-owner',
+                  ),
+                );
+          });
+        };
+        final recoveryLearning = LearningUseCases(
+          owners: owners,
+          repository: repository,
+          generateId: () => 'reload-${++generatedId}',
+          nowUtc: () => DateTime.utc(2026, 8, 25, 14, 55, generatedId),
+          buildInfo: const AppBuildInfo(version: 'test', buildId: 'f10-test'),
+        );
+        final evidence = CurrentActivityEvidenceAdapter(
+          learning: recoveryLearning,
+        );
+
+        final prepared = await adapter.prepareSession(
+          learning: recoveryLearning,
+          evidence: evidence,
+          categoryId: 'category:travel',
+        );
+        expect(prepared.session.ownerId, originalOwner.id);
+        final review = adapter.createReview(
+          session: prepared.session,
+          learning: recoveryLearning,
+          evidence: evidence,
+          recovery: prepared,
+        );
+        addTearDown(review.dispose);
+        final summary = await review.timeout();
+
+        expect(summary.ownerId, originalOwner.id);
+        final sessions = await database.select(database.learningSessions).get();
+        expect(
+          sessions.singleWhere((row) => row.id == prepared.session.id).state,
+          'completed',
+        );
+        expect(
+          sessions
+              .singleWhere((row) => row.id == 'matching-reload-next-active')
+              .state,
+          'active',
+        );
       },
     );
 
@@ -3762,6 +4237,46 @@ void main() {
   });
 }
 
+Future<void> _setCanonicalCoreIdentities(
+  AppDatabase database, {
+  required int revision,
+}) async {
+  final words = await database.select(database.vocabularyWords).get();
+  for (final word in words) {
+    final checksum = ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: word.categoryId,
+      spelling: word.spelling,
+      normalizedSpelling: word.normalizedSpelling,
+      meaning: word.meaning,
+      normalizedMeaning: word.normalizedMeaning,
+      partOfSpeech: word.partOfSpeech,
+      cefrLevel: word.cefrLevel,
+      source: word.source,
+      isGlobal: word.isGlobal,
+    );
+    await (database.update(
+      database.vocabularyWords,
+    )..where((candidate) => candidate.id.equals(word.id))).write(
+      VocabularyWordsCompanion(
+        contentRevision: Value(revision),
+        contentChecksumSha256: Value(checksum),
+      ),
+    );
+  }
+}
+
+String _matchingRevision(int revision, String coreChecksumSha256) =>
+    LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+      promptMode: 'matchingPair',
+      wordId: 'ignored-by-matching-format',
+      revision: revision,
+      checksumSha256:
+          LexicalPromptArtifactResolver.canonicalPromptChecksumSha256(
+            promptMode: 'matchingPair',
+            coreChecksumSha256: coreChecksumSha256,
+          ),
+    );
+
 QuizSession _session(List<QuizWord> words) => QuizSession(
   id: 'session:matching',
   startedAtUtc: DateTime.utc(2026, 8, 25, 9),
@@ -4100,6 +4615,8 @@ final class _RestartRecoveryRepository
   int? checkpointFailureRevision;
   LearningActivityRecovery Function(LearningActivityRecovery recovery)?
   recoveryTransform;
+  Future<void> Function(LearningActivityRecovery? recovery)? afterRecoveryLoad;
+  Future<void> Function()? afterCheckpointedStart;
   final List<RecordAnswerCommand> commands = <RecordAnswerCommand>[];
   final List<({String ownerId, String sessionId, DateTime endedAtUtc})> closes =
       <({String ownerId, String sessionId, DateTime endedAtUtc})>[];
@@ -4123,10 +4640,15 @@ final class _RestartRecoveryRepository
   Future<void> startSessionWithCheckpoint({
     required LearningSessionDraft session,
     required LearningActivityCheckpoint checkpoint,
-  }) => delegate.startSessionWithCheckpoint(
-    session: session,
-    checkpoint: checkpoint,
-  );
+  }) async {
+    await delegate.startSessionWithCheckpoint(
+      session: session,
+      checkpoint: checkpoint,
+    );
+    final after = afterCheckpointedStart;
+    afterCheckpointedStart = null;
+    await after?.call();
+  }
 
   @override
   Future<LearningActivityRecovery?> loadLatestActivityRecovery({
@@ -4137,6 +4659,9 @@ final class _RestartRecoveryRepository
       ownerId: ownerId,
       activityType: activityType,
     );
+    final after = afterRecoveryLoad;
+    afterRecoveryLoad = null;
+    await after?.call(recovery);
     if (recovery == null) return null;
     return recoveryTransform?.call(recovery) ?? recovery;
   }

@@ -536,6 +536,323 @@ void main() {
   );
 
   test(
+    'completion and retry stay pinned to the launched session owner',
+    () async {
+      final fixture = await _fixture();
+      addTearDown(fixture.controller.dispose);
+      final originalOwner = await fixture.owners.getOrCreateActiveOwner();
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.database.transaction(() async {
+        await (fixture.database.update(fixture.database.localOwners)
+              ..where((row) => row.id.equals(originalOwner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await fixture.database
+            .into(fixture.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'local:new-owner',
+                createdAtUtcMs: fixture.now.millisecondsSinceEpoch,
+              ),
+            );
+        await fixture.database
+            .into(fixture.database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'new-owner-active',
+                ownerId: 'local:new-owner',
+                activityType: 'quiz',
+                state: 'active',
+                startedAtUtcMs: fixture.now.millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'new-owner',
+              ),
+            );
+      });
+      fixture.repository.failNextFinish = true;
+      final completedAt = fixture.now.add(const Duration(minutes: 1));
+
+      await expectLater(
+        fixture.controller.complete(completedAt),
+        throwsStateError,
+      );
+      await fixture.controller.complete(completedAt);
+      await fixture.controller.complete(completedAt);
+
+      expect(fixture.repository.finishOwnerIds, [
+        originalOwner.id,
+        originalOwner.id,
+      ]);
+      final sessions = await fixture.database
+          .select(fixture.database.learningSessions)
+          .get();
+      final original = sessions.singleWhere(
+        (session) => session.id == fixture.startCommand.sessionId,
+      );
+      final nextOwner = sessions.singleWhere(
+        (session) => session.id == 'new-owner-active',
+      );
+      expect(original.ownerId, originalOwner.id);
+      expect(original.state, 'completed');
+      expect(nextOwner.ownerId, 'local:new-owner');
+      expect(nextOwner.state, 'active');
+    },
+  );
+
+  testWidgets(
+    'generic shell initialization pins the loaded durable session owner',
+    (tester) async {
+      final fixture = await _fixture();
+      addTearDown(fixture.controller.dispose);
+      final originalOwner = await fixture.owners.getOrCreateActiveOwner();
+      late UnifiedLessonSessionLifecycle lifecycle;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonShell(
+            controller: fixture.controller,
+            nowUtc: () => fixture.now.add(const Duration(minutes: 1)),
+            builder: (context) {
+              lifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context)!;
+              return const Text('lesson body');
+            },
+          ),
+        ),
+      );
+      await lifecycle.initializeSession(
+        Future<QuizSession>.value(fixture.session),
+      );
+      await fixture.database.transaction(() async {
+        await (fixture.database.update(fixture.database.localOwners)
+              ..where((row) => row.id.equals(originalOwner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await fixture.database
+            .into(fixture.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'local:shell-next-owner',
+                createdAtUtcMs: fixture.now.millisecondsSinceEpoch,
+              ),
+            );
+        await fixture.database
+            .into(fixture.database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'shell-next-owner-active',
+                ownerId: 'local:shell-next-owner',
+                activityType: 'quiz',
+                state: 'active',
+                startedAtUtcMs: fixture.now.millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'next-owner',
+              ),
+            );
+      });
+      fixture.repository.failNextFinish = true;
+      final close = fixture.learning.captureSessionClose(
+        sessionId: fixture.session.id,
+      );
+
+      await expectLater(lifecycle.complete(close), throwsStateError);
+      await lifecycle.completeRecovery(close);
+
+      expect(fixture.repository.finishOwnerIds, [
+        originalOwner.id,
+        originalOwner.id,
+      ]);
+      final sessions = await fixture.database
+          .select(fixture.database.learningSessions)
+          .get();
+      expect(
+        sessions.singleWhere((row) => row.id == fixture.session.id).state,
+        'completed',
+      );
+      expect(
+        sessions
+            .singleWhere((row) => row.id == 'shell-next-owner-active')
+            .state,
+        'active',
+      );
+    },
+  );
+
+  test(
+    'configured evidence effort and close retry stay on the session owner',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final originalOwner = await fixture.owners.getOrCreateActiveOwner();
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        ownerId: originalOwner.id,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.database.transaction(() async {
+        await (fixture.database.update(fixture.database.localOwners)
+              ..where((row) => row.id.equals(originalOwner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await fixture.database
+            .into(fixture.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'local:configured-next-owner',
+                createdAtUtcMs: fixture.now.millisecondsSinceEpoch,
+              ),
+            );
+        await fixture.database
+            .into(fixture.database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'configured-next-owner-active',
+                ownerId: 'local:configured-next-owner',
+                activityType: 'quiz',
+                state: 'active',
+                startedAtUtcMs: fixture.now.millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'next-owner',
+              ),
+            );
+      });
+
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      monotonicMicros = const Duration(milliseconds: 500).inMicroseconds;
+      await fixture.controller.recordActiveLearningInteraction(
+        fixture.now.add(const Duration(milliseconds: 500)),
+      );
+      await fixture.controller.submit(fixture.submission());
+      fixture.repository.failNextFinish = true;
+      final completedAt = fixture.now.add(const Duration(seconds: 1));
+      await expectLater(
+        fixture.controller.complete(completedAt),
+        throwsStateError,
+      );
+      await fixture.controller.complete(completedAt);
+
+      expect(fixture.repository.configurationLoadOwnerIds, [originalOwner.id]);
+      expect(
+        fixture.repository.configurationEffortOwnerIds,
+        everyElement(originalOwner.id),
+      );
+      expect(
+        fixture.repository.recordCommands.single.ownerId,
+        originalOwner.id,
+      );
+      expect(fixture.repository.finishOwnerIds, [
+        originalOwner.id,
+        originalOwner.id,
+      ]);
+      final original = await fixture.repository.delegate
+          .loadSessionConfigurationState(
+            ownerId: originalOwner.id,
+            sessionId: fixture.session.id,
+          );
+      expect(original?.state, 'completed');
+      expect(
+        original?.configurationActiveEffort,
+        const Duration(milliseconds: 500),
+      );
+      final nextOwner = await fixture.repository.delegate
+          .loadSessionConfigurationState(
+            ownerId: 'local:configured-next-owner',
+            sessionId: 'configured-next-owner-active',
+          );
+      expect(nextOwner?.state, 'active');
+      expect(nextOwner?.configurationActiveEffort, Duration.zero);
+    },
+  );
+
+  test(
+    'configured abandonment closes effort only for the session owner',
+    () async {
+      var monotonicMicros = 0;
+      final fixture = await _fixture(
+        configurationMonotonicMicros: () => monotonicMicros,
+      );
+      addTearDown(fixture.controller.dispose);
+      final originalOwner = await fixture.owners.getOrCreateActiveOwner();
+      final configuration = _sessionConfiguration(
+        fixture.adapter.mode,
+        ownerId: originalOwner.id,
+        timing: const SessionTiming.timed(Duration(seconds: 10)),
+      );
+      await fixture.bindSessionConfiguration(
+        configuration,
+        revalidate: (candidate) async => candidate,
+      );
+      await fixture.database.transaction(() async {
+        await (fixture.database.update(fixture.database.localOwners)
+              ..where((row) => row.id.equals(originalOwner.id)))
+            .write(const LocalOwnersCompanion(isActive: Value(false)));
+        await fixture.database
+            .into(fixture.database.localOwners)
+            .insert(
+              LocalOwnersCompanion.insert(
+                id: 'local:configured-abandon-next-owner',
+                createdAtUtcMs: fixture.now.millisecondsSinceEpoch,
+              ),
+            );
+        await fixture.database
+            .into(fixture.database.learningSessions)
+            .insert(
+              LearningSessionsCompanion.insert(
+                id: 'configured-abandon-next-active',
+                ownerId: 'local:configured-abandon-next-owner',
+                activityType: 'quiz',
+                state: 'active',
+                startedAtUtcMs: fixture.now.millisecondsSinceEpoch,
+                appVersion: 'test',
+                buildId: 'next-owner',
+              ),
+            );
+      });
+
+      await fixture.controller.start(
+        _configuredCommand(fixture.startCommand, configuration),
+      );
+      monotonicMicros = const Duration(milliseconds: 750).inMicroseconds;
+      await fixture.controller.abandon(
+        fixture.now.add(const Duration(milliseconds: 750)),
+      );
+
+      expect(fixture.repository.configurationLoadOwnerIds, [originalOwner.id]);
+      expect(
+        fixture.repository.configurationEffortOwnerIds,
+        everyElement(originalOwner.id),
+      );
+      expect(fixture.repository.abandonOwnerIds, [originalOwner.id]);
+      final sessions = await fixture.database
+          .select(fixture.database.learningSessions)
+          .get();
+      expect(
+        sessions.singleWhere((row) => row.id == fixture.session.id).state,
+        'abandoned',
+      );
+      expect(
+        sessions
+            .singleWhere((row) => row.id == 'configured-abandon-next-active')
+            .state,
+        'active',
+      );
+      final original = await fixture.repository.delegate
+          .loadSessionConfigurationState(
+            ownerId: originalOwner.id,
+            sessionId: fixture.session.id,
+          );
+      expect(
+        original?.configurationActiveEffort,
+        const Duration(milliseconds: 750),
+      );
+    },
+  );
+
+  test(
     'f16 completed configured recovery reconciles without accruing effort',
     () async {
       var monotonicMicros = 0;
@@ -3477,6 +3794,7 @@ LessonStartCommand _configuredCommand(
   sessionId: command.sessionId,
   startedAtUtc: command.startedAtUtc,
   itemCount: command.itemCount,
+  ownerId: command.ownerId,
   configuration: configuration,
 );
 
@@ -3574,6 +3892,7 @@ Future<_Fixture> _fixture({
       sessionId: quiz.id,
       startedAtUtc: quiz.startedAtUtc!,
       itemCount: quiz.questions.length,
+      ownerId: owner.id,
     ),
     now: now,
     wordId: quiz.questions.single.word.id,
@@ -4450,6 +4769,10 @@ final class _CountingRepository
   int recordCalls = 0;
   int replayCalls = 0;
   int finishCalls = 0;
+  final List<String> finishOwnerIds = <String>[];
+  final List<String> configurationLoadOwnerIds = <String>[];
+  final List<String> configurationEffortOwnerIds = <String>[];
+  final List<String> abandonOwnerIds = <String>[];
   int scopedAbandonCalls = 0;
   int bulkAbandonCalls = 0;
   RecordAnswerCommand? lastRecordCommand;
@@ -4525,6 +4848,7 @@ final class _CountingRepository
     required DateTime endedAtUtc,
   }) async {
     finishCalls += 1;
+    finishOwnerIds.add(ownerId);
     if (!finishStarted.isCompleted) finishStarted.complete();
     if (blockFinish) await _finishRelease.future;
     if (failNextFinish) {
@@ -4557,6 +4881,7 @@ final class _CountingRepository
     required DateTime abandonedAtUtc,
   }) async {
     scopedAbandonCalls += 1;
+    abandonOwnerIds.add(ownerId);
     if (!abandonStarted.isCompleted) abandonStarted.complete();
     if (blockAbandon) await _abandonRelease.future;
     if (failAbandon) throw StateError('abandon failed');
@@ -4586,10 +4911,13 @@ final class _CountingRepository
   Future<LearningSessionSummary?> loadSessionConfigurationState({
     required String ownerId,
     required String sessionId,
-  }) => delegate.loadSessionConfigurationState(
-    ownerId: ownerId,
-    sessionId: sessionId,
-  );
+  }) {
+    configurationLoadOwnerIds.add(ownerId);
+    return delegate.loadSessionConfigurationState(
+      ownerId: ownerId,
+      sessionId: sessionId,
+    );
+  }
 
   @override
   Future<Duration> addSessionConfigurationActiveEffort({
@@ -4598,6 +4926,7 @@ final class _CountingRepository
     required String configurationIdentity,
     required Duration delta,
   }) async {
+    configurationEffortOwnerIds.add(ownerId);
     final started = _configurationEffortStarted;
     final release = _configurationEffortRelease;
     if (started != null && release != null && !release.isCompleted) {

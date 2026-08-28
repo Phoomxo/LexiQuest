@@ -1,6 +1,3 @@
-import 'dart:convert';
-
-import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 
 import '../domain/answer_feedback.dart';
@@ -8,6 +5,7 @@ import '../domain/evidence_context.dart';
 import '../domain/hint_policy.dart';
 import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
 import 'learning_use_cases.dart';
@@ -33,21 +31,16 @@ String typedRecallAnswerSetChecksumSha256({
     return coreChecksumSha256;
   }
   if (acceptedVariantsRevision == null ||
-      acceptedVariantsRevision <= 0 ||
-      acceptedVariantsChecksumSha256 == null ||
-      !checksumPattern.hasMatch(acceptedVariantsChecksumSha256)) {
+      acceptedVariantsChecksumSha256 == null) {
     throw ArgumentError(
       'accepted spelling variants require a positive revision and checksum',
     );
   }
-  return sha256
-      .convert(
-        utf8.encode(
-          'typed-recall-answer-set-v1\u0000$coreChecksumSha256\u0000'
-          '$acceptedVariantsRevision\u0000$acceptedVariantsChecksumSha256',
-        ),
-      )
-      .toString();
+  return LexicalPromptArtifactResolver.typedRecallAnswerSetChecksumSha256(
+    coreChecksumSha256: coreChecksumSha256,
+    acceptedVariantsRevision: acceptedVariantsRevision,
+    acceptedVariantsChecksumSha256: acceptedVariantsChecksumSha256,
+  );
 }
 
 /// Bounded canonical decomposition table for the Latin vocabulary supported
@@ -399,6 +392,7 @@ final class TypedRecallModeAdapter
 
   CapturedTypedRecallSubmission capture({
     required CurrentActivityEvidenceAdapter evidence,
+    String? ownerId,
     required String sessionId,
     required TypedRecallPrompt prompt,
     required String response,
@@ -411,19 +405,29 @@ final class TypedRecallModeAdapter
       response: response,
       support: support,
     );
-    final answerSetChecksum = typedRecallAnswerSetChecksumSha256(
+    final identity = LexicalPromptArtifactResolver.resolveForAdapter(
+      promptMode: prompt.promptKind == TypedRecallPromptKind.context
+          ? 'associativeRecall'
+          : 'typedRecall',
+      wordId: prompt.wordId,
+      coreRevision: prompt.contentRevision,
       coreChecksumSha256: prompt.contentChecksumSha256,
-      acceptedVariantsRevision: prompt.acceptedVariantsRevision,
-      acceptedVariantsChecksumSha256: prompt.acceptedVariantsChecksumSha256,
+      verifiedArtifactRevision: prompt.acceptedVariantsRevision,
+      verifiedArtifactChecksumSha256: prompt.acceptedVariantsChecksumSha256,
+      usesAcceptedVariants: prompt.acceptedVariants.isNotEmpty,
     );
+    if (identity == null) {
+      throw StateError('typed recall artifact identity is unavailable');
+    }
     final pending = evidence.captureTypedRecall(
+      ownerId: ownerId,
       sessionId: sessionId,
       wordId: prompt.wordId,
       isCorrect: evaluation.isCorrect,
       responseTimeMs: responseTimeMs,
       attemptNumber: attemptNumber,
       contentRevision: prompt.contentRevision,
-      checksumSha256: answerSetChecksum,
+      checksumSha256: identity.checksumSha256,
       contextual: prompt.promptKind == TypedRecallPromptKind.context,
       providerProvenance: evaluation.providerProvenance,
       classification: HintEvidenceClassification(
@@ -779,6 +783,7 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
     final hintLevel = _adapter._supportLevel(_supportUsage());
     _recordInteraction();
     final pending = _evidence.captureSupportedMeaningRecognition(
+      ownerId: session.ownerId,
       sessionId: session.id,
       wordId: question.word.id,
       isCorrect: option == question.correctOption,
@@ -813,6 +818,7 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
     if (prompt == null) throw StateError('typed recall prompt is unavailable');
     final captured = _adapter.capture(
       evidence: _evidence,
+      ownerId: session.ownerId,
       sessionId: session.id,
       prompt: prompt,
       response: response,
@@ -921,6 +927,7 @@ final class TypedRecallQuizReviewController extends ChangeNotifier {
     _requireOperationAccepted();
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
+      ownerId: session.ownerId,
     );
     _setPhase(MeaningQuizReviewPhase.completing);
     try {

@@ -4,6 +4,7 @@ import 'package:crypto/crypto.dart';
 
 import '../../learning_packs/domain/content_manifest.dart';
 import 'evidence_context.dart';
+import 'lexical_prompt_artifact_identity.dart';
 
 const String contrastiveFeedbackAttemptProvenancePrefix = 'f18:v1:';
 
@@ -275,16 +276,12 @@ String contrastiveEvidenceContentRevision({
   required String wordId,
   required int revision,
   required String checksumSha256,
-}) => switch (promptMode) {
-  'meaningChoice' ||
-  'wordChoice' => 'lexical-meaning:$wordId@$revision:$checksumSha256',
-  'definitionChoice' => 'lexical-definition:$wordId@$revision:$checksumSha256',
-  'clozeSelected' => 'lexical-cloze:$wordId@$revision:$checksumSha256',
-  'matchingPair' => 'lexical-matching:v$revision:$checksumSha256',
-  _ => throw FormatException(
-    'unsupported contrastive feedback prompt mode: $promptMode',
-  ),
-};
+}) => LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+  promptMode: promptMode,
+  wordId: wordId,
+  revision: revision,
+  checksumSha256: checksumSha256,
+);
 
 bool _matchesEvidenceContentRevision({
   required String promptMode,
@@ -293,18 +290,21 @@ bool _matchesEvidenceContentRevision({
   required String manifestChecksumSha256,
   required String evidenceContentRevision,
 }) {
-  if (promptMode == 'matchingPair') {
-    return RegExp(
-      '^lexical-matching:v$revision:[0-9a-f]{64}\$',
-    ).hasMatch(evidenceContentRevision);
-  }
-  return evidenceContentRevision ==
-      contrastiveEvidenceContentRevision(
-        promptMode: promptMode,
-        wordId: wordId,
-        revision: revision,
-        checksumSha256: manifestChecksumSha256,
-      );
+  final escapedWordId = RegExp.escape(wordId);
+  final prefix = switch (promptMode) {
+    'matchingPair' => 'lexical-matching:v$revision:',
+    'meaningChoice' ||
+    'wordChoice' => 'lexical-meaning:$escapedWordId@$revision:',
+    'definitionChoice' => 'lexical-definition:$escapedWordId@$revision:',
+    'clozeSelected' ||
+    'clozeTyped' => 'lexical-cloze:$escapedWordId@$revision:',
+    'typedRecall' ||
+    'associativeRecall' => 'lexical-typed-recall:$escapedWordId@$revision:',
+    _ => null,
+  };
+  return prefix != null &&
+      RegExp('^$prefix[0-9a-f]{64}\$').hasMatch(evidenceContentRevision) &&
+      RegExp(r'^[0-9a-f]{64}$').hasMatch(manifestChecksumSha256);
 }
 
 void _requireLexicalManifestIdentity(ContentIdentity identity) {

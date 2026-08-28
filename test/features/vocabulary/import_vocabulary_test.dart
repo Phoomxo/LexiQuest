@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyCategory, VocabularyWord;
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/import_vocabulary.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_import_repository.dart';
@@ -83,6 +84,40 @@ void main() {
       expect(await vocabulary.watchWords(category.id).first, hasLength(1));
     },
   );
+
+  test('new imports persist the canonical core content checksum', () async {
+    final category = await vocabulary.createCategory('Travel');
+
+    await importer(
+      categoryId: category.id,
+      sourceName: 'travel.csv',
+      rows: const [
+        {
+          'word': 'station',
+          'meaning': 'สถานี',
+          'partOfSpeech': 'noun',
+          'cefrLevel': 'A1',
+        },
+      ],
+    );
+
+    final word = await database.select(database.vocabularyWords).getSingle();
+    expect(word.source, 'import');
+    expect(
+      word.contentChecksumSha256,
+      ContentQualityPolicy.vocabularyChecksumSha256(
+        categoryId: category.id,
+        spelling: 'station',
+        normalizedSpelling: 'station',
+        meaning: 'สถานี',
+        normalizedMeaning: 'สถานี',
+        partOfSpeech: 'noun',
+        cefrLevel: 'A1',
+        source: 'import',
+        isGlobal: false,
+      ),
+    );
+  });
 
   test(
     'replaying the same source returns stored results without new words',

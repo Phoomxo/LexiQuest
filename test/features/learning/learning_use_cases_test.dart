@@ -1080,11 +1080,14 @@ void main() {
   });
 
   test('associative reading starts one canonical learning session', () async {
-    final sessionId = await useCases.startAssociativeReadingSession();
+    final handle = await useCases.startAssociativeReadingSessionHandle();
+    final sessionId = handle.id;
 
     expect(sessionId, 'session:1');
+    expect(handle.ownerId, 'local:guest');
     final stored = await database.select(database.learningSessions).getSingle();
     expect(stored.id, sessionId);
+    expect(stored.ownerId, handle.ownerId);
     expect(stored.activityType, 'associativeReading');
     expect(stored.state, 'active');
   });

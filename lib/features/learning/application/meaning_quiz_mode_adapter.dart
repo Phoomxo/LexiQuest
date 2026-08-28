@@ -7,6 +7,7 @@ import '../domain/evidence_context.dart';
 import '../domain/answer_feedback.dart';
 import '../domain/contrastive_explanation.dart';
 import '../domain/learning_models.dart';
+import '../domain/lexical_prompt_artifact_identity.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/session_configuration.dart';
 import 'current_activity_evidence.dart';
@@ -33,6 +34,7 @@ final class MeaningQuizQuestion {
     this.optionIdentities = const <String, String>{},
     this.contrastiveIdentity,
     this.contrastiveChecksumSha256,
+    this.evidenceChecksumSha256,
   });
 
   final QuizWord word;
@@ -43,6 +45,7 @@ final class MeaningQuizQuestion {
   final Map<String, String> optionIdentities;
   final ContentIdentity? contrastiveIdentity;
   final String? contrastiveChecksumSha256;
+  final String? evidenceChecksumSha256;
 
   String? optionIdentity(String option) => optionIdentities[option];
 }
@@ -158,7 +161,21 @@ final class MeaningQuizModeAdapter
         );
         final lexical = lexicalById[word.id];
         final rich = lexical?.richMetadata;
-        final verifiedChecksum = rich?.verifiedArtifactChecksumSha256;
+        final promptMode =
+            questionDirection == MeaningQuizDirection.wordToMeaning
+            ? 'meaningChoice'
+            : 'wordChoice';
+        final artifactIdentity = lexical == null
+            ? null
+            : LexicalPromptArtifactResolver.resolveForAdapter(
+                promptMode: promptMode,
+                wordId: word.id,
+                coreRevision: word.contentRevision ?? 0,
+                coreChecksumSha256: word.contentChecksumSha256,
+                verifiedArtifactRevision: rich?.verifiedContentRevision,
+                verifiedArtifactChecksumSha256:
+                    rich?.verifiedArtifactChecksumSha256,
+              );
         final hasVerifiedLexicalMetadata =
             lexical != null &&
             lexical.isGlobal &&
@@ -168,8 +185,7 @@ final class MeaningQuizModeAdapter
                 ContentPublicationState.published &&
             lexical.contentRevision == word.contentRevision &&
             rich?.verifiedContentRevision == lexical.contentRevision &&
-            verifiedChecksum != null &&
-            RegExp(r'^[0-9a-f]{64}$').hasMatch(verifiedChecksum);
+            artifactIdentity != null;
         return MeaningQuizQuestion(
           word: word,
           direction: questionDirection,
@@ -194,7 +210,10 @@ final class MeaningQuizModeAdapter
                 )
               : null,
           contrastiveChecksumSha256: hasVerifiedLexicalMetadata
-              ? verifiedChecksum
+              ? artifactIdentity.verifiedArtifactChecksumSha256
+              : null,
+          evidenceChecksumSha256: hasVerifiedLexicalMetadata
+              ? artifactIdentity.checksumSha256
               : null,
         );
       }),
@@ -369,11 +388,13 @@ final class MeaningQuizReviewController extends ChangeNotifier {
         : CurrentActivityInput.meaningToWordMultipleChoice;
     final manifestIdentity = question.contrastiveIdentity;
     final contentRevision = manifestIdentity?.revision;
-    final checksum = question.contrastiveChecksumSha256;
+    final manifestChecksum = question.contrastiveChecksumSha256;
+    final checksum = question.evidenceChecksumSha256;
     final hasPinnedLexicalIdentity =
         contentRevision != null &&
         contentRevision > 0 &&
         checksum != null &&
+        manifestChecksum != null &&
         RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum);
     final selectedOptionId = question.optionIdentity(option);
     final correctOptionId = question.optionIdentity(question.correctOption);
@@ -384,7 +405,7 @@ final class MeaningQuizReviewController extends ChangeNotifier {
             correctOptionId != null
         ? ContrastiveFeedbackContext(
             manifestIdentity: manifestIdentity!,
-            manifestChecksumSha256: checksum,
+            manifestChecksumSha256: manifestChecksum,
             promptMode: input == CurrentActivityInput.meaningMultipleChoice
                 ? 'meaningChoice'
                 : 'wordChoice',
@@ -403,6 +424,7 @@ final class MeaningQuizReviewController extends ChangeNotifier {
     _recordInteraction();
     final pending = hasPinnedLexicalIdentity
         ? _evidence.capturePinnedMeaningRecognition(
+            ownerId: session.ownerId,
             input: input,
             sessionId: session.id,
             wordId: question.word.id,
@@ -414,6 +436,7 @@ final class MeaningQuizReviewController extends ChangeNotifier {
             contrastiveFeedback: contrastiveFeedback,
           )
         : _evidence.capture(
+            ownerId: session.ownerId,
             input: input,
             sessionId: session.id,
             wordId: question.word.id,
@@ -511,6 +534,7 @@ final class MeaningQuizReviewController extends ChangeNotifier {
     _requireOperationAccepted();
     final close = _pendingClose ??= _learning.captureSessionClose(
       sessionId: session.id,
+      ownerId: session.ownerId,
     );
     _setPhase(MeaningQuizReviewPhase.completing);
     try {

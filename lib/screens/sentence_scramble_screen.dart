@@ -12,6 +12,7 @@ class SentenceScrambleScreen extends StatefulWidget {
   final String targetSentence;
   final String translation;
   final VoiceUseCases? voice;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -23,6 +24,7 @@ class SentenceScrambleScreen extends StatefulWidget {
     required this.targetSentence,
     this.translation = '',
     this.voice,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -142,6 +144,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     final pending = _pendingEvidence = _modeAdapter
         .capture(
           evidence: evidence,
+          ownerId: widget.ownerId,
           sessionId: sessionId,
           wordId: wordId,
           target: widget.targetSentence,
@@ -206,6 +209,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
     }
     final close = _pendingSessionClose ??= learning.captureSessionClose(
       sessionId: sessionId,
+      ownerId: widget.ownerId,
     );
     if (mounted) setState(() {});
     try {

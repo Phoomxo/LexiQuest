@@ -10,6 +10,7 @@ import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
 import '../domain/session_configuration.dart';
 import '../domain/hint_policy.dart';
+import '../../learning_packs/domain/content_manifest.dart';
 import '../../../runtime/app_dependencies.dart';
 import '../../../runtime/production_feature_gate.dart';
 import '../../../runtime/registries/feature_registry.dart';
@@ -83,6 +84,7 @@ final class UnifiedLessonSessionLifecycle {
     required String sessionId,
     required DateTime startedAtUtc,
     required int itemCount,
+    String? ownerId,
   }) {
     final command = LessonStartCommand(
       sessionId: sessionId,
@@ -90,6 +92,7 @@ final class UnifiedLessonSessionLifecycle {
       itemCount: itemCount,
       startedAtUtc: startedAtUtc,
       configuration: _controller.sessionConfiguration,
+      ownerId: ownerId,
     );
     return _routeLifecycle?.start(command) ?? _controller.start(command);
   }
@@ -118,6 +121,7 @@ final class UnifiedLessonSessionLifecycle {
         sessionId: session.id,
         startedAtUtc: startedAtUtc,
         itemCount: session.questions.length,
+        ownerId: session.ownerId,
       );
     }
     return session;
@@ -228,6 +232,7 @@ final class UnifiedLessonRouteLifecycle {
   bool _accepting = true;
   Future<QuizSession>? _initialization;
   String? _loadedSessionId;
+  String? _loadedOwnerId;
   Future<void>? _startInFlight;
   Future<LearningSessionSummary>? _completionInFlight;
   PendingLearningSessionClose? _acceptedClose;
@@ -298,12 +303,14 @@ final class UnifiedLessonRouteLifecycle {
   Future<QuizSession> initializeSession(
     Future<QuizSession> load, {
     RecoveredLessonCloseReader? recoveredClose,
+    String? ownerId,
   }) {
     final existing = _initialization;
     if (existing != null) return existing;
     final initialization = _initializeSession(
       load,
       recoveredClose: recoveredClose,
+      ownerId: ownerId,
     );
     _initialization = initialization;
     return initialization;
@@ -312,12 +319,22 @@ final class UnifiedLessonRouteLifecycle {
   Future<QuizSession> _initializeSession(
     Future<QuizSession> load, {
     required RecoveredLessonCloseReader? recoveredClose,
+    required String? ownerId,
   }) async {
     final loaded = await load;
     final session = loaded;
     final startedAtUtc = session.startedAtUtc;
     if (session.isEmpty) return session;
+    final sessionOwnerId = session.ownerId;
+    if (ownerId != null &&
+        sessionOwnerId != null &&
+        ownerId != sessionOwnerId) {
+      await _compensateUnattached(session.id, sessionOwnerId);
+      throw StateError('Loaded lesson session owner identity changed.');
+    }
+    final pinnedOwnerId = ownerId ?? sessionOwnerId;
     _loadedSessionId = session.id;
+    _loadedOwnerId = pinnedOwnerId;
     final restoredClose = recoveredClose?.call();
     if (restoredClose != null) {
       _reserveLoadedRecoveryClose(restoredClose, session.id);
@@ -339,6 +356,7 @@ final class UnifiedLessonRouteLifecycle {
       itemCount: session.questions.length,
       startedAtUtc: startedAtUtc,
       configuration: _controller.sessionConfiguration,
+      ownerId: pinnedOwnerId,
     );
     try {
       if (restoredClose == null) {
@@ -564,7 +582,7 @@ final class UnifiedLessonRouteLifecycle {
     await _controller.abandonAtCutoff(cutoff);
   }
 
-  Future<void> _compensateUnattached(String sessionId) {
+  Future<void> _compensateUnattached(String sessionId, [String? ownerId]) {
     final existing = _unattachedCompensations[sessionId];
     if (existing != null) return existing;
     final learning = _learning;
@@ -574,6 +592,7 @@ final class UnifiedLessonRouteLifecycle {
       );
     }
     final operation = learning.abandonSession(
+      ownerId: ownerId ?? _loadedOwnerId,
       sessionId: sessionId,
       abandonedAtUtc: _nowUtc(),
     );
@@ -587,6 +606,187 @@ final class _UnifiedLessonOperationLease {
 
   final UnifiedLessonRouteLifecycle owner;
   bool active = true;
+}
+
+/// One preflighted, route-owned Unified Lesson destination. The lease takes
+/// ownership of its controller before any durable session is created, binds
+/// exactly one returned session, and retires through canonical lifecycle
+/// authority when navigation fails, races, or completes.
+final class UnifiedLessonShellLease {
+  factory UnifiedLessonShellLease({
+    required UnifiedLessonController controller,
+    required LearningUseCases learning,
+    required LessonUtcNow nowUtc,
+    required WidgetBuilder builder,
+    ContrastiveFeedbackUseCases? contrastiveFeedback,
+  }) {
+    if (!controller.usesLearningAuthority(learning) ||
+        controller.state.status != LessonSessionStatus.planned) {
+      controller.dispose();
+      throw StateError(
+        'Unified Lesson destination must own one planned canonical controller.',
+      );
+    }
+    return UnifiedLessonShellLease._(
+      controller: controller,
+      learning: learning,
+      nowUtc: nowUtc,
+      builder: builder,
+      contrastiveFeedback: contrastiveFeedback,
+    );
+  }
+
+  UnifiedLessonShellLease._({
+    required this.controller,
+    required LearningUseCases learning,
+    required this.nowUtc,
+    required this.builder,
+    required this.contrastiveFeedback,
+  }) : _learning = learning,
+       _routeLifecycle = UnifiedLessonRouteLifecycle(
+         controller,
+         learning,
+         nowUtc,
+       );
+
+  final UnifiedLessonController controller;
+  final LearningUseCases _learning;
+  final LessonUtcNow nowUtc;
+  final WidgetBuilder builder;
+  final ContrastiveFeedbackUseCases? contrastiveFeedback;
+  final UnifiedLessonRouteLifecycle _routeLifecycle;
+
+  Future<void>? _attachment;
+  Future<void>? _retirement;
+  String? _sessionId;
+  bool _attached = false;
+  bool _controllerDisposed = false;
+
+  bool usesLearningAuthority(Object authorityIdentity) =>
+      identical(_learning, authorityIdentity);
+
+  Future<void> attach(
+    QuizSession session, {
+    required String ownerId,
+    required List<ReviewedLexicalContentSnapshot> expectedContent,
+  }) {
+    if (ownerId.isEmpty || ownerId != ownerId.trim()) {
+      return Future<void>.error(
+        ArgumentError.value(ownerId, 'ownerId', 'must be canonical'),
+      );
+    }
+    if (_retirement != null) {
+      return _rejectAndCompensate(
+        session: session,
+        ownerId: ownerId,
+        message: 'Unified Lesson destination is already retiring.',
+      );
+    }
+    final existing = _attachment;
+    if (existing != null) {
+      if (_sessionId != session.id) {
+        return _rejectAndCompensate(
+          session: session,
+          ownerId: ownerId,
+          message: 'Unified Lesson destination already owns another session.',
+        );
+      }
+      return existing;
+    }
+    _sessionId = session.id;
+    return _attachment = _attach(
+      session,
+      ownerId: ownerId,
+      expectedContent: expectedContent,
+    );
+  }
+
+  Future<void> _rejectAndCompensate({
+    required QuizSession session,
+    required String ownerId,
+    required String message,
+  }) async {
+    await _routeLifecycle._compensateUnattached(session.id, ownerId);
+    throw StateError(message);
+  }
+
+  Future<void> _attach(
+    QuizSession session, {
+    required String ownerId,
+    required List<ReviewedLexicalContentSnapshot> expectedContent,
+  }) async {
+    final attached = await _routeLifecycle.initializeSession(
+      Future<QuizSession>.value(session),
+      ownerId: ownerId,
+    );
+    final state = controller.state;
+    if (!identical(attached, session) ||
+        session.isEmpty ||
+        session.ownerId != ownerId ||
+        session.startedAtUtc == null ||
+        controller.sessionConfiguration != session.sessionConfiguration ||
+        state.status != LessonSessionStatus.active ||
+        state.sessionId != session.id ||
+        state.startedAtUtc != session.startedAtUtc ||
+        state.itemCount != session.questions.length ||
+        !_matchesReviewedContent(session, expectedContent)) {
+      throw StateError(
+        'Unified Lesson destination did not attach the exact durable session.',
+      );
+    }
+    _attached = true;
+  }
+
+  bool _matchesReviewedContent(
+    QuizSession session,
+    List<ReviewedLexicalContentSnapshot> expected,
+  ) {
+    if (session.questions.length != expected.length) return false;
+    for (var index = 0; index < expected.length; index += 1) {
+      final snapshot = expected[index];
+      final word = session.questions[index].word;
+      if (snapshot.identity.id != word.id ||
+          snapshot.identity.revision != word.contentRevision ||
+          snapshot.categoryId != word.categoryId ||
+          snapshot.spelling != word.spelling ||
+          snapshot.normalizedSpelling != word.normalizedSpelling ||
+          snapshot.meaning != word.meaning ||
+          snapshot.normalizedMeaning != word.normalizedMeaning ||
+          snapshot.partOfSpeech != word.partOfSpeech ||
+          snapshot.cefrLevel != word.cefrLevel ||
+          snapshot.coreChecksumSha256 != word.contentChecksumSha256) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  Widget get shell {
+    if (!_attached || _retirement != null) {
+      throw StateError('Unified Lesson destination is not attached.');
+    }
+    return UnifiedLessonShell(
+      controller: controller,
+      nowUtc: nowUtc,
+      routeLifecycle: _routeLifecycle,
+      configuration: controller.sessionConfiguration,
+      contrastiveFeedback: contrastiveFeedback,
+      builder: builder,
+    );
+  }
+
+  Future<void> retire() => _retirement ??= _retire();
+
+  Future<void> _retire() async {
+    try {
+      await _routeLifecycle.retire();
+    } finally {
+      if (!_controllerDisposed) {
+        _controllerDisposed = true;
+        controller.dispose();
+      }
+    }
+  }
 }
 
 final class UnifiedLessonModeHost extends StatefulWidget {

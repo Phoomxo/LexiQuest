@@ -17,6 +17,7 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
@@ -66,7 +67,9 @@ void main() {
             normalizedMeaning: 'สถานี',
             partOfSpeech: 'noun',
             contentRevision: const Value(1),
-            contentChecksumSha256: const Value(_checksumA),
+            contentChecksumSha256: Value(
+              _canonicalCoreChecksum(spelling: 'station', meaning: 'สถานี'),
+            ),
             createdAtUtcMs: 1,
             updatedAtUtcMs: 1,
           ),
@@ -615,7 +618,6 @@ void main() {
           id: 'word-2',
           spelling: 'airport',
           meaning: 'สนามบิน',
-          checksum: _checksumB,
         );
       });
       final pinnedRepository = _FailFirstLearningRepository(
@@ -704,7 +706,11 @@ void main() {
       expect(
         context.contentRevision,
         'lexical-typed-recall:word-2@1:'
-        '${typedRecallAnswerSetChecksumSha256(coreChecksumSha256: _checksumB, acceptedVariantsRevision: 1, acceptedVariantsChecksumSha256: _checksumA)}',
+        '${typedRecallAnswerSetChecksumSha256(
+          coreChecksumSha256: _canonicalCoreChecksum(spelling: 'airport', meaning: 'สนามบิน'),
+          acceptedVariantsRevision: 1,
+          acceptedVariantsChecksumSha256: _checksumA,
+        )}',
       );
     },
   );
@@ -1448,7 +1454,6 @@ Future<void> _insertWord(
   required String id,
   required String spelling,
   required String meaning,
-  String checksum = _checksumA,
 }) {
   return database
       .into(database.vocabularyWords)
@@ -1463,12 +1468,29 @@ Future<void> _insertWord(
           normalizedMeaning: meaning,
           partOfSpeech: 'noun',
           contentRevision: const Value(1),
-          contentChecksumSha256: Value(checksum),
+          contentChecksumSha256: Value(
+            _canonicalCoreChecksum(spelling: spelling, meaning: meaning),
+          ),
           createdAtUtcMs: 1,
           updatedAtUtcMs: 1,
         ),
       );
 }
+
+String _canonicalCoreChecksum({
+  required String spelling,
+  required String meaning,
+}) => ContentQualityPolicy.vocabularyChecksumSha256(
+  categoryId: 'category-1',
+  spelling: spelling,
+  normalizedSpelling: spelling,
+  meaning: meaning,
+  normalizedMeaning: meaning,
+  partOfSpeech: 'noun',
+  cefrLevel: null,
+  source: 'manual',
+  isGlobal: false,
+);
 
 Future<void> _pumpUntilFound(WidgetTester tester, Finder finder) async {
   for (var attempt = 0; attempt < 50; attempt++) {

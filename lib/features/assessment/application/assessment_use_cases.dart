@@ -241,6 +241,7 @@ final class AssessmentUseCases {
         }
 
         final resolved = await learning.resolveEvidenceForRecording(
+          ownerId: run.ownerId,
           command: FrozenLearningEvidenceCommand(
             sourceEvidenceId: sourceEvidenceId,
             occurredAtUtc: occurredAtUtc,

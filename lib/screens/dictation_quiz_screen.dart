@@ -13,6 +13,7 @@ import 'media_dependency_unavailable.dart';
 class DictationQuizScreen extends StatefulWidget {
   final String targetWord;
   final VoiceUseCases? voice;
+  final String? ownerId;
   final String? sessionId;
   final String? wordId;
   final int attemptNumber;
@@ -23,6 +24,7 @@ class DictationQuizScreen extends StatefulWidget {
     super.key,
     required this.targetWord,
     this.voice,
+    this.ownerId,
     this.sessionId,
     this.wordId,
     this.attemptNumber = 1,
@@ -129,6 +131,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     if (evidence == null || sessionId == null || wordId == null) return;
     final captured = _modeAdapter.capture(
       evidence: evidence,
+      ownerId: widget.ownerId,
       sessionId: sessionId,
       wordId: wordId,
       target: widget.targetWord,
@@ -187,6 +190,7 @@ class _DictationQuizScreenState extends State<DictationQuizScreen>
     }
     final close = _pendingSessionClose ??= learning.captureSessionClose(
       sessionId: sessionId,
+      ownerId: widget.ownerId,
     );
     if (mounted) setState(() {});
     try {
