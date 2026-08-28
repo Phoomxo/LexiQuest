@@ -75,17 +75,21 @@ final class DriftProgressQueries {
                     database.srsStates.intervalDays.isBiggerOrEqualValue(14),
               ))
             .getSingle();
-    final achievementCountExpression = database.achievementUnlocks.id.count();
-    final achievementRow =
-        await (database.selectOnly(database.achievementUnlocks)
-              ..addColumns([achievementCountExpression])
-              ..where(database.achievementUnlocks.ownerId.equals(ownerId)))
-            .getSingle();
     final achievementRows =
         await (database.select(database.achievementUnlocks)
               ..where((row) => row.ownerId.equals(ownerId))
-              ..orderBy([(row) => OrderingTerm.asc(row.unlockedAtUtcMs)]))
+              ..orderBy([
+                (row) => OrderingTerm.asc(row.unlockedAtUtcMs),
+                (row) => OrderingTerm.asc(row.achievementId),
+                (row) => OrderingTerm.asc(row.definitionVersion),
+                (row) => OrderingTerm.asc(row.sourceEventId),
+                (row) => OrderingTerm.asc(row.id),
+              ]))
             .get();
+    final durableAchievementRows = <String, AchievementUnlock>{};
+    for (final row in achievementRows) {
+      durableAchievementRows.putIfAbsent(row.achievementId, () => row);
+    }
 
     final weaknesses = await _loadWeaknesses(ownerId);
     return ProgressSnapshot(
@@ -103,7 +107,7 @@ final class DriftProgressQueries {
           0,
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
-      achievementCount: achievementRow.read(achievementCountExpression) ?? 0,
+      achievementCount: durableAchievementRows.length,
       gameLevel: (totalXp ~/ 20) + 1,
       skills: _skills(attempts),
       weaknesses: weaknesses,
@@ -119,7 +123,7 @@ final class DriftProgressQueries {
             ),
           )
           .toList(growable: false),
-      achievements: achievementRows
+      achievements: durableAchievementRows.values
           .map(
             (row) => AchievementEvidence(
               id: row.achievementId,

@@ -130,6 +130,11 @@ void main() {
 
       for (final collection in SyncCollection.values) {
         final entityId = switch (collection) {
+          SyncCollection.achievementUnlocks =>
+            AchievementUnlockSyncPayloadContract.canonicalEntityId(
+              achievementId: 'first-answer',
+              definitionVersion: 1,
+            ),
           SyncCollection.experimentAssignments => _canonicalAssignmentId(),
           SyncCollection.assessmentRuns => 'assessment-run-pre',
           SyncCollection.savedLearningItems =>
@@ -145,6 +150,12 @@ void main() {
             updatedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
           ),
           SyncCollection.attempts => _attemptPayloadV1(),
+          SyncCollection.achievementUnlocks => <String, Object?>{
+            'achievementId': 'first-answer',
+            'definitionVersion': 1,
+            'sourceEventId': 'attempt-achievement-v1',
+            'unlockedAtUtcMs': clientUpdatedAt.millisecondsSinceEpoch,
+          },
           SyncCollection.experimentAssignments => _assignmentPayload(
             assignmentId: entityId,
             assignedAtUtcMs: clientUpdatedAt.millisecondsSinceEpoch,
@@ -170,6 +181,13 @@ void main() {
         };
         final mutation = PushMutation(
           operationId: switch (collection) {
+            SyncCollection.achievementUnlocks =>
+              AchievementUnlockSyncPayloadContract.canonicalOperationId(
+                achievementId: payload['achievementId']! as String,
+                definitionVersion: payload['definitionVersion']! as int,
+                sourceEventId: payload['sourceEventId']! as String,
+                unlockedAtUtcMs: payload['unlockedAtUtcMs']! as int,
+              ),
             SyncCollection.contentQualityReports =>
               ContentQualityReportSyncPayloadContract.canonicalOperationId(
                 localOperationId: 'contentQualityReport:generic:v1',
@@ -209,6 +227,89 @@ void main() {
         expect(decoded.payload, payload, reason: collection.name);
       }
     });
+
+    test(
+      'achievement codec writes canonical identity and reads frozen legacy ids',
+      () {
+        final occurredAt = DateTime.utc(2026, 8, 28, 9);
+        final payload = <String, Object?>{
+          'achievementId': 'first-answer',
+          'definitionVersion': 1,
+          'sourceEventId': 'attempt-achievement-codec',
+          'unlockedAtUtcMs': occurredAt.millisecondsSinceEpoch,
+        };
+        final canonicalEntityId =
+            AchievementUnlockSyncPayloadContract.canonicalEntityId(
+              achievementId: 'first-answer',
+              definitionVersion: 1,
+            );
+        final mutation = PushMutation(
+          operationId:
+              AchievementUnlockSyncPayloadContract.canonicalOperationId(
+                achievementId: 'first-answer',
+                definitionVersion: 1,
+                sourceEventId: 'attempt-achievement-codec',
+                unlockedAtUtcMs: occurredAt.millisecondsSinceEpoch,
+              ),
+          firebaseUid: 'firebase-user-1',
+          collection: SyncCollection.achievementUnlocks,
+          entityId: canonicalEntityId,
+          operationKind: SyncOperationKind.upsert,
+          payloadVersion: 1,
+          baseRevision: 0,
+          localRevision: 1,
+          clientUpdatedAtUtc: occurredAt,
+          payload: payload,
+        );
+        final encoded = FirestoreSyncCodec.encodeEntity(
+          mutation,
+          serverTimestamp: Timestamp.fromDate(occurredAt),
+        );
+
+        const legacyId = 'achievement:legacy-owner:first-answer:1';
+        final legacyEnvelope = <String, Object?>{
+          ...encoded,
+          'entityId': legacyId,
+        };
+        expect(
+          FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.achievementUnlocks,
+            documentId: legacyId,
+            data: legacyEnvelope,
+          ).payload,
+          payload,
+        );
+
+        final forgedCanonicalId =
+            'achievement-unlock:v1:${List<String>.filled(64, '0').join()}';
+        expect(
+          () => FirestoreSyncCodec.decodeEntity(
+            collection: SyncCollection.achievementUnlocks,
+            documentId: forgedCanonicalId,
+            data: <String, Object?>{...encoded, 'entityId': forgedCanonicalId},
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+        expect(
+          () => FirestoreSyncCodec.encodeEntity(
+            PushMutation(
+              operationId: mutation.operationId,
+              firebaseUid: mutation.firebaseUid,
+              collection: mutation.collection,
+              entityId: legacyId,
+              operationKind: mutation.operationKind,
+              payloadVersion: mutation.payloadVersion,
+              baseRevision: mutation.baseRevision,
+              localRevision: mutation.localRevision,
+              clientUpdatedAtUtc: mutation.clientUpdatedAtUtc,
+              payload: mutation.payload,
+            ),
+            serverTimestamp: Timestamp.fromDate(occurredAt),
+          ),
+          throwsA(isA<InvalidSyncPayloadFailure>()),
+        );
+      },
+    );
 
     test('saved item codec binds exact payload tombstone and timestamp', () {
       final payload = _savedLearningItemPayload(

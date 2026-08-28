@@ -13,6 +13,7 @@ import '../domain/evidence_eligibility_policy.dart';
 import '../domain/evidence_policy_rollout.dart';
 import '../domain/learning_models.dart';
 import '../domain/srs_policy.dart';
+import '../../progress/domain/achievement_policy.dart';
 
 final class _WordProjectionScope {
   const _WordProjectionScope({
@@ -52,6 +53,7 @@ final class DriftLearningProjectionRebuilder {
         const EvidenceEligibilityPolicySet(),
     EvidencePolicyRolloutModeProvider rolloutModeProvider =
         const FixedEvidencePolicyRolloutModeProvider.legacy(),
+    this.achievementPolicy = const AchievementPolicy(),
   }) : evidenceDecisions = DriftLearningEventStore(
          database,
          evidencePolicy: evidencePolicy,
@@ -60,6 +62,7 @@ final class DriftLearningProjectionRebuilder {
 
   final db.AppDatabase database;
   final SrsPolicy srsPolicy;
+  final AchievementPolicy achievementPolicy;
   final DriftLearningEventStore evidenceDecisions;
 
   /// Whether [wordId] is the live canonical target of immutable historical
@@ -459,48 +462,59 @@ final class DriftLearningProjectionRebuilder {
                 (row) => OrderingTerm.asc(row.id),
               ]))
             .get();
-    final eligible = <db.AnswerAttempt>[];
+    final evidence = <AchievementEvidenceFact>[];
     for (final attempt in attempts) {
       final decisionSet = await evidenceDecisions.ensureDecisionSetForAttempt(
         attempt: attempt,
       );
-      if (decisionSet.allows(LearningProjection.achievement)) {
-        eligible.add(attempt);
-      }
-    }
-    final desired = <String, db.AnswerAttempt>{};
-    if (eligible.isNotEmpty) desired['first_answer'] = eligible.first;
-    final correct = eligible
-        .where((attempt) => attempt.isCorrect)
-        .toList(growable: false);
-    if (correct.isNotEmpty) {
-      desired['first_correct'] = correct.first;
-    }
-    if (correct.length >= 10) {
-      desired['ten_correct'] = correct[9];
-    }
-    const managedAchievementIds = <String>{
-      'first_answer',
-      'first_correct',
-      'ten_correct',
-    };
-    final obsolete = managedAchievementIds.difference(desired.keys.toSet());
-    if (obsolete.isNotEmpty) {
-      await (database.delete(database.achievementUnlocks)..where(
-            (row) =>
-                row.ownerId.equals(ownerId) &
-                row.definitionVersion.equals(1) &
-                row.achievementId.isIn(obsolete),
-          ))
-          .go();
-    }
-    for (final entry in desired.entries) {
-      await _insertAchievement(
-        ownerId: ownerId,
-        achievementId: entry.key,
-        source: entry.value,
+      evidence.add(
+        AchievementEvidenceFact(
+          sourceEventId: attempt.id,
+          sessionId: attempt.sessionId,
+          occurredAtUtc: _utc(attempt.occurredAtUtcMs),
+          isCorrect: attempt.isCorrect,
+          isEligible: decisionSet.allows(LearningProjection.achievement),
+        ),
       );
     }
+    final completedSessions =
+        await (database.select(database.learningSessions)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) & row.state.equals('completed'),
+            ))
+            .get();
+    final existing = await (database.select(
+      database.achievementUnlocks,
+    )..where((row) => row.ownerId.equals(ownerId))).get();
+    final decisions = achievementPolicy.evaluate(
+      evidence: evidence,
+      completedSessions: [
+        for (final session in completedSessions)
+          if (session.endedAtUtcMs != null)
+            AchievementCompletedSessionFact(
+              sourceEventId: session.id,
+              completedAtUtc: _utc(session.endedAtUtcMs!),
+            ),
+      ],
+      permanentlyUnlockedAchievementIds: existing
+          .map((row) => row.achievementId)
+          .toSet(),
+    );
+    await database.transaction(() async {
+      for (final unlock in existing) {
+        await _ensureAchievementOutbox(
+          ownerId: ownerId,
+          unlockId: unlock.id,
+          achievementId: unlock.achievementId,
+          definitionVersion: unlock.definitionVersion,
+          sourceEventId: unlock.sourceEventId,
+          unlockedAtUtcMs: unlock.unlockedAtUtcMs,
+        );
+      }
+      for (final decision in decisions) {
+        await _insertAchievement(ownerId: ownerId, decision: decision);
+      }
+    });
   }
 
   Future<LearningEvidenceDecisionSet> decisionSetForAttempt(
@@ -570,49 +584,87 @@ final class DriftLearningProjectionRebuilder {
 
   Future<void> _insertAchievement({
     required String ownerId,
-    required String achievementId,
-    required db.AnswerAttempt source,
+    required AchievementUnlockDecision decision,
   }) async {
-    const definitionVersion = 1;
-    final existing =
+    final durable =
         await (database.select(database.achievementUnlocks)..where(
               (row) =>
                   row.ownerId.equals(ownerId) &
-                  row.achievementId.equals(achievementId) &
-                  row.definitionVersion.equals(definitionVersion),
+                  row.achievementId.equals(decision.achievementId),
             ))
-            .getSingleOrNull();
-    if (existing != null) {
-      if (source.id == existing.sourceEventId &&
-          source.occurredAtUtcMs == existing.unlockedAtUtcMs) {
-        return;
-      }
-
-      // Preserve the unlock identity while rebuilding canonical provenance
-      // exclusively from eligible evidence.
-      await (database.update(
-        database.achievementUnlocks,
-      )..where((row) => row.id.equals(existing.id))).write(
-        db.AchievementUnlocksCompanion(
-          sourceEventId: Value(source.id),
-          unlockedAtUtcMs: Value(source.occurredAtUtcMs),
-        ),
-      );
-      return;
-    }
+            .get();
+    if (durable.isNotEmpty) return;
+    final unlockId =
+        'achievement:$ownerId:${decision.achievementId}:${decision.definitionVersion}';
     await database
         .into(database.achievementUnlocks)
         .insert(
           db.AchievementUnlocksCompanion.insert(
-            id: 'achievement:$ownerId:$achievementId:$definitionVersion',
+            id: unlockId,
             ownerId: ownerId,
-            achievementId: achievementId,
-            definitionVersion: definitionVersion,
-            sourceEventId: source.id,
-            unlockedAtUtcMs: source.occurredAtUtcMs,
+            achievementId: decision.achievementId,
+            definitionVersion: decision.definitionVersion,
+            sourceEventId: decision.sourceEventId,
+            unlockedAtUtcMs: decision.unlockedAtUtc.millisecondsSinceEpoch,
+          ),
+        );
+    await _ensureAchievementOutbox(
+      ownerId: ownerId,
+      unlockId: unlockId,
+      achievementId: decision.achievementId,
+      definitionVersion: decision.definitionVersion,
+      sourceEventId: decision.sourceEventId,
+      unlockedAtUtcMs: decision.unlockedAtUtc.millisecondsSinceEpoch,
+    );
+  }
+
+  Future<void> _ensureAchievementOutbox({
+    required String ownerId,
+    required String unlockId,
+    required String achievementId,
+    required int definitionVersion,
+    required String sourceEventId,
+    required int unlockedAtUtcMs,
+  }) async {
+    if (!_validAchievementIdentifier(ownerId) ||
+        !_validAchievementIdentifier(unlockId) ||
+        !_validAchievementIdentifier(achievementId) ||
+        !_validAchievementIdentifier(sourceEventId) ||
+        definitionVersion < 0 ||
+        unlockedAtUtcMs < 0) {
+      throw StateError('achievement unlock identity is invalid');
+    }
+    final operationId = 'achievementUnlock:$unlockId:1';
+    final existingOperation = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.operationId.equals(operationId))).getSingleOrNull();
+    if (existingOperation != null) {
+      if (existingOperation.ownerId != ownerId ||
+          existingOperation.entityType != 'achievementUnlock' ||
+          existingOperation.entityId != unlockId ||
+          existingOperation.operationKind != 'upsert' ||
+          existingOperation.baseRevision != 0 ||
+          existingOperation.createdAtUtcMs != unlockedAtUtcMs) {
+        throw StateError('achievement outbox identity is ambiguous');
+      }
+      return;
+    }
+    await database
+        .into(database.outboxOperations)
+        .insert(
+          db.OutboxOperationsCompanion.insert(
+            operationId: operationId,
+            ownerId: ownerId,
+            entityType: 'achievementUnlock',
+            entityId: unlockId,
+            operationKind: 'upsert',
+            createdAtUtcMs: unlockedAtUtcMs,
           ),
         );
   }
+
+  bool _validAchievementIdentifier(String value) =>
+      value.isNotEmpty && value.trim() == value && value.runes.length <= 256;
 }
 
 DateTime _utc(int millisecondsSinceEpoch) =>

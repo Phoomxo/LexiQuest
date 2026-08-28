@@ -217,6 +217,39 @@ void main() {
   });
 
   test(
+    'definition-version audit rows project one durable achievement',
+    () async {
+      for (final row in const [
+        ('achievement-v2', 2, 'source-later', 20),
+        ('achievement-v1', 1, 'source-first', 10),
+      ]) {
+        await database
+            .into(database.achievementUnlocks)
+            .insert(
+              AchievementUnlocksCompanion.insert(
+                id: row.$1,
+                ownerId: 'owner-1',
+                achievementId: 'first_answer',
+                definitionVersion: row.$2,
+                sourceEventId: row.$3,
+                unlockedAtUtcMs: row.$4,
+              ),
+            );
+      }
+
+      final result = await progress.load(
+        ownerId: 'owner-1',
+        nowUtc: DateTime.utc(2026, 7, 30, 12),
+      );
+
+      expect(result.achievementCount, 1);
+      expect(result.achievements, hasLength(1));
+      expect(result.achievements.single.definitionVersion, 1);
+      expect(result.achievements.single.sourceEventId, 'source-first');
+    },
+  );
+
+  test(
     'lifetime xp excludes purchases negative and unknown point types',
     () async {
       for (final row in const [

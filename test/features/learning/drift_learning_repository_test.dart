@@ -551,6 +551,70 @@ void main() {
     expect(storedSession.wrongCount, 0);
   });
 
+  test(
+    'eligible answer grandfathers legacy definition zero unlock and outbox',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-legacy-zero-answer',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      await database
+          .into(database.achievementUnlocks)
+          .insert(
+            AchievementUnlocksCompanion.insert(
+              id: 'legacy-zero-answer-unlock',
+              ownerId: 'owner-1',
+              achievementId: 'legacy_zero_answer',
+              definitionVersion: 0,
+              sourceEventId: 'legacy-zero-answer-source',
+              unlockedAtUtcMs: 7,
+            ),
+          );
+
+      final result = await repository.recordAnswer(
+        RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'attempt-legacy-zero',
+          ownerId: 'owner-1',
+          sessionId: 'session-legacy-zero-answer',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 300,
+          attemptNumber: 1,
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+          evidenceContext: _legacyEvidence(),
+        ),
+      );
+
+      expect(result.inserted, isTrue);
+      final legacy =
+          await (database.select(database.achievementUnlocks)
+                ..where((row) => row.id.equals('legacy-zero-answer-unlock')))
+              .getSingle();
+      expect(legacy.definitionVersion, 0);
+      expect(legacy.sourceEventId, 'legacy-zero-answer-source');
+      final outbox = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityId.equals(legacy.id))).getSingle();
+      expect(outbox.operationId, 'achievementUnlock:${legacy.id}:1');
+      expect(outbox.createdAtUtcMs, legacy.unlockedAtUtcMs);
+      final newlyEmitted = await (database.select(
+        database.achievementUnlocks,
+      )..where((row) => row.id.isNotValue(legacy.id))).get();
+      expect(newlyEmitted, isNotEmpty);
+      expect(
+        newlyEmitted.every((unlock) => unlock.definitionVersion > 0),
+        isTrue,
+      );
+    },
+  );
+
   test('answer rejects an event not correlated to its evidence id', () async {
     await repository.startSession(
       LearningSessionDraft(
@@ -644,6 +708,126 @@ void main() {
     expect(result.wrongCount, 1);
     expect(result.score, 0);
   });
+
+  test(
+    'session completion grandfathers legacy definition zero unlock',
+    () async {
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-legacy-zero-finish',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      await database
+          .into(database.achievementUnlocks)
+          .insert(
+            AchievementUnlocksCompanion.insert(
+              id: 'legacy-zero-finish-unlock',
+              ownerId: 'owner-1',
+              achievementId: 'first_session',
+              definitionVersion: 0,
+              sourceEventId: 'legacy-zero-finish-source',
+              unlockedAtUtcMs: 8,
+            ),
+          );
+
+      final result = await repository.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-legacy-zero-finish',
+        endedAtUtc: DateTime.utc(2026, 7, 30, 10, 2),
+      );
+
+      expect(result.state, 'completed');
+      final unlocks = await database.select(database.achievementUnlocks).get();
+      expect(unlocks, hasLength(1));
+      expect(unlocks.single.definitionVersion, 0);
+      expect(unlocks.single.sourceEventId, 'legacy-zero-finish-source');
+      final outbox = await database.select(database.outboxOperations).get();
+      expect(
+        outbox.where(
+          (operation) => operation.entityType == 'achievementUnlock',
+        ),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'live and rebuild achievement paths preserve one durable unlock identity',
+    () async {
+      final startedAt = DateTime.utc(2026, 7, 30, 10);
+      final endedAt = DateTime.utc(2026, 7, 30, 10, 2);
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-achievement-policy',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: startedAt,
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+      await repository.recordAnswer(
+        RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'attempt-achievement-policy',
+          ownerId: 'owner-1',
+          sessionId: 'session-achievement-policy',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 300,
+          attemptNumber: 1,
+          occurredAtUtc: startedAt.add(const Duration(minutes: 1)),
+          evidenceContext: _legacyEvidence(),
+        ),
+      );
+      await database
+          .into(database.achievementUnlocks)
+          .insert(
+            AchievementUnlocksCompanion.insert(
+              id: 'historical-first-session',
+              ownerId: 'owner-1',
+              achievementId: 'first_session',
+              definitionVersion: 7,
+              sourceEventId: 'historical-session',
+              unlockedAtUtcMs: 7,
+            ),
+          );
+
+      await repository.finishSession(
+        ownerId: 'owner-1',
+        sessionId: 'session-achievement-policy',
+        endedAtUtc: endedAt,
+      );
+      final live = (await database.select(database.achievementUnlocks).get())
+          .map((row) => row.toJson())
+          .toList(growable: false);
+      await repository.projections.rebuildAchievements('owner-1');
+      final rebuilt = (await database.select(database.achievementUnlocks).get())
+          .map((row) => row.toJson())
+          .toList(growable: false);
+
+      expect(rebuilt, live);
+      expect(
+        rebuilt.where((row) => row['achievementId'] == 'first_session'),
+        hasLength(1),
+      );
+      expect(
+        rebuilt.singleWhere(
+          (row) => row['achievementId'] == 'first_session',
+        )['definitionVersion'],
+        7,
+      );
+      expect(
+        rebuilt.where((row) => row['achievementId'] == 'perfect_session'),
+        hasLength(1),
+      );
+    },
+  );
 
   test(
     'session-scoped abandon preserves a recoverable peer and exact terminal time',
@@ -752,7 +936,7 @@ void main() {
   );
 
   test(
-    'out-of-order local attempts rebuild SRS in canonical event order',
+    'out-of-order attempts rebuild SRS without rewriting unlock evidence',
     () async {
       await repository.startSession(
         LearningSessionDraft(
@@ -803,8 +987,8 @@ void main() {
       final firstAnswer = await (database.select(
         database.achievementUnlocks,
       )..where((row) => row.achievementId.equals('first_answer'))).getSingle();
-      expect(firstAnswer.sourceEventId, 'attempt-earlier');
-      expect(firstAnswer.unlockedAtUtcMs, earlier.millisecondsSinceEpoch);
+      expect(firstAnswer.sourceEventId, 'attempt-later');
+      expect(firstAnswer.unlockedAtUtcMs, later.millisecondsSinceEpoch);
     },
   );
 

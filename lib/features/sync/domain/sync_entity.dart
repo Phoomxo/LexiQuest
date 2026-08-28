@@ -158,6 +158,108 @@ final class SyncPayloadRollout {
   };
 }
 
+/// Canonical cloud identity for one immutable achievement-definition unlock.
+///
+/// Local unlock rows deliberately retain their owner-scoped physical ids so
+/// owner lifecycle operations remain local. Cloud documents live below an
+/// already owner-scoped Firebase UID, so their identity must not include the
+/// device-local owner id. The operation identity includes the complete
+/// immutable payload: equal evidence can replay one acknowledgement, while
+/// competing offline evidence reaches the entity conflict path and converges
+/// on the single durable cloud record.
+abstract final class AchievementUnlockSyncPayloadContract {
+  static const String _entityPrefix = 'achievement-unlock:v1:';
+  static const String _operationPrefix = 'achievement-unlock-operation:v1:';
+
+  static const Set<String> keys = <String>{
+    'achievementId',
+    'definitionVersion',
+    'sourceEventId',
+    'unlockedAtUtcMs',
+  };
+
+  static String canonicalEntityId({
+    required String achievementId,
+    required int definitionVersion,
+  }) {
+    _requireIdentifier(achievementId);
+    if (definitionVersion < 0) throw const InvalidSyncPayloadFailure();
+    return '$_entityPrefix${_digest(<Object?>[achievementId, definitionVersion])}';
+  }
+
+  static String canonicalOperationId({
+    required String achievementId,
+    required int definitionVersion,
+    required String sourceEventId,
+    required int unlockedAtUtcMs,
+  }) {
+    _requireIdentifier(achievementId);
+    _requireIdentifier(sourceEventId);
+    if (definitionVersion < 0 || unlockedAtUtcMs < 0) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    return '$_operationPrefix${_digest(<Object?>[achievementId, definitionVersion, sourceEventId, unlockedAtUtcMs])}';
+  }
+
+  /// Validates the exact immutable payload and canonical timestamp.
+  ///
+  /// A non-canonical entity id is accepted only as a frozen legacy physical
+  /// id. Values claiming this contract's namespace must match the digest.
+  static void requireCompatible({
+    required Map<String, Object?> payload,
+    required String entityId,
+    required int clientUpdatedAtUtcMs,
+  }) {
+    if (payload.length != keys.length || !keys.every(payload.containsKey)) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final achievementId = payload['achievementId'];
+    final definitionVersion = payload['definitionVersion'];
+    final sourceEventId = payload['sourceEventId'];
+    final unlockedAtUtcMs = payload['unlockedAtUtcMs'];
+    if (achievementId is! String ||
+        definitionVersion is! int ||
+        sourceEventId is! String ||
+        unlockedAtUtcMs is! int) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    _requireIdentifier(achievementId);
+    _requireIdentifier(sourceEventId);
+    if (definitionVersion < 0 ||
+        unlockedAtUtcMs < 0 ||
+        unlockedAtUtcMs != clientUpdatedAtUtcMs) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final canonical = canonicalEntityId(
+      achievementId: achievementId,
+      definitionVersion: definitionVersion,
+    );
+    if (entityId.startsWith(_entityPrefix) && entityId != canonical) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  static bool isCanonicalEntityId({
+    required String entityId,
+    required String achievementId,
+    required int definitionVersion,
+  }) =>
+      entityId ==
+      canonicalEntityId(
+        achievementId: achievementId,
+        definitionVersion: definitionVersion,
+      );
+
+  static String _digest(List<Object?> components) =>
+      sha256.convert(utf8.encode(jsonEncode(components))).toString();
+
+  static void _requireIdentifier(String value) {
+    if (value.isEmpty || value.trim() != value || value.runes.length > 256) {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+}
+
 /// Deploy-safe gate for learning-goal payload v1.
 final class LearningGoalSyncRollout {
   const LearningGoalSyncRollout.off()

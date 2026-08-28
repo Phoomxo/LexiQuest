@@ -4,7 +4,9 @@ import 'package:vocab_learning_app/features/progress/domain/progress_models.dart
 import 'package:vocab_learning_app/screens/achievements_screen.dart';
 
 void main() {
-  testWidgets('renders only stored achievement evidence', (tester) async {
+  testWidgets('renders durable achievement evidence without redefining it', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       MaterialApp(
         home: AchievementsScreen(loader: () async => _withAchievement),
@@ -15,7 +17,7 @@ void main() {
     expect(find.text('ความสำเร็จ'), findsOneWidget);
     expect(find.text('เรียนจบเซสชันแรก'), findsOneWidget);
     expect(find.textContaining('session-1'), findsOneWidget);
-    expect(find.textContaining('นิยาม v1'), findsOneWidget);
+    expect(find.textContaining('นิยาม v7'), findsOneWidget);
   });
 
   testWidgets('fresh account reports zero evidence without sample badges', (
@@ -70,7 +72,7 @@ final _withAchievement = ProgressSnapshot(
   achievements: [
     AchievementEvidence(
       id: 'first_session',
-      definitionVersion: 1,
+      definitionVersion: 7,
       sourceEventId: 'session-1',
       unlockedAtUtc: DateTime.utc(2026, 7, 30),
     ),

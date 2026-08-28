@@ -962,10 +962,17 @@ final class DriftSyncStore implements SyncStore {
           operation.leaseToken != claim.leaseToken) {
         return false;
       }
+      if (cloudEntity.collection == SyncCollection.achievementUnlocks) {
+        await _resolveAchievementUnlockConflict(
+          operation: operation,
+          cloudEntity: cloudEntity,
+          resolvedAtUtc: resolvedAtUtc,
+        );
+        return true;
+      }
       if (cloudEntity.collection == SyncCollection.attempts ||
           cloudEntity.collection == SyncCollection.readingEvents ||
           cloudEntity.collection == SyncCollection.rewardTransactions ||
-          cloudEntity.collection == SyncCollection.achievementUnlocks ||
           cloudEntity.collection == SyncCollection.experimentAssignments ||
           cloudEntity.collection == SyncCollection.assessmentRuns ||
           cloudEntity.collection == SyncCollection.contentQualityReports ||
@@ -1864,17 +1871,46 @@ final class DriftSyncStore implements SyncStore {
         if (unlock == null) {
           throw StateError('outbox achievementUnlock was not found');
         }
+        await _boundFirebaseUid(
+          operation.ownerId,
+          expectedFirebaseUid: firebaseUid,
+        );
+        if (operation.operationKind != SyncOperationKind.upsert.name ||
+            operation.payloadVersion != 1 ||
+            operation.baseRevision != 0 ||
+            baseRevision != 0 ||
+            _operationRevision(operation) != 1) {
+          throw const InvalidSyncPayloadFailure();
+        }
+        final payload = _achievementUnlockPayload(unlock);
+        AchievementUnlockSyncPayloadContract.requireCompatible(
+          payload: payload,
+          entityId: unlock.id,
+          clientUpdatedAtUtcMs: unlock.unlockedAtUtcMs,
+        );
+        final cloudEntityId =
+            AchievementUnlockSyncPayloadContract.canonicalEntityId(
+              achievementId: unlock.achievementId,
+              definitionVersion: unlock.definitionVersion,
+            );
+        final cloudOperationId =
+            AchievementUnlockSyncPayloadContract.canonicalOperationId(
+              achievementId: unlock.achievementId,
+              definitionVersion: unlock.definitionVersion,
+              sourceEventId: unlock.sourceEventId,
+              unlockedAtUtcMs: unlock.unlockedAtUtcMs,
+            );
         return PushMutation(
-          operationId: operation.operationId,
+          operationId: cloudOperationId,
           firebaseUid: firebaseUid,
           collection: SyncCollection.achievementUnlocks,
-          entityId: unlock.id,
+          entityId: cloudEntityId,
           operationKind: SyncOperationKind.upsert,
-          payloadVersion: operation.payloadVersion,
+          payloadVersion: 1,
           baseRevision: 0,
           localRevision: 1,
           clientUpdatedAtUtc: _utc(unlock.unlockedAtUtcMs),
-          payload: _achievementUnlockPayload(unlock),
+          payload: payload,
         );
       case 'experimentAssignment':
         final row = await _experimentAssignmentForOperation(
@@ -3637,35 +3673,243 @@ final class DriftSyncStore implements SyncStore {
     SyncEntity entity,
   ) async {
     _requireImmutableEntity(entity, SyncCollection.achievementUnlocks);
-    final existing =
-        await (database.select(database.achievementUnlocks)..where(
-              (r) => r.id.equals(entity.entityId) & r.ownerId.equals(ownerId),
-            ))
-            .getSingleOrNull();
-    if (existing != null) {
-      await _handleExistingImmutable(
-        ownerId: ownerId,
-        entity: entity,
-        localPayload: _achievementUnlockPayload(existing),
-      );
-      return;
-    }
     final payload = entity.payload;
     final achievementId = _requiredString(payload, 'achievementId');
     final definitionVersion = _requiredInt(payload, 'definitionVersion');
     final sourceEventId = _requiredString(payload, 'sourceEventId');
     final unlockedAtUtcMs = _requiredInt(payload, 'unlockedAtUtcMs');
+    AchievementUnlockSyncPayloadContract.requireCompatible(
+      payload: payload,
+      entityId: entity.entityId,
+      clientUpdatedAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
+    final existing =
+        await (database.select(database.achievementUnlocks)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.achievementId.equals(achievementId) &
+                  row.definitionVersion.equals(definitionVersion),
+            ))
+            .getSingleOrNull();
+    if (existing != null) {
+      await _reconcileAchievementUnlock(
+        ownerId: ownerId,
+        existing: existing,
+        entity: entity,
+      );
+      return;
+    }
+    final localUnlockId =
+        'achievement:$ownerId:$achievementId:$definitionVersion';
 
     await database
         .into(database.achievementUnlocks)
         .insert(
           db.AchievementUnlocksCompanion.insert(
-            id: entity.entityId,
+            id: localUnlockId,
             ownerId: ownerId,
             achievementId: achievementId,
             definitionVersion: definitionVersion,
             sourceEventId: sourceEventId,
             unlockedAtUtcMs: unlockedAtUtcMs,
+          ),
+          mode: InsertMode.insert,
+        );
+  }
+
+  Future<void> _resolveAchievementUnlockConflict({
+    required db.OutboxOperation operation,
+    required SyncEntity cloudEntity,
+    required DateTime resolvedAtUtc,
+  }) async {
+    _requireImmutableEntity(cloudEntity, SyncCollection.achievementUnlocks);
+    final payload = cloudEntity.payload;
+    AchievementUnlockSyncPayloadContract.requireCompatible(
+      payload: payload,
+      entityId: cloudEntity.entityId,
+      clientUpdatedAtUtcMs:
+          cloudEntity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+    );
+    final achievementId = _requiredString(payload, 'achievementId');
+    final definitionVersion = _requiredInt(payload, 'definitionVersion');
+    if (!AchievementUnlockSyncPayloadContract.isCanonicalEntityId(
+      entityId: cloudEntity.entityId,
+      achievementId: achievementId,
+      definitionVersion: definitionVersion,
+    )) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    final existing =
+        await (database.select(database.achievementUnlocks)..where(
+              (row) =>
+                  row.id.equals(operation.entityId) &
+                  row.ownerId.equals(operation.ownerId),
+            ))
+            .getSingleOrNull();
+    if (existing == null ||
+        existing.achievementId != achievementId ||
+        existing.definitionVersion != definitionVersion) {
+      throw const InvalidSyncPayloadFailure();
+    }
+    await _reconcileAchievementUnlock(
+      ownerId: operation.ownerId,
+      existing: existing,
+      entity: cloudEntity,
+      resolvedAtUtc: resolvedAtUtc,
+      attemptedOperationId: operation.operationId,
+    );
+  }
+
+  Future<void> _reconcileAchievementUnlock({
+    required String ownerId,
+    required db.AchievementUnlock existing,
+    required SyncEntity entity,
+    DateTime? resolvedAtUtc,
+    String? attemptedOperationId,
+  }) async {
+    final localPayload = _achievementUnlockPayload(existing);
+    if (_jsonEquivalent(localPayload, entity.payload)) {
+      await _resolvePendingImmutableOutbox(
+        ownerId: ownerId,
+        entity: entity,
+        failureCode: 'identicalCloudEvidence',
+        additionalEntityId: existing.id,
+      );
+      return;
+    }
+
+    final canonicalIncoming =
+        AchievementUnlockSyncPayloadContract.isCanonicalEntityId(
+          entityId: entity.entityId,
+          achievementId: existing.achievementId,
+          definitionVersion: existing.definitionVersion,
+        );
+    final operations =
+        await (database.select(database.outboxOperations)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityType.equals(
+                    SyncCollection.achievementUnlocks.entityType,
+                  ) &
+                  row.entityId.equals(existing.id),
+            ))
+            .get();
+    final wasAcknowledged = operations.any(
+      (operation) => operation.state == 'acknowledged',
+    );
+    final alreadyResolved = operations.any(
+      (operation) => operation.state == 'conflictResolved',
+    );
+    final hasYieldableLocalDelivery = operations.any(
+      (operation) => const <String>{
+        'pending',
+        'retryWaiting',
+        'inFlight',
+        'blockedAuth',
+        'permanentFailure',
+      }.contains(operation.state),
+    );
+    if (!canonicalIncoming ||
+        !hasYieldableLocalDelivery ||
+        wasAcknowledged ||
+        alreadyResolved) {
+      await _recordImmutableConflict(
+        ownerId: ownerId,
+        entity: entity,
+        localPayload: localPayload,
+        resolvedAtUtc: resolvedAtUtc ?? entity.serverUpdatedAtUtc,
+      );
+      if (attemptedOperationId != null) {
+        await (database.update(
+          database.outboxOperations,
+        )..where((row) => row.operationId.equals(attemptedOperationId))).write(
+          const db.OutboxOperationsCompanion(
+            state: Value('permanentFailure'),
+            leaseToken: Value(null),
+            leaseExpiresAtUtcMs: Value(null),
+            nextAttemptAtUtcMs: Value(null),
+            failureCode: Value('immutableConflictQuarantined'),
+          ),
+        );
+      }
+      return;
+    }
+
+    await _recordAchievementCloudWinner(
+      ownerId: ownerId,
+      existing: existing,
+      entity: entity,
+      localPayload: localPayload,
+      resolvedAtUtc: resolvedAtUtc ?? entity.serverUpdatedAtUtc,
+    );
+    final canonicalUnlockedAtUtcMs = _requiredInt(
+      entity.payload,
+      'unlockedAtUtcMs',
+    );
+    await (database.update(database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityType.equals(
+                SyncCollection.achievementUnlocks.entityType,
+              ) &
+              row.entityId.equals(existing.id) &
+              row.state.isIn(const <String>[
+                'pending',
+                'retryWaiting',
+                'inFlight',
+                'blockedAuth',
+                'permanentFailure',
+              ]),
+        ))
+        .write(
+          db.OutboxOperationsCompanion(
+            createdAtUtcMs: Value(canonicalUnlockedAtUtcMs),
+          ),
+        );
+    await (database.update(database.achievementUnlocks)..where(
+          (row) => row.id.equals(existing.id) & row.ownerId.equals(ownerId),
+        ))
+        .write(
+          db.AchievementUnlocksCompanion(
+            sourceEventId: Value(
+              _requiredString(entity.payload, 'sourceEventId'),
+            ),
+            unlockedAtUtcMs: Value(canonicalUnlockedAtUtcMs),
+          ),
+        );
+    await _resolvePendingImmutableOutbox(
+      ownerId: ownerId,
+      entity: entity,
+      failureCode: 'canonicalAchievementCloudWins',
+      additionalEntityId: existing.id,
+    );
+  }
+
+  Future<void> _recordAchievementCloudWinner({
+    required String ownerId,
+    required db.AchievementUnlock existing,
+    required SyncEntity entity,
+    required Map<String, Object?> localPayload,
+    required DateTime resolvedAtUtc,
+  }) async {
+    final conflictId =
+        'conflict:achievement:${existing.id}:${entity.entityId}:'
+        '${entity.revision}';
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id: conflictId,
+            ownerId: ownerId,
+            entityType: SyncCollection.achievementUnlocks.entityType,
+            entityId: existing.id,
+            localRevision: 1,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'canonicalAchievementVersion',
+            outcome: 'cloudWins',
+            localSnapshotJson: Value(jsonEncode(localPayload)),
+            cloudSnapshotJson: Value(jsonEncode(entity.payload)),
+            resolvedAtUtcMs: resolvedAtUtc.millisecondsSinceEpoch,
           ),
           mode: InsertMode.insertOrIgnore,
         );

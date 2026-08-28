@@ -8,7 +8,7 @@ library;
 
 import 'dart:convert';
 
-import 'package:drift/drift.dart' show Value;
+import 'package:drift/drift.dart' show OrderingTerm, Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
@@ -236,13 +236,27 @@ void main() {
       },
     );
 
-    test('assessment-only rebuild leaves mastery and XP empty', () async {
+    test('denied evidence leaves mastery XP and achievements empty', () async {
       await _insertAttempt(
         db,
         isCorrect: true,
         seqMs: 0,
         attemptNumber: 1,
         evidenceContext: _assessmentEvidence(),
+      );
+      await _insertAttempt(
+        db,
+        isCorrect: true,
+        seqMs: 1000,
+        attemptNumber: 2,
+        evidenceContext: _declaredEvidence(EvidenceClass.guidedPractice),
+      );
+      await _insertAttempt(
+        db,
+        isCorrect: true,
+        seqMs: 2000,
+        attemptNumber: 3,
+        evidenceContext: _declaredEvidence(EvidenceClass.recreational),
       );
 
       final rebuilder = DriftLearningProjectionRebuilder(
@@ -259,6 +273,236 @@ void main() {
       expect(await db.select(db.srsStates).get(), isEmpty);
       expect(await db.select(db.pointsLedgerEntries).get(), isEmpty);
       await rebuilder.rebuildAchievements('owner-rebuild');
+      expect(await db.select(db.achievementUnlocks).get(), isEmpty);
+    });
+
+    test(
+      'achievement rebuild preserves durable unlocks across definition changes',
+      () async {
+        await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+        await db
+            .into(db.achievementUnlocks)
+            .insert(
+              AchievementUnlocksCompanion.insert(
+                id: 'achievement:owner-rebuild:first_answer:7',
+                ownerId: 'owner-rebuild',
+                achievementId: 'first_answer',
+                definitionVersion: 7,
+                sourceEventId: 'historical-source',
+                unlockedAtUtcMs: 7,
+              ),
+            );
+        await db
+            .into(db.achievementUnlocks)
+            .insert(
+              AchievementUnlocksCompanion.insert(
+                id: 'achievement:owner-rebuild:ten_correct:1',
+                ownerId: 'owner-rebuild',
+                achievementId: 'ten_correct',
+                definitionVersion: 1,
+                sourceEventId: 'historical-tenth',
+                unlockedAtUtcMs: 8,
+              ),
+            );
+
+        await DriftLearningProjectionRebuilder(
+          db,
+        ).rebuildAchievements('owner-rebuild');
+
+        final rows = await (db.select(
+          db.achievementUnlocks,
+        )..orderBy([(row) => OrderingTerm.asc(row.achievementId)])).get();
+        expect(rows.map((row) => row.achievementId), [
+          'first_answer',
+          'first_correct',
+          'ten_correct',
+        ]);
+        expect(
+          rows.singleWhere((row) => row.achievementId == 'first_answer'),
+          isA<AchievementUnlock>()
+              .having((row) => row.definitionVersion, 'definitionVersion', 7)
+              .having(
+                (row) => row.sourceEventId,
+                'sourceEventId',
+                'historical-source',
+              ),
+        );
+        expect(
+          rows.singleWhere((row) => row.achievementId == 'ten_correct'),
+          isA<AchievementUnlock>().having(
+            (row) => row.sourceEventId,
+            'sourceEventId',
+            'historical-tenth',
+          ),
+        );
+      },
+    );
+
+    test(
+      'achievement rebuild backfills outbox without rewriting legacy unlock',
+      () async {
+        await db
+            .into(db.achievementUnlocks)
+            .insert(
+              AchievementUnlocksCompanion.insert(
+                id: 'legacy-achievement-row',
+                ownerId: 'owner-rebuild',
+                achievementId: 'first_answer',
+                definitionVersion: 7,
+                sourceEventId: 'legacy-attempt',
+                unlockedAtUtcMs: 7,
+              ),
+            );
+        final before = (await db.select(db.achievementUnlocks).get()).single;
+
+        await DriftLearningProjectionRebuilder(
+          db,
+        ).rebuildAchievements('owner-rebuild');
+
+        expect((await db.select(db.achievementUnlocks).get()).single, before);
+        final operation = (await db.select(db.outboxOperations).get()).single;
+        expect(
+          operation.operationId,
+          'achievementUnlock:legacy-achievement-row:1',
+        );
+        expect(operation.entityId, 'legacy-achievement-row');
+        expect(operation.createdAtUtcMs, 7);
+      },
+    );
+
+    test('achievement rebuild rejects negative definition versions', () async {
+      await db
+          .into(db.achievementUnlocks)
+          .insert(
+            AchievementUnlocksCompanion.insert(
+              id: 'invalid-negative-achievement-row',
+              ownerId: 'owner-rebuild',
+              achievementId: 'invalid_negative',
+              definitionVersion: -1,
+              sourceEventId: 'invalid-negative-source',
+              unlockedAtUtcMs: 7,
+            ),
+          );
+
+      await expectLater(
+        DriftLearningProjectionRebuilder(
+          db,
+        ).rebuildAchievements('owner-rebuild'),
+        throwsStateError,
+      );
+      expect(await db.select(db.outboxOperations).get(), isEmpty);
+    });
+
+    test(
+      'achievement rebuild is byte-stable and includes session milestones',
+      () async {
+        await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+        final completedAt = DateTime.utc(2026, 1, 1, 0, 1);
+        await (db.update(
+          db.learningSessions,
+        )..where((row) => row.id.equals('session-rebuild'))).write(
+          LearningSessionsCompanion(
+            state: const Value('completed'),
+            endedAtUtcMs: Value(completedAt.millisecondsSinceEpoch),
+          ),
+        );
+        final rebuilder = DriftLearningProjectionRebuilder(db);
+
+        await rebuilder.rebuildAchievements('owner-rebuild');
+        final first = (await db.select(db.achievementUnlocks).get())
+            .map((row) => row.toJson())
+            .toList(growable: false);
+        await rebuilder.rebuildAchievements('owner-rebuild');
+        final replay = (await db.select(db.achievementUnlocks).get())
+            .map((row) => row.toJson())
+            .toList(growable: false);
+
+        expect(replay, first);
+        expect(replay.map((row) => row['achievementId']).toSet(), {
+          'first_answer',
+          'first_correct',
+          'first_session',
+          'perfect_session',
+        });
+        expect(
+          replay.singleWhere(
+            (row) => row['achievementId'] == 'first_session',
+          )['sourceEventId'],
+          'session-rebuild',
+        );
+      },
+    );
+
+    test(
+      'concurrent achievement rebuilds converge to one unlock per rule',
+      () async {
+        await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+        final first = DriftLearningProjectionRebuilder(db);
+        final second = DriftLearningProjectionRebuilder(db);
+
+        await Future.wait([
+          first.rebuildAchievements('owner-rebuild'),
+          second.rebuildAchievements('owner-rebuild'),
+        ]);
+
+        final rows = await db.select(db.achievementUnlocks).get();
+        expect(rows.map((row) => row.achievementId).toSet(), {
+          'first_answer',
+          'first_correct',
+        });
+        expect(rows, hasLength(2));
+      },
+    );
+
+    test(
+      'new achievement unlocks have stable source-bound outbox rows',
+      () async {
+        await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+
+        await DriftLearningProjectionRebuilder(
+          db,
+        ).rebuildAchievements('owner-rebuild');
+
+        final operations =
+            await (db.select(db.outboxOperations)
+                  ..where((row) => row.entityType.equals('achievementUnlock'))
+                  ..orderBy([(row) => OrderingTerm.asc(row.operationId)]))
+                .get();
+        expect(operations, hasLength(2));
+        expect(operations.map((row) => row.operationId), [
+          'achievementUnlock:achievement:owner-rebuild:first_answer:1:1',
+          'achievementUnlock:achievement:owner-rebuild:first_correct:1:1',
+        ]);
+        expect(operations.map((row) => row.entityId), [
+          'achievement:owner-rebuild:first_answer:1',
+          'achievement:owner-rebuild:first_correct:1',
+        ]);
+      },
+    );
+
+    test('conflicting achievement outbox rolls back every new unlock', () async {
+      await _insertAttempt(db, isCorrect: true, seqMs: 0, attemptNumber: 1);
+      await db
+          .into(db.outboxOperations)
+          .insert(
+            OutboxOperationsCompanion.insert(
+              operationId:
+                  'achievementUnlock:achievement:owner-rebuild:first_answer:1:1',
+              ownerId: 'owner-rebuild',
+              entityType: 'achievementUnlock',
+              entityId: 'forged-unlock',
+              operationKind: 'upsert',
+              createdAtUtcMs: 1,
+            ),
+          );
+
+      await expectLater(
+        DriftLearningProjectionRebuilder(
+          db,
+        ).rebuildAchievements('owner-rebuild'),
+        throwsStateError,
+      );
+
       expect(await db.select(db.achievementUnlocks).get(), isEmpty);
     });
 
@@ -326,3 +570,20 @@ EvidenceContext _assessmentEvidence() => EvidenceContext.forNewEvidence(
   scoringRuleVersion: 'score-v1',
   engagementAllowed: false,
 );
+
+EvidenceContext _declaredEvidence(EvidenceClass evidenceClass) =>
+    EvidenceContext.forNewEvidence(
+      evidenceClass: evidenceClass,
+      skillId: 'declared-skill',
+      hintLevel: evidenceClass == EvidenceClass.guidedPractice ? 1 : 0,
+      contentRevision: 'declared-content-v1',
+      rolloutMode: EvidencePolicyRolloutMode.enforced,
+      protocolId: 'protocol-a',
+      protocolVersion: 'protocol-v1',
+      experimentId: 'experiment-a',
+      experimentVersion: 1,
+      assignmentId: 'assignment-a',
+      cohort: 'treatment',
+      researchConsentVersion: 1,
+      engagementAllowed: true,
+    );

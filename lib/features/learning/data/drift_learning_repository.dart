@@ -1406,36 +1406,7 @@ final class DriftLearningRepository
             score: Value(score),
           ),
         );
-        final sessionAttempts =
-            await (database.select(database.answerAttempts)..where(
-                  (attempt) =>
-                      attempt.ownerId.equals(ownerId) &
-                      attempt.sessionId.equals(sessionId),
-                ))
-                .get();
-        final achievementAttempts = <db.AnswerAttempt>[];
-        for (final attempt in sessionAttempts) {
-          final decisionSet = await projections.decisionSetForAttempt(attempt);
-          if (decisionSet.allows(LearningProjection.achievement)) {
-            achievementAttempts.add(attempt);
-          }
-        }
-        if (achievementAttempts.isNotEmpty) {
-          await _unlockAchievement(
-            ownerId: ownerId,
-            achievementId: 'first_session',
-            sourceEventId: sessionId,
-            unlockedAtUtc: endedAtUtc,
-          );
-          if (achievementAttempts.every((attempt) => attempt.isCorrect)) {
-            await _unlockAchievement(
-              ownerId: ownerId,
-              achievementId: 'perfect_session',
-              sourceEventId: sessionId,
-              unlockedAtUtc: endedAtUtc,
-            );
-          }
-        }
+        await projections.rebuildAchievements(ownerId);
       }
       final completed = await (database.select(
         database.learningSessions,
@@ -1541,37 +1512,6 @@ final class DriftLearningRepository
         documentRevision: command.documentRevision,
       );
     });
-  }
-
-  Future<void> _unlockAchievement({
-    required String ownerId,
-    required String achievementId,
-    required String sourceEventId,
-    required DateTime unlockedAtUtc,
-  }) async {
-    const definitionVersion = 1;
-    final achievementId_ =
-        'achievement:$ownerId:$achievementId:$definitionVersion';
-    await database
-        .into(database.achievementUnlocks)
-        .insert(
-          db.AchievementUnlocksCompanion.insert(
-            id: achievementId_,
-            ownerId: ownerId,
-            achievementId: achievementId,
-            definitionVersion: definitionVersion,
-            sourceEventId: sourceEventId,
-            unlockedAtUtcMs: unlockedAtUtc.millisecondsSinceEpoch,
-          ),
-          mode: InsertMode.insertOrIgnore,
-        );
-    // Outbox hook — sync achievement unlock to Firestore (Phase 0 Week 12-13).
-    await _appendImmutableOutbox(
-      ownerId: ownerId,
-      entityType: 'achievementUnlock',
-      entityId: achievementId_,
-      occurredAtUtc: unlockedAtUtc,
-    );
   }
 
   Future<void> _appendImmutableOutbox({

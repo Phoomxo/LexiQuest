@@ -498,6 +498,18 @@ final class FirestoreSyncCodec {
           payloadVersion: schemaVersion,
           payload: canonicalPayload,
         );
+      } else if (collection == SyncCollection.achievementUnlocks) {
+        _requireExactKeys(data, _entityEnvelopeKeys);
+        final revision = _requiredInt(data, 'revision');
+        final deleted = _requiredBool(data, 'isDeleted');
+        AchievementUnlockSyncPayloadContract.requireCompatible(
+          payload: canonicalPayload,
+          entityId: entityId,
+          clientUpdatedAtUtcMs: _requiredInt(data, 'clientUpdatedAtUtcMs'),
+        );
+        if (revision != 1 || deleted) {
+          throw const InvalidSyncPayloadFailure();
+        }
       } else if (collection == SyncCollection.experimentAssignments) {
         _requireExactKeys(data, _entityEnvelopeKeys);
         ExperimentAssignmentSyncPayloadContract.requireCanonical(
@@ -592,7 +604,8 @@ final class FirestoreSyncCodec {
     Map<String, Object?> data, {
     required PushMutation expectedMutation,
   }) {
-    if (expectedMutation.collection == SyncCollection.experimentAssignments ||
+    if (expectedMutation.collection == SyncCollection.achievementUnlocks ||
+        expectedMutation.collection == SyncCollection.experimentAssignments ||
         expectedMutation.collection == SyncCollection.assessmentRuns ||
         expectedMutation.collection == SyncCollection.savedLearningItems ||
         expectedMutation.collection == SyncCollection.contentQualityReports ||
@@ -640,6 +653,39 @@ final class FirestoreSyncCodec {
         payloadVersion: mutation.payloadVersion,
         payload: mutation.payload,
       );
+      return;
+    }
+    if (mutation.collection == SyncCollection.achievementUnlocks) {
+      if (mutation.payloadVersion != 1 ||
+          mutation.operationKind != SyncOperationKind.upsert ||
+          mutation.baseRevision != 0 ||
+          mutation.localRevision != 1) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      AchievementUnlockSyncPayloadContract.requireCompatible(
+        payload: mutation.payload,
+        entityId: mutation.entityId,
+        clientUpdatedAtUtcMs:
+            mutation.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      );
+      final achievementId = mutation.payload['achievementId']! as String;
+      final definitionVersion = mutation.payload['definitionVersion']! as int;
+      final sourceEventId = mutation.payload['sourceEventId']! as String;
+      final unlockedAtUtcMs = mutation.payload['unlockedAtUtcMs']! as int;
+      if (!AchievementUnlockSyncPayloadContract.isCanonicalEntityId(
+            entityId: mutation.entityId,
+            achievementId: achievementId,
+            definitionVersion: definitionVersion,
+          ) ||
+          mutation.operationId !=
+              AchievementUnlockSyncPayloadContract.canonicalOperationId(
+                achievementId: achievementId,
+                definitionVersion: definitionVersion,
+                sourceEventId: sourceEventId,
+                unlockedAtUtcMs: unlockedAtUtcMs,
+              )) {
+        throw const InvalidSyncPayloadFailure();
+      }
       return;
     }
     if (mutation.collection == SyncCollection.assessmentRuns) {

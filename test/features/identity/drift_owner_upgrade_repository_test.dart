@@ -28,6 +28,7 @@ import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
 import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
@@ -1066,6 +1067,11 @@ void main() {
           "'guest-source', 2)",
         );
         await firstDatabase.customInsert(
+          "INSERT INTO achievement_unlocks VALUES "
+          "('unlock-guest-v7', 'guest-owner', 'first_answer', 7, "
+          "'guest-source-v7', 3)",
+        );
+        await firstDatabase.customInsert(
           "INSERT INTO outbox_operations "
           "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
           "created_at_utc_ms) VALUES "
@@ -1078,6 +1084,13 @@ void main() {
           "created_at_utc_ms) VALUES "
           "('achievementUnlock:unlock-guest:1', 'guest-owner', "
           "'achievementUnlock', 'unlock-guest', 'upsert', 2)",
+        );
+        await firstDatabase.customInsert(
+          "INSERT INTO outbox_operations "
+          "(operation_id, owner_id, entity_type, entity_id, operation_kind, "
+          "created_at_utc_ms) VALUES "
+          "('achievementUnlock:unlock-guest-v7:1', 'guest-owner', "
+          "'achievementUnlock', 'unlock-guest-v7', 'upsert', 3)",
         );
         var tokenSequence = 0;
         await DriftOwnerUpgradeRepository(
@@ -1145,6 +1158,18 @@ void main() {
           isNot(equals(null)),
           reason: 'projection rebuild must preserve the target unlock identity',
         );
+        final auditRows = await (reopenedDatabase.select(
+          reopenedDatabase.achievementUnlocks,
+        )..where((row) => row.achievementId.equals('first_answer'))).get();
+        expect(auditRows, hasLength(2));
+        final progress = await DriftProgressQueries(
+          reopenedDatabase,
+        ).load(ownerId: 'account-owner', nowUtc: now);
+        final firstAnswer = progress.achievements.where(
+          (achievement) => achievement.id == 'first_answer',
+        );
+        expect(firstAnswer, hasLength(1));
+        expect(firstAnswer.single.sourceEventId, 'target-source');
       } finally {
         await reopenedDatabase.close();
         driftRuntimeOptions.dontWarnAboutMultipleDatabases =
