@@ -3,27 +3,38 @@ import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
+import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
   late AppDatabase database;
+  late DriftLocalOwnerRepository owners;
+  late ProgressUseCases progress;
   late RewardUseCases rewards;
   late DriftRewardRepository repository;
   var sequence = 0;
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
-    final owners = DriftLocalOwnerRepository(
+    owners = DriftLocalOwnerRepository(
       database,
       generateId: () => 'owner',
       nowUtc: () => DateTime.utc(2026, 7, 30),
     );
     repository = DriftRewardRepository(database);
+    progress = ProgressUseCases(
+      owners: owners,
+      queries: DriftProgressQueries(database),
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+    );
     rewards = RewardUseCases(
       owners: owners,
       repository: repository,
+      progress: progress,
       generateId: () => 'tx-${sequence++}',
       nowUtc: () => DateTime.utc(2026, 7, 30, 12),
     );
@@ -96,7 +107,10 @@ void main() {
 
   test('equipment requires ownership and keeps one item per slot', () async {
     await expectLater(
-      rewards.equip('theme_ocean'),
+      rewards.equip(
+        'theme_ocean',
+        idempotencyKey: 'equip:theme-ocean:not-owned',
+      ),
       throwsA(
         isA<RewardException>().having(
           (error) => error.code,
@@ -110,9 +124,12 @@ void main() {
       catalogVersion: RewardCatalog.version,
       idempotencyKey: 'theme-buy',
     );
-    final account = await rewards.equip('theme_ocean');
-    expect(account.equippedBySlot['theme'], 'theme_ocean');
-    expect(account.transactionCount, 2);
+    final equipped = await rewards.equip(
+      'theme_ocean',
+      idempotencyKey: 'equip:theme-ocean:first',
+    );
+    expect(equipped.account.equippedBySlot['theme'], 'theme_ocean');
+    expect(equipped.account.transactionCount, 2);
     expect(
       await database.select(database.rewardTransactions).get(),
       hasLength(3),
@@ -286,7 +303,7 @@ void main() {
   );
 
   test(
-    'repository equip rejects an overlong derived idempotency key without mutation',
+    'repository equip rejects an overlong idempotency key without mutation',
     () async {
       await _expectRejectedWithoutRewardMutation(
         database: database,
@@ -294,10 +311,39 @@ void main() {
         operation: () => repository.equip(
           ownerId: 'local:owner',
           item: RewardCatalog.byId('theme_default')!,
-          transactionId: List<String>.filled(251, 'e').join(),
+          idempotencyKey: List<String>.filled(257, 'e').join(),
+          transactionId: 'reward:valid-equip-transaction',
           occurredAtUtc: DateTime.utc(2026, 7, 30, 12),
         ),
       );
+    },
+  );
+
+  test(
+    'repository equip rejects catalog-v1 ingress without mutation',
+    () async {
+      final before = await _rewardState(database, repository);
+      final legacyItem = RewardCatalog.catalogV1Items.singleWhere(
+        (item) => item.id == 'theme_default',
+      );
+
+      expect(
+        () => repository.equip(
+          ownerId: 'local:owner',
+          item: legacyItem,
+          idempotencyKey: 'equip:legacy-ingress',
+          transactionId: 'reward:legacy-equip-ingress',
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 12),
+        ),
+        throwsA(
+          isA<RewardException>().having(
+            (error) => error.code,
+            'code',
+            RewardFailureCode.staleCatalog,
+          ),
+        ),
+      );
+      expect(await _rewardState(database, repository), equals(before));
     },
   );
 
@@ -472,6 +518,358 @@ void main() {
           .get();
       expect(transactions, hasLength(1));
       expect(transactions.single.transactionType, 'legacyEarningBackfill');
+    },
+  );
+
+  test(
+    'cosmetic purchase unlocks at the exact lifetime xp threshold',
+    () async {
+      await database.delete(database.pointsLedgerEntries).go();
+      await rewards.grantCoins(
+        idempotencyKey: 'coins:avatar-threshold',
+        amount: 200,
+        sourceEventId: 'admin:avatar-threshold',
+      );
+
+      await expectLater(
+        rewards.purchase(
+          itemId: 'theme_ocean',
+          catalogVersion: RewardCatalog.version,
+          idempotencyKey: 'purchase:locked-theme',
+        ),
+        throwsA(
+          isA<RewardException>().having(
+            (error) => error.code,
+            'code',
+            RewardFailureCode.lockedByProgression,
+          ),
+        ),
+      );
+
+      await database
+          .into(database.pointsLedgerEntries)
+          .insert(
+            PointsLedgerEntriesCompanion.insert(
+              id: 'xp:avatar-threshold',
+              ownerId: 'local:owner',
+              idempotencyKey: 'xp:avatar-threshold',
+              entryType: 'quizCorrect',
+              amount: 40,
+              sourceEventId: const Value('event:avatar-threshold'),
+              occurredAtUtcMs: 2,
+            ),
+          );
+
+      final AvatarRewardState stateAtThreshold = await rewards.loadAvatar();
+      expect(stateAtThreshold.progression.level, 3);
+      expect(
+        stateAtThreshold.progression.isItemUnlocked('theme_ocean'),
+        isTrue,
+      );
+      final purchase = await rewards.purchase(
+        itemId: 'theme_ocean',
+        catalogVersion: RewardCatalog.version,
+        idempotencyKey: 'purchase:unlocked-theme',
+      );
+      expect(purchase.status, PurchaseStatus.purchased);
+    },
+  );
+
+  test(
+    'purchase changes coins but never lifetime xp or avatar level',
+    () async {
+      final before = await rewards.loadAvatar();
+
+      await rewards.purchase(
+        itemId: 'theme_ocean',
+        catalogVersion: RewardCatalog.version,
+        idempotencyKey: 'purchase:xp-invariant',
+      );
+      final after = await rewards.loadAvatar();
+
+      expect(after.progression.lifetimeXp, before.progression.lifetimeXp);
+      expect(after.progression.level, before.progression.level);
+      expect(after.account.coinBalance, before.account.coinBalance - 80);
+    },
+  );
+
+  test('equip replay remains idempotent across use-case restart', () async {
+    await rewards.purchase(
+      itemId: 'theme_ocean',
+      catalogVersion: RewardCatalog.version,
+      idempotencyKey: 'purchase:equip-replay',
+    );
+    final first = await rewards.equip(
+      'theme_ocean',
+      idempotencyKey: 'equip:avatar-replay',
+    );
+    final restarted = RewardUseCases(
+      owners: owners,
+      repository: DriftRewardRepository(database),
+      progress: progress,
+      generateId: () => 'restart-transaction',
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+    );
+    final replay = await restarted.equip(
+      'theme_ocean',
+      idempotencyKey: 'equip:avatar-replay',
+    );
+
+    expect(first.status, EquipStatus.equipped);
+    expect(replay.status, EquipStatus.replayed);
+    expect(replay.account.equippedBySlot['theme'], 'theme_ocean');
+    expect(
+      (await database.select(database.rewardTransactions).get()).where(
+        (row) => row.transactionType == 'equip',
+      ),
+      hasLength(1),
+    );
+  });
+
+  test('restart rebuild restores owned and equipped cosmetics', () async {
+    await rewards.purchase(
+      itemId: 'theme_ocean',
+      catalogVersion: RewardCatalog.version,
+      idempotencyKey: 'purchase:restart-rebuild',
+    );
+    await rewards.equip('theme_ocean', idempotencyKey: 'equip:restart-rebuild');
+    final before = await rewards.loadAvatar();
+    await database.delete(database.ownedRewardItems).go();
+    await database.delete(database.equippedRewardItems).go();
+
+    final restarted = RewardUseCases(
+      owners: owners,
+      repository: DriftRewardRepository(database),
+      progress: progress,
+      generateId: () => 'unused-restart-transaction',
+      nowUtc: () => DateTime.utc(2026, 7, 30, 12),
+    );
+    final rebuilt = await restarted.loadAvatar();
+
+    expect(rebuilt.progression.lifetimeXp, before.progression.lifetimeXp);
+    expect(rebuilt.progression.level, before.progression.level);
+    expect(rebuilt.account.ownedItemIds, contains('theme_ocean'));
+    expect(rebuilt.account.equippedBySlot['theme'], 'theme_ocean');
+  });
+
+  test(
+    'corrupt reward transaction fails closed without erasing projections',
+    () async {
+      await rewards.purchase(
+        itemId: 'theme_ocean',
+        catalogVersion: RewardCatalog.version,
+        idempotencyKey: 'purchase:corruption-guard',
+      );
+      await rewards.equip(
+        'theme_ocean',
+        idempotencyKey: 'equip:corruption-guard',
+      );
+      final ownedBefore = await database
+          .select(database.ownedRewardItems)
+          .get();
+      final equippedBefore = await database
+          .select(database.equippedRewardItems)
+          .get();
+      await database
+          .into(database.rewardTransactions)
+          .insert(
+            RewardTransactionsCompanion.insert(
+              id: 'reward:corrupt-avatar',
+              ownerId: 'local:owner',
+              idempotencyKey: 'corrupt-avatar',
+              transactionType: 'unknown',
+              amount: 1,
+              catalogVersion: RewardCatalog.version,
+              occurredAtUtcMs: 3,
+            ),
+          );
+
+      await expectLater(
+        rewards.loadAvatar(),
+        throwsA(
+          isA<RewardException>().having(
+            (error) => error.code,
+            'code',
+            RewardFailureCode.evidenceUnavailable,
+          ),
+        ),
+      );
+      expect(
+        await database.select(database.ownedRewardItems).get(),
+        ownedBefore,
+      );
+      expect(
+        await database.select(database.equippedRewardItems).get(),
+        equippedBefore,
+      );
+    },
+  );
+
+  test('avatar rollback keeps quest xp and coin authorities durable', () async {
+    await repository.progressionEligibility.establishCutover('local:owner');
+    await database
+        .into(database.rewardTransactions)
+        .insert(
+          RewardTransactionsCompanion.insert(
+            id: 'late-legacy-purchase',
+            ownerId: 'local:owner',
+            idempotencyKey: 'late-legacy-purchase',
+            transactionType: 'purchase',
+            amount: -80,
+            itemId: const Value('theme_ocean'),
+            catalogVersion: RewardCatalog.catalogV1Version,
+            occurredAtUtcMs: 2,
+          ),
+        );
+    final occurredAt = DateTime.utc(2026, 7, 30, 12);
+
+    final inserted = await repository.grantQuestEconomyDuringAvatarRollback(
+      ownerId: 'local:owner',
+      sourceEventId: 'quest:avatar-rollback',
+      xpAmount: 10,
+      occurredAtUtc: occurredAt,
+    );
+    final replayed = await repository.grantQuestEconomyDuringAvatarRollback(
+      ownerId: 'local:owner',
+      sourceEventId: 'quest:avatar-rollback',
+      xpAmount: 10,
+      occurredAtUtc: occurredAt,
+    );
+    final learningInserted = await repository.grantCoinsDuringAvatarRollback(
+      ownerId: 'local:owner',
+      idempotencyKey: 'economy:v1:coin:attempt:avatar-rollback',
+      amount: 1,
+      sourceEventId: 'attempt:avatar-rollback',
+      occurredAtUtc: occurredAt.add(const Duration(seconds: 1)),
+    );
+    final learningReplayed = await repository.grantCoinsDuringAvatarRollback(
+      ownerId: 'local:owner',
+      idempotencyKey: 'economy:v1:coin:attempt:avatar-rollback',
+      amount: 1,
+      sourceEventId: 'attempt:avatar-rollback',
+      occurredAtUtc: occurredAt.add(const Duration(seconds: 1)),
+    );
+
+    expect(inserted, QuestEconomyGrantResult.inserted);
+    expect(replayed, QuestEconomyGrantResult.replayed);
+    expect(learningInserted, CoinGrantResult.inserted);
+    expect(learningReplayed, CoinGrantResult.replayed);
+    final questXp =
+        await (database.select(database.pointsLedgerEntries)..where(
+              (row) => row.sourceEventId.equals('quest:avatar-rollback'),
+            ))
+            .getSingle();
+    expect(questXp.entryType, 'questCompletion');
+    expect(questXp.amount, 10);
+    expect(questXp.occurredAtUtcMs, occurredAt.millisecondsSinceEpoch);
+    final grants = await (database.select(
+      database.rewardTransactions,
+    )..where((row) => row.transactionType.equals('coinGrant'))).get();
+    expect(grants, hasLength(2));
+    expect(grants.map((row) => (row.sourceEventId, row.amount)).toSet(), {
+      ('quest:avatar-rollback', 10),
+      ('attempt:avatar-rollback', 1),
+    });
+    final rewardOutbox = await (database.select(
+      database.outboxOperations,
+    )..where((row) => row.entityType.equals('rewardTransaction'))).get();
+    expect(
+      rewardOutbox.map((row) => row.entityId),
+      containsAll(grants.map((row) => row.id)),
+    );
+  });
+
+  test(
+    'normal grant paths dynamically preserve xp coins and outbox after owner quarantine',
+    () async {
+      await repository.progressionEligibility.establishCutover('local:owner');
+      await database
+          .into(database.rewardTransactions)
+          .insert(
+            RewardTransactionsCompanion.insert(
+              id: 'owner-transition-raw-v1',
+              ownerId: 'local:owner',
+              idempotencyKey: 'owner-transition-raw-v1',
+              transactionType: 'purchase',
+              amount: -80,
+              itemId: const Value('theme_ocean'),
+              catalogVersion: RewardCatalog.catalogV1Version,
+              occurredAtUtcMs: 2,
+            ),
+          );
+      final occurredAt = DateTime.utc(2026, 7, 30, 18);
+
+      final quest = await repository.grantQuestXpAndCoins(
+        ownerId: 'local:owner',
+        sourceEventId: 'quest:dynamic-avatar-quarantine',
+        xpAmount: 10,
+        occurredAtUtc: occurredAt,
+      );
+      final learning = await repository.grantCoins(
+        ownerId: 'local:owner',
+        idempotencyKey: 'economy:v1:coin:dynamic-avatar-quarantine',
+        amount: 1,
+        sourceEventId: 'attempt:dynamic-avatar-quarantine',
+        occurredAtUtc: occurredAt.add(const Duration(seconds: 1)),
+      );
+
+      expect(quest, QuestEconomyGrantResult.inserted);
+      expect(learning, CoinGrantResult.inserted);
+      expect(
+        await (database.select(database.pointsLedgerEntries)..where(
+              (row) =>
+                  row.sourceEventId.equals('quest:dynamic-avatar-quarantine'),
+            ))
+            .get(),
+        hasLength(1),
+      );
+      final grants = await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.transactionType.equals('coinGrant'))).get();
+      expect(grants.map((row) => row.sourceEventId).toSet(), {
+        'quest:dynamic-avatar-quarantine',
+        'attempt:dynamic-avatar-quarantine',
+      });
+      final outbox = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.entityType.equals('rewardTransaction'))).get();
+      expect(
+        outbox.map((row) => row.entityId),
+        containsAll(grants.map((row) => row.id)),
+      );
+      await expectLater(
+        rewards.loadAvatar(),
+        throwsA(
+          isA<RewardException>().having(
+            (error) => error.code,
+            'code',
+            RewardFailureCode.evidenceUnavailable,
+          ),
+        ),
+      );
+
+      await expectLater(
+        rewards.purchase(
+          itemId: 'theme_ocean',
+          catalogVersion: RewardCatalog.version,
+          idempotencyKey: 'quarantined-action-recheck',
+        ),
+        throwsA(
+          isA<RewardException>().having(
+            (error) => error.code,
+            'code',
+            RewardFailureCode.evidenceUnavailable,
+          ),
+        ),
+      );
+
+      await (database.delete(
+        database.rewardTransactions,
+      )..where((row) => row.id.equals('owner-transition-raw-v1'))).go();
+
+      final repaired = await rewards.loadAvatar();
+      expect(repaired.account.coinBalance, 211);
+      expect(repaired.account.ownedItemIds, isEmpty);
     },
   );
 }

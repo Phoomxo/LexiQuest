@@ -6,6 +6,7 @@ import '../../../data/local/app_database.dart';
 import '../../learning/domain/evidence_context.dart';
 import '../../recommendation/domain/recommendation_models.dart';
 import '../../recommendation/domain/recommendation_policy.dart';
+import '../../rewards/domain/avatar_progression_policy.dart';
 import '../domain/progress_models.dart';
 
 final class DriftProgressQueries {
@@ -41,6 +42,9 @@ final class DriftProgressQueries {
               ))
             .getSingle();
     final totalXp = pointsRow.read(pointsExpression) ?? 0;
+    final avatarProgression = const AvatarProgressionPolicy().evaluate(
+      lifetimeXp: totalXp,
+    );
     final practiceSessionIds = attempts
         .map((attempt) => attempt.sessionId)
         .toSet();
@@ -108,7 +112,7 @@ final class DriftProgressQueries {
       dueReviewCount: dueRow.read(dueCountExpression) ?? 0,
       masteredWordCount: masteredRow.read(masteredCountExpression) ?? 0,
       achievementCount: durableAchievementRows.length,
-      gameLevel: (totalXp ~/ 20) + 1,
+      gameLevel: avatarProgression.level,
       skills: _skills(attempts),
       weaknesses: weaknesses,
       recommendations: weaknesses

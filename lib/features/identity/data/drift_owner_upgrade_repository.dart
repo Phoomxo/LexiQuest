@@ -17,12 +17,17 @@ import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning/domain/session_configuration.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../motivation/data/drift_streak_repository.dart';
+import '../../rewards/data/drift_avatar_progression_eligibility.dart';
 import '../../rewards/data/drift_economy_cutover.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../rewards/domain/avatar_progression_policy.dart';
+import '../../rewards/domain/reward_models.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../../research/domain/experiment_assignment.dart';
 import '../../sync/data/drift_owner_operation_gate.dart';
 import '../../sync/domain/owner_operation_gate.dart';
+import '../../sync/domain/sync_failure.dart';
+import '../../sync/domain/sync_store.dart';
 import '../../time_tracking/domain/learning_time_segment.dart';
 import '../domain/owner_upgrade.dart';
 
@@ -107,12 +112,24 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             throw StateError('active local owner was not found');
           }
           if (source.firebaseUid == uid) {
+            final avatarEligibility = DriftAvatarProgressionEligibility(
+              _database,
+              nowUtc: nowUtc,
+            );
+            final avatarReady = await _tryEstablishAvatarCutover(
+              avatarEligibility,
+              source.id,
+            );
             await DriftStreakRepository(_database).establishCutover(
               ownerId: source.id,
               establishedAtUtc: _requireUtc(nowUtc()),
             );
             await DriftEconomyCutover(_database).ensureSeparated(source.id);
-            await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
+            await _rebuildAvatarOrQuarantine(
+              avatarEligibility,
+              source.id,
+              avatarReady: avatarReady,
+            );
             return OwnerUpgradeResult(
               targetOwnerId: source.id,
               mode: OwnerUpgradeMode.alreadyBound,
@@ -124,12 +141,24 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           final upgradedAtUtc = _requireUtc(nowUtc());
           final upgradedAt = upgradedAtUtc.millisecondsSinceEpoch;
           if (target == null) {
+            final avatarEligibility = DriftAvatarProgressionEligibility(
+              _database,
+              nowUtc: nowUtc,
+            );
+            final avatarReady = await _tryEstablishAvatarCutover(
+              avatarEligibility,
+              source.id,
+            );
             await DriftStreakRepository(_database).establishCutover(
               ownerId: source.id,
               establishedAtUtc: upgradedAtUtc,
             );
             await DriftEconomyCutover(_database).ensureSeparated(source.id);
-            await DriftRewardProjectionRebuilder(_database).rebuild(source.id);
+            await _rebuildAvatarOrQuarantine(
+              avatarEligibility,
+              source.id,
+              avatarReady: avatarReady,
+            );
             await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
             await _reconcileExperimentAssignmentOutbox(
               ownerId: source.id,
@@ -157,6 +186,26 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             targetId: target.id,
             establishedAtUtc: upgradedAtUtc,
           );
+          final avatarProgressionEligibility =
+              DriftAvatarProgressionEligibility(_database, nowUtc: nowUtc);
+          final sourceAvatarReady = await _tryEstablishAvatarCutover(
+            avatarProgressionEligibility,
+            source.id,
+          );
+          final targetAvatarReady = await _tryEstablishAvatarCutover(
+            avatarProgressionEligibility,
+            target.id,
+          );
+          final avatarCutoversReady = sourceAvatarReady && targetAvatarReady;
+          var convertedTargetAvatarTransactionIds = const <String>{};
+          if (!avatarCutoversReady) {
+            convertedTargetAvatarTransactionIds =
+                await avatarProgressionEligibility
+                    .detachCutoversForQuarantinedMerge(
+                      sourceId: source.id,
+                      targetId: target.id,
+                    );
+          }
           var conflicts = 0;
           conflicts += await _mergeCategories(source.id, target.id, upgradedAt);
           conflicts += await _mergeWords(source.id, target.id, upgradedAt);
@@ -183,6 +232,15 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             target.id,
             upgradedAt,
           );
+          if (avatarCutoversReady) {
+            await avatarProgressionEligibility.refreshForOwnerMerge(source.id);
+            await avatarProgressionEligibility.refreshForOwnerMerge(target.id);
+            convertedTargetAvatarTransactionIds =
+                await avatarProgressionEligibility.mergeCutovers(
+                  sourceId: source.id,
+                  targetId: target.id,
+                );
+          }
           conflicts += await _mergeResearchConsents(
             source.id,
             target.id,
@@ -202,6 +260,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           );
           await _discardAiUsageDuplicates(source.id, target.id);
           await _requeueOwnerForNewCloudNamespace(source.id, upgradedAt);
+          await _reviveConvertedTargetAvatarPermissionFailures(
+            ownerId: target.id,
+            transactionIds: convertedTargetAvatarTransactionIds,
+            rehomedAtUtcMs: upgradedAt,
+          );
           await _normalizeLearningProjectionState(source.id, target.id);
           await _mergeSessionConfigurations(source.id, target.id);
           await _rebindLearningSessionConfigurations(source.id, target.id);
@@ -253,7 +316,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           );
           await _rebuildLearningProjections(target.id);
           await DriftEconomyCutover(_database).ensureSeparated(target.id);
-          await DriftRewardProjectionRebuilder(_database).rebuild(target.id);
+          await _rebuildAvatarOrQuarantine(
+            avatarProgressionEligibility,
+            target.id,
+            avatarReady: avatarCutoversReady,
+          );
           return OwnerUpgradeResult(
             targetOwnerId: target.id,
             mode: OwnerUpgradeMode.mergedExisting,
@@ -290,6 +357,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
           await DriftStreakRepository(
             _database,
           ).establishCutover(ownerId: ownerId, establishedAtUtc: createdAtUtc);
+          await DriftAvatarProgressionEligibility(
+            _database,
+            nowUtc: nowUtc,
+          ).establishCutover(ownerId);
           return OwnerUpgradeResult(
             targetOwnerId: ownerId,
             mode: OwnerUpgradeMode.localGuestCreated,
@@ -328,6 +399,10 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
               isUtc: true,
             ),
           );
+          await DriftAvatarProgressionEligibility(
+            _database,
+            nowUtc: nowUtc,
+          ).rollbackEmptyTransition(guest);
           await (_database.delete(
             _database.localOwners,
           )..where((row) => row.id.equals(guest))).go();
@@ -337,6 +412,42 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         });
       }),
     );
+  }
+
+  Future<bool> _tryEstablishAvatarCutover(
+    DriftAvatarProgressionEligibility eligibility,
+    String ownerId,
+  ) async {
+    try {
+      await eligibility.establishCutover(ownerId);
+      return true;
+    } on StateError {
+      return false;
+    }
+  }
+
+  Future<void> _rebuildAvatarOrQuarantine(
+    DriftAvatarProgressionEligibility eligibility,
+    String ownerId, {
+    required bool avatarReady,
+  }) async {
+    if (avatarReady) {
+      try {
+        await DriftRewardProjectionRebuilder(
+          _database,
+          progressionEligibility: eligibility,
+        ).rebuild(ownerId);
+        return;
+      } on StateError {
+        // Reward corruption must not roll back authentication or owner merge.
+      }
+    }
+    await (_database.delete(
+      _database.ownedRewardItems,
+    )..where((row) => row.ownerId.equals(ownerId))).go();
+    await (_database.delete(
+      _database.equippedRewardItems,
+    )..where((row) => row.ownerId.equals(ownerId))).go();
   }
 
   Future<int> _mergeCategories(
@@ -1695,10 +1806,76 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
         collisionSuffix += 1;
         mergedKey = 'merged:$suffix:$collisionSuffix';
       }
+      final transaction = await (_database.select(
+        _database.rewardTransactions,
+      )..where((row) => row.id.equals(guestId))).getSingle();
+      var reboundSourceEventId = transaction.sourceEventId;
+      if (transaction.catalogVersion == RewardCatalog.catalogV1Version &&
+          (transaction.transactionType == 'purchase' ||
+              transaction.transactionType == 'equip') &&
+          transaction.sourceEventId != null) {
+        const carry = AvatarLegacyCarryForwardContract();
+        if (!carry.isValidPersistedTransaction(
+          transactionId: transaction.id,
+          idempotencyKey: transaction.idempotencyKey,
+          transactionType: transaction.transactionType,
+          amount: transaction.amount,
+          itemId: transaction.itemId,
+          catalogVersion: transaction.catalogVersion,
+          sourceEventId: transaction.sourceEventId,
+          occurredAtUtcMs: transaction.occurredAtUtcMs,
+        )) {
+          throw StateError('legacy avatar merge evidence is invalid');
+        }
+        reboundSourceEventId = carry
+            .issue(
+              transactionId: transaction.id,
+              idempotencyKey: mergedKey,
+              transactionType: transaction.transactionType,
+              amount: transaction.amount,
+              itemId: transaction.itemId!,
+              catalogVersion: transaction.catalogVersion,
+              occurredAtUtcMs: transaction.occurredAtUtcMs,
+            )
+            .sourceEventId;
+      } else if (transaction.transactionType == 'purchase' &&
+          transaction.catalogVersion == RewardCatalog.catalogV2Version) {
+        final item = transaction.itemId == null
+            ? null
+            : RewardCatalog.byIdAtVersion(
+                transaction.itemId!,
+                transaction.catalogVersion,
+              );
+        final receipt = item == null
+            ? null
+            : const AvatarProgressionEligibilityContract()
+                  .validatePersistedPurchase(
+                    idempotencyKey: transaction.idempotencyKey,
+                    itemId: item.id,
+                    amount: transaction.amount,
+                    catalogVersion: transaction.catalogVersion,
+                    sourceEventId: transaction.sourceEventId,
+                    occurredAtUtcMs: transaction.occurredAtUtcMs,
+                  );
+        if (item == null || receipt == null) {
+          throw StateError('avatar purchase merge evidence is invalid');
+        }
+        reboundSourceEventId = const AvatarProgressionEligibilityContract()
+            .issue(
+              idempotencyKey: mergedKey,
+              item: item,
+              lifetimeXp: receipt.lifetimeXp,
+              occurredAtUtcMs: transaction.occurredAtUtcMs,
+            )
+            .sourceEventId;
+      }
       await (_database.update(
         _database.rewardTransactions,
       )..where((row) => row.id.equals(guestId))).write(
-        db.RewardTransactionsCompanion(idempotencyKey: Value(mergedKey)),
+        db.RewardTransactionsCompanion(
+          idempotencyKey: Value(mergedKey),
+          sourceEventId: Value(reboundSourceEventId),
+        ),
       );
       await _recordMergeConflict(
         ownerId: targetId,
@@ -3178,6 +3355,32 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             );
       }
     }
+  }
+
+  Future<void> _reviveConvertedTargetAvatarPermissionFailures({
+    required String ownerId,
+    required Set<String> transactionIds,
+    required int rehomedAtUtcMs,
+  }) async {
+    if (transactionIds.isEmpty) return;
+    await (_database.update(_database.outboxOperations)..where(
+          (row) =>
+              row.ownerId.equals(ownerId) &
+              row.entityType.equals('rewardTransaction') &
+              row.entityId.isIn(transactionIds) &
+              row.state.equals('permanentFailure') &
+              row.failureCode.equals(SyncFailureCode.permissionDenied.name) &
+              row.attemptCount.isSmallerThanValue(maxSyncSendReservations),
+        ))
+        .write(
+          db.OutboxOperationsCompanion(
+            state: const Value('retryWaiting'),
+            nextAttemptAtUtcMs: Value(rehomedAtUtcMs),
+            leaseToken: const Value(null),
+            leaseExpiresAtUtcMs: const Value(null),
+            failureCode: const Value(null),
+          ),
+        );
   }
 
   Future<void> _rebuildLearningProjections(String ownerId) async {

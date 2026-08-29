@@ -574,14 +574,16 @@ void main() {
         final srs = await (reopened.select(
           reopened.srsStates,
         )..where((row) => row.ownerId.equals(_ownerId))).getSingle();
-        final progress = await ProgressUseCases(
+        final progressUseCases = ProgressUseCases(
           owners: reopenedOwners,
           queries: DriftProgressQueries(reopened),
           nowUtc: () => now,
-        ).load();
+        );
+        final progress = await progressUseCases.load();
         final rewards = await RewardUseCases(
           owners: reopenedOwners,
           repository: DriftRewardRepository(reopened),
+          progress: progressUseCases,
           generateId: () => 'unused-reward-id',
           nowUtc: () => now,
         ).load();

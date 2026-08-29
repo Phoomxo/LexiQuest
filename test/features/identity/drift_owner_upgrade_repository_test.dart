@@ -29,14 +29,18 @@ import 'package:vocab_learning_app/features/learning/domain/session_configuratio
 import 'package:vocab_learning_app/features/motivation/application/streak_use_cases.dart';
 import 'package:vocab_learning_app/features/motivation/data/drift_streak_repository.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/data/drift_sync_store.dart';
 import 'package:vocab_learning_app/features/sync/data/firestore_sync_gateway.dart';
 import 'package:vocab_learning_app/features/sync/domain/owner_operation_gate.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_entity.dart';
 import 'package:vocab_learning_app/features/sync/domain/sync_failure.dart';
+import 'package:vocab_learning_app/features/sync/domain/sync_result.dart';
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/runtime/registries/drift_consent_registry.dart';
 import 'package:vocab_learning_app/runtime/registries/experiment_registry.dart';
@@ -399,6 +403,815 @@ void main() {
       expect(owners.single.id, 'guest-owner');
       expect(owners.single.firebaseUid, 'new-firebase-user');
       expect(owners.single.isActive, isTrue);
+    },
+  );
+
+  test(
+    'post-cutover anonymous bind completes while raw v1 avatar rows stay quarantined',
+    () async {
+      await (database.delete(
+        database.localOwners,
+      )..where((row) => row.id.equals('account-owner'))).go();
+      await _seedMinimalLegacyRewardHistory(database, 'guest-owner');
+      final cutoverAt = DateTime.fromMillisecondsSinceEpoch(
+        AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+        isUtc: true,
+      );
+      final lateRepository = DriftOwnerUpgradeRepository(
+        database,
+        nowUtc: () => cutoverAt,
+        generateConflictId: () => 'late-bind-conflict-${conflictSequence++}',
+        generateOwnerId: () => 'unused-late-bind-owner',
+        generateOwnerOperationToken: () =>
+            'late-bind-operation-${ownerOperationSequence++}',
+        deleteOwnerSecrets: (_) async {},
+      );
+
+      final result = await lateRepository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'late-firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.anonymousBound);
+      final owner = await (database.select(
+        database.localOwners,
+      )..where((row) => row.id.equals('guest-owner'))).getSingle();
+      expect(owner.firebaseUid, 'late-firebase-user');
+      expect(
+        await (database.select(database.rewardTransactions)..where(
+              (row) =>
+                  row.ownerId.equals('guest-owner') &
+                  row.catalogVersion.equals(RewardCatalog.catalogV1Version),
+            ))
+            .get(),
+        hasLength(2),
+      );
+      expect(
+        await (database.select(database.eventsV2)..where(
+              (row) =>
+                  row.eventType.equals('AvatarProgressionEligibilityCutover'),
+            ))
+            .get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'post-cutover merged owner lifecycle completes with raw v1 evidence quarantined',
+    () async {
+      await database.customInsert(
+        "INSERT INTO reward_transactions VALUES "
+        "('late-guest-v1', 'guest-owner', 'late-guest-v1', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 20)",
+      );
+      await database.customInsert(
+        "INSERT INTO reward_transactions VALUES "
+        "('late-account-v1', 'account-owner', 'late-account-v1', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 21)",
+      );
+      final cutoverAt = DateTime.fromMillisecondsSinceEpoch(
+        AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+        isUtc: true,
+      );
+      final lateRepository = DriftOwnerUpgradeRepository(
+        database,
+        nowUtc: () => cutoverAt,
+        generateConflictId: () => 'late-merge-conflict-${conflictSequence++}',
+        generateOwnerId: () => 'unused-late-merge-owner',
+        generateOwnerOperationToken: () =>
+            'late-merge-operation-${ownerOperationSequence++}',
+        deleteOwnerSecrets: (_) async {},
+      );
+
+      final result = await lateRepository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      expect(result.targetOwnerId, 'account-owner');
+      final active = await (database.select(
+        database.localOwners,
+      )..where((row) => row.isActive.equals(true))).getSingle();
+      expect(active.id, 'account-owner');
+      expect(
+        await (database.select(database.rewardTransactions)..where(
+              (row) =>
+                  row.ownerId.equals('account-owner') &
+                  row.catalogVersion.equals(RewardCatalog.catalogV1Version),
+            ))
+            .get(),
+        hasLength(2),
+      );
+      expect(await database.select(database.ownedRewardItems).get(), isEmpty);
+    },
+  );
+
+  for (final checkpoint in const [
+    'availability before cutoff',
+    'restart before cutoff',
+    'claim after cutoff',
+    'trusted repair after cutoff',
+  ]) {
+    test(
+      'post-marker legacy avatar quarantine survives owner merge: $checkpoint',
+      () async {
+        final directory = await Directory.systemTemp.createTemp(
+          'lexiquest-avatar-quarantine-merge-',
+        );
+        final file = File(
+          '${directory.path}${Platform.pathSeparator}app.sqlite',
+        );
+        AppDatabase? fileDatabase;
+        var now = DateTime.utc(2026, 9, 20, 12);
+        const attemptId = 'quarantine-merge-attempt';
+        const eventId = 'learning-event:$attemptId';
+        const purchaseId = 'post-marker-v1-purchase';
+        const purchaseOperationId = 'rewardTransaction:$purchaseId:1';
+        try {
+          final initial = AppDatabase(NativeDatabase(file));
+          fileDatabase = initial;
+          await _seedOwners(initial);
+          final learningAt = now.subtract(const Duration(minutes: 2));
+          await _insertLearningEvent(
+            initial,
+            ownerId: 'guest-owner',
+            eventId: eventId,
+            occurredAt: learningAt,
+          );
+          await initial
+              .into(initial.pointsLedgerEntries)
+              .insert(
+                PointsLedgerEntriesCompanion.insert(
+                  id: 'points:$attemptId',
+                  ownerId: 'guest-owner',
+                  idempotencyKey: 'correct-answer:$attemptId',
+                  entryType: 'quizCorrect',
+                  amount: 1,
+                  sourceEventId: const Value(attemptId),
+                  occurredAtUtcMs: learningAt.millisecondsSinceEpoch,
+                ),
+              );
+          final eligibility = DriftAvatarProgressionEligibility(
+            initial,
+            nowUtc: () => now,
+          );
+          final rewards = DriftRewardRepository(
+            initial,
+            progressionEligibility: eligibility,
+          );
+          expect(
+            await rewards.grantCoins(
+              ownerId: 'guest-owner',
+              idempotencyKey: 'quarantine-merge-coins',
+              amount: 200,
+              sourceEventId: 'quarantine-merge-coin-source',
+              occurredAtUtc: now,
+            ),
+            CoinGrantResult.inserted,
+          );
+          await eligibility.establishCutover('guest-owner');
+          expect(
+            await rewards.avatarProjectionAvailable('guest-owner'),
+            isTrue,
+          );
+          final earningsBefore = await initial
+              .select(initial.rewardTransactions)
+              .get();
+          final attemptBefore = await (initial.select(
+            initial.answerAttempts,
+          )..where((row) => row.id.equals(attemptId))).getSingle();
+          final eventBefore = await (initial.select(
+            initial.eventsV2,
+          )..where((row) => row.eventId.equals(eventId))).getSingle();
+
+          // An unchanged v1 client writes a normal purchase after f32's
+          // marker, still before the deadline and without clock rollback.
+          now = now.add(const Duration(minutes: 1));
+          final legacyItem = RewardCatalog.byIdAtVersion(
+            'theme_ocean',
+            RewardCatalog.catalogV1Version,
+          )!;
+          await initial.transaction(() async {
+            await initial
+                .into(initial.rewardTransactions)
+                .insert(
+                  RewardTransactionsCompanion.insert(
+                    id: purchaseId,
+                    ownerId: 'guest-owner',
+                    idempotencyKey: purchaseId,
+                    transactionType: 'purchase',
+                    amount: -legacyItem.price,
+                    itemId: Value(legacyItem.id),
+                    catalogVersion: legacyItem.catalogVersion,
+                    occurredAtUtcMs: now.millisecondsSinceEpoch,
+                  ),
+                );
+            await initial
+                .into(initial.ownedRewardItems)
+                .insert(
+                  OwnedRewardItemsCompanion.insert(
+                    id: 'owned:guest-owner:${legacyItem.id}',
+                    ownerId: 'guest-owner',
+                    itemId: legacyItem.id,
+                    catalogVersion: legacyItem.catalogVersion,
+                    acquiredByTransactionId: purchaseId,
+                    acquiredAtUtcMs: now.millisecondsSinceEpoch,
+                  ),
+                );
+            await initial
+                .into(initial.outboxOperations)
+                .insert(
+                  OutboxOperationsCompanion.insert(
+                    operationId: purchaseOperationId,
+                    ownerId: 'guest-owner',
+                    entityType: 'rewardTransaction',
+                    entityId: purchaseId,
+                    operationKind: 'upsert',
+                    createdAtUtcMs: now.millisecondsSinceEpoch,
+                  ),
+                );
+            if (checkpoint == 'trusted repair after cutoff') {
+              now = now.add(const Duration(seconds: 1));
+              await initial
+                  .into(initial.rewardTransactions)
+                  .insert(
+                    RewardTransactionsCompanion.insert(
+                      id: 'post-marker-v1-equip',
+                      ownerId: 'guest-owner',
+                      idempotencyKey: 'equip:post-marker-v1-equip',
+                      transactionType: 'equip',
+                      amount: 0,
+                      itemId: Value(legacyItem.id),
+                      catalogVersion: legacyItem.catalogVersion,
+                      occurredAtUtcMs: now.millisecondsSinceEpoch,
+                    ),
+                  );
+              await initial
+                  .into(initial.equippedRewardItems)
+                  .insert(
+                    EquippedRewardItemsCompanion.insert(
+                      id: 'equipped:guest-owner:theme',
+                      ownerId: 'guest-owner',
+                      slot: 'theme',
+                      itemId: legacyItem.id,
+                      equippedAtUtcMs: now.millisecondsSinceEpoch,
+                    ),
+                  );
+            }
+          });
+          expect(
+            await rewards.avatarProjectionAvailable('guest-owner'),
+            isFalse,
+          );
+          final rejectedPurchase = await (initial.select(
+            initial.rewardTransactions,
+          )..where((row) => row.id.equals(purchaseId))).getSingle();
+          now = now.add(const Duration(minutes: 1));
+          var sequence = 0;
+          final upgrade = DriftOwnerUpgradeRepository(
+            initial,
+            nowUtc: () => now,
+            generateConflictId: () => 'quarantine-merge-${sequence++}',
+            generateOwnerId: () => 'unused-quarantine-owner',
+            generateOwnerOperationToken: () =>
+                'quarantine-merge-gate-${sequence++}',
+            deleteOwnerSecrets: (_) async {},
+          );
+          final result = await upgrade.upgrade(
+            activeOwnerId: 'guest-owner',
+            firebaseUid: 'firebase-user',
+          );
+          expect(result.mode, OwnerUpgradeMode.mergedExisting);
+          expect(result.targetOwnerId, 'account-owner');
+          expect(await initial.select(initial.ownedRewardItems).get(), isEmpty);
+          expect(
+            await initial.select(initial.equippedRewardItems).get(),
+            isEmpty,
+          );
+
+          var checkDatabase = initial;
+          if (checkpoint != 'availability before cutoff') {
+            await initial.close();
+            fileDatabase = null;
+            final reopened = AppDatabase(NativeDatabase(file));
+            fileDatabase = reopened;
+            checkDatabase = reopened;
+          }
+          if (checkpoint.endsWith('after cutoff')) {
+            now = DateTime.fromMillisecondsSinceEpoch(
+              AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs + 1000,
+              isUtc: true,
+            );
+          }
+          final active = await (checkDatabase.select(
+            checkDatabase.localOwners,
+          )..where((row) => row.isActive.equals(true))).getSingle();
+          expect(active.id, 'account-owner');
+          expect(active.firebaseUid, 'firebase-user');
+          final attemptAfter = await (checkDatabase.select(
+            checkDatabase.answerAttempts,
+          )..where((row) => row.id.equals(attemptId))).getSingle();
+          expect(attemptAfter.toJson(), <String, dynamic>{
+            ...attemptBefore.toJson(),
+            'ownerId': 'account-owner',
+          });
+          final eventAfter = await (checkDatabase.select(
+            checkDatabase.eventsV2,
+          )..where((row) => row.eventId.equals(eventId))).getSingle();
+          expect(eventAfter.ownerId, 'account-owner');
+          expect(eventAfter.payloadJson, eventBefore.payloadJson);
+          expect(eventAfter.occurredAtUtc, eventBefore.occurredAtUtc);
+          final progress = await DriftProgressQueries(
+            checkDatabase,
+          ).load(ownerId: 'account-owner', nowUtc: now);
+          expect(progress.totalXp, 1);
+          expect(progress.correctCount, 1);
+          for (final earning in earningsBefore) {
+            final persisted = await (checkDatabase.select(
+              checkDatabase.rewardTransactions,
+            )..where((row) => row.id.equals(earning.id))).getSingle();
+            expect(persisted.toJson(), <String, dynamic>{
+              ...earning.toJson(),
+              'ownerId': 'account-owner',
+            });
+          }
+          final currentEligibility = DriftAvatarProgressionEligibility(
+            checkDatabase,
+            nowUtc: () => now,
+          );
+          final currentRewards = DriftRewardRepository(
+            checkDatabase,
+            progressionEligibility: currentEligibility,
+          );
+          if (checkpoint == 'claim after cutoff') {
+            final gate = DriftOwnerOperationGate(checkDatabase);
+            expect(
+              await gate.tryAcquire(
+                token: 'quarantine-merge-claim-gate',
+                nowUtc: now,
+                leaseDuration: const Duration(minutes: 10),
+              ),
+              isTrue,
+            );
+            try {
+              final claims =
+                  await DriftSyncStore(
+                    checkDatabase,
+                    avatarProgressionEligibility: currentEligibility,
+                  ).claimPending(
+                    ownerId: 'account-owner',
+                    firebaseUid: 'firebase-user',
+                    limit: 20,
+                    leaseToken: 'quarantine-merge-claim-lease',
+                    ownerGateToken: 'quarantine-merge-claim-gate',
+                    leaseDuration: const Duration(minutes: 5),
+                    nowUtc: now,
+                  );
+              final claimedIds = claims.map((claim) => claim.mutation.entityId);
+              expect(claimedIds, isNot(contains(purchaseId)));
+              expect(claimedIds, contains(attemptId));
+              expect(
+                claimedIds,
+                contains(
+                  earningsBefore
+                      .singleWhere((row) => row.transactionType == 'coinGrant')
+                      .id,
+                ),
+              );
+            } finally {
+              await gate.release(token: 'quarantine-merge-claim-gate');
+            }
+          }
+          expect(
+            await currentRewards.avatarProjectionAvailable('account-owner'),
+            isFalse,
+          );
+          await expectLater(
+            currentRewards.load('account-owner'),
+            throwsStateError,
+          );
+          if (checkpoint == 'trusted repair after cutoff') {
+            final quarantine =
+                await (checkDatabase.select(checkDatabase.eventsV2)..where(
+                      (row) =>
+                          row.ownerId.equals('account-owner') &
+                          row.eventType.equals(
+                            DriftAvatarProgressionEligibility.eventType,
+                          ),
+                    ))
+                    .getSingle();
+            expect(
+              quarantine.eventId,
+              'avatar-progression-cutover:account-owner:'
+              'v${DriftAvatarProgressionEligibility.cutoverVersion}',
+            );
+            expect(quarantine.actorIdentity, 'account-owner');
+            expect(quarantine.aggregateId, 'account-owner');
+            expect(jsonDecode(quarantine.payloadJson)['state'], 'quarantined');
+
+            Future<String> echo(RewardTransaction row, DateTime serverAt) =>
+                currentEligibility.registerTrustedLegacyPull(
+                  ownerId: 'account-owner',
+                  transactionId: row.id,
+                  idempotencyKey: row.idempotencyKey,
+                  transactionType: row.transactionType,
+                  amount: row.amount,
+                  itemId: row.itemId!,
+                  catalogVersion: row.catalogVersion,
+                  sourceEventId: row.sourceEventId,
+                  occurredAtUtcMs: row.occurredAtUtcMs,
+                  serverUpdatedAtUtcMs: serverAt.millisecondsSinceEpoch,
+                );
+            // A raw echo acknowledged after the deadline is not a repair.
+            await expectLater(echo(rejectedPurchase, now), throwsStateError);
+            final purchaseSource = await echo(
+              rejectedPurchase,
+              DateTime.fromMillisecondsSinceEpoch(
+                rejectedPurchase.occurredAtUtcMs,
+                isUtc: true,
+              ),
+            );
+            expect(purchaseSource, startsWith('avatar-legacy:'));
+            expect(
+              await currentRewards.avatarProjectionAvailable('account-owner'),
+              isFalse,
+              reason: 'One trusted row must not admit the remaining raw equip',
+            );
+            final partial =
+                await (checkDatabase.select(checkDatabase.eventsV2)
+                      ..where((row) => row.eventId.equals(quarantine.eventId)))
+                    .getSingle();
+            expect(partial.payloadJson, quarantine.payloadJson);
+            final rawEquip =
+                await (checkDatabase.select(checkDatabase.rewardTransactions)
+                      ..where((row) => row.id.equals('post-marker-v1-equip')))
+                    .getSingle();
+            await echo(
+              rawEquip,
+              DateTime.fromMillisecondsSinceEpoch(
+                rawEquip.occurredAtUtcMs,
+                isUtc: true,
+              ),
+            );
+            expect(
+              await currentRewards.avatarProjectionAvailable('account-owner'),
+              isTrue,
+            );
+            final restored = await currentRewards.load('account-owner');
+            expect(restored.coinBalance, 121);
+            expect(restored.ownedItemIds, {'theme_ocean'});
+            expect(restored.equippedBySlot, {'theme': 'theme_ocean'});
+            final restoredMarker =
+                await (checkDatabase.select(checkDatabase.eventsV2)
+                      ..where((row) => row.eventId.equals(quarantine.eventId)))
+                    .getSingle();
+            await echo(
+              rawEquip,
+              DateTime.fromMillisecondsSinceEpoch(
+                rawEquip.occurredAtUtcMs,
+                isUtc: true,
+              ),
+            );
+            expect(
+              (await (checkDatabase.select(
+                        checkDatabase.eventsV2,
+                      )..where((row) => row.eventId.equals(quarantine.eventId)))
+                      .getSingle())
+                  .payloadJson,
+              restoredMarker.payloadJson,
+            );
+            return;
+          }
+          final purchaseAfter = await (checkDatabase.select(
+            checkDatabase.rewardTransactions,
+          )..where((row) => row.id.equals(purchaseId))).getSingle();
+          expect(purchaseAfter.toJson(), <String, dynamic>{
+            ...rejectedPurchase.toJson(),
+            'ownerId': 'account-owner',
+          });
+          final operation =
+              await (checkDatabase.select(checkDatabase.outboxOperations)
+                    ..where(
+                      (row) => row.operationId.equals(purchaseOperationId),
+                    ))
+                  .getSingle();
+          expect(operation.ownerId, 'account-owner');
+          expect(operation.state, 'pending');
+          expect(operation.attemptCount, 0);
+          expect(operation.leaseToken, isNull);
+          expect(operation.leaseExpiresAtUtcMs, isNull);
+          expect(operation.acknowledgedAtUtcMs, isNull);
+          expect(
+            await checkDatabase.select(checkDatabase.ownedRewardItems).get(),
+            isEmpty,
+          );
+          expect(
+            await checkDatabase.select(checkDatabase.equippedRewardItems).get(),
+            isEmpty,
+          );
+        } finally {
+          await fileDatabase?.close();
+          await directory.delete(recursive: true);
+        }
+      },
+    );
+  }
+
+  for (final markerOwner in const ['guest-owner', 'account-owner']) {
+    test(
+      'mixed avatar readiness detaches $markerOwner marker and remains recoverable',
+      () async {
+        final rawOwner = markerOwner == 'guest-owner'
+            ? 'account-owner'
+            : 'guest-owner';
+        for (final ownerId in const ['guest-owner', 'account-owner']) {
+          await database.customInsert(
+            'INSERT INTO reward_transactions VALUES '
+            "('mixed-$ownerId', '$ownerId', 'mixed-$ownerId', "
+            "'purchase', -80, 'theme_ocean', 1, NULL, 20)",
+          );
+        }
+        await DriftAvatarProgressionEligibility(
+          database,
+          nowUtc: () => DateTime.fromMillisecondsSinceEpoch(
+            AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs - 1000,
+            isUtc: true,
+          ),
+        ).establishCutover(markerOwner);
+        final cutoverAt = DateTime.fromMillisecondsSinceEpoch(
+          AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+          isUtc: true,
+        );
+        final lateRepository = DriftOwnerUpgradeRepository(
+          database,
+          nowUtc: () => cutoverAt,
+          generateConflictId: () =>
+              'mixed-readiness-conflict-${conflictSequence++}',
+          generateOwnerId: () => 'unused-mixed-readiness-owner',
+          generateOwnerOperationToken: () =>
+              'mixed-readiness-operation-${ownerOperationSequence++}',
+          deleteOwnerSecrets: (_) async {},
+        );
+
+        final result = await lateRepository.upgrade(
+          activeOwnerId: 'guest-owner',
+          firebaseUid: 'firebase-user',
+        );
+
+        expect(result.mode, OwnerUpgradeMode.mergedExisting);
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.eventType.equals('AvatarProgressionEligibilityCutover'),
+              ))
+              .get(),
+          isEmpty,
+        );
+        final authorized = await (database.select(
+          database.rewardTransactions,
+        )..where((row) => row.id.equals('mixed-$markerOwner'))).getSingle();
+        expect(authorized.sourceEventId, startsWith('avatar-legacy:'));
+        final raw = await (database.select(
+          database.rewardTransactions,
+        )..where((row) => row.id.equals('mixed-$rawOwner'))).getSingle();
+        expect(raw.sourceEventId, isNull);
+
+        final sync = DriftSyncStore(
+          database,
+          avatarProgressionEligibility: DriftAvatarProgressionEligibility(
+            database,
+            nowUtc: () => cutoverAt,
+          ),
+        );
+        final echo = SyncEntity(
+          collection: SyncCollection.rewardTransactions,
+          entityId: raw.id,
+          revision: 1,
+          isDeleted: false,
+          payloadVersion: 1,
+          clientUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            raw.occurredAtUtcMs,
+            isUtc: true,
+          ),
+          serverUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs - 1,
+            isUtc: true,
+          ),
+          payload: <String, Object?>{
+            'idempotencyKey': raw.idempotencyKey,
+            'transactionType': raw.transactionType,
+            'amount': raw.amount,
+            'itemId': raw.itemId,
+            'slot': 'theme',
+            'catalogVersion': raw.catalogVersion,
+            'sourceEventId': null,
+            'occurredAtUtcMs': raw.occurredAtUtcMs,
+          },
+        );
+        await sync.applyPullPage(
+          ownerId: 'account-owner',
+          collection: SyncCollection.rewardTransactions,
+          page: PullPage(
+            changes: [echo],
+            nextCursor: SyncCursor(
+              serverUpdatedAtUtc: echo.serverUpdatedAtUtc,
+              documentId: echo.entityId,
+            ),
+            hasMore: false,
+          ),
+        );
+        expect(
+          await (database.select(database.eventsV2)..where(
+                (row) =>
+                    row.eventType.equals('AvatarProgressionEligibilityCutover'),
+              ))
+              .get(),
+          hasLength(1),
+        );
+      },
+    );
+  }
+
+  test(
+    'mixed merge revives only converted target v1 permission failure within budget',
+    () async {
+      await database.customInsert(
+        'INSERT INTO reward_transactions VALUES '
+        "('target-recoverable-purchase', 'account-owner', "
+        "'target-recoverable-purchase', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 20), "
+        "('target-exhausted-equip', 'account-owner', "
+        "'target-exhausted-equip', 'equip', 0, "
+        "'theme_ocean', 1, NULL, 21), "
+        "('target-unrelated-coin', 'account-owner', "
+        "'target-unrelated-coin', 'coinGrant', 5, NULL, 1, NULL, 22), "
+        "('source-raw-purchase', 'guest-owner', "
+        "'source-raw-purchase', 'purchase', -60, "
+        "'wallpaper_focus', 1, NULL, 23)",
+      );
+      await DriftAvatarProgressionEligibility(
+        database,
+        nowUtc: () => DateTime.fromMillisecondsSinceEpoch(
+          AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs - 1000,
+          isUtc: true,
+        ),
+      ).establishCutover('account-owner');
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'attempt_count, state, next_attempt_at_utc_ms, lease_token, '
+        'lease_expires_at_utc_ms, last_attempt_at_utc_ms, '
+        'created_at_utc_ms, failure_code) VALUES '
+        "('target-recoverable-outbox', 'account-owner', "
+        "'rewardTransaction', 'target-recoverable-purchase', 'upsert', "
+        "3, 'permanentFailure', 30, 'stale-lease', 31, 29, 20, "
+        "'permissionDenied'), "
+        "('target-exhausted-outbox', 'account-owner', "
+        "'rewardTransaction', 'target-exhausted-equip', 'upsert', "
+        "5, 'permanentFailure', 30, NULL, NULL, 29, 21, "
+        "'permissionDenied'), "
+        "('target-unrelated-outbox', 'account-owner', "
+        "'rewardTransaction', 'target-unrelated-coin', 'upsert', "
+        "2, 'permanentFailure', 30, NULL, NULL, 29, 22, "
+        "'permissionDenied')",
+      );
+      final cutoverAt = DateTime.fromMillisecondsSinceEpoch(
+        AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+        isUtc: true,
+      );
+      final lateRepository = DriftOwnerUpgradeRepository(
+        database,
+        nowUtc: () => cutoverAt,
+        generateConflictId: () =>
+            'target-revival-conflict-${conflictSequence++}',
+        generateOwnerId: () => 'unused-target-revival-owner',
+        generateOwnerOperationToken: () =>
+            'target-revival-operation-${ownerOperationSequence++}',
+        deleteOwnerSecrets: (_) async {},
+      );
+
+      final result = await lateRepository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final operations = await (database.select(
+        database.outboxOperations,
+      )..where((row) => row.ownerId.equals('account-owner'))).get();
+      final recoverable = operations.singleWhere(
+        (row) => row.operationId == 'target-recoverable-outbox',
+      );
+      expect(recoverable.state, 'retryWaiting');
+      expect(recoverable.attemptCount, 3);
+      expect(
+        recoverable.nextAttemptAtUtcMs,
+        AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+      );
+      expect(recoverable.leaseToken, isNull);
+      expect(recoverable.leaseExpiresAtUtcMs, isNull);
+      expect(recoverable.failureCode, isNull);
+
+      final exhausted = operations.singleWhere(
+        (row) => row.operationId == 'target-exhausted-outbox',
+      );
+      expect(exhausted.state, 'permanentFailure');
+      expect(exhausted.attemptCount, DriftSyncStore.maxSendReservations);
+      expect(exhausted.failureCode, SyncFailureCode.permissionDenied.name);
+
+      final unrelated = operations.singleWhere(
+        (row) => row.operationId == 'target-unrelated-outbox',
+      );
+      expect(unrelated.state, 'permanentFailure');
+      expect(unrelated.attemptCount, 2);
+      expect(unrelated.failureCode, SyncFailureCode.permissionDenied.name);
+
+      final targetRewards =
+          await (database.select(database.rewardTransactions)..where(
+                (row) => row.id.isIn(const [
+                  'target-recoverable-purchase',
+                  'target-exhausted-equip',
+                ]),
+              ))
+              .get();
+      expect(targetRewards, hasLength(2));
+      expect(
+        targetRewards.every(
+          (row) => const AvatarLegacyCarryForwardContract()
+              .isValidPersistedTransaction(
+                transactionId: row.id,
+                idempotencyKey: row.idempotencyKey,
+                transactionType: row.transactionType,
+                amount: row.amount,
+                itemId: row.itemId,
+                catalogVersion: row.catalogVersion,
+                sourceEventId: row.sourceEventId,
+                occurredAtUtcMs: row.occurredAtUtcMs,
+              ),
+        ),
+        isTrue,
+      );
+    },
+  );
+
+  test(
+    'ready merge revives the exact converted target v1 permission failure',
+    () async {
+      await database.customInsert(
+        'INSERT INTO reward_transactions VALUES '
+        "('ready-target-purchase', 'account-owner', "
+        "'ready-target-purchase', 'purchase', -80, "
+        "'theme_ocean', 1, NULL, 20), "
+        "('ready-source-purchase', 'guest-owner', "
+        "'ready-source-purchase', 'purchase', -60, "
+        "'wallpaper_focus', 1, NULL, 21)",
+      );
+      final eligibility = DriftAvatarProgressionEligibility(
+        database,
+        nowUtc: () => DateTime.utc(2026, 7, 30, 11),
+      );
+      await eligibility.establishCutover('account-owner');
+      await eligibility.establishCutover('guest-owner');
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'attempt_count, state, created_at_utc_ms, failure_code) VALUES '
+        "('ready-target-outbox', 'account-owner', 'rewardTransaction', "
+        "'ready-target-purchase', 'upsert', 4, 'permanentFailure', 20, "
+        "'permissionDenied')",
+      );
+
+      final result = await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      expect(result.mode, OwnerUpgradeMode.mergedExisting);
+      final target = await (database.select(
+        database.rewardTransactions,
+      )..where((row) => row.id.equals('ready-target-purchase'))).getSingle();
+      expect(
+        const AvatarLegacyCarryForwardContract().isValidPersistedTransaction(
+          transactionId: target.id,
+          idempotencyKey: target.idempotencyKey,
+          transactionType: target.transactionType,
+          amount: target.amount,
+          itemId: target.itemId,
+          catalogVersion: target.catalogVersion,
+          sourceEventId: target.sourceEventId,
+          occurredAtUtcMs: target.occurredAtUtcMs,
+        ),
+        isTrue,
+      );
+      final operation =
+          await (database.select(database.outboxOperations)
+                ..where((row) => row.operationId.equals('ready-target-outbox')))
+              .getSingle();
+      expect(operation.state, 'retryWaiting');
+      expect(operation.attemptCount, 4);
+      expect(operation.failureCode, isNull);
     },
   );
 
@@ -1985,6 +2798,22 @@ void main() {
         "('reward-guest', 'guest-owner', 'same-tap', 'purchase', -80, "
         "'theme_ocean', 1, NULL, 2)",
       );
+      final guestCarry = const AvatarLegacyCarryForwardContract().issue(
+        transactionId: 'reward-guest',
+        idempotencyKey: 'same-tap',
+        transactionType: 'purchase',
+        amount: -80,
+        itemId: 'theme_ocean',
+        catalogVersion: RewardCatalog.catalogV1Version,
+        occurredAtUtcMs: 2,
+      );
+      await database.customUpdate(
+        'UPDATE reward_transactions SET source_event_id = ? WHERE id = ?',
+        variables: [
+          Variable<String>(guestCarry.sourceEventId),
+          const Variable<String>('reward-guest'),
+        ],
+      );
 
       final result = await repository.upgrade(
         activeOwnerId: 'guest-owner',
@@ -2020,6 +2849,49 @@ void main() {
       )..where((row) => row.ownerId.equals('account-owner'))).get();
       expect(ledger.fold<int>(0, (sum, row) => sum + row.amount), 200);
       expect(rewardAccount.coinBalance, 120);
+      final mergedGuest = transactions.singleWhere(
+        (row) => row.id == 'reward-guest',
+      );
+      expect(mergedGuest.idempotencyKey, startsWith('merged:'));
+      expect(
+        const AvatarLegacyCarryForwardContract().isValidPersistedTransaction(
+          transactionId: mergedGuest.id,
+          idempotencyKey: mergedGuest.idempotencyKey,
+          transactionType: mergedGuest.transactionType,
+          amount: mergedGuest.amount,
+          itemId: mergedGuest.itemId,
+          catalogVersion: mergedGuest.catalogVersion,
+          sourceEventId: mergedGuest.sourceEventId,
+          occurredAtUtcMs: mergedGuest.occurredAtUtcMs,
+        ),
+        isTrue,
+      );
+      final gate = DriftOwnerOperationGate(database);
+      final claimAt = DateTime.utc(2026, 7, 30, 12, 1);
+      expect(
+        await gate.tryAcquire(
+          token: 'reward-carry-merge-gate',
+          nowUtc: claimAt,
+          leaseDuration: const Duration(minutes: 10),
+        ),
+        isTrue,
+      );
+      final claims = await DriftSyncStore(database).claimPending(
+        ownerId: 'account-owner',
+        firebaseUid: 'firebase-user',
+        limit: 20,
+        leaseToken: 'reward-carry-merge-lease',
+        ownerGateToken: 'reward-carry-merge-gate',
+        leaseDuration: const Duration(minutes: 5),
+        nowUtc: claimAt,
+      );
+      final mergedGuestClaim = claims.singleWhere(
+        (claim) => claim.mutation.entityId == 'reward-guest',
+      );
+      expect(
+        mergedGuestClaim.mutation.payload['sourceEventId'],
+        mergedGuest.sourceEventId,
+      );
     },
   );
 

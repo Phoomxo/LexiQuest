@@ -19,6 +19,8 @@ import 'package:vocab_learning_app/features/learning/domain/learning_models.dart
 import 'package:vocab_learning_app/features/learning_packs/data/drift_content_manifest_repository.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_repository.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 
@@ -550,6 +552,69 @@ void main() {
     expect(storedSession.correctCount, 1);
     expect(storedSession.wrongCount, 0);
   });
+
+  test(
+    'avatar cutover quarantine cannot roll back canonical learning evidence',
+    () async {
+      await DriftAvatarProgressionEligibility(
+        database,
+      ).establishCutover('owner-1');
+      await database
+          .into(database.rewardTransactions)
+          .insert(
+            RewardTransactionsCompanion.insert(
+              id: 'late-avatar-row',
+              ownerId: 'owner-1',
+              idempotencyKey: 'late-avatar-row',
+              transactionType: 'purchase',
+              amount: -80,
+              itemId: const Value('theme_ocean'),
+              catalogVersion: RewardCatalog.catalogV1Version,
+              occurredAtUtcMs: 2,
+            ),
+          );
+      await repository.startSession(
+        LearningSessionDraft(
+          id: 'session-avatar-quarantine',
+          ownerId: 'owner-1',
+          activityType: 'quiz',
+          startedAtUtc: DateTime.utc(2026, 7, 30, 10),
+          appVersion: '1.0.0',
+          buildId: 'test',
+        ),
+      );
+
+      final result = await repository.recordAnswer(
+        RecordAnswerCommand.frozenV13LegacyIngress(
+          id: 'attempt-avatar-quarantine',
+          ownerId: 'owner-1',
+          sessionId: 'session-avatar-quarantine',
+          wordId: 'word-1',
+          promptMode: 'meaningChoice',
+          isCorrect: true,
+          responseTimeMs: 420,
+          attemptNumber: 1,
+          occurredAtUtc: DateTime.utc(2026, 7, 30, 10, 1),
+          evidenceContext: _legacyEvidence(),
+        ),
+      );
+
+      expect(result.inserted, isTrue);
+      expect(
+        await (database.select(database.answerAttempts)
+              ..where((row) => row.id.equals('attempt-avatar-quarantine')))
+            .getSingleOrNull(),
+        isA<AnswerAttempt>(),
+      );
+      expect(
+        await (database.select(database.pointsLedgerEntries)..where(
+              (row) => row.sourceEventId.equals('attempt-avatar-quarantine'),
+            ))
+            .getSingleOrNull(),
+        isA<PointsLedgerEntry>(),
+      );
+    },
+  );
 
   test(
     'eligible answer grandfathers legacy definition zero unlock and outbox',

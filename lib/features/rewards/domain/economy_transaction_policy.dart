@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
 
+import 'avatar_progression_policy.dart';
 import 'reward_models.dart';
 
 enum EconomyTransactionType {
@@ -31,16 +32,34 @@ final class EconomyTransactionPolicy {
     required String? sourceEventId,
     required int occurredAtUtcMs,
   }) {
-    return _validIdentifier(idempotencyKey) &&
-        occurredAtUtcMs >= 0 &&
-        isValid(
-          transactionType: transactionType,
-          amount: amount,
-          itemId: itemId,
-          slot: slot,
-          catalogVersion: catalogVersion,
-          sourceEventId: sourceEventId,
-        );
+    if (!_validIdentifier(idempotencyKey) || occurredAtUtcMs < 0) {
+      return false;
+    }
+    if (!isValid(
+      transactionType: transactionType,
+      amount: amount,
+      itemId: itemId,
+      slot: slot,
+      catalogVersion: catalogVersion,
+      sourceEventId: sourceEventId,
+    )) {
+      return false;
+    }
+    if (transactionType == EconomyTransactionType.purchase.name &&
+        catalogVersion == RewardCatalog.catalogV2Version) {
+      return itemId != null &&
+          const AvatarProgressionEligibilityContract()
+                  .validatePersistedPurchase(
+                    idempotencyKey: idempotencyKey,
+                    itemId: itemId,
+                    amount: amount,
+                    catalogVersion: catalogVersion,
+                    sourceEventId: sourceEventId,
+                    occurredAtUtcMs: occurredAtUtcMs,
+                  ) !=
+              null;
+    }
+    return true;
   }
 
   bool isValid({
@@ -65,17 +84,38 @@ final class EconomyTransactionPolicy {
             sourceIsValid;
       case EconomyTransactionType.purchase:
       case EconomyTransactionType.equip:
-        final item = itemId == null ? null : RewardCatalog.byId(itemId);
+        final item = itemId == null
+            ? null
+            : RewardCatalog.byIdAtVersion(itemId, catalogVersion);
         if (item == null ||
-            item.catalogVersion != RewardCatalog.version ||
-            catalogVersion != RewardCatalog.version ||
             slot != item.slot ||
-            sourceEventId != null) {
+            (catalogVersion != RewardCatalog.catalogV1Version &&
+                catalogVersion != RewardCatalog.catalogV2Version)) {
           return false;
         }
-        return type == EconomyTransactionType.purchase
-            ? item.price > 0 && amount == -item.price
-            : amount == 0;
+        if (type == EconomyTransactionType.purchase) {
+          final sourceShapeValid =
+              catalogVersion == RewardCatalog.catalogV1Version
+              ? sourceEventId == null ||
+                    sourceEventId.startsWith(
+                      '${AvatarLegacyCarryForwardContract.sourcePrefix}:'
+                      'v${AvatarLegacyCarryForwardContract.version}:c1:p:',
+                    )
+              : sourceEventId != null &&
+                    sourceEventId.startsWith(
+                      '${AvatarProgressionEligibilityContract.sourcePrefix}:',
+                    );
+          return item.price > 0 && amount == -item.price && sourceShapeValid;
+        }
+        final equipSourceShapeValid =
+            catalogVersion == RewardCatalog.catalogV1Version
+            ? sourceEventId == null ||
+                  sourceEventId.startsWith(
+                    '${AvatarLegacyCarryForwardContract.sourcePrefix}:'
+                    'v${AvatarLegacyCarryForwardContract.version}:c1:e:',
+                  )
+            : sourceEventId == null;
+        return amount == 0 && equipSourceShapeValid;
     }
   }
 }

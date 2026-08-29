@@ -285,17 +285,73 @@ function writeFieldRewardTransaction(db, {
 }
 
 function fieldRewardPayload(overrides = {}) {
-  return {
+  const payload = {
     idempotencyKey: 'purchase-tap-1',
     transactionType: 'purchase',
     amount: -80,
     itemId: 'theme_ocean',
     slot: 'theme',
-    catalogVersion: 1,
-    sourceEventId: null,
+    catalogVersion: 2,
     occurredAtUtcMs: 4000,
     ...overrides,
   };
+  if (!Object.hasOwn(overrides, 'sourceEventId')) {
+    payload.sourceEventId = payload.transactionType === 'purchase'
+      && payload.catalogVersion === 2
+      ? avatarEligibilitySource(payload)
+      : null;
+  }
+  return payload;
+}
+
+function avatarEligibilitySource({
+  idempotencyKey,
+  itemId,
+  amount,
+  catalogVersion,
+  occurredAtUtcMs,
+  progressionPolicyVersion = 1,
+  requiredAvatarLevel = 3,
+  lifetimeXp = 40,
+}) {
+  const canonical = [
+    'avatar-purchase-eligibility-v1',
+    idempotencyKey,
+    itemId,
+    amount,
+    catalogVersion,
+    progressionPolicyVersion,
+    requiredAvatarLevel,
+    lifetimeXp,
+    occurredAtUtcMs,
+  ].join('\0');
+  const digest = createHash('sha256').update(canonical).digest('hex');
+  return `avatar-xp:v1:p${progressionPolicyVersion}:c${catalogVersion}`
+    + `:l${requiredAvatarLevel}:x${lifetimeXp}:${digest}`;
+}
+
+function avatarLegacyCarrySource({
+  transactionId,
+  idempotencyKey,
+  transactionType,
+  amount,
+  itemId,
+  catalogVersion,
+  occurredAtUtcMs,
+}) {
+  const canonical = [
+    'avatar-legacy-carry-forward-v1',
+    transactionId,
+    idempotencyKey,
+    transactionType,
+    amount,
+    itemId,
+    catalogVersion,
+    occurredAtUtcMs,
+  ].join('\0');
+  const tag = transactionType === 'purchase' ? 'p' : 'e';
+  const digest = createHash('sha256').update(canonical).digest('hex');
+  return `avatar-legacy:v1:c1:${tag}:${digest}`;
 }
 
 const experimentAssignmentAssignedAtUtcMs = 4000;
@@ -1283,7 +1339,7 @@ describe('field sync ownership and atomic revision contract', () => {
           amount: 0,
           itemId: 'theme_ocean',
           slot: 'theme',
-          catalogVersion: 1,
+          catalogVersion: 2,
           sourceEventId: null,
           occurredAtUtcMs: 5000,
         },
@@ -1346,6 +1402,117 @@ describe('field sync ownership and atomic revision contract', () => {
     }
   });
 
+  it('admits raw catalog-v1 only inside the server-time migration window', async () => {
+    const db = authDb();
+    const beforeRequestTime = Math.min(Date.now() - 60_000, 1790812799999);
+    await assertSucceeds(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-legacy-v1-pre-cutover',
+        operationId: 'reward-legacy-v1-pre-cutover-operation',
+        payload: fieldRewardPayload({
+          idempotencyKey: 'legacy-v1-pre-cutover',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: beforeRequestTime,
+        }),
+      }),
+    );
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: 'reward-legacy-v1-post-cutover',
+        operationId: 'reward-legacy-v1-post-cutover-operation',
+        payload: fieldRewardPayload({
+          idempotencyKey: 'legacy-v1-post-cutover',
+          catalogVersion: 1,
+          sourceEventId: null,
+          occurredAtUtcMs: 1790812800000,
+        }),
+      }),
+    );
+  });
+
+  it('allows exact marker-attested catalog-v1 carry-forward rows', async () => {
+    const db = authDb();
+    const beforeRequestTime = Math.min(Date.now() - 60_000, 1790812799000);
+    const purchaseId = 'reward-legacy-carry-purchase';
+    const purchase = fieldRewardPayload({
+      idempotencyKey: 'legacy-carry-purchase',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: beforeRequestTime,
+    });
+    purchase.sourceEventId = avatarLegacyCarrySource({
+      transactionId: purchaseId,
+      ...purchase,
+    });
+    await assertSucceeds(
+      writeFieldRewardTransaction(db, {
+        entityId: purchaseId,
+        operationId: 'reward-legacy-carry-purchase-operation',
+        payload: purchase,
+      }),
+    );
+
+    const equipId = 'reward-legacy-carry-equip';
+    const equip = fieldRewardPayload({
+      idempotencyKey: 'legacy-carry-equip',
+      transactionType: 'equip',
+      amount: 0,
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: beforeRequestTime + 1,
+    });
+    equip.sourceEventId = avatarLegacyCarrySource({
+      transactionId: equipId,
+      ...equip,
+    });
+    await assertSucceeds(
+      writeFieldRewardTransaction(db, {
+        entityId: equipId,
+        operationId: 'reward-legacy-carry-equip-operation',
+        payload: equip,
+      }),
+    );
+
+    const clockAheadId = 'reward-clock-ahead-legacy-carry-purchase';
+    const clockAhead = fieldRewardPayload({
+      idempotencyKey: 'clock-ahead-legacy-carry-purchase',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: Math.min(Date.now() + 86_400_000, 1790812799999),
+    });
+    clockAhead.sourceEventId = avatarLegacyCarrySource({
+      transactionId: clockAheadId,
+      ...clockAhead,
+    });
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: clockAheadId,
+        operationId: 'reward-clock-ahead-legacy-carry-operation',
+        payload: clockAhead,
+      }),
+    );
+
+    const lateId = 'reward-late-legacy-carry-purchase';
+    const late = fieldRewardPayload({
+      idempotencyKey: 'late-legacy-carry-purchase',
+      catalogVersion: 1,
+      sourceEventId: null,
+      occurredAtUtcMs: 1790812800000,
+    });
+    late.sourceEventId = avatarLegacyCarrySource({
+      transactionId: lateId,
+      ...late,
+    });
+    await assertFails(
+      writeFieldRewardTransaction(db, {
+        entityId: lateId,
+        operationId: 'reward-late-legacy-carry-purchase-operation',
+        payload: late,
+      }),
+    );
+  });
+
   it('rejects reward payloads without exact keys and primitive types', async () => {
     const db = authDb();
     const canonical = fieldRewardPayload({ occurredAtUtcMs: 4500 });
@@ -1358,7 +1525,7 @@ describe('field sync ownership and atomic revision contract', () => {
       { ...canonical, amount: '-80' },
       { ...canonical, itemId: 80 },
       { ...canonical, slot: false },
-      { ...canonical, catalogVersion: '1' },
+      { ...canonical, catalogVersion: '2' },
       { ...canonical, sourceEventId: 1 },
       { ...canonical, occurredAtUtcMs: 4500.5 },
     ];
@@ -1406,6 +1573,17 @@ describe('field sync ownership and atomic revision contract', () => {
       fieldRewardPayload({ sourceEventId: 'forged-purchase-source' }),
       fieldRewardPayload({ catalogVersion: 0 }),
       fieldRewardPayload({
+        sourceEventId: fieldRewardPayload().sourceEventId.replace(':l3:', ':l2:'),
+      }),
+      fieldRewardPayload({
+        sourceEventId: fieldRewardPayload().sourceEventId.replace(':x40:', ':x39:'),
+      }),
+      fieldRewardPayload({
+        catalogVersion: 1,
+        sourceEventId: null,
+        occurredAtUtcMs: 1790812800000,
+      }),
+      fieldRewardPayload({
         itemId: 'theme_default',
         amount: 0,
       }),
@@ -1446,7 +1624,7 @@ describe('field sync ownership and atomic revision contract', () => {
           amount: -1,
           itemId: 'theme_ocean',
           slot: 'theme',
-          catalogVersion: 1,
+          catalogVersion: 2,
           sourceEventId: null,
           occurredAtUtcMs: 4000,
         },
@@ -1462,7 +1640,7 @@ describe('field sync ownership and atomic revision contract', () => {
           amount: 0,
           itemId: 'theme_ocean',
           slot: 'weapon',
-          catalogVersion: 1,
+          catalogVersion: 2,
           sourceEventId: null,
           occurredAtUtcMs: 4000,
         },

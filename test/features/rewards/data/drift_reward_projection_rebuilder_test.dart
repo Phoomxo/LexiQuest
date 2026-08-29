@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_projection_rebuilder.dart';
+import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
@@ -11,7 +13,16 @@ void main() {
 
   setUp(() async {
     database = AppDatabase(NativeDatabase.memory());
-    rebuilder = DriftRewardProjectionRebuilder(database);
+    rebuilder = DriftRewardProjectionRebuilder(
+      database,
+      progressionEligibility: DriftAvatarProgressionEligibility(
+        database,
+        nowUtc: () => DateTime.fromMillisecondsSinceEpoch(
+          AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs - 1,
+          isUtc: true,
+        ),
+      ),
+    );
     await database
         .into(database.localOwners)
         .insert(LocalOwnersCompanion.insert(id: 'owner-1', createdAtUtcMs: 1));
@@ -241,6 +252,247 @@ void main() {
     },
   );
 
+  test(
+    'first cutover at the boundary quarantines the complete raw v1 avatar set',
+    () async {
+      await _insertGrant(
+        database,
+        id: 'late-upgrader-funding',
+        type: 'coinGrant',
+        amount: 100,
+        source: 'late-upgrader-funding',
+        time: 1,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'late-upgrader-purchase',
+        type: 'purchase',
+        itemId: 'theme_ocean',
+        amount: -80,
+        time: 2,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'late-upgrader-equip',
+        type: 'equip',
+        itemId: 'theme_ocean',
+        amount: 0,
+        time: 3,
+      );
+      final eligibility = DriftAvatarProgressionEligibility(
+        database,
+        nowUtc: () => DateTime.fromMillisecondsSinceEpoch(
+          AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+          isUtc: true,
+        ),
+      );
+
+      await expectLater(
+        eligibility.establishCutover('owner-1'),
+        throwsStateError,
+      );
+
+      expect(
+        await database.select(database.rewardTransactions).get(),
+        hasLength(3),
+      );
+      expect(await database.select(database.eventsV2).get(), isEmpty);
+    },
+  );
+
+  test(
+    'pre-cutover marker fingerprints raw equip as well as purchase',
+    () async {
+      await _insertGrant(
+        database,
+        id: 'legacy-funding',
+        type: 'coinGrant',
+        amount: 100,
+        source: 'legacy-funding',
+        time: 1,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'legacy-purchase',
+        type: 'purchase',
+        itemId: 'theme_ocean',
+        amount: -80,
+        time: 2,
+      );
+      await _insertItemTransaction(
+        database,
+        id: 'legacy-equip',
+        type: 'equip',
+        itemId: 'theme_ocean',
+        amount: 0,
+        time: 3,
+      );
+      await rebuilder.rebuild('owner-1');
+      final marker = (await database.select(database.eventsV2).get()).single;
+      expect(marker.recordedAtUtc.millisecondsSinceEpoch, 1790812799000);
+
+      await _insertItemTransaction(
+        database,
+        id: 'backdated-equip-after-marker',
+        type: 'equip',
+        itemId: 'theme_ocean',
+        amount: 0,
+        time: 4,
+      );
+
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
+    },
+  );
+
+  test(
+    'post-cutover first marker admits only portable carry evidence',
+    () async {
+      const purchaseId = 'portable-purchase';
+      const equipId = 'portable-equip';
+      final purchase = RewardCatalog.byIdAtVersion(
+        'theme_ocean',
+        RewardCatalog.catalogV1Version,
+      )!;
+      final purchaseSource = const AvatarLegacyCarryForwardContract()
+          .issue(
+            transactionId: purchaseId,
+            idempotencyKey: 'idem:$purchaseId',
+            transactionType: 'purchase',
+            amount: -80,
+            itemId: purchase.id,
+            catalogVersion: purchase.catalogVersion,
+            occurredAtUtcMs: 2,
+          )
+          .sourceEventId;
+      final equipSource = const AvatarLegacyCarryForwardContract()
+          .issue(
+            transactionId: equipId,
+            idempotencyKey: 'idem:$equipId',
+            transactionType: 'equip',
+            amount: 0,
+            itemId: purchase.id,
+            catalogVersion: purchase.catalogVersion,
+            occurredAtUtcMs: 3,
+          )
+          .sourceEventId;
+      await _insertGrant(
+        database,
+        id: 'portable-funding',
+        type: 'coinGrant',
+        amount: 100,
+        source: 'portable-funding',
+        time: 1,
+      );
+      await _insertItemTransaction(
+        database,
+        id: purchaseId,
+        type: 'purchase',
+        itemId: purchase.id,
+        amount: -80,
+        time: 2,
+        sourceEventId: purchaseSource,
+      );
+      await _insertItemTransaction(
+        database,
+        id: equipId,
+        type: 'equip',
+        itemId: purchase.id,
+        amount: 0,
+        time: 3,
+        sourceEventId: equipSource,
+      );
+      final lateRebuilder = DriftRewardProjectionRebuilder(
+        database,
+        progressionEligibility: DriftAvatarProgressionEligibility(
+          database,
+          nowUtc: () => DateTime.fromMillisecondsSinceEpoch(
+            AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs + 1,
+            isUtc: true,
+          ),
+        ),
+      );
+
+      await lateRebuilder.rebuild('owner-1');
+
+      expect(
+        await database.select(database.ownedRewardItems).get(),
+        hasLength(1),
+      );
+      expect(
+        await database.select(database.equippedRewardItems).get(),
+        hasLength(1),
+      );
+    },
+  );
+
+  test(
+    'persisted cutover rejects a late v1 purchase before replacing projections',
+    () async {
+      await _seedExistingProjection(database, rebuilder);
+      final before = await _projectionState(database);
+      await _insertItemTransaction(
+        database,
+        id: 'late-v1-purchase',
+        type: 'purchase',
+        itemId: 'theme_ocean',
+        amount: -80,
+        time: AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+      );
+
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
+
+      expect(await _projectionState(database), equals(before));
+    },
+  );
+
+  test(
+    'rebuild rejects tampered legacy carry equip before replacing projections',
+    () async {
+      await _seedExistingProjection(database, rebuilder);
+      final before = await _projectionState(database);
+      const transactionId = 'tampered-legacy-carry-equip';
+      const idempotencyKey = 'tampered-legacy-carry-equip';
+      const occurredAtUtcMs = 4;
+      final item = RewardCatalog.byIdAtVersion(
+        'theme_ocean',
+        RewardCatalog.catalogV1Version,
+      )!;
+      final source = const AvatarLegacyCarryForwardContract()
+          .issue(
+            transactionId: transactionId,
+            idempotencyKey: idempotencyKey,
+            transactionType: 'equip',
+            amount: 0,
+            itemId: item.id,
+            catalogVersion: item.catalogVersion,
+            occurredAtUtcMs: occurredAtUtcMs,
+          )
+          .sourceEventId;
+      final tamperedSource =
+          '${source.substring(0, source.length - 1)}'
+          '${source.endsWith('0') ? '1' : '0'}';
+      await database
+          .into(database.rewardTransactions)
+          .insert(
+            RewardTransactionsCompanion.insert(
+              id: transactionId,
+              ownerId: 'owner-1',
+              idempotencyKey: idempotencyKey,
+              transactionType: 'equip',
+              amount: 0,
+              itemId: Value(item.id),
+              catalogVersion: item.catalogVersion,
+              sourceEventId: Value(tamperedSource),
+              occurredAtUtcMs: occurredAtUtcMs,
+            ),
+          );
+
+      await expectLater(rebuilder.rebuild('owner-1'), throwsStateError);
+
+      expect(await _projectionState(database), equals(before));
+    },
+  );
+
   for (final invalidRow
       in <({String name, String idempotencyKey, int occurredAtUtcMs})>[
         (name: 'blank idempotency key', idempotencyKey: '', occurredAtUtcMs: 4),
@@ -371,6 +623,7 @@ Future<void> _insertItemTransaction(
   required String itemId,
   required int amount,
   required int time,
+  String? sourceEventId,
 }) {
   return database
       .into(database.rewardTransactions)
@@ -382,7 +635,8 @@ Future<void> _insertItemTransaction(
           transactionType: type,
           amount: amount,
           itemId: Value(itemId),
-          catalogVersion: RewardCatalog.version,
+          catalogVersion: RewardCatalog.legacyVersion,
+          sourceEventId: Value(sourceEventId),
           occurredAtUtcMs: time,
         ),
       );

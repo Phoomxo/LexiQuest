@@ -1,20 +1,37 @@
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart' as db;
+import '../domain/avatar_progression_policy.dart';
 import '../domain/economy_transaction_policy.dart';
 import '../domain/reward_models.dart';
+import 'drift_avatar_progression_eligibility.dart';
 
 final class DriftRewardProjectionRebuilder {
-  const DriftRewardProjectionRebuilder(
+  DriftRewardProjectionRebuilder(
     this.database, {
     this.transactionPolicy = const EconomyTransactionPolicy(),
-  });
+    DriftAvatarProgressionEligibility? progressionEligibility,
+  }) : progressionEligibility =
+           progressionEligibility ??
+           DriftAvatarProgressionEligibility(database);
 
   final db.AppDatabase database;
   final EconomyTransactionPolicy transactionPolicy;
+  final DriftAvatarProgressionEligibility progressionEligibility;
+
+  Future<void> validate(String ownerId) async {
+    final transactions = await _transactions(ownerId);
+    await progressionEligibility.requireGrandfatheredSet(ownerId);
+    _requireValidSet(transactions);
+  }
+
+  void validateTransaction(db.RewardTransaction transaction) {
+    _requireValid(transaction);
+  }
 
   Future<void> rebuild(String ownerId) async {
     final transactions = await _transactions(ownerId);
+    await progressionEligibility.requireGrandfatheredSet(ownerId);
     _requireValidSet(transactions);
 
     await (database.delete(
@@ -31,7 +48,10 @@ final class DriftRewardProjectionRebuilder {
 
     for (final transaction in transactions) {
       if (transaction.transactionType != 'purchase') continue;
-      final item = RewardCatalog.byId(transaction.itemId!)!;
+      final item = RewardCatalog.byIdAtVersion(
+        transaction.itemId!,
+        transaction.catalogVersion,
+      )!;
       if (owned.contains(item.id) || balance < item.price) continue;
       await database
           .into(database.ownedRewardItems)
@@ -51,7 +71,10 @@ final class DriftRewardProjectionRebuilder {
 
     for (final transaction in transactions) {
       if (transaction.transactionType != 'equip') continue;
-      final item = RewardCatalog.byId(transaction.itemId!)!;
+      final item = RewardCatalog.byIdAtVersion(
+        transaction.itemId!,
+        transaction.catalogVersion,
+      )!;
       if (item.price > 0 && !owned.contains(item.id)) continue;
       await database
           .into(database.equippedRewardItems)
@@ -69,6 +92,7 @@ final class DriftRewardProjectionRebuilder {
 
   Future<int> coinBalance(String ownerId) async {
     final transactions = await _transactions(ownerId);
+    await progressionEligibility.requireGrandfatheredSet(ownerId);
     _requireValidSet(transactions);
     final acceptedPurchaseIds =
         (await (database.select(
@@ -116,7 +140,10 @@ final class DriftRewardProjectionRebuilder {
   void _requireValid(db.RewardTransaction transaction) {
     final item = transaction.itemId == null
         ? null
-        : RewardCatalog.byId(transaction.itemId!);
+        : RewardCatalog.byIdAtVersion(
+            transaction.itemId!,
+            transaction.catalogVersion,
+          );
     if (!transactionPolicy.isValidPersistedRow(
       idempotencyKey: transaction.idempotencyKey,
       transactionType: transaction.transactionType,
@@ -128,6 +155,40 @@ final class DriftRewardProjectionRebuilder {
       occurredAtUtcMs: transaction.occurredAtUtcMs,
     )) {
       throw StateError('invalid reward transaction ${transaction.id}');
+    }
+    final isLegacyAvatarTransaction =
+        transaction.catalogVersion == RewardCatalog.catalogV1Version &&
+        (transaction.transactionType == EconomyTransactionType.purchase.name ||
+            transaction.transactionType == EconomyTransactionType.equip.name);
+    if (isLegacyAvatarTransaction &&
+        (transaction.occurredAtUtcMs >=
+                AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs ||
+            (transaction.sourceEventId != null &&
+                !const AvatarLegacyCarryForwardContract()
+                    .isValidPersistedTransaction(
+                      transactionId: transaction.id,
+                      idempotencyKey: transaction.idempotencyKey,
+                      transactionType: transaction.transactionType,
+                      amount: transaction.amount,
+                      itemId: transaction.itemId,
+                      catalogVersion: transaction.catalogVersion,
+                      sourceEventId: transaction.sourceEventId,
+                      occurredAtUtcMs: transaction.occurredAtUtcMs,
+                    )))) {
+      throw StateError('invalid legacy avatar evidence ${transaction.id}');
+    }
+    if (transaction.transactionType == EconomyTransactionType.purchase.name &&
+        transaction.catalogVersion == RewardCatalog.catalogV2Version &&
+        const AvatarProgressionEligibilityContract().validatePersistedPurchase(
+              idempotencyKey: transaction.idempotencyKey,
+              itemId: transaction.itemId!,
+              amount: transaction.amount,
+              catalogVersion: transaction.catalogVersion,
+              sourceEventId: transaction.sourceEventId,
+              occurredAtUtcMs: transaction.occurredAtUtcMs,
+            ) ==
+            null) {
+      throw StateError('invalid avatar progression evidence ${transaction.id}');
     }
   }
 }

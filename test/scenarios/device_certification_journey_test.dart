@@ -12,6 +12,7 @@ import 'package:vocab_learning_app/features/vocabulary/data/drift_vocabulary_rep
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/progress/application/progress_use_cases.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/application/reward_use_cases.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
@@ -101,6 +102,11 @@ void main() {
     rewards = RewardUseCases(
       owners: owners,
       repository: rewardRepository,
+      progress: ProgressUseCases(
+        owners: owners,
+        queries: DriftProgressQueries(database),
+        nowUtc: now,
+      ),
       generateId: idGen,
       nowUtc: now,
     );

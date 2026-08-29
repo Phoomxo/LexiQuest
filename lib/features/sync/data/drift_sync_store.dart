@@ -22,7 +22,9 @@ import '../../learning/domain/srs_operation_identity.dart';
 import '../../learning_packs/domain/content_quality_policy.dart';
 import '../../research/data/drift_experiment_assignment_repository.dart';
 import '../../research/domain/experiment_assignment.dart';
+import '../../rewards/data/drift_avatar_progression_eligibility.dart';
 import '../../rewards/data/drift_reward_projection_rebuilder.dart';
+import '../../rewards/domain/avatar_progression_policy.dart';
 import '../../rewards/domain/economy_transaction_policy.dart';
 import '../../rewards/domain/reward_models.dart';
 import '../domain/sync_entity.dart';
@@ -48,16 +50,27 @@ final class DriftSyncStore implements SyncStore {
         const LearningTimeSegmentSyncRollout.off(),
     this.learningGoalSyncRollout = const LearningGoalSyncRollout.off(),
     this.consentRegistry = const NoOpConsentRegistry(),
+    DriftAvatarProgressionEligibility? avatarProgressionEligibility,
   }) : projections = DriftLearningProjectionRebuilder(
          database,
          evidencePolicy: evidencePolicy,
          rolloutModeProvider: rolloutModeProvider,
        ),
-       rewardProjections = DriftRewardProjectionRebuilder(database);
+       avatarProgressionEligibility =
+           avatarProgressionEligibility ??
+           DriftAvatarProgressionEligibility(database),
+       rewardProjections = DriftRewardProjectionRebuilder(
+         database,
+         progressionEligibility:
+             avatarProgressionEligibility ??
+             DriftAvatarProgressionEligibility(database),
+       );
 
   static const int maxClaimLimit = 50;
   static const int maxSendReservations = maxSyncSendReservations;
   static const int maxLegacySrsNormalizationsPerClaim = 20;
+  static const int maxLegacyAvatarPermissionRecoveriesPerClaim =
+      DriftAvatarProgressionEligibility.maxPreMarkerLegacyRows;
   static const int _maxCandidateMultiplier = 20;
 
   final db.AppDatabase database;
@@ -69,6 +82,7 @@ final class DriftSyncStore implements SyncStore {
   final LearningGoalSyncRollout learningGoalSyncRollout;
   final ConsentRegistry consentRegistry;
   final DriftLearningProjectionRebuilder projections;
+  final DriftAvatarProgressionEligibility avatarProgressionEligibility;
   final DriftRewardProjectionRebuilder rewardProjections;
   Future<void> _claimGate = Future<void>.value();
   var _standalonePullSequence = 0;
@@ -122,6 +136,94 @@ final class DriftSyncStore implements SyncStore {
     );
   }
 
+  Future<int> _requeueLegacyAvatarPermissionDeniedFailures({
+    required String ownerId,
+    required int nowUtcMs,
+  }) async {
+    // Rules may deny a raw v1 operation before or after this client first runs.
+    // Recover only the bounded, exact permission-denied rows that this same
+    // transaction promotes from raw local evidence to trusted carry evidence.
+    final recoverableRows = await database
+        .customSelect(
+          '''
+      SELECT operation.operation_id, operation.entity_id
+      FROM outbox_operations AS operation
+      JOIN reward_transactions AS reward
+        ON reward.id = operation.entity_id
+       AND reward.owner_id = operation.owner_id
+      WHERE operation.owner_id = ?
+        AND operation.entity_type = 'rewardTransaction'
+        AND operation.state = 'permanentFailure'
+        AND operation.failure_code = ?
+        AND operation.attempt_count < ?
+        AND reward.catalog_version = ?
+        AND reward.transaction_type IN ('purchase', 'equip')
+        AND reward.source_event_id IS NULL
+        AND reward.occurred_at_utc_ms >= 0
+        AND reward.occurred_at_utc_ms < ?
+      ORDER BY operation.created_at_utc_ms, operation.operation_id
+      LIMIT ?
+      ''',
+          variables: [
+            Variable<String>(ownerId),
+            Variable<String>(SyncFailureCode.permissionDenied.name),
+            const Variable<int>(maxSendReservations),
+            const Variable<int>(RewardCatalog.catalogV1Version),
+            const Variable<int>(
+              AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs,
+            ),
+            const Variable<int>(maxLegacyAvatarPermissionRecoveriesPerClaim),
+          ],
+          readsFrom: {database.outboxOperations, database.rewardTransactions},
+        )
+        .get();
+    if (recoverableRows.isEmpty) return 0;
+    final operationIds = <String>[];
+    final transactionIds = <String>{};
+    for (final row in recoverableRows) {
+      operationIds.add(row.read<String>('operation_id'));
+      transactionIds.add(row.read<String>('entity_id'));
+    }
+    try {
+      final converted = await avatarProgressionEligibility
+          .prepareLegacyCloudCarryForwardBatch(
+            ownerId: ownerId,
+            transactionIds: transactionIds,
+          );
+      if (!converted.containsAll(transactionIds)) return 0;
+    } on StateError {
+      return 0;
+    }
+    var recovered = 0;
+    for (final operationId in operationIds) {
+      recovered += await database.customUpdate(
+        '''
+      UPDATE outbox_operations
+      SET state = 'retryWaiting',
+          next_attempt_at_utc_ms = ?,
+          lease_token = NULL,
+          lease_expires_at_utc_ms = NULL,
+          failure_code = NULL
+      WHERE operation_id = ?
+        AND owner_id = ?
+        AND entity_type = 'rewardTransaction'
+        AND state = 'permanentFailure'
+        AND failure_code = ?
+        AND attempt_count < ?
+      ''',
+        variables: [
+          Variable<int>(nowUtcMs),
+          Variable<String>(operationId),
+          Variable<String>(ownerId),
+          Variable<String>(SyncFailureCode.permissionDenied.name),
+          const Variable<int>(maxSendReservations),
+        ],
+        updates: {database.outboxOperations},
+      );
+    }
+    return recovered;
+  }
+
   @override
   Future<List<ClaimedSyncOperation>> claimPending({
     required String ownerId,
@@ -172,6 +274,10 @@ final class DriftSyncStore implements SyncStore {
           updates: {database.runtimeFlags},
         );
         if (fenced != 1) return const <ClaimedSyncOperation>[];
+        await _requeueLegacyAvatarPermissionDeniedFailures(
+          ownerId: canonicalOwnerId,
+          nowUtcMs: nowMs,
+        );
         await database.customUpdate(
           '''
           UPDATE outbox_operations
@@ -1161,6 +1267,9 @@ final class DriftSyncStore implements SyncStore {
         final parsedStoredCursor = storedCursor == null
             ? null
             : SyncCursor.parse(storedCursor);
+        if (collection == SyncCollection.rewardTransactions) {
+          await _replayDeferredAvatarV1(canonicalOwnerId);
+        }
         if (page.changes.isEmpty) {
           final preservesStored = switch ((cursor, parsedStoredCursor)) {
             (null, null) => true,
@@ -1263,6 +1372,40 @@ final class DriftSyncStore implements SyncStore {
     db.OutboxOperation operation, {
     required String firebaseUid,
   }) async {
+    if (operation.entityType == SyncCollection.rewardTransactions.entityType) {
+      final transaction =
+          await (database.select(database.rewardTransactions)..where(
+                (row) =>
+                    row.id.equals(operation.entityId) &
+                    row.ownerId.equals(operation.ownerId),
+              ))
+              .getSingleOrNull();
+      if (transaction == null) throw const InvalidSyncPayloadFailure();
+      final isAvatarTransaction =
+          transaction.transactionType == EconomyTransactionType.purchase.name ||
+          transaction.transactionType == EconomyTransactionType.equip.name;
+      if (!isAvatarTransaction) return true;
+      try {
+        rewardProjections.validateTransaction(transaction);
+      } on StateError {
+        return false;
+      }
+      if (transaction.catalogVersion != RewardCatalog.catalogV1Version) {
+        return true;
+      }
+      try {
+        await avatarProgressionEligibility.prepareLegacyCloudCarryForward(
+          ownerId: operation.ownerId,
+          transactionId: transaction.id,
+        );
+        await avatarProgressionEligibility.requireGrandfatheredSet(
+          operation.ownerId,
+        );
+      } on StateError {
+        return false;
+      }
+      return true;
+    }
     if (operation.entityType == SyncCollection.savedLearningItems.entityType) {
       return savedLearningItemSyncRollout.allowsClaims;
     }
@@ -1801,7 +1944,7 @@ final class DriftSyncStore implements SyncStore {
           },
         );
       case 'rewardTransaction':
-        final transaction =
+        var transaction =
             await (database.select(database.rewardTransactions)..where(
                   (row) =>
                       row.id.equals(operation.entityId) &
@@ -1811,6 +1954,28 @@ final class DriftSyncStore implements SyncStore {
         if (transaction == null) {
           throw StateError('outbox reward transaction was not found');
         }
+        if (transaction.catalogVersion == RewardCatalog.catalogV1Version &&
+            (transaction.transactionType ==
+                    EconomyTransactionType.purchase.name ||
+                transaction.transactionType ==
+                    EconomyTransactionType.equip.name)) {
+          try {
+            await avatarProgressionEligibility.prepareLegacyCloudCarryForward(
+              ownerId: operation.ownerId,
+              transactionId: transaction.id,
+            );
+          } on StateError {
+            throw const InvalidSyncPayloadFailure();
+          }
+          transaction =
+              await (database.select(database.rewardTransactions)..where(
+                    (row) =>
+                        row.id.equals(operation.entityId) &
+                        row.ownerId.equals(operation.ownerId),
+                  ))
+                  .getSingle();
+        }
+        await _requireOutboundRewardEligibility(transaction);
         final payload = _rewardTransactionPayload(transaction);
         if (transaction.sourceEventId != null &&
             await _rewardSourceCollision(
@@ -3327,7 +3492,6 @@ final class DriftSyncStore implements SyncStore {
         sessionId: existing.sessionId,
       );
       await projections.rebuildAchievements(ownerId);
-      await rewardProjections.rebuild(ownerId);
       return;
     }
     final payload = localEntity.payload;
@@ -3424,7 +3588,6 @@ final class DriftSyncStore implements SyncStore {
     await projections.rebuildWord(ownerId: ownerId, wordId: wordId);
     await projections.rebuildSession(ownerId: ownerId, sessionId: sessionId);
     await projections.rebuildAchievements(ownerId);
-    await rewardProjections.rebuild(ownerId);
   }
 
   Future<void> _applyReadingEvent(String ownerId, SyncEntity entity) async {
@@ -3487,13 +3650,28 @@ final class DriftSyncStore implements SyncStore {
 
   Future<void> _applyRewardTransaction(
     String ownerId,
-    SyncEntity entity,
-  ) async {
+    SyncEntity entity, {
+    bool allowLegacyDeferral = true,
+  }) async {
     _requireImmutableEntity(entity, SyncCollection.rewardTransactions);
-    final fields = _decodeRewardTransactionPayload(
-      entity.payload,
-      expectedOccurredAtUtcMs: entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
-    );
+    late final _RewardTransactionFields fields;
+    try {
+      fields = _decodeRewardTransactionPayload(
+        entity.payload,
+        expectedOccurredAtUtcMs:
+            entity.clientUpdatedAtUtc.millisecondsSinceEpoch,
+      );
+    } on InvalidSyncPayloadFailure {
+      if (!_looksLikeAvatarRewardPayload(entity.payload)) rethrow;
+      await _quarantineInvalidAvatarPull(ownerId, entity);
+      return;
+    }
+    final isAvatarTransaction =
+        fields.transactionType == EconomyTransactionType.purchase.name ||
+        fields.transactionType == EconomyTransactionType.equip.name;
+    final isLegacyAvatarTransaction =
+        isAvatarTransaction &&
+        fields.catalogVersion == RewardCatalog.catalogV1Version;
     final existing =
         await (database.select(database.rewardTransactions)..where(
               (row) =>
@@ -3501,14 +3679,44 @@ final class DriftSyncStore implements SyncStore {
             ))
             .getSingleOrNull();
     if (existing != null) {
+      if (isLegacyAvatarTransaction &&
+          _legacyAvatarEchoMatches(existing, entity, fields)) {
+        try {
+          _requireInboundLegacyAvatarEvidence(entity, fields);
+          await avatarProgressionEligibility.registerTrustedLegacyPull(
+            ownerId: ownerId,
+            transactionId: entity.entityId,
+            idempotencyKey: fields.idempotencyKey,
+            transactionType: fields.transactionType,
+            amount: fields.amount,
+            itemId: fields.itemId!,
+            catalogVersion: fields.catalogVersion,
+            sourceEventId: fields.sourceEventId,
+            occurredAtUtcMs: fields.occurredAtUtcMs,
+            serverUpdatedAtUtcMs:
+                entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+          );
+        } on StateError {
+          await _quarantineInvalidAvatarPull(ownerId, entity);
+          return;
+        }
+        if (await _avatarProjectionAvailable(ownerId)) {
+          await _rebuildRewardsOrReject(ownerId);
+        }
+        return;
+      }
       await _handleExistingImmutable(
         ownerId: ownerId,
         entity: entity,
         localPayload: _rewardTransactionPayload(existing),
       );
-      await rewardProjections.rebuild(ownerId);
+      if (await _avatarProjectionAvailable(ownerId)) {
+        await _rebuildRewardsOrReject(ownerId);
+      }
       return;
     }
+
+    final avatarProjectionAvailable = await _avatarProjectionAvailable(ownerId);
 
     final idempotencyCollision =
         await (database.select(database.rewardTransactions)..where(
@@ -3544,6 +3752,49 @@ final class DriftSyncStore implements SyncStore {
       }
     }
 
+    var persistedSourceEventId = fields.sourceEventId;
+    if (isLegacyAvatarTransaction) {
+      try {
+        _requireInboundLegacyAvatarEvidence(entity, fields);
+        if (!avatarProjectionAvailable) {
+          if (!allowLegacyDeferral) {
+            throw StateError('avatar v1 replay remains quarantined');
+          }
+          await _deferAvatarV1(ownerId: ownerId, entity: entity);
+          return;
+        }
+        persistedSourceEventId = await avatarProgressionEligibility
+            .registerTrustedLegacyPull(
+              ownerId: ownerId,
+              transactionId: entity.entityId,
+              idempotencyKey: fields.idempotencyKey,
+              transactionType: fields.transactionType,
+              amount: fields.amount,
+              itemId: fields.itemId!,
+              catalogVersion: fields.catalogVersion,
+              sourceEventId: fields.sourceEventId,
+              occurredAtUtcMs: fields.occurredAtUtcMs,
+              serverUpdatedAtUtcMs:
+                  entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+            );
+      } on StateError {
+        await _quarantineInvalidAvatarPull(ownerId, entity);
+        return;
+      }
+    } else if (fields.transactionType == EconomyTransactionType.purchase.name &&
+        const AvatarProgressionEligibilityContract().validatePersistedPurchase(
+              idempotencyKey: fields.idempotencyKey,
+              itemId: fields.itemId!,
+              amount: fields.amount,
+              catalogVersion: fields.catalogVersion,
+              sourceEventId: fields.sourceEventId,
+              occurredAtUtcMs: fields.occurredAtUtcMs,
+            ) ==
+            null) {
+      await _quarantineInvalidAvatarPull(ownerId, entity);
+      return;
+    }
+
     await database
         .into(database.rewardTransactions)
         .insert(
@@ -3555,11 +3806,274 @@ final class DriftSyncStore implements SyncStore {
             amount: fields.amount,
             itemId: Value(fields.itemId),
             catalogVersion: fields.catalogVersion,
-            sourceEventId: Value(fields.sourceEventId),
+            sourceEventId: Value(persistedSourceEventId),
             occurredAtUtcMs: fields.occurredAtUtcMs,
           ),
         );
-    await rewardProjections.rebuild(ownerId);
+    if (avatarProjectionAvailable) {
+      await _rebuildRewardsOrReject(ownerId);
+    }
+  }
+
+  bool _looksLikeAvatarRewardPayload(Map<String, Object?> payload) {
+    final transactionType = payload['transactionType'];
+    final catalogVersion = payload['catalogVersion'];
+    return (transactionType == EconomyTransactionType.purchase.name ||
+            transactionType == EconomyTransactionType.equip.name) &&
+        (catalogVersion == RewardCatalog.catalogV1Version ||
+            catalogVersion == RewardCatalog.catalogV2Version);
+  }
+
+  Future<void> _quarantineInvalidAvatarPull(String ownerId, SyncEntity entity) {
+    return _recordImmutableConflict(
+      ownerId: ownerId,
+      entity: entity,
+      localPayload: const <String, Object?>{
+        'reasonCode': 'invalidAvatarProgressionEvidence',
+      },
+      resolvedAtUtc: entity.serverUpdatedAtUtc,
+    );
+  }
+
+  bool _legacyAvatarEchoMatches(
+    db.RewardTransaction existing,
+    SyncEntity entity,
+    _RewardTransactionFields fields,
+  ) {
+    if (existing.id != entity.entityId ||
+        existing.idempotencyKey != fields.idempotencyKey ||
+        existing.transactionType != fields.transactionType ||
+        existing.amount != fields.amount ||
+        existing.itemId != fields.itemId ||
+        existing.catalogVersion != fields.catalogVersion ||
+        existing.occurredAtUtcMs != fields.occurredAtUtcMs) {
+      return false;
+    }
+    final localSource = existing.sourceEventId;
+    return localSource == fields.sourceEventId ||
+        (localSource == null && fields.sourceEventId != null) ||
+        (fields.sourceEventId == null &&
+            const AvatarLegacyCarryForwardContract()
+                .isValidPersistedTransaction(
+                  transactionId: existing.id,
+                  idempotencyKey: existing.idempotencyKey,
+                  transactionType: existing.transactionType,
+                  amount: existing.amount,
+                  itemId: existing.itemId,
+                  catalogVersion: existing.catalogVersion,
+                  sourceEventId: localSource,
+                  occurredAtUtcMs: existing.occurredAtUtcMs,
+                ));
+  }
+
+  void _requireInboundLegacyAvatarEvidence(
+    SyncEntity entity,
+    _RewardTransactionFields fields,
+  ) {
+    final serverUpdatedAtUtcMs =
+        entity.serverUpdatedAtUtc.millisecondsSinceEpoch;
+    if (serverUpdatedAtUtcMs < fields.occurredAtUtcMs) {
+      throw StateError('legacy avatar receipt predates its occurrence');
+    }
+    if (fields.sourceEventId == null) {
+      if (serverUpdatedAtUtcMs >=
+          AvatarProgressionEligibilityContract.legacyV1CutoverUtcMs) {
+        throw StateError('raw legacy avatar receipt crossed cutover');
+      }
+      return;
+    }
+    if (!const AvatarLegacyCarryForwardContract().isValidPersistedTransaction(
+      transactionId: entity.entityId,
+      idempotencyKey: fields.idempotencyKey,
+      transactionType: fields.transactionType,
+      amount: fields.amount,
+      itemId: fields.itemId,
+      catalogVersion: fields.catalogVersion,
+      sourceEventId: fields.sourceEventId,
+      occurredAtUtcMs: fields.occurredAtUtcMs,
+    )) {
+      throw StateError('legacy avatar carry-forward evidence is invalid');
+    }
+  }
+
+  Future<void> _deferAvatarV1({
+    required String ownerId,
+    required SyncEntity entity,
+  }) async {
+    final conflictId =
+        'conflict:avatar-v1-deferred:${entity.entityId}:${entity.revision}';
+    const localSnapshot = <String, Object?>{
+      'reasonCode': 'avatarProgressionCutoverMismatch',
+    };
+    final localSnapshotJson = jsonEncode(localSnapshot);
+    final cloudSnapshotJson = jsonEncode(entity.payload);
+    await database
+        .into(database.syncConflicts)
+        .insert(
+          db.SyncConflictsCompanion.insert(
+            id: conflictId,
+            ownerId: ownerId,
+            entityType: SyncCollection.rewardTransactions.entityType,
+            entityId: entity.entityId,
+            localRevision: 0,
+            cloudRevision: entity.revision,
+            resolutionPolicy: 'avatarV1MarkerDeferred',
+            outcome: 'pending',
+            localSnapshotJson: Value(localSnapshotJson),
+            cloudSnapshotJson: Value(cloudSnapshotJson),
+            resolvedAtUtcMs: entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+          ),
+          mode: InsertMode.insertOrIgnore,
+        );
+    final persisted = await (database.select(
+      database.syncConflicts,
+    )..where((row) => row.id.equals(conflictId))).getSingle();
+    Object? persistedCloud;
+    try {
+      persistedCloud = jsonDecode(persisted.cloudSnapshotJson!);
+    } on Object {
+      throw StateError('deferred avatar v1 snapshot is corrupt');
+    }
+    if (persisted.ownerId != ownerId ||
+        persisted.entityType != SyncCollection.rewardTransactions.entityType ||
+        persisted.entityId != entity.entityId ||
+        persisted.localRevision != 0 ||
+        persisted.cloudRevision != entity.revision ||
+        persisted.resolutionPolicy != 'avatarV1MarkerDeferred' ||
+        persisted.outcome != 'pending' ||
+        persisted.localSnapshotJson != localSnapshotJson ||
+        persistedCloud is! Map ||
+        !_jsonEquivalent(
+          persistedCloud.cast<String, Object?>(),
+          entity.payload,
+        ) ||
+        persisted.resolvedAtUtcMs !=
+            entity.serverUpdatedAtUtc.millisecondsSinceEpoch) {
+      throw StateError('deferred avatar v1 identity changed');
+    }
+  }
+
+  Future<void> _replayDeferredAvatarV1(String ownerId) async {
+    if (!await _avatarProjectionAvailable(ownerId)) return;
+    final deferred =
+        await (database.select(database.syncConflicts)..where(
+              (row) =>
+                  row.ownerId.equals(ownerId) &
+                  row.entityType.equals(
+                    SyncCollection.rewardTransactions.entityType,
+                  ) &
+                  row.resolutionPolicy.equals('avatarV1MarkerDeferred') &
+                  row.outcome.equals('pending'),
+            ))
+            .get();
+    deferred.sort((left, right) {
+      final time = left.resolvedAtUtcMs.compareTo(right.resolvedAtUtcMs);
+      return time != 0 ? time : left.id.compareTo(right.id);
+    });
+    for (final conflict in deferred) {
+      late final Map<String, Object?> payload;
+      try {
+        final decoded = jsonDecode(conflict.cloudSnapshotJson!);
+        if (decoded is! Map) throw const FormatException();
+        payload = decoded.cast<String, Object?>();
+      } on Object {
+        throw StateError('deferred avatar v1 snapshot is corrupt');
+      }
+      final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
+      final entity = SyncEntity(
+        collection: SyncCollection.rewardTransactions,
+        entityId: conflict.entityId,
+        revision: conflict.cloudRevision,
+        isDeleted: false,
+        payloadVersion: 1,
+        clientUpdatedAtUtc: _utc(occurredAtUtcMs),
+        serverUpdatedAtUtc: _utc(conflict.resolvedAtUtcMs),
+        payload: payload,
+      );
+      await _applyRewardTransaction(
+        ownerId,
+        entity,
+        allowLegacyDeferral: false,
+      );
+      final applied =
+          await (database.select(database.rewardTransactions)..where(
+                (row) =>
+                    row.ownerId.equals(ownerId) &
+                    row.id.equals(entity.entityId),
+              ))
+              .getSingleOrNull();
+      await (database.update(
+        database.syncConflicts,
+      )..where((row) => row.id.equals(conflict.id))).write(
+        db.SyncConflictsCompanion(
+          outcome: Value(applied == null ? 'conflict' : 'replayed'),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _avatarProjectionAvailable(String ownerId) async {
+    try {
+      await rewardProjections.validate(ownerId);
+      return true;
+    } on StateError {
+      return false;
+    }
+  }
+
+  Future<void> _rebuildRewardsOrReject(String ownerId) async {
+    try {
+      await rewardProjections.rebuild(ownerId);
+    } on StateError {
+      throw const InvalidSyncPayloadFailure();
+    }
+  }
+
+  Future<void> _requireOutboundRewardEligibility(
+    db.RewardTransaction transaction,
+  ) async {
+    final isAvatarTransaction =
+        transaction.transactionType == EconomyTransactionType.purchase.name ||
+        transaction.transactionType == EconomyTransactionType.equip.name;
+    if (!isAvatarTransaction) return;
+    if (transaction.catalogVersion == RewardCatalog.catalogV1Version) {
+      try {
+        await avatarProgressionEligibility.requireGrandfatheredSet(
+          transaction.ownerId,
+        );
+      } on StateError {
+        throw const ProviderUnavailableSyncFailure();
+      }
+      if (!const AvatarLegacyCarryForwardContract().isValidPersistedTransaction(
+        transactionId: transaction.id,
+        idempotencyKey: transaction.idempotencyKey,
+        transactionType: transaction.transactionType,
+        amount: transaction.amount,
+        itemId: transaction.itemId,
+        catalogVersion: transaction.catalogVersion,
+        sourceEventId: transaction.sourceEventId,
+        occurredAtUtcMs: transaction.occurredAtUtcMs,
+      )) {
+        throw const InvalidSyncPayloadFailure();
+      }
+      return;
+    }
+    if (transaction.transactionType != EconomyTransactionType.purchase.name ||
+        transaction.catalogVersion != RewardCatalog.catalogV2Version) {
+      return;
+    }
+    if (transaction.itemId == null ||
+        const AvatarProgressionEligibilityContract().validatePersistedPurchase(
+              idempotencyKey: transaction.idempotencyKey,
+              itemId: transaction.itemId!,
+              amount: transaction.amount,
+              catalogVersion: transaction.catalogVersion,
+              sourceEventId: transaction.sourceEventId,
+              occurredAtUtcMs: transaction.occurredAtUtcMs,
+            ) ==
+            null) {
+      throw const InvalidSyncPayloadFailure();
+    }
   }
 
   Future<db.RewardTransaction?> _rewardSourceCollision({
@@ -4764,7 +5278,10 @@ Map<String, Object?> _rewardTransactionPayload(
 ) {
   final item = transaction.itemId == null
       ? null
-      : RewardCatalog.byId(transaction.itemId!);
+      : RewardCatalog.byIdAtVersion(
+          transaction.itemId!,
+          transaction.catalogVersion,
+        );
   final payload = <String, Object?>{
     'idempotencyKey': transaction.idempotencyKey,
     'transactionType': transaction.transactionType,
@@ -4811,13 +5328,15 @@ _RewardTransactionFields _decodeRewardTransactionPayload(
   final occurredAtUtcMs = _requiredInt(payload, 'occurredAtUtcMs');
   if (occurredAtUtcMs < 0 ||
       occurredAtUtcMs != expectedOccurredAtUtcMs ||
-      !const EconomyTransactionPolicy().isValid(
+      !const EconomyTransactionPolicy().isValidPersistedRow(
+        idempotencyKey: idempotencyKey,
         transactionType: transactionType,
         amount: amount,
         itemId: itemId,
         slot: slot,
         catalogVersion: catalogVersion,
         sourceEventId: sourceEventId,
+        occurredAtUtcMs: occurredAtUtcMs,
       )) {
     throw const InvalidSyncPayloadFailure();
   }

@@ -10,6 +10,7 @@ import 'package:vocab_learning_app/features/learning/domain/learning_evidence_co
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/progress/data/drift_progress_queries.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_reward_repository.dart';
+import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
 void main() {
@@ -280,6 +281,10 @@ void main() {
 
       expect(result.totalXp, 25);
       expect(result.gameLevel, 2);
+      expect(
+        result.gameLevel,
+        const AvatarProgressionPolicy().evaluate(lifetimeXp: 25).level,
+      );
       expect(
         await database.select(database.pointsLedgerEntries).get(),
         hasLength(5),

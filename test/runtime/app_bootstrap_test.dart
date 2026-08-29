@@ -38,6 +38,8 @@ import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repo
 import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_manifest.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
+import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
+import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
 import 'package:vocab_learning_app/features/research/application/experiment_assignment_use_cases.dart';
 import 'package:vocab_learning_app/features/research/data/drift_experiment_assignment_repository.dart';
@@ -2249,12 +2251,270 @@ void main() {
               jsonDecode(cutovers.single.payloadJson) as Map<String, dynamic>;
           expect(payload['horizonEventId'], isNull);
           expect(payload['horizonOccurredAtUtcMs'], isNull);
+
+          final avatarCutovers =
+              await (firstDependencies.database!.select(
+                    firstDependencies.database!.eventsV2,
+                  )..where(
+                    (row) =>
+                        row.ownerId.equals('concurrent-cutover-owner') &
+                        row.eventType.equals(
+                          'AvatarProgressionEligibilityCutover',
+                        ),
+                  ))
+                  .get();
+          expect(avatarCutovers, hasLength(1));
+          final avatarPayload =
+              jsonDecode(avatarCutovers.single.payloadJson)
+                  as Map<String, dynamic>;
+          expect(avatarPayload['grandfatheredTransactionCount'], 0);
+          expect(avatarPayload['activeCatalogVersion'], 2);
         } finally {
           await firstDependencies?.dispose();
           await secondDependencies?.dispose();
           if (firstDependencies == null && secondDependencies == null) {
             await database.close();
           }
+        }
+      },
+    );
+
+    test(
+      'avatar cutover mismatch closes shop without bricking progress',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        AppDependencies? dependencies;
+        try {
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'avatar-quarantine-owner',
+                  createdAtUtcMs: 1,
+                ),
+              );
+          await DriftAvatarProgressionEligibility(
+            database,
+          ).establishCutover('avatar-quarantine-owner');
+          await database
+              .into(database.rewardTransactions)
+              .insert(
+                RewardTransactionsCompanion.insert(
+                  id: 'avatar-quarantine-late-purchase',
+                  ownerId: 'avatar-quarantine-owner',
+                  idempotencyKey: 'avatar-quarantine-late-purchase',
+                  transactionType: 'purchase',
+                  amount: -80,
+                  itemId: const Value('theme_ocean'),
+                  catalogVersion: RewardCatalog.catalogV1Version,
+                  occurredAtUtcMs: 2,
+                ),
+              );
+          await database
+              .into(database.pointsLedgerEntries)
+              .insert(
+                PointsLedgerEntriesCompanion.insert(
+                  id: 'avatar-quarantine-xp',
+                  ownerId: 'avatar-quarantine-owner',
+                  idempotencyKey: 'avatar-quarantine-xp',
+                  entryType: 'quizCorrect',
+                  amount: 40,
+                  occurredAtUtcMs: 3,
+                ),
+              );
+          final bootstrap = AppBootstrap(
+            createDatabase: () => database,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+          );
+
+          dependencies = await bootstrap.initialize();
+
+          expect(dependencies.rewards, isNotNull);
+          await expectLater(
+            dependencies.rewards!.loadAvatar(),
+            throwsA(
+              isA<RewardException>().having(
+                (error) => error.code,
+                'code',
+                RewardFailureCode.evidenceUnavailable,
+              ),
+            ),
+          );
+          expect((await dependencies.progress!.load()).totalXp, 40);
+          expect(
+            await (database.select(database.rewardTransactions)..where(
+                  (row) => row.id.equals('avatar-quarantine-late-purchase'),
+                ))
+                .getSingleOrNull(),
+            isNotNull,
+          );
+        } finally {
+          await dependencies?.dispose();
+          if (dependencies == null) await database.close();
+        }
+      },
+    );
+
+    test(
+      'tampered avatar receipt closes shop without losing XP authority',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        AppDependencies? dependencies;
+        try {
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'avatar-receipt-quarantine-owner',
+                  createdAtUtcMs: 1,
+                ),
+              );
+          await database
+              .into(database.pointsLedgerEntries)
+              .insert(
+                PointsLedgerEntriesCompanion.insert(
+                  id: 'avatar-receipt-quarantine-xp',
+                  ownerId: 'avatar-receipt-quarantine-owner',
+                  idempotencyKey: 'avatar-receipt-quarantine-xp',
+                  entryType: 'quizCorrect',
+                  amount: 40,
+                  sourceEventId: const Value(
+                    'avatar-receipt-quarantine-attempt',
+                  ),
+                  occurredAtUtcMs: 2,
+                ),
+              );
+          await database
+              .into(database.rewardTransactions)
+              .insert(
+                RewardTransactionsCompanion.insert(
+                  id: 'avatar-tampered-v2-purchase',
+                  ownerId: 'avatar-receipt-quarantine-owner',
+                  idempotencyKey: 'avatar-tampered-v2-purchase',
+                  transactionType: 'purchase',
+                  amount: -80,
+                  itemId: const Value('theme_ocean'),
+                  catalogVersion: RewardCatalog.catalogV2Version,
+                  sourceEventId: Value('avatar-xp:v1:p1:c2:l3:x40:${'0' * 64}'),
+                  occurredAtUtcMs: 3,
+                ),
+              );
+
+          dependencies = await AppBootstrap(
+            createDatabase: () => database,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            createEntryStateStore: _createSignedOutEntryState,
+          ).initialize();
+
+          expect(dependencies.rewards, isNotNull);
+          await expectLater(
+            dependencies.rewards!.loadAvatar(),
+            throwsA(
+              isA<RewardException>().having(
+                (error) => error.code,
+                'code',
+                RewardFailureCode.evidenceUnavailable,
+              ),
+            ),
+          );
+          expect((await dependencies.progress!.load()).totalXp, 40);
+          expect(
+            await (database.select(database.pointsLedgerEntries)..where(
+                  (row) => row.id.equals('avatar-receipt-quarantine-xp'),
+                ))
+                .getSingleOrNull(),
+            isNotNull,
+          );
+        } finally {
+          await dependencies?.dispose();
+          if (dependencies == null) await database.close();
+        }
+      },
+    );
+
+    test(
+      'avatar availability follows logout to a clean guest without restart',
+      () async {
+        final database = AppDatabase(NativeDatabase.memory());
+        AppDependencies? dependencies;
+        final gateway = _BootstrapAccountGateway(
+          currentSession: const AccountSession(
+            uid: 'avatar-bound-user',
+            email: 'student@example.com',
+            isAnonymous: false,
+            emailVerified: true,
+          ),
+        );
+        try {
+          await database
+              .into(database.localOwners)
+              .insert(
+                LocalOwnersCompanion.insert(
+                  id: 'avatar-bound-owner',
+                  firebaseUid: const Value('avatar-bound-user'),
+                  accountState: const Value('firebaseBound'),
+                  createdAtUtcMs: 1,
+                ),
+              );
+          await DriftAvatarProgressionEligibility(
+            database,
+          ).establishCutover('avatar-bound-owner');
+          await database
+              .into(database.rewardTransactions)
+              .insert(
+                RewardTransactionsCompanion.insert(
+                  id: 'avatar-bound-owner-raw-v1',
+                  ownerId: 'avatar-bound-owner',
+                  idempotencyKey: 'avatar-bound-owner-raw-v1',
+                  transactionType: 'purchase',
+                  amount: -80,
+                  itemId: const Value('theme_ocean'),
+                  catalogVersion: RewardCatalog.catalogV1Version,
+                  occurredAtUtcMs: 2,
+                ),
+              );
+
+          dependencies = await AppBootstrap(
+            createDatabase: () => database,
+            initializeFirebase: () async {},
+            initializeSupabase: () async {},
+            loadConfig: _validConfig,
+            guestSessionService: _StubGuestSessionService(),
+            accountGatewayFactory: () => gateway,
+            createEntryStateStore: _createSignedOutEntryState,
+          ).initialize();
+
+          expect(dependencies.rewards, isNotNull);
+          await expectLater(
+            dependencies.rewards!.loadAvatar(),
+            throwsA(
+              isA<RewardException>().having(
+                (error) => error.code,
+                'code',
+                RewardFailureCode.evidenceUnavailable,
+              ),
+            ),
+          );
+
+          final transition = await dependencies.account!.signOutToLocalGuest();
+          expect(transition.mode, OwnerUpgradeMode.localGuestCreated);
+          final guest = await dependencies.localOwners!
+              .getOrCreateActiveOwner();
+          expect(guest.id, transition.targetOwnerId);
+          expect(guest.firebaseUid, isNull);
+          final clean = await dependencies.rewards!.loadAvatar();
+          expect(clean.account.coinBalance, 0);
+          expect(clean.account.ownedItemIds, isEmpty);
+        } finally {
+          await dependencies?.dispose();
+          if (dependencies == null) await database.close();
         }
       },
     );

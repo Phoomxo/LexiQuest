@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/rewards/domain/avatar_progression_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/economy_transaction_policy.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 
@@ -7,6 +8,14 @@ void main() {
 
   group('EconomyTransactionPolicy', () {
     test('accepts exactly the four supported transaction shapes', () {
+      final item = RewardCatalog.byId('theme_ocean')!;
+      final purchaseEligibility = const AvatarProgressionEligibilityContract()
+          .issue(
+            idempotencyKey: 'purchase-current',
+            item: item,
+            lifetimeXp: 40,
+            occurredAtUtcMs: 1,
+          );
       expect(
         transactions.isValid(
           transactionType: 'legacyEarningBackfill',
@@ -32,11 +41,11 @@ void main() {
       expect(
         transactions.isValid(
           transactionType: 'purchase',
-          amount: -RewardCatalog.byId('theme_ocean')!.price,
+          amount: -item.price,
           itemId: 'theme_ocean',
           slot: 'theme',
           catalogVersion: RewardCatalog.version,
-          sourceEventId: null,
+          sourceEventId: purchaseEligibility.sourceEventId,
         ),
         isTrue,
       );

@@ -5,8 +5,10 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 
 import '../../../data/local/app_database.dart';
+import '../domain/avatar_progression_policy.dart';
 import '../domain/economy_transaction_policy.dart';
 import '../domain/reward_models.dart';
+import 'drift_avatar_progression_eligibility.dart';
 import 'drift_economy_cutover.dart';
 import 'drift_reward_projection_rebuilder.dart';
 
@@ -14,12 +16,22 @@ final class DriftRewardRepository {
   DriftRewardRepository(
     this.database, {
     DriftEconomyCutover? cutover,
+    DriftAvatarProgressionEligibility? progressionEligibility,
     this.awardPolicy = const EconomyAwardPolicyV1(),
   }) : cutover = cutover ?? DriftEconomyCutover(database),
-       projections = DriftRewardProjectionRebuilder(database);
+       progressionEligibility =
+           progressionEligibility ??
+           DriftAvatarProgressionEligibility(database),
+       projections = DriftRewardProjectionRebuilder(
+         database,
+         progressionEligibility:
+             progressionEligibility ??
+             DriftAvatarProgressionEligibility(database),
+       );
 
   final AppDatabase database;
   final DriftEconomyCutover cutover;
+  final DriftAvatarProgressionEligibility progressionEligibility;
   final EconomyAwardPolicyV1 awardPolicy;
   final DriftRewardProjectionRebuilder projections;
   static const EconomyTransactionPolicy _transactionPolicy =
@@ -36,6 +48,18 @@ final class DriftRewardRepository {
     });
   }
 
+  Future<bool> avatarProjectionAvailable(String ownerId) {
+    _requireIdentifier(ownerId, 'ownerId');
+    return _serialized(() async {
+      try {
+        await projections.validate(ownerId);
+        return true;
+      } on StateError {
+        return false;
+      }
+    });
+  }
+
   Future<PurchaseResult> purchase({
     required String ownerId,
     required RewardCatalogItem item,
@@ -47,18 +71,12 @@ final class DriftRewardRepository {
     _requireIdentifier(idempotencyKey, 'idempotencyKey');
     _requireIdentifier(transactionId, 'transactionId');
     _requireUtc(occurredAtUtc, 'occurredAtUtc');
+    if (item.catalogVersion != RewardCatalog.version || item.price <= 0) {
+      throw const RewardException(RewardFailureCode.staleCatalog);
+    }
     final epoch = occurredAtUtc.millisecondsSinceEpoch;
-    _requireValidPersistedRewardTransaction(
-      idempotencyKey: idempotencyKey,
-      transactionType: EconomyTransactionType.purchase.name,
-      amount: -item.price,
-      itemId: item.id,
-      slot: item.slot,
-      catalogVersion: item.catalogVersion,
-      sourceEventId: null,
-      occurredAtUtcMs: epoch,
-    );
     return _serialized(() async {
+      await progressionEligibility.establishCutover(ownerId);
       await cutover.ensureSeparated(ownerId);
       return database.transaction(() async {
         await projections.rebuild(ownerId);
@@ -70,15 +88,7 @@ final class DriftRewardRepository {
                 ))
                 .getSingleOrNull();
         if (replay != null) {
-          if (replay.transactionType != 'purchase' ||
-              replay.itemId != item.id ||
-              replay.amount != -item.price ||
-              replay.catalogVersion != item.catalogVersion ||
-              replay.sourceEventId != null) {
-            throw const RewardException(
-              RewardFailureCode.invalidIdempotencyKey,
-            );
-          }
+          _requireExactPurchase(replay, ownerId: ownerId, item: item);
           return PurchaseResult(
             status: PurchaseStatus.replayed,
             account: await _loadSeparated(ownerId),
@@ -100,6 +110,34 @@ final class DriftRewardRepository {
         if (account.coinBalance < item.price) {
           throw const RewardException(RewardFailureCode.insufficientBalance);
         }
+        final lifetimeXp = await _lifetimeXp(ownerId);
+        final AvatarProgressionEligibilityReceipt eligibility;
+        try {
+          eligibility = const AvatarProgressionEligibilityContract().issue(
+            idempotencyKey: idempotencyKey,
+            item: item,
+            lifetimeXp: lifetimeXp,
+            occurredAtUtcMs: epoch,
+          );
+        } on StateError {
+          throw const RewardException(RewardFailureCode.lockedByProgression);
+        }
+        _requireValidPersistedRewardTransaction(
+          idempotencyKey: idempotencyKey,
+          transactionType: EconomyTransactionType.purchase.name,
+          amount: -item.price,
+          itemId: item.id,
+          slot: item.slot,
+          catalogVersion: item.catalogVersion,
+          sourceEventId: eligibility.sourceEventId,
+          occurredAtUtcMs: epoch,
+        );
+        final transactionIdCollision = await (database.select(
+          database.rewardTransactions,
+        )..where((row) => row.id.equals(transactionId))).getSingleOrNull();
+        if (transactionIdCollision != null) {
+          throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+        }
         await database
             .into(database.rewardTransactions)
             .insert(
@@ -111,6 +149,7 @@ final class DriftRewardRepository {
                 amount: -item.price,
                 itemId: Value(item.id),
                 catalogVersion: item.catalogVersion,
+                sourceEventId: Value(eligibility.sourceEventId),
                 occurredAtUtcMs: epoch,
               ),
             );
@@ -128,16 +167,20 @@ final class DriftRewardRepository {
     });
   }
 
-  Future<RewardAccount> equip({
+  Future<EquipResult> equip({
     required String ownerId,
     required RewardCatalogItem item,
+    required String idempotencyKey,
     required String transactionId,
     required DateTime occurredAtUtc,
   }) {
     _requireIdentifier(ownerId, 'ownerId');
+    _requireIdentifier(idempotencyKey, 'idempotencyKey');
     _requireIdentifier(transactionId, 'transactionId');
     _requireUtc(occurredAtUtc, 'occurredAtUtc');
-    final idempotencyKey = 'equip:$transactionId';
+    if (item.catalogVersion != RewardCatalog.version) {
+      throw const RewardException(RewardFailureCode.staleCatalog);
+    }
     final epoch = occurredAtUtc.millisecondsSinceEpoch;
     _requireValidPersistedRewardTransaction(
       idempotencyKey: idempotencyKey,
@@ -153,6 +196,31 @@ final class DriftRewardRepository {
       await cutover.ensureSeparated(ownerId);
       return database.transaction(() async {
         await projections.rebuild(ownerId);
+        final replay =
+            await (database.select(database.rewardTransactions)..where(
+                  (row) =>
+                      row.ownerId.equals(ownerId) &
+                      row.idempotencyKey.equals(idempotencyKey),
+                ))
+                .getSingleOrNull();
+        if (replay != null) {
+          _requireExactEquip(
+            replay,
+            ownerId: ownerId,
+            idempotencyKey: idempotencyKey,
+            item: item,
+          );
+          return EquipResult(
+            status: EquipStatus.replayed,
+            account: await _loadSeparated(ownerId),
+          );
+        }
+        final transactionIdCollision = await (database.select(
+          database.rewardTransactions,
+        )..where((row) => row.id.equals(transactionId))).getSingleOrNull();
+        if (transactionIdCollision != null) {
+          throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+        }
         if (item.price > 0) {
           final owned =
               await (database.select(database.ownedRewardItems)..where(
@@ -185,7 +253,10 @@ final class DriftRewardRepository {
           occurredAtUtcMs: epoch,
         );
         await projections.rebuild(ownerId);
-        return _loadSeparated(ownerId);
+        return EquipResult(
+          status: EquipStatus.equipped,
+          account: await _loadSeparated(ownerId),
+        );
       });
     });
   }
@@ -196,6 +267,40 @@ final class DriftRewardRepository {
     required int amount,
     required String sourceEventId,
     required DateTime occurredAtUtc,
+  }) => _grantCoins(
+    ownerId: ownerId,
+    idempotencyKey: idempotencyKey,
+    amount: amount,
+    sourceEventId: sourceEventId,
+    occurredAtUtc: occurredAtUtc,
+    rebuildRewardProjections: true,
+  );
+
+  /// Quarantine path used only while avatar purchase/equip evidence is
+  /// unavailable. Coin audit and outbox authority remain canonical; only the
+  /// avatar ownership/equipment projection is skipped until repair.
+  Future<CoinGrantResult> grantCoinsDuringAvatarRollback({
+    required String ownerId,
+    required String idempotencyKey,
+    required int amount,
+    required String sourceEventId,
+    required DateTime occurredAtUtc,
+  }) => _grantCoins(
+    ownerId: ownerId,
+    idempotencyKey: idempotencyKey,
+    amount: amount,
+    sourceEventId: sourceEventId,
+    occurredAtUtc: occurredAtUtc,
+    rebuildRewardProjections: false,
+  );
+
+  Future<CoinGrantResult> _grantCoins({
+    required String ownerId,
+    required String idempotencyKey,
+    required int amount,
+    required String sourceEventId,
+    required DateTime occurredAtUtc,
+    required bool rebuildRewardProjections,
   }) {
     _requireIdentifier(ownerId, 'ownerId');
     _requireIdentifier(idempotencyKey, 'idempotencyKey');
@@ -218,90 +323,103 @@ final class DriftRewardRepository {
 
     return _serialized(() async {
       await cutover.ensureSeparated(ownerId);
-      return database.transaction(() async {
-        final byId = await (database.select(
-          database.rewardTransactions,
-        )..where((row) => row.id.equals(transactionId))).getSingleOrNull();
-        if (byId != null) {
-          _requireExactCoinGrant(
-            byId,
-            ownerId: ownerId,
-            idempotencyKey: idempotencyKey,
-            amount: amount,
-            sourceEventId: sourceEventId,
-            occurredAtUtcMs: epoch,
-          );
-          await _ensureOutbox(
-            ownerId: ownerId,
-            transactionId: byId.id,
-            occurredAtUtcMs: byId.occurredAtUtcMs,
-          );
-          await projections.rebuild(ownerId);
-          return CoinGrantResult.replayed;
-        }
-        final byIdempotency =
-            await (database.select(database.rewardTransactions)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.idempotencyKey.equals(idempotencyKey),
-                ))
-                .getSingleOrNull();
-        if (byIdempotency != null) {
-          throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
-        }
-        final sameSource =
-            await (database.select(database.rewardTransactions)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.sourceEventId.equals(sourceEventId) &
-                      row.transactionType.isIn(const [
-                        'legacyEarningBackfill',
-                        'coinGrant',
-                      ]),
-                ))
-                .get();
-        if (sameSource.length > 1) {
-          throw StateError('duplicate coin evidence for $sourceEventId');
-        }
-        if (sameSource.isNotEmpty) {
-          final existing = sameSource.single;
-          if (!_isValidPersistedRewardTransaction(existing) ||
-              existing.ownerId != ownerId ||
-              existing.amount != amount ||
-              existing.sourceEventId != sourceEventId ||
-              existing.occurredAtUtcMs != epoch) {
-            throw const RewardException(
-              RewardFailureCode.invalidIdempotencyKey,
-            );
-          }
-          if (existing.transactionType == 'legacyEarningBackfill') {
-            return CoinGrantResult.capturedByLegacyBackfill;
-          }
-          return CoinGrantResult.replayed;
-        }
-
-        await database
-            .into(database.rewardTransactions)
-            .insert(
-              RewardTransactionsCompanion.insert(
-                id: transactionId,
+      Future<CoinGrantResult> persist(bool shouldRebuild) =>
+          database.transaction(() async {
+            final byId = await (database.select(
+              database.rewardTransactions,
+            )..where((row) => row.id.equals(transactionId))).getSingleOrNull();
+            if (byId != null) {
+              _requireExactCoinGrant(
+                byId,
                 ownerId: ownerId,
                 idempotencyKey: idempotencyKey,
-                transactionType: EconomyTransactionType.coinGrant.name,
                 amount: amount,
-                catalogVersion: 0,
-                sourceEventId: Value(sourceEventId),
+                sourceEventId: sourceEventId,
                 occurredAtUtcMs: epoch,
-              ),
+              );
+              await _ensureOutbox(
+                ownerId: ownerId,
+                transactionId: byId.id,
+                occurredAtUtcMs: byId.occurredAtUtcMs,
+              );
+              if (shouldRebuild) {
+                await projections.rebuild(ownerId);
+              }
+              return CoinGrantResult.replayed;
+            }
+            final byIdempotency =
+                await (database.select(database.rewardTransactions)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.idempotencyKey.equals(idempotencyKey),
+                    ))
+                    .getSingleOrNull();
+            if (byIdempotency != null) {
+              throw const RewardException(
+                RewardFailureCode.invalidIdempotencyKey,
+              );
+            }
+            final sameSource =
+                await (database.select(database.rewardTransactions)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.sourceEventId.equals(sourceEventId) &
+                          row.transactionType.isIn(const [
+                            'legacyEarningBackfill',
+                            'coinGrant',
+                          ]),
+                    ))
+                    .get();
+            if (sameSource.length > 1) {
+              throw StateError('duplicate coin evidence for $sourceEventId');
+            }
+            if (sameSource.isNotEmpty) {
+              final existing = sameSource.single;
+              if (!_isValidPersistedRewardTransaction(existing) ||
+                  existing.ownerId != ownerId ||
+                  existing.amount != amount ||
+                  existing.sourceEventId != sourceEventId ||
+                  existing.occurredAtUtcMs != epoch) {
+                throw const RewardException(
+                  RewardFailureCode.invalidIdempotencyKey,
+                );
+              }
+              if (existing.transactionType == 'legacyEarningBackfill') {
+                return CoinGrantResult.capturedByLegacyBackfill;
+              }
+              return CoinGrantResult.replayed;
+            }
+
+            await database
+                .into(database.rewardTransactions)
+                .insert(
+                  RewardTransactionsCompanion.insert(
+                    id: transactionId,
+                    ownerId: ownerId,
+                    idempotencyKey: idempotencyKey,
+                    transactionType: EconomyTransactionType.coinGrant.name,
+                    amount: amount,
+                    catalogVersion: 0,
+                    sourceEventId: Value(sourceEventId),
+                    occurredAtUtcMs: epoch,
+                  ),
+                );
+            await _ensureOutbox(
+              ownerId: ownerId,
+              transactionId: transactionId,
+              occurredAtUtcMs: epoch,
             );
-        await _ensureOutbox(
-          ownerId: ownerId,
-          transactionId: transactionId,
-          occurredAtUtcMs: epoch,
-        );
-        await projections.rebuild(ownerId);
-        return CoinGrantResult.inserted;
-      });
+            if (shouldRebuild) {
+              await projections.rebuild(ownerId);
+            }
+            return CoinGrantResult.inserted;
+          });
+      if (!rebuildRewardProjections) return persist(false);
+      try {
+        return await persist(true);
+      } on StateError {
+        return persist(false);
+      }
     });
   }
 
@@ -310,6 +428,35 @@ final class DriftRewardRepository {
     required String sourceEventId,
     required int xpAmount,
     required DateTime occurredAtUtc,
+  }) => _grantQuestXpAndCoins(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    xpAmount: xpAmount,
+    occurredAtUtc: occurredAtUtc,
+    rebuildRewardProjections: true,
+  );
+
+  /// Quarantine path that preserves the indivisible Foundation XP + Coin
+  /// authority while avatar ownership/equipment projection is closed.
+  Future<QuestEconomyGrantResult> grantQuestEconomyDuringAvatarRollback({
+    required String ownerId,
+    required String sourceEventId,
+    required int xpAmount,
+    required DateTime occurredAtUtc,
+  }) => _grantQuestXpAndCoins(
+    ownerId: ownerId,
+    sourceEventId: sourceEventId,
+    xpAmount: xpAmount,
+    occurredAtUtc: occurredAtUtc,
+    rebuildRewardProjections: false,
+  );
+
+  Future<QuestEconomyGrantResult> _grantQuestXpAndCoins({
+    required String ownerId,
+    required String sourceEventId,
+    required int xpAmount,
+    required DateTime occurredAtUtc,
+    required bool rebuildRewardProjections,
   }) {
     _requireIdentifier(ownerId, 'ownerId');
     _requireIdentifier(sourceEventId, 'sourceEventId');
@@ -341,117 +488,132 @@ final class DriftRewardRepository {
 
     return _serialized(() async {
       await cutover.ensureSeparated(ownerId);
-      return database.transaction(() async {
-        final xp =
-            await (database.select(database.pointsLedgerEntries)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.idempotencyKey.equals(award.xpIdempotencyKey),
-                ))
-                .getSingleOrNull();
-        final coins =
-            await (database.select(database.rewardTransactions)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.idempotencyKey.equals(award.coinIdempotencyKey),
-                ))
-                .getSingleOrNull();
-        if (xp != null || coins != null) {
-          if (xp == null || coins == null) {
-            throw StateError('partial quest economy grant for $sourceEventId');
-          }
-          _requireExactQuestXp(
-            xp,
-            ownerId: ownerId,
-            idempotencyKey: award.xpIdempotencyKey,
-            amount: award.xpAmount,
-            sourceEventId: sourceEventId,
-            occurredAtUtcMs: epoch,
-          );
-          _requireExactCoinGrant(
-            coins,
-            ownerId: ownerId,
-            idempotencyKey: award.coinIdempotencyKey,
-            amount: award.coinAmount,
-            sourceEventId: sourceEventId,
-            occurredAtUtcMs: epoch,
-          );
-          await _ensureOutbox(
-            ownerId: ownerId,
-            transactionId: coins.id,
-            occurredAtUtcMs: coins.occurredAtUtcMs,
-          );
-          await projections.rebuild(ownerId);
-          return QuestEconomyGrantResult.replayed;
-        }
-
-        final legacyXp =
-            await (database.select(database.pointsLedgerEntries)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.entryType.equals('questCompletion') &
-                      row.sourceEventId.equals(sourceEventId),
-                ))
-                .get();
-        final legacyCoins =
-            await (database.select(database.rewardTransactions)..where(
-                  (row) =>
-                      row.ownerId.equals(ownerId) &
-                      row.sourceEventId.equals(sourceEventId) &
-                      row.transactionType.isIn(const [
-                        'legacyEarningBackfill',
-                        'coinGrant',
-                      ]),
-                ))
-                .get();
-        if (legacyXp.isNotEmpty || legacyCoins.isNotEmpty) {
-          if (legacyXp.length != 1 ||
-              legacyCoins.length != 1 ||
-              legacyXp.single.amount != award.xpAmount ||
-              legacyCoins.single.amount != award.coinAmount) {
-            throw StateError(
-              'invalid legacy quest economy grant $sourceEventId',
-            );
-          }
-          await projections.rebuild(ownerId);
-          return QuestEconomyGrantResult.replayed;
-        }
-
-        await database
-            .into(database.pointsLedgerEntries)
-            .insert(
-              PointsLedgerEntriesCompanion.insert(
-                id: pointId,
+      Future<QuestEconomyGrantResult> persist(bool shouldRebuild) =>
+          database.transaction(() async {
+            final xp =
+                await (database.select(database.pointsLedgerEntries)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.idempotencyKey.equals(award.xpIdempotencyKey),
+                    ))
+                    .getSingleOrNull();
+            final coins =
+                await (database.select(database.rewardTransactions)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.idempotencyKey.equals(award.coinIdempotencyKey),
+                    ))
+                    .getSingleOrNull();
+            if (xp != null || coins != null) {
+              if (xp == null || coins == null) {
+                throw StateError(
+                  'partial quest economy grant for $sourceEventId',
+                );
+              }
+              _requireExactQuestXp(
+                xp,
                 ownerId: ownerId,
                 idempotencyKey: award.xpIdempotencyKey,
-                entryType: 'questCompletion',
                 amount: award.xpAmount,
-                sourceEventId: Value(sourceEventId),
+                sourceEventId: sourceEventId,
                 occurredAtUtcMs: epoch,
-              ),
-            );
-        await database
-            .into(database.rewardTransactions)
-            .insert(
-              RewardTransactionsCompanion.insert(
-                id: coinTransactionId,
+              );
+              _requireExactCoinGrant(
+                coins,
                 ownerId: ownerId,
                 idempotencyKey: award.coinIdempotencyKey,
-                transactionType: EconomyTransactionType.coinGrant.name,
                 amount: award.coinAmount,
-                catalogVersion: 0,
-                sourceEventId: Value(sourceEventId),
+                sourceEventId: sourceEventId,
                 occurredAtUtcMs: epoch,
-              ),
+              );
+              await _ensureOutbox(
+                ownerId: ownerId,
+                transactionId: coins.id,
+                occurredAtUtcMs: coins.occurredAtUtcMs,
+              );
+              if (shouldRebuild) {
+                await projections.rebuild(ownerId);
+              }
+              return QuestEconomyGrantResult.replayed;
+            }
+
+            final legacyXp =
+                await (database.select(database.pointsLedgerEntries)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.entryType.equals('questCompletion') &
+                          row.sourceEventId.equals(sourceEventId),
+                    ))
+                    .get();
+            final legacyCoins =
+                await (database.select(database.rewardTransactions)..where(
+                      (row) =>
+                          row.ownerId.equals(ownerId) &
+                          row.sourceEventId.equals(sourceEventId) &
+                          row.transactionType.isIn(const [
+                            'legacyEarningBackfill',
+                            'coinGrant',
+                          ]),
+                    ))
+                    .get();
+            if (legacyXp.isNotEmpty || legacyCoins.isNotEmpty) {
+              if (legacyXp.length != 1 ||
+                  legacyCoins.length != 1 ||
+                  legacyXp.single.amount != award.xpAmount ||
+                  legacyCoins.single.amount != award.coinAmount) {
+                throw StateError(
+                  'invalid legacy quest economy grant $sourceEventId',
+                );
+              }
+              if (shouldRebuild) {
+                await projections.rebuild(ownerId);
+              }
+              return QuestEconomyGrantResult.replayed;
+            }
+
+            await database
+                .into(database.pointsLedgerEntries)
+                .insert(
+                  PointsLedgerEntriesCompanion.insert(
+                    id: pointId,
+                    ownerId: ownerId,
+                    idempotencyKey: award.xpIdempotencyKey,
+                    entryType: 'questCompletion',
+                    amount: award.xpAmount,
+                    sourceEventId: Value(sourceEventId),
+                    occurredAtUtcMs: epoch,
+                  ),
+                );
+            await database
+                .into(database.rewardTransactions)
+                .insert(
+                  RewardTransactionsCompanion.insert(
+                    id: coinTransactionId,
+                    ownerId: ownerId,
+                    idempotencyKey: award.coinIdempotencyKey,
+                    transactionType: EconomyTransactionType.coinGrant.name,
+                    amount: award.coinAmount,
+                    catalogVersion: 0,
+                    sourceEventId: Value(sourceEventId),
+                    occurredAtUtcMs: epoch,
+                  ),
+                );
+            await _ensureOutbox(
+              ownerId: ownerId,
+              transactionId: coinTransactionId,
+              occurredAtUtcMs: epoch,
             );
-        await _ensureOutbox(
-          ownerId: ownerId,
-          transactionId: coinTransactionId,
-          occurredAtUtcMs: epoch,
-        );
-        await projections.rebuild(ownerId);
-        return QuestEconomyGrantResult.inserted;
-      });
+            if (shouldRebuild) {
+              await projections.rebuild(ownerId);
+            }
+            return QuestEconomyGrantResult.inserted;
+          });
+      if (!rebuildRewardProjections) return persist(false);
+      try {
+        return await persist(true);
+      } on StateError {
+        return persist(false);
+      }
     });
   }
 
@@ -597,7 +759,10 @@ final class DriftRewardRepository {
   bool _isValidPersistedRewardTransaction(RewardTransaction transaction) {
     final item = transaction.itemId == null
         ? null
-        : RewardCatalog.byId(transaction.itemId!);
+        : RewardCatalog.byIdAtVersion(
+            transaction.itemId!,
+            transaction.catalogVersion,
+          );
     return _transactionPolicy.isValidPersistedRow(
       idempotencyKey: transaction.idempotencyKey,
       transactionType: transaction.transactionType,
@@ -647,6 +812,56 @@ final class DriftRewardRepository {
         point.occurredAtUtcMs != occurredAtUtcMs) {
       throw StateError('quest xp identity collision ${point.id}');
     }
+  }
+
+  void _requireExactEquip(
+    RewardTransaction transaction, {
+    required String ownerId,
+    required String idempotencyKey,
+    required RewardCatalogItem item,
+  }) {
+    if (!_isValidPersistedRewardTransaction(transaction) ||
+        transaction.ownerId != ownerId ||
+        transaction.idempotencyKey != idempotencyKey ||
+        transaction.transactionType != 'equip' ||
+        transaction.amount != 0 ||
+        transaction.itemId != item.id ||
+        transaction.catalogVersion != item.catalogVersion ||
+        transaction.sourceEventId != null) {
+      throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+    }
+  }
+
+  void _requireExactPurchase(
+    RewardTransaction transaction, {
+    required String ownerId,
+    required RewardCatalogItem item,
+  }) {
+    if (!_isValidPersistedRewardTransaction(transaction) ||
+        transaction.ownerId != ownerId ||
+        transaction.transactionType != 'purchase' ||
+        transaction.amount != -item.price ||
+        transaction.itemId != item.id ||
+        transaction.catalogVersion != item.catalogVersion) {
+      throw const RewardException(RewardFailureCode.invalidIdempotencyKey);
+    }
+  }
+
+  Future<int> _lifetimeXp(String ownerId) async {
+    final expression = database.pointsLedgerEntries.amount.sum();
+    final row =
+        await (database.selectOnly(database.pointsLedgerEntries)
+              ..addColumns([expression])
+              ..where(
+                database.pointsLedgerEntries.ownerId.equals(ownerId) &
+                    database.pointsLedgerEntries.amount.isBiggerThanValue(0) &
+                    database.pointsLedgerEntries.entryType.isIn(const [
+                      'quizCorrect',
+                      'questCompletion',
+                    ]),
+              ))
+            .getSingle();
+    return row.read(expression) ?? 0;
   }
 
   String _coinTransactionId(String ownerId, String idempotencyKey) =>

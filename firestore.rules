@@ -535,14 +535,69 @@ service cloud.firestore {
 
     function fieldRewardCatalogEntryOk() {
       let payload = request.resource.data.payload;
-      return payload.catalogVersion == 1
-        && payload.itemId is string
+      let currentV2Purchase = payload.catalogVersion == 2
+        && payload.transactionType == 'purchase'
+        && payload.sourceEventId is string
+        && payload.sourceEventId.size() <= 256
+        && ((payload.itemId == 'theme_ocean'
+             && payload.sourceEventId.matches(
+               '^avatar-xp:v1:p1:c2:l3:x([4-9][0-9]|[1-9][0-9]{2,}):[0-9a-f]{64}$'
+             ))
+            || (payload.itemId == 'wallpaper_focus'
+                && payload.sourceEventId.matches(
+                  '^avatar-xp:v1:p1:c2:l2:x([2-9][0-9]|[1-9][0-9]{2,}):[0-9a-f]{64}$'
+                ))
+            || (payload.itemId == 'headgear_ipa'
+                && payload.sourceEventId.matches(
+                  '^avatar-xp:v1:p1:c2:l4:x([6-9][0-9]|[1-9][0-9]{2,}):[0-9a-f]{64}$'
+                ))
+            || (payload.itemId in ['weapon_cefr', 'armor_srs']
+                && payload.sourceEventId.matches(
+                  '^avatar-xp:v1:p1:c2:l5:x([8-9][0-9]|[1-9][0-9]{2,}):[0-9a-f]{64}$'
+                )));
+      let currentV2Equip = payload.catalogVersion == 2
+        && payload.transactionType == 'equip'
+        && payload.sourceEventId == null;
+      // Raw catalog-v1 rows are accepted only during the bounded migration
+      // window. Firestore request.time is the trusted admission clock; the
+      // client occurrence may not claim a future event.
+      let legacyRawPurchase = payload.catalogVersion == 1
+        && payload.transactionType == 'purchase'
+        && payload.occurredAtUtcMs < 1790812800000
+        && request.time.toMillis() < 1790812800000
+        && request.time.toMillis() >= payload.occurredAtUtcMs
+        && payload.sourceEventId == null;
+      let legacyRawEquip = payload.catalogVersion == 1
+        && payload.transactionType == 'equip'
+        && payload.occurredAtUtcMs < 1790812800000
+        && request.time.toMillis() < 1790812800000
+        && request.time.toMillis() >= payload.occurredAtUtcMs
+        && payload.sourceEventId == null;
+      let legacyCarryPurchase = payload.catalogVersion == 1
+        && payload.transactionType == 'purchase'
+        && payload.occurredAtUtcMs < 1790812800000
+        && request.time.toMillis() >= payload.occurredAtUtcMs
+        && payload.sourceEventId is string
+        && payload.sourceEventId.matches(
+          '^avatar-legacy:v1:c1:p:[0-9a-f]{64}$'
+        );
+      let legacyCarryEquip = payload.catalogVersion == 1
+        && payload.transactionType == 'equip'
+        && payload.occurredAtUtcMs < 1790812800000
+        && request.time.toMillis() >= payload.occurredAtUtcMs
+        && payload.sourceEventId is string
+        && payload.sourceEventId.matches(
+          '^avatar-legacy:v1:c1:e:[0-9a-f]{64}$'
+        );
+      return payload.itemId is string
         && payload.itemId.size() > 0
         && payload.itemId.size() <= 256
         && payload.slot is string
         && payload.slot.size() > 0
         && payload.slot.size() <= 60
-        && payload.sourceEventId == null
+        && (currentV2Purchase || currentV2Equip
+          || legacyRawPurchase || legacyRawEquip
+          || legacyCarryPurchase || legacyCarryEquip)
         && ((payload.transactionType == 'purchase'
              && ((payload.itemId == 'theme_ocean'
                   && payload.slot == 'theme'

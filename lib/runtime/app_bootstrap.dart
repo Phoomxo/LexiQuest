@@ -83,6 +83,8 @@ import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/rewards/application/reward_use_cases.dart';
+import '../features/rewards/data/drift_avatar_progression_eligibility.dart';
+import '../features/rewards/data/drift_reward_projection_rebuilder.dart';
 import '../features/rewards/data/drift_reward_repository.dart';
 import '../features/review/application/learner_intent_use_cases.dart';
 import '../features/review/application/content_report_use_cases.dart';
@@ -470,6 +472,10 @@ final class AppBootstrap {
       generateOwnerOperationToken: idGenerator.v4,
     );
     final bootstrapOwner = await localOwners.getOrCreateActiveOwner();
+    final avatarProgressionEligibility = DriftAvatarProgressionEligibility(
+      database,
+      nowUtc: runtimeFeatureNowUtc,
+    );
     final streakRepository = DriftStreakRepository(database);
     await streakRepository.establishCutover(
       ownerId: bootstrapOwner.id,
@@ -603,7 +609,7 @@ final class AppBootstrap {
     );
     final ownerUpgrades = DriftOwnerUpgradeRepository(
       database,
-      nowUtc: () => DateTime.now().toUtc(),
+      nowUtc: runtimeFeatureNowUtc,
       generateConflictId: idGenerator.v4,
       generateOwnerId: idGenerator.v4,
       generateOwnerOperationToken: idGenerator.v4,
@@ -667,6 +673,17 @@ final class AppBootstrap {
       }
     }
     final reconciledOwner = await localOwners.getOrCreateActiveOwner();
+    try {
+      await avatarProgressionEligibility.establishCutover(reconciledOwner.id);
+      await DriftRewardProjectionRebuilder(
+        database,
+        progressionEligibility: avatarProgressionEligibility,
+      ).validate(reconciledOwner.id);
+    } on StateError {
+      // Avatar ownership/equipment remains quarantined for this owner. Reward
+      // use cases stay composed so a later owner transition or repair can be
+      // re-evaluated without restarting the process.
+    }
     await streakRepository.establishCutover(
       ownerId: reconciledOwner.id,
       establishedAtUtc: DateTime.now().toUtc(),
@@ -724,6 +741,7 @@ final class AppBootstrap {
           rolloutModeProvider: evidenceRolloutModeProvider,
           payloadRollout: researchRuntimeConfig.syncPayloadRollout,
           consentRegistry: consentRegistry,
+          avatarProgressionEligibility: avatarProgressionEligibility,
           learningTimeSegmentSyncRollout: learningTimeSegmentSyncRollout,
           learningGoalSyncRollout: learningGoalSyncRollout,
         ),
@@ -842,11 +860,15 @@ final class AppBootstrap {
       repository: DriftResearchConsentRepository(database),
       nowUtc: () => DateTime.now().toUtc(),
     );
-    final rewardRepository = DriftRewardRepository(database);
+    final rewardRepository = DriftRewardRepository(
+      database,
+      progressionEligibility: avatarProgressionEligibility,
+    );
     const economyAwardPolicy = EconomyAwardPolicyV1();
     final rewards = RewardUseCases(
       owners: localOwners,
       repository: rewardRepository,
+      progress: progress,
       generateId: idGenerator.v4,
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
@@ -930,15 +952,16 @@ final class AppBootstrap {
             },
           );
         }
+        final occurredAtUtc = DateTime.fromMillisecondsSinceEpoch(
+          evidence.attempt.occurredAtUtcMs,
+          isUtc: true,
+        );
         final result = await rewardRepository.grantCoins(
           ownerId: evidence.attempt.ownerId,
           idempotencyKey: award.coinIdempotencyKey,
           amount: award.coinAmount,
           sourceEventId: award.sourceEventId,
-          occurredAtUtc: DateTime.fromMillisecondsSinceEpoch(
-            evidence.attempt.occurredAtUtcMs,
-            isUtc: true,
-          ),
+          occurredAtUtc: occurredAtUtc,
         );
         if (result == CoinGrantResult.inserted) {
           notifyLocalMutation();

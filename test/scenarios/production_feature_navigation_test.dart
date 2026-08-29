@@ -581,6 +581,7 @@ AppDependencies _dependencies(
     rewards: RewardUseCases(
       owners: owners,
       repository: DriftRewardRepository(database),
+      progress: progress,
       generateId: () => 'navigation-reward-id',
       nowUtc: () => DateTime.utc(2026, 8, 11),
     ),

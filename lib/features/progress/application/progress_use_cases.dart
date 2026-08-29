@@ -17,10 +17,17 @@ final class ProgressUseCases {
 
   Future<ProgressSnapshot> load() async {
     final owner = await owners.getOrCreateActiveOwner();
+    return loadForOwner(owner.id);
+  }
+
+  Future<ProgressSnapshot> loadForOwner(String ownerId) async {
+    if (ownerId.isEmpty || ownerId.trim() != ownerId) {
+      throw ArgumentError.value(ownerId, 'ownerId');
+    }
     final now = nowUtc();
     if (!now.isUtc) {
       throw ArgumentError.value(now, 'nowUtc', 'must be UTC');
     }
-    return queries.load(ownerId: owner.id, nowUtc: now);
+    return queries.load(ownerId: ownerId, nowUtc: now);
   }
 }

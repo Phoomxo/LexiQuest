@@ -4,7 +4,6 @@ import 'package:crypto/crypto.dart';
 import 'package:drift/drift.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart' as db;
 
-import '../../rewards/data/drift_reward_projection_rebuilder.dart';
 import '../../vocabulary/domain/vocabulary_repository.dart';
 import '../../vocabulary/domain/vocabulary_word.dart';
 import '../../learning_packs/domain/content_manifest.dart';
@@ -54,7 +53,6 @@ final class DriftLearningRepository
          evidencePolicy: evidencePolicy,
          rolloutModeProvider: rolloutModeProvider,
        ),
-       rewardProjections = DriftRewardProjectionRebuilder(database),
        events = DriftLearningEventStore(
          database,
          evidencePolicy: evidencePolicy,
@@ -64,7 +62,6 @@ final class DriftLearningRepository
   final db.AppDatabase database;
   final VocabularyRepository? lexicalVocabulary;
   final DriftLearningProjectionRebuilder projections;
-  final DriftRewardProjectionRebuilder rewardProjections;
   final DriftLearningEventStore events;
 
   @override
@@ -1129,10 +1126,6 @@ final class DriftLearningRepository
       );
       if (decisionSet.allows(LearningProjection.achievement)) {
         await projections.rebuildAchievements(command.ownerId);
-      }
-      if (decisionSet.allows(LearningProjection.xp) ||
-          decisionSet.allows(LearningProjection.coins)) {
-        await rewardProjections.rebuild(command.ownerId);
       }
       // Outbox hook — push updated SRS state to Firestore (Phase 0 Week 12-13).
       // Entity ID is wordId (unique per owner-word pair).

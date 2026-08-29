@@ -187,6 +187,10 @@ void main() {
         database,
         rolloutModeProvider: const ContextEvidencePolicyRolloutModeProvider(),
       );
+      // This fixture represents durable reward state written before f32 made
+      // the avatar cutover authoritative. Seed it before the first live
+      // learning projection establishes that boundary.
+      await _seedRewardState(database);
       await repository.startSession(
         LearningSessionDraft(
           id: _practiceSessionId,
@@ -216,7 +220,6 @@ void main() {
         evidenceContext: _practiceEvidence(),
       );
       await practice.finishSession(_practiceSessionId);
-      await _seedRewardState(database);
 
       final before = await _projectionBytes(database);
       expect(before.values, everyElement(isNot('[]')));
@@ -431,7 +434,7 @@ Future<void> _seedRewardState(AppDatabase database) async {
           transactionType: 'purchase',
           amount: -80,
           itemId: const Value('theme_ocean'),
-          catalogVersion: RewardCatalog.version,
+          catalogVersion: RewardCatalog.legacyVersion,
           occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 1,
         ),
       );
@@ -445,7 +448,7 @@ Future<void> _seedRewardState(AppDatabase database) async {
           transactionType: 'equip',
           amount: 0,
           itemId: const Value('theme_ocean'),
-          catalogVersion: RewardCatalog.version,
+          catalogVersion: RewardCatalog.legacyVersion,
           occurredAtUtcMs: _practiceAtUtc.millisecondsSinceEpoch + 2,
         ),
       );
