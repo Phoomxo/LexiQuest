@@ -27,7 +27,7 @@ import '../support/current_database_contract.dart';
 
 void main() {
   test(
-    'current v21 lifecycle classifies owner and non-owner tables exactly once',
+    'current v22 lifecycle classifies owner and non-owner tables exactly once',
     () async {
       final database = AppDatabase(NativeDatabase.memory());
       addTearDown(database.close);
@@ -334,6 +334,9 @@ void main() {
         'availableMinutesPerDay',
         'activityPreference',
         'updatedAtUtc',
+        'themeMode',
+        'motionMode',
+        'displayUpdatedAtUtc',
       });
       final vocabularyImports = ownerLifecycleManifest.singleWhere(
         (entry) => entry.tableName == 'vocabulary_imports',
@@ -1016,6 +1019,9 @@ void main() {
           'availableMinutesPerDay': 45,
           'activityPreference': 'quiz',
           'updatedAtUtc': '1970-01-01T00:00:00.020Z',
+          'themeMode': 'system',
+          'motionMode': 'system',
+          'displayUpdatedAtUtc': '1970-01-01T00:00:00.000Z',
         },
       ]);
       final assignmentArchive = archiveTables
@@ -1237,10 +1243,10 @@ void main() {
         versionIndex: DriftAiCredentialVersionIndex(database),
       );
 
-      // v21 also deletes the owner's durable learner preference.
+      // v22 also deletes the owner's durable learner/display preference.
       expect(deleted, 37);
       expect(await _ownerPhysicalRowCount(database, 'owner-a'), 0);
-      // v21 retains exactly one row for every direct-owner lifecycle entry,
+      // v22 retains exactly one row for every direct-owner lifecycle entry,
       // including one immutable assignment and its assessment run.
       expect(await _ownerPhysicalRowCount(database, 'owner-b'), 37);
       expect(

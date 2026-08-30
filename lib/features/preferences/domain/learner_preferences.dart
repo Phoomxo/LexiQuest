@@ -25,6 +25,31 @@ enum LearnerActivityPreference {
   vocabulary,
 }
 
+enum LearnerThemePreference { system, light, dark }
+
+abstract final class LearnerThemePreferenceCodec {
+  static LearnerThemePreference parse(String value) => switch (value) {
+    'system' => LearnerThemePreference.system,
+    'light' => LearnerThemePreference.light,
+    'dark' => LearnerThemePreference.dark,
+    _ => throw LearnerPreferencesValidationFailure(
+      'unsupported learner theme preference: $value',
+    ),
+  };
+}
+
+enum LearnerMotionPreference { system, reduced }
+
+abstract final class LearnerMotionPreferenceCodec {
+  static LearnerMotionPreference parse(String value) => switch (value) {
+    'system' => LearnerMotionPreference.system,
+    'reduced' => LearnerMotionPreference.reduced,
+    _ => throw LearnerPreferencesValidationFailure(
+      'unsupported learner motion preference: $value',
+    ),
+  };
+}
+
 abstract final class LearnerActivityPreferenceCodec {
   static LearnerActivityPreference parse(String value) => switch (value) {
     'mixedPractice' => LearnerActivityPreference.mixedPractice,
@@ -47,6 +72,58 @@ final class LearnerPreferencesValidationFailure implements Exception {
   String toString() => 'LearnerPreferencesValidationFailure($message)';
 }
 
+final class LearnerDisplayPreferences {
+  factory LearnerDisplayPreferences({
+    required LearnerThemePreference themeMode,
+    required LearnerMotionPreference motionMode,
+    required DateTime updatedAtUtc,
+  }) {
+    if (!updatedAtUtc.isUtc || updatedAtUtc.millisecondsSinceEpoch < 0) {
+      throw ArgumentError.value(
+        updatedAtUtc,
+        'updatedAtUtc',
+        'must be nonnegative UTC',
+      );
+    }
+    return LearnerDisplayPreferences._(
+      themeMode: themeMode,
+      motionMode: motionMode,
+      updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        updatedAtUtc.millisecondsSinceEpoch,
+        isUtc: true,
+      ),
+    );
+  }
+
+  factory LearnerDisplayPreferences.defaults({DateTime? updatedAtUtc}) =>
+      LearnerDisplayPreferences(
+        themeMode: LearnerThemePreference.system,
+        motionMode: LearnerMotionPreference.system,
+        updatedAtUtc:
+            updatedAtUtc ?? DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+
+  const LearnerDisplayPreferences._({
+    required this.themeMode,
+    required this.motionMode,
+    required this.updatedAtUtc,
+  });
+
+  final LearnerThemePreference themeMode;
+  final LearnerMotionPreference motionMode;
+  final DateTime updatedAtUtc;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LearnerDisplayPreferences &&
+      other.themeMode == themeMode &&
+      other.motionMode == motionMode &&
+      other.updatedAtUtc == updatedAtUtc;
+
+  @override
+  int get hashCode => Object.hash(themeMode, motionMode, updatedAtUtc);
+}
+
 final class LearnerPreferences {
   factory LearnerPreferences({
     required String ownerId,
@@ -55,6 +132,7 @@ final class LearnerPreferences {
     required int availableMinutesPerDay,
     required LearnerActivityPreference activityPreference,
     required DateTime updatedAtUtc,
+    LearnerDisplayPreferences? display,
   }) {
     if (ownerId.isEmpty || ownerId != ownerId.trim()) {
       throw ArgumentError.value(ownerId, 'ownerId', 'must be canonical');
@@ -90,6 +168,7 @@ final class LearnerPreferences {
         updatedAtUtc.millisecondsSinceEpoch,
         isUtc: true,
       ),
+      display: display ?? LearnerDisplayPreferences.defaults(),
     );
   }
 
@@ -112,6 +191,7 @@ final class LearnerPreferences {
     required this.availableMinutesPerDay,
     required this.activityPreference,
     required this.updatedAtUtc,
+    required this.display,
   });
 
   final String ownerId;
@@ -120,6 +200,7 @@ final class LearnerPreferences {
   final int availableMinutesPerDay;
   final LearnerActivityPreference activityPreference;
   final DateTime updatedAtUtc;
+  final LearnerDisplayPreferences display;
 
   Map<String, Object?> toJson() => <String, Object?>{
     'preferenceVersion': preferenceVersion,
@@ -137,7 +218,8 @@ final class LearnerPreferences {
       other.goal == goal &&
       other.availableMinutesPerDay == availableMinutesPerDay &&
       other.activityPreference == activityPreference &&
-      other.updatedAtUtc == updatedAtUtc;
+      other.updatedAtUtc == updatedAtUtc &&
+      other.display == display;
 
   @override
   int get hashCode => Object.hash(
@@ -147,6 +229,7 @@ final class LearnerPreferences {
     availableMinutesPerDay,
     activityPreference,
     updatedAtUtc,
+    display,
   );
 }
 

@@ -28706,6 +28706,41 @@ class $LearnerPreferencesTable extends LearnerPreferences
     type: DriftSqlType.int,
     requiredDuringInsert: true,
   );
+  static const VerificationMeta _themeModeMeta = const VerificationMeta(
+    'themeMode',
+  );
+  @override
+  late final GeneratedColumn<String> themeMode = GeneratedColumn<String>(
+    'theme_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('system'),
+  );
+  static const VerificationMeta _motionModeMeta = const VerificationMeta(
+    'motionMode',
+  );
+  @override
+  late final GeneratedColumn<String> motionMode = GeneratedColumn<String>(
+    'motion_mode',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+    defaultValue: const Constant('system'),
+  );
+  static const VerificationMeta _displayUpdatedAtUtcMsMeta =
+      const VerificationMeta('displayUpdatedAtUtcMs');
+  @override
+  late final GeneratedColumn<int> displayUpdatedAtUtcMs = GeneratedColumn<int>(
+    'display_updated_at_utc_ms',
+    aliasedName,
+    false,
+    type: DriftSqlType.int,
+    requiredDuringInsert: false,
+    defaultValue: const Constant(0),
+  );
   static const VerificationMeta _localRevisionMeta = const VerificationMeta(
     'localRevision',
   );
@@ -28774,6 +28809,9 @@ class $LearnerPreferencesTable extends LearnerPreferences
     availableMinutesPerDay,
     activityPreference,
     updatedAtUtcMs,
+    themeMode,
+    motionMode,
+    displayUpdatedAtUtcMs,
     localRevision,
     cloudRevision,
     lastAcknowledgedAtUtcMs,
@@ -28852,6 +28890,27 @@ class $LearnerPreferencesTable extends LearnerPreferences
     } else if (isInserting) {
       context.missing(_updatedAtUtcMsMeta);
     }
+    if (data.containsKey('theme_mode')) {
+      context.handle(
+        _themeModeMeta,
+        themeMode.isAcceptableOrUnknown(data['theme_mode']!, _themeModeMeta),
+      );
+    }
+    if (data.containsKey('motion_mode')) {
+      context.handle(
+        _motionModeMeta,
+        motionMode.isAcceptableOrUnknown(data['motion_mode']!, _motionModeMeta),
+      );
+    }
+    if (data.containsKey('display_updated_at_utc_ms')) {
+      context.handle(
+        _displayUpdatedAtUtcMsMeta,
+        displayUpdatedAtUtcMs.isAcceptableOrUnknown(
+          data['display_updated_at_utc_ms']!,
+          _displayUpdatedAtUtcMsMeta,
+        ),
+      );
+    }
     if (data.containsKey('local_revision')) {
       context.handle(
         _localRevisionMeta,
@@ -28927,6 +28986,18 @@ class $LearnerPreferencesTable extends LearnerPreferences
         DriftSqlType.int,
         data['${effectivePrefix}updated_at_utc_ms'],
       )!,
+      themeMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}theme_mode'],
+      )!,
+      motionMode: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}motion_mode'],
+      )!,
+      displayUpdatedAtUtcMs: attachedDatabase.typeMapping.read(
+        DriftSqlType.int,
+        data['${effectivePrefix}display_updated_at_utc_ms'],
+      )!,
       localRevision: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}local_revision'],
@@ -28964,6 +29035,9 @@ class LearnerPreferenceRow extends DataClass
   final int availableMinutesPerDay;
   final String activityPreference;
   final int updatedAtUtcMs;
+  final String themeMode;
+  final String motionMode;
+  final int displayUpdatedAtUtcMs;
   final int localRevision;
   final int cloudRevision;
   final int? lastAcknowledgedAtUtcMs;
@@ -28976,6 +29050,9 @@ class LearnerPreferenceRow extends DataClass
     required this.availableMinutesPerDay,
     required this.activityPreference,
     required this.updatedAtUtcMs,
+    required this.themeMode,
+    required this.motionMode,
+    required this.displayUpdatedAtUtcMs,
     required this.localRevision,
     required this.cloudRevision,
     this.lastAcknowledgedAtUtcMs,
@@ -28991,6 +29068,9 @@ class LearnerPreferenceRow extends DataClass
     map['available_minutes_per_day'] = Variable<int>(availableMinutesPerDay);
     map['activity_preference'] = Variable<String>(activityPreference);
     map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs);
+    map['theme_mode'] = Variable<String>(themeMode);
+    map['motion_mode'] = Variable<String>(motionMode);
+    map['display_updated_at_utc_ms'] = Variable<int>(displayUpdatedAtUtcMs);
     map['local_revision'] = Variable<int>(localRevision);
     map['cloud_revision'] = Variable<int>(cloudRevision);
     if (!nullToAbsent || lastAcknowledgedAtUtcMs != null) {
@@ -29013,6 +29093,9 @@ class LearnerPreferenceRow extends DataClass
       availableMinutesPerDay: Value(availableMinutesPerDay),
       activityPreference: Value(activityPreference),
       updatedAtUtcMs: Value(updatedAtUtcMs),
+      themeMode: Value(themeMode),
+      motionMode: Value(motionMode),
+      displayUpdatedAtUtcMs: Value(displayUpdatedAtUtcMs),
       localRevision: Value(localRevision),
       cloudRevision: Value(cloudRevision),
       lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs == null && nullToAbsent
@@ -29041,6 +29124,11 @@ class LearnerPreferenceRow extends DataClass
         json['activityPreference'],
       ),
       updatedAtUtcMs: serializer.fromJson<int>(json['updatedAtUtcMs']),
+      themeMode: serializer.fromJson<String>(json['themeMode']),
+      motionMode: serializer.fromJson<String>(json['motionMode']),
+      displayUpdatedAtUtcMs: serializer.fromJson<int>(
+        json['displayUpdatedAtUtcMs'],
+      ),
       localRevision: serializer.fromJson<int>(json['localRevision']),
       cloudRevision: serializer.fromJson<int>(json['cloudRevision']),
       lastAcknowledgedAtUtcMs: serializer.fromJson<int?>(
@@ -29062,6 +29150,9 @@ class LearnerPreferenceRow extends DataClass
       'availableMinutesPerDay': serializer.toJson<int>(availableMinutesPerDay),
       'activityPreference': serializer.toJson<String>(activityPreference),
       'updatedAtUtcMs': serializer.toJson<int>(updatedAtUtcMs),
+      'themeMode': serializer.toJson<String>(themeMode),
+      'motionMode': serializer.toJson<String>(motionMode),
+      'displayUpdatedAtUtcMs': serializer.toJson<int>(displayUpdatedAtUtcMs),
       'localRevision': serializer.toJson<int>(localRevision),
       'cloudRevision': serializer.toJson<int>(cloudRevision),
       'lastAcknowledgedAtUtcMs': serializer.toJson<int?>(
@@ -29079,6 +29170,9 @@ class LearnerPreferenceRow extends DataClass
     int? availableMinutesPerDay,
     String? activityPreference,
     int? updatedAtUtcMs,
+    String? themeMode,
+    String? motionMode,
+    int? displayUpdatedAtUtcMs,
     int? localRevision,
     int? cloudRevision,
     Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -29092,6 +29186,9 @@ class LearnerPreferenceRow extends DataClass
         availableMinutesPerDay ?? this.availableMinutesPerDay,
     activityPreference: activityPreference ?? this.activityPreference,
     updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+    themeMode: themeMode ?? this.themeMode,
+    motionMode: motionMode ?? this.motionMode,
+    displayUpdatedAtUtcMs: displayUpdatedAtUtcMs ?? this.displayUpdatedAtUtcMs,
     localRevision: localRevision ?? this.localRevision,
     cloudRevision: cloudRevision ?? this.cloudRevision,
     lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs.present
@@ -29118,6 +29215,13 @@ class LearnerPreferenceRow extends DataClass
       updatedAtUtcMs: data.updatedAtUtcMs.present
           ? data.updatedAtUtcMs.value
           : this.updatedAtUtcMs,
+      themeMode: data.themeMode.present ? data.themeMode.value : this.themeMode,
+      motionMode: data.motionMode.present
+          ? data.motionMode.value
+          : this.motionMode,
+      displayUpdatedAtUtcMs: data.displayUpdatedAtUtcMs.present
+          ? data.displayUpdatedAtUtcMs.value
+          : this.displayUpdatedAtUtcMs,
       localRevision: data.localRevision.present
           ? data.localRevision.value
           : this.localRevision,
@@ -29143,6 +29247,9 @@ class LearnerPreferenceRow extends DataClass
           ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
           ..write('activityPreference: $activityPreference, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('motionMode: $motionMode, ')
+          ..write('displayUpdatedAtUtcMs: $displayUpdatedAtUtcMs, ')
           ..write('localRevision: $localRevision, ')
           ..write('cloudRevision: $cloudRevision, ')
           ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
@@ -29160,6 +29267,9 @@ class LearnerPreferenceRow extends DataClass
     availableMinutesPerDay,
     activityPreference,
     updatedAtUtcMs,
+    themeMode,
+    motionMode,
+    displayUpdatedAtUtcMs,
     localRevision,
     cloudRevision,
     lastAcknowledgedAtUtcMs,
@@ -29176,6 +29286,9 @@ class LearnerPreferenceRow extends DataClass
           other.availableMinutesPerDay == this.availableMinutesPerDay &&
           other.activityPreference == this.activityPreference &&
           other.updatedAtUtcMs == this.updatedAtUtcMs &&
+          other.themeMode == this.themeMode &&
+          other.motionMode == this.motionMode &&
+          other.displayUpdatedAtUtcMs == this.displayUpdatedAtUtcMs &&
           other.localRevision == this.localRevision &&
           other.cloudRevision == this.cloudRevision &&
           other.lastAcknowledgedAtUtcMs == this.lastAcknowledgedAtUtcMs &&
@@ -29191,6 +29304,9 @@ class LearnerPreferencesCompanion
   final Value<int> availableMinutesPerDay;
   final Value<String> activityPreference;
   final Value<int> updatedAtUtcMs;
+  final Value<String> themeMode;
+  final Value<String> motionMode;
+  final Value<int> displayUpdatedAtUtcMs;
   final Value<int> localRevision;
   final Value<int> cloudRevision;
   final Value<int?> lastAcknowledgedAtUtcMs;
@@ -29204,6 +29320,9 @@ class LearnerPreferencesCompanion
     this.availableMinutesPerDay = const Value.absent(),
     this.activityPreference = const Value.absent(),
     this.updatedAtUtcMs = const Value.absent(),
+    this.themeMode = const Value.absent(),
+    this.motionMode = const Value.absent(),
+    this.displayUpdatedAtUtcMs = const Value.absent(),
     this.localRevision = const Value.absent(),
     this.cloudRevision = const Value.absent(),
     this.lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -29218,6 +29337,9 @@ class LearnerPreferencesCompanion
     required int availableMinutesPerDay,
     required String activityPreference,
     required int updatedAtUtcMs,
+    this.themeMode = const Value.absent(),
+    this.motionMode = const Value.absent(),
+    this.displayUpdatedAtUtcMs = const Value.absent(),
     this.localRevision = const Value.absent(),
     this.cloudRevision = const Value.absent(),
     this.lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -29237,6 +29359,9 @@ class LearnerPreferencesCompanion
     Expression<int>? availableMinutesPerDay,
     Expression<String>? activityPreference,
     Expression<int>? updatedAtUtcMs,
+    Expression<String>? themeMode,
+    Expression<String>? motionMode,
+    Expression<int>? displayUpdatedAtUtcMs,
     Expression<int>? localRevision,
     Expression<int>? cloudRevision,
     Expression<int>? lastAcknowledgedAtUtcMs,
@@ -29252,6 +29377,10 @@ class LearnerPreferencesCompanion
         'available_minutes_per_day': availableMinutesPerDay,
       if (activityPreference != null) 'activity_preference': activityPreference,
       if (updatedAtUtcMs != null) 'updated_at_utc_ms': updatedAtUtcMs,
+      if (themeMode != null) 'theme_mode': themeMode,
+      if (motionMode != null) 'motion_mode': motionMode,
+      if (displayUpdatedAtUtcMs != null)
+        'display_updated_at_utc_ms': displayUpdatedAtUtcMs,
       if (localRevision != null) 'local_revision': localRevision,
       if (cloudRevision != null) 'cloud_revision': cloudRevision,
       if (lastAcknowledgedAtUtcMs != null)
@@ -29270,6 +29399,9 @@ class LearnerPreferencesCompanion
     Value<int>? availableMinutesPerDay,
     Value<String>? activityPreference,
     Value<int>? updatedAtUtcMs,
+    Value<String>? themeMode,
+    Value<String>? motionMode,
+    Value<int>? displayUpdatedAtUtcMs,
     Value<int>? localRevision,
     Value<int>? cloudRevision,
     Value<int?>? lastAcknowledgedAtUtcMs,
@@ -29285,6 +29417,10 @@ class LearnerPreferencesCompanion
           availableMinutesPerDay ?? this.availableMinutesPerDay,
       activityPreference: activityPreference ?? this.activityPreference,
       updatedAtUtcMs: updatedAtUtcMs ?? this.updatedAtUtcMs,
+      themeMode: themeMode ?? this.themeMode,
+      motionMode: motionMode ?? this.motionMode,
+      displayUpdatedAtUtcMs:
+          displayUpdatedAtUtcMs ?? this.displayUpdatedAtUtcMs,
       localRevision: localRevision ?? this.localRevision,
       cloudRevision: cloudRevision ?? this.cloudRevision,
       lastAcknowledgedAtUtcMs:
@@ -29317,6 +29453,17 @@ class LearnerPreferencesCompanion
     }
     if (updatedAtUtcMs.present) {
       map['updated_at_utc_ms'] = Variable<int>(updatedAtUtcMs.value);
+    }
+    if (themeMode.present) {
+      map['theme_mode'] = Variable<String>(themeMode.value);
+    }
+    if (motionMode.present) {
+      map['motion_mode'] = Variable<String>(motionMode.value);
+    }
+    if (displayUpdatedAtUtcMs.present) {
+      map['display_updated_at_utc_ms'] = Variable<int>(
+        displayUpdatedAtUtcMs.value,
+      );
     }
     if (localRevision.present) {
       map['local_revision'] = Variable<int>(localRevision.value);
@@ -29352,6 +29499,9 @@ class LearnerPreferencesCompanion
           ..write('availableMinutesPerDay: $availableMinutesPerDay, ')
           ..write('activityPreference: $activityPreference, ')
           ..write('updatedAtUtcMs: $updatedAtUtcMs, ')
+          ..write('themeMode: $themeMode, ')
+          ..write('motionMode: $motionMode, ')
+          ..write('displayUpdatedAtUtcMs: $displayUpdatedAtUtcMs, ')
           ..write('localRevision: $localRevision, ')
           ..write('cloudRevision: $cloudRevision, ')
           ..write('lastAcknowledgedAtUtcMs: $lastAcknowledgedAtUtcMs, ')
@@ -54232,6 +54382,9 @@ typedef $$LearnerPreferencesTableCreateCompanionBuilder =
       required int availableMinutesPerDay,
       required String activityPreference,
       required int updatedAtUtcMs,
+      Value<String> themeMode,
+      Value<String> motionMode,
+      Value<int> displayUpdatedAtUtcMs,
       Value<int> localRevision,
       Value<int> cloudRevision,
       Value<int?> lastAcknowledgedAtUtcMs,
@@ -54247,6 +54400,9 @@ typedef $$LearnerPreferencesTableUpdateCompanionBuilder =
       Value<int> availableMinutesPerDay,
       Value<String> activityPreference,
       Value<int> updatedAtUtcMs,
+      Value<String> themeMode,
+      Value<String> motionMode,
+      Value<int> displayUpdatedAtUtcMs,
       Value<int> localRevision,
       Value<int> cloudRevision,
       Value<int?> lastAcknowledgedAtUtcMs,
@@ -54317,6 +54473,21 @@ class $$LearnerPreferencesTableFilterComposer
 
   ColumnFilters<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get motionMode => $composableBuilder(
+    column: $table.motionMode,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<int> get displayUpdatedAtUtcMs => $composableBuilder(
+    column: $table.displayUpdatedAtUtcMs,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -54403,6 +54574,21 @@ class $$LearnerPreferencesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get themeMode => $composableBuilder(
+    column: $table.themeMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get motionMode => $composableBuilder(
+    column: $table.motionMode,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<int> get displayUpdatedAtUtcMs => $composableBuilder(
+    column: $table.displayUpdatedAtUtcMs,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<int> get localRevision => $composableBuilder(
     column: $table.localRevision,
     builder: (column) => ColumnOrderings(column),
@@ -54481,6 +54667,19 @@ class $$LearnerPreferencesTableAnnotationComposer
 
   GeneratedColumn<int> get updatedAtUtcMs => $composableBuilder(
     column: $table.updatedAtUtcMs,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get themeMode =>
+      $composableBuilder(column: $table.themeMode, builder: (column) => column);
+
+  GeneratedColumn<String> get motionMode => $composableBuilder(
+    column: $table.motionMode,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<int> get displayUpdatedAtUtcMs => $composableBuilder(
+    column: $table.displayUpdatedAtUtcMs,
     builder: (column) => column,
   );
 
@@ -54570,6 +54769,9 @@ class $$LearnerPreferencesTableTableManager
                 Value<int> availableMinutesPerDay = const Value.absent(),
                 Value<String> activityPreference = const Value.absent(),
                 Value<int> updatedAtUtcMs = const Value.absent(),
+                Value<String> themeMode = const Value.absent(),
+                Value<String> motionMode = const Value.absent(),
+                Value<int> displayUpdatedAtUtcMs = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
                 Value<int> cloudRevision = const Value.absent(),
                 Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -54583,6 +54785,9 @@ class $$LearnerPreferencesTableTableManager
                 availableMinutesPerDay: availableMinutesPerDay,
                 activityPreference: activityPreference,
                 updatedAtUtcMs: updatedAtUtcMs,
+                themeMode: themeMode,
+                motionMode: motionMode,
+                displayUpdatedAtUtcMs: displayUpdatedAtUtcMs,
                 localRevision: localRevision,
                 cloudRevision: cloudRevision,
                 lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,
@@ -54598,6 +54803,9 @@ class $$LearnerPreferencesTableTableManager
                 required int availableMinutesPerDay,
                 required String activityPreference,
                 required int updatedAtUtcMs,
+                Value<String> themeMode = const Value.absent(),
+                Value<String> motionMode = const Value.absent(),
+                Value<int> displayUpdatedAtUtcMs = const Value.absent(),
                 Value<int> localRevision = const Value.absent(),
                 Value<int> cloudRevision = const Value.absent(),
                 Value<int?> lastAcknowledgedAtUtcMs = const Value.absent(),
@@ -54611,6 +54819,9 @@ class $$LearnerPreferencesTableTableManager
                 availableMinutesPerDay: availableMinutesPerDay,
                 activityPreference: activityPreference,
                 updatedAtUtcMs: updatedAtUtcMs,
+                themeMode: themeMode,
+                motionMode: motionMode,
+                displayUpdatedAtUtcMs: displayUpdatedAtUtcMs,
                 localRevision: localRevision,
                 cloudRevision: cloudRevision,
                 lastAcknowledgedAtUtcMs: lastAcknowledgedAtUtcMs,

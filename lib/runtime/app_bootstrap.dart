@@ -83,6 +83,7 @@ import '../features/events/application/event_v1_to_v2_adapter.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/progress/data/drift_progress_queries.dart';
 import '../features/preferences/application/learner_preferences_use_cases.dart';
+import '../features/preferences/application/display_preferences_controller.dart';
 import '../features/preferences/data/drift_learner_preferences_repository.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/rewards/data/drift_avatar_progression_eligibility.dart';
@@ -574,6 +575,14 @@ final class AppBootstrap {
       );
     }
 
+    DisplayPreferencesController? activeDisplayPreferences;
+    Future<void> refreshDisplayPreferencesAfterOwnerTransition() async {
+      final controller = activeDisplayPreferences;
+      if (controller != null) {
+        await controller.refreshAfterOwnerTransition();
+      }
+    }
+
     final localErasureCoordinator = OwnerOperationCoordinator(
       gate: ownerOperationGate,
       activeOwnerId: activeOwnerId,
@@ -593,7 +602,9 @@ final class AppBootstrap {
       ),
       coordinate: (ownerId, operation) async {
         final cancellation = AiCancellation();
-        return localErasureCoordinator.run(cancellation, (activeOwner) {
+        final deleted = await localErasureCoordinator.run(cancellation, (
+          activeOwner,
+        ) async {
           if (activeOwner != ownerId) {
             throw StateError('Only the active owner can be erased.');
           }
@@ -601,11 +612,12 @@ final class AppBootstrap {
           if (operationToken == null) {
             throw StateError('Local erasure requires the owner lease.');
           }
-          return operation(operationToken).then((deleted) {
-            localErasureCoordinator.markCurrentOperationResultCommitted();
-            return deleted;
-          });
+          final deleted = await operation(operationToken);
+          localErasureCoordinator.markCurrentOperationResultCommitted();
+          return deleted;
         });
+        await refreshDisplayPreferencesAfterOwnerTransition();
+        return deleted;
       },
       coordinateReminderErasure: (ownerId, operation) {
         final operationToken = OwnerOperationCoordinator.currentLeaseToken;
@@ -676,6 +688,8 @@ final class AppBootstrap {
         owners: localOwners,
         upgradeGuestOwner: upgradeGuestOwner,
         entryState: entryState,
+        onOwnerTransitionCommitted:
+            refreshDisplayPreferencesAfterOwnerTransition,
       );
       try {
         await candidate.reconcileLocalOwner();
@@ -887,14 +901,19 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       generateId: () => 'goal:${idGenerator.v4()}',
     );
+    final learnerPreferencesRepository = DriftLearnerPreferencesRepository(
+      database,
+      onLocalMutation: () async => notifyLocalMutation(),
+    );
     final learnerPreferences = LearnerPreferencesUseCases(
-      repository: DriftLearnerPreferencesRepository(
-        database,
-        onLocalMutation: () async => notifyLocalMutation(),
-      ),
+      repository: learnerPreferencesRepository,
       owners: localOwners,
       nowUtc: () => DateTime.now().toUtc(),
     );
+    final displayPreferences = DisplayPreferencesController(learnerPreferences);
+    activeDisplayPreferences = displayPreferences;
+    resources.own(displayPreferences.dispose);
+    await displayPreferences.initialize();
     final researchConsent = ResearchConsentUseCases(
       owners: localOwners,
       repository: DriftResearchConsentRepository(database),
@@ -1350,6 +1369,7 @@ final class AppBootstrap {
       studyPlanning: studyPlanning,
       learningGoals: learningGoals,
       learnerPreferences: learnerPreferences,
+      displayPreferences: displayPreferences,
       studyReminders: studyReminders,
       progress: progress,
       rewards: rewards,

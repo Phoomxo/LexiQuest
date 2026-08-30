@@ -402,6 +402,31 @@ open a v21 database.
 
 ---
 
+### v22 — Display Preferences on Learner Preference Authority
+**Reserved:** 2026-08-30
+**Implemented:** 2026-08-30
+**Branch:** `feature/alltcas-8-44-integration`
+**Status:** IMPLEMENTED; release evidence pending
+
+Extended the existing owner-scoped `learner_preferences` row with local-only
+`theme_mode`, `motion_mode`, and `display_updated_at_utc_ms` columns. Safe
+defaults are `system`, `system`, and epoch zero. The table remains the single
+learner/display preference authority; no second table or SharedPreferences
+store is introduced.
+
+The named inventory remains exactly 44 tables. The existing learner-preference
+sync payload v1 remains exact and excludes display fields, so cloud pulls update
+only goal/time/activity fields and cannot overwrite device-local display
+choices. Owner upgrade, archive/export, and explicit owner deletion continue to
+operate on the same row.
+
+**Migration safety:** v21→v22 adds only the three display columns and preserves
+all 44 v21 tables and rows. Rollback is forward-only: removing the settings UI
+does not erase stored preferences, no downgrade migration is provided, and
+older binaries must not open a v22 database.
+
+---
+
 ## Conflict Register
 
 | Conflict | Description | Resolution |
@@ -425,6 +450,7 @@ open a v21 database.
 | 2026-08-25 | Reserved and implemented v19 language-learning goals plus the f27 reminder lifecycle table. | LexiQuest integration |
 | 2026-08-26 | Recorded released v20 session configuration authority and session audit pins. | LexiQuest integration |
 | 2026-08-30 | Recorded forward-only v21 learner preferences, raising the named inventory to 44 tables. | LexiQuest integration |
+| 2026-08-30 | Extended the v21 learner preference row with local-only display controls in v22; named inventory remains 44 tables. | LexiQuest integration |
 
 ---
 

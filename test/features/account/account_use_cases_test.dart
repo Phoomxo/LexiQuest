@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/features/account/application/account_use_cases.dart';
 import 'package:vocab_learning_app/features/account/domain/account_contracts.dart';
@@ -5,6 +6,10 @@ import 'package:vocab_learning_app/features/identity/application/upgrade_guest_o
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
+import 'package:vocab_learning_app/features/preferences/application/display_preferences_controller.dart';
+import 'package:vocab_learning_app/features/preferences/application/learner_preferences_use_cases.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 import 'package:vocab_learning_app/features/session/domain/app_entry_state.dart';
 
 void main() {
@@ -123,6 +128,63 @@ void main() {
   });
 
   test(
+    'committed merge refreshes display owner before entry clear error returns',
+    () async {
+      final transitionOwners = _FakeOwnerRepository();
+      final transitionUpgrades = _TransitioningUpgradeRepository(
+        transitionOwners,
+      );
+      final preferences = _MemoryLearnerPreferencesRepository({
+        'local-owner': _displayPreferences(
+          ownerId: 'local-owner',
+          theme: LearnerThemePreference.light,
+          motion: LearnerMotionPreference.reduced,
+        ),
+        'account-owner': _displayPreferences(
+          ownerId: 'account-owner',
+          theme: LearnerThemePreference.dark,
+          motion: LearnerMotionPreference.system,
+        ),
+      });
+      final display = DisplayPreferencesController(
+        LearnerPreferencesUseCases(
+          repository: preferences,
+          owners: transitionOwners,
+          nowUtc: () => DateTime.utc(2026, 8, 30),
+        ),
+      );
+      addTearDown(display.dispose);
+      await display.initialize();
+      final failingEntryState = _MemoryAppEntryStateStore(AppEntryMode.guest)
+        ..clearFailure = StateError('entry clear failed');
+      final accountsWithDisplay = AccountUseCases(
+        gateway: _FakeGateway(),
+        owners: transitionOwners,
+        upgradeGuestOwner: UpgradeGuestOwner(transitionUpgrades),
+        entryState: failingEntryState,
+        onOwnerTransitionCommitted: display.refreshAfterOwnerTransition,
+      );
+
+      await expectLater(
+        accountsWithDisplay.signIn(
+          email: 'student@example.com',
+          password: 'password123',
+        ),
+        throwsStateError,
+      );
+
+      expect(transitionOwners.activeOwner.id, 'account-owner');
+      expect(display.themeMode, ThemeMode.dark);
+      expect(display.reducedMotionEnabled, isFalse);
+      await display.setReducedMotion(true);
+      expect(
+        (await preferences.read('account-owner')).display.themeMode,
+        LearnerThemePreference.dark,
+      );
+    },
+  );
+
+  test(
     'startup binds an authenticated provider session to local data',
     () async {
       gateway.currentSession = const AccountSession(
@@ -171,6 +233,66 @@ void main() {
       'markGuest',
     ]);
   });
+
+  test(
+    'failed logout rollback refreshes display to the guest left active',
+    () async {
+      final transitionOwners = _FakeOwnerRepository()
+        ..activeOwner = LocalOwner(
+          id: 'account-owner',
+          firebaseUid: 'firebase-user',
+          createdAtUtc: DateTime.utc(2026, 7, 30),
+          upgradedAtUtc: DateTime.utc(2026, 7, 30),
+        );
+      final transitionUpgrades = _TransitioningUpgradeRepository(
+        transitionOwners,
+      )..rollbackFailure = StateError('rollback failed');
+      final preferences = _MemoryLearnerPreferencesRepository({
+        'account-owner': _displayPreferences(
+          ownerId: 'account-owner',
+          theme: LearnerThemePreference.dark,
+          motion: LearnerMotionPreference.reduced,
+        ),
+        'new-local-owner': _displayPreferences(
+          ownerId: 'new-local-owner',
+          theme: LearnerThemePreference.system,
+          motion: LearnerMotionPreference.system,
+        ),
+      });
+      final display = DisplayPreferencesController(
+        LearnerPreferencesUseCases(
+          repository: preferences,
+          owners: transitionOwners,
+          nowUtc: () => DateTime.utc(2026, 8, 30),
+        ),
+      );
+      addTearDown(display.dispose);
+      await display.initialize();
+      final providerFailure = StateError('provider sign-out failed');
+      final failingGateway = _FakeGateway()..signOutFailure = providerFailure;
+      final accountsWithDisplay = AccountUseCases(
+        gateway: failingGateway,
+        owners: transitionOwners,
+        upgradeGuestOwner: UpgradeGuestOwner(transitionUpgrades),
+        entryState: _MemoryAppEntryStateStore(AppEntryMode.guest),
+        onOwnerTransitionCommitted: display.refreshAfterOwnerTransition,
+      );
+
+      await expectLater(
+        accountsWithDisplay.signOutToLocalGuest(),
+        throwsA(same(providerFailure)),
+      );
+
+      expect(transitionOwners.activeOwner.id, 'new-local-owner');
+      expect(display.themeMode, ThemeMode.system);
+      expect(display.reducedMotionEnabled, isFalse);
+      await display.selectThemeMode(ThemeMode.light);
+      expect(
+        (await preferences.read('new-local-owner')).display.motionMode,
+        LearnerMotionPreference.system,
+      );
+    },
+  );
 
   test(
     'logout clear failure leaves provider and local owner unchanged',
@@ -384,5 +506,122 @@ final class _FakeUpgradeRepository implements OwnerUpgradeRepository {
     transitionLog.add('rollbackGuest');
   }
 }
+
+final class _TransitioningUpgradeRepository implements OwnerUpgradeRepository {
+  _TransitioningUpgradeRepository(this.owners);
+
+  final _FakeOwnerRepository owners;
+  Object? rollbackFailure;
+
+  @override
+  Future<OwnerUpgradeResult> upgrade({
+    required String activeOwnerId,
+    required String firebaseUid,
+  }) async {
+    owners.activeOwner = LocalOwner(
+      id: 'account-owner',
+      firebaseUid: firebaseUid,
+      createdAtUtc: DateTime.utc(2026, 7, 30),
+      upgradedAtUtc: DateTime.utc(2026, 8, 30),
+    );
+    return const OwnerUpgradeResult(
+      targetOwnerId: 'account-owner',
+      mode: OwnerUpgradeMode.mergedExisting,
+      conflictCount: 0,
+    );
+  }
+
+  @override
+  Future<OwnerUpgradeResult> createLocalGuestAfterLogout() async {
+    owners.activeOwner = LocalOwner(
+      id: 'new-local-owner',
+      createdAtUtc: DateTime.utc(2026, 8, 30),
+    );
+    return const OwnerUpgradeResult(
+      targetOwnerId: 'new-local-owner',
+      mode: OwnerUpgradeMode.localGuestCreated,
+      conflictCount: 0,
+    );
+  }
+
+  @override
+  Future<void> rollbackLocalGuestLogout({
+    required String previousOwnerId,
+    required String guestOwnerId,
+  }) async {
+    if (rollbackFailure case final failure?) throw failure;
+    owners.activeOwner = LocalOwner(
+      id: previousOwnerId,
+      firebaseUid: 'firebase-user',
+      createdAtUtc: DateTime.utc(2026, 7, 30),
+      upgradedAtUtc: DateTime.utc(2026, 7, 30),
+    );
+  }
+}
+
+final class _MemoryLearnerPreferencesRepository
+    implements LearnerPreferencesRepository {
+  _MemoryLearnerPreferencesRepository(this.values);
+
+  final Map<String, LearnerPreferences> values;
+
+  @override
+  Future<LearnerPreferences> read(String ownerId) async =>
+      values[ownerId] ??
+      LearnerPreferences.defaults(
+        ownerId: ownerId,
+        updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+      );
+
+  @override
+  Future<void> save(
+    LearnerPreferences preferences, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    values[preferences.ownerId] = preferences;
+  }
+
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    final current = await read(ownerId);
+    values[ownerId] = LearnerPreferences(
+      ownerId: ownerId,
+      preferenceVersion: current.preferenceVersion,
+      goal: current.goal,
+      availableMinutesPerDay: current.availableMinutesPerDay,
+      activityPreference: current.activityPreference,
+      updatedAtUtc: current.updatedAtUtc,
+      display: display,
+    );
+  }
+}
+
+LearnerPreferences _displayPreferences({
+  required String ownerId,
+  required LearnerThemePreference theme,
+  required LearnerMotionPreference motion,
+}) => LearnerPreferences(
+  ownerId: ownerId,
+  preferenceVersion: 1,
+  goal: LearnerPreferenceGoal.balancedGrowth,
+  availableMinutesPerDay: 20,
+  activityPreference: LearnerActivityPreference.mixedPractice,
+  updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(0, isUtc: true),
+  display: LearnerDisplayPreferences(
+    themeMode: theme,
+    motionMode: motion,
+    updatedAtUtc: DateTime.utc(2026, 8, 30),
+  ),
+);
 
 _FakeUpgradeRepository? _activeUpgradeRepository;

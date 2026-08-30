@@ -5,6 +5,7 @@ import '../features/account/application/local_data_deletion.dart';
 import '../features/account/domain/account_contracts.dart';
 import '../features/consent/application/research_consent_use_cases.dart';
 import '../features/identity/domain/local_owner_repository.dart';
+import '../features/preferences/application/display_preferences_controller.dart';
 import '../navigation/app_routes.dart';
 import '../runtime/app_dependencies.dart';
 import '../runtime/app_runtime_status.dart';
@@ -16,12 +17,14 @@ class SettingScreen extends StatefulWidget {
     this.researchConsent,
     this.localDataEraser,
     this.localOwners,
+    this.displayPreferences,
   });
 
   final AccountUseCases? account;
   final ResearchConsentUseCases? researchConsent;
   final LocalDataEraser? localDataEraser;
   final LocalOwnerRepository? localOwners;
+  final DisplayPreferencesController? displayPreferences;
 
   @override
   State<SettingScreen> createState() => _SettingScreenState();
@@ -32,7 +35,9 @@ class _SettingScreenState extends State<SettingScreen> {
   ResearchConsentUseCases? _researchConsent;
   LocalDataEraser? _localDataEraser;
   LocalOwnerRepository? _localOwners;
+  DisplayPreferencesController? _displayPreferences;
   bool _busy = false;
+  bool _displayBusy = false;
 
   @override
   void didChangeDependencies() {
@@ -44,6 +49,63 @@ class _SettingScreenState extends State<SettingScreen> {
     _localDataEraser ??=
         widget.localDataEraser ?? dependencies?.localDataEraser;
     _localOwners ??= widget.localOwners ?? dependencies?.localOwners;
+    _bindDisplayPreferences(
+      widget.displayPreferences ?? dependencies?.displayPreferences,
+    );
+  }
+
+  @override
+  void didUpdateWidget(covariant SettingScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!identical(oldWidget.displayPreferences, widget.displayPreferences)) {
+      final dependencies = AppDependenciesScope.maybeOf(context);
+      _bindDisplayPreferences(
+        widget.displayPreferences ?? dependencies?.displayPreferences,
+      );
+    }
+  }
+
+  void _bindDisplayPreferences(DisplayPreferencesController? controller) {
+    if (identical(_displayPreferences, controller)) return;
+    _displayPreferences?.removeListener(_onDisplayPreferencesChanged);
+    _displayPreferences = controller;
+    controller?.addListener(_onDisplayPreferencesChanged);
+  }
+
+  void _onDisplayPreferencesChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _displayPreferences?.removeListener(_onDisplayPreferencesChanged);
+    super.dispose();
+  }
+
+  Future<void> _selectTheme(ThemeMode mode) async {
+    final display = _displayPreferences;
+    if (display == null || _displayBusy) return;
+    setState(() => _displayBusy = true);
+    try {
+      await display.selectThemeMode(mode);
+    } on Object {
+      if (mounted) _show('บันทึกธีมไม่สำเร็จ');
+    } finally {
+      if (mounted) setState(() => _displayBusy = false);
+    }
+  }
+
+  Future<void> _setReducedMotion(bool enabled) async {
+    final display = _displayPreferences;
+    if (display == null || _displayBusy) return;
+    setState(() => _displayBusy = true);
+    try {
+      await display.setReducedMotion(enabled);
+    } on Object {
+      if (mounted) _show('บันทึกการลดการเคลื่อนไหวไม่สำเร็จ');
+    } finally {
+      if (mounted) setState(() => _displayBusy = false);
+    }
   }
 
   Future<void> _changePassword() async {
@@ -200,6 +262,64 @@ class _SettingScreenState extends State<SettingScreen> {
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (_displayPreferences case final display?)
+            Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'การแสดงผล',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 12),
+                    Wrap(
+                      alignment: WrapAlignment.spaceEvenly,
+                      children: [
+                        ChoiceChip(
+                          key: const ValueKey<String>('theme-system'),
+                          selected: display.themeMode == ThemeMode.system,
+                          onSelected: _displayBusy
+                              ? null
+                              : (_) => _selectTheme(ThemeMode.system),
+                          label: const Text('ระบบ'),
+                          avatar: const Icon(Icons.settings_suggest_outlined),
+                        ),
+                        ChoiceChip(
+                          key: const ValueKey<String>('theme-light'),
+                          selected: display.themeMode == ThemeMode.light,
+                          onSelected: _displayBusy
+                              ? null
+                              : (_) => _selectTheme(ThemeMode.light),
+                          label: const Text('สว่าง'),
+                          avatar: const Icon(Icons.light_mode_outlined),
+                        ),
+                        ChoiceChip(
+                          key: const ValueKey<String>('theme-dark'),
+                          selected: display.themeMode == ThemeMode.dark,
+                          onSelected: _displayBusy
+                              ? null
+                              : (_) => _selectTheme(ThemeMode.dark),
+                          label: const Text('มืด'),
+                          avatar: const Icon(Icons.dark_mode_outlined),
+                        ),
+                      ],
+                    ),
+                    SwitchListTile(
+                      key: const ValueKey<String>('reduced-motion-switch'),
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('ลดการเคลื่อนไหว'),
+                      subtitle: const Text(
+                        'ปิดแอนิเมชันเสริม โดยยังเคารพการตั้งค่าของระบบเสมอ',
+                      ),
+                      value: display.reducedMotionEnabled,
+                      onChanged: _displayBusy ? null : _setReducedMotion,
+                    ),
+                  ],
+                ),
+              ),
+            ),
           Card(
             child: ListTile(
               leading: Icon(

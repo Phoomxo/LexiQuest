@@ -123,10 +123,12 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms, local_revision, '
+        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+        'display_updated_at_utc_ms, local_revision, '
         'cloud_revision, last_acknowledged_at_utc_ms, '
         'server_updated_at_utc_ms) VALUES '
-        "('guest-owner', 1, 'examPreparation', 45, 'quiz', 30, 2, 2, 25, 25)",
+        "('guest-owner', 1, 'examPreparation', 45, 'quiz', 30, 'dark', "
+        "'reduced', 29, 2, 2, 25, 25)",
       );
       await database.customInsert(
         'INSERT INTO outbox_operations '
@@ -148,6 +150,7 @@ void main() {
           .customSelect(
             'SELECT owner_id, preference_version, goal, '
             'available_minutes_per_day, activity_preference, updated_at_utc_ms, '
+            'theme_mode, motion_mode, display_updated_at_utc_ms, '
             'local_revision, cloud_revision, last_acknowledged_at_utc_ms, '
             'server_updated_at_utc_ms '
             'FROM learner_preferences',
@@ -160,6 +163,9 @@ void main() {
         'available_minutes_per_day': 45,
         'activity_preference': 'quiz',
         'updated_at_utc_ms': 30,
+        'theme_mode': 'dark',
+        'motion_mode': 'reduced',
+        'display_updated_at_utc_ms': 29,
         'local_revision': 1,
         'cloud_revision': 0,
         'last_acknowledged_at_utc_ms': null,
@@ -174,6 +180,110 @@ void main() {
       expect(operation.read<String>('owner_id'), 'account-owner');
       expect(operation.read<String>('entity_type'), 'learnerPreference');
       expect(operation.read<String>('state'), 'pending');
+    },
+  );
+
+  test(
+    'f39 owner merge resolves learning and display timestamps independently',
+    () async {
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+        'display_updated_at_utc_ms, local_revision, cloud_revision) VALUES '
+        "('guest-owner', 1, 'balancedGrowth', 20, 'mixedPractice', 20, "
+        "'dark', 'reduced', 50, 1, 0), "
+        "('account-owner', 1, 'examPreparation', 45, 'quiz', 40, "
+        "'light', 'system', 30, 2, 2)",
+      );
+      await database.customInsert(
+        'INSERT INTO outbox_operations '
+        '(operation_id, owner_id, entity_type, entity_id, operation_kind, '
+        'payload_version, base_revision, state, attempt_count, '
+        'created_at_utc_ms) VALUES '
+        "('learnerPreference:guest-owner:1', 'guest-owner', "
+        "'learnerPreference', 'guest-owner', 'upsert', 1, 0, 'pending', 0, 20)",
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'firebase-user',
+      );
+
+      final row = await database
+          .customSelect(
+            'SELECT owner_id, goal, available_minutes_per_day, '
+            'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+            'display_updated_at_utc_ms, local_revision, cloud_revision '
+            'FROM learner_preferences',
+          )
+          .getSingle();
+      expect(row.data, {
+        'owner_id': 'account-owner',
+        'goal': 'examPreparation',
+        'available_minutes_per_day': 45,
+        'activity_preference': 'quiz',
+        'updated_at_utc_ms': 40,
+        'theme_mode': 'dark',
+        'motion_mode': 'reduced',
+        'display_updated_at_utc_ms': 50,
+        'local_revision': 2,
+        'cloud_revision': 2,
+      });
+      expect(
+        await database
+            .customSelect(
+              "SELECT COUNT(*) AS count FROM outbox_operations "
+              "WHERE entity_type = 'learnerPreference' AND state = 'pending'",
+            )
+            .map((result) => result.read<int>('count'))
+            .getSingle(),
+        0,
+        reason: 'a display-only merge cannot revive an older learning intent',
+      );
+    },
+  );
+
+  test(
+    'f39 display-only guest rehome does not invent a cloud learning intent',
+    () async {
+      await database.customInsert(
+        'INSERT INTO learner_preferences '
+        '(owner_id, preference_version, goal, available_minutes_per_day, '
+        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+        'display_updated_at_utc_ms, local_revision, cloud_revision) VALUES '
+        "('guest-owner', 1, 'balancedGrowth', 20, 'mixedPractice', 0, "
+        "'dark', 'reduced', 50, 0, 0)",
+      );
+
+      await repository.upgrade(
+        activeOwnerId: 'guest-owner',
+        firebaseUid: 'new-firebase-user',
+      );
+
+      final row = await database
+          .customSelect(
+            'SELECT owner_id, theme_mode, motion_mode, local_revision, '
+            'cloud_revision FROM learner_preferences',
+          )
+          .getSingle();
+      expect(row.data, {
+        'owner_id': 'guest-owner',
+        'theme_mode': 'dark',
+        'motion_mode': 'reduced',
+        'local_revision': 0,
+        'cloud_revision': 0,
+      });
+      expect(
+        await database
+            .customSelect(
+              "SELECT COUNT(*) AS count FROM outbox_operations "
+              "WHERE entity_type = 'learnerPreference'",
+            )
+            .map((result) => result.read<int>('count'))
+            .getSingle(),
+        0,
+      );
     },
   );
 

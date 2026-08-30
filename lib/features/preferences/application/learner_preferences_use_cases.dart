@@ -39,6 +39,33 @@ final class LearnerPreferencesUseCases {
     return repository.read(owner.id);
   }
 
+  Future<LearnerPreferences> saveDisplayPreferences({
+    required String expectedOwnerId,
+    required LearnerThemePreference themeMode,
+    required LearnerMotionPreference motionMode,
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    final owner = await owners.getOrCreateActiveOwner();
+    if (owner.id != expectedOwnerId) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    final current = await repository.read(owner.id);
+    if (current.display.themeMode == themeMode &&
+        current.display.motionMode == motionMode) {
+      return current;
+    }
+    await repository.saveDisplayPreferences(
+      owner.id,
+      LearnerDisplayPreferences(
+        themeMode: themeMode,
+        motionMode: motionMode,
+        updatedAtUtc: nowUtc(),
+      ),
+      mutationAllowed: mutationAllowed,
+    );
+    return repository.read(owner.id);
+  }
+
   Future<EffectiveLearnerPreferences> readEffective({
     LearnerPreferenceProtocolClamp? protocolClamp,
   }) async {

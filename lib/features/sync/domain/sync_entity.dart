@@ -17,7 +17,7 @@ const String answerAttemptV2RulesRevision = 'answer-attempt-v2-r1';
 const String vocabularyWordV2RulesRevision = 'vocabulary-word-v2-r1';
 const String experimentAssignmentV1RulesRevision =
     'experiment-assignment-v1-r1';
-const String assessmentRunV1RulesRevision = 'assessment-run-v1-r2';
+const String assessmentRunV1RulesRevision = 'assessment-run-v1-r3';
 const String savedLearningItemV1RulesRevision = 'saved-learning-item-v1-r1';
 const String contentQualityReportV1RulesRevision =
     'content-quality-report-v1-r1';
@@ -1295,6 +1295,7 @@ abstract final class AssessmentRunSyncPayloadContract {
             19,
             20,
             21,
+            22,
           }.contains(databaseSchemaVersion) ||
           evidencePolicyVersion != EvidenceContext.currentPolicyVersion ||
           featureContractHash is! String ||

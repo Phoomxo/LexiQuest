@@ -423,8 +423,27 @@ const assessmentRunInstrumentChecksum =
   'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 const assessmentRunFormChecksum =
   'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb';
+const assessmentRunContractIdentities = [
+  {
+    revision: '1.0.0',
+    hash: 'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0',
+  },
+  {
+    revision: '1.1.0',
+    hash: '40e587aa5605d066e67aee81f3254671ea5484beca04dbb41fccbfd3ddb2af27',
+  },
+  {
+    revision: '1.2.0',
+    hash: 'c6a772993afa6cc2d78f3eb11687d615192ef6ff52581fa882826180f90afee7',
+  },
+  {
+    revision: '1.3.0',
+    hash: '41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4',
+  },
+];
+const assessmentRunContractRevision = '1.3.0';
 const assessmentRunContractHash =
-  'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0';
+  '41e15622e6d367ca706fef41a0b3e10b5dfcb56033b3fdf194594be458dd38d4';
 
 function fieldAssessmentRunPayload(overrides = {}) {
   return {
@@ -453,7 +472,7 @@ function fieldAssessmentRunPayload(overrides = {}) {
     databaseSchemaVersion: 15,
     contentRevision: 'assessment-content-v1',
     evidencePolicyVersion: 'learning-evidence-v1',
-    featureContractRevision: '1.0.0',
+    featureContractRevision: assessmentRunContractRevision,
     featureContractHash: assessmentRunContractHash,
     startedAtUtcMs: assessmentRunStartedAtUtcMs,
     completedAtUtcMs: null,
@@ -2229,7 +2248,74 @@ describe('assessment_runs revisioned research contract', () => {
     )));
   });
 
-  it('accepts assessment evidence pinned to supported database schemas through v21', async () => {
+  it('accepts only append-only exact feature-contract identity pairs', async () => {
+    const db = authDb();
+    await assertSucceeds(writeAssessmentAssignment(db, 'contract-identity'));
+    for (let index = 0; index < assessmentRunContractIdentities.length; index += 1) {
+      const identity = assessmentRunContractIdentities[index];
+      const entityId = `assessment-run-supported-contract-${index}`;
+      await assertSucceeds(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            featureContractRevision: identity.revision,
+            featureContractHash: identity.hash,
+          }),
+        }),
+      );
+      await assertSucceeds(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:2`,
+          revision: 2,
+          baseRevision: 1,
+          clientUpdatedAtUtcMs: assessmentRunCompletedAtUtcMs,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            state: 'completed',
+            completedAtUtcMs: assessmentRunCompletedAtUtcMs,
+            featureContractRevision: identity.revision,
+            featureContractHash: identity.hash,
+          }),
+        }),
+      );
+    }
+
+    const unsupported = [
+      {
+        revision: '1.0.0',
+        hash: assessmentRunContractHash,
+      },
+      {
+        revision: assessmentRunContractRevision,
+        hash:
+          'f60ad6c20312b7e898c9961cf55618d9c8a5995c11d254cf32efad0c6d8a4cb0',
+      },
+      {
+        revision: '2.0.0',
+        hash: assessmentRunContractHash,
+      },
+    ];
+    for (let index = 0; index < unsupported.length; index += 1) {
+      const identity = unsupported[index];
+      const entityId = `assessment-run-unsupported-contract-${index}`;
+      await assertFails(
+        writeFieldAssessmentRun(db, {
+          entityId,
+          operationId: `assessmentRun:${entityId}:1`,
+          payload: fieldAssessmentRunPayload({
+            runId: entityId,
+            featureContractRevision: identity.revision,
+            featureContractHash: identity.hash,
+          }),
+        }),
+      );
+    }
+  });
+
+  it('accepts assessment evidence pinned to supported database schemas through v22', async () => {
     const db = authDb();
     const assignmentId = 'experiment-assignment:assessment-cloud-schema';
     await assertSucceeds(
@@ -2242,7 +2328,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       }),
     );
-    for (const databaseSchemaVersion of [19, 20, 21]) {
+    for (const databaseSchemaVersion of [19, 20, 21, 22]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertSucceeds(
         writeFieldAssessmentRun(db, {
@@ -2256,7 +2342,7 @@ describe('assessment_runs revisioned research contract', () => {
         }),
       );
     }
-    for (const databaseSchemaVersion of [14, 22]) {
+    for (const databaseSchemaVersion of [14, 23]) {
       const entityId = `assessment-run-schema-${databaseSchemaVersion}`;
       await assertFails(
         writeFieldAssessmentRun(db, {

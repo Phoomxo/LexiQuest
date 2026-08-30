@@ -122,6 +122,26 @@ final class _Preferences implements LearnerPreferencesRepository {
     current = preferences;
     saveCount += 1;
   }
+
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    current = LearnerPreferences(
+      ownerId: current.ownerId,
+      preferenceVersion: current.preferenceVersion,
+      goal: current.goal,
+      availableMinutesPerDay: current.availableMinutesPerDay,
+      activityPreference: current.activityPreference,
+      updatedAtUtc: current.updatedAtUtc,
+      display: display,
+    );
+  }
 }
 
 final class _Owner implements LocalOwnerRepository {

@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'config/m3_theme.dart';
+import 'features/accessibility/presentation/accessibility_scope.dart';
+import 'features/preferences/application/display_preferences_controller.dart';
 import 'runtime/app_bootstrap.dart';
 import 'runtime/app_dependencies.dart';
 import 'features/sync/application/sync_trigger.dart';
@@ -81,26 +83,43 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    return AppDependenciesScope(
-      dependencies: widget.dependencies,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        title: 'LexiQuest - AI Vocab Learning',
-        theme: M3Theme.lightTheme,
-        darkTheme: M3Theme.darkTheme,
-        themeMode: ThemeMode.system,
-        navigatorObservers: <NavigatorObserver>[appRouteObserver],
-        initialRoute: widget.dependencies.initialRoute.path,
-        onGenerateInitialRoutes: (platformRoute) {
-          final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)
-              ? platformRoute
-              : widget.dependencies.initialRoute.path;
-          return <Route<dynamic>>[
-            AppRouteFactory.onGenerateRoute(RouteSettings(name: routeName)),
-          ];
-        },
-        onGenerateRoute: AppRouteFactory.onGenerateRoute,
-      ),
+    final displayPreferences = widget.dependencies.displayPreferences;
+    Widget buildApp() => MaterialApp(
+      debugShowCheckedModeBanner: false,
+      title: 'LexiQuest - AI Vocab Learning',
+      theme: M3Theme.lightTheme,
+      darkTheme: M3Theme.darkTheme,
+      themeMode:
+          displayPreferences?.themeMode ??
+          DisplayPreferencesController.fallbackThemeMode,
+      builder: (context, child) {
+        final platform = MediaQuery.of(context);
+        return MediaQuery(
+          data: M3Theme.applyReducedMotionPreference(
+            platform,
+            reduceMotion: displayPreferences?.reducedMotionEnabled ?? false,
+          ),
+          child: AccessibilityScope(child: child ?? const SizedBox.shrink()),
+        );
+      },
+      navigatorObservers: <NavigatorObserver>[appRouteObserver],
+      initialRoute: widget.dependencies.initialRoute.path,
+      onGenerateInitialRoutes: (platformRoute) {
+        final routeName = AppRouteFactory.supportsInitialRoute(platformRoute)
+            ? platformRoute
+            : widget.dependencies.initialRoute.path;
+        return <Route<dynamic>>[
+          AppRouteFactory.onGenerateRoute(RouteSettings(name: routeName)),
+        ];
+      },
+      onGenerateRoute: AppRouteFactory.onGenerateRoute,
     );
+    final app = displayPreferences == null
+        ? buildApp()
+        : AnimatedBuilder(
+            animation: displayPreferences,
+            builder: (context, _) => buildApp(),
+          );
+    return AppDependenciesScope(dependencies: widget.dependencies, child: app);
   }
 }

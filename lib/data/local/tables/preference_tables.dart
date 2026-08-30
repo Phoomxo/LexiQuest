@@ -13,6 +13,10 @@ class LearnerPreferences extends Table {
   )();
   TextColumn get activityPreference => text()();
   IntColumn get updatedAtUtcMs => integer()();
+  TextColumn get themeMode => text().withDefault(const Constant('system'))();
+  TextColumn get motionMode => text().withDefault(const Constant('system'))();
+  IntColumn get displayUpdatedAtUtcMs =>
+      integer().withDefault(const Constant(0))();
   IntColumn get localRevision => integer().withDefault(const Constant(1))();
   IntColumn get cloudRevision => integer().withDefault(const Constant(0))();
   IntColumn get lastAcknowledgedAtUtcMs => integer().nullable()();

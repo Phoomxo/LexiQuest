@@ -73,7 +73,7 @@ part 'app_database.g.dart';
   ],
 )
 final class AppDatabase extends _$AppDatabase {
-  static const int currentSchemaVersion = 21;
+  static const int currentSchemaVersion = 22;
 
   AppDatabase(super.executor);
 
@@ -291,6 +291,26 @@ final class AppDatabase extends _$AppDatabase {
       }
       if (from < 21 && !await _tableExists('learner_preferences')) {
         await migrator.createTable(learnerPreferences);
+      }
+      if (from < 22) {
+        await _addColumnIfMissing(
+          migrator,
+          'learner_preferences',
+          learnerPreferences,
+          learnerPreferences.themeMode,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'learner_preferences',
+          learnerPreferences,
+          learnerPreferences.motionMode,
+        );
+        await _addColumnIfMissing(
+          migrator,
+          'learner_preferences',
+          learnerPreferences,
+          learnerPreferences.displayUpdatedAtUtcMs,
+        );
       }
     },
     beforeOpen: (details) async {

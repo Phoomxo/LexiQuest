@@ -15,7 +15,7 @@ void main() {
       );
       addTearDown(database.close);
 
-      expect(AppDatabase.currentSchemaVersion, 21);
+      expect(AppDatabase.currentSchemaVersion, 22);
       expect(currentDatabaseTableInventory, hasLength(44));
       expect(currentDatabaseTableInventory.difference(schemaTwentyInventory), {
         'learner_preferences',
@@ -59,6 +59,9 @@ void main() {
         'available_minutes_per_day',
         'activity_preference',
         'updated_at_utc_ms',
+        'theme_mode',
+        'motion_mode',
+        'display_updated_at_utc_ms',
         'local_revision',
         'cloud_revision',
         'last_acknowledged_at_utc_ms',
@@ -72,7 +75,8 @@ void main() {
       expect(
         await _tableNames(database),
         currentDatabaseTableInventory,
-        reason: 'v21 has one named preference table and no style/profile table',
+        reason:
+            'v22 extends the one preference table without a second authority',
       );
       expect(
         await _tableNames(database),

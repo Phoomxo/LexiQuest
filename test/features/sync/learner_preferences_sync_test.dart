@@ -687,6 +687,10 @@ void main() {
     test(
       'canonical pull updates once without echo and malformed pull rolls back',
       () async {
+        await database.customUpdate(
+          "UPDATE learner_preferences SET theme_mode = 'dark', "
+          "motion_mode = 'reduced', display_updated_at_utc_ms = 1500",
+        );
         final store = DriftSyncStore(
           database,
           learnerPreferenceSyncRollout: const LearnerPreferenceSyncRollout.v1(
@@ -739,6 +743,7 @@ void main() {
         final row = await database
             .customSelect(
               'SELECT goal, available_minutes_per_day, activity_preference, '
+              'theme_mode, motion_mode, display_updated_at_utc_ms, '
               'local_revision, cloud_revision FROM learner_preferences '
               "WHERE owner_id = 'local:preferences'",
             )
@@ -746,6 +751,9 @@ void main() {
         expect(row.read<String>('goal'), 'conversationConfidence');
         expect(row.read<int>('available_minutes_per_day'), 30);
         expect(row.read<String>('activity_preference'), 'speaking');
+        expect(row.read<String>('theme_mode'), 'dark');
+        expect(row.read<String>('motion_mode'), 'reduced');
+        expect(row.read<int>('display_updated_at_utc_ms'), 1500);
         expect(row.read<int>('local_revision'), 2);
         expect(row.read<int>('cloud_revision'), 2);
         expect(

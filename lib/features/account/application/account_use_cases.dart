@@ -11,12 +11,14 @@ final class AccountUseCases {
     required this.owners,
     required this.upgradeGuestOwner,
     required this.entryState,
+    this.onOwnerTransitionCommitted,
   });
 
   final AccountGateway gateway;
   final LocalOwnerRepository owners;
   final UpgradeGuestOwner upgradeGuestOwner;
   final AppEntryStateStore entryState;
+  final Future<void> Function()? onOwnerTransitionCommitted;
 
   AccountSession? get currentSession => gateway.currentSession;
 
@@ -26,6 +28,7 @@ final class AccountUseCases {
     if (session != null) {
       if (owner.firebaseUid != session.uid) {
         await _bindOrSignOut(session.uid);
+        await _notifyOwnerTransitionCommitted();
       }
       return;
     }
@@ -33,6 +36,7 @@ final class AccountUseCases {
       await upgradeGuestOwner.createLocalGuestAfterLogout(
         sourceOwnerId: owner.id,
       );
+      await _notifyOwnerTransitionCommitted();
     }
   }
 
@@ -101,7 +105,6 @@ final class AccountUseCases {
         sourceOwnerId: previous.id,
       );
       await gateway.signOut();
-      return guest;
     } catch (error, stackTrace) {
       if (previous != null && guest != null) {
         try {
@@ -118,8 +121,11 @@ final class AccountUseCases {
       } catch (_) {
         // Preserve the original failure after best-effort rollback.
       }
+      await _notifyOwnerTransitionAfterFailure();
       Error.throwWithStackTrace(error, stackTrace);
     }
+    await _notifyOwnerTransitionCommitted();
+    return guest;
   }
 
   Future<void> _bindAndClearOrSignOut(String uid) async {
@@ -141,8 +147,10 @@ final class AccountUseCases {
           // Preserve the original failure after best-effort entry restoration.
         }
       }
+      await _notifyOwnerTransitionAfterFailure();
       Error.throwWithStackTrace(error, stackTrace);
     }
+    await _notifyOwnerTransitionCommitted();
   }
 
   Future<void> _bindOrSignOut(String uid) async {
@@ -150,6 +158,7 @@ final class AccountUseCases {
       await _bind(uid);
     } catch (_) {
       await gateway.signOut();
+      await _notifyOwnerTransitionAfterFailure();
       rethrow;
     }
   }
@@ -157,6 +166,19 @@ final class AccountUseCases {
   Future<void> _bind(String uid) async {
     final owner = await owners.getOrCreateActiveOwner();
     await upgradeGuestOwner(activeOwnerId: owner.id, firebaseUid: uid);
+  }
+
+  Future<void> _notifyOwnerTransitionCommitted() async {
+    final callback = onOwnerTransitionCommitted;
+    if (callback != null) await callback();
+  }
+
+  Future<void> _notifyOwnerTransitionAfterFailure() async {
+    try {
+      await _notifyOwnerTransitionCommitted();
+    } on Object {
+      // Preserve the transition's original failure after best-effort refresh.
+    }
   }
 
   Future<void> _restoreEntryState(AppEntryMode previousEntry) {

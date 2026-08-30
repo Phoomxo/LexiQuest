@@ -1,8 +1,15 @@
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/data/local/app_database.dart'
+    show AppDatabase;
 import 'package:vocab_learning_app/main.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
+import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
+import 'package:vocab_learning_app/features/preferences/application/display_preferences_controller.dart';
+import 'package:vocab_learning_app/features/preferences/application/learner_preferences_use_cases.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
+import 'package:vocab_learning_app/features/preferences/domain/learner_preferences_repository.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_engine.dart';
 import 'package:vocab_learning_app/features/sync/application/sync_trigger.dart';
@@ -24,6 +31,7 @@ AppDependencies _dependencies(
   AppBuildInfo buildInfo, {
   Future<void> Function()? disposeResources,
   SyncTrigger? syncTrigger,
+  DisplayPreferencesController? displayPreferences,
 }) {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -47,6 +55,7 @@ AppDependencies _dependencies(
         research.evidencePolicyRolloutModeProvider,
     buildInfo: buildInfo,
     syncTrigger: syncTrigger,
+    displayPreferences: displayPreferences,
     disposeResources: disposeResources,
   );
 }
@@ -199,4 +208,121 @@ void main() {
 
     expect(runs, 1);
   });
+
+  testWidgets('MyApp is driven by the durable display preference controller', (
+    tester,
+  ) async {
+    final repository = _DisplayRepository();
+    final controller = DisplayPreferencesController(
+      LearnerPreferencesUseCases(
+        repository: repository,
+        owners: _DisplayOwner(),
+        nowUtc: () => DateTime.utc(2026, 8, 30, 12),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+    await controller.selectThemeMode(ThemeMode.dark);
+    await controller.setReducedMotion(true);
+    final dependencies = _dependencies(
+      const AppBuildInfo.fromEnvironment(),
+      displayPreferences: controller,
+    );
+
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pump();
+
+    expect(
+      tester.widget<MaterialApp>(find.byType(MaterialApp)).themeMode,
+      ThemeMode.dark,
+    );
+    final descendant = find.descendant(
+      of: find.byType(MaterialApp),
+      matching: find.byType(Navigator),
+    );
+    expect(descendant, findsOneWidget);
+    expect(MediaQuery.of(tester.element(descendant)).disableAnimations, isTrue);
+  });
+
+  testWidgets('MyApp system theme follows platform brightness changes', (
+    tester,
+  ) async {
+    final controller = DisplayPreferencesController(
+      LearnerPreferencesUseCases(
+        repository: _DisplayRepository(),
+        owners: _DisplayOwner(),
+        nowUtc: () => DateTime.utc(2026, 8, 30, 12),
+      ),
+    );
+    addTearDown(controller.dispose);
+    await controller.initialize();
+    final dispatcher = tester.binding.platformDispatcher;
+    addTearDown(dispatcher.clearPlatformBrightnessTestValue);
+    dispatcher.platformBrightnessTestValue = Brightness.light;
+    final dependencies = _dependencies(
+      const AppBuildInfo.fromEnvironment(),
+      displayPreferences: controller,
+    );
+    await tester.pumpWidget(MyApp(dependencies: dependencies));
+    await tester.pump();
+    final navigator = find.descendant(
+      of: find.byType(MaterialApp),
+      matching: find.byType(Navigator),
+    );
+    expect(Theme.of(tester.element(navigator)).brightness, Brightness.light);
+
+    dispatcher.platformBrightnessTestValue = Brightness.dark;
+    dispatcher.onPlatformBrightnessChanged?.call();
+    await tester.pumpAndSettle();
+
+    expect(controller.themeMode, ThemeMode.system);
+    expect(Theme.of(tester.element(navigator)).brightness, Brightness.dark);
+  });
+}
+
+final class _DisplayOwner implements LocalOwnerRepository {
+  @override
+  Future<LocalOwner> getOrCreateActiveOwner() async => LocalOwner(
+    id: 'owner:display-main',
+    createdAtUtc: DateTime.utc(2026, 8, 30),
+  );
+
+  @override
+  Future<LocalOwner> bindFirebaseUid(String ownerId, String firebaseUid) =>
+      getOrCreateActiveOwner();
+}
+
+final class _DisplayRepository implements LearnerPreferencesRepository {
+  LearnerPreferences current = LearnerPreferences.defaults(
+    ownerId: 'owner:display-main',
+    updatedAtUtc: DateTime.utc(2026, 8, 30),
+  );
+
+  @override
+  Future<LearnerPreferences> read(String ownerId) async => current;
+
+  @override
+  Future<void> save(
+    LearnerPreferences preferences, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    current = preferences;
+  }
+
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    current = LearnerPreferences(
+      ownerId: current.ownerId,
+      preferenceVersion: current.preferenceVersion,
+      goal: current.goal,
+      availableMinutesPerDay: current.availableMinutesPerDay,
+      activityPreference: current.activityPreference,
+      updatedAtUtc: current.updatedAtUtc,
+      display: display,
+    );
+  }
 }

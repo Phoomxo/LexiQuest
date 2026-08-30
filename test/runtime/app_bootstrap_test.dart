@@ -8,6 +8,7 @@ import 'package:drift/drift.dart' hide isNotNull, isNull;
 import 'package:drift/native.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/config/app_config.dart';
 import 'package:vocab_learning_app/config/research_runtime_config.dart';
@@ -118,8 +119,70 @@ AppDatabase _testDatabase() {
   return database;
 }
 
+Future<void> _seedDisplayPreferenceOwner(
+  AppDatabase database, {
+  required String ownerId,
+  required bool isActive,
+  required String themeMode,
+  required String motionMode,
+  required int displayUpdatedAtUtcMs,
+  String? firebaseUid,
+}) async {
+  await database
+      .into(database.localOwners)
+      .insert(
+        LocalOwnersCompanion.insert(
+          id: ownerId,
+          firebaseUid: Value(firebaseUid),
+          accountState: Value(
+            firebaseUid == null ? 'localGuest' : 'firebaseBound',
+          ),
+          createdAtUtcMs: 1,
+          isActive: Value(isActive),
+        ),
+      );
+  await database
+      .into(database.learnerPreferences)
+      .insert(
+        LearnerPreferencesCompanion.insert(
+          ownerId: ownerId,
+          preferenceVersion: 1,
+          goal: LearnerPreferenceGoal.balancedGrowth.name,
+          availableMinutesPerDay: 20,
+          activityPreference: LearnerActivityPreference.mixedPractice.name,
+          updatedAtUtcMs: 0,
+          themeMode: Value(themeMode),
+          motionMode: Value(motionMode),
+          displayUpdatedAtUtcMs: Value(displayUpdatedAtUtcMs),
+          localRevision: const Value(0),
+        ),
+      );
+}
+
 Future<AppEntryStateStore> _createSignedOutEntryState() async =>
     _MemoryAppEntryStateStore();
+
+ManagedAiTutor _buildNoOpManagedAiTutor(AiTutorBuildContext _) {
+  final controller = _BootstrapAiTutorController();
+  return ManagedAiTutor(
+    controller: controller,
+    disposeController: controller.dispose,
+  );
+}
+
+void _installNoOpSecureStorage() {
+  const channel = MethodChannel('plugins.it_nomads.com/flutter_secure_storage');
+  final messenger =
+      TestWidgetsFlutterBinding.ensureInitialized().defaultBinaryMessenger;
+  messenger.setMockMethodCallHandler(channel, (call) async {
+    return switch (call.method) {
+      'containsKey' => false,
+      'readAll' => <String, String>{},
+      _ => null,
+    };
+  });
+  addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+}
 
 Future<void> _insertFrozenLearningEvidence(
   AppDatabase database, {
@@ -578,6 +641,8 @@ void main() {
       expect(dependencies.createLessonController, isNotNull);
       expect(dependencies.learningGoals, isNotNull);
       expect(dependencies.learnerPreferences, isNotNull);
+      expect(dependencies.displayPreferences, isNotNull);
+      expect(dependencies.displayPreferences!.isInitialized, isTrue);
       expect(dependencies.studyPlanning, isNotNull);
       expect(
         dependencies.hasComposedDependencyFor(Feature.studyPlanning),
@@ -621,6 +686,150 @@ void main() {
         expect(reasons, <SyncTriggerReason>[SyncTriggerReason.localMutation]);
       },
     );
+
+    test(
+      'display preferences follow an existing-account merge without stale companion overwrite',
+      () async {
+        _installNoOpSecureStorage();
+        final database = _testDatabase();
+        await _seedDisplayPreferenceOwner(
+          database,
+          ownerId: 'display-guest',
+          isActive: true,
+          themeMode: 'light',
+          motionMode: 'reduced',
+          displayUpdatedAtUtcMs: 10,
+        );
+        await _seedDisplayPreferenceOwner(
+          database,
+          ownerId: 'display-account',
+          firebaseUid: 'account-user',
+          isActive: false,
+          themeMode: 'dark',
+          motionMode: 'system',
+          displayUpdatedAtUtcMs: 20,
+        );
+        final dependencies = await AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          accountGatewayFactory: _BootstrapAccountGateway.new,
+          createEntryStateStore: _createSignedOutEntryState,
+          buildAiTutor: _buildNoOpManagedAiTutor,
+        ).initialize();
+        addTearDown(dependencies.dispose);
+
+        expect(dependencies.displayPreferences!.themeMode, ThemeMode.light);
+        expect(dependencies.displayPreferences!.reducedMotionEnabled, isTrue);
+
+        await dependencies.account!.signIn(
+          email: 'student@example.com',
+          password: 'password-1',
+        );
+
+        expect(dependencies.displayPreferences!.themeMode, ThemeMode.dark);
+        expect(dependencies.displayPreferences!.reducedMotionEnabled, isFalse);
+        await dependencies.displayPreferences!.setReducedMotion(true);
+        final persisted = await (database.select(
+          database.learnerPreferences,
+        )..where((row) => row.ownerId.equals('display-account'))).getSingle();
+        expect(persisted.themeMode, 'dark');
+        expect(persisted.motionMode, 'reduced');
+      },
+    );
+
+    test('display preferences reset after sign-out to a fresh guest', () async {
+      final database = _testDatabase();
+      await _seedDisplayPreferenceOwner(
+        database,
+        ownerId: 'display-account',
+        firebaseUid: 'account-user',
+        isActive: true,
+        themeMode: 'dark',
+        motionMode: 'reduced',
+        displayUpdatedAtUtcMs: 20,
+      );
+      final gateway = _BootstrapAccountGateway(
+        currentSession: const AccountSession(
+          uid: 'account-user',
+          email: 'student@example.com',
+          isAnonymous: false,
+          emailVerified: true,
+        ),
+      );
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        accountGatewayFactory: () => gateway,
+        createEntryStateStore: _createSignedOutEntryState,
+        buildAiTutor: _buildNoOpManagedAiTutor,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(dependencies.displayPreferences!.themeMode, ThemeMode.dark);
+      expect(dependencies.displayPreferences!.reducedMotionEnabled, isTrue);
+
+      final transition = await dependencies.account!.signOutToLocalGuest();
+
+      expect(transition.mode, OwnerUpgradeMode.localGuestCreated);
+      expect(dependencies.displayPreferences!.themeMode, ThemeMode.system);
+      expect(dependencies.displayPreferences!.reducedMotionEnabled, isFalse);
+      await dependencies.displayPreferences!.selectThemeMode(ThemeMode.light);
+      final replacement = await dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      final persisted = await (database.select(
+        database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(replacement.id))).getSingle();
+      expect(persisted.themeMode, 'light');
+      expect(persisted.motionMode, 'system');
+    });
+
+    test('display preferences reset after committed local erase', () async {
+      _installNoOpSecureStorage();
+      final database = _testDatabase();
+      await _seedDisplayPreferenceOwner(
+        database,
+        ownerId: 'display-erased-owner',
+        isActive: true,
+        themeMode: 'dark',
+        motionMode: 'reduced',
+        displayUpdatedAtUtcMs: 20,
+      );
+      final dependencies = await AppBootstrap(
+        createDatabase: () => database,
+        initializeFirebase: () async {},
+        initializeSupabase: () async {},
+        loadConfig: _validConfig,
+        guestSessionService: _StubGuestSessionService(),
+        createEntryStateStore: _createSignedOutEntryState,
+        buildAiTutor: _buildNoOpManagedAiTutor,
+      ).initialize();
+      addTearDown(dependencies.dispose);
+
+      expect(dependencies.displayPreferences!.themeMode, ThemeMode.dark);
+      expect(dependencies.displayPreferences!.reducedMotionEnabled, isTrue);
+
+      await dependencies.localDataEraser!.eraseAll(
+        ownerId: 'display-erased-owner',
+      );
+
+      expect(dependencies.displayPreferences!.themeMode, ThemeMode.system);
+      expect(dependencies.displayPreferences!.reducedMotionEnabled, isFalse);
+      final replacement = await dependencies.localOwners!
+          .getOrCreateActiveOwner();
+      expect(replacement.id, isNot('display-erased-owner'));
+      await dependencies.displayPreferences!.selectThemeMode(ThemeMode.light);
+      final persisted = await (database.select(
+        database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(replacement.id))).getSingle();
+      expect(persisted.themeMode, 'light');
+      expect(persisted.motionMode, 'system');
+    });
 
     test(
       'bootstrap composes reminders without requesting permission',

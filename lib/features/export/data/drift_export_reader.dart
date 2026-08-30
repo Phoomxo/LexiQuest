@@ -152,6 +152,9 @@ final class ExportLearnerPreferenceRow {
     required this.availableMinutesPerDay,
     required this.activityPreference,
     required this.updatedAtUtc,
+    required this.themeMode,
+    required this.motionMode,
+    required this.displayUpdatedAtUtc,
   });
 
   final int preferenceVersion;
@@ -159,6 +162,9 @@ final class ExportLearnerPreferenceRow {
   final int availableMinutesPerDay;
   final String activityPreference;
   final DateTime updatedAtUtc;
+  final String themeMode;
+  final String motionMode;
+  final DateTime displayUpdatedAtUtc;
 }
 
 final class ExportDataSet {
@@ -296,6 +302,12 @@ final class DriftExportReader {
           activityPreference: row.activityPreference,
           updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
             row.updatedAtUtcMs,
+            isUtc: true,
+          ),
+          themeMode: row.themeMode,
+          motionMode: row.motionMode,
+          displayUpdatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+            row.displayUpdatedAtUtcMs,
             isUtc: true,
           ),
         ),

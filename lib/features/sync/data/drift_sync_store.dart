@@ -3215,9 +3215,34 @@ final class DriftSyncStore implements SyncStore {
       return;
     }
     final payload = entity.payload;
+    final existing = await (database.select(
+      database.learnerPreferences,
+    )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+    final learningUpdate = db.LearnerPreferencesCompanion(
+      preferenceVersion: Value(payload['preferenceVersion']! as int),
+      goal: Value(payload['goal']! as String),
+      availableMinutesPerDay: Value(payload['availableMinutesPerDay']! as int),
+      activityPreference: Value(payload['activityPreference']! as String),
+      updatedAtUtcMs: Value(payload['updatedAtUtcMs']! as int),
+      localRevision: Value(entity.revision),
+      cloudRevision: Value(entity.revision),
+      lastAcknowledgedAtUtcMs: Value(
+        entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+      ),
+      serverUpdatedAtUtcMs: Value(
+        entity.serverUpdatedAtUtc.millisecondsSinceEpoch,
+      ),
+      isDeleted: const Value(false),
+    );
+    if (existing != null) {
+      await (database.update(
+        database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(ownerId))).write(learningUpdate);
+      return;
+    }
     await database
         .into(database.learnerPreferences)
-        .insertOnConflictUpdate(
+        .insert(
           db.LearnerPreferencesCompanion.insert(
             ownerId: ownerId,
             preferenceVersion: payload['preferenceVersion']! as int,

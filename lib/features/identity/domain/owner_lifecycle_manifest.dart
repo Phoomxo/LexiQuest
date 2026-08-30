@@ -437,6 +437,9 @@ const ownerLifecycleManifest = <OwnerLifecycleTableDescriptor>[
       'availableMinutesPerDay',
       'activityPreference',
       'updatedAtUtc',
+      'themeMode',
+      'motionMode',
+      'displayUpdatedAtUtc',
     ],
   ),
   OwnerLifecycleTableDescriptor(

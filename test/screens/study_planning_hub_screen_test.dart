@@ -510,6 +510,26 @@ final class _Preferences implements LearnerPreferencesRepository {
     }
     current = preferences;
   }
+
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    if (!(mutationAllowed?.call() ?? true)) {
+      throw const LearnerPreferencesMutationUnavailable();
+    }
+    current = LearnerPreferences(
+      ownerId: current.ownerId,
+      preferenceVersion: current.preferenceVersion,
+      goal: current.goal,
+      availableMinutesPerDay: current.availableMinutesPerDay,
+      activityPreference: current.activityPreference,
+      updatedAtUtc: current.updatedAtUtc,
+      display: display,
+    );
+  }
 }
 
 final class _Packs implements LearningPackRepository {

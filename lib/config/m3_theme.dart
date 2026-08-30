@@ -12,6 +12,20 @@ class M3Theme {
   /// Font family for proper Thai rendering across all screens.
   static const String thaiFontFamily = 'NotoSansThai';
 
+  /// Applies the learner override without ever disabling a platform request
+  /// for reduced motion.
+  static MediaQueryData applyReducedMotionPreference(
+    MediaQueryData platform, {
+    required bool reduceMotion,
+  }) => platform.copyWith(
+    disableAnimations: platform.disableAnimations || reduceMotion,
+  );
+
+  static Duration motionDuration(
+    Duration standard, {
+    required MediaQueryData mediaQuery,
+  }) => mediaQuery.disableAnimations ? Duration.zero : standard;
+
   /// Light Theme Data for Material 3
   static ThemeData get lightTheme {
     final base = ThemeData(

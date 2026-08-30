@@ -687,6 +687,9 @@ final class OwnerLifecycleArchiveExporter {
           'availableMinutesPerDay': row.availableMinutesPerDay,
           'activityPreference': _safeLabel(row.activityPreference),
           'updatedAtUtc': row.updatedAtUtc.toIso8601String(),
+          'themeMode': _safeLabel(row.themeMode),
+          'motionMode': _safeLabel(row.motionMode),
+          'displayUpdatedAtUtc': row.displayUpdatedAtUtc.toIso8601String(),
         },
     ];
   }

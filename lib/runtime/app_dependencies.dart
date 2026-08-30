@@ -27,6 +27,7 @@ import '../features/media_practice/application/speech_practice_use_cases.dart';
 import '../features/motivation/application/streak_use_cases.dart';
 import '../features/progress/application/progress_use_cases.dart';
 import '../features/preferences/application/learner_preferences_use_cases.dart';
+import '../features/preferences/application/display_preferences_controller.dart';
 import '../features/quest/application/quest_use_cases.dart';
 import '../features/rewards/application/reward_use_cases.dart';
 import '../features/research/application/assigned_learning_event_context_provider.dart';
@@ -96,6 +97,7 @@ final class AppDependencies {
     this.studyPlanning,
     this.learningGoals,
     this.learnerPreferences,
+    this.displayPreferences,
     this.studyReminders,
     this.progress,
     this.rewards,
@@ -155,6 +157,7 @@ final class AppDependencies {
   final StudyPlanningUseCases? studyPlanning;
   final LearningGoalUseCases? learningGoals;
   final LearnerPreferencesUseCases? learnerPreferences;
+  final DisplayPreferencesController? displayPreferences;
   final StudyReminderUseCases? studyReminders;
   final ProgressUseCases? progress;
   final RewardUseCases? rewards;

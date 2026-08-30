@@ -49,6 +49,7 @@ final class DriftLearnerPreferencesRepository
               .getSingleOrNull();
       if (existing != null &&
           !existing.isDeleted &&
+          existing.localRevision > 0 &&
           _sameValues(existing, preferences)) {
         return false;
       }
@@ -88,23 +89,39 @@ final class DriftLearnerPreferencesRepository
         ],
         updates: {database.outboxOperations},
       );
-      await database
-          .into(database.learnerPreferences)
-          .insertOnConflictUpdate(
-            db.LearnerPreferencesCompanion.insert(
-              ownerId: preferences.ownerId,
-              preferenceVersion: preferences.preferenceVersion,
-              goal: preferences.goal.name,
-              availableMinutesPerDay: preferences.availableMinutesPerDay,
-              activityPreference: preferences.activityPreference.name,
-              updatedAtUtcMs: updatedAtUtcMs,
-              localRevision: Value(revision),
-              cloudRevision: Value(existing?.cloudRevision ?? 0),
-              lastAcknowledgedAtUtcMs: Value(existing?.lastAcknowledgedAtUtcMs),
-              serverUpdatedAtUtcMs: Value(existing?.serverUpdatedAtUtcMs),
-              isDeleted: const Value(false),
-            ),
-          );
+      if (existing == null) {
+        await database
+            .into(database.learnerPreferences)
+            .insert(
+              db.LearnerPreferencesCompanion.insert(
+                ownerId: preferences.ownerId,
+                preferenceVersion: preferences.preferenceVersion,
+                goal: preferences.goal.name,
+                availableMinutesPerDay: preferences.availableMinutesPerDay,
+                activityPreference: preferences.activityPreference.name,
+                updatedAtUtcMs: updatedAtUtcMs,
+                localRevision: Value(revision),
+                isDeleted: const Value(false),
+              ),
+            );
+      } else {
+        await (database.update(
+          database.learnerPreferences,
+        )..where((row) => row.ownerId.equals(preferences.ownerId))).write(
+          db.LearnerPreferencesCompanion(
+            preferenceVersion: Value(preferences.preferenceVersion),
+            goal: Value(preferences.goal.name),
+            availableMinutesPerDay: Value(preferences.availableMinutesPerDay),
+            activityPreference: Value(preferences.activityPreference.name),
+            updatedAtUtcMs: Value(updatedAtUtcMs),
+            localRevision: Value(revision),
+            cloudRevision: Value(existing.cloudRevision),
+            lastAcknowledgedAtUtcMs: Value(existing.lastAcknowledgedAtUtcMs),
+            serverUpdatedAtUtcMs: Value(existing.serverUpdatedAtUtcMs),
+            isDeleted: const Value(false),
+          ),
+        );
+      }
       await database
           .into(database.outboxOperations)
           .insert(
@@ -125,6 +142,68 @@ final class DriftLearnerPreferencesRepository
     if (changed) await onLocalMutation?.call();
   }
 
+  @override
+  Future<void> saveDisplayPreferences(
+    String ownerId,
+    LearnerDisplayPreferences display, {
+    LearnerPreferencesMutationGuard? mutationAllowed,
+  }) async {
+    await database.transaction(() async {
+      final owner = await (database.select(
+        database.localOwners,
+      )..where((row) => row.id.equals(ownerId))).getSingleOrNull();
+      if (owner == null || !owner.isActive) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
+      final existing = await (database.select(
+        database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
+      if (existing != null &&
+          existing.themeMode == display.themeMode.name &&
+          existing.motionMode == display.motionMode.name) {
+        return;
+      }
+      if (!(mutationAllowed?.call() ?? true)) {
+        throw const LearnerPreferencesMutationUnavailable();
+      }
+      final requestedUpdatedAt = display.updatedAtUtc.millisecondsSinceEpoch;
+      final updatedAtUtcMs =
+          existing == null ||
+              requestedUpdatedAt > existing.displayUpdatedAtUtcMs
+          ? requestedUpdatedAt
+          : existing.displayUpdatedAtUtcMs + 1;
+      if (existing == null) {
+        await database
+            .into(database.learnerPreferences)
+            .insert(
+              db.LearnerPreferencesCompanion.insert(
+                ownerId: ownerId,
+                preferenceVersion: 1,
+                goal: LearnerPreferenceGoal.balancedGrowth.name,
+                availableMinutesPerDay: 20,
+                activityPreference:
+                    LearnerActivityPreference.mixedPractice.name,
+                updatedAtUtcMs: 0,
+                themeMode: Value(display.themeMode.name),
+                motionMode: Value(display.motionMode.name),
+                displayUpdatedAtUtcMs: Value(updatedAtUtcMs),
+                localRevision: const Value(0),
+              ),
+            );
+        return;
+      }
+      await (database.update(
+        database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(ownerId))).write(
+        db.LearnerPreferencesCompanion(
+          themeMode: Value(display.themeMode.name),
+          motionMode: Value(display.motionMode.name),
+          displayUpdatedAtUtcMs: Value(updatedAtUtcMs),
+        ),
+      );
+    });
+  }
+
   bool _sameValues(
     db.LearnerPreferenceRow row,
     LearnerPreferences preferences,
@@ -134,18 +213,33 @@ final class DriftLearnerPreferencesRepository
       row.availableMinutesPerDay == preferences.availableMinutesPerDay &&
       row.activityPreference == preferences.activityPreference.name;
 
-  LearnerPreferences _toDomain(db.LearnerPreferenceRow row) =>
-      LearnerPreferences(
-        ownerId: row.ownerId,
-        preferenceVersion: row.preferenceVersion,
-        goal: LearnerPreferenceGoalCodec.parse(row.goal),
-        availableMinutesPerDay: row.availableMinutesPerDay,
-        activityPreference: LearnerActivityPreferenceCodec.parse(
-          row.activityPreference,
-        ),
+  LearnerPreferences _toDomain(db.LearnerPreferenceRow row) {
+    LearnerDisplayPreferences display;
+    try {
+      display = LearnerDisplayPreferences(
+        themeMode: LearnerThemePreferenceCodec.parse(row.themeMode),
+        motionMode: LearnerMotionPreferenceCodec.parse(row.motionMode),
         updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
-          row.updatedAtUtcMs,
+          row.displayUpdatedAtUtcMs,
           isUtc: true,
         ),
       );
+    } on Object {
+      display = LearnerDisplayPreferences.defaults();
+    }
+    return LearnerPreferences(
+      ownerId: row.ownerId,
+      preferenceVersion: row.preferenceVersion,
+      goal: LearnerPreferenceGoalCodec.parse(row.goal),
+      availableMinutesPerDay: row.availableMinutesPerDay,
+      activityPreference: LearnerActivityPreferenceCodec.parse(
+        row.activityPreference,
+      ),
+      updatedAtUtc: DateTime.fromMillisecondsSinceEpoch(
+        row.updatedAtUtcMs,
+        isUtc: true,
+      ),
+      display: display,
+    );
+  }
 }

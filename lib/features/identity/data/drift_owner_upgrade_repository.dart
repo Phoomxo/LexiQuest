@@ -3375,7 +3375,64 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     await (_database.delete(
       _database.learnerPreferences,
     )..where((row) => row.ownerId.equals(sourceId))).go();
-    if (target != null && source.updatedAtUtcMs <= target.updatedAtUtcMs) {
+    final sourceHasLearningIntent =
+        source.localRevision > 0 ||
+        source.cloudRevision > 0 ||
+        source.updatedAtUtcMs > 0;
+    final targetHasLearningIntent =
+        target != null &&
+        (target.localRevision > 0 ||
+            target.cloudRevision > 0 ||
+            target.updatedAtUtcMs > 0);
+    final sourceLearningWins =
+        sourceHasLearningIntent &&
+        (!targetHasLearningIntent ||
+            source.updatedAtUtcMs > target.updatedAtUtcMs);
+    final sourceDisplayWins =
+        target == null ||
+        source.displayUpdatedAtUtcMs > target.displayUpdatedAtUtcMs;
+    if (!sourceLearningWins && !sourceDisplayWins) {
+      await _retireLearnerPreferenceSourceOutbox(
+        sourceOwnerId: sourceId,
+        targetOwnerId: targetId,
+      );
+      return;
+    }
+    if (target == null && !sourceHasLearningIntent) {
+      await _database
+          .into(_database.learnerPreferences)
+          .insert(
+            db.LearnerPreferencesCompanion.insert(
+              ownerId: targetId,
+              preferenceVersion: source.preferenceVersion,
+              goal: source.goal,
+              availableMinutesPerDay: source.availableMinutesPerDay,
+              activityPreference: source.activityPreference,
+              updatedAtUtcMs: source.updatedAtUtcMs,
+              themeMode: Value(source.themeMode),
+              motionMode: Value(source.motionMode),
+              displayUpdatedAtUtcMs: Value(source.displayUpdatedAtUtcMs),
+              localRevision: const Value(0),
+              cloudRevision: const Value(0),
+              isDeleted: Value(source.isDeleted),
+            ),
+          );
+      await _retireLearnerPreferenceSourceOutbox(
+        sourceOwnerId: sourceId,
+        targetOwnerId: targetId,
+      );
+      return;
+    }
+    if (!sourceLearningWins) {
+      await (_database.update(
+        _database.learnerPreferences,
+      )..where((row) => row.ownerId.equals(targetId))).write(
+        db.LearnerPreferencesCompanion(
+          themeMode: Value(source.themeMode),
+          motionMode: Value(source.motionMode),
+          displayUpdatedAtUtcMs: Value(source.displayUpdatedAtUtcMs),
+        ),
+      );
       await _retireLearnerPreferenceSourceOutbox(
         sourceOwnerId: sourceId,
         targetOwnerId: targetId,
@@ -3384,6 +3441,7 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
     }
     final baseRevision = target?.cloudRevision ?? 0;
     final localRevision = baseRevision + 1;
+    final db.LearnerPreferenceRow display = sourceDisplayWins ? source : target;
     await _database
         .into(_database.learnerPreferences)
         .insertOnConflictUpdate(
@@ -3394,6 +3452,9 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
             availableMinutesPerDay: source.availableMinutesPerDay,
             activityPreference: source.activityPreference,
             updatedAtUtcMs: source.updatedAtUtcMs,
+            themeMode: Value(display.themeMode),
+            motionMode: Value(display.motionMode),
+            displayUpdatedAtUtcMs: Value(display.displayUpdatedAtUtcMs),
             localRevision: Value(localRevision),
             cloudRevision: Value(baseRevision),
             lastAcknowledgedAtUtcMs: Value(target?.lastAcknowledgedAtUtcMs),
@@ -3418,6 +3479,11 @@ final class DriftOwnerUpgradeRepository implements OwnerUpgradeRepository {
       _database.learnerPreferences,
     )..where((row) => row.ownerId.equals(ownerId))).getSingleOrNull();
     if (preference == null) return;
+    if (preference.localRevision == 0 &&
+        preference.cloudRevision == 0 &&
+        preference.updatedAtUtcMs == 0) {
+      return;
+    }
     await (_database.update(
       _database.learnerPreferences,
     )..where((row) => row.ownerId.equals(ownerId))).write(

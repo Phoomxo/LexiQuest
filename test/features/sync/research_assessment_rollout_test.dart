@@ -62,7 +62,7 @@ void main() {
       staleAssessmentRules.allowsAssessmentRunClaims,
       isFalse,
       reason:
-          'the pre-f35 rules token cannot authorize the widened v15-v21 '
+          'the pre-f39 rules token cannot authorize the widened v15-v22 '
           'assessment payload contract',
     );
   });

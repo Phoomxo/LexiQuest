@@ -32,4 +32,48 @@ void main() {
       expect(size.height, greaterThanOrEqualTo(48));
     }
   });
+
+  test('display preference preserves platform reduced motion fail closed', () {
+    const platformReduced = MediaQueryData(disableAnimations: true);
+    const platformAnimated = MediaQueryData(disableAnimations: false);
+
+    expect(
+      M3Theme.applyReducedMotionPreference(
+        platformReduced,
+        reduceMotion: false,
+      ).disableAnimations,
+      isTrue,
+    );
+    expect(
+      M3Theme.applyReducedMotionPreference(
+        platformAnimated,
+        reduceMotion: true,
+      ).disableAnimations,
+      isTrue,
+    );
+    expect(
+      M3Theme.applyReducedMotionPreference(
+        platformAnimated,
+        reduceMotion: false,
+      ).disableAnimations,
+      isFalse,
+    );
+  });
+
+  test('motion duration becomes static only for effective reduced motion', () {
+    expect(
+      M3Theme.motionDuration(
+        const Duration(milliseconds: 300),
+        mediaQuery: const MediaQueryData(disableAnimations: true),
+      ),
+      Duration.zero,
+    );
+    expect(
+      M3Theme.motionDuration(
+        const Duration(milliseconds: 300),
+        mediaQuery: const MediaQueryData(disableAnimations: false),
+      ),
+      const Duration(milliseconds: 300),
+    );
+  });
 }

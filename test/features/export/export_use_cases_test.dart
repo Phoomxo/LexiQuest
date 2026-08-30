@@ -141,8 +141,10 @@ void main() {
       await database.customInsert(
         'INSERT INTO learner_preferences '
         '(owner_id, preference_version, goal, available_minutes_per_day, '
-        'activity_preference, updated_at_utc_ms) VALUES '
-        "('local:owner', 1, 'examPreparation', 45, 'quiz', 20)",
+        'activity_preference, updated_at_utc_ms, theme_mode, motion_mode, '
+        'display_updated_at_utc_ms) VALUES '
+        "('local:owner', 1, 'examPreparation', 45, 'quiz', 20, 'dark', "
+        "'reduced', 21)",
       );
       await consent.withdraw();
 
@@ -170,6 +172,9 @@ void main() {
           'availableMinutesPerDay': 45,
           'activityPreference': 'quiz',
           'updatedAtUtc': '1970-01-01T00:00:00.020Z',
+          'themeMode': 'dark',
+          'motionMode': 'reduced',
+          'displayUpdatedAtUtc': '1970-01-01T00:00:00.021Z',
         },
       ]);
     },
