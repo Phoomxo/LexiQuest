@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../../accessibility/domain/accessibility_policy.dart';
+import '../../accessibility/presentation/accessibility_scope.dart';
 import '../application/handwriting_self_check_adapter.dart';
 import 'unified_lesson_shell.dart';
 
@@ -183,30 +185,36 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
-          Text(
-            'Practice writing',
-            style: Theme.of(context).textTheme.titleLarge,
+          AccessibilitySemanticRegion(
+            role: AccessibilitySemanticRole.prompt,
+            child: Text(
+              'Practice writing',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Draw your answer for your own review. This stays on this device only and is never recognized automatically.',
           ),
           const SizedBox(height: 12),
-          RepaintBoundary(
-            child: SizedBox(
-              height: 240,
-              child: Semantics(
-                label: 'Local handwriting canvas',
-                child: GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onPanStart: (details) =>
-                      _controller.beginStroke(details.localPosition),
-                  onPanUpdate: (details) =>
-                      _controller.appendPoint(details.localPosition),
-                  onPanEnd: (_) => _controller.endStroke(),
-                  child: CustomPaint(
-                    painter: _HandwritingPainter(_controller),
-                    child: const SizedBox.expand(),
+          AccessibilitySemanticRegion(
+            role: AccessibilitySemanticRole.responseAndInput,
+            child: RepaintBoundary(
+              child: SizedBox(
+                height: 240,
+                child: Semantics(
+                  label: 'Local handwriting canvas',
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanStart: (details) =>
+                        _controller.beginStroke(details.localPosition),
+                    onPanUpdate: (details) =>
+                        _controller.appendPoint(details.localPosition),
+                    onPanEnd: (_) => _controller.endStroke(),
+                    child: CustomPaint(
+                      painter: _HandwritingPainter(_controller),
+                      child: const SizedBox.expand(),
+                    ),
                   ),
                 ),
               ),
@@ -243,34 +251,42 @@ final class _HandwritingScratchpadState extends State<HandwritingScratchpad>
           const Text(
             'Typing is an alternative for your own self-check, not handwriting recognition.',
           ),
-          TextField(
-            controller: _typedAlternative,
-            maxLength: 120,
-            onChanged: _onTypedAlternativeChanged,
-            decoration: const InputDecoration(
-              labelText: 'Type your answer instead',
-              helperText: 'Your text stays only while this scratchpad is open.',
+          AccessibilitySemanticRegion(
+            role: AccessibilitySemanticRole.responseAndInput,
+            child: TextField(
+              controller: _typedAlternative,
+              maxLength: 120,
+              onChanged: _onTypedAlternativeChanged,
+              decoration: const InputDecoration(
+                labelText: 'Type your answer instead',
+                helperText:
+                    'Your text stays only while this scratchpad is open.',
+              ),
             ),
           ),
           const SizedBox(height: 8),
           const Text(
             'Choose your own result. This does not update progress or rewards.',
           ),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: <Widget>[
-              FilledButton(
-                onPressed: () =>
-                    _selfCheck(HandwritingSelfCheckSelection.looksCorrect),
-                child: const Text('I checked it'),
-              ),
-              OutlinedButton(
-                onPressed: () =>
-                    _selfCheck(HandwritingSelfCheckSelection.needsMorePractice),
-                child: const Text('I need more practice'),
-              ),
-            ],
+          AccessibilitySemanticRegion(
+            role: AccessibilitySemanticRole.navigation,
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: <Widget>[
+                FilledButton(
+                  onPressed: () =>
+                      _selfCheck(HandwritingSelfCheckSelection.looksCorrect),
+                  child: const Text('I checked it'),
+                ),
+                OutlinedButton(
+                  onPressed: () => _selfCheck(
+                    HandwritingSelfCheckSelection.needsMorePractice,
+                  ),
+                  child: const Text('I need more practice'),
+                ),
+              ],
+            ),
           ),
         ],
       ),

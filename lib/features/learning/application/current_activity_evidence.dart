@@ -803,8 +803,24 @@ final class PendingCurrentActivityEvidence {
   /// screen advances after a successful commit.
   bool get isResponseLocked => !isCommitted;
 
+  /// Opaque authority check for controller-owned capture boundaries. The
+  /// underlying [LearningUseCases] instance is deliberately not exposed.
+  bool belongsToLearningAuthority(LearningUseCases authority) =>
+      identical(_learning, authority);
+
   Future<ResolvedLearningEvidenceContexts> freezeContexts() async {
-    return (await _resolveOnce()).contexts;
+    final previousStatus = _status;
+    _status = PendingCurrentActivityEvidenceStatus.resolving;
+    try {
+      return (await _resolveOnce()).contexts;
+    } catch (_) {
+      _status = PendingCurrentActivityEvidenceStatus.retryRequired;
+      rethrow;
+    } finally {
+      if (_status == PendingCurrentActivityEvidenceStatus.resolving) {
+        _status = previousStatus;
+      }
+    }
   }
 
   Future<AnswerRecordResult> record() {

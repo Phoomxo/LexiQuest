@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/meaning_quiz_mode_adapter.dart';
@@ -321,7 +323,7 @@ class _QuizScreenState extends State<QuizScreen> {
         if (didPop || _persistenceLocked) return;
         unawaited(_confirmExit(context));
       },
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('Quiz คำศัพท์')),
         body: FutureBuilder<QuizSession>(
           future: _load,
@@ -378,11 +380,14 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            Text(
-              question.prompt,
-              key: const ValueKey<String>('meaning-quiz-prompt'),
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.headlineMedium,
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.prompt,
+              child: Text(
+                question.prompt,
+                key: const ValueKey<String>('meaning-quiz-prompt'),
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.headlineMedium,
+              ),
             ),
             const SizedBox(height: 4),
             Text(
@@ -391,60 +396,68 @@ class _QuizScreenState extends State<QuizScreen> {
               style: Theme.of(context).textTheme.bodyMedium,
             ),
             const SizedBox(height: 24),
-            if (_expectsTypedResponse) ...<Widget>[
-              TextField(
-                key: const ValueKey<String>('typed-recall-input'),
-                controller: _typedResponseController,
-                enabled: !_isAnswered && !actionLocked,
-                maxLength: TypedRecallModeAdapter.maxAnswerScalars,
-                autocorrect: false,
-                textInputAction: TextInputAction.done,
-                onChanged: (_) {
-                  _lessonLifecycle?.recordInteraction();
-                  setState(() {});
-                },
-                onSubmitted: (_) {
-                  if (_typedResponseController.text.trim().isNotEmpty &&
-                      !actionLocked) {
-                    _recordTyped();
-                  }
-                },
-                decoration: const InputDecoration(
-                  labelText: 'Type the vocabulary word',
-                  hintText: 'Enter the spelling from memory',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 10),
-              FilledButton(
-                key: const ValueKey<String>('typed-recall-submit'),
-                onPressed:
-                    _isAnswered ||
-                        actionLocked ||
-                        _typedResponseController.text.trim().isEmpty
-                    ? null
-                    : _recordTyped,
-                child: const Text('Check answer'),
-              ),
-            ] else
-              ...question.options.map(
-                (option) => Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: FilledButton.tonal(
-                    key: ValueKey<String>(
-                      'meaning-quiz-option-${question.word.id}-$option',
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.responseAndInput,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  if (_expectsTypedResponse) ...<Widget>[
+                    TextField(
+                      key: const ValueKey<String>('typed-recall-input'),
+                      controller: _typedResponseController,
+                      enabled: !_isAnswered && !actionLocked,
+                      maxLength: TypedRecallModeAdapter.maxAnswerScalars,
+                      autocorrect: false,
+                      textInputAction: TextInputAction.done,
+                      onChanged: (_) {
+                        _lessonLifecycle?.recordInteraction();
+                        setState(() {});
+                      },
+                      onSubmitted: (_) {
+                        if (_typedResponseController.text.trim().isNotEmpty &&
+                            !actionLocked) {
+                          _recordTyped();
+                        }
+                      },
+                      decoration: const InputDecoration(
+                        labelText: 'Type the vocabulary word',
+                        hintText: 'Enter the spelling from memory',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
-                    onPressed: _isAnswered || actionLocked
-                        ? null
-                        : () => _recordChoice(option),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                      backgroundColor: _answerColor(option),
+                    const SizedBox(height: 10),
+                    FilledButton(
+                      key: const ValueKey<String>('typed-recall-submit'),
+                      onPressed:
+                          _isAnswered ||
+                              actionLocked ||
+                              _typedResponseController.text.trim().isEmpty
+                          ? null
+                          : _recordTyped,
+                      child: const Text('Check answer'),
                     ),
-                    child: Text(option),
-                  ),
-                ),
+                  ] else
+                    ...question.options.map(
+                      (option) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: FilledButton.tonal(
+                          key: ValueKey<String>(
+                            'meaning-quiz-option-${question.word.id}-$option',
+                          ),
+                          onPressed: _isAnswered || actionLocked
+                              ? null
+                              : () => _recordChoice(option),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                            backgroundColor: _answerColor(option),
+                          ),
+                          child: Text(option),
+                        ),
+                      ),
+                    ),
+                ],
               ),
+            ),
             if (_isSaving) const LinearProgressIndicator(),
             if (_reviewPhase == MeaningQuizReviewPhase.evidenceRetryRequired)
               FilledButton(
@@ -461,7 +474,10 @@ class _QuizScreenState extends State<QuizScreen> {
               ),
             if (_reviewFeedback case final feedback?) ...<Widget>[
               const SizedBox(height: 12),
-              AnswerFeedbackPanel(feedback: feedback),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.feedback,
+                child: AnswerFeedbackPanel(feedback: feedback),
+              ),
             ],
             if (_isAnswered) ...<Widget>[
               const SizedBox(height: 12),

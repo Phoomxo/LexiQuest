@@ -1,10 +1,14 @@
 import 'dart:async';
 
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide LocalOwner;
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
+import 'package:vocab_learning_app/features/accessibility/presentation/accessibility_scope.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -30,6 +34,7 @@ import 'package:vocab_learning_app/features/voice/application/voice_use_cases.da
 import 'package:vocab_learning_app/voice/voice_provider.dart';
 
 import '../support/inert_research_dependencies.dart';
+import '../support/accessibility_semantics_test_support.dart';
 import '../support/test_quest_use_cases.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
@@ -84,6 +89,225 @@ void main() {
     expect(find.text('apple'), findsOneWidget);
     expect(fakeVoice.spokenRequests.length, 1);
   });
+
+  testWidgets(
+    'f38 ultra review: SRS prompt and reveal are sibling semantic regions',
+    (tester) async {
+      final semanticsHandle = tester.ensureSemantics();
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      try {
+        await _pumpLegacyCompatibility(
+          tester,
+          wordList: const <Map<String, String>>[
+            <String, String>{
+              'word': 'station',
+              'translation': 'สถานี',
+              'example': 'The station is open.',
+            },
+          ],
+          voice: voice,
+        );
+        await tester.pumpAndSettle();
+
+        final root = find.byType(SrsFlashcardsScreen);
+        final prompt = semanticsNodeForAccessibilityRole(
+          tester,
+          scope: root,
+          role: AccessibilitySemanticRole.prompt,
+        );
+        final response = semanticsNodeForAccessibilityRole(
+          tester,
+          scope: root,
+          role: AccessibilitySemanticRole.responseAndInput,
+        );
+        expect(
+          prompt.parent,
+          same(response.parent),
+          reason:
+              'the card prompt cannot be nested under the reveal/rating '
+              'response region because an ancestor is traversed first',
+        );
+        expectRenderedAccessibilityTraversal(
+          tester,
+          scope: root,
+          roles: const <AccessibilitySemanticRole>[
+            AccessibilitySemanticRole.prompt,
+            AccessibilitySemanticRole.responseAndInput,
+            AccessibilitySemanticRole.navigation,
+          ],
+        );
+      } finally {
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await voice.dispose();
+        semanticsHandle.dispose();
+      }
+    },
+  );
+
+  testWidgets('f38 review: SRS reveal is keyboard focusable and activatable', (
+    tester,
+  ) async {
+    final voice = FakeVoiceProvider();
+    await _pumpLegacyCompatibility(
+      tester,
+      wordList: const <Map<String, String>>[
+        <String, String>{
+          'word': 'station',
+          'translation': 'สถานี',
+          'example': 'The train leaves the station.',
+        },
+      ],
+      voice: VoiceUseCases(provider: voice, disposeProvider: () async {}),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('สถานี'), findsNothing);
+    FocusManager.instance.primaryFocus?.unfocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+    await tester.pump();
+    expect(FocusManager.instance.primaryFocus, isNotNull);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('สถานี'),
+      findsOneWidget,
+      reason: 'keyboard activation must reveal without a pointer tap',
+    );
+    expect(find.textContaining('Good'), findsOneWidget);
+    expect(find.textContaining('Again'), findsOneWidget);
+  });
+
+  testWidgets(
+    'f38 review: SRS snaps an active flip when reduced motion turns on',
+    (tester) async {
+      final disableAnimations = ValueNotifier<bool>(false);
+      addTearDown(disableAnimations.dispose);
+      await _pumpLegacyCompatibility(
+        tester,
+        wordList: const <Map<String, String>>[
+          <String, String>{
+            'word': 'station',
+            'translation': 'สถานี',
+            'example': 'The train leaves the station.',
+          },
+        ],
+        voice: VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        ),
+        disableAnimations: disableAnimations,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('station'));
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(find.text('สถานี'), findsNothing);
+
+      disableAnimations.value = true;
+      await tester.pump();
+
+      expect(find.text('สถานี'), findsOneWidget);
+      expect(find.textContaining('Good'), findsOneWidget);
+      expect(find.textContaining('Again'), findsOneWidget);
+      expect(
+        tester.binding.transientCallbackCount,
+        0,
+        reason: 'the in-flight 400 ms ticker must be stopped after the snap',
+      );
+    },
+  );
+
+  testWidgets(
+    'f38 final review: compatibility route applies a concrete high contrast theme',
+    (tester) async {
+      const wordList = <Map<String, String>>[
+        <String, String>{
+          'word': 'station',
+          'translation': 'สถานี',
+          'example': 'The train leaves the station.',
+        },
+      ];
+      final standardTheme = ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepOrange),
+      );
+
+      await _pumpLegacyCompatibility(
+        tester,
+        wordList: wordList,
+        voice: VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        ),
+        highContrast: true,
+        theme: standardTheme,
+      );
+      await tester.pumpAndSettle();
+      final highContrastContext = tester.element(find.text('station'));
+
+      expect(AccessibilityScope.of(highContrastContext).highContrast, isTrue);
+      expect(
+        Theme.of(highContrastContext).colorScheme,
+        isNot(standardTheme.colorScheme),
+        reason:
+            'the real compatibility route must consume the platform signal '
+            'as a concrete descendant theme, not metadata only',
+      );
+    },
+  );
+
+  testWidgets(
+    'f38 final review: compatibility reverse snaps to the next card front',
+    (tester) async {
+      final disableAnimations = ValueNotifier<bool>(false);
+      addTearDown(disableAnimations.dispose);
+      await _pumpLegacyCompatibility(
+        tester,
+        wordList: const <Map<String, String>>[
+          <String, String>{
+            'word': 'station',
+            'translation': 'สถานี',
+            'example': 'The train leaves the station.',
+          },
+          <String, String>{
+            'word': 'airport',
+            'translation': 'สนามบิน',
+            'example': 'The airport is nearby.',
+          },
+        ],
+        voice: VoiceUseCases(
+          provider: FakeVoiceProvider(),
+          disposeProvider: () async {},
+        ),
+        disableAnimations: disableAnimations,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('station'));
+      await tester.pumpAndSettle();
+      expect(find.text('สถานี'), findsOneWidget);
+
+      await tester.tap(find.text('จำได้แล้ว (Good)'));
+      await tester.pump(const Duration(milliseconds: 100));
+      disableAnimations.value = true;
+      await tester.pumpAndSettle();
+
+      expect(find.text('airport'), findsOneWidget);
+      expect(
+        find.text('สนามบิน'),
+        findsNothing,
+        reason:
+            'a reverse animation must snap to its zero target before the '
+            'next logically-unrevealed card replaces it',
+      );
+      expect(tester.binding.transientCallbackCount, 0);
+    },
+  );
 
   test(
     'flashcard close and retry stay pinned after active owner switch',
@@ -834,6 +1058,9 @@ Future<void> _pumpLegacyCompatibility(
   WidgetTester tester, {
   required List<Map<String, String>> wordList,
   required VoiceUseCases voice,
+  ValueListenable<bool>? disableAnimations,
+  bool highContrast = false,
+  ThemeData? theme,
 }) async {
   final database = AppDatabase(NativeDatabase.memory());
   addTearDown(database.close);
@@ -879,6 +1106,30 @@ Future<void> _pumpLegacyCompatibility(
     AppDependenciesScope(
       dependencies: dependencies,
       child: MaterialApp(
+        theme: theme,
+        builder: disableAnimations == null && !highContrast
+            ? null
+            : (context, child) {
+                Widget mediaQuery({required bool disableAnimations}) =>
+                    MediaQuery(
+                      data: MediaQuery.of(context).copyWith(
+                        disableAnimations: disableAnimations,
+                        highContrast: highContrast,
+                      ),
+                      child: child!,
+                    );
+                final animationChanges = disableAnimations;
+                if (animationChanges == null) {
+                  return mediaQuery(
+                    disableAnimations: MediaQuery.of(context).disableAnimations,
+                  );
+                }
+                return ValueListenableBuilder<bool>(
+                  valueListenable: animationChanges,
+                  builder: (context, disabled, _) =>
+                      mediaQuery(disableAnimations: disabled),
+                );
+              },
         home: SrsFlashcardCompatibilityRoute(wordList: wordList, voice: voice),
       ),
     ),

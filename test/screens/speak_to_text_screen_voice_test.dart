@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -18,6 +19,8 @@ import 'package:vocab_learning_app/screens/speak_to_text_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 class FakeVoiceProvider implements VoiceProvider {
   final List<VoiceRequest> spokenRequests = [];
@@ -647,6 +650,49 @@ void main() {
       expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
       expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
     },
+  );
+
+  testWidgets(
+    'f38 ultra review: speaking assessment follows the response region',
+    (tester) => withAccessibilitySemantics(tester, () async {
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      addTearDown(voice.dispose);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: SpeakToTextScreen(
+            correctWord: 'cat',
+            voice: voice,
+            speechPractice: SpeechPracticeUseCases(_EvidenceSpeechGateway()),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const ValueKey<String>('speech-listen-button')),
+      );
+      await tester.pumpAndSettle();
+
+      final root = find.byType(SpeakToTextScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.textContaining('ความเหมือนของข้อความ:'),
+        role: AccessibilitySemanticRole.feedback,
+        reason: 'speech assessment is feedback, not pre-response prompt state',
+      );
+      expectRenderedAccessibilityTraversal(
+        tester,
+        scope: root,
+        roles: const <AccessibilitySemanticRole>[
+          AccessibilitySemanticRole.prompt,
+          AccessibilitySemanticRole.responseAndInput,
+          AccessibilitySemanticRole.feedback,
+          AccessibilitySemanticRole.navigation,
+        ],
+      );
+    }),
   );
 
   testWidgets(

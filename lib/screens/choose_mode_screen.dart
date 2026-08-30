@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/flashcard_mode_adapter.dart';
 import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
@@ -730,17 +731,37 @@ typedef NativeLessonQuestionAvailability = bool Function(QuizQuestion question);
 
 /// Loads one repository-owned vocabulary item only after the enclosing shell
 /// exists, so flag retirement owns delayed-session compensation.
-class NativeVocabularyLessonModeLoader extends StatefulWidget {
+class NativeVocabularyLessonModeLoader extends StatefulWidget
+    implements AccessibilityModeFeedbackSurface {
   const NativeVocabularyLessonModeLoader({
     super.key,
     required this.builder,
     this.isQuestionAvailable,
     this.sessionConfiguration,
+  }) : _shellFeedback = null;
+
+  const NativeVocabularyLessonModeLoader._withFeedback({
+    super.key,
+    required this.builder,
+    required this.isQuestionAvailable,
+    required this.sessionConfiguration,
+    required this._shellFeedback,
   });
 
   final NativeLessonModeScreenBuilder builder;
   final NativeLessonQuestionAvailability? isQuestionAvailable;
   final SessionConfiguration? sessionConfiguration;
+  final Widget? _shellFeedback;
+
+  @override
+  Widget withShellFeedback(Widget? feedback) =>
+      NativeVocabularyLessonModeLoader._withFeedback(
+        key: key,
+        builder: builder,
+        isQuestionAvailable: isQuestionAvailable,
+        sessionConfiguration: sessionConfiguration,
+        shellFeedback: feedback,
+      );
 
   @override
   State<NativeVocabularyLessonModeLoader> createState() =>
@@ -806,7 +827,23 @@ class _NativeVocabularyModeLoaderState
             body: Center(child: Text('Add vocabulary before starting.')),
           );
         }
-        return widget.builder(context, session, session.questions.single);
+        final modeSurface = widget.builder(
+          context,
+          session,
+          session.questions.single,
+        );
+        final feedback = widget._shellFeedback;
+        if (modeSurface is AccessibilityModeFeedbackSurface) {
+          return (modeSurface as AccessibilityModeFeedbackSurface)
+              .withShellFeedback(feedback);
+        }
+        if (feedback == null) return modeSurface;
+        return Column(
+          children: <Widget>[
+            feedback,
+            Expanded(child: modeSurface),
+          ],
+        );
       },
     );
   }

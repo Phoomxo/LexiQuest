@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyWord;
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/definition_quiz_mode_adapter.dart';
@@ -13,12 +14,16 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artifact_identity.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/definition_quiz_screen.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 void main() {
   late AppDatabase database;
@@ -53,7 +58,7 @@ void main() {
       id: 'word:airport',
       spelling: 'airport',
       revision: 2,
-      checksum: _checksumB,
+      checksum: _coreChecksum(spelling: 'airport', meaning: 'ความหมาย'),
     );
     await _insertWord(
       database,
@@ -61,7 +66,7 @@ void main() {
       id: 'word:station',
       spelling: 'station',
       revision: 3,
-      checksum: _checksumA,
+      checksum: _coreChecksum(spelling: 'station', meaning: 'ความหมาย'),
     );
     learning = LearningUseCases(
       owners: owners,
@@ -75,8 +80,8 @@ void main() {
   tearDown(() => database.close());
 
   testWidgets(
-    'renders a reviewed definition at 200 percent and feedback only after commit',
-    (tester) async {
+    'f38 ultra review: definition feedback follows response semantics',
+    (tester) => withAccessibilitySemantics(tester, () async {
       await tester.pumpWidget(
         MaterialApp(
           builder: (context, child) => MediaQuery(
@@ -110,6 +115,24 @@ void main() {
       await tester.tap(find.text('airport'));
       await _pumpUntilFound(tester, find.text('Correct answer: airport'));
 
+      final root = find.byType(DefinitionQuizScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('answer-feedback-panel')),
+        role: AccessibilitySemanticRole.feedback,
+        reason: 'committed definition feedback must own role 3',
+      );
+      expectRenderedAccessibilityTraversal(
+        tester,
+        scope: root,
+        roles: const <AccessibilitySemanticRole>[
+          AccessibilitySemanticRole.prompt,
+          AccessibilitySemanticRole.responseAndInput,
+          AccessibilitySemanticRole.feedback,
+          AccessibilitySemanticRole.navigation,
+        ],
+      );
+
       final attempts = await database.select(database.answerAttempts).get();
       expect(attempts, hasLength(1));
       final context = EvidenceContext.fromJson(
@@ -121,15 +144,22 @@ void main() {
       expect(context.hintLevel, 0);
       expect(
         context.contentRevision,
-        'lexical-definition:word:airport@2:$_checksumB',
+        _evidenceContentRevision(
+          promptMode: 'definitionChoice',
+          wordId: 'word:airport',
+          spelling: 'airport',
+          meaning: 'ความหมาย',
+          revision: 2,
+          artifactChecksum: _checksumB,
+        ),
       );
       expect(await database.select(database.srsStates).get(), isEmpty);
       expect(tester.takeException(), isNull);
-    },
+    }),
   );
 
   testWidgets(
-    'announces missing reviewed definition and skips without evidence',
+    'f38 ultra review: definition skip owns prompt and response semantics',
     (tester) async {
       final words = _reviewedWords();
       final first = words.first.copyWith(
@@ -156,6 +186,21 @@ void main() {
           'Skipped. The English definition has not been approved.',
         ),
         findsOneWidget,
+      );
+      final root = find.byType(DefinitionQuizScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.bySemanticsLabel(
+          'Skipped. The English definition has not been approved.',
+        ),
+        role: AccessibilitySemanticRole.prompt,
+        reason: 'a valid skip state still owns an announced prompt',
+      );
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('definition-quiz-skip')),
+        role: AccessibilitySemanticRole.responseAndInput,
+        reason: 'the skip continuation is the available response action',
       );
       expect(await database.select(database.answerAttempts).get(), isEmpty);
 
@@ -316,14 +361,16 @@ List<VocabularyWord> _reviewedWords() => <VocabularyWord>[
     id: 'word:airport',
     spelling: 'airport',
     revision: 2,
-    checksum: _checksumB,
+    coreChecksum: _coreChecksum(spelling: 'airport', meaning: 'ความหมาย'),
+    artifactChecksum: _checksumB,
     definition: 'A place where aircraft arrive and depart.',
   ),
   _lexicalWord(
     id: 'word:station',
     spelling: 'station',
     revision: 3,
-    checksum: _checksumA,
+    coreChecksum: _coreChecksum(spelling: 'station', meaning: 'ความหมาย'),
+    artifactChecksum: _checksumA,
     definition: 'A place where trains stop for passengers.',
   ),
 ];
@@ -332,7 +379,8 @@ VocabularyWord _lexicalWord({
   required String id,
   required String spelling,
   required int revision,
-  required String checksum,
+  required String coreChecksum,
+  required String artifactChecksum,
   required String definition,
 }) => VocabularyWord(
   id: id,
@@ -350,15 +398,51 @@ VocabularyWord _lexicalWord({
   createdAtUtc: DateTime.utc(2026, 8, 1),
   updatedAtUtc: DateTime.utc(2026, 8, 2),
   contentRevision: revision,
-  contentChecksumSha256: checksum,
+  contentChecksumSha256: coreChecksum,
   contentProvenance: ContentProvenance.packaged,
   contentReviewState: ContentReviewState.approved,
   contentPublicationState: ContentPublicationState.published,
   richMetadata: RichLexicalMetadata(
     englishDefinition: definition,
-    verifiedArtifactChecksumSha256: checksum,
+    verifiedContentRevision: revision,
+    verifiedArtifactChecksumSha256: artifactChecksum,
   ),
 );
+
+String _coreChecksum({required String spelling, required String meaning}) =>
+    ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: 'category:travel',
+      spelling: spelling,
+      normalizedSpelling: spelling,
+      meaning: meaning,
+      normalizedMeaning: meaning,
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'pack',
+      isGlobal: true,
+    );
+
+String _evidenceContentRevision({
+  required String promptMode,
+  required String wordId,
+  required String spelling,
+  required String meaning,
+  required int revision,
+  required String artifactChecksum,
+}) {
+  final checksum = LexicalPromptArtifactResolver.canonicalPromptChecksumSha256(
+    promptMode: promptMode,
+    coreChecksumSha256: _coreChecksum(spelling: spelling, meaning: meaning),
+    verifiedArtifactRevision: revision,
+    verifiedArtifactChecksumSha256: artifactChecksum,
+  );
+  return LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+    promptMode: promptMode,
+    wordId: wordId,
+    revision: revision,
+    checksumSha256: checksum,
+  );
+}
 
 Future<void> _insertWord(
   AppDatabase database, {
@@ -379,8 +463,13 @@ Future<void> _insertWord(
         meaning: 'ความหมาย',
         normalizedMeaning: 'ความหมาย',
         partOfSpeech: 'noun',
+        source: const Value<String>('pack'),
+        isGlobal: const Value<bool>(true),
         contentRevision: Value(revision),
         contentChecksumSha256: Value(checksum),
+        contentProvenance: Value(ContentProvenance.packaged.name),
+        contentReviewState: Value(ContentReviewState.approved.name),
+        contentPublicationState: Value(ContentPublicationState.published.name),
         createdAtUtcMs: 1,
         updatedAtUtcMs: 1,
       ),

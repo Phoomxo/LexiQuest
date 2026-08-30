@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/cloze_mode_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -193,7 +195,7 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
         if (didPop || _persistenceLocked) return;
         unawaited(_confirmExit());
       },
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('Cloze Test')),
         body: FutureBuilder<QuizSession>(
           future: _load,
@@ -241,113 +243,139 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
             ),
             const SizedBox(height: 24),
             if (question == null) ...<Widget>[
-              Semantics(
-                container: true,
-                liveRegion: true,
-                excludeSemantics: true,
-                label: item.semanticAnnouncement,
-                child: Text(
-                  item.semanticAnnouncement,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Semantics(
+                  container: true,
+                  liveRegion: true,
+                  excludeSemantics: true,
+                  label: item.semanticAnnouncement,
+                  child: Text(
+                    item.semanticAnnouncement,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              FilledButton(
-                key: const ValueKey<String>('cloze-skip'),
-                onPressed: _actionLocked ? null : _advance,
-                child: const Text('Continue'),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: FilledButton(
+                  key: const ValueKey<String>('cloze-skip'),
+                  onPressed: _actionLocked ? null : _advance,
+                  child: const Text('Continue'),
+                ),
               ),
             ] else ...<Widget>[
-              Text(
-                question.prompt,
-                key: const ValueKey<String>('cloze-prompt'),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Text(
+                  question.prompt,
+                  key: const ValueKey<String>('cloze-prompt'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
               const SizedBox(height: 20),
-              if (_inputMode == null)
-                Wrap(
-                  key: const ValueKey<String>('cloze-input-mode'),
-                  alignment: WrapAlignment.center,
-                  spacing: 12,
-                  runSpacing: 12,
-                  children: <Widget>[
-                    FilledButton.tonalIcon(
-                      key: const ValueKey<String>('cloze-mode-selected'),
-                      onPressed: _actionLocked
-                          ? null
-                          : () => setState(
-                              () => _inputMode = ClozeInputMode.selected,
-                            ),
-                      icon: const Icon(Icons.touch_app_outlined),
-                      label: const Text('Choose'),
-                    ),
-                    FilledButton.tonalIcon(
-                      key: const ValueKey<String>('cloze-mode-typed'),
-                      onPressed: _actionLocked
-                          ? null
-                          : () => setState(
-                              () => _inputMode = ClozeInputMode.typed,
-                            ),
-                      icon: const Icon(Icons.keyboard_outlined),
-                      label: const Text('Type'),
-                    ),
-                  ],
-                )
-              else
-                Semantics(
-                  key: const ValueKey<String>('cloze-input-mode'),
-                  label: _inputMode == ClozeInputMode.selected
-                      ? 'Selected response mode: Choose'
-                      : 'Selected response mode: Type',
-                  child: Text(
-                    _inputMode == ClozeInputMode.selected
-                        ? 'Choose the missing word'
-                        : 'Type the missing word',
-                    textAlign: TextAlign.center,
-                  ),
-                ),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: _inputMode == null
+                    ? Wrap(
+                        key: const ValueKey<String>('cloze-input-mode'),
+                        alignment: WrapAlignment.center,
+                        spacing: 12,
+                        runSpacing: 12,
+                        children: <Widget>[
+                          FilledButton.tonalIcon(
+                            key: const ValueKey<String>('cloze-mode-selected'),
+                            onPressed: _actionLocked
+                                ? null
+                                : () => setState(
+                                    () => _inputMode = ClozeInputMode.selected,
+                                  ),
+                            icon: const Icon(Icons.touch_app_outlined),
+                            label: const Text('Choose'),
+                          ),
+                          FilledButton.tonalIcon(
+                            key: const ValueKey<String>('cloze-mode-typed'),
+                            onPressed: _actionLocked
+                                ? null
+                                : () => setState(
+                                    () => _inputMode = ClozeInputMode.typed,
+                                  ),
+                            icon: const Icon(Icons.keyboard_outlined),
+                            label: const Text('Type'),
+                          ),
+                        ],
+                      )
+                    : Semantics(
+                        key: const ValueKey<String>('cloze-input-mode'),
+                        label: _inputMode == ClozeInputMode.selected
+                            ? 'Selected response mode: Choose'
+                            : 'Selected response mode: Type',
+                        child: Text(
+                          _inputMode == ClozeInputMode.selected
+                              ? 'Choose the missing word'
+                              : 'Type the missing word',
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+              ),
               const SizedBox(height: 16),
               if (_inputMode == ClozeInputMode.selected)
-                for (final option in question.options)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: FilledButton.tonal(
-                      key: ValueKey<String>(
-                        'cloze-option-${question.wordId}-$option',
-                      ),
-                      onPressed: review.isAnswered || _actionLocked
-                          ? null
-                          : () => _recordSelected(option),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
-                      ),
-                      child: Text(option),
-                    ),
-                  )
-              else if (_inputMode == ClozeInputMode.typed) ...<Widget>[
-                TextField(
-                  key: const ValueKey<String>('cloze-typed-answer'),
-                  controller: _typedAnswer,
-                  enabled: !review.isAnswered && !_actionLocked,
-                  autocorrect: false,
-                  textInputAction: TextInputAction.done,
-                  decoration: const InputDecoration(
-                    labelText: 'Type the missing word',
-                    border: OutlineInputBorder(),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      for (final option in question.options)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: FilledButton.tonal(
+                            key: ValueKey<String>(
+                              'cloze-option-${question.wordId}-$option',
+                            ),
+                            onPressed: review.isAnswered || _actionLocked
+                                ? null
+                                : () => _recordSelected(option),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                            ),
+                            child: Text(option),
+                          ),
+                        ),
+                    ],
                   ),
-                  onSubmitted: (_) => _recordTyped(),
+                )
+              else if (_inputMode == ClozeInputMode.typed)
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      TextField(
+                        key: const ValueKey<String>('cloze-typed-answer'),
+                        controller: _typedAnswer,
+                        enabled: !review.isAnswered && !_actionLocked,
+                        autocorrect: false,
+                        textInputAction: TextInputAction.done,
+                        decoration: const InputDecoration(
+                          labelText: 'Type the missing word',
+                          border: OutlineInputBorder(),
+                        ),
+                        onSubmitted: (_) => _recordTyped(),
+                      ),
+                      const SizedBox(height: 10),
+                      FilledButton(
+                        key: const ValueKey<String>('cloze-submit-typed'),
+                        onPressed: review.isAnswered || _actionLocked
+                            ? null
+                            : _recordTyped,
+                        child: const Text('Check answer'),
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 10),
-                FilledButton(
-                  key: const ValueKey<String>('cloze-submit-typed'),
-                  onPressed: review.isAnswered || _actionLocked
-                      ? null
-                      : _recordTyped,
-                  child: const Text('Check answer'),
-                ),
-              ],
               if (review.isSaving) const LinearProgressIndicator(),
               if (review.phase == ClozeReviewPhase.evidenceRetryRequired)
                 FilledButton(
@@ -363,7 +391,10 @@ class _FillInTheBlanksScreenState extends State<FillInTheBlanksScreen> {
                 ),
               if (review.feedback case final feedback?) ...<Widget>[
                 const SizedBox(height: 12),
-                AnswerFeedbackPanel(feedback: feedback),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.feedback,
+                  child: AnswerFeedbackPanel(feedback: feedback),
+                ),
               ],
               if (review.isAnswered) ...<Widget>[
                 const SizedBox(height: 12),

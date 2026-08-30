@@ -21,6 +21,7 @@ import '../domain/learning_models.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
 import '../domain/session_configuration.dart';
+import 'current_activity_evidence.dart';
 import 'hint_use_cases.dart';
 import 'learning_use_cases.dart';
 
@@ -159,6 +160,8 @@ final class UnifiedLessonController extends ChangeNotifier {
       <CompanionReactionEvent>{};
   final Map<String, _PendingSubmission> _submissions =
       <String, _PendingSubmission>{};
+  final Map<String, _PendingCapturedEvidence> _capturedEvidence =
+      <String, _PendingCapturedEvidence>{};
   PendingLearningSessionClose? _pendingClose;
   Future<void>? _pauseInFlight;
   Future<void>? _completionInFlight;
@@ -621,6 +624,89 @@ final class UnifiedLessonController extends ChangeNotifier {
     }
   }
 
+  /// Commits one already captured native-mode response through the same
+  /// controller-owned feedback boundary as [submit]. The captured command
+  /// retains its resolved evidence/research context and durable identity; this
+  /// method only serializes, validates, retries, and publishes the result.
+  Future<AnswerRecordResult> recordCapturedEvidence(
+    PendingCurrentActivityEvidence pending, {
+    required AnswerFeedbackContext feedbackContext,
+  }) {
+    try {
+      _requireNotDisposed();
+      _requireNoTerminalMutation('record captured evidence');
+      final evidenceId = _required(
+        pending.sourceEvidenceId,
+        'sourceEvidenceId',
+      );
+      _required(pending.wordId, 'wordId');
+      _required(pending.promptMode, 'promptMode');
+      _requiredUtc(pending.occurredAtUtc, 'occurredAtUtc');
+      if (!pending.belongsToLearningAuthority(_learning)) {
+        throw StateError(
+          'Captured evidence belongs to another learning authority.',
+        );
+      }
+      if (pending.attemptNumber < 1) {
+        throw ArgumentError.value(
+          pending.attemptNumber,
+          'attemptNumber',
+          'must be positive',
+        );
+      }
+      final responseTimeMs = pending.responseTimeMs;
+      if (responseTimeMs != null && responseTimeMs < 0) {
+        throw ArgumentError.value(
+          responseTimeMs,
+          'responseTimeMs',
+          'must be nonnegative',
+        );
+      }
+      final normalizedFeedback = feedbackContext.normalized();
+      final bookmarkIdentity = normalizedFeedback.bookmarkIdentity;
+      if (bookmarkIdentity != null &&
+          (bookmarkIdentity.type != ContentType.lexicalMetadata ||
+              bookmarkIdentity.id != pending.wordId)) {
+        throw ArgumentError.value(
+          bookmarkIdentity,
+          'feedbackContext.bookmarkIdentity',
+          'must be the captured lexical content identity',
+        );
+      }
+      final fingerprint = _CapturedEvidenceFingerprint.from(
+        pending,
+        feedbackContext: normalizedFeedback,
+      );
+      final existing = _capturedEvidence[evidenceId];
+      if (existing != null) {
+        if (!identical(existing.pending, pending) ||
+            existing.fingerprint != fingerprint) {
+          throw StateError(
+            'Evidence identity $evidenceId was reused with different semantics.',
+          );
+        }
+        final result = existing.result;
+        if (result != null) return Future<AnswerRecordResult>.value(result);
+        final inFlight = existing.inFlight;
+        if (inFlight != null) return inFlight;
+        return _startCapturedEvidence(existing);
+      }
+      _requireConfigurationEffortAvailable();
+      _requireNoUncommittedSubmission('record new captured evidence');
+      final captured = _PendingCapturedEvidence(
+        pending: pending,
+        fingerprint: fingerprint,
+        feedbackContext: normalizedFeedback,
+      );
+      _capturedEvidence[evidenceId] = captured;
+      final future = _startCapturedEvidence(captured);
+      _notifyAvailabilityChanged();
+      return future;
+    } catch (error, stackTrace) {
+      return Future<AnswerRecordResult>.error(error, stackTrace);
+    }
+  }
+
   Future<void> complete(DateTime occurredAtUtc) {
     try {
       _requireNotDisposed();
@@ -826,10 +912,105 @@ final class UnifiedLessonController extends ChangeNotifier {
       providerProvenance: response.providerProvenance,
     );
     pending.result = result;
+    _publishCommittedResult(result, feedbackContext: pending.feedbackContext);
+    return result;
+  }
+
+  Future<AnswerRecordResult> _startCapturedEvidence(
+    _PendingCapturedEvidence captured,
+  ) {
+    final pending = captured.pending;
+    late final Future<AnswerRecordResult> future;
+    future =
+        _serialize<AnswerRecordResult>(() async {
+          _requireStatus(
+            LessonSessionStatus.active,
+            'record captured evidence',
+          );
+          _requireConfigurationEffortAvailable();
+          if (pending.sessionId != _state.sessionId) {
+            throw StateError(
+              'Captured evidence does not belong to the active session.',
+            );
+          }
+          final contexts = await pending.freezeContexts();
+          final sessionOwnerId = _sessionOwnerId;
+          if (sessionOwnerId != null &&
+              pending.actorIdentity != sessionOwnerId) {
+            throw StateError(
+              'Captured evidence does not belong to the active lesson owner.',
+            );
+          }
+          final response = LessonResponse(
+            sourceEvidenceId: pending.sourceEvidenceId,
+            occurredAtUtc: pending.occurredAtUtc,
+            sessionId: pending.sessionId,
+            wordId: pending.wordId,
+            promptMode: pending.promptMode,
+            isCorrect: pending.isCorrect,
+            responseTimeMs: pending.responseTimeMs,
+            attemptNumber: pending.attemptNumber,
+            feedbackContext: captured.feedbackContext,
+            providerProvenance: pending.providerProvenance,
+          );
+          final classified = _adapter.classify(
+            response,
+            LessonSupport(evidenceContext: contexts.evidenceContext),
+          )..validate();
+          if (jsonEncode(classified.toJson()) !=
+              jsonEncode(contexts.evidenceContext.toJson())) {
+            throw StateError(
+              'Captured evidence context does not match the active mode adapter.',
+            );
+          }
+          if (_activeLearningTime != null &&
+              !EvidenceProjectionDecision.resolve(
+                context: classified,
+                projection: LearningProjection.activeLearningEffort,
+              ).isEligible) {
+            throw StateError(
+              'Trustworthy active-effort adapter produced ineligible evidence.',
+            );
+          }
+          captured.writeAttempted = true;
+          final result = await (pending.requiresRetry
+              ? pending.retry()
+              : pending.record());
+          if (result.isCorrect != pending.isCorrect) {
+            throw StateError(
+              'Committed correctness does not match the captured response.',
+            );
+          }
+          captured.result = result;
+          _publishCommittedResult(
+            result,
+            feedbackContext: captured.feedbackContext,
+          );
+          return result;
+        }).whenComplete(() {
+          if (identical(captured.inFlight, future)) captured.inFlight = null;
+          if (!captured.writeAttempted &&
+              captured.result == null &&
+              identical(
+                _capturedEvidence[pending.sourceEvidenceId],
+                captured,
+              )) {
+            _capturedEvidence.remove(pending.sourceEvidenceId);
+            _notifyAvailabilityChanged();
+          }
+        });
+    captured.inFlight = future;
+    return future;
+  }
+
+  void _publishCommittedResult(
+    AnswerRecordResult result, {
+    required AnswerFeedbackContext feedbackContext,
+  }) {
     _hints?.resetAfterCommittedEvidence();
     _feedback = AnswerFeedback.fromCommittedResult(
       result: result,
-      context: pending.feedbackContext,
+      context: feedbackContext,
     );
     _setState(
       _state.copyWith(
@@ -840,7 +1021,6 @@ final class UnifiedLessonController extends ChangeNotifier {
           ? null
           : CompanionReactionSignal.retryAfterIncorrectCommit,
     );
-    return result;
   }
 
   Future<LearningSessionSummary> _finish(
@@ -1258,7 +1438,8 @@ final class UnifiedLessonController extends ChangeNotifier {
   }
 
   bool get _hasUncommittedSubmission =>
-      _submissions.values.any((submission) => submission.result == null);
+      _submissions.values.any((submission) => submission.result == null) ||
+      _capturedEvidence.values.any((submission) => submission.result == null);
 
   void _notifyAvailabilityChanged() {
     if (!_disposed) notifyListeners();
@@ -1648,6 +1829,55 @@ final class _PendingSubmission {
   Future<AnswerRecordResult>? inFlight;
   AnswerRecordResult? result;
   bool writeAttempted = false;
+}
+
+final class _PendingCapturedEvidence {
+  _PendingCapturedEvidence({
+    required this.pending,
+    required this.fingerprint,
+    required this.feedbackContext,
+  });
+
+  final PendingCurrentActivityEvidence pending;
+  final _CapturedEvidenceFingerprint fingerprint;
+  final AnswerFeedbackContext feedbackContext;
+  Future<AnswerRecordResult>? inFlight;
+  AnswerRecordResult? result;
+  bool writeAttempted = false;
+}
+
+final class _CapturedEvidenceFingerprint {
+  const _CapturedEvidenceFingerprint(this.value);
+
+  factory _CapturedEvidenceFingerprint.from(
+    PendingCurrentActivityEvidence pending, {
+    required AnswerFeedbackContext feedbackContext,
+  }) => _CapturedEvidenceFingerprint(
+    jsonEncode(<String, Object?>{
+      'sourceEvidenceId': pending.sourceEvidenceId,
+      'occurredAtUtc': pending.occurredAtUtc.toIso8601String(),
+      'sessionId': pending.sessionId,
+      'wordId': pending.wordId,
+      'promptMode': pending.promptMode,
+      'isCorrect': pending.isCorrect,
+      'responseTimeMs': pending.responseTimeMs,
+      'attemptNumber': pending.attemptNumber,
+      'providerProvenance': pending.providerProvenance,
+      'canonicalCorrectAnswer': feedbackContext.canonicalCorrectAnswer,
+      'bookmarkIdentity': _bookmarkIdentityJson(
+        feedbackContext.bookmarkIdentity,
+      ),
+    }),
+  );
+
+  final String value;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _CapturedEvidenceFingerprint && other.value == value;
+
+  @override
+  int get hashCode => value.hashCode;
 }
 
 final class _SubmissionFingerprint {

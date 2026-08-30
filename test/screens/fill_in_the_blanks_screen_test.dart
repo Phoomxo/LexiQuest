@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide VocabularyWord;
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -14,12 +15,16 @@ import 'package:vocab_learning_app/features/learning/application/learning_use_ca
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
+import 'package:vocab_learning_app/features/learning/domain/lexical_prompt_artifact_identity.dart';
 import 'package:vocab_learning_app/features/learning/presentation/unified_lesson_shell.dart';
 import 'package:vocab_learning_app/features/learning_packs/domain/content_manifest.dart';
+import 'package:vocab_learning_app/features/learning_packs/domain/content_quality_policy.dart';
 import 'package:vocab_learning_app/features/vocabulary/application/vocabulary_use_cases.dart';
 import 'package:vocab_learning_app/features/vocabulary/domain/vocabulary_word.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/fill_in_the_blanks_screen.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 void main() {
   late AppDatabase database;
@@ -53,7 +58,7 @@ void main() {
       'word:airport',
       'airport',
       2,
-      _checksumB,
+      _coreChecksum(spelling: 'airport', meaning: 'meaning'),
     );
     await _insertWord(
       database,
@@ -61,7 +66,7 @@ void main() {
       'word:station',
       'station',
       3,
-      _checksumA,
+      _coreChecksum(spelling: 'station', meaning: 'meaning'),
     );
     learning = LearningUseCases(
       owners: owners,
@@ -75,7 +80,7 @@ void main() {
   tearDown(() => database.close());
 
   testWidgets(
-    'selected cloze is responsive at 200 percent and UI only presents feedback',
+    'f38 ultra review: selected cloze controls stay in response semantics',
     (tester) async {
       await tester.pumpWidget(
         MaterialApp(
@@ -105,6 +110,12 @@ void main() {
         find.byKey(const ValueKey<String>('cloze-mode-selected')),
       );
       await tester.pump();
+      expectInsideAccessibilityRole(
+        scope: find.byType(FillInTheBlanksScreen),
+        descendant: option,
+        role: AccessibilitySemanticRole.responseAndInput,
+        reason: 'selected cloze choices are response controls',
+      );
       await tester.ensureVisible(option);
       await tester.tap(option);
       await _pumpUntilFound(tester, find.text('Correct answer: airport'));
@@ -117,106 +128,180 @@ void main() {
       expect(context.hintLevel, 0);
       expect(
         context.contentRevision,
-        'lexical-cloze:word:airport@2:$_checksumB',
+        _evidenceContentRevision(
+          promptMode: 'clozeSelected',
+          wordId: 'word:airport',
+          spelling: 'airport',
+          meaning: 'meaning',
+          revision: 2,
+          artifactChecksum: _checksumB,
+        ),
       );
       expect(await database.select(database.srsStates).get(), isEmpty);
       expect(tester.takeException(), isNull);
     },
   );
 
-  testWidgets('typed cloze is independent recall until a shell hint is used', (
-    tester,
-  ) async {
-    const adapter = ClozeModeAdapter();
-    await tester.pumpWidget(
-      MaterialApp(
-        home: UnifiedLessonModeHost(
-          adapter: adapter,
-          learning: learning,
-          createController: (modeAdapter) =>
-              UnifiedLessonController(learning: learning, adapter: modeAdapter),
-          builder: (_) => _screen(learning, adapter: adapter),
+  testWidgets(
+    'f38 ultra review: cloze committed feedback follows response controls',
+    (tester) => withAccessibilitySemantics(tester, () async {
+      await tester.pumpWidget(MaterialApp(home: _screen(learning)));
+      await _pumpUntilFound(tester, find.text('The _____ is busy.'));
+      await tester.tap(
+        find.byKey(const ValueKey<String>('cloze-mode-selected')),
+      );
+      await tester.pump();
+      final option = find.byKey(
+        const ValueKey<String>('cloze-option-word:airport-airport'),
+      );
+      await tester.ensureVisible(option);
+      await tester.tap(option);
+      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+
+      final root = find.byType(FillInTheBlanksScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('answer-feedback-panel')),
+        role: AccessibilitySemanticRole.feedback,
+      );
+      expectRenderedAccessibilityTraversal(
+        tester,
+        scope: root,
+        roles: const <AccessibilitySemanticRole>[
+          AccessibilitySemanticRole.prompt,
+          AccessibilitySemanticRole.responseAndInput,
+          AccessibilitySemanticRole.feedback,
+          AccessibilitySemanticRole.navigation,
+        ],
+      );
+    }),
+  );
+
+  testWidgets(
+    'f38 ultra review: typed cloze controls stay in response semantics',
+    (tester) async {
+      const adapter = ClozeModeAdapter();
+      await tester.pumpWidget(
+        MaterialApp(
+          home: UnifiedLessonModeHost(
+            adapter: adapter,
+            learning: learning,
+            createController: (modeAdapter) => UnifiedLessonController(
+              learning: learning,
+              adapter: modeAdapter,
+            ),
+            builder: (_) => _screen(learning, adapter: adapter),
+          ),
         ),
-      ),
-    );
-    await _pumpUntilFound(tester, find.text('The _____ is busy.'));
-    expect(
-      find.byKey(const ValueKey<String>('cloze-option-word:airport-airport')),
-      findsNothing,
-      reason: 'typed recall cannot be exposed to selected-mode answers',
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
-    await tester.pump();
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('cloze-typed-answer')),
-      ' AIRPORT ',
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-submit-typed')));
-    await _pumpUntilFound(tester, find.text('Correct answer: airport'));
+      );
+      await _pumpUntilFound(tester, find.text('The _____ is busy.'));
+      expect(
+        find.byKey(const ValueKey<String>('cloze-option-word:airport-airport')),
+        findsNothing,
+        reason: 'typed recall cannot be exposed to selected-mode answers',
+      );
+      await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
+      await tester.pump();
+      expectInsideAccessibilityRole(
+        scope: find.byType(FillInTheBlanksScreen),
+        descendant: find.byKey(const ValueKey<String>('cloze-typed-answer')),
+        role: AccessibilitySemanticRole.responseAndInput,
+        reason: 'typed cloze input must remain in the response region',
+      );
+      expectInsideAccessibilityRole(
+        scope: find.byType(FillInTheBlanksScreen),
+        descendant: find.byKey(const ValueKey<String>('cloze-submit-typed')),
+        role: AccessibilitySemanticRole.responseAndInput,
+      );
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('cloze-typed-answer')),
+        ' AIRPORT ',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')),
+      );
+      await _pumpUntilFound(tester, find.text('Correct answer: airport'));
 
-    var attempts = await database.select(database.answerAttempts).get();
-    expect(attempts, hasLength(1));
-    expect(attempts.single.promptMode, 'clozeTyped');
-    expect(
-      _context(attempts.single.evidenceContextJson).evidenceClass,
-      EvidenceClass.independentRecall,
-    );
-    expect(await database.select(database.srsStates).get(), hasLength(1));
+      var attempts = await database.select(database.answerAttempts).get();
+      expect(attempts, hasLength(1));
+      expect(attempts.single.promptMode, 'clozeTyped');
+      expect(
+        _context(attempts.single.evidenceContextJson).evidenceClass,
+        EvidenceClass.independentRecall,
+      );
+      expect(await database.select(database.srsStates).get(), hasLength(1));
 
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-next')));
-    await _pumpUntilFound(tester, find.text('The _____ closes.'));
-    await tester.tap(find.text('Show strategy'));
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
-    await tester.pump();
-    await tester.enterText(
-      find.byKey(const ValueKey<String>('cloze-typed-answer')),
-      'station',
-    );
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-submit-typed')));
-    await _pumpUntilFound(tester, find.text('Correct answer: station'));
+      await tester.tap(find.byKey(const ValueKey<String>('cloze-next')));
+      await _pumpUntilFound(tester, find.text('The _____ closes.'));
+      await tester.tap(find.text('Show strategy'));
+      await tester.tap(find.byKey(const ValueKey<String>('cloze-mode-typed')));
+      await tester.pump();
+      await tester.enterText(
+        find.byKey(const ValueKey<String>('cloze-typed-answer')),
+        'station',
+      );
+      await tester.tap(
+        find.byKey(const ValueKey<String>('cloze-submit-typed')),
+      );
+      await _pumpUntilFound(tester, find.text('Correct answer: station'));
 
-    attempts = await database.select(database.answerAttempts).get();
-    expect(attempts, hasLength(2));
-    final guided = _context(attempts.last.evidenceContextJson);
-    expect(guided.evidenceClass, EvidenceClass.guidedPractice);
-    expect(guided.hintLevel, 1);
-    expect(await database.select(database.srsStates).get(), hasLength(1));
-  });
+      attempts = await database.select(database.answerAttempts).get();
+      expect(attempts, hasLength(2));
+      final guided = _context(attempts.last.evidenceContextJson);
+      expect(guided.evidenceClass, EvidenceClass.guidedPractice);
+      expect(guided.hintLevel, 1);
+      expect(await database.select(database.srsStates).get(), hasLength(1));
+    },
+  );
 
-  testWidgets('unreviewed example is announced and skipped without evidence', (
-    tester,
-  ) async {
-    final words = _reviewedWords();
-    final first = words.first.copyWith(
-      contentReviewState: ContentReviewState.unreviewed,
-    );
-    await tester.pumpWidget(
-      MaterialApp(
-        home: FillInTheBlanksScreen(
-          categoryId: 'category:travel',
-          learning: learning,
-          evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
-          modeAdapter: const ClozeModeAdapter(),
-          loadLexicalWords: (_) async => <VocabularyWord>[first, words.last],
+  testWidgets(
+    'f38 ultra review: cloze skip owns prompt and response semantics',
+    (tester) async {
+      final words = _reviewedWords();
+      final first = words.first.copyWith(
+        contentReviewState: ContentReviewState.unreviewed,
+      );
+      await tester.pumpWidget(
+        MaterialApp(
+          home: FillInTheBlanksScreen(
+            categoryId: 'category:travel',
+            learning: learning,
+            evidenceAdapter: CurrentActivityEvidenceAdapter(learning: learning),
+            modeAdapter: const ClozeModeAdapter(),
+            loadLexicalWords: (_) async => <VocabularyWord>[first, words.last],
+          ),
         ),
-      ),
-    );
+      );
 
-    await _pumpUntilFound(
-      tester,
-      find.byKey(const ValueKey<String>('cloze-skip')),
-    );
-    expect(
-      find.bySemanticsLabel(
-        'Skipped. The cloze example has not been approved.',
-      ),
-      findsOneWidget,
-    );
-    expect(await database.select(database.answerAttempts).get(), isEmpty);
-    await tester.tap(find.byKey(const ValueKey<String>('cloze-skip')));
-    await _pumpUntilFound(tester, find.text('The _____ closes.'));
-    expect(await database.select(database.answerAttempts).get(), isEmpty);
-  });
+      await _pumpUntilFound(
+        tester,
+        find.byKey(const ValueKey<String>('cloze-skip')),
+      );
+      expect(
+        find.bySemanticsLabel(
+          'Skipped. The cloze example has not been approved.',
+        ),
+        findsOneWidget,
+      );
+      final root = find.byType(FillInTheBlanksScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.bySemanticsLabel(
+          'Skipped. The cloze example has not been approved.',
+        ),
+        role: AccessibilitySemanticRole.prompt,
+      );
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('cloze-skip')),
+        role: AccessibilitySemanticRole.responseAndInput,
+      );
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+      await tester.tap(find.byKey(const ValueKey<String>('cloze-skip')));
+      await _pumpUntilFound(tester, find.text('The _____ closes.'));
+      expect(await database.select(database.answerAttempts).get(), isEmpty);
+    },
+  );
 
   testWidgets('route terminal acceptance fences a retained cloze callback', (
     tester,
@@ -381,14 +466,16 @@ List<VocabularyWord> _reviewedWords() => <VocabularyWord>[
     id: 'word:airport',
     spelling: 'airport',
     revision: 2,
-    checksum: _checksumB,
+    coreChecksum: _coreChecksum(spelling: 'airport', meaning: 'meaning'),
+    artifactChecksum: _checksumB,
     example: 'The airport is busy.',
   ),
   _lexicalWord(
     id: 'word:station',
     spelling: 'station',
     revision: 3,
-    checksum: _checksumA,
+    coreChecksum: _coreChecksum(spelling: 'station', meaning: 'meaning'),
+    artifactChecksum: _checksumA,
     example: 'The station closes.',
   ),
 ];
@@ -397,7 +484,8 @@ VocabularyWord _lexicalWord({
   required String id,
   required String spelling,
   required int revision,
-  required String checksum,
+  required String coreChecksum,
+  required String artifactChecksum,
   required String example,
 }) => VocabularyWord(
   id: id,
@@ -415,15 +503,51 @@ VocabularyWord _lexicalWord({
   createdAtUtc: DateTime.utc(2026, 8, 1),
   updatedAtUtc: DateTime.utc(2026, 8, 2),
   contentRevision: revision,
-  contentChecksumSha256: checksum,
+  contentChecksumSha256: coreChecksum,
   contentProvenance: ContentProvenance.packaged,
   contentReviewState: ContentReviewState.approved,
   contentPublicationState: ContentPublicationState.published,
   richMetadata: RichLexicalMetadata(
-    verifiedArtifactChecksumSha256: checksum,
+    verifiedContentRevision: revision,
+    verifiedArtifactChecksumSha256: artifactChecksum,
     examples: <String>[example],
   ),
 );
+
+String _coreChecksum({required String spelling, required String meaning}) =>
+    ContentQualityPolicy.vocabularyChecksumSha256(
+      categoryId: 'category:travel',
+      spelling: spelling,
+      normalizedSpelling: spelling,
+      meaning: meaning,
+      normalizedMeaning: meaning,
+      partOfSpeech: 'noun',
+      cefrLevel: null,
+      source: 'pack',
+      isGlobal: true,
+    );
+
+String _evidenceContentRevision({
+  required String promptMode,
+  required String wordId,
+  required String spelling,
+  required String meaning,
+  required int revision,
+  required String artifactChecksum,
+}) {
+  final checksum = LexicalPromptArtifactResolver.canonicalPromptChecksumSha256(
+    promptMode: promptMode,
+    coreChecksumSha256: _coreChecksum(spelling: spelling, meaning: meaning),
+    verifiedArtifactRevision: revision,
+    verifiedArtifactChecksumSha256: artifactChecksum,
+  );
+  return LexicalPromptArtifactResolver.formatEvidenceContentRevision(
+    promptMode: promptMode,
+    wordId: wordId,
+    revision: revision,
+    checksumSha256: checksum,
+  );
+}
 
 Future<void> _insertWord(
   AppDatabase database,
@@ -444,8 +568,13 @@ Future<void> _insertWord(
         meaning: 'meaning',
         normalizedMeaning: 'meaning',
         partOfSpeech: 'noun',
+        source: const Value<String>('pack'),
+        isGlobal: const Value<bool>(true),
         contentRevision: Value(revision),
         contentChecksumSha256: Value(checksum),
+        contentProvenance: Value(ContentProvenance.packaged.name),
+        contentReviewState: Value(ContentReviewState.approved.name),
+        contentPublicationState: Value(ContentPublicationState.published.name),
         createdAtUtcMs: 1,
         updatedAtUtcMs: 1,
       ),

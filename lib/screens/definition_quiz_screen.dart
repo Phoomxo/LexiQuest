@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/definition_quiz_mode_adapter.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -190,7 +192,7 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
         if (didPop || _persistenceLocked) return;
         unawaited(_confirmExit());
       },
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('Definition Quiz')),
         body: FutureBuilder<QuizSession>(
           future: _load,
@@ -239,29 +241,38 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
             ),
             const SizedBox(height: 24),
             if (question == null) ...<Widget>[
-              Semantics(
-                container: true,
-                liveRegion: true,
-                excludeSemantics: true,
-                label: item.semanticAnnouncement,
-                child: Text(
-                  item.semanticAnnouncement,
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.titleLarge,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Semantics(
+                  container: true,
+                  liveRegion: true,
+                  excludeSemantics: true,
+                  label: item.semanticAnnouncement,
+                  child: Text(
+                    item.semanticAnnouncement,
+                    textAlign: TextAlign.center,
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
               ),
               const SizedBox(height: 20),
-              FilledButton(
-                key: const ValueKey<String>('definition-quiz-skip'),
-                onPressed: _actionLocked ? null : _advance,
-                child: const Text('Continue'),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: FilledButton(
+                  key: const ValueKey<String>('definition-quiz-skip'),
+                  onPressed: _actionLocked ? null : _advance,
+                  child: const Text('Continue'),
+                ),
               ),
             ] else ...<Widget>[
-              Text(
-                question.definition,
-                key: const ValueKey<String>('definition-quiz-prompt'),
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.headlineSmall,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Text(
+                  question.definition,
+                  key: const ValueKey<String>('definition-quiz-prompt'),
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.headlineSmall,
+                ),
               ),
               const SizedBox(height: 4),
               Text(
@@ -270,22 +281,30 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
               const SizedBox(height: 24),
-              for (final option in question.options)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 10),
-                  child: FilledButton.tonal(
-                    key: ValueKey<String>(
-                      'definition-quiz-option-${question.wordId}-$option',
-                    ),
-                    onPressed: review.isAnswered || _actionLocked
-                        ? null
-                        : () => _record(option),
-                    style: FilledButton.styleFrom(
-                      minimumSize: const Size.fromHeight(52),
-                    ),
-                    child: Text(option),
-                  ),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    for (final option in question.options)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: FilledButton.tonal(
+                          key: ValueKey<String>(
+                            'definition-quiz-option-${question.wordId}-$option',
+                          ),
+                          onPressed: review.isAnswered || _actionLocked
+                              ? null
+                              : () => _record(option),
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                          ),
+                          child: Text(option),
+                        ),
+                      ),
+                  ],
                 ),
+              ),
               if (review.isSaving) const LinearProgressIndicator(),
               if (review.phase ==
                   DefinitionQuizReviewPhase.evidenceRetryRequired)
@@ -303,7 +322,10 @@ class _DefinitionQuizScreenState extends State<DefinitionQuizScreen> {
                 ),
               if (review.feedback case final feedback?) ...<Widget>[
                 const SizedBox(height: 12),
-                AnswerFeedbackPanel(feedback: feedback),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.feedback,
+                  child: AnswerFeedbackPanel(feedback: feedback),
+                ),
               ],
               if (review.isAnswered) ...<Widget>[
                 const SizedBox(height: 12),

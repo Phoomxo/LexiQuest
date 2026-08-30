@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/matching_mode_adapter.dart';
@@ -250,7 +252,7 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
         if (didPop || _persistenceLocked) return;
         unawaited(_confirmExit());
       },
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('Matching')),
         body: FutureBuilder<QuizSession>(
           future: _load,
@@ -297,63 +299,85 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              widget.showCountdown
-                  ? 'Match each word with its meaning. Time remaining: '
-                        '${_durationLabel(_announcedTimeRemaining ?? widget.timeLimit!)}.'
-                  : 'Untimed accessibility session. Active effort remains bounded.',
-              textAlign: TextAlign.center,
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.prompt,
+              child: Text(
+                widget.showCountdown
+                    ? 'Match each word with its meaning. Time remaining: '
+                          '${_durationLabel(_announcedTimeRemaining ?? widget.timeLimit!)}.'
+                    : 'Untimed accessibility session. Active effort remains bounded.',
+                textAlign: TextAlign.center,
+              ),
             ),
             const SizedBox(height: 12),
             const SizedBox(height: 4),
-            Text('Words', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            for (final pair in review.pairSet.wordOrder)
-              if (!review.matchedWordIds.contains(pair.word.id))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Semantics(
-                    button: true,
-                    selected: review.selectedWordId == pair.word.id,
-                    label: 'Word ${pair.wordLabel}',
-                    child: FilledButton.tonal(
-                      key: ValueKey<String>('matching-word-${pair.word.id}'),
-                      onPressed: _actionLocked
-                          ? null
-                          : () => _selectWord(pair.word.id),
-                      style: FilledButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.responseAndInput,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  Text('Words', style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 8),
+                  for (final pair in review.pairSet.wordOrder)
+                    if (!review.matchedWordIds.contains(pair.word.id))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Semantics(
+                          button: true,
+                          selected: review.selectedWordId == pair.word.id,
+                          label: 'Word ${pair.wordLabel}',
+                          child: FilledButton.tonal(
+                            key: ValueKey<String>(
+                              'matching-word-${pair.word.id}',
+                            ),
+                            onPressed: _actionLocked
+                                ? null
+                                : () => _selectWord(pair.word.id),
+                            style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                            ),
+                            child: Text(
+                              pair.wordLabel,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text(pair.wordLabel, textAlign: TextAlign.center),
-                    ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Meanings',
+                    style: Theme.of(context).textTheme.titleMedium,
                   ),
-                ),
-            const SizedBox(height: 12),
-            Text('Meanings', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
-            for (final pair in review.pairSet.meaningOrder)
-              if (!review.matchedWordIds.contains(pair.word.id))
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child: Semantics(
-                    button: true,
-                    selected: review.selectedMeaningWordId == pair.word.id,
-                    label: 'Meaning ${pair.meaningLabel}',
-                    child: OutlinedButton(
-                      key: ValueKey<String>('matching-meaning-${pair.word.id}'),
-                      onPressed: _actionLocked
-                          ? null
-                          : () => _selectMeaning(pair.word.id),
-                      style: OutlinedButton.styleFrom(
-                        minimumSize: const Size.fromHeight(52),
+                  const SizedBox(height: 8),
+                  for (final pair in review.pairSet.meaningOrder)
+                    if (!review.matchedWordIds.contains(pair.word.id))
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Semantics(
+                          button: true,
+                          selected:
+                              review.selectedMeaningWordId == pair.word.id,
+                          label: 'Meaning ${pair.meaningLabel}',
+                          child: OutlinedButton(
+                            key: ValueKey<String>(
+                              'matching-meaning-${pair.word.id}',
+                            ),
+                            onPressed: _actionLocked
+                                ? null
+                                : () => _selectMeaning(pair.word.id),
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52),
+                            ),
+                            child: Text(
+                              pair.meaningLabel,
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        ),
                       ),
-                      child: Text(
-                        pair.meaningLabel,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-                ),
+                ],
+              ),
+            ),
             if (review.phase == MatchingReviewPhase.savingEvidence ||
                 review.phase == MatchingReviewPhase.completing)
               const LinearProgressIndicator(),
@@ -372,7 +396,10 @@ class _MatchingModeScreenState extends State<MatchingModeScreen> {
               ),
             if (review.feedback case final feedback?) ...<Widget>[
               const SizedBox(height: 12),
-              AnswerFeedbackPanel(feedback: feedback),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.feedback,
+                child: AnswerFeedbackPanel(feedback: feedback),
+              ),
             ],
             if (review.allMatched && !_completionCommitted) ...<Widget>[
               const SizedBox(height: 12),

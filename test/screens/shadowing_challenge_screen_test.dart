@@ -5,6 +5,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart'
     as identity;
@@ -23,6 +24,8 @@ import 'package:vocab_learning_app/screens/shadowing_challenge_screen.dart';
 import 'package:vocab_learning_app/voice/voice_models.dart';
 import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
 import 'package:vocab_learning_app/voice/voice_provider.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 void main() {
   test(
@@ -607,6 +610,113 @@ void main() {
     expect(retry.evidenceContext.toJson(), first.evidenceContext.toJson());
     expect(retry.evidenceContext.evidenceClass, EvidenceClass.pronunciation);
   });
+
+  testWidgets(
+    'f38 final review: shadowing controls retry and assessment own ordered roles',
+    (tester) => withAccessibilitySemantics(tester, () async {
+      final repository = _RetryLearningRepository();
+      var nextId = 0;
+      final learning = LearningUseCases(
+        owners: _LearningOwnerRepository(),
+        repository: repository,
+        generateId: () => 'shadow-accessibility-${++nextId}',
+        nowUtc: () => DateTime.utc(2026, 8, 30, 10, 0, nextId),
+        buildInfo: const AppBuildInfo(version: 'test', buildId: 'test'),
+      );
+      final voice = VoiceUseCases(
+        provider: _FakeVoice(),
+        disposeProvider: () async {},
+      );
+      final speech = SpeechPracticeUseCases(_FakeSpeechGateway());
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: ShadowingChallengeScreen(
+              voice: voice,
+              speechPractice: speech,
+              learning: learning,
+              evidenceAdapter: CurrentActivityEvidenceAdapter(
+                learning: learning,
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final root = find.byType(ShadowingChallengeScreen);
+        final playReference = find.byKey(
+          const ValueKey<String>('shadowing-play-reference'),
+        );
+        final listen = find.byKey(
+          const ValueKey<String>('shadowing-listen-button'),
+        );
+        await tester.tap(playReference);
+        await tester.pumpAndSettle();
+        await tester.tap(listen);
+        await tester.pumpAndSettle();
+
+        final retry = find.byKey(
+          const ValueKey<String>('current-evidence-retry'),
+        );
+        final assessment = find.textContaining('ความเหมือนของข้อความ: 100%');
+        expect(repository.commands, hasLength(1));
+        expect(retry, findsOneWidget);
+        expectInsideAccessibilityRole(
+          scope: root,
+          descendant: playReference,
+          role: AccessibilitySemanticRole.responseAndInput,
+          reason: 'reference replay is a real response control',
+        );
+        expectInsideAccessibilityRole(
+          scope: root,
+          descendant: listen,
+          role: AccessibilitySemanticRole.responseAndInput,
+          reason: 'recording is a real response control',
+        );
+        expectInsideAccessibilityRole(
+          scope: root,
+          descendant: retry,
+          role: AccessibilitySemanticRole.responseAndInput,
+          reason: 'retry remains an input action for one frozen occurrence',
+        );
+        expectInsideAccessibilityRole(
+          scope: root,
+          descendant: assessment,
+          role: AccessibilitySemanticRole.feedback,
+          reason: 'the transcript assessment is feedback, not an input',
+        );
+        expectRenderedAccessibilityTraversal(
+          tester,
+          scope: root,
+          roles: const <AccessibilitySemanticRole>[
+            AccessibilitySemanticRole.prompt,
+            AccessibilitySemanticRole.responseAndInput,
+            AccessibilitySemanticRole.feedback,
+            AccessibilitySemanticRole.navigation,
+          ],
+        );
+
+        final first = repository.commands.single;
+        await tester.tap(retry);
+        await tester.pumpAndSettle();
+        expect(repository.commands, hasLength(2));
+        final retried = repository.commands.last;
+        expect(retried.id, first.id);
+        expect(retried.occurredAtUtc, first.occurredAtUtc);
+        expect(
+          retried.evidenceContext.toJson(),
+          first.evidenceContext.toJson(),
+        );
+        expect(retry, findsNothing);
+        expect(assessment, findsOneWidget);
+      } finally {
+        await tester.pumpWidget(const MaterialApp(home: SizedBox.shrink()));
+        await tester.pump();
+        await voice.dispose();
+        await speech.dispose();
+      }
+    }),
+  );
 
   testWidgets(
     'session-close failure keeps one evidence write and a route-safe retry',

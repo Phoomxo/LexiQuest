@@ -2,11 +2,15 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../accessibility/domain/accessibility_policy.dart';
+import '../../accessibility/presentation/accessibility_scope.dart';
 import '../../companion/presentation/contextual_companion_widget.dart';
+import '../application/current_activity_evidence.dart';
 import '../application/unified_lesson_controller.dart';
 import '../application/learning_use_cases.dart';
 import '../application/contrastive_feedback_use_cases.dart';
 import '../domain/learning_models.dart';
+import '../domain/answer_feedback.dart';
 import '../domain/lesson_mode.dart';
 import '../domain/lesson_session_state.dart';
 import '../domain/session_configuration.dart';
@@ -80,6 +84,16 @@ final class UnifiedLessonSessionLifecycle {
         ? Future<T>.sync(operation)
         : routeLifecycle.runAcceptedOperation(operation);
   }
+
+  Future<AnswerRecordResult> recordCapturedEvidence(
+    PendingCurrentActivityEvidence pending, {
+    required AnswerFeedbackContext feedbackContext,
+  }) => runAcceptedOperation(
+    () => _controller.recordCapturedEvidence(
+      pending,
+      feedbackContext: feedbackContext,
+    ),
+  );
 
   Future<void> start({
     required String sessionId,
@@ -1265,9 +1279,11 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
   Widget build(BuildContext context) {
     final controller = widget.controller;
     if (controller == null) {
-      return UnifiedLessonSessionLifecycleScope(
-        ephemeralStates: _ephemeralStates,
-        child: widget.builder(context),
+      return AccessibilityScope(
+        child: UnifiedLessonSessionLifecycleScope(
+          ephemeralStates: _ephemeralStates,
+          child: Builder(builder: widget.builder),
+        ),
       );
     }
     final hintState = controller.hintState;
@@ -1275,20 +1291,25 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
     final bookmarkLearningItem = dependencies?.bookmarkLearningItem;
     final reportContent = dependencies?.reportContent;
     final resetRequired = controller.configurationResetRequired;
-    return UnifiedLessonSessionLifecycleScope(
-      ephemeralStates: _ephemeralStates,
-      lifecycle: UnifiedLessonSessionLifecycle._(
-        controller,
-        _now,
-        widget.routeLifecycle,
-        _ephemeralStates,
-      ),
-      child: Semantics(
-        container: true,
-        label: 'Lesson ${controller.state.status.name}',
+    return AccessibilityScope(
+      child: UnifiedLessonSessionLifecycleScope(
+        ephemeralStates: _ephemeralStates,
+        lifecycle: UnifiedLessonSessionLifecycle._(
+          controller,
+          _now,
+          widget.routeLifecycle,
+          _ephemeralStates,
+        ),
         child: Column(
           children: <Widget>[
-            LinearProgressIndicator(value: controller.state.progress),
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.contextAndProgress,
+              label:
+                  'Lesson ${controller.state.status.name}. '
+                  'Progress '
+                  '${(controller.state.progress * 100).round()} percent',
+              child: LinearProgressIndicator(value: controller.state.progress),
+            ),
             if (_focusGateEnabled)
               if (controller.focusTimer case final timer?)
                 if (timer.snapshot.sessionId != null)
@@ -1306,49 +1327,73 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                 behavior: HitTestBehavior.translucent,
                 onPointerDown: (_) =>
                     controller.noteActiveLearningInteraction(_now()),
-                child: Column(
-                  children: <Widget>[
-                    if (controller.state.status == LessonSessionStatus.active &&
-                        hintState != null)
-                      HintPanel(
-                        state: hintState,
-                        onRevealNext: controller.revealNextHint,
-                        enabled: controller.canRevealHint,
-                      ),
-                    if (controller.feedback case final feedback?)
-                      AnswerFeedbackPanel(
-                        feedback: feedback,
-                        bookmarkIdentity: feedback.bookmarkIdentity,
-                        onBookmark: bookmarkLearningItem,
-                        reportIdentity: feedback.bookmarkIdentity,
-                        onReport: reportContent,
-                        contrastiveFeedback:
-                            widget.contrastiveFeedback ??
-                            dependencies?.contrastiveFeedback,
-                        featureRegistry: dependencies?.features,
-                      ),
-                    if (resetRequired != null)
-                      Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: SessionConfigurationResetPrompt(
-                          error: resetRequired,
-                          onReset: () => Navigator.of(context).maybePop(),
+                child: Builder(
+                  builder: (modeContext) {
+                    final modeSurface = widget.builder(modeContext);
+                    Widget? committedFeedback;
+                    if (controller.feedback case final feedback?) {
+                      committedFeedback = AccessibilitySemanticRegion(
+                        role: AccessibilitySemanticRole.feedback,
+                        child: AnswerFeedbackPanel(
+                          feedback: feedback,
+                          bookmarkIdentity: feedback.bookmarkIdentity,
+                          onBookmark: bookmarkLearningItem,
+                          reportIdentity: feedback.bookmarkIdentity,
+                          onReport: reportContent,
+                          contrastiveFeedback:
+                              widget.contrastiveFeedback ??
+                              dependencies?.contrastiveFeedback,
+                          featureRegistry: dependencies?.features,
                         ),
-                      ),
-                    if (controller.configurationLimitReached)
-                      Semantics(
-                        key: const ValueKey(
-                          'session-configuration-limit-reached',
-                        ),
-                        liveRegion: true,
-                        label: 'Session limit reached',
-                        child: const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text('Session limit reached'),
-                        ),
-                      ),
-                    Expanded(child: Builder(builder: widget.builder)),
-                  ],
+                      );
+                    }
+                    final AccessibilityModeFeedbackSurface? accessibleSurface =
+                        modeSurface is AccessibilityModeFeedbackSurface
+                        ? modeSurface as AccessibilityModeFeedbackSurface
+                        : null;
+                    final placedModeSurface = accessibleSurface == null
+                        ? modeSurface
+                        : accessibleSurface.withShellFeedback(
+                            committedFeedback,
+                          );
+
+                    return Column(
+                      children: <Widget>[
+                        if (controller.state.status ==
+                                LessonSessionStatus.active &&
+                            hintState != null)
+                          HintPanel(
+                            state: hintState,
+                            onRevealNext: controller.revealNextHint,
+                            enabled: controller.canRevealHint,
+                          ),
+                        if (accessibleSurface == null &&
+                            committedFeedback != null)
+                          committedFeedback,
+                        if (resetRequired != null)
+                          Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: SessionConfigurationResetPrompt(
+                              error: resetRequired,
+                              onReset: () => Navigator.of(context).maybePop(),
+                            ),
+                          ),
+                        if (controller.configurationLimitReached)
+                          Semantics(
+                            key: const ValueKey(
+                              'session-configuration-limit-reached',
+                            ),
+                            liveRegion: true,
+                            label: 'Session limit reached',
+                            child: const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text('Session limit reached'),
+                            ),
+                          ),
+                        Expanded(child: placedModeSurface),
+                      ],
+                    );
+                  },
                 ),
               ),
             ),

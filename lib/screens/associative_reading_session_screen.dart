@@ -4,6 +4,8 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/learning_layer_adapter.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
@@ -1099,7 +1101,7 @@ class _AssociativeReadingSessionScreenState
           if (didPop || _persistenceLocked || widget.sessionId == null) return;
           unawaited(_abandonAndPop());
         },
-        child: Scaffold(
+        child: AccessibilityModeScaffold(
           appBar: AppBar(
             title: Text('Associative Reading (${widget.cefrLevel})'),
           ),
@@ -1124,65 +1126,68 @@ class _AssociativeReadingSessionScreenState
                       ),
                       if (_saving) const LinearProgressIndicator(),
                       const SizedBox(height: 12),
-                      FilledButton(
-                        key: closeRetry
-                            ? const ValueKey<String>(
-                                'current-session-close-retry',
-                              )
-                            : progressRetry
-                            ? const ValueKey<String>(
-                                'current-reading-progress-retry',
-                              )
-                            : checkpointRetry
-                            ? const ValueKey<String>(
-                                'current-reading-checkpoint-retry',
-                              )
-                            : associationRetry
-                            ? const ValueKey<String>(
-                                'current-association-retry',
-                              )
-                            : recallRetry
-                            ? const ValueKey<String>('current-evidence-retry')
-                            : null,
-                        onPressed:
-                            _saving ||
-                                _completed ||
-                                !(_lessonLifecycle?.acceptsOperations ??
-                                    true) ||
-                                (_currentStage == 3 && !_typedRecallEnabled)
-                            ? null
-                            : closeRetry
-                            ? _retrySessionClose
-                            : progressRetry
-                            ? _retryCompletionProgress
-                            : checkpointRetry
-                            ? _retryCheckpoint
-                            : associationRetry
-                            ? _retryAssociationBatch
-                            : _completionLocked
-                            ? null
-                            : _checkpointLocked
-                            ? null
-                            : _associationLocked
-                            ? null
-                            : _nextStage,
-                        style: FilledButton.styleFrom(
-                          minimumSize: const Size.fromHeight(52),
-                        ),
-                        child: Text(
-                          closeRetry
-                              ? 'Retry Session Completion'
+                      AccessibilitySemanticRegion(
+                        role: AccessibilitySemanticRole.responseAndInput,
+                        child: FilledButton(
+                          key: closeRetry
+                              ? const ValueKey<String>(
+                                  'current-session-close-retry',
+                                )
                               : progressRetry
-                              ? 'Retry Reading Completion'
+                              ? const ValueKey<String>(
+                                  'current-reading-progress-retry',
+                                )
                               : checkpointRetry
-                              ? 'Retry Reading Checkpoint'
+                              ? const ValueKey<String>(
+                                  'current-reading-checkpoint-retry',
+                                )
                               : associationRetry
-                              ? 'Retry Memory Associations'
+                              ? const ValueKey<String>(
+                                  'current-association-retry',
+                                )
                               : recallRetry
-                              ? 'Retry Evidence'
-                              : _currentStage < 6
-                              ? 'Complete & Continue'
-                              : 'Finish Session',
+                              ? const ValueKey<String>('current-evidence-retry')
+                              : null,
+                          onPressed:
+                              _saving ||
+                                  _completed ||
+                                  !(_lessonLifecycle?.acceptsOperations ??
+                                      true) ||
+                                  (_currentStage == 3 && !_typedRecallEnabled)
+                              ? null
+                              : closeRetry
+                              ? _retrySessionClose
+                              : progressRetry
+                              ? _retryCompletionProgress
+                              : checkpointRetry
+                              ? _retryCheckpoint
+                              : associationRetry
+                              ? _retryAssociationBatch
+                              : _completionLocked
+                              ? null
+                              : _checkpointLocked
+                              ? null
+                              : _associationLocked
+                              ? null
+                              : _nextStage,
+                          style: FilledButton.styleFrom(
+                            minimumSize: const Size.fromHeight(52),
+                          ),
+                          child: Text(
+                            closeRetry
+                                ? 'Retry Session Completion'
+                                : progressRetry
+                                ? 'Retry Reading Completion'
+                                : checkpointRetry
+                                ? 'Retry Reading Checkpoint'
+                                : associationRetry
+                                ? 'Retry Memory Associations'
+                                : recallRetry
+                                ? 'Retry Evidence'
+                                : _currentStage < 6
+                                ? 'Complete & Continue'
+                                : 'Finish Session',
+                          ),
                         ),
                       ),
                     ],
@@ -1211,26 +1216,32 @@ class _AssociativeReadingSessionScreenState
     switch (_currentStage) {
       // ── Stage 1: Supported Reading ─────────────────────────────────────────
       case 1:
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Read the passage and notice the target words.'),
-            const SizedBox(height: 12),
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(widget.passageText),
+        return AccessibilitySemanticRegion(
+          role: AccessibilitySemanticRole.prompt,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Read the passage and notice the target words.'),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Text(widget.passageText),
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
-            Text('Target Words: ${widget.targetWords.join(', ')}'),
-          ],
+              const SizedBox(height: 12),
+              Text('Target Words: ${widget.targetWords.join(', ')}'),
+            ],
+          ),
         );
 
       // ── Stage 2: Cue Fading ────────────────────────────────────────────────
       case 2:
-        return const Text(
-          'Cue Fading: re-read the passage without translations or highlights.',
+        return const AccessibilitySemanticRegion(
+          role: AccessibilitySemanticRole.prompt,
+          child: Text(
+            'Cue Fading: re-read the passage without translations or highlights.',
+          ),
         );
 
       // ── Stage 3: Active Recall ─────────────────────────────────────────────
@@ -1238,47 +1249,57 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Recall Test: type each target word from memory.',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            const AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.prompt,
+              child: Text(
+                'Recall Test: type each target word from memory.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
             const SizedBox(height: 12),
-            ...List.generate(widget.targetWords.length, (i) {
-              final result = _recallResults[i];
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: TextField(
-                  controller: _recallControllers[i],
-                  enabled:
-                      !_saving &&
-                      !_recallBatchFrozen &&
-                      _typedRecallEnabled &&
-                      (_lessonLifecycle?.acceptsOperations ?? true),
-                  maxLength: TypedRecallModeAdapter.maxAnswerScalars,
-                  onChanged: (_) => _lessonLifecycle?.recordInteraction(),
-                  decoration: InputDecoration(
-                    labelText: 'Word ${i + 1}',
-                    hintText: 'Type from memory',
-                    border: const OutlineInputBorder(),
-                    suffixIcon: result == null
-                        ? null
-                        : Icon(
-                            result ? Icons.check_circle : Icons.cancel,
-                            color: result ? Colors.green : Colors.red,
-                          ),
-                  ),
-                ),
-              );
-            }),
-            if (_recallResults.any((r) => r != null))
-              Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Text(
-                  '${_recallResults.where((r) => r == true).length}/'
-                  '${widget.targetWords.length} correct',
-                  style: const TextStyle(fontWeight: FontWeight.w500),
-                ),
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.responseAndInput,
+              child: Column(
+                children: <Widget>[
+                  ...List.generate(widget.targetWords.length, (i) {
+                    final result = _recallResults[i];
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: TextField(
+                        controller: _recallControllers[i],
+                        enabled:
+                            !_saving &&
+                            !_recallBatchFrozen &&
+                            _typedRecallEnabled &&
+                            (_lessonLifecycle?.acceptsOperations ?? true),
+                        maxLength: TypedRecallModeAdapter.maxAnswerScalars,
+                        onChanged: (_) => _lessonLifecycle?.recordInteraction(),
+                        decoration: InputDecoration(
+                          labelText: 'Word ${i + 1}',
+                          hintText: 'Type from memory',
+                          border: const OutlineInputBorder(),
+                          suffixIcon: result == null
+                              ? null
+                              : Icon(
+                                  result ? Icons.check_circle : Icons.cancel,
+                                  color: result ? Colors.green : Colors.red,
+                                ),
+                        ),
+                      ),
+                    );
+                  }),
+                  if (_recallResults.any((r) => r != null))
+                    Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Text(
+                        '${_recallResults.where((r) => r == true).length}/'
+                        '${widget.targetWords.length} correct',
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                      ),
+                    ),
+                ],
               ),
+            ),
           ],
         );
 
@@ -1287,47 +1308,62 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Create a memory keyword or story for each target word.',
-              style: TextStyle(fontWeight: FontWeight.w500),
+            const AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.prompt,
+              child: Text(
+                'Create a memory keyword or story for each target word.',
+                style: TextStyle(fontWeight: FontWeight.w500),
+              ),
             ),
             const SizedBox(height: 12),
-            ...List.generate(widget.targetWords.length, (i) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.lightbulb_outline,
-                          size: 16,
-                          color: Colors.amber,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          widget.targetWords[i],
-                          style: const TextStyle(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    TextField(
-                      controller: _cueControllers[i],
-                      enabled:
-                          !_saving && !_associationLocked && !_checkpointLocked,
-                      onChanged: (_) => _lessonLifecycle?.recordInteraction(),
-                      decoration: const InputDecoration(
-                        hintText: 'Keyword, story, or image...',
-                        border: OutlineInputBorder(),
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.responseAndInput,
+              child: Column(
+                children: <Widget>[
+                  ...List.generate(widget.targetWords.length, (i) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                Icons.lightbulb_outline,
+                                size: 16,
+                                color: Colors.amber,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                widget.targetWords[i],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 6),
+                          TextField(
+                            controller: _cueControllers[i],
+                            enabled:
+                                !_saving &&
+                                !_associationLocked &&
+                                !_checkpointLocked,
+                            onChanged: (_) =>
+                                _lessonLifecycle?.recordInteraction(),
+                            decoration: const InputDecoration(
+                              hintText: 'Keyword, story, or image...',
+                              border: OutlineInputBorder(),
+                            ),
+                            maxLines: 2,
+                          ),
+                        ],
                       ),
-                      maxLines: 2,
-                    ),
-                  ],
-                ),
-              );
-            }),
+                    );
+                  }),
+                ],
+              ),
+            ),
           ],
         );
 
@@ -1336,14 +1372,20 @@ class _AssociativeReadingSessionScreenState
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('Use one target word in a new sentence.'),
+            const AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.prompt,
+              child: Text('Use one target word in a new sentence.'),
+            ),
             const SizedBox(height: 12),
-            TextField(
-              enabled: !_saving && !_checkpointLocked,
-              onChanged: (_) => _lessonLifecycle?.recordInteraction(),
-              decoration: const InputDecoration(
-                hintText: 'Enter a new sentence',
-                border: OutlineInputBorder(),
+            AccessibilitySemanticRegion(
+              role: AccessibilitySemanticRole.responseAndInput,
+              child: TextField(
+                enabled: !_saving && !_checkpointLocked,
+                onChanged: (_) => _lessonLifecycle?.recordInteraction(),
+                decoration: const InputDecoration(
+                  hintText: 'Enter a new sentence',
+                  border: OutlineInputBorder(),
+                ),
               ),
             ),
           ],
@@ -1354,21 +1396,24 @@ class _AssociativeReadingSessionScreenState
       default:
         final correct = _recallResults.where((r) => r == true).length;
         final total = widget.targetWords.length;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Icon(Icons.fact_check_outlined, size: 48),
-            const SizedBox(height: 12),
-            const Text(
-              'Ready to finish',
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            if (total > 0)
-              Text('Recall score: $correct / $total')
-            else
-              const Text('Tap Finish Session to save completion.'),
-          ],
+        return AccessibilitySemanticRegion(
+          role: AccessibilitySemanticRole.prompt,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.fact_check_outlined, size: 48),
+              const SizedBox(height: 12),
+              const Text(
+                'Ready to finish',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              if (total > 0)
+                Text('Recall score: $correct / $total')
+              else
+                const Text('Tap Finish Session to save completion.'),
+            ],
+          ),
         );
     }
   }

@@ -67,6 +67,76 @@ void main() {
     },
   );
 
+  testWidgets(
+    'f38 final review: voice-present dictation remains operable at 200 percent text',
+    (tester) async {
+      tester.view.physicalSize = const Size(360, 640);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+      final voice = VoiceUseCases(
+        provider: FakeVoiceProvider(),
+        disposeProvider: () async {},
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          builder: (context, child) => MediaQuery(
+            data: MediaQuery.of(
+              context,
+            ).copyWith(textScaler: const TextScaler.linear(2)),
+            child: child!,
+          ),
+          home: DictationQuizScreen(targetWord: 'station', voice: voice),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      final layoutExceptions = <Object>[];
+      while (true) {
+        final exception = tester.takeException();
+        if (exception == null) break;
+        layoutExceptions.add(exception);
+      }
+      expect(
+        layoutExceptions,
+        isEmpty,
+        reason: 'the real voice-present surface must not overflow at 200%',
+      );
+
+      final normalAudio = find.widgetWithText(
+        ElevatedButton,
+        'ความเร็วปกติ (1.0x)',
+      );
+      final slowAudio = find.widgetWithText(
+        OutlinedButton,
+        'ฟังแบบช้า (0.75x)',
+      );
+      final input = find.byType(TextField);
+      final checkAnswer = find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ');
+      expect(
+        find.ancestor(of: checkAnswer, matching: find.byType(Scrollable)),
+        findsOneWidget,
+        reason: 'narrow 200% content needs a real responsive scroll surface',
+      );
+      for (final control in <Finder>[
+        normalAudio,
+        slowAudio,
+        input,
+        checkAnswer,
+      ]) {
+        expect(control, findsOneWidget);
+        await tester.ensureVisible(control);
+        await tester.pump();
+        expect(
+          control.hitTestable(),
+          findsOneWidget,
+          reason: 'every audio, input, and check action must remain reachable',
+        );
+      }
+    },
+  );
+
   testWidgets('background stops the automatic dictation playback', (
     tester,
   ) async {

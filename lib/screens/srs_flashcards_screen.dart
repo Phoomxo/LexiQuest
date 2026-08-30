@@ -2,7 +2,10 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/flashcard_mode_adapter.dart';
@@ -71,35 +74,37 @@ final class _SrsFlashcardCompatibilityRouteState
   @override
   Widget build(BuildContext context) {
     final dependencies = _dependencies;
-    return ProductionFeatureGate(
-      feature: Feature.srs,
-      registry: dependencies?.features,
-      builder: (_) => FutureBuilder<EvidencePolicyRolloutMode>(
-        future: _rollout,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return Scaffold(
-              appBar: AppBar(title: const Text('ทบทวน SRS')),
-              body: const Center(child: CircularProgressIndicator()),
+    return AccessibilityScope(
+      child: ProductionFeatureGate(
+        feature: Feature.srs,
+        registry: dependencies?.features,
+        builder: (_) => FutureBuilder<EvidencePolicyRolloutMode>(
+          future: _rollout,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState != ConnectionState.done) {
+              return Scaffold(
+                appBar: AppBar(title: const Text('ทบทวน SRS')),
+                body: const Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (snapshot.hasError ||
+                snapshot.data != EvidencePolicyRolloutMode.legacy) {
+              return ProductionFeatureUnavailable(
+                feature: Feature.srs,
+                reason: snapshot.hasError
+                    ? ProductionFeatureUnavailableReason.missingDependency
+                    : ProductionFeatureUnavailableReason.incompatibleRollout,
+                state: dependencies?.features.stateOf(Feature.srs),
+              );
+            }
+            return _LegacyFlashcardCompatibilityScope(
+              child: SrsFlashcardsScreen(
+                wordList: widget.wordList,
+                voice: widget.voice,
+              ),
             );
-          }
-          if (snapshot.hasError ||
-              snapshot.data != EvidencePolicyRolloutMode.legacy) {
-            return ProductionFeatureUnavailable(
-              feature: Feature.srs,
-              reason: snapshot.hasError
-                  ? ProductionFeatureUnavailableReason.missingDependency
-                  : ProductionFeatureUnavailableReason.incompatibleRollout,
-              state: dependencies?.features.stateOf(Feature.srs),
-            );
-          }
-          return _LegacyFlashcardCompatibilityScope(
-            child: SrsFlashcardsScreen(
-              wordList: widget.wordList,
-              voice: widget.voice,
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -164,6 +169,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   UnifiedLessonSessionLifecycle? _lessonLifecycle;
   bool _compatibilityCompleted = false;
   bool _loadSettled = false;
+  bool _reducedMotionEnabled = false;
+  double _flipTarget = 0;
 
   bool get _isCompatibilityDeck => widget.wordList != null;
   bool get _persistenceLocked => _review?.persistenceLocked ?? false;
@@ -175,6 +182,8 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       (!_isCompatibilityDeck && _lessonLifecycle?.acceptsOperations == false) ||
       (!_isCompatibilityDeck && (_review?.actionLocked ?? true)) ||
       _completionCommitted;
+
+  bool get _reducedMotion => _reducedMotionEnabled;
 
   @override
   void initState() {
@@ -192,6 +201,12 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final reducedMotion = AccessibilityScope.of(context).reducedMotion;
+    if (reducedMotion && !_reducedMotionEnabled && _controller.isAnimating) {
+      _controller.stop(canceled: false);
+      _controller.value = _flipTarget;
+    }
+    _reducedMotionEnabled = reducedMotion;
     final dependencies = AppDependenciesScope.maybeOf(context);
     _lessonLifecycle = UnifiedLessonSessionLifecycleScope.maybeOf(context);
     _voice = widget.voice ?? dependencies?.voice;
@@ -357,12 +372,18 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       return;
     }
     _lessonLifecycle?.recordInteraction();
-    if (_isFlipped) {
-      _controller.reverse();
-    } else {
-      _controller.forward();
+    final flipped = !_isFlipped;
+    unawaited(_transitionCardSide(flipped: flipped));
+    setState(() => _isFlipped = flipped);
+  }
+
+  Future<void> _transitionCardSide({required bool flipped}) {
+    _flipTarget = flipped ? 1 : 0;
+    if (_reducedMotion) {
+      _controller.value = _flipTarget;
+      return Future<void>.value();
     }
-    setState(() => _isFlipped = !_isFlipped);
+    return flipped ? _controller.forward() : _controller.reverse();
   }
 
   Future<void> _rateItem(bool isCorrect) async {
@@ -392,7 +413,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         responseTimeMs: _responseStopwatch.elapsedMilliseconds,
       );
       if (!mounted) return;
-      await _controller.forward();
+      await _transitionCardSide(flipped: true);
     } catch (_) {
       _showSaveFailure();
     }
@@ -419,7 +440,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       await review.retry();
       if (!mounted) return;
       if (!wasRevealed && review.isRevealed) {
-        await _controller.forward();
+        await _transitionCardSide(flipped: true);
       }
       await _afterReviewAction(previousIndex: previousIndex);
     } catch (_) {
@@ -435,7 +456,9 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
       return;
     }
     if (review.index != previousIndex) {
-      if (_controller.value != 0) await _controller.reverse();
+      if (_controller.value != 0) {
+        await _transitionCardSide(flipped: false);
+      }
       _responseStopwatch
         ..reset()
         ..start();
@@ -446,7 +469,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   Future<void> _nextCompatibilityCard() async {
     _lessonLifecycle?.recordInteraction();
     if (_currentIndex < _session!.questions.length - 1) {
-      if (_isFlipped) _controller.reverse();
+      if (_isFlipped) await _transitionCardSide(flipped: false);
       setState(() {
         _isFlipped = false;
         _currentIndex++;
@@ -504,7 +527,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         if (didPop || _persistenceLocked || _isCompatibilityDeck) return;
         unawaited(_abandonAndPop());
       },
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('ทบทวน SRS')),
         body: FutureBuilder<QuizSession>(
           future: _load,
@@ -542,6 +565,7 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
   Widget _buildCard() {
     final word = _currentQuestion.word;
     final actionLocked = _actionLocked;
+    final canReveal = !actionLocked && !_visibleFlipped;
     return LayoutBuilder(
       builder: (context, constraints) => SingleChildScrollView(
         child: Padding(
@@ -560,46 +584,83 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                 SizedBox(
                   width: double.infinity,
                   height: max(180, constraints.maxHeight * 0.52),
-                  child: Semantics(
-                    button: !_visibleFlipped,
-                    enabled: !actionLocked,
-                    label: _visibleFlipped
-                        ? 'Answer for ${word.spelling}'
-                        : 'Reveal answer for ${word.spelling}',
-                    child: GestureDetector(
-                      key: !_isCompatibilityDeck && !_visibleFlipped
-                          ? const ValueKey<String>('flashcard-reveal-answer')
-                          : null,
-                      onTap: actionLocked || _visibleFlipped ? null : _flipCard,
-                      child: AnimatedBuilder(
-                        animation: _animation,
-                        builder: (context, child) {
-                          final angle = _animation.value * pi;
-                          final front = angle < pi / 2;
-                          return Transform(
-                            transform: Matrix4.identity()
-                              ..setEntry(3, 2, 0.001)
-                              ..rotateY(angle),
-                            alignment: Alignment.center,
-                            child: Card(
-                              child: SizedBox.expand(
-                                child: Padding(
-                                  padding: const EdgeInsets.all(24),
-                                  child: front
-                                      ? _front(word)
-                                      : Transform(
-                                          transform: Matrix4.identity()
-                                            ..rotateY(pi),
-                                          alignment: Alignment.center,
-                                          child: _back(word),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: <Widget>[
+                      AccessibilitySemanticRegion(
+                        role: AccessibilitySemanticRole.responseAndInput,
+                        child: FocusableActionDetector(
+                          enabled: canReveal,
+                          shortcuts: const <ShortcutActivator, Intent>{
+                            SingleActivator(LogicalKeyboardKey.enter):
+                                ActivateIntent(),
+                            SingleActivator(LogicalKeyboardKey.space):
+                                ActivateIntent(),
+                          },
+                          actions: <Type, Action<Intent>>{
+                            ActivateIntent: CallbackAction<ActivateIntent>(
+                              onInvoke: (_) {
+                                _flipCard();
+                                return null;
+                              },
+                            ),
+                          },
+                          child: Semantics(
+                            label: _visibleFlipped
+                                ? 'Answer for ${word.spelling}'
+                                : 'Reveal answer for ${word.spelling}',
+                            button: canReveal,
+                            enabled: canReveal,
+                            onTap: canReveal ? _flipCard : null,
+                            child: GestureDetector(
+                              excludeFromSemantics: true,
+                              key: !_isCompatibilityDeck && !_visibleFlipped
+                                  ? const ValueKey<String>(
+                                      'flashcard-reveal-answer',
+                                    )
+                                  : null,
+                              onTap: canReveal ? _flipCard : null,
+                              child: AnimatedBuilder(
+                                animation: _animation,
+                                builder: (context, child) {
+                                  final angle = _animation.value * pi;
+                                  final front = angle < pi / 2;
+                                  return Transform(
+                                    transform: Matrix4.identity()
+                                      ..setEntry(3, 2, 0.001)
+                                      ..rotateY(angle),
+                                    alignment: Alignment.center,
+                                    child: Card(
+                                      child: SizedBox.expand(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(24),
+                                          child: front
+                                              ? _front(word)
+                                              : Transform(
+                                                  transform: Matrix4.identity()
+                                                    ..rotateY(pi),
+                                                  alignment: Alignment.center,
+                                                  child: _back(word),
+                                                ),
                                         ),
-                                ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             ),
-                          );
-                        },
+                          ),
+                        ),
                       ),
-                    ),
+                      if (!_visibleFlipped)
+                        IgnorePointer(
+                          child: AccessibilitySemanticRegion(
+                            role: AccessibilitySemanticRole.prompt,
+                            label: word.spelling,
+                            child: const SizedBox.expand(),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -618,18 +679,27 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
                 else if (_completionCommitted)
                   const SizedBox.shrink()
                 else if (_isCompatibilityDeck && _visibleFlipped)
-                  _ratingControls()
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.responseAndInput,
+                    child: _ratingControls(),
+                  )
                 else if (!_isCompatibilityDeck && _visibleFlipped)
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      key: const ValueKey<String>('flashcard-continue'),
-                      onPressed: _advanceAfterReveal,
-                      child: const Text('Continue'),
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.responseAndInput,
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: FilledButton(
+                        key: const ValueKey<String>('flashcard-continue'),
+                        onPressed: _advanceAfterReveal,
+                        child: const Text('Continue'),
+                      ),
                     ),
                   )
                 else if (!_isCompatibilityDeck)
-                  _ratingControls(includeRevealInstruction: true)
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.responseAndInput,
+                    child: _ratingControls(includeRevealInstruction: true),
+                  )
                 else
                   const Text('แตะการ์ดเพื่อดูคำแปล'),
               ],
@@ -673,9 +743,11 @@ class _SrsFlashcardsScreenState extends State<SrsFlashcardsScreen>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              word.spelling,
-              style: Theme.of(context).textTheme.headlineLarge,
+            ExcludeSemantics(
+              child: Text(
+                word.spelling,
+                style: Theme.of(context).textTheme.headlineLarge,
+              ),
             ),
             const SizedBox(height: 16),
             IconButton(

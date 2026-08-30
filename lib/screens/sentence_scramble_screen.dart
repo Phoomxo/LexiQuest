@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/native_mode_adapters.dart';
@@ -134,13 +136,13 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
       target: widget.targetSentence,
       response: userSentence,
     );
-    setState(() {
-      _isCorrect = evaluation.isCorrect;
-    });
     final evidence = _evidenceAdapter;
     final sessionId = widget.sessionId;
     final wordId = widget.wordId;
-    if (evidence == null || sessionId == null || wordId == null) return;
+    if (evidence == null || sessionId == null || wordId == null) {
+      setState(() => _isCorrect = evaluation.isCorrect);
+      return;
+    }
     final pending = _pendingEvidence = _modeAdapter
         .capture(
           evidence: evidence,
@@ -196,6 +198,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
 
   Future<void> _afterEvidenceCommitted(bool shouldComplete) async {
     _pendingEvidence = null;
+    _isCorrect = shouldComplete;
     final lifecycle = _lifecycle;
     final learning = _learning;
     final sessionId = widget.sessionId;
@@ -241,7 +244,7 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_persistenceLocked,
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(
           title: const Text(
             'เรียงประโยคภาษาอังกฤษ',
@@ -250,124 +253,152 @@ class _SentenceScrambleScreenState extends State<SentenceScrambleScreen>
           backgroundColor: Colors.indigo,
           centerTitle: true,
         ),
-        body: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            children: [
-              if (widget.translation.isNotEmpty) ...[
-                Text(
-                  widget.translation,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.indigo,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 12),
-              ],
-              IconButton(
-                icon: const Icon(
-                  Icons.volume_up,
-                  size: 36,
-                  color: Colors.deepPurple,
-                ),
-                onPressed: _interactionLocked ? null : _playAudio,
-              ),
-              const SizedBox(height: 20),
-              // User selection area
-              Container(
-                constraints: const BoxConstraints(minHeight: 80),
-                width: double.infinity,
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.indigo.shade200),
-                ),
-                child: Wrap(
-                  spacing: 8,
-                  runSpacing: 8,
-                  children: List.generate(_userSelection.length, (index) {
-                    return ActionChip(
-                      label: Text(
-                        _userSelection[index],
-                        style: const TextStyle(fontSize: 16),
+        body: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              children: [
+                if (widget.translation.isNotEmpty) ...[
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.prompt,
+                    child: Text(
+                      widget.translation,
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.indigo,
                       ),
-                      onPressed: () => _deselectWord(index),
-                      backgroundColor: Colors.indigo.shade100,
-                    );
-                  }),
-                ),
-              ),
-              const SizedBox(height: 30),
-              // Scrambled pool area
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: List.generate(_scrambledWords.length, (index) {
-                  return ChoiceChip(
-                    label: Text(
-                      _scrambledWords[index],
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                    selected: false,
-                    onSelected: (_) => _selectWord(index),
-                  );
-                }),
-              ),
-              const Spacer(),
-              Row(
-                children: [
-                  Expanded(
-                    child: OutlinedButton(
-                      onPressed: _interactionLocked ? null : _reset,
-                      child: const Text('เริ่มใหม่'),
+                      textAlign: TextAlign.center,
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: ElevatedButton(
-                      onPressed:
-                          _userSelection.isNotEmpty && !_interactionLocked
-                          ? _checkSentence
-                          : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.indigo,
+                  const SizedBox(height: 12),
+                ],
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: IconButton(
+                    tooltip: 'ฟังประโยคอีกครั้ง',
+                    icon: const Icon(
+                      Icons.volume_up,
+                      size: 36,
+                      color: Colors.deepPurple,
+                      semanticLabel: 'ฟังประโยคอีกครั้ง',
+                    ),
+                    onPressed: _interactionLocked ? null : _playAudio,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                // User selection area
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Container(
+                    constraints: const BoxConstraints(minHeight: 80),
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.indigo.shade200),
+                    ),
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: List.generate(_userSelection.length, (index) {
+                        return ActionChip(
+                          label: Text(
+                            _userSelection[index],
+                            style: const TextStyle(fontSize: 16),
+                          ),
+                          onPressed: () => _deselectWord(index),
+                          backgroundColor: Colors.indigo.shade100,
+                        );
+                      }),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                // Scrambled pool area
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(_scrambledWords.length, (index) {
+                      return ChoiceChip(
+                        label: Text(
+                          _scrambledWords[index],
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        selected: false,
+                        onSelected: (_) => _selectWord(index),
+                      );
+                    }),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: _interactionLocked ? null : _reset,
+                          child: const Text('เริ่มใหม่'),
+                        ),
                       ),
-                      child: const Text(
-                        'ตรวจประโยค',
-                        style: TextStyle(color: Colors.white),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed:
+                              _userSelection.isNotEmpty && !_interactionLocked
+                              ? _checkSentence
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.indigo,
+                          ),
+                          child: const Text(
+                            'ตรวจประโยค',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                if (_isCorrect != null) ...[
+                  const SizedBox(height: 16),
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.feedback,
+                    child: Text(
+                      _isCorrect!
+                          ? 'ถูกต้อง! (Great job)'
+                          : 'เรียงยังไม่ถูกต้อง ลองใหม่อีกครั้ง',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: _isCorrect! ? Colors.green : Colors.red,
                       ),
                     ),
                   ),
                 ],
-              ),
-              if (_isCorrect != null) ...[
-                const SizedBox(height: 16),
-                Text(
-                  _isCorrect!
-                      ? 'ถูกต้อง! (Great job)'
-                      : 'เรียงยังไม่ถูกต้อง ลองใหม่อีกครั้ง',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: _isCorrect! ? Colors.green : Colors.red,
+                if (_pendingEvidence?.requiresRetry ?? false)
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.responseAndInput,
+                    child: TextButton(
+                      onPressed: _retryEvidence,
+                      child: const Text('ลองบันทึกผลอีกครั้ง'),
+                    ),
                   ),
-                ),
+                if (_pendingSessionClose?.requiresRetry ?? false)
+                  AccessibilitySemanticRegion(
+                    role: AccessibilitySemanticRole.responseAndInput,
+                    child: TextButton(
+                      onPressed: _retrySessionClose,
+                      child: const Text('ลองปิดเซสชันอีกครั้ง'),
+                    ),
+                  ),
+                const SizedBox(height: 16),
               ],
-              if (_pendingEvidence?.requiresRetry ?? false)
-                TextButton(
-                  onPressed: _retryEvidence,
-                  child: const Text('ลองบันทึกผลอีกครั้ง'),
-                ),
-              if (_pendingSessionClose?.requiresRetry ?? false)
-                TextButton(
-                  onPressed: _retrySessionClose,
-                  child: const Text('ลองปิดเซสชันอีกครั้ง'),
-                ),
-              const SizedBox(height: 16),
-            ],
+            ),
           ),
         ),
       ),

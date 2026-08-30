@@ -6,6 +6,7 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -28,6 +29,7 @@ import 'package:vocab_learning_app/screens/score_screen.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../support/inert_research_dependencies.dart';
+import '../support/accessibility_semantics_test_support.dart';
 import '../support/test_quest_use_cases.dart';
 
 void main() {
@@ -75,8 +77,8 @@ void main() {
   tearDown(() => database.close());
 
   testWidgets(
-    '200 percent narrow layout has no overflow and UI presents prior feedback',
-    (tester) async {
+    'f38 ultra review: matching feedback follows response semantics',
+    (tester) => withAccessibilitySemantics(tester, () async {
       tester.view.physicalSize = const Size(320, 700);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.resetPhysicalSize);
@@ -122,6 +124,23 @@ void main() {
         find.text('Correct answer: place for flights'),
       );
 
+      final root = find.byType(MatchingModeScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('answer-feedback-panel')),
+        role: AccessibilitySemanticRole.feedback,
+      );
+      expectRenderedAccessibilityTraversal(
+        tester,
+        scope: root,
+        roles: const <AccessibilitySemanticRole>[
+          AccessibilitySemanticRole.prompt,
+          AccessibilitySemanticRole.responseAndInput,
+          AccessibilitySemanticRole.feedback,
+          AccessibilitySemanticRole.navigation,
+        ],
+      );
+
       final attempt =
           (await database.select(database.answerAttempts).get()).single;
       expect(attempt.promptMode, 'matchingPair');
@@ -130,7 +149,7 @@ void main() {
         EvidenceClass.recognition,
       );
       expect(tester.takeException(), isNull);
-    },
+    }),
   );
 
   testWidgets('explicit support is guided practice and never mastery', (

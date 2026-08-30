@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/native_mode_adapters.dart';
@@ -440,38 +442,51 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
     final evidenceLocked = _persistenceLocked;
     return PopScope(
       canPop: !evidenceLocked,
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('ฝึกออกเสียง')),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(24),
             children: [
-              Text('พูดคำว่า', style: Theme.of(context).textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Semantics(
-                button: true,
-                label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
-                child: InkWell(
-                  onTap: evidenceLocked || _sessionCompleted
-                      ? null
-                      : _speakWord,
-                  borderRadius: BorderRadius.circular(12),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Flexible(
-                          child: Text(
-                            widget.correctWord,
-                            style: Theme.of(context).textTheme.headlineMedium,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'พูดคำว่า',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Semantics(
+                      button: true,
+                      label: 'ฟังการออกเสียงคำว่า ${widget.correctWord}',
+                      child: InkWell(
+                        onTap: evidenceLocked || _sessionCompleted
+                            ? null
+                            : _speakWord,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Flexible(
+                                child: Text(
+                                  widget.correctWord,
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.headlineMedium,
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.volume_up),
+                            ],
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(Icons.volume_up),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),
@@ -487,20 +502,6 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                             : _transcript,
                         key: const ValueKey<String>('speech-transcript'),
                       ),
-                      if (assessment != null) ...[
-                        const SizedBox(height: 12),
-                        Text(
-                          'ความเหมือนของข้อความ: '
-                          '${assessment.similarityPercent}%',
-                        ),
-                        Text(
-                          'วิธีวัด: ${assessment.method}',
-                          style: Theme.of(context).textTheme.bodySmall,
-                        ),
-                        const Text(
-                          'ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้',
-                        ),
-                      ],
                     ],
                   ),
                 ),
@@ -514,15 +515,45 @@ class _SpeakToTextScreenState extends State<SpeakToTextScreen>
                 ),
               ],
               const SizedBox(height: 24),
-              FilledButton.icon(
-                key: const ValueKey<String>('speech-listen-button'),
-                onPressed:
-                    _listenPending || _persistenceLocked || _sessionCompleted
-                    ? null
-                    : (_listening ? _stopListening : _startListening),
-                icon: Icon(_listening ? Icons.stop : Icons.mic),
-                label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>('speech-listen-button'),
+                  onPressed:
+                      _listenPending || _persistenceLocked || _sessionCompleted
+                      ? null
+                      : (_listening ? _stopListening : _startListening),
+                  icon: Icon(_listening ? Icons.stop : Icons.mic),
+                  label: Text(_listening ? 'หยุดฟัง' : 'เริ่มพูด'),
+                ),
               ),
+              if (assessment != null) ...[
+                const SizedBox(height: 12),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.feedback,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: <Widget>[
+                          Text(
+                            'ความเหมือนของข้อความ: '
+                            '${assessment.similarityPercent}%',
+                          ),
+                          Text(
+                            'วิธีวัด: ${assessment.method}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          const Text(
+                            'ไม่มีการวัด pitch หรือ phoneme จากเอนจินนี้',
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
               if (_pendingEvidence?.requiresRetry ?? false) ...[
                 const SizedBox(height: 12),
                 FilledButton(

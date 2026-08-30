@@ -1,4 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/native_mode_adapters.dart';
@@ -200,7 +205,7 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
 
     return PopScope(
       canPop: _pendingEvidence == null && _pendingSessionClose == null,
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(
           title: Text(
             'บทความ CEFR (${widget.cefrLevel})',
@@ -217,12 +222,15 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                widget.title,
-                style: const TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.indigo,
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: Text(
+                  widget.title,
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.indigo,
+                  ),
                 ),
               ),
               const SizedBox(height: 16),
@@ -232,20 +240,20 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
               ),
               const SizedBox(height: 12),
               Expanded(
-                child: SingleChildScrollView(
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 8,
-                    children: words.map((w) {
-                      final cleanWord = w.replaceAll(RegExp(r'[^a-zA-Z]'), '');
-                      final isSelected =
-                          _selectedWord == cleanWord && cleanWord.isNotEmpty;
-
-                      return GestureDetector(
-                        onTap: cleanWord.isNotEmpty
-                            ? () => _speakWord(cleanWord)
-                            : null,
-                        child: Container(
+                child: AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: SingleChildScrollView(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 8,
+                      children: words.map((w) {
+                        final cleanWord = w.replaceAll(
+                          RegExp(r'[^a-zA-Z]'),
+                          '',
+                        );
+                        final isSelected =
+                            _selectedWord == cleanWord && cleanWord.isNotEmpty;
+                        final tile = Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 6,
                             vertical: 4,
@@ -266,53 +274,98 @@ class _CefrArticleReaderScreenState extends State<CefrArticleReaderScreen>
                               color: Colors.black87,
                             ),
                           ),
-                        ),
-                      );
-                    }).toList(),
+                        );
+                        if (cleanWord.isEmpty) return tile;
+                        final canReplay =
+                            _pendingEvidence == null &&
+                            _pendingSessionClose == null &&
+                            _acceptsModeOperations;
+                        void replay() => unawaited(_speakWord(cleanWord));
+
+                        return FocusableActionDetector(
+                          enabled: canReplay,
+                          shortcuts: const <ShortcutActivator, Intent>{
+                            SingleActivator(LogicalKeyboardKey.enter):
+                                ActivateIntent(),
+                            SingleActivator(LogicalKeyboardKey.space):
+                                ActivateIntent(),
+                          },
+                          actions: <Type, Action<Intent>>{
+                            ActivateIntent: CallbackAction<ActivateIntent>(
+                              onInvoke: (_) {
+                                replay();
+                                return null;
+                              },
+                            ),
+                          },
+                          child: Semantics(
+                            button: true,
+                            enabled: canReplay,
+                            label: 'Replay $cleanWord',
+                            onTap: canReplay ? replay : null,
+                            child: GestureDetector(
+                              excludeFromSemantics: true,
+                              onTap: canReplay ? replay : null,
+                              child: tile,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
                   ),
                 ),
               ),
               if (_selectedWord != null && _selectedWord!.isNotEmpty) ...[
                 const Divider(height: 30),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'คำศัพท์ที่เลือก: "$_selectedWord"',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.indigo,
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'คำศัพท์ที่เลือก: "$_selectedWord"',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.indigo,
+                        ),
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(
-                        Icons.volume_up,
-                        color: Colors.indigo,
-                        size: 30,
+                      IconButton(
+                        tooltip: 'Replay selected word',
+                        icon: const Icon(
+                          Icons.volume_up,
+                          color: Colors.indigo,
+                          size: 30,
+                        ),
+                        onPressed: () => _speakWord(_selectedWord!),
                       ),
-                      onPressed: () => _speakWord(_selectedWord!),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ],
               const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const ValueKey<String>('cefr-reading-complete'),
-                onPressed:
-                    _completed ||
-                        _pendingEvidence != null ||
-                        _pendingSessionClose != null
-                    ? null
-                    : _completeReading,
-                icon: const Icon(Icons.check_circle_outline),
-                label: Text(_completed ? 'อ่านจบแล้ว' : 'อ่านบทความจบแล้ว'),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: FilledButton.icon(
+                  key: const ValueKey<String>('cefr-reading-complete'),
+                  onPressed:
+                      _completed ||
+                          _pendingEvidence != null ||
+                          _pendingSessionClose != null
+                      ? null
+                      : _completeReading,
+                  icon: const Icon(Icons.check_circle_outline),
+                  label: Text(_completed ? 'อ่านจบแล้ว' : 'อ่านบทความจบแล้ว'),
+                ),
               ),
               if ((_pendingEvidence?.requiresRetry ?? false) ||
                   _sessionCloseRetryRequired)
-                TextButton(
-                  onPressed: _retryPersistence,
-                  child: const Text('ลองบันทึกผลอีกครั้ง'),
+                AccessibilitySemanticRegion(
+                  role: AccessibilitySemanticRole.responseAndInput,
+                  child: TextButton(
+                    onPressed: _retryPersistence,
+                    child: const Text('ลองบันทึกผลอีกครั้ง'),
+                  ),
                 ),
             ],
           ),

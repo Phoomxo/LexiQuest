@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart'
     hide AssociationRecord, AssociativeMemoryState, LocalOwner;
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner.dart';
 import 'package:vocab_learning_app/features/identity/domain/local_owner_repository.dart';
@@ -29,6 +30,8 @@ import 'package:vocab_learning_app/features/learning/presentation/unified_lesson
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/screens/associative_reading_session_screen.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 const _typedChecksum =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -342,23 +345,48 @@ void main() {
       expect(find.text('Ready to finish'), findsOneWidget);
     });
 
-    testWidgets('Stage 3 shows one TextField per target word', (tester) async {
-      await tester.pumpWidget(session());
-      await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
+    testWidgets(
+      'f38 ultra review: Stage 3 inputs belong to the response region',
+      (tester) async {
+        await tester.pumpWidget(session());
+        await pumpUntilFound(tester, find.text('Stage 1: Supported Reading'));
 
-      for (var i = 0; i < 2; i++) {
-        await tester.tap(find.text('Complete & Continue'));
-        await pumpUntilFound(
-          tester,
-          find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
-        );
-      }
+        for (var i = 0; i < 2; i++) {
+          await tester.tap(find.text('Complete & Continue'));
+          await pumpUntilFound(
+            tester,
+            find.text('Stage ${i + 2}: ${_stageName(i + 2)}'),
+          );
+        }
 
-      expect(find.text('Stage 3: Active Recall'), findsOneWidget);
-      expect(find.byType(TextField), findsNWidgets(2));
-      expect(find.text('Word 1'), findsOneWidget);
-      expect(find.text('Word 2'), findsOneWidget);
-    });
+        expect(find.text('Stage 3: Active Recall'), findsOneWidget);
+        expect(find.byType(TextField), findsNWidgets(2));
+        expect(find.text('Word 1'), findsOneWidget);
+        expect(find.text('Word 2'), findsOneWidget);
+        final root = find.byType(AssociativeReadingSessionScreen);
+        for (final field in find.byType(TextField).evaluate()) {
+          final finder = find.byElementPredicate(
+            (element) => identical(element, field),
+          );
+          expectInsideAccessibilityRole(
+            scope: root,
+            descendant: finder,
+            role: AccessibilitySemanticRole.responseAndInput,
+            reason: 'typed recall is learner input, not prompt content',
+          );
+          expect(
+            find.ancestor(
+              of: finder,
+              matching: accessibilityRoleRegion(
+                root,
+                AccessibilitySemanticRole.prompt,
+              ),
+            ),
+            findsNothing,
+          );
+        }
+      },
+    );
 
     testWidgets(
       'Stage 4 saves owner-scoped association and initial memory state',

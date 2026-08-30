@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/current_activity_evidence.dart';
@@ -21,6 +22,8 @@ import 'package:vocab_learning_app/features/learning_packs/domain/content_qualit
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/screens/quiz_screen.dart';
 import 'package:vocab_learning_app/screens/score_screen.dart';
+
+import '../support/accessibility_semantics_test_support.dart';
 
 const _checksumA =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
@@ -499,8 +502,8 @@ void main() {
   );
 
   testWidgets(
-    'explicit f11 screen keeps selection and records productive typed recall',
-    (tester) async {
+    'f38 ultra review: quiz committed feedback follows response semantics',
+    (tester) => withAccessibilitySemantics(tester, () async {
       await tester.runAsync(() async {
         final ownerId = (await owners.getOrCreateActiveOwner()).id;
         await _insertWord(
@@ -542,6 +545,22 @@ void main() {
       await _pumpUntilFound(
         tester,
         find.byKey(const ValueKey<String>('answer-feedback-panel')),
+      );
+      final root = find.byType(QuizScreen);
+      expectInsideAccessibilityRole(
+        scope: root,
+        descendant: find.byKey(const ValueKey<String>('answer-feedback-panel')),
+        role: AccessibilitySemanticRole.feedback,
+      );
+      expectRenderedAccessibilityTraversal(
+        tester,
+        scope: root,
+        roles: const <AccessibilitySemanticRole>[
+          AccessibilitySemanticRole.prompt,
+          AccessibilitySemanticRole.responseAndInput,
+          AccessibilitySemanticRole.feedback,
+          AccessibilitySemanticRole.navigation,
+        ],
       );
       expect(find.text('Correct answer: สถานี'), findsOneWidget);
       expect(
@@ -604,7 +623,7 @@ void main() {
         ),
         hasLength(2),
       );
-    },
+    }),
   );
 
   testWidgets(

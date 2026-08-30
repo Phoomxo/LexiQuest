@@ -5,10 +5,12 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/companion/application/companion_reaction_use_cases.dart';
 import 'package:vocab_learning_app/features/companion/domain/companion_reaction.dart';
 import 'package:vocab_learning_app/features/companion/domain/companion_reaction_catalog.dart';
 import 'package:vocab_learning_app/features/companion/presentation/contextual_companion_widget.dart';
+import 'package:vocab_learning_app/features/accessibility/presentation/accessibility_scope.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -16,12 +18,14 @@ import 'package:vocab_learning_app/features/learning/application/current_activit
 import 'package:vocab_learning_app/features/learning/application/hint_use_cases.dart';
 import 'package:vocab_learning_app/features/learning/application/legacy_lesson_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/matching_mode_adapter.dart';
+import 'package:vocab_learning_app/features/learning/application/native_mode_adapters.dart';
 import 'package:vocab_learning_app/features/learning/application/typed_recall_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/unified_lesson_controller.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/data/drift_session_configuration_store.dart';
 import 'package:vocab_learning_app/features/learning/domain/evidence_context.dart';
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
+import 'package:vocab_learning_app/features/learning/domain/evidence_policy_rollout.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_models.dart';
 import 'package:vocab_learning_app/features/learning/domain/learning_repository.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
@@ -48,6 +52,11 @@ import 'package:vocab_learning_app/features/time_tracking/domain/focus_timer.dar
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_repository.dart';
 import 'package:vocab_learning_app/features/time_tracking/domain/learning_time_segment.dart';
 import 'package:vocab_learning_app/features/time_tracking/presentation/focus_timer_widget.dart';
+import 'package:vocab_learning_app/features/voice/application/voice_use_cases.dart';
+import 'package:vocab_learning_app/screens/dictation_quiz_screen.dart';
+import 'package:vocab_learning_app/screens/choose_mode_screen.dart';
+import 'package:vocab_learning_app/voice/voice_models.dart';
+import 'package:vocab_learning_app/voice/voice_provider.dart';
 import 'package:vocab_learning_app/navigation/app_routes.dart';
 import 'package:vocab_learning_app/runtime/app_build_info.dart';
 import 'package:vocab_learning_app/runtime/app_dependencies.dart';
@@ -57,6 +66,7 @@ import 'package:vocab_learning_app/runtime/registries/feature_registry.dart';
 import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../../support/inert_research_dependencies.dart';
+import '../../support/accessibility_semantics_test_support.dart';
 import '../../support/test_quest_use_cases.dart';
 
 const _companionUseCases = CompanionReactionUseCases(
@@ -3364,6 +3374,346 @@ void main() {
   });
 
   testWidgets(
+    'f38 final review: routed canonical mode owns prompt input feedback and navigation order',
+    (tester) async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(adapter: adapter);
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'f38-routed-dictation',
+          isCorrect: false,
+          canonicalCorrectAnswer: 'station',
+          evidenceClass: EvidenceClass.independentRecall,
+          promptMode: 'dictation',
+          providerProvenance: 'native-dictation:v1:incorrect',
+          skillId: 'dictation-spelling',
+        ),
+      );
+      final voice = VoiceUseCases(
+        provider: _AccessibilityVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Builder(
+              builder: (context) => FilledButton(
+                key: const ValueKey<String>('open-f38-dictation-route'),
+                onPressed: () => Navigator.of(context).push<void>(
+                  MaterialPageRoute<void>(
+                    builder: (_) => UnifiedLessonShell(
+                      controller: fixture.controller,
+                      builder: (_) => DictationQuizScreen(
+                        targetWord: 'station',
+                        voice: voice,
+                        modeAdapter: adapter,
+                      ),
+                    ),
+                  ),
+                ),
+                child: const Text('Open dictation'),
+              ),
+            ),
+          ),
+        );
+        await tester.tap(
+          find.byKey(const ValueKey<String>('open-f38-dictation-route')),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.byType(DictationQuizScreen), findsOneWidget);
+        expect(find.byTooltip('Back'), findsOneWidget);
+        expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+        _expectProductionDictationSemanticOrder(tester, fixture.controller);
+      } finally {
+        semanticsHandle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'f38 production gate: host loader publishes dictation feedback only after durable commit',
+    (tester) async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(adapter: adapter, blockRecord: true);
+      final voice = VoiceUseCases(
+        provider: _AccessibilityVoiceProvider(),
+        disposeProvider: () async {},
+      );
+      final semanticsHandle = tester.ensureSemantics();
+      try {
+        await _pumpProductionDictationHost(
+          tester,
+          fixture: fixture,
+          adapter: adapter,
+          voice: voice,
+        );
+        expect(fixture.controller.feedback, isNull);
+        expect(find.byType(AnswerFeedbackPanel), findsNothing);
+
+        await tester.enterText(find.byType(TextField), 'wrong');
+        await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
+        await fixture.repository.recordStarted.future;
+        await tester.pump();
+
+        expect(
+          find.text('ลองใหม่อีกครั้ง!'),
+          findsNothing,
+          reason:
+              'local evaluation must not publish feedback before the durable '
+              'canonical record commits',
+        );
+        expect(fixture.controller.feedback, isNull);
+        expect(find.byType(AnswerFeedbackPanel), findsNothing);
+
+        fixture.repository.releaseRecord();
+        await tester.pumpAndSettle();
+
+        expect(fixture.repository.recordCalls, 1);
+        expect(
+          await fixture.database.select(fixture.database.answerAttempts).get(),
+          hasLength(1),
+        );
+        expect(fixture.controller.feedback, isNotNull);
+        expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+        expect(find.text('ลองใหม่อีกครั้ง!'), findsNothing);
+        expect(
+          find.byType(AccessibilityModeFeedbackSlot),
+          findsOneWidget,
+          reason:
+              'the production loader must forward the typed feedback-capable '
+              'Dictation surface instead of forcing shell fallback',
+        );
+        _expectProductionDictationSemanticOrder(tester, fixture.controller);
+      } finally {
+        semanticsHandle.dispose();
+      }
+    },
+  );
+
+  testWidgets(
+    'f38 production gate: failed dictation write stays silent and retry publishes once',
+    (tester) async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(
+        adapter: adapter,
+        failFirstRecordBeforeWrite: true,
+      );
+      final voice = VoiceUseCases(
+        provider: _AccessibilityVoiceProvider(),
+        disposeProvider: () async {},
+      );
+
+      await _pumpProductionDictationHost(
+        tester,
+        fixture: fixture,
+        adapter: adapter,
+        voice: voice,
+      );
+      await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
+      await tester.pumpAndSettle();
+
+      expect(fixture.repository.recordCalls, 1);
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        isEmpty,
+      );
+      expect(fixture.controller.feedback, isNull);
+      expect(find.byType(AnswerFeedbackPanel), findsNothing);
+      expect(find.text('ลองใหม่อีกครั้ง!'), findsNothing);
+      final retry = find.text('ลองบันทึกผลอีกครั้ง');
+      expect(retry, findsOneWidget);
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(fixture.repository.recordCalls, 2);
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        hasLength(1),
+        reason: 'retry must reuse one immutable evidence identity',
+      );
+      expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+      expect(fixture.controller.feedback, isNotNull);
+      expect(find.text('ลองใหม่อีกครั้ง!'), findsNothing);
+      expect(retry, findsNothing);
+    },
+  );
+
+  testWidgets(
+    'f38 ultra review: dictation context failure unlocks one immutable retry',
+    (tester) async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(adapter: adapter);
+      final rollout = _FailOnceRolloutModeProvider();
+      var evidenceIds = 0;
+      final evidence = CurrentActivityEvidenceAdapter(
+        learning: fixture.learning,
+        rolloutModeProvider: rollout,
+        generateId: () {
+          evidenceIds += 1;
+          return 'f38-context-retry';
+        },
+        nowUtc: () => fixture.now,
+      );
+      final voice = VoiceUseCases(
+        provider: _AccessibilityVoiceProvider(),
+        disposeProvider: () async {},
+      );
+
+      await _pumpProductionDictationHost(
+        tester,
+        fixture: fixture,
+        adapter: adapter,
+        voice: voice,
+        currentActivityEvidence: evidence,
+      );
+      await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
+      await tester.pumpAndSettle();
+
+      expect(rollout.resolveCalls, 1);
+      expect(evidenceIds, 1);
+      expect(fixture.repository.recordCalls, 0);
+      expect(fixture.controller.feedback, isNull);
+      expect(find.byType(AnswerFeedbackPanel), findsNothing);
+      final retry = find.text('ลองบันทึกผลอีกครั้ง');
+      expect(
+        retry,
+        findsOneWidget,
+        reason:
+            'a pre-write context failure must not leave the immutable pending '
+            'response permanently locked without an explicit retry',
+      );
+
+      await tester.tap(retry);
+      await tester.pumpAndSettle();
+
+      expect(rollout.resolveCalls, 2);
+      expect(evidenceIds, 1, reason: 'retry must retain one evidence identity');
+      expect(fixture.repository.recordCalls, 1);
+      expect(
+        fixture.repository.recordCommands.single.id,
+        'attempt:f38-context-retry',
+      );
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        hasLength(1),
+      );
+      expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'f38 ultra review: dictation freezes editable response during durable write',
+    (tester) async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(adapter: adapter, blockRecord: true);
+      final voice = VoiceUseCases(
+        provider: _AccessibilityVoiceProvider(),
+        disposeProvider: () async {},
+      );
+
+      await _pumpProductionDictationHost(
+        tester,
+        fixture: fixture,
+        adapter: adapter,
+        voice: voice,
+      );
+      await tester.enterText(find.byType(TextField), 'wrong');
+      await tester.tap(find.widgetWithText(ElevatedButton, 'ตรวจคำตอบ'));
+      await fixture.repository.recordStarted.future;
+      await tester.pump();
+
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isFalse);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        'wrong',
+        reason: 'the displayed response must remain the frozen retry response',
+      );
+      expect(fixture.controller.feedback, isNull);
+
+      fixture.repository.releaseRecord();
+      await tester.pumpAndSettle();
+
+      expect(tester.widget<TextField>(find.byType(TextField)).enabled, isTrue);
+      expect(
+        tester.widget<EditableText>(find.byType(EditableText)).controller.text,
+        'wrong',
+      );
+      expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+    },
+  );
+
+  test(
+    'f38 ultra review: controller rejects captured evidence from another learning authority',
+    () async {
+      const adapter = DictationModeAdapter();
+      final fixture = await _fixture(adapter: adapter);
+      await fixture.controller.start(fixture.startCommand);
+      final foreignLearning = LearningUseCases(
+        owners: fixture.owners,
+        repository: DriftLearningRepository(fixture.database),
+        generateId: () => 'foreign-learning-id',
+        nowUtc: () => fixture.now,
+        buildInfo: const AppBuildInfo(
+          version: 'test',
+          buildId: 'foreign-authority',
+        ),
+      );
+      final rollout = _CountingRolloutModeProvider();
+      final pending =
+          CurrentActivityEvidenceAdapter(
+            learning: foreignLearning,
+            rolloutModeProvider: rollout,
+            generateId: () => 'foreign-pending',
+            nowUtc: () => fixture.now,
+          ).capture(
+            ownerId: fixture.startCommand.ownerId,
+            input: CurrentActivityInput.dictation,
+            sessionId: fixture.session.id,
+            wordId: fixture.wordId,
+            isCorrect: false,
+            responseTimeMs: 200,
+            attemptNumber: 1,
+            providerProvenance: 'native-dictation:v1:incorrect',
+          );
+
+      Object? rejection;
+      try {
+        await fixture.controller.recordCapturedEvidence(
+          pending,
+          feedbackContext: const AnswerFeedbackContext(
+            canonicalCorrectAnswer: 'lesson',
+          ),
+        );
+      } catch (error) {
+        rejection = error;
+      }
+
+      expect(
+        rollout.resolveCalls,
+        0,
+        reason: 'authority mismatch must fail before context resolution',
+      );
+      expect(fixture.repository.recordCalls, 0);
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        isEmpty,
+      );
+      expect(fixture.controller.feedback, isNull);
+      expect(
+        rejection,
+        isA<StateError>(),
+        reason: 'the controller must reject a foreign learning authority',
+      );
+    },
+  );
+
+  testWidgets(
     'production lesson shell save is idempotent and does not mutate weakness',
     (tester) async {
       final fixture = await _fixture();
@@ -3899,6 +4249,7 @@ AppDependencies _bookmarkDependencies(
   AppDatabase database, {
   FeatureRegistry features = const BuildFeatureRegistry.fieldDefaults(),
   LearningUseCases? learning,
+  CurrentActivityEvidenceAdapter? currentActivityEvidence,
   LearnerIntentRepository? learnerIntents,
   BookmarkLearningItemAction? bookmarkLearningItem,
   ContentQualityReportRepository? contentQualityReports,
@@ -3917,9 +4268,11 @@ AppDependencies _bookmarkDependencies(
     guestSessionService: _GuestSession(),
     features: features,
     learning: learning,
-    currentActivityEvidence: learning == null
-        ? null
-        : CurrentActivityEvidenceAdapter(learning: learning),
+    currentActivityEvidence:
+        currentActivityEvidence ??
+        (learning == null
+            ? null
+            : CurrentActivityEvidenceAdapter(learning: learning)),
     quest: testQuestUseCases(),
     experiments: research.experiments,
     consents: research.consents,
@@ -4064,6 +4417,117 @@ SessionConfiguration _sessionConfiguration(
   protocolLimitsIdentity: 'sha256:lesson-test-protocol',
 );
 
+Future<void> _pumpProductionDictationHost(
+  WidgetTester tester, {
+  required _Fixture fixture,
+  required DictationModeAdapter adapter,
+  required VoiceUseCases voice,
+  CurrentActivityEvidenceAdapter? currentActivityEvidence,
+}) async {
+  final features = RuntimeFeatureRegistry(
+    const BuildFeatureRegistry.allEnabled(),
+  );
+  await tester.pumpWidget(
+    AppDependenciesScope(
+      dependencies: _bookmarkDependencies(
+        fixture.database,
+        features: features,
+        learning: fixture.learning,
+        currentActivityEvidence: currentActivityEvidence,
+      ),
+      child: MaterialApp(
+        home: UnifiedLessonModeHost(
+          adapter: adapter,
+          createController: (_) => fixture.controller,
+          feature: Feature.quiz,
+          featureRegistry: features,
+          learning: fixture.learning,
+          nowUtc: () => fixture.now,
+          builder: (_) => NativeVocabularyLessonModeLoader(
+            builder: (_, session, question) => DictationQuizScreen(
+              targetWord: question.word.spelling,
+              voice: voice,
+              ownerId: session.ownerId,
+              sessionId: session.id,
+              wordId: question.word.id,
+              modeAdapter: adapter,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+  await tester.pumpAndSettle();
+  expect(find.byType(NativeVocabularyLessonModeLoader), findsOneWidget);
+  expect(find.byType(DictationQuizScreen), findsOneWidget);
+  expect(find.text('ตรวจคำตอบ'), findsOneWidget);
+}
+
+void _expectProductionDictationSemanticOrder(
+  WidgetTester tester,
+  UnifiedLessonController controller,
+) {
+  expect(controller.feedback, isNotNull);
+  expect(find.byType(AnswerFeedbackPanel), findsOneWidget);
+
+  final shell = find.byType(UnifiedLessonShell);
+  final dictation = find.byType(DictationQuizScreen);
+  expect(shell, findsOneWidget);
+  expect(dictation, findsOneWidget);
+
+  Finder region(Finder scope, AccessibilitySemanticRole role) =>
+      find.descendant(
+        of: scope,
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget is AccessibilitySemanticRegion && widget.role == role,
+          description: '${role.name} accessibility region',
+        ),
+      );
+
+  expect(
+    region(shell, AccessibilitySemanticRole.contextAndProgress),
+    findsOneWidget,
+  );
+  for (final role in const <AccessibilitySemanticRole>[
+    AccessibilitySemanticRole.prompt,
+    AccessibilitySemanticRole.responseAndInput,
+    AccessibilitySemanticRole.feedback,
+    AccessibilitySemanticRole.navigation,
+  ]) {
+    expect(region(dictation, role), findsOneWidget);
+  }
+
+  expectRenderedAccessibilityTraversal(
+    tester,
+    scope: shell,
+    roles: const <AccessibilitySemanticRole>[
+      AccessibilitySemanticRole.contextAndProgress,
+      AccessibilitySemanticRole.prompt,
+      AccessibilitySemanticRole.responseAndInput,
+      AccessibilitySemanticRole.feedback,
+      AccessibilitySemanticRole.navigation,
+    ],
+    reason:
+        'the production host/loader route must expose committed feedback in '
+        'the rendered semantic traversal, not only as sort-key widgets',
+  );
+
+  expect(
+    find.ancestor(
+      of: find.byType(AnswerFeedbackPanel),
+      matching: find.byWidgetPredicate(
+        (widget) =>
+            widget is AccessibilitySemanticRegion &&
+            widget.role == AccessibilitySemanticRole.feedback,
+        description: 'committed feedback accessibility region',
+      ),
+    ),
+    findsOneWidget,
+    reason: 'the shell-owned committed panel must remain role 3 feedback',
+  );
+}
+
 LessonStartCommand _configuredCommand(
   LessonStartCommand command,
   SessionConfiguration configuration,
@@ -4082,6 +4546,7 @@ Future<_Fixture> _fixture({
   CompanionReactionUseCases? companion,
   bool failAfterFirstRecord = false,
   bool failBeforeRecord = false,
+  bool failFirstRecordBeforeWrite = false,
   bool blockRecord = false,
   bool blockFinish = false,
   bool failFinish = false,
@@ -4134,6 +4599,7 @@ Future<_Fixture> _fixture({
     DriftLearningRepository(database),
     failAfterFirstRecord: failAfterFirstRecord,
     failBeforeRecord: failBeforeRecord,
+    failFirstRecordBeforeWrite: failFirstRecordBeforeWrite,
     blockRecord: blockRecord,
     blockFinish: blockFinish,
     failFinish: failFinish,
@@ -4196,6 +4662,48 @@ final class _Adapter implements LessonModeAdapter {
   @override
   Future<LessonItem> next(LessonCursor cursor) async =>
       LessonItem(id: 'item-${cursor.index}');
+}
+
+final class _AccessibilityVoiceProvider implements VoiceProvider {
+  @override
+  Future<VoicePlaybackResult> speak(VoiceRequest request) async =>
+      const VoicePlaybackResult(
+        requestedEngine: VoiceEngine.omniVoice,
+        actualEngine: VoiceEngine.omniVoice,
+        usedFallback: false,
+        cacheHit: false,
+      );
+
+  @override
+  Future<void> stop() async {}
+}
+
+class _CountingRolloutModeProvider
+    implements EvidencePolicyRolloutModeProvider {
+  int resolveCalls = 0;
+
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext? evidenceContext,
+  }) async {
+    resolveCalls += 1;
+    return EvidencePolicyRolloutMode.legacy;
+  }
+}
+
+final class _FailOnceRolloutModeProvider extends _CountingRolloutModeProvider {
+  @override
+  Future<EvidencePolicyRolloutMode> resolve({
+    required String ownerId,
+    required EvidenceContext? evidenceContext,
+  }) async {
+    resolveCalls += 1;
+    if (resolveCalls == 1) {
+      throw StateError('simulated one-shot context resolution failure');
+    }
+    return EvidencePolicyRolloutMode.legacy;
+  }
 }
 
 final class _ActiveEffortAdapter
@@ -5027,16 +5535,18 @@ final class _CountingRepository
     this.delegate, {
     required this.failAfterFirstRecord,
     required this.failBeforeRecord,
+    required bool failFirstRecordBeforeWrite,
     required this.blockRecord,
     required this.blockFinish,
     required this.failFinish,
     required this.blockAbandon,
     required this.failAbandon,
-  });
+  }) : _failNextRecordBeforeWrite = failFirstRecordBeforeWrite;
 
   final DriftLearningRepository delegate;
   final bool failAfterFirstRecord;
   final bool failBeforeRecord;
+  bool _failNextRecordBeforeWrite;
   final bool blockRecord;
   final bool blockFinish;
   final bool failFinish;
@@ -5117,6 +5627,10 @@ final class _CountingRepository
     recordCommands.add(command);
     if (!recordStarted.isCompleted) recordStarted.complete();
     if (blockRecord) await _recordRelease.future;
+    if (_failNextRecordBeforeWrite) {
+      _failNextRecordBeforeWrite = false;
+      throw StateError('injected one-shot record failure');
+    }
     if (failBeforeRecord) throw StateError('injected record failure');
     final result = await delegate.recordAnswer(command);
     if (failAfterFirstRecord && !_lostAckSent) {

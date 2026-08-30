@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../features/accessibility/domain/accessibility_policy.dart';
+import '../features/accessibility/presentation/accessibility_scope.dart';
 import '../features/learning/application/learning_use_cases.dart';
 import '../features/learning/application/current_activity_evidence.dart';
 import '../features/learning/application/native_mode_adapters.dart';
@@ -480,85 +482,102 @@ class _ShadowingChallengeScreenState extends State<ShadowingChallengeScreen>
     final persistenceLocked = _persistenceLocked;
     return PopScope(
       canPop: !persistenceLocked,
-      child: Scaffold(
+      child: AccessibilityModeScaffold(
         appBar: AppBar(title: const Text('ฝึกพูดตามเสียงต้นแบบ')),
         body: SafeArea(
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              if (reference == null && _error == null)
-                const Center(child: CircularProgressIndicator())
-              else if (reference != null)
-                Text(
-                  reference,
-                  style: Theme.of(context).textTheme.headlineSmall,
-                ),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.prompt,
+                child: reference == null && _error == null
+                    ? const Center(child: CircularProgressIndicator())
+                    : reference != null
+                    ? Text(
+                        reference,
+                        style: Theme.of(context).textTheme.headlineSmall,
+                      )
+                    : const SizedBox.shrink(),
+              ),
               const SizedBox(height: 16),
-              OutlinedButton.icon(
-                key: const ValueKey<String>('shadowing-play-reference'),
-                onPressed: reference == null || persistenceLocked
-                    ? null
-                    : _playReference,
-                icon: const Icon(Icons.volume_up_outlined),
-                label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
-              ),
-              const SizedBox(height: 12),
-              FilledButton.icon(
-                key: const ValueKey<String>('shadowing-listen-button'),
-                onPressed:
-                    reference == null ||
-                        _listenPending ||
-                        persistenceLocked ||
-                        _evidenceSaved
-                    ? null
-                    : _toggleListening,
-                icon: Icon(_listening ? Icons.stop : Icons.mic),
-                label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
-              ),
-              if (evidenceRetryRequired || sessionCloseRetryRequired) ...[
-                const SizedBox(height: 12),
-                FilledButton(
-                  key: const ValueKey<String>('current-evidence-retry'),
-                  onPressed: evidenceRetryRequired
-                      ? _retryEvidence
-                      : _retrySessionClose,
-                  child: Text(
-                    evidenceRetryRequired
-                        ? 'Retry saved pronunciation'
-                        : 'Retry session completion',
-                  ),
+              AccessibilitySemanticRegion(
+                role: AccessibilitySemanticRole.responseAndInput,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    OutlinedButton.icon(
+                      key: const ValueKey<String>('shadowing-play-reference'),
+                      onPressed: reference == null || persistenceLocked
+                          ? null
+                          : _playReference,
+                      icon: const Icon(Icons.volume_up_outlined),
+                      label: const Text('ฟังเสียงต้นแบบ (1.0x)'),
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      key: const ValueKey<String>('shadowing-listen-button'),
+                      onPressed:
+                          reference == null ||
+                              _listenPending ||
+                              persistenceLocked ||
+                              _evidenceSaved
+                          ? null
+                          : _toggleListening,
+                      icon: Icon(_listening ? Icons.stop : Icons.mic),
+                      label: Text(_listening ? 'หยุดบันทึก' : 'พูดตามประโยค'),
+                    ),
+                    if (evidenceRetryRequired || sessionCloseRetryRequired) ...[
+                      const SizedBox(height: 12),
+                      FilledButton(
+                        key: const ValueKey<String>('current-evidence-retry'),
+                        onPressed: evidenceRetryRequired
+                            ? _retryEvidence
+                            : _retrySessionClose,
+                        child: Text(
+                          evidenceRetryRequired
+                              ? 'Retry saved pronunciation'
+                              : 'Retry session completion',
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-              ],
+              ),
               if (_transcript.isNotEmpty) ...[
                 const SizedBox(height: 20),
-                Card(
-                  child: Padding(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('ข้อความที่ได้ยิน: $_transcript'),
-                        if (assessment != null) ...[
-                          const SizedBox(height: 8),
-                          Text(
-                            'ความเหมือนของข้อความ: '
-                            '${assessment.similarityPercent}%',
-                          ),
-                          const Text(
-                            'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
-                          ),
-                          Text(
-                            'เอนจิน: ${assessment.engine} '
-                            '(${assessment.locale})',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          const SizedBox(height: 8),
-                          const Text(
-                            'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
-                            'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
-                          ),
+                AccessibilitySemanticRegion(
+                  role: assessment == null
+                      ? AccessibilitySemanticRole.responseAndInput
+                      : AccessibilitySemanticRole.feedback,
+                  child: Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('ข้อความที่ได้ยิน: $_transcript'),
+                          if (assessment != null) ...[
+                            const SizedBox(height: 8),
+                            Text(
+                              'ความเหมือนของข้อความ: '
+                              '${assessment.similarityPercent}%',
+                            ),
+                            const Text(
+                              'เกณฑ์บันทึกคำตอบถูก: ความเหมือนของข้อความอย่างน้อย 80% · อัลกอริทึม v1',
+                            ),
+                            Text(
+                              'เอนจิน: ${assessment.engine} '
+                              '(${assessment.locale})',
+                              style: Theme.of(context).textTheme.bodySmall,
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'เอนจินนี้ไม่ได้ส่งข้อมูล pitch หรือ phoneme '
+                              'จึงไม่แสดงคะแนนที่คาดเดาขึ้น',
+                            ),
+                          ],
                         ],
-                      ],
+                      ),
                     ),
                   ),
                 ),

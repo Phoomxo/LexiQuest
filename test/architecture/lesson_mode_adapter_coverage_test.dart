@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/accessibility/domain/accessibility_policy.dart';
 import 'package:vocab_learning_app/features/learning/application/flashcard_mode_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/handwriting_self_check_adapter.dart';
 import 'package:vocab_learning_app/features/learning/application/cloze_mode_adapter.dart';
@@ -15,14 +16,136 @@ import 'package:vocab_learning_app/features/learning/domain/evidence_context.dar
 import 'package:vocab_learning_app/features/learning/domain/answer_feedback.dart';
 import 'package:vocab_learning_app/features/learning/domain/hint_policy.dart';
 import 'package:vocab_learning_app/features/learning/domain/lesson_mode.dart';
+import 'package:vocab_learning_app/features/learning/domain/session_configuration.dart';
 import 'package:vocab_learning_app/features/media_practice/domain/media_practice_contracts.dart';
 import 'package:vocab_learning_app/runtime/production_feature_contract.dart';
 import 'package:vocab_learning_app/runtime/registries/feature.dart';
+
+import '../support/production_accessibility_surface_matrix.dart';
 
 const _typedChecksum =
     'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 void main() {
+  test(
+    'accessibility declarations are an exact canonical lesson-mode join',
+    () {
+      final registry = buildLessonModeRegistry();
+      final policy = AccessibilityPolicy.canonical();
+
+      expect(policy.declarations.keys.toSet(), LessonMode.values.toSet());
+      expect(policy.declarations, hasLength(registry.registrations.length));
+      expect(() => policy.validateAgainst(registry), returnsNormally);
+
+      for (final registration in registry.registrations) {
+        final declaration = policy.declarations[registration.mode];
+        expect(
+          registration.adapter,
+          isA<SessionConfigurableLessonModeAdapter>(),
+          reason:
+              '${registration.mode} must expose typed configuration capability '
+              'metadata for the accessibility release gate',
+        );
+        expect(declaration, isNotNull);
+        expect(
+          declaration!.supportsUntimedAlternative,
+          (registration.adapter as SessionConfigurableLessonModeAdapter)
+              .sessionConfigurationCapabilities
+              .supportsUntimedAlternative,
+          reason:
+              '${registration.mode} accessibility metadata must follow its '
+              'canonical adapter capability rather than creating a second '
+              'timing authority',
+        );
+      }
+    },
+  );
+
+  test(
+    'f38 review: canonical accessibility switches are compiler exhaustive',
+    () {
+      final source = File(
+        'lib/features/accessibility/domain/accessibility_policy.dart',
+      ).readAsStringSync();
+
+      for (final method in const <String>{
+        '_canonicalInputAlternative',
+        '_canonicalMediaAlternative',
+      }) {
+        final switchBody = _modeSwitchBody(source, method);
+        expect(
+          RegExp(r'(^|\s)_\s*=>').hasMatch(switchBody),
+          isFalse,
+          reason:
+              '$method must have no wildcard that silently accepts a future '
+              'LessonMode',
+        );
+        for (final mode in LessonMode.values) {
+          expect(
+            switchBody,
+            contains('LessonMode.${mode.name}'),
+            reason:
+                '$method must name ${mode.name} so adding a mode becomes a '
+                'compile-time exhaustiveness failure',
+          );
+        }
+      }
+    },
+  );
+
+  test(
+    'f38 final review: every canonical mode owns typed production surface roles',
+    () {
+      final registry = buildLessonModeRegistry();
+      final policy = AccessibilityPolicy.canonical();
+      const expectedModeRoles = <AccessibilitySemanticRole>{
+        AccessibilitySemanticRole.prompt,
+        AccessibilitySemanticRole.responseAndInput,
+        AccessibilitySemanticRole.navigation,
+      };
+
+      expect(policy.declarations.keys.toSet(), LessonMode.values.toSet());
+      for (final registration in registry.registrations) {
+        final declaration = policy.declarations[registration.mode]!;
+        expect(
+          declaration.modeOwnedSemanticRoles,
+          expectedModeRoles,
+          reason:
+              '${registration.mode} must explicitly participate in the real '
+              'prompt, response/input, and navigation surface contract',
+        );
+        expect(
+          () => declaration.modeOwnedSemanticRoles.add(
+            AccessibilitySemanticRole.feedback,
+          ),
+          throwsUnsupportedError,
+          reason: 'mode surface ownership must be immutable release metadata',
+        );
+      }
+    },
+  );
+
+  test(
+    'f38 production gate: every declared mode has one real widget matrix entry',
+    () {
+      final policyModes = AccessibilityPolicy.canonical().declarations.keys
+          .toSet();
+      final registryModes = buildLessonModeRegistry().registrations
+          .map((registration) => registration.mode)
+          .toSet();
+
+      expect(productionAccessibilitySurfaceTypes.keys.toSet(), policyModes);
+      expect(productionAccessibilitySurfaceTypes.keys.toSet(), registryModes);
+      expect(
+        productionAccessibilitySurfaceTypes.values.every(
+          (surfaceType) => surfaceType != Object,
+        ),
+        isTrue,
+        reason: 'the matrix must point to concrete production widget types',
+      );
+    },
+  );
+
   test('f13 owns one typed native adapter module', () {
     final source = File(
       'lib/features/learning/application/native_mode_adapters.dart',
@@ -1070,4 +1193,32 @@ final class _HintBoundaryAdapter implements HintSupportingLessonModeAdapter {
   @override
   Future<LessonItem> next(LessonCursor cursor) async =>
       LessonItem(id: 'boundary-${cursor.index}');
+}
+
+String _modeSwitchBody(String source, String methodName) {
+  final methodStart = source.indexOf(methodName);
+  if (methodStart < 0) {
+    throw StateError('Missing accessibility method $methodName');
+  }
+  final switchStart = source.indexOf('switch (mode)', methodStart);
+  if (switchStart < 0) {
+    throw StateError('$methodName must contain switch (mode)');
+  }
+  final openBrace = source.indexOf('{', switchStart);
+  if (openBrace < 0) {
+    throw StateError('$methodName switch body is missing');
+  }
+  var depth = 0;
+  for (var index = openBrace; index < source.length; index++) {
+    switch (source[index]) {
+      case '{':
+        depth += 1;
+        break;
+      case '}':
+        depth -= 1;
+        if (depth == 0) return source.substring(openBrace, index + 1);
+        break;
+    }
+  }
+  throw StateError('$methodName switch body is unbalanced');
 }
