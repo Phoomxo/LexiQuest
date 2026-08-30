@@ -5,6 +5,10 @@ import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:vocab_learning_app/data/local/app_database.dart';
+import 'package:vocab_learning_app/features/companion/application/companion_reaction_use_cases.dart';
+import 'package:vocab_learning_app/features/companion/domain/companion_reaction.dart';
+import 'package:vocab_learning_app/features/companion/domain/companion_reaction_catalog.dart';
+import 'package:vocab_learning_app/features/companion/presentation/contextual_companion_widget.dart';
 import 'package:vocab_learning_app/features/consent/data/drift_research_consent_repository.dart';
 import 'package:vocab_learning_app/features/identity/data/drift_local_owner_repository.dart';
 import 'package:vocab_learning_app/features/learning/application/learning_use_cases.dart';
@@ -54,6 +58,10 @@ import 'package:vocab_learning_app/services/guest_session_service.dart';
 
 import '../../support/inert_research_dependencies.dart';
 import '../../support/test_quest_use_cases.dart';
+
+const _companionUseCases = CompanionReactionUseCases(
+  catalog: CompanionReactionCatalog.v1,
+);
 
 void main() {
   test(
@@ -1552,7 +1560,7 @@ void main() {
   );
 
   test(
-    'post-write time and close acknowledgement loss replay one frozen sequence',
+    'f33 review: lost-ACK completion publishes one companion reaction only after recovery',
     () async {
       final timeRepository = _MemoryLearningTimeRepository();
       var monotonicMicros = 0;
@@ -1563,7 +1571,18 @@ void main() {
       final fixture = await _fixture(
         adapter: _ActiveEffortAdapter(),
         activeLearningTime: activeTime,
+        companion: _companionUseCases,
       );
+      var completedReactionCount = 0;
+      CompanionReactionEvent? lastObservedCompanionEvent;
+      fixture.controller.addListener(() {
+        final event = fixture.controller.companionReaction?.event;
+        if (event == null || event == lastObservedCompanionEvent) return;
+        lastObservedCompanionEvent = event;
+        if (event.signal == CompanionReactionSignal.sessionCompleted) {
+          completedReactionCount += 1;
+        }
+      });
       final configuration = _sessionConfiguration(fixture.adapter.mode);
       await fixture.bindSessionConfiguration(
         configuration,
@@ -1603,6 +1622,11 @@ void main() {
       expect(close.requiresRetry, isTrue);
       expect(fixture.repository.finishCalls, 1);
       expect(fixture.controller.sessionCompletionRetryRequired, isTrue);
+      expect(completedReactionCount, 0);
+      expect(
+        fixture.controller.companionReaction?.event.signal,
+        isNot(CompanionReactionSignal.sessionCompleted),
+      );
 
       await route.complete(close);
 
@@ -1611,6 +1635,11 @@ void main() {
       expect(fixture.controller.sessionCompletionRetryRequired, isFalse);
       expect(timeRepository.segments, hasLength(1));
       expect(fixture.repository.finishCalls, 2);
+      expect(completedReactionCount, 1);
+      expect(
+        fixture.controller.companionReaction?.event.signal,
+        CompanionReactionSignal.sessionCompleted,
+      );
       final sessions = await fixture.database
           .select(fixture.database.learningSessions)
           .get();
@@ -1972,6 +2001,255 @@ void main() {
         AnswerFeedbackAction.retry,
       );
       expect(fixture.repository.recordCalls, 1);
+    },
+  );
+
+  test(
+    'f33 review: distinct incorrect commits advance companion event count while exact and lost-ACK replay are suppressed',
+    () async {
+      final fixture = await _fixture(
+        companion: _companionUseCases,
+        failAfterFirstRecord: true,
+      );
+      final observed = <CompanionReactionEvent>[];
+      CompanionReactionEvent? lastObserved;
+      fixture.controller.addListener(() {
+        final event = fixture.controller.companionReaction?.event;
+        if (event != null && event != lastObserved) {
+          observed.add(event);
+          lastObserved = event;
+        }
+      });
+
+      await fixture.controller.start(fixture.startCommand);
+      final firstIncorrect = fixture.submission(
+        sourceEvidenceId: 'companion-incorrect-a',
+        isCorrect: false,
+      );
+      final secondIncorrect = fixture.submission(
+        sourceEvidenceId: 'companion-incorrect-b',
+        isCorrect: false,
+      );
+      await expectLater(
+        fixture.controller.submit(firstIncorrect),
+        throwsStateError,
+      );
+      final recoveredFirst = await fixture.controller.submit(firstIncorrect);
+      await fixture.controller.submit(firstIncorrect);
+      await fixture.controller.submit(secondIncorrect);
+      await fixture.controller.submit(secondIncorrect);
+      await fixture.controller.complete(
+        fixture.now.add(const Duration(seconds: 1)),
+      );
+
+      expect(observed, <CompanionReactionEvent>[
+        CompanionReactionEvent(
+          catalogVersion: 1,
+          signal: CompanionReactionSignal.sessionStarted,
+          sessionId: fixture.startCommand.sessionId,
+          committedResponseCount: 0,
+        ),
+        CompanionReactionEvent(
+          catalogVersion: 1,
+          signal: CompanionReactionSignal.retryAfterIncorrectCommit,
+          sessionId: fixture.startCommand.sessionId,
+          committedResponseCount: 1,
+        ),
+        CompanionReactionEvent(
+          catalogVersion: 1,
+          signal: CompanionReactionSignal.retryAfterIncorrectCommit,
+          sessionId: fixture.startCommand.sessionId,
+          committedResponseCount: 2,
+        ),
+        CompanionReactionEvent(
+          catalogVersion: 1,
+          signal: CompanionReactionSignal.sessionCompleted,
+          sessionId: fixture.startCommand.sessionId,
+          committedResponseCount: 2,
+        ),
+      ]);
+      expect(
+        fixture.controller.companionReaction!.event.signal,
+        CompanionReactionSignal.sessionCompleted,
+      );
+      expect(recoveredFirst.inserted, isFalse);
+      expect(fixture.repository.recordCalls, 2);
+      expect(fixture.repository.finishCalls, 1);
+    },
+  );
+
+  test(
+    'f33 review: correct committed evidence clears an obsolete retry companion without a success reaction',
+    () async {
+      final fixture = await _fixture(companion: _companionUseCases);
+      await fixture.controller.start(fixture.startCommand);
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'companion-incorrect-a',
+          isCorrect: false,
+        ),
+      );
+      expect(
+        fixture.controller.companionReaction?.event.signal,
+        CompanionReactionSignal.retryAfterIncorrectCommit,
+      );
+      var correctCommitNotifications = 0;
+      CompanionReactionSignal? reactionAtCorrectCommit;
+      fixture.controller.addListener(() {
+        if (fixture.controller.state.committedResponseCount != 2) return;
+        correctCommitNotifications += 1;
+        reactionAtCorrectCommit =
+            fixture.controller.companionReaction?.event.signal;
+      });
+
+      await fixture.controller.submit(
+        fixture.submission(
+          sourceEvidenceId: 'companion-correct-b',
+          isCorrect: true,
+        ),
+      );
+
+      expect(fixture.controller.state.committedResponseCount, 2);
+      expect(correctCommitNotifications, 1);
+      expect(reactionAtCorrectCommit, isNull);
+      expect(fixture.controller.companionReaction, isNull);
+      expect(fixture.repository.recordCalls, 2);
+    },
+  );
+
+  test(
+    'companion does not publish a retry reaction for a failed evidence write',
+    () async {
+      final fixture = await _fixture(
+        companion: _companionUseCases,
+        failBeforeRecord: true,
+      );
+      await fixture.controller.start(fixture.startCommand);
+
+      await expectLater(
+        fixture.controller.submit(fixture.submission(isCorrect: false)),
+        throwsStateError,
+      );
+
+      expect(
+        fixture.controller.companionReaction!.event.signal,
+        CompanionReactionSignal.sessionStarted,
+      );
+      expect(fixture.controller.state.committedResponseCount, 0);
+      expect(fixture.repository.recordCalls, 1);
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        isEmpty,
+      );
+    },
+  );
+
+  test(
+    'companion publishes one retry reaction after lost-ack recovery without replay duplication',
+    () async {
+      final fixture = await _fixture(
+        companion: _companionUseCases,
+        failAfterFirstRecord: true,
+      );
+      final observed = <CompanionReactionSignal>[];
+      CompanionReactionSignal? lastObserved;
+      fixture.controller.addListener(() {
+        final signal = fixture.controller.companionReaction?.event.signal;
+        if (signal != null && signal != lastObserved) {
+          observed.add(signal);
+          lastObserved = signal;
+        }
+      });
+      await fixture.controller.start(fixture.startCommand);
+      final submission = fixture.submission(isCorrect: false);
+
+      await expectLater(
+        fixture.controller.submit(submission),
+        throwsStateError,
+      );
+      final retried = await fixture.controller.submit(submission);
+      final replay = await fixture.controller.submit(submission);
+
+      expect(retried.inserted, isFalse);
+      expect(replay, same(retried));
+      expect(observed, <CompanionReactionSignal>[
+        CompanionReactionSignal.sessionStarted,
+        CompanionReactionSignal.retryAfterIncorrectCommit,
+      ]);
+      expect(fixture.repository.recordCalls, 1);
+    },
+  );
+
+  testWidgets(
+    'shell publishes companion retry copy only after canonical commit',
+    (tester) async {
+      final fixture = await _fixture(
+        companion: _companionUseCases,
+        blockRecord: true,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: UnifiedLessonShell(
+              controller: fixture.controller,
+              builder: (_) => const Text('lesson input'),
+            ),
+          ),
+        ),
+      );
+
+      expect(
+        find.text('Welcome back. Let\'s take one step at a time.'),
+        findsOneWidget,
+      );
+      final submission = fixture.controller.submit(
+        fixture.submission(isCorrect: false),
+      );
+      await fixture.repository.recordStarted.future;
+      await tester.pump();
+      expect(
+        find.text('That attempt is saved. Try once more when you\'re ready.'),
+        findsNothing,
+      );
+
+      fixture.repository.releaseRecord();
+      await submission;
+      await tester.pump();
+
+      expect(find.byType(ContextualCompanionWidget), findsOneWidget);
+      expect(
+        find.text('That attempt is saved. Try once more when you\'re ready.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  test(
+    'disposing during an accepted evidence write suppresses companion state',
+    () async {
+      final fixture = await _fixture(
+        companion: _companionUseCases,
+        blockRecord: true,
+      );
+      await fixture.controller.start(fixture.startCommand);
+      final submit = fixture.controller.submit(
+        fixture.submission(isCorrect: false),
+      );
+      await fixture.repository.recordStarted.future;
+
+      fixture.controller.dispose();
+      fixture.repository.releaseRecord();
+      await submit;
+
+      expect(
+        fixture.controller.companionReaction?.event.signal,
+        isNot(CompanionReactionSignal.retryAfterIncorrectCommit),
+      );
+      expect(
+        await fixture.database.select(fixture.database.answerAttempts).get(),
+        hasLength(1),
+      );
     },
   );
 
@@ -3801,7 +4079,9 @@ LessonStartCommand _configuredCommand(
 Future<_Fixture> _fixture({
   LessonModeAdapter? adapter,
   HintUseCases? hints,
+  CompanionReactionUseCases? companion,
   bool failAfterFirstRecord = false,
+  bool failBeforeRecord = false,
   bool blockRecord = false,
   bool blockFinish = false,
   bool failFinish = false,
@@ -3853,6 +4133,7 @@ Future<_Fixture> _fixture({
   final repository = _CountingRepository(
     DriftLearningRepository(database),
     failAfterFirstRecord: failAfterFirstRecord,
+    failBeforeRecord: failBeforeRecord,
     blockRecord: blockRecord,
     blockFinish: blockFinish,
     failFinish: failFinish,
@@ -3872,6 +4153,7 @@ Future<_Fixture> _fixture({
   final controller = UnifiedLessonController(
     learning: learning,
     adapter: modeAdapter,
+    companion: companion,
     hints: hints,
     activeLearningTime: activeLearningTime,
     focusTimer: focusTimer,
@@ -4744,6 +5026,7 @@ final class _CountingRepository
   _CountingRepository(
     this.delegate, {
     required this.failAfterFirstRecord,
+    required this.failBeforeRecord,
     required this.blockRecord,
     required this.blockFinish,
     required this.failFinish,
@@ -4753,6 +5036,7 @@ final class _CountingRepository
 
   final DriftLearningRepository delegate;
   final bool failAfterFirstRecord;
+  final bool failBeforeRecord;
   final bool blockRecord;
   final bool blockFinish;
   final bool failFinish;
@@ -4833,6 +5117,7 @@ final class _CountingRepository
     recordCommands.add(command);
     if (!recordStarted.isCompleted) recordStarted.complete();
     if (blockRecord) await _recordRelease.future;
+    if (failBeforeRecord) throw StateError('injected record failure');
     final result = await delegate.recordAnswer(command);
     if (failAfterFirstRecord && !_lostAckSent) {
       _lostAckSent = true;

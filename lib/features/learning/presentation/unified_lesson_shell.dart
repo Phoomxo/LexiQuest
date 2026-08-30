@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../companion/presentation/contextual_companion_widget.dart';
 import '../application/unified_lesson_controller.dart';
 import '../application/learning_use_cases.dart';
 import '../application/contrastive_feedback_use_cases.dart';
@@ -1299,6 +1300,7 @@ final class _UnifiedLessonShellState extends State<UnifiedLessonShell>
                     onResume: controller.resumeFocusTimer,
                     onFinish: controller.finishFocusTimer,
                   ),
+            ContextualCompanionWidget(reaction: controller.companionReaction),
             Expanded(
               child: Listener(
                 behavior: HitTestBehavior.translucent,

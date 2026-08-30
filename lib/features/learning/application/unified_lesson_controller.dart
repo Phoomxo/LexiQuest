@@ -4,6 +4,9 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 
+import '../../companion/application/companion_reaction_use_cases.dart';
+import '../../companion/domain/companion_reaction.dart';
+import '../../companion/domain/companion_reaction_catalog.dart';
 import '../../learning_packs/domain/content_manifest.dart';
 import '../../time_tracking/application/active_learning_time_controller.dart';
 import '../../time_tracking/application/focus_timer_controller.dart';
@@ -53,6 +56,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     required LearningUseCases learning,
     required LessonModeAdapter adapter,
     HintUseCases? hints,
+    CompanionReactionUseCases? companion,
     ActiveLearningTimeController? activeLearningTime,
     FocusTimerController? focusTimer,
     Feature? focusTimerFeature,
@@ -116,6 +120,8 @@ final class UnifiedLessonController extends ChangeNotifier {
       learning,
       adapter,
       resolvedHints,
+      companion ??
+          const CompanionReactionUseCases(catalog: CompanionReactionCatalog.v1),
       activeLearningTime,
       focusTimer,
       focusTimerFeature,
@@ -128,6 +134,7 @@ final class UnifiedLessonController extends ChangeNotifier {
     this._learning,
     this._adapter,
     this._hints,
+    this._companion,
     this._activeLearningTime,
     this._focusTimer,
     this._focusTimerFeature,
@@ -138,6 +145,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   final LearningUseCases _learning;
   final LessonModeAdapter _adapter;
   final HintUseCases? _hints;
+  final CompanionReactionUseCases _companion;
   final ActiveLearningTimeController? _activeLearningTime;
   final FocusTimerController? _focusTimer;
   final Feature? _focusTimerFeature;
@@ -146,6 +154,9 @@ final class UnifiedLessonController extends ChangeNotifier {
   LessonSessionState _state;
   String? _sessionOwnerId;
   AnswerFeedback? _feedback;
+  CompanionReaction? _companionReaction;
+  final Set<CompanionReactionEvent> _publishedCompanionEvents =
+      <CompanionReactionEvent>{};
   final Map<String, _PendingSubmission> _submissions =
       <String, _PendingSubmission>{};
   PendingLearningSessionClose? _pendingClose;
@@ -182,6 +193,7 @@ final class UnifiedLessonController extends ChangeNotifier {
   bool get configurationAcceptsOperations =>
       !_disposed && !_configurationLimitReached;
   AnswerFeedback? get feedback => _feedback;
+  CompanionReaction? get companionReaction => _companionReaction;
   HintState? get hintState => _hints?.state;
   HintUsageSnapshot snapshotHintUsageForAcceptedEvidence() {
     _requireNotDisposed();
@@ -385,6 +397,7 @@ final class UnifiedLessonController extends ChangeNotifier {
           lastTransitionAtUtc: startedAtUtc,
           itemCount: command.itemCount,
         ),
+        companionSignal: CompanionReactionSignal.sessionStarted,
       );
       _sessionOwnerId = ownerId;
       if (completedConfigurationRecovery) {
@@ -822,6 +835,10 @@ final class UnifiedLessonController extends ChangeNotifier {
       _state.copyWith(
         committedResponseCount: _state.committedResponseCount + 1,
       ),
+      clearRetryCompanionReaction: result.isCorrect,
+      companionSignal: result.isCorrect
+          ? null
+          : CompanionReactionSignal.retryAfterIncorrectCommit,
     );
     return result;
   }
@@ -862,7 +879,11 @@ final class UnifiedLessonController extends ChangeNotifier {
     } else {
       summary = await close.finish();
     }
-    _transition(LessonSessionStatus.completed, occurredAtUtc);
+    _transition(
+      LessonSessionStatus.completed,
+      occurredAtUtc,
+      companionSignal: CompanionReactionSignal.sessionCompleted,
+    );
     if (identical(_terminalClosePending, close)) {
       _terminalClosePending = null;
     }
@@ -1252,16 +1273,47 @@ final class UnifiedLessonController extends ChangeNotifier {
     }
   }
 
-  void _transition(LessonSessionStatus status, DateTime occurredAtUtc) {
+  void _transition(
+    LessonSessionStatus status,
+    DateTime occurredAtUtc, {
+    CompanionReactionSignal? companionSignal,
+  }) {
     _setState(
       _state.copyWith(status: status, lastTransitionAtUtc: occurredAtUtc),
+      companionSignal: companionSignal,
     );
   }
 
-  void _setState(LessonSessionState next) {
+  void _setState(
+    LessonSessionState next, {
+    bool clearRetryCompanionReaction = false,
+    CompanionReactionSignal? companionSignal,
+  }) {
     if (_disposed) return;
     _state = next;
+    if (clearRetryCompanionReaction &&
+        _companionReaction?.event.signal ==
+            CompanionReactionSignal.retryAfterIncorrectCommit) {
+      _companionReaction = null;
+    }
+    if (companionSignal != null) {
+      _resolveCompanionReaction(companionSignal);
+    }
     notifyListeners();
+  }
+
+  void _resolveCompanionReaction(CompanionReactionSignal signal) {
+    final sessionId = _state.sessionId;
+    if (sessionId == null) return;
+    final event = CompanionReactionEvent(
+      catalogVersion: 1,
+      signal: signal,
+      sessionId: sessionId,
+      committedResponseCount: _state.committedResponseCount,
+    );
+    if (!_publishedCompanionEvents.add(event)) return;
+    final reaction = _companion.resolve(event);
+    if (reaction != null) _companionReaction = reaction;
   }
 
   void _requireNotDisposed() {
