@@ -40,6 +40,7 @@ import 'package:vocab_learning_app/features/identity/domain/owner_lifecycle_mani
 import 'package:vocab_learning_app/features/identity/domain/owner_upgrade.dart';
 import 'package:vocab_learning_app/features/quest/domain/quest_models.dart';
 import 'package:vocab_learning_app/features/preferences/domain/learner_preferences.dart';
+import 'package:vocab_learning_app/features/progress/domain/personal_learning_profile.dart';
 import 'package:vocab_learning_app/features/rewards/data/drift_avatar_progression_eligibility.dart';
 import 'package:vocab_learning_app/features/rewards/domain/reward_models.dart';
 import 'package:vocab_learning_app/features/research/application/assigned_learning_event_context_provider.dart';
@@ -1869,6 +1870,37 @@ void main() {
     );
 
     test(
+      'seeded zero-progress quest keeps a new personal profile empty',
+      () async {
+        final database = _testDatabase();
+        final bootstrap = AppBootstrap(
+          createDatabase: () => database,
+          initializeFirebase: () async {},
+          initializeSupabase: () async {},
+          loadConfig: _validConfig,
+          guestSessionService: _StubGuestSessionService(),
+          createEntryStateStore: _createSignedOutEntryState,
+        );
+
+        final dependencies = await bootstrap.initialize();
+        addTearDown(dependencies.dispose);
+        final active = await dependencies.quest.getActiveInstances();
+        expect(active, hasLength(1));
+        expect(active.single.progress.single.currentCount, 0);
+
+        final profile = await dependencies.progress!
+            .loadPersonalLearningProfile();
+
+        expect(profile.engagement.activeQuestCount, 1);
+        expect(
+          profile.engagement.availability,
+          ProfileAxisAvailability.noEvidence,
+        );
+        expect(profile.isEmpty, isTrue);
+      },
+    );
+
+    test(
       'loads persisted emergency feature controls into navigation',
       () async {
         final database = _testDatabase();
@@ -2428,7 +2460,7 @@ void main() {
     });
 
     test(
-      'resolves one injected learning timezone for quest and streak',
+      'resolves one injected learning timezone for progress quest and streak',
       () async {
         var timezoneResolutionCalls = 0;
         final bootstrap = AppBootstrap(
@@ -2447,9 +2479,15 @@ void main() {
         final dependencies = await bootstrap.initialize();
 
         expect(timezoneResolutionCalls, 1);
+        expect(dependencies.progress, isNotNull);
+        expect(dependencies.progress!.learningTimezoneId, 'Asia/Bangkok');
         expect(dependencies.quest.timezoneId, 'Asia/Bangkok');
         expect(dependencies.streak, isNotNull);
         expect(dependencies.streak!.timezoneId, 'Asia/Bangkok');
+        expect(
+          dependencies.progress!.learningTimezoneId,
+          dependencies.quest.timezoneId,
+        );
         expect(dependencies.streak!.timezoneId, dependencies.quest.timezoneId);
       },
     );

@@ -880,10 +880,12 @@ final class AppBootstrap {
       nowUtc: () => DateTime.now().toUtc(),
       onLocalMutation: notifyLocalMutation,
     );
+    final resolvedLearningTimezoneId = learningTimezoneId();
     final progress = ProgressUseCases(
       owners: localOwners,
       queries: DriftProgressQueries(database),
       nowUtc: () => DateTime.now().toUtc(),
+      learningTimezoneId: resolvedLearningTimezoneId,
     );
     final studyPlanning = StudyPlanningUseCases(
       packs: DriftLearningPackRepository(
@@ -936,7 +938,6 @@ final class AppBootstrap {
     // ── V2 Quest pipeline (must precede learning wiring) ─────────────────
     final questRepository = DriftQuestRepository(database);
     final buildInfo = const AppBuildInfo.fromEnvironment();
-    final resolvedLearningTimezoneId = learningTimezoneId();
     final quest = QuestUseCases(
       repository: questRepository,
       owners: localOwners,

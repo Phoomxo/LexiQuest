@@ -1,21 +1,22 @@
 import 'package:flutter/material.dart';
 
-import '../features/progress/domain/progress_models.dart';
+import '../features/progress/domain/personal_learning_profile.dart';
 import '../runtime/app_dependencies.dart';
 
-typedef ProfileProgressLoader = Future<ProgressSnapshot> Function();
+typedef ProfileSettingsProfileLoader =
+    Future<PersonalLearningProfile> Function();
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key, this.loader});
 
-  final ProfileProgressLoader? loader;
+  final ProfileSettingsProfileLoader? loader;
 
   @override
   State<ProfileSettingsScreen> createState() => _ProfileSettingsScreenState();
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
-  Future<ProgressSnapshot>? _load;
+  Future<PersonalLearningProfile>? _load;
   var _wasActive = false;
 
   @override
@@ -27,10 +28,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
       return;
     }
     final loader =
-        widget.loader ?? AppDependenciesScope.maybeOf(context)?.progress?.load;
+        widget.loader ??
+        AppDependenciesScope.maybeOf(
+          context,
+        )?.progress?.loadPersonalLearningProfile;
     _load = loader == null
-        ? Future<ProgressSnapshot>.error(
-            StateError('progress dependency unavailable'),
+        ? Future<PersonalLearningProfile>.error(
+            StateError('personal learning profile dependency unavailable'),
           )
         : loader();
     _wasActive = true;
@@ -43,7 +47,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     )?.account?.currentSession;
     return Scaffold(
       appBar: AppBar(title: const Text('โปรไฟล์')),
-      body: FutureBuilder<ProgressSnapshot>(
+      body: FutureBuilder<PersonalLearningProfile>(
         future: _load,
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -52,7 +56,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           if (!snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
-          final progress = snapshot.data!;
+          final profile = snapshot.data!;
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -71,26 +75,58 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              _Metric(label: 'XP สะสม', value: '${progress.totalXp}'),
-              _Metric(label: 'Streak', value: '${progress.streakDays} วัน'),
-              _Metric(
-                label: 'ระดับจากคะแนนจริง',
-                value: '${progress.gameLevel}',
+              if (profile.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'ยังไม่มีหลักฐานการเรียนสำหรับโปรไฟล์นี้',
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+              _AxisCard(
+                label: 'Mastery',
+                value: _available(
+                  profile.mastery.availability,
+                  '${profile.mastery.masteredWordCount} คำที่ชำนาญ',
+                ),
               ),
-              _Metric(
-                label: 'คำตอบที่ใช้คำนวณ',
-                value: '${progress.sampleSize}',
+              _AxisCard(
+                label: 'SRS',
+                value: _available(
+                  profile.srs.availability,
+                  '${profile.srs.dueReviewCount} คำถึงกำหนด จาก '
+                  '${profile.srs.trackedWordCount} คำ',
+                ),
               ),
-              _Metric(
-                label: 'ความสำเร็จที่ปลดล็อก',
-                value: '${progress.achievementCount}',
+              _AxisCard(
+                label: 'Effort',
+                value: _available(
+                  profile.effort.availability,
+                  _duration(profile.effort.activeDuration),
+                ),
               ),
-              Padding(
-                padding: const EdgeInsets.all(12),
-                child: Text(
-                  'อัลกอริทึม v${progress.algorithmVersion} · '
-                  'ไม่มีคะแนนหรืออันดับตัวอย่าง',
+              _AxisCard(
+                label: 'Accuracy',
+                value: profile.accuracy.value == null
+                    ? 'ยังไม่มีหลักฐาน'
+                    : '${(profile.accuracy.value! * 100).toStringAsFixed(0)}% '
+                          'จาก ${profile.accuracy.sampleSize} คำตอบ',
+              ),
+              _AxisCard(
+                label: 'Weakness',
+                value: _available(
+                  profile.weakness.availability,
+                  profile.weakness.items.isEmpty
+                      ? 'ไม่พบจุดอ่อนในหลักฐานปัจจุบัน'
+                      : '${profile.weakness.items.length} คำที่ควรทบทวน',
+                ),
+              ),
+              _AxisCard(
+                label: 'Engagement',
+                value: _available(
+                  profile.engagement.availability,
+                  '${profile.engagement.totalXp} XP · '
+                  'Streak ${profile.engagement.currentStreakDays} วัน',
                 ),
               ),
             ],
@@ -101,8 +137,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
   }
 }
 
-class _Metric extends StatelessWidget {
-  const _Metric({required this.label, required this.value});
+class _AxisCard extends StatelessWidget {
+  const _AxisCard({required this.label, required this.value});
 
   final String label;
   final String value;
@@ -110,10 +146,18 @@ class _Metric extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      child: ListTile(
-        title: Text(label),
-        trailing: Text(value, style: Theme.of(context).textTheme.titleLarge),
-      ),
+      child: ListTile(title: Text(label), subtitle: Text(value)),
     );
   }
+}
+
+String _available(ProfileAxisAvailability availability, String value) =>
+    availability == ProfileAxisAvailability.available
+    ? value
+    : 'ยังไม่มีหลักฐาน';
+
+String _duration(Duration duration) {
+  final minutes = duration.inMinutes;
+  final seconds = duration.inSeconds.remainder(60);
+  return minutes == 0 ? '$seconds วินาที' : '$minutes นาที $seconds วินาที';
 }

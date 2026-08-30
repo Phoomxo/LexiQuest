@@ -1,44 +1,90 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:vocab_learning_app/features/progress/domain/learning_calendar.dart';
+import 'package:vocab_learning_app/features/progress/domain/personal_learning_profile.dart';
 import 'package:vocab_learning_app/features/progress/domain/progress_models.dart';
+import 'package:vocab_learning_app/screens/learning_calendar_screen.dart';
 import 'package:vocab_learning_app/screens/mastery_dashboard_screen.dart';
 
 void main() {
-  testWidgets('renders evidence-backed streak, skills, and sample sizes', (
-    tester,
-  ) async {
+  testWidgets('renders all six axes without a combined score', (tester) async {
     await tester.pumpWidget(
-      MaterialApp(home: MasteryDashboardScreen(loader: () async => _snapshot)),
+      MaterialApp(home: MasteryDashboardScreen(loader: () async => _profile)),
     );
     await tester.pumpAndSettle();
 
     expect(find.text('ภาพรวมการเรียน'), findsOneWidget);
-    expect(find.text('7 วัน'), findsOneWidget);
-    expect(find.text('Listening'), findsOneWidget);
-    expect(find.text('จำนวนตัวอย่าง: 4'), findsOneWidget);
-    expect(
-      find.text('จำนวนตัวอย่างทั้งหมด: 10 • อัลกอริทึมเวอร์ชัน 1'),
-      findsOneWidget,
-    );
+    for (final text in const [
+      'Mastery',
+      'Listening',
+      'จำนวนตัวอย่าง: 4',
+      'SRS',
+      'Effort',
+      'Accuracy',
+      'Weakness',
+      'Engagement',
+    ]) {
+      await _scrollToText(tester, text);
+      expect(find.text(text), findsOneWidget);
+      expect(find.textContaining('คะแนนรวม'), findsNothing);
+    }
   });
 
-  testWidgets('empty evidence shows sample size zero', (tester) async {
+  testWidgets('empty evidence is an honest typed empty state', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(home: MasteryDashboardScreen(loader: () async => _empty)),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('ยังไม่มีหลักฐานการเรียนที่เพียงพอ'), findsOneWidget);
+    expect(find.text('0%'), findsNothing);
+  });
+
+  testWidgets('calendar action receives the exact canonical f25 snapshot', (
+    tester,
+  ) async {
+    LearningCalendarSnapshot? opened;
     await tester.pumpWidget(
       MaterialApp(
-        home: MasteryDashboardScreen(loader: () async => _emptySnapshot),
+        home: MasteryDashboardScreen(
+          loader: () async => _profile,
+          openLearningCalendar: (context, calendar) async {
+            opened = calendar;
+          },
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
+    await _scrollToCalendarAction(tester);
+    await tester.tap(find.byKey(const Key('learning-calendar-action')));
+    await tester.pump();
+
+    expect(opened, same(_profile.calendar));
   });
 
-  testWidgets('reloads evidence whenever an indexed tab becomes active', (
+  testWidgets('default calendar action opens the existing f25 screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(home: MasteryDashboardScreen(loader: () async => _profile)),
+    );
+    await tester.pumpAndSettle();
+
+    await _scrollToCalendarAction(tester);
+    await tester.tap(find.byKey(const Key('learning-calendar-action')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LearningCalendarScreen), findsOneWidget);
+    expect(find.text('ปฏิทินการเรียน'), findsOneWidget);
+  });
+
+  testWidgets('reloads profile whenever an indexed tab becomes active', (
     tester,
   ) async {
     final active = ValueNotifier<bool>(false);
     addTearDown(active.dispose);
-    var progress = _emptySnapshot;
+    var profile = _empty;
     var loadCalls = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -49,7 +95,7 @@ void main() {
             child: MasteryDashboardScreen(
               loader: () async {
                 loadCalls += 1;
-                return progress;
+                return profile;
               },
             ),
           ),
@@ -61,56 +107,126 @@ void main() {
     active.value = true;
     await tester.pumpAndSettle();
     expect(loadCalls, 1);
-    expect(find.textContaining('จำนวนตัวอย่าง: 0'), findsOneWidget);
+    expect(find.text('ยังไม่มีหลักฐานการเรียนที่เพียงพอ'), findsOneWidget);
 
     active.value = false;
     await tester.pump();
-    progress = _snapshot;
+    profile = _profile;
     active.value = true;
     await tester.pumpAndSettle();
 
     expect(loadCalls, 2);
     expect(find.text('Listening'), findsOneWidget);
   });
+
+  testWidgets('remains readable without overflow at 200 percent text', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(textScaler: TextScaler.linear(2)),
+          child: MasteryDashboardScreen(loader: () async => _profile),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await _scrollToCalendarAction(tester);
+
+    expect(find.byKey(const Key('learning-calendar-action')), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
 }
 
-const _snapshot = ProgressSnapshot(
-  sampleSize: 10,
-  correctCount: 8,
-  wrongCount: 2,
-  accuracy: 0.8,
-  totalXp: 8,
-  completedSessions: 2,
-  streakDays: 7,
-  dueReviewCount: 1,
-  masteredWordCount: 2,
-  achievementCount: 1,
-  gameLevel: 1,
-  skills: [
-    SkillEvidence(
-      key: 'listening',
-      label: 'Listening',
-      sampleSize: 4,
-      accuracy: 0.75,
-    ),
-  ],
-  weaknesses: [],
-  recommendations: [],
-);
+Future<void> _scrollToText(WidgetTester tester, String text) =>
+    tester.scrollUntilVisible(
+      find.text(text),
+      240,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 20,
+    );
 
-const _emptySnapshot = ProgressSnapshot(
-  sampleSize: 0,
-  correctCount: 0,
-  wrongCount: 0,
-  accuracy: null,
-  totalXp: 0,
-  completedSessions: 0,
-  streakDays: 0,
-  dueReviewCount: 0,
-  masteredWordCount: 0,
-  achievementCount: 0,
-  gameLevel: 1,
-  skills: [],
-  weaknesses: [],
-  recommendations: [],
-);
+Future<void> _scrollToCalendarAction(WidgetTester tester) =>
+    tester.scrollUntilVisible(
+      find.byKey(const Key('learning-calendar-action')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+      maxScrolls: 20,
+    );
+
+final _profile = _profileFixture();
+final _empty = _profileFixture(empty: true);
+
+PersonalLearningProfile _profileFixture({bool empty = false}) {
+  final availability = empty
+      ? ProfileAxisAvailability.noEvidence
+      : ProfileAxisAvailability.available;
+  return PersonalLearningProfile(
+    ownerId: 'owner-1',
+    mastery: PersonalLearningMastery(
+      availability: availability,
+      masteredWordCount: empty ? 0 : 2,
+      observedPracticeCount: empty ? 0 : 10,
+      skills: empty
+          ? const []
+          : const [
+              SkillEvidence(
+                key: 'listening',
+                label: 'Listening',
+                sampleSize: 4,
+                accuracy: .75,
+              ),
+            ],
+    ),
+    srs: PersonalLearningSrs(
+      availability: availability,
+      trackedWordCount: empty ? 0 : 3,
+      dueReviewCount: empty ? 0 : 1,
+    ),
+    effort: PersonalLearningEffort(
+      availability: availability,
+      activeDuration: empty ? Duration.zero : const Duration(minutes: 25),
+    ),
+    accuracy: PersonalLearningAccuracy(
+      availability: availability,
+      sampleSize: empty ? 0 : 10,
+      correctCount: empty ? 0 : 8,
+    ),
+    weakness: PersonalLearningWeakness(
+      availability: availability,
+      items: const [],
+    ),
+    engagement: PersonalLearningEngagement(
+      availability: availability,
+      totalXp: empty ? 0 : 42,
+      avatarLevel: empty ? 1 : 3,
+      completedSessionCount: empty ? 0 : 2,
+      currentStreakDays: empty ? 0 : 7,
+      longestStreakDays: empty ? 0 : 9,
+      activeQuestCount: empty ? 0 : 1,
+      completedQuestCount: empty ? 0 : 2,
+      achievementCount: empty ? 0 : 1,
+      ownedRewardItemCount: empty ? 0 : 2,
+    ),
+    calendar: _calendar(empty: empty),
+  );
+}
+
+LearningCalendarSnapshot _calendar({required bool empty}) =>
+    LearningCalendarSnapshot(
+      timezoneId: 'Asia/Bangkok',
+      weekStart: DateTime(2026, 8, 24),
+      days: const [],
+      weekly: WeeklyLearningAnalytics(
+        effort: LearningEffortAxis(
+          activeDuration: empty ? Duration.zero : const Duration(minutes: 25),
+        ),
+        accuracy: LearningAccuracyAxis(
+          sampleSize: empty ? 0 : 10,
+          correctCount: empty ? 0 : 8,
+        ),
+        skillDistribution: const [],
+        accuracyTrend: const [],
+      ),
+    );
