@@ -153,6 +153,24 @@ final class DriftProgressQueries {
     );
   }
 
+  /// Latest canonical practice evidence used only for freshness decisions.
+  /// Assessment and recreational attempts remain excluded by the shared
+  /// validated-practice boundary.
+  Future<DateTime?> loadLatestPracticeEvidenceAtUtc({
+    required String ownerId,
+  }) async {
+    if (ownerId.isEmpty || ownerId.trim() != ownerId) {
+      throw ArgumentError.value(ownerId, 'ownerId');
+    }
+    final attempts = await _loadValidatedPracticeAttempts(ownerId);
+    return attempts.isEmpty
+        ? null
+        : DateTime.fromMillisecondsSinceEpoch(
+            attempts.last.occurredAtUtcMs,
+            isUtc: true,
+          );
+  }
+
   /// Returns f14's typed advisory decisions without changing the legacy
   /// [ProgressSnapshot] contract or persisting a recommendation record.
   Future<List<RecommendationDecision>> loadFlashcardFirstDecisions({
@@ -269,7 +287,9 @@ final class DriftProgressQueries {
         left.incorrectCount,
       );
       if (incorrectCount != 0) return incorrectCount;
-      return left.spelling.compareTo(right.spelling);
+      final spelling = left.spelling.compareTo(right.spelling);
+      if (spelling != 0) return spelling;
+      return left.wordId.compareTo(right.wordId);
     });
     return candidates;
   }
@@ -286,6 +306,35 @@ final class DriftProgressQueries {
       query.where((row) => row.wordId.isIn(wordIds.toList()));
     }
     final storedAttempts = await query.get();
+    if (storedAttempts.isEmpty) return const <AnswerAttempt>[];
+    final sessionIds = storedAttempts
+        .map((attempt) => attempt.sessionId)
+        .toSet();
+    final referencedWordIds = storedAttempts
+        .map((attempt) => attempt.wordId)
+        .toSet();
+    final sessions = await (database.select(
+      database.learningSessions,
+    )..where((row) => row.id.isIn(sessionIds.toList(growable: false)))).get();
+    final words =
+        await (database.select(database.vocabularyWords)..where(
+              (row) => row.id.isIn(referencedWordIds.toList(growable: false)),
+            ))
+            .get();
+    final sessionOwners = <String, String>{
+      for (final session in sessions) session.id: session.ownerId,
+    };
+    final wordOwners = <String, String>{
+      for (final word in words) word.id: word.ownerId,
+    };
+    for (final attempt in storedAttempts) {
+      if (sessionOwners[attempt.sessionId] != ownerId ||
+          wordOwners[attempt.wordId] != ownerId) {
+        throw const FormatException(
+          'attempt session and word references must match the attempt owner',
+        );
+      }
+    }
     return storedAttempts.where(_isPracticeAttempt).toList(growable: false);
   }
 
@@ -336,7 +385,8 @@ final class DriftProgressQueries {
       ORDER BY
         (1.0 * SUM(CASE WHEN a.is_correct = 0 THEN 1 ELSE 0 END) / COUNT(*)) DESC,
         incorrect_count DESC,
-        w.spelling ASC
+        w.spelling ASC,
+        w.id ASC
       $limitSql
       ''',
           variables: [
